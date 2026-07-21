@@ -1,0 +1,58 @@
+# ==============================
+# Node.js dependencies
+# ==============================
+node_modules/
+
+# ==============================
+# Environment variables / secrets
+# ==============================
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Build output
+# ==============================
+dist/
+build/
+out/
+.next/
+coverage/
+
+# ==============================
+# Tool caches
+# ==============================
+.cache/
+.vite/
+.npm/
+.eslintcache
+
+# ==============================
+# Logs
+# ==============================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==============================
+# Temporary files
+# ==============================
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ==============================
+# Editor settings
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# Operating system files
+# ==============================
+.DS_Store
+Thumbs.db
+Desktop.ini

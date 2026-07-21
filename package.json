@@ -1,0 +1,14 @@
+{
+  "name": "football-roguelite-simulator",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node devtool/build.js",
+    "demo": "node devtool/server.js",
+    "devtool": "node devtool/server.js",
+    "simulate": "node src/cli.js --matches 10000 --seed demo",
+    "traits": "node src/trait-cli.js --seed demo --role ST",
+    "test": "node --test"
+  }
+}

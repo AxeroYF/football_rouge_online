@@ -1,0 +1,6865 @@
+{
+  "meta": {
+    "schemaVersion": 11,
+    "createdAt": "2026-07-15T12:58:11.672Z",
+    "updatedAt": "2026-07-17T11:54:42.984Z",
+    "title": "场边实验室"
+  },
+  "traitCards": [
+    {
+      "id": "one-touch",
+      "name": "一脚出球",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "buildUp",
+        "possession",
+        "antiPress"
+      ],
+      "polarity": "positive",
+      "summary": "对手逼抢达到65以上时，球队后场组织成功率获得相当于+4组织能力的加成。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "buildUp",
+          "addRating": 4,
+          "when": {
+            "opponentPressingGte": 65
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "box-instinct",
+      "name": "禁区嗅觉",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "movement"
+      ],
+      "polarity": "positive",
+      "summary": "直塞和倒三角机会中，被选为射手的权重提高35%。",
+      "rules": [
+        {
+          "hook": "shooterSelection",
+          "shotTypes": [
+            "throughBall",
+            "cutback"
+          ],
+          "multiplyWeight": 1.35
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "aerial-beacon",
+      "name": "空中灯塔",
+      "rarity": "common",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "DEF",
+        "ATT"
+      ],
+      "tags": [
+        "aerial",
+        "cross",
+        "setPiece",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "头球与弹跳各+5、争顶射手权重提高40%，但速度-2。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "heading": 5,
+            "jumping": 5,
+            "pace": -2
+          }
+        },
+        {
+          "hook": "shooterSelection",
+          "shotTypes": [
+            "cross",
+            "corner"
+          ],
+          "multiplyWeight": 1.4
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "endless-engine",
+      "name": "永动机",
+      "rarity": "common",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "stamina",
+        "pressing"
+      ],
+      "polarity": "positive",
+      "summary": "整场比赛的动态疲劳惩罚减少25%。",
+      "rules": [
+        {
+          "hook": "fatigue",
+          "multiplyPenalty": 0.75
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "touchline-flywheel",
+      "name": "边线飞轮",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "wide",
+        "cross",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "踢边路位置时速度+3、传中+4；被放到中路时机会创造-2。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": 3,
+            "crossing": 4
+          },
+          "when": {
+            "roleIsWide": true
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "chanceCreation",
+          "addRating": -2,
+          "when": {
+            "roleIsCentral": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "shadow-marker",
+      "name": "贴身影子",
+      "rarity": "common",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "marking",
+        "duel",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "对方射门权重最高的球员在场时，盯人与抢断各+5，但自身犯规率提高10%。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "marking": 5,
+            "tackling": 5
+          },
+          "when": {
+            "opponentPrimaryShooterActive": true
+          }
+        },
+        {
+          "hook": "foul",
+          "multiplyProbability": 1.1
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "long-shot-license",
+      "name": "远射许可证",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "longShot",
+        "variance",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "远射选择权重变为1.8倍，远射机会质量提高12%；球队会因此放弃一部分更稳妥的进攻。",
+      "rules": [
+        {
+          "hook": "shotType",
+          "shotType": "longShot",
+          "multiplyWeight": 1.8,
+          "multiplyXg": 1.12
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "set-piece-toolbox",
+      "name": "定位球工具箱",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "setPiece"
+      ],
+      "polarity": "positive",
+      "summary": "定位球能力+7，并优先成为本队主罚者。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "setPieces": 7
+          }
+        },
+        {
+          "hook": "setPieceTaker",
+          "multiplyWeight": 1.5
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "penalty-ice",
+      "name": "冰点十二码",
+      "rarity": "common",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "penalty",
+        "composure",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "点球进球率增加8个百分点；若仍然罚失，本场状态-8。",
+      "rules": [
+        {
+          "hook": "shot",
+          "shotType": "penalty",
+          "addGoalProbability": 0.08
+        },
+        {
+          "hook": "afterPenaltyMiss",
+          "addMorale": -8
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "long-pass-switch",
+      "name": "长传开关",
+      "rarity": "common",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "direct",
+        "progression",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "直接进攻的推进能力+5，但后场组织阶段丢失球权的概率增加3个百分点。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "progression",
+          "addRating": 5,
+          "when": {
+            "teamDirectnessGte": 60
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "buildUp",
+          "addFailureProbability": 0.03
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "rain-boots",
+      "name": "雨鞋",
+      "rarity": "common",
+      "category": "environment",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "weather",
+        "rain"
+      ],
+      "polarity": "positive",
+      "summary": "无视降雨和烂场地带来的个人传控惩罚；降雨超过60时灵活+4。",
+      "rules": [
+        {
+          "hook": "weather",
+          "ignore": [
+            "rainPassingPenalty",
+            "poorPitchPenalty"
+          ]
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "agility": 4
+          },
+          "when": {
+            "precipitationGte": 60
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "impact-sub",
+      "name": "替补热身王",
+      "rarity": "common",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "substitution",
+        "tempo"
+      ],
+      "polarity": "positive",
+      "summary": "替补登场后的20分钟内，所有阶段能力+5；首发时没有效果。",
+      "rules": [
+        {
+          "hook": "derivedMetric",
+          "addRating": 5,
+          "when": {
+            "minutesSinceSubLte": 20
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "sweeper-keeper",
+      "name": "清道夫门将",
+      "rarity": "common",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "highLine",
+        "buildUp",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "防线高度达到60以上时，球队转换防守+4、门将传球+5；出击失败会产生一次高质量吊射。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "passing": 5
+          },
+          "when": {
+            "teamDefensiveLineGte": 60
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "transitionDefense",
+          "addRating": 4,
+          "when": {
+            "teamDefensiveLineGte": 60
+          }
+        },
+        {
+          "hook": "sweeperFailure",
+          "createShotType": "chip"
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "safe-outlet",
+      "name": "安全出口",
+      "rarity": "common",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "buildUp",
+        "possession",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "球队后场组织+3，但该球员主动射门的权重降低40%。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "buildUp",
+          "addRating": 3
+        },
+        {
+          "hook": "shooterSelection",
+          "multiplyWeight": 0.6
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "assist-chef",
+      "name": "喂饼大师",
+      "rarity": "rare",
+      "category": "playmaking",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "creation",
+        "assist",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "场上存在前锋时机会创造+7，自身射门权重降低45%；由其创造的进球会额外提升射手状态。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "chanceCreation",
+          "addRating": 7,
+          "when": {
+            "strikerActive": true
+          }
+        },
+        {
+          "hook": "shooterSelection",
+          "multiplyWeight": 0.55
+        },
+        {
+          "hook": "afterAssistedGoal",
+          "addShooterMorale": 3
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "lone-finisher",
+      "name": "独狼终结者",
+      "rarity": "rare",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "chemistry",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "射门与冷静各+7，但该球员在场时球队默契按-5计算。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "finishing": 7,
+            "composure": 7
+          }
+        },
+        {
+          "hook": "teamState",
+          "addChemistry": -5
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "grows-from-misses",
+      "name": "越挫越勇",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "momentum"
+      ],
+      "polarity": "positive",
+      "summary": "每次射失后，下一次射门的射门与冷静各+3，最多叠加3层；进球后清空。",
+      "rules": [
+        {
+          "hook": "afterShotMiss",
+          "addStack": "missResolve",
+          "maxStacks": 3
+        },
+        {
+          "hook": "shot",
+          "addPerStack": {
+            "finishing": 3,
+            "composure": 3
+          },
+          "stack": "missResolve"
+        },
+        {
+          "hook": "afterGoal",
+          "clearStack": "missResolve"
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "professional-foul",
+      "name": "战术犯规",
+      "rarity": "rare",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "counter",
+        "card",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "对手形成反击时有35%概率提前终止该次进攻，但自身吃牌概率变为1.45倍。",
+      "rules": [
+        {
+          "hook": "opponentCounter",
+          "cancelProbability": 0.35
+        },
+        {
+          "hook": "card",
+          "multiplyProbability": 1.45
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "pressing-trigger",
+      "name": "压迫扳机",
+      "rarity": "rare",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "pressing",
+        "stamina",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "前场丢球后，下一次防守的逼抢+7；本场疲劳累积速度提高18%。",
+      "rules": [
+        {
+          "hook": "afterFinalThirdTurnover",
+          "addNextPhaseRating": {
+            "phase": "press",
+            "value": 7
+          }
+        },
+        {
+          "hook": "fatigue",
+          "multiplyPenalty": 1.18
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "first-counter-arrow",
+      "name": "反击第一箭",
+      "rarity": "rare",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "counter",
+        "progression",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "反击中的推进与创造各+7，阵地进攻中的创造-3。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": [
+            "progression",
+            "chanceCreation"
+          ],
+          "addRating": 7,
+          "when": {
+            "possessionType": "counter"
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "chanceCreation",
+          "addRating": -3,
+          "when": {
+            "possessionType": "settled"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "low-block-keeper",
+      "name": "低位门神",
+      "rarity": "rare",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "lowBlock",
+        "shotStopping",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "防线高度不超过40时扑救+8；防线高度达到60以上时扑救-5。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "shotStopping",
+          "addRating": 8,
+          "when": {
+            "teamDefensiveLineLte": 40
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "shotStopping",
+          "addRating": -5,
+          "when": {
+            "teamDefensiveLineGte": 60
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "big-stage",
+      "name": "大场面球员",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "lateGame",
+        "comeback"
+      ],
+      "polarity": "positive",
+      "summary": "70分钟后，当比分持平或落后时，决策与冷静各+6。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "decisions": 6,
+            "composure": 6
+          },
+          "when": {
+            "minuteGte": 70,
+            "scoreState": [
+              "tied",
+              "trailing"
+            ]
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "opening-sprint",
+      "name": "开场闪击",
+      "rarity": "rare",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "earlyGame",
+        "pace",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "前20分钟速度与无球各+7；65分钟后额外承受3点疲劳惩罚。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": 7,
+            "offBall": 7
+          },
+          "when": {
+            "minuteLte": 20
+          }
+        },
+        {
+          "hook": "fatigue",
+          "addPenalty": 3,
+          "when": {
+            "minuteGte": 65
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "stoppage-time-expert",
+      "name": "读秒专家",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "lateGame",
+        "finishing"
+      ],
+      "polarity": "positive",
+      "summary": "85分钟后射手选择权重变为2倍、冷静+8；可能因此抢走队友更好的机会。",
+      "rules": [
+        {
+          "hook": "shooterSelection",
+          "multiplyWeight": 2,
+          "when": {
+            "minuteGte": 85
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "composure": 8
+          },
+          "when": {
+            "minuteGte": 85
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "glass-cannon",
+      "name": "玻璃大炮",
+      "rarity": "rare",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "peak",
+        "injury",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "三项最高的非身体能力各+8，但受伤概率变为2.2倍，赛后体能消耗提高25%。",
+      "rules": [
+        {
+          "hook": "topAttributes",
+          "count": 3,
+          "exclude": "physical",
+          "add": 8
+        },
+        {
+          "hook": "injury",
+          "multiplyProbability": 2.2
+        },
+        {
+          "hook": "postMatchFitness",
+          "multiplyLoss": 1.25
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "offside-artist",
+      "name": "越位艺术家",
+      "rarity": "rare",
+      "category": "movement",
+      "eligibleRoleGroups": [
+        "ATT"
+      ],
+      "tags": [
+        "throughBall",
+        "variance",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "直塞形成的机会质量提高20%，但其中18%的推进会因越位直接结束。",
+      "rules": [
+        {
+          "hook": "shotType",
+          "shotType": "throughBall",
+          "multiplyXg": 1.2
+        },
+        {
+          "hook": "progression",
+          "when": {
+            "intendedShotType": "throughBall"
+          },
+          "forceTurnoverProbability": 0.18,
+          "reason": "offside"
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "hard-mode-scorer",
+      "name": "专进难球",
+      "rarity": "rare",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "variance",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "xG不高于0.08的射门，进球率提高55%；xG不低于0.25的射门，进球率降低20%。",
+      "rules": [
+        {
+          "hook": "shot",
+          "multiplyGoalProbability": 1.55,
+          "when": {
+            "xgLte": 0.08
+          }
+        },
+        {
+          "hook": "shot",
+          "multiplyGoalProbability": 0.8,
+          "when": {
+            "xgGte": 0.25
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "metronome",
+      "name": "节拍器",
+      "rarity": "rare",
+      "category": "playmaking",
+      "eligibleRoleGroups": [
+        "MID"
+      ],
+      "tags": [
+        "buildUp",
+        "progression",
+        "dependency",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "在场时全队组织与推进各+4；如果他受伤或被罚下，全队本场状态-8。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": [
+            "buildUp",
+            "progression"
+          ],
+          "addRating": 4
+        },
+        {
+          "hook": "onForcedExit",
+          "addTeamMorale": -8
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "defense-commander",
+      "name": "防线指挥官",
+      "rarity": "epic",
+      "category": "leadership",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "tags": [
+        "defending",
+        "setPiece",
+        "aura",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "在场时全队防守+4、定位球防守+6，但本人参与进攻的能力-3；同名光环只取最高。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "defending",
+          "addTeamRating": 4,
+          "uniqueAura": true
+        },
+        {
+          "hook": "phase",
+          "phase": "setPieceDefense",
+          "addTeamRating": 6,
+          "uniqueAura": true
+        },
+        {
+          "hook": "phase",
+          "phase": "attacking",
+          "addRating": -3
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "locker-room-glue",
+      "name": "更衣室黏合剂",
+      "rarity": "legendary",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "chemistry",
+        "aura"
+      ],
+      "polarity": "positive",
+      "summary": "该球员进入比赛名单时，球队默契按+12计算；本人不获得这项加成。",
+      "rules": [
+        {
+          "hook": "teamState",
+          "addChemistry": 12,
+          "excludeSelf": true,
+          "uniqueAura": true
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "double-edged-core",
+      "name": "双刃核心",
+      "rarity": "epic",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "usage",
+        "creation",
+        "finishing",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "55%的关键进攻会优先经过他，创造+6、射门+4；当体能低于40时，全队推进-6。",
+      "rules": [
+        {
+          "hook": "keyActionSelection",
+          "minimumShare": 0.55
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "vision": 6,
+            "finishing": 4
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "progression",
+          "addTeamRating": -6,
+          "when": {
+            "fitnessLte": 40
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "ten-man-hero",
+      "name": "十人战神",
+      "rarity": "epic",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "redCard",
+        "comeback"
+      ],
+      "polarity": "positive",
+      "summary": "本队少一人时个人所有阶段能力+8，并让少打一人的团队惩罚减少20%；人数相等时没有效果。",
+      "rules": [
+        {
+          "hook": "derivedMetric",
+          "addRating": 8,
+          "when": {
+            "teamPlayerDeficitGte": 1
+          }
+        },
+        {
+          "hook": "shortHandPenalty",
+          "multiplyTeamPenalty": 0.8,
+          "when": {
+            "teamPlayerDeficitGte": 1
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "penalty-reader",
+      "name": "扑点专家",
+      "rarity": "epic",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "penalty",
+        "reroll",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "每场可让对手第一次罚进的点球重判一次；作为代价，常规传球-3。",
+      "rules": [
+        {
+          "hook": "afterOpponentPenaltyGoal",
+          "reroll": true,
+          "chargesPerMatch": 1
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "passing": -3
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "utility-player",
+      "name": "万金油",
+      "rarity": "epic",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "position",
+        "substitution",
+        "flexibility"
+      ],
+      "polarity": "positive",
+      "summary": "可以替补除门将外的任意位置，完全取消位置不熟惩罚，但在非主位置只发挥90%的特性加成。",
+      "rules": [
+        {
+          "hook": "position",
+          "ignoreOutOfPositionPenalty": true,
+          "eligibleRoleGroups": [
+            "DEF",
+            "MID",
+            "ATT"
+          ]
+        },
+        {
+          "hook": "traitEffect",
+          "multiplyEffect": 0.9,
+          "when": {
+            "outsidePrimaryRole": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "borrowed-peak",
+      "name": "借来的巅峰",
+      "rarity": "epic",
+      "category": "campaign",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "peak",
+        "injury",
+        "oncePerRun",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "每轮征程可主动开启一次：本场所有能力+7；赛后有35%概率受伤，并额外损失20体能。",
+      "rules": [
+        {
+          "hook": "manualActivation",
+          "chargesPerRun": 1,
+          "addAllAttributes": 7
+        },
+        {
+          "hook": "postMatch",
+          "injuryProbability": 0.35,
+          "addFitness": -20,
+          "when": {
+            "activated": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "last-dance",
+      "name": "最后一舞",
+      "rarity": "legendary",
+      "category": "campaign",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "elimination",
+        "story",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "淘汰赛可主动开启：本场所有能力+10；若球队晋级，之后每场身体能力永久-2，直到本轮征程结束。",
+      "rules": [
+        {
+          "hook": "manualActivation",
+          "when": {
+            "eliminationMatch": true
+          },
+          "addAllAttributes": 10
+        },
+        {
+          "hook": "campaignAdvance",
+          "addPhysicalAttributes": -2,
+          "when": {
+            "activatedAndWon": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "total-football",
+      "name": "全攻全守",
+      "rarity": "legendary",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "position",
+        "contribution",
+        "stamina",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "本职阶段之外，还能以70%效率参与相邻的进攻或防守阶段；疲劳累积速度提高30%。",
+      "rules": [
+        {
+          "hook": "phaseContribution",
+          "adjacentPhaseEfficiency": 0.7
+        },
+        {
+          "hook": "fatigue",
+          "multiplyPenalty": 1.3
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "rewrite-fate",
+      "name": "改写命运",
+      "rarity": "legendary",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "reroll",
+        "finishing",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "每场第一次错失xG不低于0.25的机会时重判射门；若第二次仍未进球，本场状态-10。",
+      "rules": [
+        {
+          "hook": "afterShotMiss",
+          "reroll": true,
+          "chargesPerMatch": 1,
+          "when": {
+            "xgGte": 0.25
+          }
+        },
+        {
+          "hook": "afterRerollMiss",
+          "addMorale": -10
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "nameless-heart",
+      "name": "无名队魂",
+      "rarity": "legendary",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "underdog",
+        "aura",
+        "teamBuilding"
+      ],
+      "polarity": "positive",
+      "summary": "每有一名未装备史诗或传奇特性的队友，其他队员有效状态+1，最多+8；持卡者本人不享受。",
+      "rules": [
+        {
+          "hook": "teamState",
+          "addPerEligibleTeammate": 1,
+          "maximum": 8,
+          "excludeSelf": true
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "keeper-charge",
+      "name": "门将冲锋",
+      "rarity": "rare",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "lateGame",
+        "setPiece",
+        "variance",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "85分钟后落后时，门将加入角球与前场定位球，定位球进攻+10；若进攻失败，有15%概率送给对手空门反击。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "setPieceAttack",
+          "addTeamRating": 10,
+          "when": {
+            "minuteGte": 85,
+            "scoreState": "trailing"
+          }
+        },
+        {
+          "hook": "afterFailedSetPiece",
+          "createEmptyGoalCounterProbability": 0.15,
+          "when": {
+            "minuteGte": 85,
+            "scoreState": "trailing"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "first-step-thief",
+      "name": "第一步小偷",
+      "rarity": "common",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "tackling",
+        "duel"
+      ],
+      "polarity": "positive",
+      "summary": "每次防守对位的第一次抢断获得+6判定，失败后本次对位不再生效。",
+      "rules": [
+        {
+          "hook": "duel",
+          "duelType": "tackle",
+          "addRating": 6,
+          "chargesPerPossession": 1
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "wall-pass-addict",
+      "name": "撞墙上瘾",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "passing",
+        "movement",
+        "possession"
+      ],
+      "polarity": "positive",
+      "summary": "连续短传后推进+4；如果队友没有回传，他会短暂地感到失落。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "progression",
+          "addRating": 4,
+          "when": {
+            "consecutiveShortPassesGte": 2
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "near-post-padlock",
+      "name": "近角挂锁",
+      "rarity": "common",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "goalkeeping",
+        "shotStopping",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "扑救近角射门+7，但面对挑射时扑救-3。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "shotStopping",
+          "addRating": 7,
+          "when": {
+            "shotTarget": "nearPost"
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "shotStopping",
+          "addRating": -3,
+          "when": {
+            "shotType": "chip"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "loud-organizer",
+      "name": "自带扩音器",
+      "rarity": "common",
+      "category": "leadership",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "tags": [
+        "defending",
+        "aura"
+      ],
+      "polarity": "positive",
+      "summary": "本人在场时，相邻防守队友站位+3；解说席可能听见他的全部指令。",
+      "rules": [
+        {
+          "hook": "attributeAura",
+          "target": "adjacentDefenders",
+          "add": {
+            "positioning": 3
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "muddy-knees",
+      "name": "泥腿防线",
+      "rarity": "common",
+      "category": "environment",
+      "eligibleRoleGroups": [
+        "DEF"
+      ],
+      "tags": [
+        "weather",
+        "rain",
+        "tackling"
+      ],
+      "polarity": "positive",
+      "summary": "雨天与烂场地中抢断+5，铲球动作看起来尤其有说服力。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "tackling": 5
+          },
+          "when": {
+            "precipitationGte": 35
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "second-ball-radar",
+      "name": "二点球雷达",
+      "rarity": "common",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "possession",
+        "aerial"
+      ],
+      "polarity": "positive",
+      "summary": "争顶或封堵后的二点球争夺+6。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "secondBall",
+          "addRating": 6
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "weak-foot-tuesday",
+      "name": "今天练逆足",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "passing",
+        "variance",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "逆足传射惩罚减半，但有12%概率坚持用逆足处理本可用惯用脚的球。",
+      "rules": [
+        {
+          "hook": "weakFoot",
+          "multiplyPenalty": 0.5
+        },
+        {
+          "hook": "actionSelection",
+          "forceWeakFootProbability": 0.12
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "calm-restart",
+      "name": "慢慢开门球",
+      "rarity": "common",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "tags": [
+        "buildUp",
+        "composure"
+      ],
+      "polarity": "positive",
+      "summary": "比赛领先时门球与后场任意球的组织+5。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "buildUp",
+          "addRating": 5,
+          "when": {
+            "scoreState": "leading",
+            "restartFromBack": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "corner-flag-friend",
+      "name": "角旗区熟客",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "wide",
+        "possession",
+        "lateGame"
+      ],
+      "polarity": "positive",
+      "summary": "领先时在角旗区护球，球队拖延时间效率+35%。",
+      "rules": [
+        {
+          "hook": "timeManagement",
+          "multiplyDelayEfficiency": 1.35,
+          "when": {
+            "scoreState": "leading"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "goal-frame-believer",
+      "name": "门柱信徒",
+      "rarity": "common",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "shotStopping",
+        "morale"
+      ],
+      "polarity": "positive",
+      "summary": "对手射中门框后状态+4，并在下一次扑救中获得+3判定。",
+      "rules": [
+        {
+          "hook": "afterOpponentWoodwork",
+          "addMorale": 4,
+          "addNextSaveRating": 3
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "pace-budget",
+      "name": "省着点跑",
+      "rarity": "common",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "stamina",
+        "lateGame",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "前30分钟速度-2，70分钟后速度与耐力各+4。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": -2
+          },
+          "when": {
+            "minuteLte": 30
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": 4,
+            "stamina": 4
+          },
+          "when": {
+            "minuteGte": 70
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "crowd-powered",
+      "name": "人来疯",
+      "rarity": "common",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "home",
+        "morale",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "主场时状态+4，空场或客场时决策-2。",
+      "rules": [
+        {
+          "hook": "teamState",
+          "addForm": 4,
+          "when": {
+            "venue": "home"
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "decisions": -2
+          },
+          "when": {
+            "venue": [
+              "away",
+              "empty"
+            ]
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "clean-tackle",
+      "name": "干净利落",
+      "rarity": "common",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "tackling",
+        "discipline"
+      ],
+      "polarity": "positive",
+      "summary": "抢断+3，铲球造成犯规的概率降低18%。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "tackling": 3
+          }
+        },
+        {
+          "hook": "foul",
+          "multiplyProbability": 0.82,
+          "when": {
+            "action": "tackle"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "toe-poke",
+      "name": "脚尖一捅",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "surprise"
+      ],
+      "polarity": "positive",
+      "summary": "禁区内被贴身时仍有30%概率完成低质量捅射。",
+      "rules": [
+        {
+          "hook": "underPressure",
+          "createShotProbability": 0.3,
+          "shotType": "toePoke",
+          "xgMultiplier": 0.72
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "halftime-snack",
+      "name": "中场小饼干",
+      "rarity": "common",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "stamina",
+        "halftime"
+      ],
+      "polarity": "positive",
+      "summary": "中场休息额外恢复5点体能。没人知道饼干藏在哪里。",
+      "rules": [
+        {
+          "hook": "halftime",
+          "addFitness": 5
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "bounce-reader",
+      "name": "反弹预报员",
+      "rarity": "common",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "poorPitch",
+        "possession"
+      ],
+      "polarity": "positive",
+      "summary": "场地质量低于60时停球与二点球判断各+4。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "firstTouch": 4,
+            "decisions": 4
+          },
+          "when": {
+            "pitchQualityLte": 60
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "nutmeg-tax",
+      "name": "穿裆税",
+      "rarity": "rare",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "dribbling",
+        "morale",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "成功过人有18%概率触发穿裆，使对手状态-3；失败时本人决策-2，持续10分钟。",
+      "rules": [
+        {
+          "hook": "afterDribbleWin",
+          "triggerProbability": 0.18,
+          "addOpponentMorale": -3
+        },
+        {
+          "hook": "afterDribbleLoss",
+          "addTemporary": {
+            "decisions": -2
+          },
+          "durationMinutes": 10
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "captains-armband",
+      "name": "队长袖标",
+      "rarity": "rare",
+      "category": "leadership",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "morale",
+        "aura"
+      ],
+      "polarity": "positive",
+      "summary": "本人担任队长时，全队落后后的状态损失减少50%。",
+      "rules": [
+        {
+          "hook": "teamMoraleLoss",
+          "multiplyLoss": 0.5,
+          "when": {
+            "isCaptain": true,
+            "scoreState": "trailing"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "rainmaker",
+      "name": "雨幕导演",
+      "rarity": "rare",
+      "category": "environment",
+      "eligibleRoleGroups": [
+        "MID"
+      ],
+      "tags": [
+        "weather",
+        "rain",
+        "passing"
+      ],
+      "polarity": "positive",
+      "summary": "雨天传球与视野各+6，且本队雨天失误惩罚减少20%。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "passing": 6,
+            "vision": 6
+          },
+          "when": {
+            "precipitationGte": 35
+          }
+        },
+        {
+          "hook": "weather",
+          "multiplyTeamRainError": 0.8
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "snow-plough",
+      "name": "雪地推土机",
+      "rarity": "rare",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "DEF",
+        "ATT"
+      ],
+      "tags": [
+        "weather",
+        "snow",
+        "physical"
+      ],
+      "polarity": "positive",
+      "summary": "雪天力量与平衡各+8，并无视雪天一半速度惩罚。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "strength": 8,
+            "balance": 8
+          },
+          "when": {
+            "weather": "snow"
+          }
+        },
+        {
+          "hook": "weather",
+          "multiplySnowPacePenalty": 0.5
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "protect-one-goal",
+      "name": "一球保险箱",
+      "rarity": "rare",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "tags": [
+        "lateGame",
+        "defending",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "70分钟后领先一球时防守+7，但球队推进-4。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "defending",
+          "addRating": 7,
+          "when": {
+            "minuteGte": 70,
+            "leadEquals": 1
+          }
+        },
+        {
+          "hook": "phase",
+          "phase": "progression",
+          "addTeamRating": -4,
+          "when": {
+            "minuteGte": 70,
+            "leadEquals": 1
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "derby-blood",
+      "name": "德比体质",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "rivalry",
+        "aggression",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "面对宿敌时所有能力+4、侵略性+10，吃牌概率提高20%。",
+      "rules": [
+        {
+          "hook": "derivedMetric",
+          "addRating": 4,
+          "when": {
+            "rivalryMatch": true
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "aggression": 10
+          },
+          "when": {
+            "rivalryMatch": true
+          }
+        },
+        {
+          "hook": "card",
+          "multiplyProbability": 1.2,
+          "when": {
+            "rivalryMatch": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "yellow-card-brain",
+      "name": "黄牌后长脑子",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "card",
+        "discipline"
+      ],
+      "polarity": "positive",
+      "summary": "吃到黄牌后决策+6，后续犯规概率降低35%。",
+      "rules": [
+        {
+          "hook": "afterYellowCard",
+          "add": {
+            "decisions": 6
+          },
+          "multiplyFoulProbability": 0.65
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "rebound-hunter",
+      "name": "补射猎人",
+      "rarity": "rare",
+      "category": "movement",
+      "eligibleRoleGroups": [
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "rebound"
+      ],
+      "polarity": "positive",
+      "summary": "队友射门被扑后，成为补射者的权重变为2.2倍，补射冷静+5。",
+      "rules": [
+        {
+          "hook": "shooterSelection",
+          "shotTypes": [
+            "rebound"
+          ],
+          "multiplyWeight": 2.2
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "composure": 5
+          },
+          "when": {
+            "shotType": "rebound"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "false-nine-license",
+      "name": "伪九号执照",
+      "rarity": "rare",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "position",
+        "creation",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "担任前锋时创造+7、传球+5，但禁区内射手选择权重降低25%。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "chanceCreation",
+          "addRating": 7,
+          "when": {
+            "activeRole": "ATT"
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "passing": 5
+          },
+          "when": {
+            "activeRole": "ATT"
+          }
+        },
+        {
+          "hook": "shooterSelection",
+          "multiplyWeight": 0.75,
+          "when": {
+            "inPenaltyArea": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "keeper-throw-cannon",
+      "name": "手抛球大炮",
+      "rarity": "rare",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "counter",
+        "distribution"
+      ],
+      "polarity": "positive",
+      "summary": "成功扑救后有28%概率立即发起高质量反击，反击推进+8。",
+      "rules": [
+        {
+          "hook": "afterSave",
+          "createCounterProbability": 0.28,
+          "addProgressionRating": 8
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "late-bloomer",
+      "name": "越踢越来劲",
+      "rarity": "rare",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "lateGame",
+        "stamina",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "每经过20分钟所有能力+1，最多4层；开场时所有能力-2。",
+      "rules": [
+        {
+          "hook": "derivedMetric",
+          "addRatingPerMinutes": 1,
+          "intervalMinutes": 20,
+          "maximum": 4
+        },
+        {
+          "hook": "derivedMetric",
+          "addRating": -2,
+          "when": {
+            "minuteLte": 19
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "scoreline-amnesia",
+      "name": "忘记比分",
+      "rarity": "rare",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "mentality",
+        "composure",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "落后时不承受状态惩罚，但领先时也不获得状态加成。",
+      "rules": [
+        {
+          "hook": "scoreStateMorale",
+          "ignore": [
+            "trailingPenalty",
+            "leadingBonus"
+          ]
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "wall-specialist",
+      "name": "人墙砖块",
+      "rarity": "rare",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "setPiece",
+        "bravery"
+      ],
+      "polarity": "positive",
+      "summary": "对方直接任意球的进球率降低18%，成功封堵后本人状态+5。",
+      "rules": [
+        {
+          "hook": "opponentShot",
+          "shotType": "directFreeKick",
+          "multiplyGoalProbability": 0.82
+        },
+        {
+          "hook": "afterFreeKickBlock",
+          "addMorale": 5
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "bench-oracle",
+      "name": "替补席先知",
+      "rarity": "rare",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "substitution",
+        "teamBuilding"
+      ],
+      "polarity": "positive",
+      "summary": "坐在替补席时，教练第一次换人的体能判断更准确，并让登场者状态+3。",
+      "rules": [
+        {
+          "hook": "substitution",
+          "revealFitnessAccuracy": true,
+          "addIncomingForm": 3,
+          "when": {
+            "holderOnBench": true
+          },
+          "chargesPerMatch": 1
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "weather-forecaster",
+      "name": "天气预报员",
+      "rarity": "epic",
+      "category": "environment",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "weather",
+        "aura"
+      ],
+      "polarity": "positive",
+      "summary": "全队受到的恶劣天气惩罚减少35%，赛前可提前看到天气。",
+      "rules": [
+        {
+          "hook": "weather",
+          "multiplyTeamPenalty": 0.65
+        },
+        {
+          "hook": "preMatch",
+          "revealWeather": true
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "collective-press",
+      "name": "全队一起上",
+      "rarity": "epic",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "MID"
+      ],
+      "tags": [
+        "pressing",
+        "aura",
+        "stamina",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "前场逼抢时全队防守+7；每次成功抢回球权，全队额外损失1体能。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "press",
+          "addTeamRating": 7,
+          "uniqueAura": true
+        },
+        {
+          "hook": "afterPressRegain",
+          "addTeamFitness": -1
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "immovable-object",
+      "name": "不动如山",
+      "rarity": "rare",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "tags": [
+        "defending",
+        "physical",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "防守与力量各+10，速度-6；对手的身体对抗加成对其无效。",
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "defending": 10,
+            "strength": 10,
+            "pace": -6
+          }
+        },
+        {
+          "hook": "duel",
+          "ignoreOpponentPhysicalBonus": true
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "chaos-conductor",
+      "name": "混乱指挥家",
+      "rarity": "epic",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "variance",
+        "creation",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "每次进攻的创造能力随机获得-6至+12，正向结果出现概率更高。",
+      "rules": [
+        {
+          "hook": "phase",
+          "phase": "chanceCreation",
+          "addRandomRating": {
+            "minimum": -6,
+            "maximum": 12,
+            "positiveBias": 0.62
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "emergency-gloves",
+      "name": "谁说我不能守门",
+      "rarity": "epic",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "goalkeeping",
+        "position",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "客串门将时发挥65%的综合能力，不再使用普通非门将惩罚；常规位置防守-2。",
+      "rules": [
+        {
+          "hook": "position",
+          "emergencyGoalkeeperEfficiency": 0.65
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "defending": -2
+          },
+          "when": {
+            "activeRoleNot": "GK"
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "comeback-script",
+      "name": "逆转剧本",
+      "rarity": "epic",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "comeback",
+        "lateGame"
+      ],
+      "polarity": "positive",
+      "summary": "60分钟后每落后一球，进攻与冷静各+3，最多叠加3层。",
+      "rules": [
+        {
+          "hook": "derivedMetric",
+          "addPerGoalBehind": {
+            "attacking": 3,
+            "composure": 3
+          },
+          "maximumStacks": 3,
+          "when": {
+            "minuteGte": 60
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "tactical-chameleon",
+      "name": "战术变色龙",
+      "rarity": "epic",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "tactics",
+        "flexibility"
+      ],
+      "polarity": "positive",
+      "summary": "每次改变球队战术后的15分钟内，个人所有阶段能力+5；每场最多触发两次。",
+      "rules": [
+        {
+          "hook": "afterTacticChange",
+          "addRating": 5,
+          "durationMinutes": 15,
+          "chargesPerMatch": 2
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "golden-five-minutes",
+      "name": "黄金五分钟",
+      "rarity": "epic",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ATT"
+      ],
+      "tags": [
+        "finishing",
+        "momentum",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "取得进球后的5分钟内射门+12；如果期间没有再次进球，随后10分钟射门-4。",
+      "rules": [
+        {
+          "hook": "afterGoal",
+          "addTemporary": {
+            "finishing": 12
+          },
+          "durationMinutes": 5
+        },
+        {
+          "hook": "afterGoalBuffExpires",
+          "addTemporary": {
+            "finishing": -4
+          },
+          "durationMinutes": 10,
+          "when": {
+            "noSecondGoal": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "borrowed-time",
+      "name": "向终场借时间",
+      "rarity": "legendary",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "lateGame",
+        "reroll",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "90分钟落后时自动追加一次最后进攻，该次进攻所有阶段+10；失败后赛后体能额外-15。",
+      "rules": [
+        {
+          "hook": "fullTime",
+          "createFinalPossession": true,
+          "addAllPhaseRating": 10,
+          "when": {
+            "scoreState": "trailing"
+          }
+        },
+        {
+          "hook": "postMatchFitness",
+          "addLoss": 15,
+          "when": {
+            "finalPossessionFailed": true
+          }
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "street-football-soul",
+      "name": "街头足球之魂",
+      "rarity": "legendary",
+      "category": "technique",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "underdog",
+        "dribbling",
+        "creation",
+        "aura"
+      ],
+      "polarity": "positive",
+      "summary": "当本队纸面实力更低时，全队盘带、创造与冷静按实力差获得加成，最高+9。",
+      "rules": [
+        {
+          "hook": "underdogAura",
+          "attributes": [
+            "dribbling",
+            "vision",
+            "composure"
+          ],
+          "scalePerRatingDeficit": 0.45,
+          "maximum": 9,
+          "uniqueAura": true
+        }
+      ],
+      "dropWeight": 1,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "delivery-master",
+      "name": "点外卖大师",
+      "rarity": "rare",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "bench",
+        "aura",
+        "attack"
+      ],
+      "polarity": "positive",
+      "summary": "该球员坐在替补席时，球队进攻相关指标+4；登场后该加成立即消失。",
+      "rules": [
+        {
+          "hook": "benchAura",
+          "addTeamRating": {
+            "attack": 4,
+            "chanceCreation": 4,
+            "finishing": 2
+          }
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "front-runner-essential",
+      "name": "本质顺风战士",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "scoreState",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "球队领先时该球员整体能力提高30%；球队落后时整体能力降低50%。",
+      "rules": [
+        {
+          "hook": "allAttributes",
+          "multiply": 1.3,
+          "when": {
+            "scoreState": "leading"
+          }
+        },
+        {
+          "hook": "allAttributes",
+          "multiply": 0.5,
+          "when": {
+            "scoreState": "trailing"
+          }
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "fast-break-runner",
+      "name": "下快攻",
+      "rarity": "common",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "counter",
+        "finishing",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员参与反击时终结能力提高30%，但其防守贡献降低70%。",
+      "rules": [
+        {
+          "hook": "shot",
+          "shotType": "counter",
+          "multiplyGoalProbability": 1.3
+        },
+        {
+          "hook": "metricContribution",
+          "metric": "defense",
+          "multiply": 0.3
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "penalty-is-mine",
+      "name": "点球只能我来",
+      "rarity": "epic",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "penalty",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员在场时本队获得点球的概率变为1.8倍，并优先主罚；其点球命中率降低50%。",
+      "rules": [
+        {
+          "hook": "penalty",
+          "multiplyAwardProbability": 1.8
+        },
+        {
+          "hook": "setPieceTaker",
+          "shotType": "penalty",
+          "multiplyWeight": 4
+        },
+        {
+          "hook": "shot",
+          "shotType": "penalty",
+          "multiplyGoalProbability": 0.5
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": [
+        "bond-mrouqg7l"
+      ]
+    },
+    {
+      "id": "full-contact-brawl",
+      "name": "全武行",
+      "rarity": "epic",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "aggression",
+        "injury",
+        "card"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员每场比赛至少会踢伤一名对方球员；严重犯规仍会正常接受裁判判罚。",
+      "rules": [
+        {
+          "hook": "guaranteedInjury",
+          "minimumPerMatch": 1
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "low-xg-godkeeper",
+      "name": "门神",
+      "rarity": "epic",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "goalkeeping",
+        "shotStopping"
+      ],
+      "polarity": "positive",
+      "summary": "该门将在场时，必定扑出基础xG低于0.20的射门。",
+      "rules": [
+        {
+          "hook": "opponentShot",
+          "forceSaveWhenXgLt": 0.2
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "stormproof-lightning-rod",
+      "name": "风雨无惧",
+      "rarity": "common",
+      "category": "environment",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "weather",
+        "lightning",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员不受雨雪、大风和恶劣场地造成的能力惩罚，但成为雷击目标的权重翻倍。",
+      "rules": [
+        {
+          "hook": "weather",
+          "ignoreAllPenalties": true
+        },
+        {
+          "hook": "lightningTarget",
+          "multiplyWeight": 2
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "special-one-loan",
+      "name": "特别的一个",
+      "rarity": "rare",
+      "category": "campaign",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "temporary",
+        "departure",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "装备后接下来3次出场整体能力提高30%；完成第3次出场后，该球员离队。",
+      "rules": [
+        {
+          "hook": "campaignDeparture",
+          "appearances": 3,
+          "multiplyAllAttributes": 1.3
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "wolf-pack-press",
+      "name": "群狼战术",
+      "rarity": "common",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "pressing",
+        "stacking"
+      ],
+      "polarity": "positive",
+      "summary": "每名携带者令自身逼抢防守能力提高10%；场上每多一名携带者，所有携带者额外提高5%，最高30%。",
+      "rules": [
+        {
+          "hook": "stackingMetric",
+          "metric": "pressDefense",
+          "baseMultiplier": 1.1,
+          "addPerCarrier": 0.05,
+          "maximum": 1.3
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "iron-health",
+      "name": "身体倍棒",
+      "rarity": "epic",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "injury",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员不会受到常规伤病、踢伤或雷击伤病，但所有能力降低20%。",
+      "rules": [
+        {
+          "hook": "injury",
+          "immune": true
+        },
+        {
+          "hook": "allAttributes",
+          "multiply": 0.8
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "chameleon-role",
+      "name": "变色龙",
+      "rarity": "rare",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "position",
+        "versatility"
+      ],
+      "polarity": "positive",
+      "summary": "该球员可以出战所有位置；无论被放到哪里，位置适配系数最低为70%。",
+      "rules": [
+        {
+          "hook": "position",
+          "minimumFit": 0.7
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "invoke-the-legend",
+      "name": "请神上身",
+      "rarity": "epic",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "legend",
+        "variance"
+      ],
+      "polarity": "positive",
+      "summary": "每场比赛开始时随机请来一名传奇模板，该球员本场能力同步为该传奇模板。",
+      "rules": [
+        {
+          "hook": "copyRandomLegend",
+          "deterministicPerMatch": true
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "defensive-bulldozer",
+      "name": "推土机来了",
+      "rarity": "legendary",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "defending",
+        "physical",
+        "card",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员的防守贡献翻倍，但被出示黄牌或红牌的概率提高30%。",
+      "rules": [
+        {
+          "hook": "metricContribution",
+          "metric": "defense",
+          "multiply": 2
+        },
+        {
+          "hook": "card",
+          "multiplyProbability": 1.3
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "final-ripple",
+      "name": "最后的波纹",
+      "rarity": "epic",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "goalkeeping",
+        "injury",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该门将在场时，本队本场最多失1球；赛后该门将固定伤停5场。",
+      "rules": [
+        {
+          "hook": "goalLimit",
+          "maximumConceded": 1
+        },
+        {
+          "hook": "postMatchInjury",
+          "severity": "severe",
+          "matchesOut": 5,
+          "cause": "trait"
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "diving-prince",
+      "name": "跳水王子",
+      "rarity": "epic",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "penalty",
+        "card",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员在场时，本队获得点球的概率提高30%；其本人被出示黄牌或红牌的概率提高50%。",
+      "rules": [
+        {
+          "hook": "penalty",
+          "multiplyAwardProbability": 1.3
+        },
+        {
+          "hook": "card",
+          "multiplyProbability": 1.5
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "five-minutes-before-clockout",
+      "name": "下班前五分钟",
+      "rarity": "legendary",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "lateGame",
+        "tradeoff",
+        "comeback"
+      ],
+      "polarity": "mixed",
+      "summary": "60分钟以前所有能力降低10%；从60分钟开始所有能力提高35%。",
+      "rules": [
+        {
+          "hook": "allAttributes",
+          "multiply": 0.9,
+          "when": {
+            "minuteLte": 59
+          }
+        },
+        {
+          "hook": "allAttributes",
+          "multiply": 1.35,
+          "when": {
+            "minuteGte": 60
+          }
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "one-goal-to-fame",
+      "name": "一脚成名",
+      "rarity": "rare",
+      "category": "personality",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "goal",
+        "momentum",
+        "variance"
+      ],
+      "polarity": "positive",
+      "summary": "该球员本场取得进球后，剩余比赛时间所有能力提高30%。",
+      "rules": [
+        {
+          "hook": "afterGoalBuff",
+          "multiplyAllAttributes": 1.3
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "my-flank-alone",
+      "name": "这条边归我",
+      "rarity": "common",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "ATT"
+      ],
+      "tags": [
+        "wide",
+        "spacing",
+        "formation",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "该球员独占所在边路时进攻贡献提高40%；同侧每多一名队友，进攻贡献降低25%。仅限锋线球员使用。",
+      "rules": [
+        {
+          "hook": "flankIsolation",
+          "soloMultiplier": 1.4,
+          "multiplyPerTeammate": 0.75
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "human-goalpost",
+      "name": "肉身门柱",
+      "rarity": "legendary",
+      "category": "defending",
+      "eligibleRoleGroups": [
+        "DEF"
+      ],
+      "tags": [
+        "block",
+        "injury",
+        "sacrifice",
+        "substitution"
+      ],
+      "polarity": "mixed",
+      "summary": "每场第一次即将进门的非点球射门会被该球员强制挡出；随后该球员当场受伤离场，并在赛后伤停1至3场。",
+      "rules": [
+        {
+          "hook": "goalLineSacrifice",
+          "excludeShotTypes": [
+            "penalty"
+          ],
+          "matchesOutMin": 1,
+          "matchesOutMax": 3
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    },
+    {
+      "id": "last-ticket",
+      "name": "最后一张票",
+      "rarity": "legendary",
+      "category": "campaign",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "resultOverride",
+        "consumable",
+        "injury",
+        "tradeoff"
+      ],
+      "polarity": "mixed",
+      "summary": "本征程第一次失败时，将失败强制改为成功；随后本卡永久销毁，携带者固定伤停3场。",
+      "rules": [
+        {
+          "hook": "lossToWin",
+          "oncePerRun": true
+        },
+        {
+          "hook": "consumeTrait",
+          "afterTrigger": "lossToWin"
+        },
+        {
+          "hook": "triggerInjury",
+          "afterTrigger": "lossToWin",
+          "severity": "moderate",
+          "matchesOut": 3,
+          "cause": "trait"
+        }
+      ],
+      "dropWeight": 0.72,
+      "maxLevel": 1,
+      "bondIds": []
+    }
+  ],
+  "players": [
+    {
+      "id": "river-athletic:player:1",
+      "name": "河湾竞技 1",
+      "role": "GK",
+      "preferredFoot": "right",
+      "heightCm": 191,
+      "attributes": {
+        "passing": 64,
+        "firstTouch": 62,
+        "dribbling": 47,
+        "crossing": 42,
+        "finishing": 34,
+        "longShots": 37,
+        "heading": 47,
+        "setPieces": 44,
+        "tackling": 47,
+        "marking": 52,
+        "positioning": 79,
+        "vision": 62,
+        "decisions": 72,
+        "composure": 72,
+        "offBall": 42,
+        "discipline": 78,
+        "pace": 57,
+        "acceleration": 56,
+        "strength": 75,
+        "stamina": 64,
+        "agility": 73,
+        "jumping": 77,
+        "workRate": 60,
+        "aggression": 64,
+        "goalkeeping": 82,
+        "reflexes": 83
+      },
+      "state": {
+        "retired": false,
+        "fitness": 94,
+        "form": 47,
+        "morale": 54,
+        "injuryProneness": 20,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 89,
+        "professionalism": 86,
+        "ambition": 39,
+        "consistency": 43,
+        "pressure": 51,
+        "teamwork": 60,
+        "leadership": 47,
+        "volatility": 43,
+        "injuryResistance": 75,
+        "emergencyGoalkeeper": 39,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 30,
+        "potential": 95,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 86.5,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:2",
+      "name": "河湾竞技 2",
+      "role": "RB",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 71,
+        "firstTouch": 71,
+        "dribbling": 73,
+        "crossing": 79,
+        "finishing": 57,
+        "longShots": 64,
+        "heading": 67,
+        "setPieces": 69,
+        "tackling": 77,
+        "marking": 76,
+        "positioning": 75,
+        "vision": 69,
+        "decisions": 71,
+        "composure": 71,
+        "offBall": 74,
+        "discipline": 72,
+        "pace": 78,
+        "acceleration": 77,
+        "strength": 71,
+        "stamina": 79,
+        "agility": 75,
+        "jumping": 68,
+        "workRate": 79,
+        "aggression": 73,
+        "goalkeeping": 16,
+        "reflexes": 36
+      },
+      "state": {
+        "retired": false,
+        "fitness": 95,
+        "form": 49,
+        "morale": 57,
+        "injuryProneness": 27,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 53,
+        "professionalism": 43,
+        "ambition": 76,
+        "consistency": 60,
+        "pressure": 39,
+        "teamwork": 72,
+        "leadership": 82,
+        "volatility": 53,
+        "injuryResistance": 69,
+        "emergencyGoalkeeper": 61,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 30,
+        "potential": 92,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 72.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:3",
+      "name": "河湾竞技 3",
+      "role": "CB",
+      "preferredFoot": "right",
+      "heightCm": 187,
+      "attributes": {
+        "passing": 71,
+        "firstTouch": 69,
+        "dribbling": 64,
+        "crossing": 60,
+        "finishing": 52,
+        "longShots": 59,
+        "heading": 82,
+        "setPieces": 64,
+        "tackling": 83,
+        "marking": 84,
+        "positioning": 82,
+        "vision": 68,
+        "decisions": 74,
+        "composure": 74,
+        "offBall": 65,
+        "discipline": 77,
+        "pace": 70,
+        "acceleration": 69,
+        "strength": 82,
+        "stamina": 75,
+        "agility": 69,
+        "jumping": 82,
+        "workRate": 78,
+        "aggression": 79,
+        "goalkeeping": 19,
+        "reflexes": 39
+      },
+      "state": {
+        "retired": false,
+        "fitness": 96,
+        "form": 51,
+        "morale": 60,
+        "injuryProneness": 34,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 59,
+        "professionalism": 72,
+        "ambition": 69,
+        "consistency": 67,
+        "pressure": 62,
+        "teamwork": 50,
+        "leadership": 45,
+        "volatility": 66,
+        "injuryResistance": 75,
+        "emergencyGoalkeeper": 74,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 25,
+        "potential": 91,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 82,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:4",
+      "name": "河湾竞技 4",
+      "role": "CB",
+      "preferredFoot": "right",
+      "heightCm": 187,
+      "attributes": {
+        "passing": 69,
+        "firstTouch": 67,
+        "dribbling": 62,
+        "crossing": 58,
+        "finishing": 50,
+        "longShots": 57,
+        "heading": 80,
+        "setPieces": 62,
+        "tackling": 81,
+        "marking": 82,
+        "positioning": 80,
+        "vision": 66,
+        "decisions": 72,
+        "composure": 72,
+        "offBall": 63,
+        "discipline": 75,
+        "pace": 68,
+        "acceleration": 67,
+        "strength": 80,
+        "stamina": 73,
+        "agility": 67,
+        "jumping": 80,
+        "workRate": 76,
+        "aggression": 77,
+        "goalkeeping": 17,
+        "reflexes": 37
+      },
+      "state": {
+        "retired": false,
+        "fitness": 97,
+        "form": 53,
+        "morale": 54,
+        "injuryProneness": 41,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 62,
+        "professionalism": 68,
+        "ambition": 79,
+        "consistency": 66,
+        "pressure": 89,
+        "teamwork": 47,
+        "leadership": 85,
+        "volatility": 32,
+        "injuryResistance": 50,
+        "emergencyGoalkeeper": 35,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 28,
+        "potential": 92,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 80.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:5",
+      "name": "河湾竞技 5",
+      "role": "LB",
+      "preferredFoot": "left",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 70,
+        "firstTouch": 70,
+        "dribbling": 72,
+        "crossing": 78,
+        "finishing": 56,
+        "longShots": 63,
+        "heading": 66,
+        "setPieces": 68,
+        "tackling": 76,
+        "marking": 75,
+        "positioning": 74,
+        "vision": 68,
+        "decisions": 70,
+        "composure": 70,
+        "offBall": 73,
+        "discipline": 71,
+        "pace": 77,
+        "acceleration": 76,
+        "strength": 70,
+        "stamina": 78,
+        "agility": 74,
+        "jumping": 67,
+        "workRate": 78,
+        "aggression": 72,
+        "goalkeeping": 15,
+        "reflexes": 35
+      },
+      "state": {
+        "retired": false,
+        "fitness": 94,
+        "form": 55,
+        "morale": 57,
+        "injuryProneness": 48,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 47,
+        "professionalism": 37,
+        "ambition": 69,
+        "consistency": 88,
+        "pressure": 83,
+        "teamwork": 88,
+        "leadership": 42,
+        "volatility": 24,
+        "injuryResistance": 75,
+        "emergencyGoalkeeper": 69,
+        "personality": "teamPlayer"
+      },
+      "development": {
+        "age": 28,
+        "potential": 80,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 70.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:6",
+      "name": "河湾竞技 6",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 77,
+        "firstTouch": 75,
+        "dribbling": 71,
+        "crossing": 69,
+        "finishing": 61,
+        "longShots": 73,
+        "heading": 74,
+        "setPieces": 73,
+        "tackling": 81,
+        "marking": 79,
+        "positioning": 81,
+        "vision": 77,
+        "decisions": 80,
+        "composure": 78,
+        "offBall": 71,
+        "discipline": 76,
+        "pace": 71,
+        "acceleration": 73,
+        "strength": 77,
+        "stamina": 80,
+        "agility": 73,
+        "jumping": 74,
+        "workRate": 81,
+        "aggression": 77,
+        "goalkeeping": 18,
+        "reflexes": 38
+      },
+      "state": {
+        "retired": false,
+        "fitness": 95,
+        "form": 47,
+        "morale": 60,
+        "injuryProneness": 55,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 74,
+        "professionalism": 76,
+        "ambition": 82,
+        "consistency": 53,
+        "pressure": 76,
+        "teamwork": 52,
+        "leadership": 39,
+        "volatility": 48,
+        "injuryResistance": 89,
+        "emergencyGoalkeeper": 58,
+        "personality": "ambitious"
+      },
+      "development": {
+        "age": 23,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 83.3,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:7",
+      "name": "河湾竞技 7",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 82,
+        "firstTouch": 80,
+        "dribbling": 76,
+        "crossing": 75,
+        "finishing": 69,
+        "longShots": 78,
+        "heading": 71,
+        "setPieces": 78,
+        "tackling": 76,
+        "marking": 74,
+        "positioning": 77,
+        "vision": 82,
+        "decisions": 80,
+        "composure": 78,
+        "offBall": 77,
+        "discipline": 77,
+        "pace": 73,
+        "acceleration": 74,
+        "strength": 73,
+        "stamina": 82,
+        "agility": 76,
+        "jumping": 74,
+        "workRate": 81,
+        "aggression": 74,
+        "goalkeeping": 19,
+        "reflexes": 39
+      },
+      "state": {
+        "retired": false,
+        "fitness": 96,
+        "form": 49,
+        "morale": 54,
+        "injuryProneness": 20,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 42,
+        "professionalism": 88,
+        "ambition": 74,
+        "consistency": 42,
+        "pressure": 45,
+        "teamwork": 62,
+        "leadership": 46,
+        "volatility": 75,
+        "injuryResistance": 75,
+        "emergencyGoalkeeper": 35,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 28,
+        "potential": 96,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 87.2,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:8",
+      "name": "林岳",
+      "role": "RM",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 80,
+        "firstTouch": 81,
+        "dribbling": 80,
+        "crossing": 76,
+        "finishing": 76,
+        "longShots": 79,
+        "heading": 67,
+        "setPieces": 80,
+        "tackling": 63,
+        "marking": 63,
+        "positioning": 71,
+        "vision": 83,
+        "decisions": 78,
+        "composure": 78,
+        "offBall": 80,
+        "discipline": 75,
+        "pace": 76,
+        "acceleration": 77,
+        "strength": 68,
+        "stamina": 74,
+        "agility": 80,
+        "jumping": 73,
+        "workRate": 74,
+        "aggression": 69,
+        "goalkeeping": 18,
+        "reflexes": 38
+      },
+      "state": {
+        "retired": false,
+        "fitness": 97,
+        "form": 51,
+        "morale": 57,
+        "injuryProneness": 27,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [
+        "playmaker",
+        "bigGamePlayer"
+      ],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [
+        "playmaker",
+        "bigGamePlayer"
+      ],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 58,
+        "professionalism": 46,
+        "ambition": 81,
+        "consistency": 43,
+        "pressure": 72,
+        "teamwork": 68,
+        "leadership": 63,
+        "volatility": 71,
+        "injuryResistance": 66,
+        "emergencyGoalkeeper": 34,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 25,
+        "potential": 90,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 73.7,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:9",
+      "name": "河湾竞技 9",
+      "role": "RW",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 74,
+        "firstTouch": 78,
+        "dribbling": 82,
+        "crossing": 80,
+        "finishing": 74,
+        "longShots": 74,
+        "heading": 65,
+        "setPieces": 75,
+        "tackling": 62,
+        "marking": 63,
+        "positioning": 69,
+        "vision": 76,
+        "decisions": 72,
+        "composure": 73,
+        "offBall": 80,
+        "discipline": 73,
+        "pace": 83,
+        "acceleration": 84,
+        "strength": 65,
+        "stamina": 76,
+        "agility": 82,
+        "jumping": 72,
+        "workRate": 74,
+        "aggression": 69,
+        "goalkeeping": 17,
+        "reflexes": 37
+      },
+      "state": {
+        "retired": false,
+        "fitness": 94,
+        "form": 53,
+        "morale": 60,
+        "injuryProneness": 34,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 72,
+        "professionalism": 80,
+        "ambition": 68,
+        "consistency": 62,
+        "pressure": 86,
+        "teamwork": 40,
+        "leadership": 54,
+        "volatility": 33,
+        "injuryResistance": 72,
+        "emergencyGoalkeeper": 68,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 23,
+        "potential": 90,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 84.6,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:10",
+      "name": "周野",
+      "role": "ST",
+      "preferredFoot": "right",
+      "heightCm": 184,
+      "attributes": {
+        "passing": 71,
+        "firstTouch": 79,
+        "dribbling": 78,
+        "crossing": 66,
+        "finishing": 91,
+        "longShots": 80,
+        "heading": 82,
+        "setPieces": 76,
+        "tackling": 61,
+        "marking": 61,
+        "positioning": 71,
+        "vision": 72,
+        "decisions": 77,
+        "composure": 80,
+        "offBall": 86,
+        "discipline": 75,
+        "pace": 80,
+        "acceleration": 80,
+        "strength": 79,
+        "stamina": 74,
+        "agility": 77,
+        "jumping": 81,
+        "workRate": 74,
+        "aggression": 77,
+        "goalkeeping": 20,
+        "reflexes": 40
+      },
+      "state": {
+        "retired": false,
+        "fitness": 95,
+        "form": 55,
+        "morale": 54,
+        "injuryProneness": 41,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [
+        "poacher",
+        "streaky"
+      ],
+      "teamId": "river-athletic",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [
+        "poacher",
+        "streaky"
+      ],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 76,
+        "professionalism": 54,
+        "ambition": 47,
+        "consistency": 47,
+        "pressure": 64,
+        "teamwork": 93,
+        "leadership": 35,
+        "volatility": 19,
+        "injuryResistance": 75,
+        "emergencyGoalkeeper": 65,
+        "personality": "teamPlayer"
+      },
+      "development": {
+        "age": 19,
+        "potential": 95,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 76.3,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:11",
+      "name": "河湾竞技 11",
+      "role": "LW",
+      "preferredFoot": "left",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 73,
+        "firstTouch": 77,
+        "dribbling": 81,
+        "crossing": 79,
+        "finishing": 73,
+        "longShots": 73,
+        "heading": 64,
+        "setPieces": 74,
+        "tackling": 61,
+        "marking": 62,
+        "positioning": 68,
+        "vision": 75,
+        "decisions": 71,
+        "composure": 72,
+        "offBall": 79,
+        "discipline": 72,
+        "pace": 82,
+        "acceleration": 83,
+        "strength": 64,
+        "stamina": 75,
+        "agility": 81,
+        "jumping": 71,
+        "workRate": 73,
+        "aggression": 68,
+        "goalkeeping": 16,
+        "reflexes": 36
+      },
+      "state": {
+        "retired": false,
+        "fitness": 96,
+        "form": 47,
+        "morale": 57,
+        "injuryProneness": 48,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 87,
+        "professionalism": 64,
+        "ambition": 64,
+        "consistency": 44,
+        "pressure": 81,
+        "teamwork": 48,
+        "leadership": 49,
+        "volatility": 26,
+        "injuryResistance": 56,
+        "emergencyGoalkeeper": 43,
+        "personality": "resilient"
+      },
+      "development": {
+        "age": 28,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 79.5,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:12",
+      "name": "河湾竞技 替补1",
+      "role": "GK",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 60,
+        "firstTouch": 58,
+        "dribbling": 43,
+        "crossing": 38,
+        "finishing": 30,
+        "longShots": 33,
+        "heading": 43,
+        "setPieces": 40,
+        "tackling": 43,
+        "marking": 48,
+        "positioning": 75,
+        "vision": 58,
+        "decisions": 68,
+        "composure": 68,
+        "offBall": 38,
+        "discipline": 74,
+        "pace": 53,
+        "acceleration": 52,
+        "strength": 71,
+        "stamina": 60,
+        "agility": 69,
+        "jumping": 73,
+        "workRate": 56,
+        "aggression": 60,
+        "goalkeeping": 78,
+        "reflexes": 79
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 53,
+        "professionalism": 37,
+        "ambition": 37,
+        "consistency": 44,
+        "pressure": 67,
+        "teamwork": 81,
+        "leadership": 37,
+        "volatility": 24,
+        "injuryResistance": 72,
+        "emergencyGoalkeeper": 48,
+        "personality": "teamPlayer"
+      },
+      "development": {
+        "age": 22,
+        "potential": 87,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 70.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:13",
+      "name": "河湾竞技 替补2",
+      "role": "CB",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 66,
+        "firstTouch": 64,
+        "dribbling": 59,
+        "crossing": 55,
+        "finishing": 47,
+        "longShots": 54,
+        "heading": 77,
+        "setPieces": 59,
+        "tackling": 78,
+        "marking": 79,
+        "positioning": 77,
+        "vision": 63,
+        "decisions": 69,
+        "composure": 69,
+        "offBall": 60,
+        "discipline": 72,
+        "pace": 65,
+        "acceleration": 64,
+        "strength": 77,
+        "stamina": 70,
+        "agility": 64,
+        "jumping": 77,
+        "workRate": 73,
+        "aggression": 74,
+        "goalkeeping": 14,
+        "reflexes": 34
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 92,
+        "professionalism": 48,
+        "ambition": 87,
+        "consistency": 89,
+        "pressure": 56,
+        "teamwork": 48,
+        "leadership": 55,
+        "volatility": 69,
+        "injuryResistance": 53,
+        "emergencyGoalkeeper": 26,
+        "personality": "ambitious"
+      },
+      "development": {
+        "age": 20,
+        "potential": 84,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 74.4,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:14",
+      "name": "河湾竞技 替补3",
+      "role": "RB",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 70,
+        "firstTouch": 70,
+        "dribbling": 72,
+        "crossing": 78,
+        "finishing": 56,
+        "longShots": 63,
+        "heading": 66,
+        "setPieces": 68,
+        "tackling": 76,
+        "marking": 75,
+        "positioning": 74,
+        "vision": 68,
+        "decisions": 70,
+        "composure": 70,
+        "offBall": 73,
+        "discipline": 71,
+        "pace": 77,
+        "acceleration": 76,
+        "strength": 70,
+        "stamina": 78,
+        "agility": 74,
+        "jumping": 67,
+        "workRate": 78,
+        "aggression": 72,
+        "goalkeeping": 15,
+        "reflexes": 35
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 43,
+        "professionalism": 76,
+        "ambition": 93,
+        "consistency": 81,
+        "pressure": 87,
+        "teamwork": 64,
+        "leadership": 39,
+        "volatility": 75,
+        "injuryResistance": 55,
+        "emergencyGoalkeeper": 28,
+        "personality": "ambitious"
+      },
+      "development": {
+        "age": 28,
+        "potential": 84,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 83.3,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:15",
+      "name": "河湾竞技 替补4",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 72,
+        "firstTouch": 70,
+        "dribbling": 66,
+        "crossing": 64,
+        "finishing": 56,
+        "longShots": 68,
+        "heading": 69,
+        "setPieces": 68,
+        "tackling": 76,
+        "marking": 74,
+        "positioning": 76,
+        "vision": 72,
+        "decisions": 75,
+        "composure": 73,
+        "offBall": 66,
+        "discipline": 71,
+        "pace": 66,
+        "acceleration": 68,
+        "strength": 72,
+        "stamina": 75,
+        "agility": 68,
+        "jumping": 69,
+        "workRate": 76,
+        "aggression": 72,
+        "goalkeeping": 13,
+        "reflexes": 33
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 92,
+        "professionalism": 59,
+        "ambition": 68,
+        "consistency": 49,
+        "pressure": 53,
+        "teamwork": 70,
+        "leadership": 80,
+        "volatility": 59,
+        "injuryResistance": 73,
+        "emergencyGoalkeeper": 27,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 23,
+        "potential": 85,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 77.9,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:16",
+      "name": "河湾竞技 替补5",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 77,
+        "firstTouch": 75,
+        "dribbling": 71,
+        "crossing": 70,
+        "finishing": 64,
+        "longShots": 73,
+        "heading": 66,
+        "setPieces": 73,
+        "tackling": 71,
+        "marking": 69,
+        "positioning": 72,
+        "vision": 77,
+        "decisions": 75,
+        "composure": 73,
+        "offBall": 72,
+        "discipline": 72,
+        "pace": 68,
+        "acceleration": 69,
+        "strength": 68,
+        "stamina": 77,
+        "agility": 71,
+        "jumping": 69,
+        "workRate": 76,
+        "aggression": 69,
+        "goalkeeping": 14,
+        "reflexes": 34
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 68,
+        "professionalism": 39,
+        "ambition": 81,
+        "consistency": 67,
+        "pressure": 64,
+        "teamwork": 49,
+        "leadership": 70,
+        "volatility": 52,
+        "injuryResistance": 65,
+        "emergencyGoalkeeper": 30,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 22,
+        "potential": 89,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 71.5,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:17",
+      "name": "河湾竞技 替补6",
+      "role": "RW",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 72,
+        "firstTouch": 76,
+        "dribbling": 80,
+        "crossing": 78,
+        "finishing": 72,
+        "longShots": 72,
+        "heading": 63,
+        "setPieces": 73,
+        "tackling": 60,
+        "marking": 61,
+        "positioning": 67,
+        "vision": 74,
+        "decisions": 70,
+        "composure": 71,
+        "offBall": 78,
+        "discipline": 71,
+        "pace": 81,
+        "acceleration": 82,
+        "strength": 63,
+        "stamina": 74,
+        "agility": 80,
+        "jumping": 70,
+        "workRate": 72,
+        "aggression": 67,
+        "goalkeeping": 15,
+        "reflexes": 35
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 60,
+        "professionalism": 75,
+        "ambition": 38,
+        "consistency": 55,
+        "pressure": 84,
+        "teamwork": 62,
+        "leadership": 33,
+        "volatility": 73,
+        "injuryResistance": 49,
+        "emergencyGoalkeeper": 44,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 27,
+        "potential": 83,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 83,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "river-athletic:player:18",
+      "name": "河湾竞技 替补7",
+      "role": "ST",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 64,
+        "firstTouch": 72,
+        "dribbling": 71,
+        "crossing": 59,
+        "finishing": 80,
+        "longShots": 73,
+        "heading": 75,
+        "setPieces": 69,
+        "tackling": 54,
+        "marking": 54,
+        "positioning": 64,
+        "vision": 65,
+        "decisions": 70,
+        "composure": 76,
+        "offBall": 79,
+        "discipline": 68,
+        "pace": 73,
+        "acceleration": 73,
+        "strength": 72,
+        "stamina": 67,
+        "agility": 70,
+        "jumping": 74,
+        "workRate": 67,
+        "aggression": 70,
+        "goalkeeping": 13,
+        "reflexes": 33
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "river-athletic",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 57,
+        "professionalism": 87,
+        "ambition": 68,
+        "consistency": 64,
+        "pressure": 62,
+        "teamwork": 84,
+        "leadership": 34,
+        "volatility": 35,
+        "injuryResistance": 68,
+        "emergencyGoalkeeper": 36,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 24,
+        "potential": 88,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 86.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:101",
+      "name": "铁城联 1",
+      "role": "GK",
+      "preferredFoot": "right",
+      "heightCm": 191,
+      "attributes": {
+        "passing": 63,
+        "firstTouch": 61,
+        "dribbling": 46,
+        "crossing": 41,
+        "finishing": 33,
+        "longShots": 36,
+        "heading": 46,
+        "setPieces": 43,
+        "tackling": 46,
+        "marking": 51,
+        "positioning": 78,
+        "vision": 61,
+        "decisions": 71,
+        "composure": 71,
+        "offBall": 41,
+        "discipline": 77,
+        "pace": 56,
+        "acceleration": 55,
+        "strength": 74,
+        "stamina": 63,
+        "agility": 72,
+        "jumping": 76,
+        "workRate": 59,
+        "aggression": 63,
+        "goalkeeping": 81,
+        "reflexes": 82
+      },
+      "state": {
+        "retired": false,
+        "fitness": 94,
+        "form": 47,
+        "morale": 54,
+        "injuryProneness": 20,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 82,
+        "professionalism": 62,
+        "ambition": 69,
+        "consistency": 88,
+        "pressure": 46,
+        "teamwork": 68,
+        "leadership": 66,
+        "volatility": 72,
+        "injuryResistance": 46,
+        "emergencyGoalkeeper": 40,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 28,
+        "potential": 93,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 78.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:102",
+      "name": "铁城联 2",
+      "role": "RB",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 70,
+        "firstTouch": 70,
+        "dribbling": 72,
+        "crossing": 78,
+        "finishing": 56,
+        "longShots": 63,
+        "heading": 66,
+        "setPieces": 68,
+        "tackling": 76,
+        "marking": 75,
+        "positioning": 74,
+        "vision": 68,
+        "decisions": 70,
+        "composure": 70,
+        "offBall": 73,
+        "discipline": 71,
+        "pace": 77,
+        "acceleration": 76,
+        "strength": 70,
+        "stamina": 78,
+        "agility": 74,
+        "jumping": 67,
+        "workRate": 78,
+        "aggression": 72,
+        "goalkeeping": 15,
+        "reflexes": 35
+      },
+      "state": {
+        "retired": false,
+        "fitness": 95,
+        "form": 49,
+        "morale": 57,
+        "injuryProneness": 27,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 56,
+        "professionalism": 90,
+        "ambition": 85,
+        "consistency": 75,
+        "pressure": 54,
+        "teamwork": 84,
+        "leadership": 82,
+        "volatility": 79,
+        "injuryResistance": 46,
+        "emergencyGoalkeeper": 65,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 19,
+        "potential": 89,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 87.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:103",
+      "name": "韩峥",
+      "role": "CB",
+      "preferredFoot": "right",
+      "heightCm": 187,
+      "attributes": {
+        "passing": 70,
+        "firstTouch": 68,
+        "dribbling": 63,
+        "crossing": 59,
+        "finishing": 51,
+        "longShots": 58,
+        "heading": 85,
+        "setPieces": 63,
+        "tackling": 82,
+        "marking": 83,
+        "positioning": 81,
+        "vision": 67,
+        "decisions": 73,
+        "composure": 73,
+        "offBall": 64,
+        "discipline": 76,
+        "pace": 69,
+        "acceleration": 68,
+        "strength": 81,
+        "stamina": 74,
+        "agility": 68,
+        "jumping": 81,
+        "workRate": 77,
+        "aggression": 83,
+        "goalkeeping": 18,
+        "reflexes": 38
+      },
+      "state": {
+        "retired": false,
+        "fitness": 96,
+        "form": 51,
+        "morale": 60,
+        "injuryProneness": 34,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 63,
+        "professionalism": 68,
+        "ambition": 65,
+        "consistency": 71,
+        "pressure": 51,
+        "teamwork": 75,
+        "leadership": 56,
+        "volatility": 38,
+        "injuryResistance": 61,
+        "emergencyGoalkeeper": 39,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 24,
+        "potential": 87,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 80.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:104",
+      "name": "铁城联 4",
+      "role": "CB",
+      "preferredFoot": "right",
+      "heightCm": 187,
+      "attributes": {
+        "passing": 68,
+        "firstTouch": 66,
+        "dribbling": 61,
+        "crossing": 57,
+        "finishing": 49,
+        "longShots": 56,
+        "heading": 79,
+        "setPieces": 61,
+        "tackling": 80,
+        "marking": 81,
+        "positioning": 79,
+        "vision": 65,
+        "decisions": 71,
+        "composure": 71,
+        "offBall": 62,
+        "discipline": 74,
+        "pace": 67,
+        "acceleration": 66,
+        "strength": 79,
+        "stamina": 72,
+        "agility": 66,
+        "jumping": 79,
+        "workRate": 75,
+        "aggression": 76,
+        "goalkeeping": 16,
+        "reflexes": 36
+      },
+      "state": {
+        "retired": false,
+        "fitness": 97,
+        "form": 53,
+        "morale": 54,
+        "injuryProneness": 41,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 54,
+        "professionalism": 39,
+        "ambition": 80,
+        "consistency": 47,
+        "pressure": 69,
+        "teamwork": 62,
+        "leadership": 46,
+        "volatility": 35,
+        "injuryResistance": 70,
+        "emergencyGoalkeeper": 67,
+        "personality": "ambitious"
+      },
+      "development": {
+        "age": 30,
+        "potential": 93,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 71.5,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:105",
+      "name": "铁城联 5",
+      "role": "LB",
+      "preferredFoot": "left",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 69,
+        "firstTouch": 69,
+        "dribbling": 71,
+        "crossing": 77,
+        "finishing": 55,
+        "longShots": 62,
+        "heading": 65,
+        "setPieces": 67,
+        "tackling": 75,
+        "marking": 74,
+        "positioning": 73,
+        "vision": 67,
+        "decisions": 69,
+        "composure": 69,
+        "offBall": 72,
+        "discipline": 70,
+        "pace": 76,
+        "acceleration": 75,
+        "strength": 69,
+        "stamina": 77,
+        "agility": 73,
+        "jumping": 66,
+        "workRate": 77,
+        "aggression": 71,
+        "goalkeeping": 14,
+        "reflexes": 34
+      },
+      "state": {
+        "retired": false,
+        "fitness": 94,
+        "form": 55,
+        "morale": 57,
+        "injuryProneness": 48,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 64,
+        "professionalism": 87,
+        "ambition": 64,
+        "consistency": 62,
+        "pressure": 73,
+        "teamwork": 72,
+        "leadership": 59,
+        "volatility": 76,
+        "injuryResistance": 57,
+        "emergencyGoalkeeper": 59,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 19,
+        "potential": 82,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 86.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:106",
+      "name": "铁城联 6",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 76,
+        "firstTouch": 74,
+        "dribbling": 70,
+        "crossing": 68,
+        "finishing": 60,
+        "longShots": 72,
+        "heading": 73,
+        "setPieces": 72,
+        "tackling": 80,
+        "marking": 78,
+        "positioning": 80,
+        "vision": 76,
+        "decisions": 79,
+        "composure": 77,
+        "offBall": 70,
+        "discipline": 75,
+        "pace": 70,
+        "acceleration": 72,
+        "strength": 76,
+        "stamina": 79,
+        "agility": 72,
+        "jumping": 73,
+        "workRate": 80,
+        "aggression": 76,
+        "goalkeeping": 17,
+        "reflexes": 37
+      },
+      "state": {
+        "retired": false,
+        "fitness": 95,
+        "form": 47,
+        "morale": 60,
+        "injuryProneness": 55,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 54,
+        "professionalism": 58,
+        "ambition": 57,
+        "consistency": 89,
+        "pressure": 48,
+        "teamwork": 47,
+        "leadership": 35,
+        "volatility": 57,
+        "injuryResistance": 67,
+        "emergencyGoalkeeper": 68,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 19,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 77.6,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:107",
+      "name": "铁城联 7",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 81,
+        "firstTouch": 79,
+        "dribbling": 75,
+        "crossing": 74,
+        "finishing": 68,
+        "longShots": 77,
+        "heading": 70,
+        "setPieces": 77,
+        "tackling": 75,
+        "marking": 73,
+        "positioning": 76,
+        "vision": 81,
+        "decisions": 79,
+        "composure": 77,
+        "offBall": 76,
+        "discipline": 76,
+        "pace": 72,
+        "acceleration": 73,
+        "strength": 72,
+        "stamina": 81,
+        "agility": 75,
+        "jumping": 73,
+        "workRate": 80,
+        "aggression": 73,
+        "goalkeeping": 18,
+        "reflexes": 38
+      },
+      "state": {
+        "retired": false,
+        "fitness": 96,
+        "form": 49,
+        "morale": 54,
+        "injuryProneness": 20,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 67,
+        "professionalism": 58,
+        "ambition": 88,
+        "consistency": 42,
+        "pressure": 78,
+        "teamwork": 93,
+        "leadership": 41,
+        "volatility": 51,
+        "injuryResistance": 78,
+        "emergencyGoalkeeper": 28,
+        "personality": "teamPlayer"
+      },
+      "development": {
+        "age": 20,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 77.6,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:108",
+      "name": "铁城联 8",
+      "role": "RM",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 79,
+        "firstTouch": 80,
+        "dribbling": 79,
+        "crossing": 75,
+        "finishing": 75,
+        "longShots": 78,
+        "heading": 66,
+        "setPieces": 79,
+        "tackling": 62,
+        "marking": 62,
+        "positioning": 70,
+        "vision": 82,
+        "decisions": 77,
+        "composure": 77,
+        "offBall": 79,
+        "discipline": 74,
+        "pace": 75,
+        "acceleration": 76,
+        "strength": 67,
+        "stamina": 73,
+        "agility": 79,
+        "jumping": 72,
+        "workRate": 73,
+        "aggression": 68,
+        "goalkeeping": 17,
+        "reflexes": 37
+      },
+      "state": {
+        "retired": false,
+        "fitness": 97,
+        "form": 51,
+        "morale": 57,
+        "injuryProneness": 27,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 80,
+        "professionalism": 43,
+        "ambition": 35,
+        "consistency": 42,
+        "pressure": 71,
+        "teamwork": 39,
+        "leadership": 45,
+        "volatility": 31,
+        "injuryResistance": 46,
+        "emergencyGoalkeeper": 33,
+        "personality": "resilient"
+      },
+      "development": {
+        "age": 19,
+        "potential": 85,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 72.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:109",
+      "name": "铁城联 9",
+      "role": "RW",
+      "preferredFoot": "right",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 73,
+        "firstTouch": 77,
+        "dribbling": 81,
+        "crossing": 79,
+        "finishing": 73,
+        "longShots": 73,
+        "heading": 64,
+        "setPieces": 74,
+        "tackling": 61,
+        "marking": 62,
+        "positioning": 68,
+        "vision": 75,
+        "decisions": 71,
+        "composure": 72,
+        "offBall": 79,
+        "discipline": 72,
+        "pace": 82,
+        "acceleration": 83,
+        "strength": 64,
+        "stamina": 75,
+        "agility": 81,
+        "jumping": 71,
+        "workRate": 73,
+        "aggression": 68,
+        "goalkeeping": 16,
+        "reflexes": 36
+      },
+      "state": {
+        "retired": false,
+        "fitness": 94,
+        "form": 53,
+        "morale": 60,
+        "injuryProneness": 34,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "lineup",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 48,
+        "professionalism": 50,
+        "ambition": 80,
+        "consistency": 52,
+        "pressure": 57,
+        "teamwork": 84,
+        "leadership": 66,
+        "volatility": 65,
+        "injuryResistance": 89,
+        "emergencyGoalkeeper": 38,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 19,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 75,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:110",
+      "name": "高塔",
+      "role": "ST",
+      "preferredFoot": "right",
+      "heightCm": 193,
+      "attributes": {
+        "passing": 70,
+        "firstTouch": 78,
+        "dribbling": 77,
+        "crossing": 65,
+        "finishing": 86,
+        "longShots": 79,
+        "heading": 87,
+        "setPieces": 75,
+        "tackling": 60,
+        "marking": 60,
+        "positioning": 70,
+        "vision": 71,
+        "decisions": 76,
+        "composure": 82,
+        "offBall": 85,
+        "discipline": 74,
+        "pace": 73,
+        "acceleration": 79,
+        "strength": 78,
+        "stamina": 73,
+        "agility": 76,
+        "jumping": 80,
+        "workRate": 73,
+        "aggression": 76,
+        "goalkeeping": 19,
+        "reflexes": 39
+      },
+      "state": {
+        "retired": false,
+        "fitness": 95,
+        "form": 55,
+        "morale": 54,
+        "injuryProneness": 41,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [
+        "targetForward"
+      ],
+      "teamId": "iron-city",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [
+        "targetForward"
+      ],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 79,
+        "professionalism": 85,
+        "ambition": 87,
+        "consistency": 72,
+        "pressure": 78,
+        "teamwork": 59,
+        "leadership": 29,
+        "volatility": 37,
+        "injuryResistance": 61,
+        "emergencyGoalkeeper": 42,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 24,
+        "potential": 92,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 86.2,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:111",
+      "name": "铁城联 11",
+      "role": "LW",
+      "preferredFoot": "left",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 72,
+        "firstTouch": 76,
+        "dribbling": 80,
+        "crossing": 78,
+        "finishing": 72,
+        "longShots": 72,
+        "heading": 63,
+        "setPieces": 73,
+        "tackling": 60,
+        "marking": 61,
+        "positioning": 67,
+        "vision": 74,
+        "decisions": 70,
+        "composure": 71,
+        "offBall": 78,
+        "discipline": 71,
+        "pace": 81,
+        "acceleration": 82,
+        "strength": 63,
+        "stamina": 74,
+        "agility": 80,
+        "jumping": 70,
+        "workRate": 72,
+        "aggression": 67,
+        "goalkeeping": 15,
+        "reflexes": 35
+      },
+      "state": {
+        "retired": false,
+        "fitness": 96,
+        "form": 47,
+        "morale": 57,
+        "injuryProneness": 48,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 66,
+        "professionalism": 69,
+        "ambition": 44,
+        "consistency": 78,
+        "pressure": 91,
+        "teamwork": 43,
+        "leadership": 78,
+        "volatility": 50,
+        "injuryResistance": 81,
+        "emergencyGoalkeeper": 68,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 27,
+        "potential": 87,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 81.1,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:112",
+      "name": "铁城联 替补1",
+      "role": "GK",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 59,
+        "firstTouch": 57,
+        "dribbling": 42,
+        "crossing": 37,
+        "finishing": 29,
+        "longShots": 32,
+        "heading": 42,
+        "setPieces": 39,
+        "tackling": 42,
+        "marking": 47,
+        "positioning": 74,
+        "vision": 57,
+        "decisions": 67,
+        "composure": 67,
+        "offBall": 37,
+        "discipline": 73,
+        "pace": 52,
+        "acceleration": 51,
+        "strength": 70,
+        "stamina": 59,
+        "agility": 68,
+        "jumping": 72,
+        "workRate": 55,
+        "aggression": 59,
+        "goalkeeping": 77,
+        "reflexes": 78
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 67,
+        "professionalism": 79,
+        "ambition": 61,
+        "consistency": 56,
+        "pressure": 67,
+        "teamwork": 51,
+        "leadership": 60,
+        "volatility": 72,
+        "injuryResistance": 77,
+        "emergencyGoalkeeper": 31,
+        "personality": "professional"
+      },
+      "development": {
+        "age": 25,
+        "potential": 82,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 84.3,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:113",
+      "name": "铁城联 替补2",
+      "role": "CB",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 65,
+        "firstTouch": 63,
+        "dribbling": 58,
+        "crossing": 54,
+        "finishing": 46,
+        "longShots": 53,
+        "heading": 76,
+        "setPieces": 58,
+        "tackling": 77,
+        "marking": 78,
+        "positioning": 76,
+        "vision": 62,
+        "decisions": 68,
+        "composure": 68,
+        "offBall": 59,
+        "discipline": 71,
+        "pace": 64,
+        "acceleration": 63,
+        "strength": 76,
+        "stamina": 69,
+        "agility": 63,
+        "jumping": 76,
+        "workRate": 72,
+        "aggression": 73,
+        "goalkeeping": 13,
+        "reflexes": 33
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 92,
+        "professionalism": 37,
+        "ambition": 80,
+        "consistency": 79,
+        "pressure": 90,
+        "teamwork": 47,
+        "leadership": 33,
+        "volatility": 50,
+        "injuryResistance": 61,
+        "emergencyGoalkeeper": 44,
+        "personality": "resilient"
+      },
+      "development": {
+        "age": 28,
+        "potential": 87,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 70.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:114",
+      "name": "铁城联 替补3",
+      "role": "RB",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 69,
+        "firstTouch": 69,
+        "dribbling": 71,
+        "crossing": 77,
+        "finishing": 55,
+        "longShots": 62,
+        "heading": 65,
+        "setPieces": 67,
+        "tackling": 75,
+        "marking": 74,
+        "positioning": 73,
+        "vision": 67,
+        "decisions": 69,
+        "composure": 69,
+        "offBall": 72,
+        "discipline": 70,
+        "pace": 76,
+        "acceleration": 75,
+        "strength": 69,
+        "stamina": 77,
+        "agility": 73,
+        "jumping": 66,
+        "workRate": 77,
+        "aggression": 71,
+        "goalkeeping": 14,
+        "reflexes": 34
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 50,
+        "professionalism": 41,
+        "ambition": 88,
+        "consistency": 47,
+        "pressure": 81,
+        "teamwork": 57,
+        "leadership": 84,
+        "volatility": 31,
+        "injuryResistance": 68,
+        "emergencyGoalkeeper": 55,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 25,
+        "potential": 84,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 72.1,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:115",
+      "name": "铁城联 替补4",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 71,
+        "firstTouch": 69,
+        "dribbling": 65,
+        "crossing": 63,
+        "finishing": 55,
+        "longShots": 67,
+        "heading": 68,
+        "setPieces": 67,
+        "tackling": 75,
+        "marking": 73,
+        "positioning": 75,
+        "vision": 71,
+        "decisions": 74,
+        "composure": 72,
+        "offBall": 65,
+        "discipline": 70,
+        "pace": 65,
+        "acceleration": 67,
+        "strength": 71,
+        "stamina": 74,
+        "agility": 67,
+        "jumping": 68,
+        "workRate": 75,
+        "aggression": 71,
+        "goalkeeping": 12,
+        "reflexes": 32
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "bench",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 80,
+        "professionalism": 46,
+        "ambition": 52,
+        "consistency": 62,
+        "pressure": 56,
+        "teamwork": 77,
+        "leadership": 56,
+        "volatility": 72,
+        "injuryResistance": 49,
+        "emergencyGoalkeeper": 50,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 27,
+        "potential": 88,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 73.7,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:116",
+      "name": "铁城联 替补5",
+      "role": "DM",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 76,
+        "firstTouch": 74,
+        "dribbling": 70,
+        "crossing": 69,
+        "finishing": 63,
+        "longShots": 72,
+        "heading": 65,
+        "setPieces": 72,
+        "tackling": 70,
+        "marking": 68,
+        "positioning": 71,
+        "vision": 76,
+        "decisions": 74,
+        "composure": 72,
+        "offBall": 71,
+        "discipline": 71,
+        "pace": 67,
+        "acceleration": 68,
+        "strength": 67,
+        "stamina": 76,
+        "agility": 70,
+        "jumping": 68,
+        "workRate": 75,
+        "aggression": 68,
+        "goalkeeping": 13,
+        "reflexes": 33
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 84,
+        "professionalism": 43,
+        "ambition": 71,
+        "consistency": 45,
+        "pressure": 61,
+        "teamwork": 74,
+        "leadership": 63,
+        "volatility": 34,
+        "injuryResistance": 86,
+        "emergencyGoalkeeper": 63,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 24,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 72.8,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:117",
+      "name": "铁城联 替补6",
+      "role": "RW",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 71,
+        "firstTouch": 75,
+        "dribbling": 79,
+        "crossing": 77,
+        "finishing": 71,
+        "longShots": 71,
+        "heading": 62,
+        "setPieces": 72,
+        "tackling": 59,
+        "marking": 60,
+        "positioning": 66,
+        "vision": 73,
+        "decisions": 69,
+        "composure": 70,
+        "offBall": 77,
+        "discipline": 70,
+        "pace": 80,
+        "acceleration": 81,
+        "strength": 62,
+        "stamina": 73,
+        "agility": 79,
+        "jumping": 69,
+        "workRate": 71,
+        "aggression": 66,
+        "goalkeeping": 14,
+        "reflexes": 34
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 67,
+        "professionalism": 39,
+        "ambition": 48,
+        "consistency": 58,
+        "pressure": 88,
+        "teamwork": 89,
+        "leadership": 89,
+        "volatility": 78,
+        "injuryResistance": 49,
+        "emergencyGoalkeeper": 27,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 25,
+        "potential": 88,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 71.5,
+        "lastGrowth": null
+      }
+    },
+    {
+      "id": "iron-city:player:118",
+      "name": "铁城联 替补7",
+      "role": "ST",
+      "preferredFoot": "right",
+      "heightCm": 180,
+      "attributes": {
+        "passing": 63,
+        "firstTouch": 71,
+        "dribbling": 70,
+        "crossing": 58,
+        "finishing": 79,
+        "longShots": 72,
+        "heading": 74,
+        "setPieces": 68,
+        "tackling": 53,
+        "marking": 53,
+        "positioning": 63,
+        "vision": 64,
+        "decisions": 69,
+        "composure": 75,
+        "offBall": 78,
+        "discipline": 67,
+        "pace": 72,
+        "acceleration": 72,
+        "strength": 71,
+        "stamina": 66,
+        "agility": 69,
+        "jumping": 73,
+        "workRate": 66,
+        "aggression": 69,
+        "goalkeeping": 12,
+        "reflexes": 32
+      },
+      "state": {
+        "retired": false,
+        "fitness": 100,
+        "form": 50,
+        "morale": 52,
+        "injuryProneness": 28,
+        "injury": {
+          "severity": "none",
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "cause": null,
+          "sufferedAtStage": null
+        },
+        "suspension": {
+          "matchesRemaining": 0,
+          "totalMatches": 0,
+          "reason": null,
+          "receivedAtStage": null
+        }
+      },
+      "traits": [],
+      "teamId": "iron-city",
+      "squadStatus": "reserve",
+      "traitCards": [],
+      "legacyTraits": [],
+      "secondaryRole": null,
+      "hidden": {
+        "mentality": 61,
+        "professionalism": 40,
+        "ambition": 56,
+        "consistency": 88,
+        "pressure": 53,
+        "teamwork": 84,
+        "leadership": 85,
+        "volatility": 22,
+        "injuryResistance": 47,
+        "emergencyGoalkeeper": 48,
+        "personality": "leader"
+      },
+      "development": {
+        "age": 25,
+        "potential": 86,
+        "experience": 0,
+        "level": 1,
+        "matchesPlayed": 0,
+        "growthRate": 71.8,
+        "lastGrowth": null
+      }
+    }
+  ],
+  "teams": [
+    {
+      "id": "river-athletic",
+      "name": "河湾竞技",
+      "lineupIds": [
+        "river-athletic:player:1",
+        "river-athletic:player:2",
+        "river-athletic:player:3",
+        "river-athletic:player:6",
+        "river-athletic:player:7",
+        "river-athletic:player:8",
+        "river-athletic:player:9"
+      ],
+      "benchIds": [
+        "river-athletic:player:12",
+        "river-athletic:player:4",
+        "river-athletic:player:15",
+        "river-athletic:player:10"
+      ],
+      "formation": {
+        "name": "2-3-1",
+        "defensiveBalance": 52,
+        "midfieldDensity": 62,
+        "attackingNumbers": 54
+      },
+      "tactics": {
+        "tempo": 58,
+        "directness": 28,
+        "width": 60,
+        "pressing": 64,
+        "defensiveLine": 61,
+        "risk": 55,
+        "tackleIntensity": 45,
+        "counterAttack": 38,
+        "crossing": 42,
+        "setPieceFocus": 43,
+        "timeWasting": 10
+      },
+      "coach": {
+        "attack": 55,
+        "defense": 54,
+        "adaptability": 57,
+        "substitutions": 55
+      },
+      "chemistry": 66,
+      "morale": 58,
+      "form": 52
+    },
+    {
+      "id": "iron-city",
+      "name": "铁城联",
+      "lineupIds": [
+        "iron-city:player:101",
+        "iron-city:player:102",
+        "iron-city:player:103",
+        "iron-city:player:106",
+        "iron-city:player:107",
+        "iron-city:player:108",
+        "iron-city:player:109"
+      ],
+      "benchIds": [
+        "iron-city:player:112",
+        "iron-city:player:104",
+        "iron-city:player:115",
+        "iron-city:player:110"
+      ],
+      "formation": {
+        "name": "2-3-1",
+        "defensiveBalance": 52,
+        "midfieldDensity": 52,
+        "attackingNumbers": 54
+      },
+      "tactics": {
+        "tempo": 68,
+        "directness": 78,
+        "width": 65,
+        "pressing": 48,
+        "defensiveLine": 43,
+        "risk": 56,
+        "tackleIntensity": 58,
+        "counterAttack": 67,
+        "crossing": 72,
+        "setPieceFocus": 64,
+        "timeWasting": 20
+      },
+      "coach": {
+        "attack": 54,
+        "defense": 53,
+        "adaptability": 56,
+        "substitutions": 55
+      },
+      "chemistry": 66,
+      "morale": 58,
+      "form": 52
+    }
+  ],
+  "simulationPresets": [
+    {
+      "id": "default-match",
+      "name": "默认测试赛",
+      "homeTeamId": "river-athletic",
+      "awayTeamId": "iron-city",
+      "seed": "devtool-default",
+      "matches": 500,
+      "context": {
+        "minutes": 90,
+        "basePossessions": 160,
+        "homeAdvantage": 3.2,
+        "pitchQuality": 85,
+        "weather": {
+          "precipitation": 10,
+          "wind": 10,
+          "temperature": 18
+        },
+        "referee": {
+          "strictness": 50,
+          "penaltyBias": 50,
+          "homeBias": 50
+        }
+      }
+    }
+  ],
+  "globalConfig": {
+    "weatherWeights": {
+      "sunny": 60,
+      "rain": 15,
+      "storm": 15,
+      "snow": 10
+    },
+    "lightning": {
+      "chance": 0.006,
+      "fitnessLossMin": 8,
+      "fitnessLossMax": 16,
+      "moraleLossMin": 2,
+      "moraleLossMax": 6
+    },
+    "referee": {
+      "strictnessMin": 56,
+      "strictnessMax": 84,
+      "penaltyBiasMin": 52,
+      "penaltyBiasMax": 82,
+      "homeBiasMin": 46,
+      "homeBiasMax": 54
+    },
+    "economy": {
+      "victoryBaseGold": 220,
+      "victoryGoldPerStage": 20
+    }
+  },
+  "traitDrafts": [
+    {
+      "id": "draft-test-sponsor-mandate",
+      "name": "赞助商指定",
+      "status": "concept",
+      "rarity": "rare",
+      "category": "economy",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "economy",
+        "starting",
+        "minutes",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "该球员首发并出场满60分钟时，赛后额外获得80G；60分钟以前该球员所有能力降低10%。",
+      "designNotes": "第一次让特性卡直接改变经济路线。玩家可以为了稳定收入安排一名不够强势的商业首发，也要承担受伤或提前换人导致奖金落空的风险。",
+      "rulesDraft": "[{\"hook\":\"allAttributes\",\"multiply\":0.9,\"when\":{\"minuteLte\":59}},{\"hook\":\"postMatchEconomy\",\"addGold\":80,\"when\":{\"started\":true,\"minutesPlayedGte\":60}}]",
+      "implementationNotes": "伤停、红牌或提前换下导致不足60分钟时不发奖金；加时不计入门槛。",
+      "testNotes": "测试80G是否足以形成选择但不会成为必拿经济卡。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:00:00.000Z",
+      "updatedAt": "2026-07-17T11:00:00.000Z"
+    },
+    {
+      "id": "draft-test-work-while-injured",
+      "name": "带病上班",
+      "status": "concept",
+      "rarity": "legendary",
+      "category": "campaign",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "injury",
+        "availability",
+        "sacrifice",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "非退役伤病期间可以强行出场一次，本场所有能力按70%计算；赛后剩余伤停场次翻倍。",
+      "designNotes": "打破伤病球员不可用的规则，让玩家在关键关卡借用未来健康。它不是免疫伤病，而是把短期缺人问题转化为更长期的阵容债务。",
+      "rulesDraft": "[{\"hook\":\"injuryAvailability\",\"allowOneAppearance\":true,\"excludeSeverity\":[\"careerEnding\"],\"multiplyAllAttributes\":0.7},{\"hook\":\"postMatchInjury\",\"multiplyRemainingMatches\":2,\"afterForcedAppearance\":true}]",
+      "implementationNotes": "每次伤病周期只能强行出场一次；出场中再次受伤时取更严重结果。",
+      "testNotes": "重点测试首领战价值以及与身体倍棒的冲突优先级。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:01:00.000Z",
+      "updatedAt": "2026-07-17T11:01:00.000Z"
+    },
+    {
+      "id": "draft-test-take-the-card-for-you",
+      "name": "替你吃牌",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "discipline",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "redCard",
+        "redirect",
+        "sacrifice"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "本队另一名球员本场第一次被直接红牌罚下时，红牌改由该球员承担；原球员留场，该球员离场并正常停赛。",
+      "designNotes": "卡片不减少红牌代价，而是允许玩家把代价从核心球员转移到更适合牺牲的人身上。它会让球员身份和阵容层级参与判罚系统。",
+      "rulesDraft": "[{\"hook\":\"redCardRedirect\",\"firstDirectRedOnly\":true,\"excludeSelf\":true,\"redirectSuspension\":true}]",
+      "implementationNotes": "仅直接红牌可转移；两黄变红不触发。携带者已经离场或受伤时不生效。",
+      "testNotes": "观察与全武行、推土机等高吃牌风险卡的组合。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:02:00.000Z",
+      "updatedAt": "2026-07-17T11:02:00.000Z"
+    },
+    {
+      "id": "draft-test-two-cards-as-three",
+      "name": "两张卡当三张用",
+      "status": "concept",
+      "rarity": "legendary",
+      "category": "cardMeta",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "copy",
+        "adjacency",
+        "traitMeta",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "比赛开始时复制战术板上距离最近队友的一张非先天特性卡，本场自身所有能力降低15%。",
+      "designNotes": "让一张卡直接操作另一张卡，形成真正的卡牌层构筑。站位既决定足球位置，也决定复制对象；能力惩罚防止无成本复制传奇效果。",
+      "rulesDraft": "[{\"hook\":\"copyNearestTrait\",\"exclude\":[\"innate\",\"self\"],\"count\":1,\"duration\":\"match\"},{\"hook\":\"allAttributes\",\"multiply\":0.85}]",
+      "implementationNotes": "若最近队友距离相同则按阵容顺序选择；不能复制本卡或一次性已消耗卡。",
+      "testNotes": "必须测试复制肉身门柱、最后一张票及请神上身等规则级卡的边界。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:03:00.000Z",
+      "updatedAt": "2026-07-17T11:03:00.000Z"
+    },
+    {
+      "id": "draft-test-giant-killer",
+      "name": "专打强队",
+      "status": "concept",
+      "rarity": "rare",
+      "category": "mentality",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "underdog",
+        "opponentRating",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "对手整体评级比本队高8点以上时，所有能力提高35%；否则所有能力降低15%。",
+      "designNotes": "让卡片强度随关卡对手变化。它在首领和越级挑战中极强，但对普通关卡反而拖后腿，促使玩家按赛程调整装备。",
+      "rulesDraft": "[{\"hook\":\"allAttributes\",\"multiply\":1.35,\"when\":{\"opponentRatingAdvantageGte\":8}},{\"hook\":\"allAttributes\",\"multiply\":0.85,\"when\":{\"opponentRatingAdvantageLt\":8}}]",
+      "implementationNotes": "评级差在赛前锁定，不随红牌、伤病和换人变化。",
+      "testNotes": "分别测试普通关、精英关和首领关，防止成为后期无脑常驻卡。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:04:00.000Z",
+      "updatedAt": "2026-07-17T11:04:00.000Z"
+    },
+    {
+      "id": "draft-test-reverse-finisher",
+      "name": "反向神射手",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "finishing",
+      "eligibleRoleGroups": [
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "xG",
+        "finishing",
+        "variance",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "基础xG低于0.10的射门，进球概率变为2.5倍；基础xG高于0.30的射门，进球概率降低55%。",
+      "designNotes": "把正常射手逻辑彻底反转：世界波和困难球更危险，绝佳机会却可能浪费。玩家会主动给他远射权，也会避免让他主罚点球或吃到单刀。",
+      "rulesDraft": "[{\"hook\":\"shot\",\"multiplyGoalProbability\":2.5,\"when\":{\"xgLt\":0.1}},{\"hook\":\"shot\",\"multiplyGoalProbability\":0.45,\"when\":{\"xgGt\":0.3}}]",
+      "implementationNotes": "倍率作用于最终进球概率但仍受概率上限约束；点球属于高xG惩罚范围。",
+      "testNotes": "统计远射数量、总进球和高质量机会浪费率。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:05:00.000Z",
+      "updatedAt": "2026-07-17T11:05:00.000Z"
+    },
+    {
+      "id": "draft-test-clean-sheet-bonus",
+      "name": "零封奖金",
+      "status": "concept",
+      "rarity": "rare",
+      "category": "economy",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "tags": [
+        "cleanSheet",
+        "economy",
+        "morale",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "本场零封时额外获得100G；若失球达到2个，携带者赛后状态降低10点。",
+      "designNotes": "把防守目标转化为经济目标，并让最后阶段是否保守变成资源决策。它也给门将和后卫提供与进球奖励不同的个人叙事。",
+      "rulesDraft": "[{\"hook\":\"postMatchEconomy\",\"addGold\":100,\"when\":{\"goalsConceded\":0}},{\"hook\":\"postMatchState\",\"addMorale\":-10,\"when\":{\"goalsConcededGte\":2}}]",
+      "implementationNotes": "多名携带者时奖金只结算一次，状态惩罚分别结算。",
+      "testNotes": "测试与最后的波纹、门神叠加后的经济强度。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:06:00.000Z",
+      "updatedAt": "2026-07-17T11:06:00.000Z"
+    },
+    {
+      "id": "draft-test-red-card-insurance",
+      "name": "红牌保险",
+      "status": "concept",
+      "rarity": "legendary",
+      "category": "discipline",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "bench",
+        "redCard",
+        "restoreNumbers",
+        "consumable"
+      ],
+      "bondIds": [],
+      "polarity": "positive",
+      "summary": "携带者在替补席时，本队第一次出现红牌后等待10分钟，携带者可以直接登场补回人数；不占换人名额，随后本卡永久销毁。",
+      "designNotes": "不取消红牌和停赛，而是把少打一人的时间缩短为10分钟。它使用替补席、人数劣势、一次性卡片三个系统，同时仍保持七人制人数上限。",
+      "rulesDraft": "[{\"hook\":\"redCardInsurance\",\"carrierMustBeOnBench\":true,\"delayMinutes\":10,\"freeSubstitution\":true,\"maximumActivePlayers\":7},{\"hook\":\"consumeTrait\",\"afterTrigger\":\"redCardInsurance\"}]",
+      "implementationNotes": "若携带者在等待期间受伤、被其他换人用掉或比赛结束，则效果失效且不消耗卡。",
+      "testNotes": "重点评估传奇A评级是否合理，以及全武行阵容的滥用风险。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:07:00.000Z",
+      "updatedAt": "2026-07-17T11:07:00.000Z"
+    },
+    {
+      "id": "draft-test-team-rest-day",
+      "name": "全队轮休",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "campaign",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "bench",
+        "recovery",
+        "fitness",
+        "campaign"
+      ],
+      "bondIds": [],
+      "polarity": "positive",
+      "summary": "携带者整场留在替补席且球队获胜时，所有本场出场球员赛后额外恢复8点体力。",
+      "designNotes": "把一个替补卡槽转换成团队长期恢复工具。玩家会在当前比赛强度和后续赛程健康之间做取舍，也能形成真正的轮换构筑。",
+      "rulesDraft": "[{\"hook\":\"postMatchTeamFitness\",\"addFitness\":8,\"when\":{\"carrierUnusedBench\":true,\"result\":\"win\"}}]",
+      "implementationNotes": "携带者哪怕只出场1分钟也不触发；额外恢复不能突破100。多名携带者不叠加。",
+      "testNotes": "测试连续关卡中对高压战术体力成本的抵消程度。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:08:00.000Z",
+      "updatedAt": "2026-07-17T11:08:00.000Z"
+    },
+    {
+      "id": "draft-test-var-regular",
+      "name": "VAR常客",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "referee",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "tags": [
+        "VAR",
+        "opponentGoal",
+        "penalty",
+        "variance",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "对手本场第一次进球会接受VAR复核：50%概率取消进球；若复核失败，则额外判给对手一个点球。",
+      "designNotes": "不是稳定防守增益，而是把一次失球变成高风险改判事件。成功时救回一球，失败时可能在原失球之外再送一个点球。",
+      "rulesDraft": "[{\"hook\":\"afterOpponentFirstGoal\",\"varReview\":true,\"cancelGoalProbability\":0.5,\"onReviewFail\":{\"awardOpponentPenalty\":true}}]",
+      "implementationNotes": "VAR只复核常规进球，不复核点球；取消后比分与进球者数据一并回滚，但保留此前比赛事件。",
+      "testNotes": "大量模拟实际净胜球变化，确认50%取消加失败点球不会产生隐藏正收益过高。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T11:09:00.000Z",
+      "updatedAt": "2026-07-17T11:09:00.000Z"
+    },
+    {
+      "id": "draft-test-no-warmup",
+      "name": "不热身",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "physical",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "substitution",
+        "burst",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "替补登场后的10分钟内所有能力提高40%；10分钟结束时体力立即降至40。首发时没有效果。",
+      "designNotes": "把替补球员变成一次短时间战术武器，爆发结束后会留下明显负担。玩家需要决定是晚换人赌最后一击，还是提前登场承担体力崩盘。",
+      "rulesDraft": "[{\"hook\":\"allAttributes\",\"multiply\":1.4,\"when\":{\"minutesSinceSubLte\":10}},{\"hook\":\"fitnessSet\",\"value\":40,\"when\":{\"minutesSinceSubEquals\":11}}]",
+      "implementationNotes": "仅由替补登场触发一次；因伤被迫换上也触发。",
+      "testNotes": "测试第70、80、85分钟登场时对比分的影响。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T10:31:00.000Z",
+      "updatedAt": "2026-07-17T10:31:00.000Z"
+    },
+    {
+      "id": "draft-test-goalkeeper-goes-up",
+      "name": "门将也压上",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "goalkeeping",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "tags": [
+        "lateGame",
+        "setPiece",
+        "emptyGoal",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "75分钟后球队落后时，该门将会参与前场定位球，定位球进攻提高12；一旦被对手打出反击，对方射门基础xG最低为0.60。",
+      "designNotes": "把门将压上这一足球名场面做成明确的风险按钮：它能真正增加扳平机会，也会产生空门级惩罚。",
+      "rulesDraft": "[{\"hook\":\"phase\",\"phase\":\"setPieceAttack\",\"addRating\":12,\"when\":{\"minuteGte\":75,\"scoreState\":\"trailing\"}},{\"hook\":\"opponentCounterShot\",\"minimumXg\":0.6,\"when\":{\"goalkeeperJoinedAttack\":true}}]",
+      "implementationNotes": "只有前场角球和任意球触发；进攻结束后门将恢复正常位置。",
+      "testNotes": "观察是否过度制造最后15分钟的大比分波动。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T10:33:00.000Z",
+      "updatedAt": "2026-07-17T10:33:00.000Z"
+    },
+    {
+      "id": "draft-test-borrow-your-legs",
+      "name": "借腿一用",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "quirk",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "copy",
+        "teammate",
+        "physical",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "赛前复制首发队友中最高的速度和耐力；被复制的两项能力来源球员，其对应能力本场降低20%。",
+      "designNotes": "不是凭空获得数值，而是从队友身上借走强项。它会制造阵容内部的资源转移：弱者变强，但王牌可能因此被削弱。",
+      "rulesDraft": "[{\"hook\":\"copyTeamAttribute\",\"attributes\":[\"pace\",\"stamina\"],\"source\":\"highestStartingTeammate\",\"sourceMultiply\":0.8,\"duration\":\"match\"}]",
+      "implementationNotes": "速度与耐力可以来自不同队友；不能复制自己，也不能重复借走已经被借走的同一项能力。",
+      "testNotes": "检查多张同卡同时存在时的处理顺序与极端连锁削弱。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T10:35:00.000Z",
+      "updatedAt": "2026-07-17T10:35:00.000Z"
+    },
+    {
+      "id": "draft-test-scoreboard-first",
+      "name": "比分最重要",
+      "status": "concept",
+      "rarity": "rare",
+      "category": "tactics",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID"
+      ],
+      "tags": [
+        "scoreState",
+        "adaptive",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "领先时防守贡献提高50%、进攻贡献降为50%；落后时进攻贡献提高50%、防守贡献降为50%。平局时无效果。",
+      "designNotes": "让同一球员随比分彻底切换职责，形成自动但极端的比赛管理逻辑。与顺风战士不同，它不改变综合强弱，而是重新分配贡献方向。",
+      "rulesDraft": "[{\"hook\":\"metricContribution\",\"when\":{\"scoreState\":\"leading\"},\"multiply\":{\"defense\":1.5,\"attack\":0.5}},{\"hook\":\"metricContribution\",\"when\":{\"scoreState\":\"trailing\"},\"multiply\":{\"attack\":1.5,\"defense\":0.5}}]",
+      "implementationNotes": "比分变化后立即切换，不保留上一状态。",
+      "testNotes": "检查领先后是否容易形成无法逆转的防守滚雪球。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T10:36:00.000Z",
+      "updatedAt": "2026-07-17T10:36:00.000Z"
+    },
+    {
+      "id": "draft-test-cloud-seeding",
+      "name": "人工降雨",
+      "status": "concept",
+      "rarity": "epic",
+      "category": "environment",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [
+        "weather",
+        "rain",
+        "globalRule",
+        "tradeoff"
+      ],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "装备后本场天气强制变为大雨。该球员雨战所有能力提高20%，其余所有球员正常承受大雨影响。",
+      "designNotes": "卡片不只是适应天气，而是主动创造天气，把整场比赛变成围绕携带者构筑的环境主场。双方都会受影响，因此也可能帮助对手的雨战卡。",
+      "rulesDraft": "[{\"hook\":\"matchWeather\",\"force\":{\"type\":\"rain\",\"precipitation\":85}},{\"hook\":\"allAttributes\",\"multiply\":1.2,\"when\":{\"weather\":\"rain\"}}]",
+      "implementationNotes": "若双方都存在强制天气卡，需要定义天气冲突优先级或随机决胜。大雨不等同雷暴，不触发雷击。",
+      "testNotes": "测试与雨鞋、风雨无惧及对手天气卡的组合。",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T10:38:00.000Z",
+      "updatedAt": "2026-07-17T10:38:00.000Z"
+    },
+    {
+      "id": "draft-trait-mron38m9",
+      "name": "裁判友好",
+      "status": "concept",
+      "rarity": "legendary",
+      "category": "",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "tags": [],
+      "bondIds": [],
+      "polarity": "mixed",
+      "summary": "",
+      "designNotes": "该球员的受伤概率提升50%，但是整场比赛中裁判会更偏向该队",
+      "rulesDraft": "",
+      "implementationNotes": "",
+      "testNotes": "",
+      "dropWeight": null,
+      "createdAt": "2026-07-17T07:51:43.713Z",
+      "updatedAt": "2026-07-17T07:55:02.260Z"
+    }
+  ],
+  "bonds": [
+    {
+      "id": "bond-mrouqg7l",
+      "name": "影视学院",
+      "short": "新羁绊",
+      "description": "足球不是打打杀杀，演技也是很重要的",
+      "traitIds": [
+        "penalty-is-mine"
+      ],
+      "tiers": [
+        {
+          "threshold": 2,
+          "bonuses": {},
+          "effectText": ""
+        }
+      ]
+    },
+    {
+      "id": "bond-mrouqk05",
+      "name": "新羁绊 2",
+      "short": "新羁绊",
+      "description": "",
+      "traitIds": [],
+      "tiers": [
+        {
+          "threshold": 2,
+          "bonuses": {},
+          "effectText": ""
+        }
+      ]
+    }
+  ]
+}

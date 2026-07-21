@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#101c19" />
+    <title>冠军之路 · 七人制足球 Roguelite</title>
+    <link rel="stylesheet" href="/game/styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="game-shell">
+      <header class="game-header">
+        <a class="game-brand" href="/game/" aria-label="冠军之路首页">
+          <span class="brand-shield">FT<em>1</em></span>
+          <span><strong>冠军之路</strong><small>FOOTBALL TEST 1</small></span>
+        </a>
+        <div class="run-status" id="run-status" hidden>
+          <span><small>征程</small><b id="status-stage">01 / 50</b></span>
+          <span><small>资金</small><b id="status-gold">0 G</b></span>
+          <span class="save-dot"><i></i><small id="save-label">v0.2 本地存档</small></span>
+        </div>
+      </header>
+
+      <nav class="game-nav" id="game-nav" aria-label="球队功能导航" hidden>
+        <button data-game-nav="matchday"><span>01</span><b>比赛日</b></button>
+        <button data-game-nav="loadout"><span>02</span><b>特性阵容</b></button>
+        <button data-game-nav="team"><span>03</span><b>球队信息</b></button>
+        <button data-game-nav="shop"><span>04</span><b>卡牌商店</b></button>
+      </nav>
+
+      <main id="game-screen" class="game-screen" aria-live="polite"></main>
+
+      <footer class="game-footer">
+        <span>LOCAL PROTOTYPE · v0.2</span>
+        <span>数据来自场边实验室</span>
+      </footer>
+    </div>
+
+    <div class="modal-backdrop" id="modal-backdrop" hidden>
+      <section class="modal" id="game-modal" role="dialog" aria-modal="true"></section>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/game/game.js"></script>
+  </body>
+</html>

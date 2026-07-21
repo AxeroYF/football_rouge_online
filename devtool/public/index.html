@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>场边实验室 · 足球 Roguelite 开发工具</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">TL</div>
+          <div>
+            <strong>场边实验室</strong>
+            <span>Touchline Lab</span>
+          </div>
+        </div>
+
+        <nav class="main-nav" aria-label="开发工具导航">
+          <button class="nav-item active" data-view-target="traits">
+            <span class="nav-index">01</span>
+            <span><b>特性卡</b><small>规则与卡池</small></span>
+          </button>
+          <button class="nav-item" data-view-target="ratings">
+            <span class="nav-index">02</span>
+            <span><b>等级管理</b><small>A / B / C / D 看板</small></span>
+          </button>
+          <button class="nav-item" data-view-target="bonds">
+            <span class="nav-index">03</span>
+            <span><b>羁绊设计</b><small>组合与自定义效果</small></span>
+          </button>
+          <button class="nav-item" data-view-target="simulation">
+            <span class="nav-index">04</span>
+            <span><b>比赛模拟</b><small>参数与结果</small></span>
+          </button>
+          <button class="nav-item" data-view-target="players">
+            <span class="nav-index">05</span>
+            <span><b>球员卡</b><small>属性与阵容</small></span>
+          </button>
+          <button class="nav-item" data-view-target="settings">
+            <span class="nav-index">06</span>
+            <span><b>全局配置</b><small>天气与经济</small></span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="local-badge"><span></span>仅限本机访问</div>
+          <p>独立开发后台<br />不会进入正式游戏构建</p>
+          <button class="text-button danger-text" id="reset-data-button">恢复初始数据</button>
+        </div>
+      </aside>
+
+      <main class="main-stage">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="view-eyebrow">CONTENT SYSTEM / 01</p>
+            <h1 id="view-title">特性卡管理</h1>
+            <p id="view-description">设计卡牌、调整效果参数，并维护随机卡池。</p>
+          </div>
+          <div class="top-actions">
+            <div class="save-state" id="save-state" aria-live="polite"><span></span>已保存</div>
+            <button class="button ghost" id="import-button">导入</button>
+            <button class="button ghost" id="export-button">导出</button>
+            <button class="button primary" id="save-button">保存全部</button>
+            <input type="file" id="import-file" accept="application/json,.json" hidden />
+          </div>
+        </header>
+
+        <div class="content-area">
+          <section class="view active" id="view-traits" aria-labelledby="view-title">
+            <div class="trait-workspace-toolbar">
+              <div class="trait-workspace-tabs" role="tablist" aria-label="特性卡工作区">
+                <button class="trait-workspace-tab active" type="button" data-trait-workspace="formal" role="tab" aria-selected="true">正式卡池 <b id="formal-trait-count">0</b></button>
+                <button class="trait-workspace-tab" type="button" data-trait-workspace="development" role="tab" aria-selected="false">开发中 <b id="draft-trait-count">0</b></button>
+              </div>
+              <p class="trait-workspace-safety"><span></span>开发中草稿与正式卡池隔离，不参与抽取、装备和比赛模拟</p>
+            </div>
+            <div class="summary-strip" id="trait-summary"></div>
+            <div class="toolbar">
+              <label class="search-field">
+                <span aria-hidden="true">⌕</span>
+                <input id="trait-search" type="search" placeholder="搜索名称、标签或说明" autocomplete="off" />
+              </label>
+              <select id="trait-rarity-filter" aria-label="筛选特性卡稀有度">
+                <option value="all">全部稀有度</option>
+                <option value="common">普通</option>
+                <option value="rare">稀有</option>
+                <option value="epic">史诗</option>
+                <option value="legendary">传奇</option>
+              </select>
+              <select id="trait-role-filter" aria-label="筛选适用位置">
+                <option value="all">全部位置</option>
+                <option value="GK">门将</option>
+                <option value="DEF">后卫</option>
+                <option value="MID">中场</option>
+                <option value="ATT">前锋</option>
+                <option value="CB">中后卫</option>
+                <option value="LB">左边后卫</option>
+                <option value="RB">右边后卫</option>
+                <option value="DM">后腰</option>
+                <option value="LM">左中场</option>
+                <option value="RM">右中场</option>
+                <option value="ST">中锋</option>
+                <option value="LW">左边锋</option>
+                <option value="RW">右边锋</option>
+              </select>
+              <select id="trait-status-filter" aria-label="筛选开发状态" hidden>
+                <option value="all">全部开发状态</option>
+                <option value="concept">构思中</option>
+                <option value="incomplete">待补充</option>
+                <option value="ready">可测试</option>
+                <option value="testing">测试中</option>
+                <option value="review">待评审</option>
+              </select>
+              <button class="button primary compact" id="add-trait-button">＋ 新建特性</button>
+            </div>
+
+            <div class="editor-layout">
+              <div class="list-panel" id="trait-list" aria-label="特性卡列表"></div>
+              <div class="editor-panel" id="trait-editor"></div>
+            </div>
+          </section>
+
+          <section class="view" id="view-ratings" aria-labelledby="view-title">
+            <div class="grade-toolbar panel-card">
+              <div>
+                <span class="panel-label">RARITY BOARD</span>
+                <h2>正式卡等级看板</h2>
+                <p>把卡片拖到另一个等级框即可改级。每张正式卡始终只会出现在一个等级中。</p>
+              </div>
+              <label class="search-field grade-search"><span aria-hidden="true">⌕</span><input id="grade-trait-search" type="search" placeholder="搜索正式特性卡" autocomplete="off" /></label>
+            </div>
+            <div class="grade-board" id="grade-board"></div>
+          </section>
+
+          <section class="view" id="view-bonds" aria-labelledby="view-title">
+            <div class="bond-toolbar panel-card">
+              <div>
+                <span class="panel-label">BOND WORKBENCH</span>
+                <h2>羁绊框看板</h2>
+                <p>新建一个羁绊框，再把左侧卡片直接拖进去。同一张卡仍可加入多个羁绊。</p>
+              </div>
+              <button class="button primary" id="add-bond-button">＋ 新建羁绊栏位</button>
+            </div>
+            <div class="bond-designer-layout">
+              <aside class="bond-library panel-card">
+                <div class="section-heading"><div><span>FORMAL TRAITS</span><h2>正式特性卡</h2></div><b id="bond-library-count">0</b></div>
+                <label class="search-field bond-search"><span aria-hidden="true">⌕</span><input id="bond-trait-search" type="search" placeholder="搜索可用特性卡" autocomplete="off" /></label>
+                <div class="bond-trait-library" id="bond-trait-library"></div>
+              </aside>
+              <main class="bond-canvas">
+                <div class="bond-canvas-heading"><div><span>YOUR BONDS</span><h2>已建立的羁绊框</h2></div><b id="bond-board-count">0</b></div>
+                <div class="bond-board" id="bond-board"></div>
+              </main>
+              <aside class="bond-inspector panel-card" id="bond-inspector"></aside>
+            </div>
+          </section>
+
+          <section class="view" id="view-simulation" aria-labelledby="view-title">
+            <div class="simulation-layout">
+              <div class="simulation-controls panel-card">
+                <div class="section-heading">
+                  <div><span>MODEL INPUT</span><h2>比赛参数</h2></div>
+                  <button class="button primary" id="run-simulation-button">运行模拟</button>
+                </div>
+                <div id="simulation-form"></div>
+              </div>
+              <div class="simulation-results panel-card" id="simulation-results">
+                <div class="empty-state large">
+                  <span class="empty-ball" aria-hidden="true">●</span>
+                  <h2>等待第一次开球</h2>
+                  <p>调整左侧参数，然后运行单场事件与批量概率模拟。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="view" id="view-players" aria-labelledby="view-title">
+            <div class="summary-strip" id="player-summary"></div>
+            <div class="toolbar">
+              <label class="search-field">
+                <span aria-hidden="true">⌕</span>
+                <input id="player-search" type="search" placeholder="搜索球员或球队" autocomplete="off" />
+              </label>
+              <select id="player-team-filter" aria-label="筛选球队"></select>
+              <select id="player-role-filter" aria-label="筛选球员位置">
+                <option value="all">全部位置</option>
+                <option value="GK">门将</option>
+                <option value="DEF">后卫</option>
+                <option value="MID">中场</option>
+                <option value="ATT">前锋</option>
+              </select>
+              <button class="button primary compact" id="add-player-button">＋ 新建球员</button>
+            </div>
+
+            <div class="editor-layout player-layout">
+              <div class="list-panel" id="player-list" aria-label="球员卡列表"></div>
+              <div class="editor-panel" id="player-editor"></div>
+            </div>
+          </section>
+
+          <section class="view" id="view-settings" aria-labelledby="view-title">
+            <div id="global-settings-form"></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <aside class="trait-info-tooltip" id="trait-info-tooltip" role="tooltip" hidden></aside>
+    <div class="trait-detail-backdrop" id="trait-detail-backdrop" hidden>
+      <section class="trait-detail-dialog" id="trait-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="trait-detail-title">
+        <button class="trait-detail-close" type="button" data-close-trait-detail aria-label="关闭特性卡详情">×</button>
+        <div id="trait-detail-content"></div>
+      </section>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
