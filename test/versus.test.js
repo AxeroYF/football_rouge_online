@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS } from "../versus/player-pool.js";
+import { INDIVIDUALIZED_PLAYERS, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS } from "../versus/player-pool.js";
 import { VersusRoomService } from "../versus/room-service.js";
 import { createLineupSeed, parseLineupSeed } from "../versus/lineup-seed.js";
 import {
@@ -67,6 +67,7 @@ test("玩家ID绑定、自定义分享码与历史战绩会持久累计", () => 
   assert.equal(profile.matches.length, 1);
   assert.equal(profile.matches[0].opponentId, "guest_001");
   assert.equal(profile.matches[0].hasDetails, true);
+  assert.ok(profile.matches[0].ownFormation && profile.matches[0].opponentFormation);
   const detail = service.profileMatch("host_001", hostAccount.accountToken, profile.matches[0].id);
   assert.equal(detail.teams.length, 2);
   assert.ok(detail.teams.every((team) => team.formation && team.tactic && team.style));
@@ -104,6 +105,10 @@ test("十一人对战拥有四个各125人的唯一真实球员池", () => {
   assert.ok(REAL_PLAYERS.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
   assert.ok(REAL_PLAYERS.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
   assert.ok(REAL_PLAYER_POOLS.GK.every((player) => player.secondaryRole === null));
+  assert.equal(INDIVIDUALIZED_PLAYERS.length, 100);
+  assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.signature && player.archetype && player.nationality && player.club));
+  assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));
+  assert.equal(INDIVIDUALIZED_PLAYERS.at(-1).overall, 90);
 });
 
 test("副位置减益小于完全陌生位置减益", () => {
@@ -564,6 +569,9 @@ test("详细播报记录对抗双方、属性解释并持续更新评分", () =>
   advanceVersusMatch(match, 60_000);
   const detailed = match.events.find((entry) => entry.actorId && entry.opponentId && entry.detail);
   assert.ok(detailed);
+  const chained = match.events.filter((entry) => entry.chainId);
+  assert.ok(chained.length >= 2);
+  assert.ok(new Set(chained.map((entry) => entry.chainId)).size < chained.length);
   assert.ok(match.teams.flatMap((team) => team.players).some((player) => player.rating !== 6));
   const view = publicMatch(match, 60_000);
   assert.ok(view.teams.every((team) => team.players.every((player) => Number.isFinite(player.rating) && Number.isFinite(player.fitness))));
@@ -590,6 +598,7 @@ test("比赛结束后生成双方完整统计、重要事件与球员评分", ()
   advanceVersusMatch(match, REGULAR_DURATION_MS);
   if (!match.finished) advanceVersusMatch(match, REGULAR_DURATION_MS + 30_000);
   if (!match.finished) advanceVersusMatch(match, REGULAR_DURATION_MS + EXTRA_DURATION_MS + PENALTY_KICK_INTERVAL_MS * 30);
+  if (!match.finished) advanceVersusMatch(match, match.lastAdvancedAt + PENALTY_KICK_INTERVAL_MS * 30);
   assert.ok(match.finished);
   assert.ok(match.report);
   assert.equal(match.report.teams.length, 2);

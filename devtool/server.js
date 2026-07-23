@@ -7,6 +7,7 @@ import { runSimulation } from "./simulation.js";
 import { handleVersusApi } from "../versus/api.js";
 import { handleAdminApi } from "../versus/admin-api.js";
 import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
+import { versusRooms } from "../versus/room-service.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.join(here, "public");
@@ -95,6 +96,47 @@ async function handleApi(request, response, pathname) {
   return sendJson(response, 404, { ok: false, error: "API not found" });
 }
 
+function handleVersusStream(request, response, url) {
+  const match = url.pathname.match(/^\/api\/versus\/stream\/([^/]+)$/);
+  if (request.method !== "GET" || !match) return false;
+  const code = decodeURIComponent(match[1]);
+  const authorization = request.headers.authorization ?? "";
+  const playerToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  let closed = false;
+  let lastPayload = "";
+  let interval = null;
+  const sendSnapshot = () => {
+    if (closed) return;
+    try {
+      const room = versusRooms.view(versusRooms.getRoom(code), playerToken);
+      const payload = JSON.stringify({ ok: true, room });
+      if (payload === lastPayload) return;
+      lastPayload = payload;
+      response.write(`event: room\ndata: ${payload}\n\n`);
+    } catch (error) {
+      response.write(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`);
+      response.end();
+      closed = true;
+      if (interval) clearInterval(interval);
+    }
+  };
+  response.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-cache, no-transform",
+    connection: "keep-alive",
+    "x-accel-buffering": "no",
+  });
+  response.flushHeaders?.();
+  response.write("retry: 1500\n\n");
+  sendSnapshot();
+  interval = setInterval(sendSnapshot, 400);
+  request.on("close", () => {
+    closed = true;
+    if (interval) clearInterval(interval);
+  });
+  return true;
+}
+
 async function serveStatic(response, pathname) {
   if (publicOnly && pathname === "/") {
     response.writeHead(302, { location: "/versus/", "cache-control": "no-store" });
@@ -142,6 +184,9 @@ const server = http.createServer(async (request, response) => {
   }
   const url = new URL(request.url, "http://localhost");
   try {
+    if (handleVersusStream(request, response, url)) {
+      return;
+    }
     if (url.pathname.startsWith("/api/")) {
       await handleApi(request, response, url.pathname);
     } else {

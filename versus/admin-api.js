@@ -158,7 +158,14 @@ function playerDetail(playerId) {
     createdAt: account.createdAt,
     lastSeenAt: account.lastSeenAt,
     summary: account.summary,
-    matches: (account.matches ?? []).map(({ detail, viewerIndex, ...record }) => ({ ...record, matchId: detail?.id ?? record.id ?? null, hasDetails: Boolean(detail), viewerIndex })),
+    matches: (account.matches ?? []).map(({ detail, viewerIndex, ...record }) => ({
+      ...record,
+      matchId: detail?.id ?? record.id ?? null,
+      hasDetails: Boolean(detail),
+      viewerIndex,
+      ownFormation: detail?.teams?.[viewerIndex]?.formation ?? null,
+      opponentFormation: detail?.teams?.[viewerIndex === 0 ? 1 : 0]?.formation ?? null,
+    })),
   };
 }
 

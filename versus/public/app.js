@@ -16,6 +16,9 @@ let session = readSession();
 let account = readAccount();
 let room = null;
 let polling = null;
+let roomStream = null;
+let roomStreamConnected = false;
+let roomStreamReconnectTimer = null;
 let localPositions = null;
 let localStartingIds = null;
 let localTactic = "balanced";
@@ -123,7 +126,7 @@ function profileMarkup(profile = account?.profile) {
   const summary = profile.summary;
   const recent = profile.matches?.length
     ? profile.matches.slice(0, 8).map((match) => match.hasDetails
-      ? `<button class="history-row" data-history-match="${escapeHtml(match.id)}"><span><b>${escapeHtml(match.opponentName)}</b><small>${new Date(match.playedAt).toLocaleDateString()} · ${match.goals}球 ${match.assists}助 · 点击查看详情</small></span><strong class="result-${match.result}">${match.scoreFor}:${match.scoreAgainst}<small>查看 ›</small></strong></button>`
+      ? `<button class="history-row" data-history-match="${escapeHtml(match.id)}"><span><b>${escapeHtml(match.opponentName)}</b><small>${new Date(match.playedAt).toLocaleDateString()} · ${escapeHtml(match.ownFormation ?? "阵型未知")} vs ${escapeHtml(match.opponentFormation ?? "阵型未知")} · ${match.goals}球 ${match.assists}助</small></span><strong class="result-${match.result}">${match.scoreFor}:${match.scoreAgainst}<small>查看 ›</small></strong></button>`
       : `<div class="history-row history-row-legacy"><span><b>${escapeHtml(match.opponentName)}</b><small>${new Date(match.playedAt).toLocaleDateString()} · ${match.goals}球 ${match.assists}助 · 旧版记录</small></span><strong class="result-${match.result}">${match.scoreFor}:${match.scoreAgainst}</strong></div>`).join("")
     : `<p class="history-empty">还没有比赛记录，完成第一场后会自动统计。</p>`;
   return `<section class="account-history"><header><div><h2>${escapeHtml(profile.nickname)} <small>@${escapeHtml(profile.id)}</small></h2></div><b>${summary.wins}胜 ${summary.losses}负</b></header><div class="career-stats"><span>场次<b>${summary.played}</b></span><span>进球<b>${summary.goals}</b></span><span>助攻<b>${summary.assists}</b></span><span>总比分<b>${summary.goalsFor}:${summary.goalsAgainst}</b></span></div><div class="history-list">${recent}</div></section>`;
@@ -354,7 +357,8 @@ function playerStats(player) {
 
 function playerCard(player) {
   const identity = [player.nationality, player.club].filter((value) => value && !value.startsWith("未登记")).map(escapeHtml).join(" · ");
-  return `<button class="player-card grade-${player.grade.toLowerCase()}" data-player-choice="${player.id}" data-rating="${player.overall}"><div class="card-top"><span class="rating">${player.overall}</span><span class="position">${player.grade} · ${ROLE_LABELS[player.role]}</span></div><h3>${escapeHtml(player.name)}</h3><p>${identity || `副位置 ${ROLE_LABELS[player.secondaryRole] ?? "无"}`} · ${Math.round(player.heightCm)}cm</p><div class="stat-row">${playerStats(player)}</div><span class="card-action">选择球员</span></button>`;
+  const signature = player.signature ? `<small class="player-signature">${escapeHtml(player.signature)}</small>` : "";
+  return `<button class="player-card grade-${player.grade.toLowerCase()}" data-player-choice="${player.id}" data-rating="${player.overall}"><div class="card-top"><span class="rating">${player.overall}</span><span class="position">${player.grade} · ${ROLE_LABELS[player.role]}</span></div><h3>${escapeHtml(player.name)}</h3>${signature}<p>${identity || `副位置 ${ROLE_LABELS[player.secondaryRole] ?? "无"}`} · ${Math.round(player.heightCm)}cm</p><div class="stat-row">${playerStats(player)}</div><span class="card-action">选择球员</span></button>`;
 }
 
 function rosterList(player) {
@@ -929,6 +933,93 @@ function render() {
   if (phaseChanged) requestAnimationFrame(() => window.scrollTo(0, 0));
 }
 
+function acceptRoomSnapshot(nextRoom) {
+  const previousPhase = room?.phase;
+  const previousUpdatedAt = room?.updatedAt;
+  room = nextRoom;
+  if (room.profile && account) storeAccount({ ...account, profile:room.profile });
+  if (previousPhase !== room.phase) {
+    localPositions = null;
+    localStartingIds = null;
+    localTactic = ownPlayer()?.tactic ?? "balanced";
+    localStyle = ownPlayer()?.style ?? "possession";
+    localAttackFocus = ownPlayer()?.attackFocus ?? "balanced";
+    localDefenseFocus = ownPlayer()?.defenseFocus ?? "balanced";
+  }
+  const roomChanged = previousPhase !== room.phase || previousUpdatedAt !== room.updatedAt || room.phase === "match";
+  if (!draggingMagnet && !controlInteraction && roomChanged) render();
+  else if (!roomChanged) {
+    const timer = document.querySelector(".phase-timer b");
+    if (timer && room.timer) timer.textContent = clockText(room.timer.remainingMs);
+  }
+}
+
+function stopRoomStream() {
+  clearTimeout(roomStreamReconnectTimer);
+  roomStreamReconnectTimer = null;
+  const activeStream = roomStream;
+  roomStream = null;
+  roomStreamConnected = false;
+  activeStream?.abort();
+}
+
+function startRoomStream() {
+  stopRoomStream();
+  if (!session || typeof ReadableStream === "undefined") return;
+  const controller = new AbortController();
+  roomStream = controller;
+  void (async () => {
+    try {
+      const response = await fetch(`/api/versus/stream/${encodeURIComponent(session.code)}`, {
+        headers: { authorization:`Bearer ${session.token}` },
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!response.ok || !response.body) throw new Error("实时连接建立失败");
+      if (roomStream !== controller) return;
+      roomStreamConnected = true;
+      networkFailures = 0;
+      connectionState = "online";
+      updateChrome();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (roomStream === controller) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream:true });
+        let boundary = buffer.indexOf("\n\n");
+        while (boundary >= 0) {
+          const frame = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          const eventName = frame.split("\n").find((line) => line.startsWith("event:"))?.slice(6).trim();
+          const data = frame.split("\n").filter((line) => line.startsWith("data:")).map((line) => line.slice(5).trim()).join("\n");
+          if (eventName === "room" && data) {
+            try {
+              const payload = JSON.parse(data);
+              if (payload.room && session) acceptRoomSnapshot(payload.room);
+            } catch {}
+          }
+          boundary = buffer.indexOf("\n\n");
+        }
+      }
+      throw new Error("实时连接已关闭");
+    } catch (error) {
+      if (controller.signal.aborted || roomStream !== controller) return;
+    } finally {
+      if (roomStream !== controller) return;
+      roomStream = null;
+      roomStreamConnected = false;
+      connectionState = "reconnecting";
+      updateChrome();
+      if (session) {
+        schedulePolling(300);
+        roomStreamReconnectTimer = setTimeout(startRoomStream, 1500);
+      }
+    }
+  })();
+}
+
 async function refresh() {
   if (!session) return;
   if (roomMutationPending) return schedulePolling(100);
@@ -938,17 +1029,7 @@ async function refresh() {
     if (requestEpoch !== roomStateEpoch || roomMutationPending) return;
     networkFailures = 0;
     connectionState = "online";
-    const previousPhase = room?.phase;
-    const previousUpdatedAt = room?.updatedAt;
-    room = value.room;
-    if (room.profile && account) storeAccount({ ...account, profile:room.profile });
-    if (previousPhase !== room.phase) { localPositions = null; localStartingIds = null; localTactic = ownPlayer()?.tactic ?? "balanced"; localStyle = ownPlayer()?.style ?? "possession"; localAttackFocus = ownPlayer()?.attackFocus ?? "balanced"; localDefenseFocus = ownPlayer()?.defenseFocus ?? "balanced"; }
-    const roomChanged = previousPhase !== room.phase || previousUpdatedAt !== room.updatedAt || room.phase === "match";
-    if (!draggingMagnet && !controlInteraction && roomChanged) render();
-    else if (!roomChanged) {
-      const timer = document.querySelector(".phase-timer b");
-      if (timer && room.timer) timer.textContent = clockText(room.timer.remainingMs);
-    }
+    acceptRoomSnapshot(value.room);
   } catch (error) {
     networkFailures += 1;
     connectionState = "reconnecting";
@@ -960,6 +1041,7 @@ async function refresh() {
 }
 
 function pollDelay() {
+  if (roomStreamConnected) return 5000;
   if (document.hidden) return 3000;
   if (room?.phase === "match") return 250;
   if (room?.phase === "lobby") return 750;
@@ -972,10 +1054,11 @@ function schedulePolling(delay = pollDelay()) {
 }
 
 function startPolling() {
+  startRoomStream();
   schedulePolling(200);
 }
 
-leaveButton.onclick = () => { clearTimeout(polling); storeSession(null); room = null; localPositions = null; localStartingIds = null; localTactic = "balanced"; localStyle = "possession"; localAttackFocus = "balanced"; localDefenseFocus = "balanced"; lineupSeedInput = ""; exportedLineupCode = ""; renderLanding(); };
+leaveButton.onclick = () => { clearTimeout(polling); stopRoomStream(); storeSession(null); room = null; localPositions = null; localStartingIds = null; localTactic = "balanced"; localStyle = "possession"; localAttackFocus = "balanced"; localDefenseFocus = "balanced"; lineupSeedInput = ""; exportedLineupCode = ""; renderLanding(); };
 
 app.addEventListener("focusin", (event) => {
   if (!event.target.matches("select, input")) return;
@@ -1009,7 +1092,7 @@ async function bootstrap() {
     const config = await response.json();
     publicHosting = Boolean(config.publicOnly);
   } catch { publicHosting = false; }
-  if (session) refresh(); else renderLanding();
+  if (session) { startRoomStream(); refresh(); } else renderLanding();
 }
 
 bootstrap();

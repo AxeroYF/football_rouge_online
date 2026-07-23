@@ -1,5 +1,6 @@
 import { normalizePlayerSchema } from "../game/public/schema.js";
 import { LEGEND_PROFILES } from "../game/public/legends.js";
+import { applyTopPlayerProfile, TOP_PLAYER_PROFILES } from "./top-player-profiles.js";
 
 export const VERSUS_LINES = Object.freeze({
   GK: Object.freeze({ label: "门将", roles: ["GK"] }),
@@ -530,23 +531,81 @@ C罗|ST|94|right
 };
 
 const ROLE_PROFILES = Object.freeze({
-  GK: { attack: 16, passing: 58, defense: 38, pace: 48, stamina: 62, composure: 78, aggression: 36, goalkeeping: 92 },
-  CB: { attack: 42, passing: 65, defense: 91, pace: 68, stamina: 78, composure: 78, aggression: 75, goalkeeping: 10 },
-  LB: { attack: 62, passing: 75, defense: 78, pace: 86, stamina: 86, composure: 72, aggression: 67, goalkeeping: 10 },
-  RB: { attack: 62, passing: 75, defense: 78, pace: 86, stamina: 86, composure: 72, aggression: 67, goalkeeping: 10 },
-  DM: { attack: 61, passing: 84, defense: 84, pace: 70, stamina: 86, composure: 82, aggression: 72, goalkeeping: 10 },
-  AM: { attack: 82, passing: 91, defense: 48, pace: 76, stamina: 76, composure: 87, aggression: 48, goalkeeping: 10 },
-  LM: { attack: 78, passing: 86, defense: 58, pace: 82, stamina: 83, composure: 79, aggression: 52, goalkeeping: 10 },
-  RM: { attack: 78, passing: 86, defense: 58, pace: 82, stamina: 83, composure: 79, aggression: 52, goalkeeping: 10 },
-  ST: { attack: 93, passing: 72, defense: 30, pace: 83, stamina: 74, composure: 89, aggression: 63, goalkeeping: 8 },
-  LW: { attack: 88, passing: 79, defense: 34, pace: 91, stamina: 77, composure: 83, aggression: 48, goalkeeping: 8 },
-  RW: { attack: 88, passing: 79, defense: 34, pace: 91, stamina: 77, composure: 83, aggression: 48, goalkeeping: 8 },
+  GK: {
+    passing: 58, firstTouch: 55, dribbling: 28, crossing: 18, finishing: 10, longShots: 14, heading: 25, setPieces: 24,
+    tackling: 20, marking: 18, positioning: 86, vision: 55, decisions: 80, composure: 78, offBall: 20, discipline: 76,
+    pace: 48, acceleration: 50, strength: 76, stamina: 62, agility: 70, jumping: 82, workRate: 55, aggression: 36,
+    goalkeeping: 92, reflexes: 92,
+  },
+  CB: {
+    passing: 65, firstTouch: 62, dribbling: 43, crossing: 38, finishing: 34, longShots: 40, heading: 86, setPieces: 42,
+    tackling: 91, marking: 91, positioning: 90, vision: 57, decisions: 82, composure: 78, offBall: 43, discipline: 72,
+    pace: 68, acceleration: 65, strength: 86, stamina: 78, agility: 61, jumping: 86, workRate: 80, aggression: 75,
+    goalkeeping: 10, reflexes: 10,
+  },
+  LB: {
+    passing: 75, firstTouch: 73, dribbling: 72, crossing: 82, finishing: 48, longShots: 58, heading: 58, setPieces: 57,
+    tackling: 78, marking: 77, positioning: 76, vision: 69, decisions: 72, composure: 72, offBall: 73, discipline: 69,
+    pace: 86, acceleration: 85, strength: 69, stamina: 86, agility: 82, jumping: 65, workRate: 86, aggression: 67,
+    goalkeeping: 10, reflexes: 10,
+  },
+  RB: {
+    passing: 75, firstTouch: 73, dribbling: 72, crossing: 82, finishing: 48, longShots: 58, heading: 58, setPieces: 57,
+    tackling: 78, marking: 77, positioning: 76, vision: 69, decisions: 72, composure: 72, offBall: 73, discipline: 69,
+    pace: 86, acceleration: 85, strength: 69, stamina: 86, agility: 82, jumping: 65, workRate: 86, aggression: 67,
+    goalkeeping: 10, reflexes: 10,
+  },
+  DM: {
+    passing: 84, firstTouch: 79, dribbling: 68, crossing: 62, finishing: 51, longShots: 66, heading: 70, setPieces: 64,
+    tackling: 84, marking: 81, positioning: 84, vision: 79, decisions: 82, composure: 82, offBall: 67, discipline: 74,
+    pace: 70, acceleration: 68, strength: 78, stamina: 86, agility: 69, jumping: 72, workRate: 87, aggression: 72,
+    goalkeeping: 10, reflexes: 10,
+  },
+  AM: {
+    passing: 91, firstTouch: 89, dribbling: 85, crossing: 78, finishing: 78, longShots: 80, heading: 52, setPieces: 81,
+    tackling: 48, marking: 43, positioning: 58, vision: 91, decisions: 86, composure: 87, offBall: 84, discipline: 67,
+    pace: 76, acceleration: 79, strength: 61, stamina: 76, agility: 84, jumping: 55, workRate: 73, aggression: 48,
+    goalkeeping: 10, reflexes: 10,
+  },
+  LM: {
+    passing: 86, firstTouch: 84, dribbling: 84, crossing: 88, finishing: 71, longShots: 73, heading: 52, setPieces: 76,
+    tackling: 58, marking: 54, positioning: 62, vision: 82, decisions: 79, composure: 79, offBall: 82, discipline: 68,
+    pace: 82, acceleration: 83, strength: 62, stamina: 83, agility: 84, jumping: 57, workRate: 82, aggression: 52,
+    goalkeeping: 10, reflexes: 10,
+  },
+  RM: {
+    passing: 86, firstTouch: 84, dribbling: 84, crossing: 88, finishing: 71, longShots: 73, heading: 52, setPieces: 76,
+    tackling: 58, marking: 54, positioning: 62, vision: 82, decisions: 79, composure: 79, offBall: 82, discipline: 68,
+    pace: 82, acceleration: 83, strength: 62, stamina: 83, agility: 84, jumping: 57, workRate: 82, aggression: 52,
+    goalkeeping: 10, reflexes: 10,
+  },
+  ST: {
+    passing: 72, firstTouch: 84, dribbling: 81, crossing: 61, finishing: 93, longShots: 82, heading: 78, setPieces: 70,
+    tackling: 30, marking: 28, positioning: 49, vision: 69, decisions: 82, composure: 89, offBall: 91, discipline: 65,
+    pace: 83, acceleration: 84, strength: 78, stamina: 74, agility: 79, jumping: 75, workRate: 72, aggression: 63,
+    goalkeeping: 8, reflexes: 8,
+  },
+  LW: {
+    passing: 79, firstTouch: 87, dribbling: 91, crossing: 82, finishing: 84, longShots: 78, heading: 58, setPieces: 73,
+    tackling: 34, marking: 31, positioning: 48, vision: 79, decisions: 79, composure: 83, offBall: 86, discipline: 67,
+    pace: 91, acceleration: 92, strength: 63, stamina: 77, agility: 91, jumping: 60, workRate: 72, aggression: 48,
+    goalkeeping: 8, reflexes: 8,
+  },
+  RW: {
+    passing: 79, firstTouch: 87, dribbling: 91, crossing: 82, finishing: 84, longShots: 78, heading: 58, setPieces: 73,
+    tackling: 34, marking: 31, positioning: 48, vision: 79, decisions: 79, composure: 83, offBall: 86, discipline: 67,
+    pace: 91, acceleration: 92, strength: 63, stamina: 77, agility: 91, jumping: 60, workRate: 72, aggression: 48,
+    goalkeeping: 8, reflexes: 8,
+  },
 });
 
 function scaleProfile(role, overall) {
   const profile = ROLE_PROFILES[role];
   const delta = overall - 86;
-  return Object.fromEntries(Object.entries(profile).map(([key, value]) => [key, Math.max(1, Math.min(99, Math.round(value + delta * (key === "goalkeeping" && role !== "GK" ? 0.15 : 0.72))))]));
+  return Object.fromEntries(Object.entries(profile).map(([key, value]) => [
+    key,
+    Math.max(1, Math.min(99, Math.round(value + delta * (["goalkeeping", "reflexes"].includes(key) && role !== "GK" ? 0.15 : 0.72)))),
+  ]));
 }
 
 function secondaryRoleFor(role, preferredFoot, index) {
@@ -579,16 +638,18 @@ function databaseHeight(name, role, listedHeight) {
 function parsePlayer(line, pool, index) {
   const [name, role, overallText, preferredFoot, listedNationality, listedClub, listedHeight] = line.split("|");
   const overall = Number(overallText);
-  const attributes = scaleProfile(role, overall);
-  const nationality = listedNationality || (ARGENTINA_PLAYER_NAMES.has(name) ? "阿根廷" : "未登记");
-  const club = listedClub || (VERSUS_LEGEND_NAMES.has(name) ? "传奇球员" : "未登记俱乐部");
+  const individualized = applyTopPlayerProfile(name, overall, scaleProfile(role, overall));
+  const profile = individualized.profile;
+  const attributes = individualized.attributes;
+  const nationality = profile?.nationality || listedNationality || (ARGENTINA_PLAYER_NAMES.has(name) ? "阿根廷" : "未登记");
+  const club = profile?.club || listedClub || (VERSUS_LEGEND_NAMES.has(name) ? "传奇球员" : "未登记俱乐部");
   const player = normalizePlayerSchema({
     id: `real-${pool.toLowerCase()}-${String(index + 1).padStart(3, "0")}`,
     name,
     role,
     secondaryRole: secondaryRoleFor(role, preferredFoot, index),
     preferredFoot,
-    heightCm: databaseHeight(name, role, listedHeight),
+    heightCm: profile?.heightCm ?? databaseHeight(name, role, listedHeight),
     attributes,
     state: { fitness: 100, form: 50, morale: 70 },
     development: { age: 27, potential: overall },
@@ -596,7 +657,18 @@ function parsePlayer(line, pool, index) {
     nationality,
     club,
   }, { index });
-  return Object.freeze({ ...player, nationality, club, pool, overall, grade: versusPlayerGrade(name, overall), traits: [] });
+  return Object.freeze({
+    ...player,
+    nationality,
+    club,
+    pool,
+    overall,
+    grade: versusPlayerGrade(name, overall),
+    signature: profile?.signature ?? null,
+    archetype: profile?.archetype ?? null,
+    individualized: Boolean(profile),
+    traits: [],
+  });
 }
 
 export const REAL_PLAYER_POOLS = Object.freeze(Object.fromEntries(Object.entries(RAW_PLAYERS).map(([pool, text]) => {
@@ -607,3 +679,9 @@ export const REAL_PLAYER_POOLS = Object.freeze(Object.fromEntries(Object.entries
 
 export const REAL_PLAYERS = Object.freeze(Object.values(REAL_PLAYER_POOLS).flat());
 export const REAL_PLAYER_BY_ID = Object.freeze(Object.fromEntries(REAL_PLAYERS.map((player) => [player.id, player])));
+export const INDIVIDUALIZED_PLAYERS = Object.freeze(
+  REAL_PLAYERS.filter((player) => player.individualized).sort((left, right) => right.overall - left.overall || left.id.localeCompare(right.id)),
+);
+if (INDIVIDUALIZED_PLAYERS.length !== Object.keys(TOP_PLAYER_PROFILES).length || INDIVIDUALIZED_PLAYERS.length !== 100) {
+  throw new Error(`top player profiles must resolve to exactly 100 players, received ${INDIVIDUALIZED_PLAYERS.length}`);
+}

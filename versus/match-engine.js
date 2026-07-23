@@ -332,6 +332,26 @@ function event(match, type, teamIndex, text, data = {}) {
   return entry;
 }
 
+function nextChainId(match) {
+  match.sequenceCounter = Number(match.sequenceCounter ?? 0) + 1;
+  return `chain-${match.sequenceCounter}`;
+}
+
+function shotDescription(match, attackType, shooter) {
+  if (attackType === "cross") return chance(match, 0.62) ? "抢点头槌" : "凌空垫射";
+  if (attackType === "longShot") return chance(match, 0.55) ? "大力抽射" : "弧线远射";
+  if (attackType === "counter") return chance(match, 0.48) ? "低射远角" : "单刀推射";
+  if (attackType === "cutback") return chance(match, 0.58) ? "迎球推射" : "不停球抽射";
+  return attribute(match, match.teams[shooter.teamIndex], shooter, "composure") >= 88 ? "冷静搓射" : "快速低射";
+}
+
+function saveDescription(match, goalkeeper, xg) {
+  const reflexes = Number(goalkeeper?.attributes?.reflexes ?? 50);
+  if (xg >= 0.3) return chance(match, 0.5) ? "近距离封堵" : "舒展身体单掌托出";
+  if (reflexes >= 90 && chance(match, 0.55)) return "飞身指尖改变线路";
+  return chance(match, 0.5) ? "稳健侧扑" : "倒地将球挡出";
+}
+
 function playerLabel(player) {
   return `${player.name}（${player.assignedRole}）`;
 }
@@ -498,6 +518,7 @@ function simulatePossession(match) {
   const defendingIndex = attackingIndex === 0 ? 1 : 0;
   const attacking = match.teams[attackingIndex];
   const defending = match.teams[defendingIndex];
+  const chainId = nextChainId(match);
   const attackSnapshot = snapshots[attackingIndex];
   const defenseSnapshot = snapshots[defendingIndex];
   attacking.stats.possession += 1;
@@ -538,6 +559,7 @@ function simulatePossession(match) {
     updateRating(defender, 0.07);
     updateRating(creator, -0.04);
     event(match, "duel", defendingIndex, `${creator.name}试图从${defender.name}身边推进，${defender.name}判断准确并完成拦截。`, {
+      chainId,
       actorId: defender.id, opponentId: creator.id,
       creatorRole: creator.assignedRole, defenderRole: defender.assignedRole, attackLane, duelProbability: Number(duelProbability.toFixed(3)),
       detail: `${duelDetail} ${creator.name}位置熟悉度 ${Math.round(familiarity(creator) * 100)}%、体能 ${Math.round(creator.state.fitness)}；${defender.name}体能 ${Math.round(defender.state.fitness)}。`,
@@ -551,17 +573,30 @@ function simulatePossession(match) {
   const attackType = chooseAttackType(match, { team: attacking, snapshot: attackSnapshot }, { team: defending, snapshot: defenseSnapshot });
   const typeText = { throughBall: "送出穿透防线的直塞", cross: "把球转移到边路准备传中", cutback: "沿肋部推进寻找倒三角", counter: "带队高速反击", longShot: "在禁区外获得起脚空间" }[attackType];
   event(match, attackType === "counter" ? "counter" : "attack", attackingIndex, `${creator.name}摆脱${defender.name}后${typeText}。`, {
+    chainId,
     actorId: creator.id, opponentId: defender.id,
     creatorRole: creator.assignedRole, defenderRole: defender.assignedRole, attackLane, attackType, duelProbability: Number(duelProbability.toFixed(3)),
     detail: `${duelDetail} ${creator.name}赢下对抗后选择“${typeText}”；本方转换风险 ${attackSnapshot.transitionRisk.toFixed(2)}，对方防线强度 ${Math.round(defenseSnapshot.defense)}。`,
   });
   const creationProbability = clamp(0.52 + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 105
     + (attackSnapshot.tactic.attack - 1) * 0.32 + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.08, 0.16, 0.9);
-  if (!chance(match, creationProbability)) return;
-  takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, creator, attackType, attackLane);
+  if (!chance(match, creationProbability)) {
+    const coveringDefender = choose(match, activePlayers(defending).filter((player) => player.id !== defender.id), (player) =>
+      playerMetric(match, defending, player, { positioning: 0.35, marking: 0.25, pace: 0.2, decisions: 0.2 }));
+    if (coveringDefender) {
+      coveringDefender.matchStats.duelsWon += 1;
+      updateRating(coveringDefender, 0.04);
+      event(match, "cover", defendingIndex, `${coveringDefender.name}及时补位，封住了${creator.name}准备送出的最后一传。`, {
+        chainId, actorId: coveringDefender.id, opponentId: creator.id, attackType, attackLane,
+        detail: `第一道防线被突破后，${coveringDefender.name}依靠站位和决策完成第二次防守对抗，进攻没有形成射门。`,
+      });
+    }
+    return;
+  }
+  takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, creator, attackType, attackLane, chainId);
 }
 
-function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, creator, attackType, attackLane) {
+function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, creator, attackType, attackLane, chainId) {
   const attackLabel = { throughBall: "中路直塞", cross: "边路传中", cutback: "肋部倒三角", counter: "快速反击", longShot: "禁区外远射" }[attackType] ?? "阵地进攻";
   const laneLabel = { left: "左路", center: "中路", right: "右路" }[attackLane] ?? "中路";
   const candidates = activePlayers(attacking).filter((player) => roleGroup(player.assignedRole) !== "GK");
@@ -571,6 +606,7 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
       ? { heading: 0.36, jumping: 0.2, strength: 0.14, offBall: 0.18, composure: 0.12 }
       : { finishing: 0.36, offBall: 0.2, pace: 0.14, composure: 0.18, dribbling: 0.12 });
   });
+  shooter.teamIndex = attacking.index;
   const goalkeeper = activePlayers(defending).find((player) => roleGroup(player.assignedRole) === "GK") ?? activePlayers(defending)[0];
   const marker = choose(match, activePlayers(defending).filter((player) => player.id !== goalkeeper.id), (player) => playerMetric(match, defending, player, { positioning: 0.3, marking: 0.25, pace: 0.2, strength: 0.15, jumping: 0.1 }));
   const finishing = playerMetric(match, attacking, shooter, attackType === "cross"
@@ -592,6 +628,7 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
   attacking.stats.xg += xg;
   shooter.matchStats.shots += 1;
   const onTarget = chance(match, clamp(0.31 + finishing / 210, 0.32, 0.72));
+  const technique = shotDescription(match, attackType, shooter);
   if (onTarget) {
     attacking.stats.shotsOnTarget += 1;
     shooter.matchStats.shotsOnTarget += 1;
@@ -608,6 +645,7 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
     if (goalkeeper) updateRating(goalkeeper, -0.22);
     const finishText = attackType === "cross" ? `力压${marker?.name ?? "防守球员"}头球攻门` : attackType === "longShot" ? "禁区外果断起脚" : `摆脱${marker?.name ?? "盯防者"}后冷静施射`;
     event(match, "goal", attacking.index, `${attacking.name}从${laneLabel}发动${attackLabel}，${shooter.name}${finishText}得分！${assister ? ` ${assister.name}送出助攻。` : ""}`, {
+      chainId, technique,
       actorId: shooter.id, opponentId: marker?.id ?? goalkeeper?.id, assistId: assister?.id ?? null,
       creatorId: creator.id, shooterRole: shooter.assignedRole, attackLane,
       score: [match.teams[0].score, match.teams[1].score], xg: Number(xg.toFixed(2)), attackType, importance: "major",
@@ -619,19 +657,81 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
   if (onTarget) {
     if (goalkeeper) { goalkeeper.matchStats.saves += 1; updateRating(goalkeeper, 0.13 + xg * 0.25); }
     updateRating(shooter, xg > 0.25 ? -0.12 : -0.03);
-    event(match, "save", defending.index, `${attacking.name}以${attackLabel}制造射门，${shooter.name}的攻门被${goalkeeper?.name ?? "防守球员"}化解。`, {
+    const saveStyle = saveDescription(match, goalkeeper, xg);
+    const looseBall = Boolean(goalkeeper && chance(match, clamp(0.12 + xg * 0.35 - keeperValue / 900, 0.08, 0.28)));
+    event(match, "save", defending.index, `${shooter.name}以${technique}完成攻门，${goalkeeper?.name ?? "防守球员"}${saveStyle}${looseBall ? "，但皮球脱手留在禁区内" : "并控制住皮球"}。`, {
+      chainId, technique, saveStyle, looseBall,
       actorId: goalkeeper?.id, opponentId: shooter.id, creatorId: creator.id, shooterRole: shooter.assignedRole,
       xg: Number(xg.toFixed(2)), attackType, attackLane,
       detail: `${laneLabel}推进；机会质量 xG ${xg.toFixed(2)}。${shooter.name}终结 ${Math.round(finishing + heightEdge)} / ${goalkeeper?.name ?? "防线"}扑救 ${Math.round(keeperValue)}。`,
       ratings: { ...(goalkeeper ? { [goalkeeper.id]: goalkeeper.rating } : {}), [shooter.id]: shooter.rating },
     });
-    if (chance(match, 0.22)) {
+    if (looseBall) {
+      const rebounder = choose(match, candidates.filter((player) => player.id !== shooter.id), (player) =>
+        ({ ATT: 3.6, MID: 1.2, DEF: 0.25 }[roleGroup(player.assignedRole)] ?? 0.2)
+        * playerMetric(match, attacking, player, { offBall: 0.35, acceleration: 0.2, finishing: 0.25, composure: 0.2 }));
+      const clearer = choose(match, activePlayers(defending).filter((player) => player.id !== goalkeeper?.id), (player) =>
+        playerMetric(match, defending, player, { positioning: 0.35, decisions: 0.25, strength: 0.2, aggression: 0.2 }));
+      const reboundAttack = rebounder ? playerMetric(match, attacking, rebounder, { finishing: 0.4, offBall: 0.3, composure: 0.3 }) : 0;
+      const clearance = clearer ? playerMetric(match, defending, clearer, { positioning: 0.4, decisions: 0.3, strength: 0.3 }) : 30;
+      if (rebounder && chance(match, clamp(0.5 + (reboundAttack - clearance) / 130, 0.22, 0.78))) {
+        const reboundXg = clamp(xg * 0.62 + 0.08, 0.08, 0.38);
+        attacking.stats.shots += 1;
+        attacking.stats.xg += reboundXg;
+        rebounder.matchStats.shots += 1;
+        const reboundOnTarget = chance(match, clamp(0.4 + reboundAttack / 220, 0.42, 0.78));
+        if (reboundOnTarget) {
+          attacking.stats.shotsOnTarget += 1;
+          rebounder.matchStats.shotsOnTarget += 1;
+        }
+        const reboundGoal = reboundOnTarget && chance(match, clamp(reboundXg * (1.05 + reboundAttack / 135) * (1.4 - keeperValue / 210), 0.04, 0.62));
+        if (reboundGoal) {
+          attacking.score += 1;
+          match.lastGoalMinute = match.minute;
+          match.lastGoalTeamIndex = attacking.index;
+          rebounder.matchStats.goals += 1;
+          updateRating(rebounder, 0.82);
+          if (goalkeeper) updateRating(goalkeeper, -0.16);
+          event(match, "goal", attacking.index, `${goalkeeper?.name ?? "门将"}扑出第一点后，${rebounder.name}抢在${clearer?.name ?? "防线"}之前补射得分！`, {
+            chainId, actorId: rebounder.id, opponentId: goalkeeper?.id, creatorId: creator.id,
+            shooterRole: rebounder.assignedRole, score: [match.teams[0].score, match.teams[1].score],
+            xg: Number(reboundXg.toFixed(2)), attackType: "rebound", importance: "major",
+            detail: `连续事件：首次扑救脱手 → ${rebounder.name}赢下二点球 → 近距离补射。`,
+          });
+          return;
+        }
+        event(match, reboundOnTarget ? "save" : "miss", reboundOnTarget ? defending.index : attacking.index,
+          `${rebounder.name}跟进补射，${reboundOnTarget ? `${goalkeeper?.name ?? "门将"}完成连续第二次扑救` : "仓促起脚将球打偏"}。`, {
+            chainId, actorId: reboundOnTarget ? goalkeeper?.id : rebounder.id, opponentId: rebounder.id,
+            xg: Number(reboundXg.toFixed(2)), attackType: "rebound",
+            detail: `连续事件：首次扑救脱手 → 二点球争夺 → 补射${reboundOnTarget ? "再次被扑" : "偏出"}。`,
+          });
+        return;
+      }
+      if (clearer) {
+        clearer.matchStats.duelsWon += 1;
+        updateRating(clearer, 0.05);
+        event(match, "clearance", defending.index, `${clearer.name}抢先卡住落点，将${goalkeeper?.name ?? "门将"}扑出的第二点解围。`, {
+          chainId, actorId: clearer.id, opponentId: rebounder?.id, attackType: "rebound",
+          detail: "连续事件：扑救脱手 → 禁区二点对抗 → 防守方完成解围。",
+        });
+      }
+    } else if (chance(match, 0.22)) {
       attacking.stats.corners += 1;
-      event(match, "corner", attacking.index, `${goalkeeper?.name ?? "防守球员"}把球挡出底线，${attacking.name}获得角球。`, { actorId: goalkeeper?.id, importance: "normal" });
+      event(match, "corner", attacking.index, `${goalkeeper?.name ?? "防守球员"}把球挡出底线，${attacking.name}获得角球。`, { chainId, actorId: goalkeeper?.id, importance: "normal" });
     }
   } else {
     updateRating(shooter, -0.05 - xg * 0.2);
-    event(match, "miss", attacking.index, `${attacking.name}从${laneLabel}完成${attackLabel}，${shooter.name}在${marker?.name ?? "防守球员"}干扰下将球射偏。`, {
+    const blocked = Boolean(marker && chance(match, clamp(0.16 + markerDefense / 420, 0.18, 0.38)));
+    if (blocked) {
+      marker.matchStats.duelsWon += 1;
+      marker.matchStats.tackles += 1;
+      updateRating(marker, 0.07);
+    }
+    event(match, blocked ? "block" : "miss", blocked ? defending.index : attacking.index, blocked
+      ? `${shooter.name}的${technique}刚刚离脚，${marker.name}倒地封堵改变了皮球线路。`
+      : `${attacking.name}从${laneLabel}完成${attackLabel}，${shooter.name}以${technique}攻门偏出。`, {
+      chainId, technique,
       actorId: shooter.id, opponentId: marker?.id, creatorId: creator.id, shooterRole: shooter.assignedRole,
       xg: Number(xg.toFixed(2)), attackType, attackLane,
       detail: `机会质量 xG ${xg.toFixed(2)}。${shooter.name}终结 ${Math.round(finishing + heightEdge)} / ${marker?.name ?? "防线"}限制 ${Math.round(markerDefense)}。`,

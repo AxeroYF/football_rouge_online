@@ -188,6 +188,9 @@ function publicPlayer(player) {
     overall: player.overall,
     grade: player.grade,
     attributes: player.attributes,
+    signature: player.signature,
+    archetype: player.archetype,
+    individualized: player.individualized,
   };
 }
 
@@ -277,6 +280,8 @@ export class VersusRoomService {
     const matches = account.matches.filter((match) => match.result !== "leg").slice(0, 20).map(({ detail, viewerIndex, ...match }) => ({
       ...match,
       hasDetails: Boolean(detail),
+      ownFormation: detail?.teams?.[viewerIndex]?.formation ?? null,
+      opponentFormation: detail?.teams?.[viewerIndex === 0 ? 1 : 0]?.formation ?? null,
     }));
     return clone({ id: account.id, nickname: account.nickname, summary: normalizeSummary(account.summary), matches });
   }

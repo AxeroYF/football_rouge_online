@@ -12,4 +12,6 @@
 - `artifacts/11人制对战-综合平衡报告-v4.md`、`数据-v4.json`：历史基线，保留用于回溯。
 - `football-versus-handoff-20260723.zip`：本清单全部内容的压缩包。
 
+2026-07-23第二批代码新增 `versus/top-player-profiles.js`，并修改比赛事件链、SSE联机、历史战绩和admin阵型展示。交接包中的源码仍以 `D:\Project\game_test` 工作区为准。
+
 交接包不包含源码；源码位置为 `D:\Project\game_test`。
