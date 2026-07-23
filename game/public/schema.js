@@ -7,7 +7,7 @@ export const SEVEN_A_SIDE = Object.freeze({
 
 export const POSITION_GROUPS = Object.freeze({
   GK: Object.freeze(["GK"]),
-  DEF: Object.freeze(["CB", "LB", "RB"]),
+  DEF: Object.freeze(["CB", "LB", "RB", "LWB", "RWB"]),
   MID: Object.freeze(["DM", "AM", "LM", "RM"]),
   ATT: Object.freeze(["ST", "LW", "RW"]),
 });
@@ -16,7 +16,7 @@ export const POSITION_ORDER = Object.freeze(["GK", "CB", "LB", "RB", "DM", "AM",
 
 export const ROLE_LABELS = Object.freeze({
   GK: "门将", DEF: "后卫", MID: "中场", ATT: "前锋",
-  CB: "中后卫", LB: "左边后卫", RB: "右边后卫",
+  CB: "中后卫", LB: "左边后卫", RB: "右边后卫", LWB: "左边翼卫", RWB: "右边翼卫",
   DM: "后腰", AM: "前腰", LM: "左中场", RM: "右中场",
   ST: "中锋", LW: "左边锋", RW: "右边锋",
 });
@@ -109,6 +109,8 @@ export function inferBoardRoles(entries = []) {
 }
 
 export function normalizePosition(role, preferredFoot = "right", salt = 0) {
+  if (role === "LWB") return "LB";
+  if (role === "RWB") return "RB";
   if (POSITION_ORDER.includes(role)) return role;
   if (role === "WB") return preferredFoot === "left" ? "LM" : "RM";
   if (role === "WM") return preferredFoot === "left" ? "LM" : "RM";
@@ -133,8 +135,8 @@ export function positionFitScore(player, assignedRole) {
         : assignedGroup === "GK"
           ? Math.max(0.35, Number(player?.hidden?.emergencyGoalkeeper ?? 35) / 100)
           : 0.66;
-  const leftSide = ["LB", "LM", "LW"].includes(assigned);
-  const rightSide = ["RB", "RM", "RW"].includes(assigned);
+  const leftSide = ["LB", "LWB", "LM", "LW"].includes(assignedRole) || ["LB", "LM", "LW"].includes(assigned);
+  const rightSide = ["RB", "RWB", "RM", "RW"].includes(assignedRole) || ["RB", "RM", "RW"].includes(assigned);
   if (leftSide || rightSide) {
     if (player?.preferredFoot === "both") fit *= 1.03;
     else if ((leftSide && player?.preferredFoot === "left") || (rightSide && player?.preferredFoot === "right")) fit *= 1.02;

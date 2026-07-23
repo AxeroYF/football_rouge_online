@@ -4,13 +4,19 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadDatabase, resetDatabase, saveDatabase } from "./store.js";
 import { runSimulation } from "./simulation.js";
+import { handleVersusApi } from "../versus/api.js";
+import { handleAdminApi } from "../versus/admin-api.js";
+import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.join(here, "public");
 const gameDirectory = path.resolve(here, "../game/public");
 const sourceDirectory = path.resolve(here, "../src");
+const versusDirectory = path.resolve(here, "../versus/public");
+const adminDirectory = path.resolve(here, "../admin/public");
 const port = Number(process.env.DEVTOOL_PORT ?? 4310);
-const host = "127.0.0.1";
+const host = process.env.VERSUS_HOST ?? "127.0.0.1";
+const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
 const maximumBodyBytes = 8 * 1024 * 1024;
 
 const mimeTypes = {
@@ -47,6 +53,25 @@ async function readJson(request) {
 }
 
 async function handleApi(request, response, pathname) {
+  if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson);
+  if (request.method === "GET" && pathname === "/api/versus/config") {
+    return sendJson(response, 200, { ok: true, publicOnly });
+  }
+  if (publicOnly) {
+    if (request.method === "GET" && pathname === "/api/health") {
+      return sendJson(response, 200, { ok: true, publicOnly: true });
+    }
+    if (pathname === "/api/versus/dev-room" || !pathname.startsWith("/api/versus/")) {
+      return sendJson(response, 404, { ok: false, error: "API not found" });
+    }
+    return handleVersusApi(request, response, pathname, readJson, sendJson);
+  }
+  if (request.method === "GET" && pathname === "/api/versus-traits") {
+    return sendJson(response, 200, { ok: true, traits: VERSUS_TRAIT_CARDS });
+  }
+  if (pathname.startsWith("/api/versus/")) {
+    return handleVersusApi(request, response, pathname, readJson, sendJson);
+  }
   if (request.method === "GET" && pathname === "/api/health") {
     return sendJson(response, 200, { ok: true, localOnly: true });
   }
@@ -71,15 +96,24 @@ async function handleApi(request, response, pathname) {
 }
 
 async function serveStatic(response, pathname) {
+  if (publicOnly && pathname === "/") {
+    response.writeHead(302, { location: "/versus/", "cache-control": "no-store" });
+    return response.end();
+  }
   const servesGame = pathname === "/game" || pathname.startsWith("/game/");
+  const servesVersus = pathname === "/versus" || pathname.startsWith("/versus/");
+  const servesAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const servesSource = pathname.startsWith("/src/");
-  const directory = servesSource ? sourceDirectory : servesGame ? gameDirectory : publicDirectory;
+  if (publicOnly && !servesVersus && !servesAdmin) return sendJson(response, 404, { ok: false, error: "not found" });
+  const directory = servesSource ? sourceDirectory : servesAdmin ? adminDirectory : servesVersus ? versusDirectory : servesGame ? gameDirectory : publicDirectory;
   const gamePath = pathname === "/game"
     ? "/"
     : pathname.startsWith("/game/public/")
       ? pathname.slice("/game/public".length)
       : pathname.slice(5);
-  const requestedPath = servesSource ? pathname.slice(4) : servesGame ? gamePath : pathname;
+  const versusPath = pathname.slice("/versus".length) || "/";
+  const adminPath = pathname.slice("/admin".length) || "/";
+  const requestedPath = servesSource ? pathname.slice(4) : servesAdmin ? adminPath : servesVersus ? versusPath : servesGame ? gamePath : pathname;
   const requested = requestedPath === "/" ? "/index.html" : requestedPath;
   const safeRelative = path.normalize(requested).replace(/^(\.\.[/\\])+/, "");
   const filePath = path.resolve(directory, "." + path.sep + safeRelative);
@@ -103,7 +137,7 @@ async function serveStatic(response, pathname) {
 }
 
 const server = http.createServer(async (request, response) => {
-  if (!isLoopback(request.socket.remoteAddress)) {
+  if (host === "127.0.0.1" && !isLoopback(request.socket.remoteAddress)) {
     return sendJson(response, 403, { ok: false, error: "local access only" });
   }
   const url = new URL(request.url, "http://localhost");
@@ -125,5 +159,8 @@ const server = http.createServer(async (request, response) => {
 server.listen(port, host, () => {
   console.log("本地足球项目已启动：http://" + host + ":" + port);
   console.log("游戏 Demo：http://" + host + ":" + port + "/game/");
-  console.log("仅允许本机访问，按 Ctrl+C 停止。");
+  console.log("好友对战：http://" + host + ":" + port + "/versus/");
+  console.log("管理员后台：http://" + host + ":" + port + "/admin/");
+  if (publicOnly) console.log("公网试玩安全模式：开放好友对战及需要密码认证的管理员后台。");
+  else console.log(host === "127.0.0.1" ? "仅允许本机访问，按 Ctrl+C 停止。" : "已开放网络访问，请仅在可信局域网中使用。");
 });

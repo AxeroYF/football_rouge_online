@@ -216,6 +216,16 @@ textarea:focus-visible {
   font-size: 11px;
 }
 
+.trait-workspace-tab.versus-tab.active { color: #10140e; border-color: var(--lime); background: var(--lime); }
+.mode-list-badge { display:block; margin-bottom:3px; color:var(--lime); font-size:9px; white-space:nowrap; }
+.versus-source-banner { margin-bottom:18px; padding:12px 14px; display:flex; justify-content:space-between; gap:14px; border:1px solid rgba(201,246,91,.32); border-radius:8px; background:var(--lime-soft); }
+.versus-source-banner b { color:var(--lime); }.versus-source-banner span { color:var(--muted); font-size:12px; }
+.card-preview .mode-chip { position:absolute; right:14px; top:14px; padding:4px 7px; border:1px solid rgba(201,246,91,.4); border-radius:4px; color:var(--lime); background:#101411; font-size:9px; font-weight:800; }
+.readonly-value,.readonly-copy,.readonly-code { border:1px solid var(--line); border-radius:8px; background:var(--panel-soft); }
+.readonly-value { min-height:48px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; }.readonly-value small { color:var(--muted); }
+.readonly-copy { padding:14px; color:var(--text); line-height:1.65; }
+.readonly-code { margin:0; padding:14px; max-height:330px; overflow:auto; color:#bde9df; font:12px/1.6 "Cascadia Code",Consolas,monospace; white-space:pre-wrap; }
+
 .danger-text:hover {
   color: var(--red);
 }

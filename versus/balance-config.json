@@ -1,0 +1,72 @@
+{
+  "outputVersion": "v9-detailed",
+  "seed": "versus-balance-v9-detailed",
+  "targets": {
+    "averageTotalGoals": {
+      "minimum": 2.8,
+      "ideal": 3.0,
+      "maximum": 3.2
+    },
+    "regulationDrawRatePercent": {
+      "minimum": 24,
+      "ideal": 28,
+      "maximum": 32
+    },
+    "formationWinRatePercent": {
+      "minimum": 44,
+      "maximum": 56
+    },
+    "firstGoalMinute": {
+      "minimum": 20,
+      "ideal": 30,
+      "maximum": 40
+    },
+    "scorelessMatchRatePercent": {
+      "minimum": 4,
+      "ideal": 8,
+      "maximum": 14
+    }
+  },
+  "analysisDimensions": {
+    "seededLineups": ["fullPlayerPool", "formationRoleSlots", "threeCandidateSelection", "primaryAndSecondaryPositionFit"],
+    "goalTiming": ["exactMinute", "15MinuteBuckets", "firstGoalMinute", "extraTimeGoals"],
+    "goalIntervals": ["betweenAnyGoals", "betweenSameTeamGoals"],
+    "scorers": ["assignedRole", "roleGroup", "assistRole", "attackType", "goalXg"],
+    "matchContext": ["formation", "tactic", "style", "attackFocus", "defenseFocus", "weather", "referee"],
+    "rawMatchFields": ["score", "regulationScore", "penalties", "teamStrategies", "teamPhysicalProfile", "teamStats", "goalSequence"]
+  },
+  "quick": {
+    "lineupMode": "legacyGrouped",
+    "draftChoiceCount": 3,
+    "randomMatches": 1000,
+    "formationMatches": 100,
+    "tacticMatches": 40,
+    "styleMatches": 40,
+    "focusMatches": 50,
+    "weatherStyleMatches": 35,
+    "refereeStyleMatches": 35,
+    "positionMatches": 100,
+    "abilityMatches": 150,
+    "styleFitMatches": 40,
+    "physicalMatches": 100,
+    "goalEventMatches": 1000,
+    "rawMatchSampleLimit": 100
+  },
+  "full": {
+    "lineupMode": "legacyGrouped",
+    "draftChoiceCount": 3,
+    "randomMatches": 20000,
+    "formationMatches": 1000,
+    "tacticMatches": 250,
+    "styleMatches": 300,
+    "focusMatches": 300,
+    "weatherStyleMatches": 250,
+    "refereeStyleMatches": 250,
+    "positionMatches": 1000,
+    "abilityMatches": 1200,
+    "styleFitMatches": 250,
+    "physicalMatches": 800,
+    "goalEventMatches": 25000,
+    "rawMatchSampleLimit": 2000
+  }
+}

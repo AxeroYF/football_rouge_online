@@ -147,6 +147,8 @@ const app = {
   traitWorkspace: "formal",
   selectedTraitId: null,
   selectedTraitDraftId: null,
+  selectedVersusTraitId: null,
+  versusTraits: [],
   selectedBondId: null,
   selectedPlayerId: null,
   traitRuleDrafts: new Map(),
@@ -343,6 +345,7 @@ function draftCompletion(draft) {
 
 function renderTraitWorkspaceControls() {
   const development = app.traitWorkspace === "development";
+  const versus11 = app.traitWorkspace === "versus11";
   document.querySelectorAll("[data-trait-workspace]").forEach((button) => {
     const active = button.dataset.traitWorkspace === app.traitWorkspace;
     button.classList.toggle("active", active);
@@ -350,21 +353,37 @@ function renderTraitWorkspaceControls() {
   });
   document.querySelector("#formal-trait-count").textContent = app.state.traitCards.length;
   document.querySelector("#draft-trait-count").textContent = app.state.traitDrafts.length;
+  document.querySelector("#versus-trait-count").textContent = app.versusTraits.length;
   document.querySelector("#trait-rarity-filter").hidden = development;
   document.querySelector("#trait-role-filter").hidden = development;
   document.querySelector("#trait-status-filter").hidden = !development;
   document.querySelector("#trait-search").placeholder = development
     ? "搜索草稿名称、想法或备注"
-    : "搜索名称、标签或说明";
+    : versus11 ? "搜索11人制卡牌、位置或标签" : "搜索名称、标签或说明";
   document.querySelector("#add-trait-button").textContent = development ? "＋ 新建开发卡" : "＋ 新建特性";
+  document.querySelector("#add-trait-button").hidden = versus11;
+  document.querySelector("#trait-workspace-note").innerHTML = versus11
+    ? "<span></span>11人制卡池独立维护，不会进入7人制抽取、装备和比赛模拟"
+    : "<span></span>开发中草稿与正式卡池隔离，不参与抽取、装备和比赛模拟";
   if (app.activeView === "traits") {
     document.querySelector("#view-description").textContent = development
       ? "记录尚未定稿的卡牌想法；允许缺少标签、位置和程序规则。"
-      : VIEW_META.traits.description;
+      : versus11 ? "查看11人制对战专用卡池，并区分适配卡与11人制新增卡。" : VIEW_META.traits.description;
   }
 }
 
 function renderTraitSummary() {
+  if (app.traitWorkspace === "versus11") {
+    const added = app.versusTraits.filter((trait) => trait.source === "versus11-new").length;
+    const adapted = app.versusTraits.filter((trait) => trait.source === "adapted-seven-a-side").length;
+    const roleCoverage = new Set(app.versusTraits.flatMap((trait) => trait.eligibleRoleGroups ?? [])).size;
+    document.querySelector("#trait-summary").innerHTML =
+      summaryCell("11人制卡池", app.versusTraits.length) +
+      summaryCell("11人制新增", added) +
+      summaryCell("7人制适配", adapted) +
+      summaryCell("位置覆盖", roleCoverage + " 类");
+    return;
+  }
   if (app.traitWorkspace === "development") {
     const drafts = app.state.traitDrafts;
     const ready = drafts.filter((draft) => draft.status === "ready" || draft.status === "testing").length;
@@ -416,7 +435,8 @@ function traitMatchesFilter(trait) {
 function renderTraitList() {
   const list = document.querySelector("#trait-list");
   const development = app.traitWorkspace === "development";
-  const traits = (development ? app.state.traitDrafts : app.state.traitCards).filter(traitMatchesFilter);
+  const versus11 = app.traitWorkspace === "versus11";
+  const traits = (development ? app.state.traitDrafts : versus11 ? app.versusTraits : app.state.traitCards).filter(traitMatchesFilter);
   if (traits.length === 0) {
     list.innerHTML = development
       ? '<div class="empty-state draft-empty"><span>DEV</span><h2>还没有开发中草稿</h2><p>新建一张开发卡，先写名字或一句想法也可以。</p></div>'
@@ -437,15 +457,16 @@ function renderTraitList() {
     }
     const roles = (trait.eligibleRoleGroups ?? []).map((role) => ROLE_GROUP_LABELS[role] ?? role).join(" · ");
     return (
-      '<button class="list-item ' + (trait.id === app.selectedTraitId ? "active" : "") + '" data-trait-item-id="' + escapeHtml(trait.id) + '">' +
+      '<button class="list-item ' + (trait.id === (versus11 ? app.selectedVersusTraitId : app.selectedTraitId) ? "active" : "") + '" data-trait-item-id="' + escapeHtml(trait.id) + '">' +
       '<span class="rarity-line ' + escapeHtml(trait.rarity) + '"></span>' +
       '<span class="list-copy"><strong>' + escapeHtml(trait.name) + "</strong><small>" + escapeHtml(roles + " · " + trait.category) + "</small></span>" +
-      '<span class="list-meta">' + escapeHtml(RARITY_LABELS[trait.rarity] ?? trait.rarity) + "</span></button>"
+      '<span class="list-meta">' + (versus11 ? '<b class="mode-list-badge">' + escapeHtml(trait.developerLabel) + '</b>' : '') + escapeHtml(RARITY_LABELS[trait.rarity] ?? trait.rarity) + "</span></button>"
     );
   }).join("");
   list.querySelectorAll("[data-trait-item-id]").forEach((button) => {
     button.addEventListener("click", () => {
       if (development) app.selectedTraitDraftId = button.dataset.traitItemId;
+      else if (versus11) app.selectedVersusTraitId = button.dataset.traitItemId;
       else app.selectedTraitId = button.dataset.traitItemId;
       renderTraitList();
       renderTraitEditor();
@@ -638,6 +659,7 @@ function renderTraitDraftEditor() {
 
 function renderTraitEditor() {
   if (app.traitWorkspace === "development") return renderTraitDraftEditor();
+  if (app.traitWorkspace === "versus11") return renderVersusTraitEditor();
   const editor = document.querySelector("#trait-editor");
   const trait = app.state.traitCards.find((candidate) => candidate.id === app.selectedTraitId);
   if (!trait) {
@@ -743,6 +765,29 @@ function renderTraitEditor() {
   document.querySelector("#delete-trait-button").addEventListener("click", () => deleteTrait(trait));
 }
 
+function renderVersusTraitEditor() {
+  const editor = document.querySelector("#trait-editor");
+  const trait = app.versusTraits.find((candidate) => candidate.id === app.selectedVersusTraitId);
+  if (!trait) {
+    editor.innerHTML = '<div class="empty-state"><h2>选择一张11人制特性卡</h2><p>这里展示对战模式实际使用的独立卡池。</p></div>';
+    return;
+  }
+  const roles = (trait.eligibleRoleGroups ?? []).map((role) => ROLE_GROUP_LABELS[role] ?? role).join(" · ");
+  const sourceLabel = trait.source === "versus11-new" ? "11人制新增" : "7人制适配";
+  editor.innerHTML = `<div class="versus-source-banner"><b>${escapeHtml(sourceLabel)}</b><span>仅进入11人制好友对战卡池</span></div>
+    <div class="editor-head">
+      <div class="card-preview ${escapeHtml(trait.rarity)}"><span class="rarity-chip ${escapeHtml(trait.rarity)}">${escapeHtml(RARITY_LABELS[trait.rarity])}</span><span class="mode-chip">${escapeHtml(trait.developerLabel)}</span><h3>${escapeHtml(trait.name)}</h3><p>${escapeHtml(trait.summary)}</p></div>
+      <div class="editor-title"><p class="panel-label">11V11 TRAIT / ${escapeHtml(trait.id)}</p><h2>${escapeHtml(trait.name)}</h2><p>${escapeHtml(roles)} · ${escapeHtml(trait.category)} · ${escapeHtml((trait.tags ?? []).join(" / "))}</p></div>
+    </div>
+    <div class="form-grid versus-readonly-grid">
+      <div class="field"><span class="field-label">来源标记</span><div class="readonly-value"><b>${escapeHtml(sourceLabel)}</b><small>${escapeHtml(trait.introducedIn ?? "versus11-adaptation")}</small></div></div>
+      <div class="field"><span class="field-label">等级与掉落权重</span><div class="readonly-value"><b>${escapeHtml(RARITY_LABELS[trait.rarity])}</b><small>权重 ${escapeHtml(trait.dropWeight)}</small></div></div>
+      <div class="field span-2"><span class="field-label">适用位置</span><div class="checkbox-row">${(trait.eligibleRoleGroups ?? []).map((role) => `<span class="membership-pill">${escapeHtml(ROLE_GROUP_LABELS[role] ?? role)}</span>`).join("")}</div></div>
+      <div class="field span-2"><span class="field-label">玩家可见效果</span><div class="readonly-copy">${escapeHtml(trait.summary)}</div></div>
+      <div class="field span-2"><span class="field-label">实际效果规则</span><pre class="readonly-code">${escapeHtml(JSON.stringify(trait.rules ?? [], null, 2))}</pre></div>
+    </div>`;
+}
+
 function changeTraitId(trait, input) {
   const nextId = input.value.trim();
   if (!/^[a-z0-9][a-z0-9-]*$/.test(nextId)) {
@@ -778,11 +823,12 @@ function changeTraitId(trait, input) {
 }
 
 function switchTraitWorkspace(workspace) {
-  if (!Object.hasOwn({ formal: true, development: true }, workspace)) return;
+  if (!Object.hasOwn({ formal: true, development: true, versus11: true }, workspace)) return;
   app.traitWorkspace = workspace;
   if (workspace === "development" && !app.selectedTraitDraftId) {
     app.selectedTraitDraftId = app.state.traitDrafts[0]?.id ?? null;
   }
+  if (workspace === "versus11" && !app.selectedVersusTraitId) app.selectedVersusTraitId = app.versusTraits[0]?.id ?? null;
   renderTraits();
 }
 
@@ -847,6 +893,7 @@ function deleteTraitDraft(draft) {
 
 function addTrait() {
   if (app.traitWorkspace === "development") return addTraitDraft();
+  if (app.traitWorkspace === "versus11") return;
   const ids = new Set([...app.state.traitCards, ...app.state.traitDrafts].map((trait) => trait.id));
   const id = uniqueId("trait", ids);
   const trait = {
@@ -2070,10 +2117,12 @@ function bindStaticEvents() {
 async function start() {
   bindStaticEvents();
   try {
-    const payload = await api("/api/state");
+    const [payload, versusPayload] = await Promise.all([api("/api/state"), api("/api/versus-traits")]);
     app.state = prepareClientState(payload.state);
+    app.versusTraits = versusPayload.traits ?? [];
     app.selectedTraitId = app.state.traitCards[0]?.id ?? null;
     app.selectedTraitDraftId = app.state.traitDrafts[0]?.id ?? null;
+    app.selectedVersusTraitId = app.versusTraits[0]?.id ?? null;
     app.selectedPlayerId = app.state.players[0]?.id ?? null;
     initializeSimulationConfig();
     renderAll();

@@ -56,3 +56,11 @@ temp/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# ==============================
+# Local runtime data / generated QA artifacts
+# ==============================
+data/versus-accounts.json
+outputs/
+handoff/artifacts/
+handoff/*.zip

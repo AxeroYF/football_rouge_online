@@ -1,0 +1,46 @@
+{
+  "outputVersion": "v8-fast",
+  "seed": "versus-balance-v8-fast",
+  "targets": {
+    "averageTotalGoals": {
+      "minimum": 2.8,
+      "ideal": 3.0,
+      "maximum": 3.2
+    },
+    "regulationDrawRatePercent": {
+      "minimum": 24,
+      "ideal": 28,
+      "maximum": 32
+    },
+    "formationWinRatePercent": {
+      "minimum": 44,
+      "maximum": 56
+    }
+  },
+  "quick": {
+    "randomMatches": 400,
+    "formationMatches": 40,
+    "tacticMatches": 16,
+    "styleMatches": 16,
+    "focusMatches": 20,
+    "weatherStyleMatches": 14,
+    "refereeStyleMatches": 14,
+    "positionMatches": 40,
+    "abilityMatches": 50,
+    "styleFitMatches": 16,
+    "physicalMatches": 40
+  },
+  "full": {
+    "randomMatches": 2000,
+    "formationMatches": 180,
+    "tacticMatches": 50,
+    "styleMatches": 50,
+    "focusMatches": 60,
+    "weatherStyleMatches": 45,
+    "refereeStyleMatches": 45,
+    "positionMatches": 180,
+    "abilityMatches": 240,
+    "styleFitMatches": 45,
+    "physicalMatches": 180
+  }
+}

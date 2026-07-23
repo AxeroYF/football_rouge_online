@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#071411" />
+    <title>好友对战 · 11V11 选秀模式</title>
+    <link rel="stylesheet" href="/versus/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/game/"><span>FT<em>1</em></span><div><b>好友对战</b><small>11V11 DRAFT ROOM</small></div></a>
+      <div class="room-status" id="room-status" hidden></div>
+      <button class="icon-button" id="leave-room" title="退出房间" hidden>×</button>
+    </header>
+    <main id="app" aria-live="polite"></main>
+    <div class="toast" id="toast" role="status"></div>
+    <script type="module" src="/versus/app.js"></script>
+  </body>
+</html>

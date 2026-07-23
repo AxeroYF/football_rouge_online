@@ -45,6 +45,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .save-dot i { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 12px var(--lime); }
 .game-screen { flex: 1; display: grid; padding: clamp(30px, 5vh, 62px) 0; }
 .game-footer { color: #6f7c76; font-size: 9px; letter-spacing: .18em; padding-top: 18px; border-top: 1px solid var(--line); }
+.versus-entry { margin-left:auto; padding:9px 12px; border:1px solid rgba(201,240,92,.38); color:var(--lime); background:rgba(201,240,92,.06); font-size:10px; font-weight:900; letter-spacing:.08em; text-decoration:none; }
+.versus-entry:hover { color:#102018; background:var(--lime); }
 
 .kicker { margin: 0 0 11px; color: var(--lime); font-size: 10px; letter-spacing: .25em; font-weight: 800; text-transform: uppercase; }
 .display-title { margin: 0; font-size: clamp(52px, 8.2vw, 118px); line-height: .84; letter-spacing: -.075em; font-weight: 900; }

@@ -7,6 +7,8 @@ const source = path.join(here, "public");
 const target = path.join(here, "dist");
 const gameSource = path.resolve(here, "../game/public");
 const gameTarget = path.resolve(here, "../game/dist");
+const versusSource = path.resolve(here, "../versus/public");
+const versusTarget = path.resolve(here, "../versus/dist");
 
 const index = await readFile(path.join(source, "index.html"), "utf8");
 for (const required of ["styles.css", "app.js", "场边实验室"]) {
@@ -36,4 +38,17 @@ await writeFile(
   "utf8",
 );
 
-console.log("构建完成：devtool/dist 与 game/dist");
+const versusIndex = await readFile(path.join(versusSource, "index.html"), "utf8");
+for (const required of ["好友对战", "styles.css", "app.js"]) {
+  if (!versusIndex.includes(required)) throw new Error("versus index.html is missing: " + required);
+}
+await rm(versusTarget, { recursive: true, force: true });
+await mkdir(versusTarget, { recursive: true });
+await cp(versusSource, versusTarget, { recursive: true });
+await writeFile(
+  path.join(versusTarget, "build-meta.json"),
+  JSON.stringify({ builtAt: new Date().toISOString(), prototype: true }, null, 2) + "\n",
+  "utf8",
+);
+
+console.log("构建完成：devtool/dist、game/dist 与 versus/dist");
