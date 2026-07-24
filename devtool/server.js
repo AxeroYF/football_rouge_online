@@ -8,6 +8,7 @@ import { handleVersusApi } from "../versus/api.js";
 import { handleAdminApi } from "../versus/admin-api.js";
 import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
 import { versusRooms } from "../versus/room-service.js";
+import { yellowDogsLeague } from "../versus/league-service.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.join(here, "public");
@@ -209,3 +210,9 @@ server.listen(port, host, () => {
   if (publicOnly) console.log("公网试玩安全模式：开放好友对战及需要密码认证的管理员后台。");
   else console.log(host === "127.0.0.1" ? "仅允许本机访问，按 Ctrl+C 停止。" : "已开放网络访问，请仅在可信局域网中使用。");
 });
+
+const leagueTimer = setInterval(() => {
+  try { yellowDogsLeague.tick(); }
+  catch (error) { console.error("YellowDogs League 定时任务失败：", error); }
+}, 15_000);
+leagueTimer.unref();

@@ -1,5 +1,7 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { versusRooms } from "./room-service.js";
+import { hydrateHistoricalMatchDetail } from "./history-detail.js";
+import { yellowDogsLeague } from "./league-service.js";
 
 const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971027";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -172,7 +174,7 @@ function playerDetail(playerId) {
 function matchDetail(matchId) {
   const match = uniqueMatches().find((candidate) => candidate.id === matchId);
   if (!match) throw Object.assign(new Error("比赛记录不存在"), { statusCode: 404 });
-  return match;
+  return hydrateHistoricalMatchDetail(match);
 }
 
 export async function handleAdminApi(request, response, pathname, readJson, sendJson) {
@@ -201,6 +203,34 @@ export async function handleAdminApi(request, response, pathname, readJson, send
       return sendJson(response, 200, { ok: true });
     }
     if (request.method === "GET" && pathname === "/api/admin/dashboard") return sendJson(response, 200, { ok: true, dashboard: buildDashboard() });
+    if (request.method === "GET" && pathname === "/api/admin/league") return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
+    if (request.method === "POST" && pathname === "/api/admin/league/simulate") {
+      yellowDogsLeague.simulateNextRound();
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/reward-pack") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.scheduleAdminRewardPack(body) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/champion-badge") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.awardChampionBadge(body) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/restart") {
+      const body = await readJson(request);
+      if (body.confirm !== "RESTART") throw new Error("需要确认重启当前赛季");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.restartSeason() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/new-season") {
+      const body = await readJson(request);
+      if (body.confirm !== "NEW_SEASON") throw new Error("需要确认开启新赛季");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startNewSeason() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/full-reset") {
+      const body = await readJson(request);
+      if (body.confirm !== "FULL_RESET_YDL") throw new Error("需要确认完全重置联赛");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.fullReset() });
+    }
     const playerMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)$/);
     if (request.method === "GET" && playerMatch) return sendJson(response, 200, { ok: true, player: playerDetail(decodeURIComponent(playerMatch[1])) });
     const historyMatch = pathname.match(/^\/api\/admin\/matches\/([^/]+)$/);

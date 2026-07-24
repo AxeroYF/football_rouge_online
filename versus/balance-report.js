@@ -5,7 +5,7 @@ import { roleGroup } from "../game/public/schema.js";
 import { EXTRA_DURATION_MS, HALFTIME_ADJUSTMENT_MS, PENALTY_KICK_INTERVAL_MS, REGULAR_DURATION_MS, advanceVersusMatch, createVersusMatch } from "./match-engine.js";
 import { REAL_PLAYER_POOLS, REAL_PLAYERS } from "./player-pool.js";
 import { VERSUS_TRAIT_CARDS } from "./trait-pool.js";
-import { inferElevenBoardRoles } from "./rules.js";
+import { formationStructureProfile, inferElevenBoardRoles } from "./rules.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const outputDirectory = path.resolve(here, "../outputs");
@@ -46,6 +46,8 @@ const STANDARD_FORMATIONS = {
   "5-3-2": [1, 5, 3, 2],
   "4-2-4": [1, 4, 2, 4],
   "3-4-3": [1, 3, 4, 3],
+  "3-1-2-1-3": { counts: [1, 3, 4, 3], midfieldLines: [1, 2, 1] },
+  "3-4-3（边翼卫）": { counts: [1, 5, 2, 3], wingbacks: true },
   "2-5-3": [1, 2, 5, 3],
   "4-5-1": [1, 4, 5, 1],
   "4-2-3-1": { counts: [1, 4, 5, 1], midfieldLines: [2, 3] },
@@ -108,6 +110,17 @@ function layeredMidfieldPositions(players, lineCounts) {
   return positions;
 }
 
+function defenderPositions(players, specification) {
+  if (!specification.wingbacks || players.length < 3) return linePositions(players, 69);
+  const centralDefenders = players.slice(0, -2);
+  const [leftWingback, rightWingback] = players.slice(-2);
+  return {
+    ...linePositions(centralDefenders, 69),
+    [leftWingback.id]: { x:18, y:57 },
+    [rightWingback.id]: { x:82, y:57 },
+  };
+}
+
 function buildSeat(name, specification, tactic, offset, salt, style = "possession", attackFocus = "balanced", defenseFocus = "balanced") {
   const [goalkeepers, defenders, midfielders, attackers] = specification.counts ?? specification;
   const groups = {
@@ -119,7 +132,7 @@ function buildSeat(name, specification, tactic, offset, salt, style = "possessio
   const players = [...groups.GK, ...groups.DEF, ...groups.MID, ...groups.ATT];
   const positions = {
     ...linePositions(groups.GK, 90),
-    ...linePositions(groups.DEF, 69),
+    ...defenderPositions(groups.DEF, specification),
     ...(specification.midfieldLines
       ? layeredMidfieldPositions(groups.MID, specification.midfieldLines)
       : linePositions(groups.MID, 45)),
@@ -144,7 +157,7 @@ function seededFormationSlots(specification) {
   const slots = [...groups.GK, ...groups.DEF, ...groups.MID, ...groups.ATT];
   const positions = {
     ...linePositions(groups.GK, 90),
-    ...linePositions(groups.DEF, 69),
+    ...defenderPositions(groups.DEF, specification),
     ...(specification.midfieldLines ? layeredMidfieldPositions(groups.MID, specification.midfieldLines) : linePositions(groups.MID, 45)),
     ...linePositions(groups.ATT, 19),
   };
@@ -154,9 +167,11 @@ function seededFormationSlots(specification) {
 
 function seededDraftPlayer(role, used, seed, choiceCount = 3) {
   const available = REAL_PLAYERS.filter((player) => !used.has(player.id));
+  const wingbackFullbackRole = role === "LWB" ? "LB" : role === "RWB" ? "RB" : null;
   const tiers = [
     available.filter((player) => player.role === role),
     available.filter((player) => player.secondaryRole === role),
+    ...(wingbackFullbackRole ? [available.filter((player) => [player.role, player.secondaryRole].includes(wingbackFullbackRole))] : []),
     available.filter((player) => roleGroup(player.role) === roleGroup(role)),
     available,
   ];
@@ -179,6 +194,13 @@ function buildSeededFormationSeat(name, formationName, tactic, style, seed, atta
     positions[source.id] = { ...slot.position };
   });
   return { name, players, positions, tactic, style, attackFocus, defenseFocus, formationName };
+}
+
+function midfieldShapeKey(formationName) {
+  const specification = STANDARD_FORMATIONS[formationName];
+  if (specification.wingbacks) return "wingback-system";
+  const lineCount = specification.midfieldLines?.length ?? 1;
+  return lineCount > 1 ? `layered-${lineCount}` : "flat";
 }
 
 const ROLE_SLOTS_433 = [
@@ -352,25 +374,32 @@ function play(home, away, seed, weather = null, referee = null, options = {}) {
     weather: match.weather.key,
     referee: match.referee.key,
     blackWhistle: match.blackWhistleTriggered,
-    teams: match.teams.map((team, index) => ({
-      name: team.name,
-      tactic: team.tactic,
-      style: team.style,
-      attackFocus: team.attackFocus,
-      defenseFocus: team.defenseFocus,
-      activeCount: team.players.filter((player) => player.active).length,
-      physical: physicalProfiles[index],
-      stats: { ...team.stats, xg: Number(team.stats.xg.toFixed(3)) },
-      ...(recordEvents ? { players: team.players.map((player) => ({
-        id: player.id,
-        name: player.name,
-        role: player.role,
-        assignedRole: player.assignedRole,
-        grade: player.grade,
-        heightCm: player.heightCm,
-        overall: player.overall,
-      })) } : {}),
-    })),
+    teams: match.teams.map((team, index) => {
+      const active = team.players.filter((player) => player.active);
+      const structure = formationStructureProfile(active, team.positions);
+      return {
+        name: team.name,
+        formation: structure.name,
+        tactic: team.tactic,
+        style: team.style,
+        attackFocus: team.attackFocus,
+        defenseFocus: team.defenseFocus,
+        activeCount: team.players.filter((player) => player.active).length,
+        physical: physicalProfiles[index],
+        structure: { midfield:structure.midfieldStructure, multipliers:structure.multipliers },
+        wingbacks: active.filter((player) => ["LWB", "RWB"].includes(player.assignedRole)).map((player) => ({ id:player.id, role:player.role, assignedRole:player.assignedRole })),
+        stats: { ...team.stats, xg: Number(team.stats.xg.toFixed(3)) },
+        ...(recordEvents ? { players: team.players.map((player) => ({
+          id: player.id,
+          name: player.name,
+          role: player.role,
+          assignedRole: player.assignedRole,
+          grade: player.grade,
+          heightCm: player.heightCm,
+          overall: player.overall,
+        })) } : {}),
+      };
+    }),
     ...(recordEvents ? { events: match.events } : {}),
     lightningEvents: Number(match.lightningTriggered),
   };
@@ -482,7 +511,7 @@ function runRandomBaseline(matches, draftChoiceCount = 3, lineupMode = "legacyGr
   const totals = emptyTotals();
   const shortage = {};
   const meta = {
-    formation: {}, tactic: {}, style: {}, formationStyle: {}, formationTactic: {}, styleTactic: {},
+    formation: {}, midfieldShape: {}, tactic: {}, style: {}, formationStyle: {}, formationTactic: {}, styleTactic: {},
     formationMatchups: {}, tacticMatchups: {}, styleMatchups: {},
   };
   const formationKeys = Object.keys(STANDARD_FORMATIONS);
@@ -501,8 +530,8 @@ function runRandomBaseline(matches, draftChoiceCount = 3, lineupMode = "legacyGr
     const homeDefenseFocus = focusKeys[hash(`hdf:${index}`) % focusKeys.length];
     const awayDefenseFocus = focusKeys[hash(`adf:${index}`) % focusKeys.length];
     const metadata = [
-      { formation: homeFormation, tactic: homeTactic, style: homeStyle, attackFocus: homeAttackFocus, defenseFocus: homeDefenseFocus },
-      { formation: awayFormation, tactic: awayTactic, style: awayStyle, attackFocus: awayAttackFocus, defenseFocus: awayDefenseFocus },
+      { formation: homeFormation, midfieldShape:midfieldShapeKey(homeFormation), tactic: homeTactic, style: homeStyle, attackFocus: homeAttackFocus, defenseFocus: homeDefenseFocus },
+      { formation: awayFormation, midfieldShape:midfieldShapeKey(awayFormation), tactic: awayTactic, style: awayStyle, attackFocus: awayAttackFocus, defenseFocus: awayDefenseFocus },
     ];
     const homeSeat = lineupMode === "seededPositionAware"
       ? buildSeededFormationSeat("主队", homeFormation, homeTactic, homeStyle, `random-lineup:${index}:home`, homeAttackFocus, homeDefenseFocus, draftChoiceCount)
@@ -523,6 +552,7 @@ function runRandomBaseline(matches, draftChoiceCount = 3, lineupMode = "legacyGr
       shortage[bucket] ??= emptyOutcomes();
       addOutcome(shortage[bucket], result, teamIndex);
       addMetaOutcome(meta.formation, own.formation, result, teamIndex);
+      addMetaOutcome(meta.midfieldShape, own.midfieldShape, result, teamIndex);
       addMetaOutcome(meta.tactic, own.tactic, result, teamIndex);
       addMetaOutcome(meta.style, own.style, result, teamIndex);
       addMetaOutcome(meta.formationStyle, `${own.formation}|${own.style}`, result, teamIndex);
@@ -538,6 +568,7 @@ function runRandomBaseline(matches, draftChoiceCount = 3, lineupMode = "legacyGr
     shortage: Object.fromEntries(Object.entries(shortage).map(([key, value]) => [key, outcomeSummary(value)])),
     seededMeta: {
       formationVsField: summarizeMetaOutcomes(meta.formation),
+      midfieldShapeVsField: summarizeMetaOutcomes(meta.midfieldShape),
       tacticVsField: summarizeMetaOutcomes(meta.tactic),
       styleVsField: summarizeMetaOutcomes(meta.style),
       formationStyleVsField: summarizeMetaOutcomes(meta.formationStyle),
@@ -736,7 +767,7 @@ function runGoalEventAnalysis(matches, rawMatchSampleLimit = 0, draftChoiceCount
       regulationScore: result.regulationScore,
       penalties: result.penalties,
       winnerIndex: result.winnerIndex,
-      teams: metadata.map((team, teamIndex) => ({ ...team, name: result.teams[teamIndex].name, physical: result.teams[teamIndex].physical, stats: result.teams[teamIndex].stats })),
+      teams: metadata.map((team, teamIndex) => ({ ...team, name: result.teams[teamIndex].name, physical: result.teams[teamIndex].physical, structure:result.teams[teamIndex].structure, wingbacks:result.teams[teamIndex].wingbacks, stats: result.teams[teamIndex].stats })),
       goals: orderedGoals.map((goal) => {
         const team = result.teams[goal.teamIndex];
         const scorer = team.players.find((player) => player.id === goal.actorId);
@@ -779,14 +810,18 @@ function runGoalEventAnalysis(matches, rawMatchSampleLimit = 0, draftChoiceCount
   };
 }
 
-function runFormationComparisons(matchesPerFormation) {
+function runFormationComparisons(matchesPerFormation, draftChoiceCount = 3, lineupMode = "legacyGrouped") {
   const output = {};
-  for (const [name, counts] of Object.entries(STANDARD_FORMATIONS)) {
+  for (const [name, specification] of Object.entries(STANDARD_FORMATIONS)) {
     const outcomes = emptyOutcomes();
     for (let index = 0; index < matchesPerFormation; index += 1) {
       const subjectIndex = index % 2;
-      const subject = buildSeat(name, counts, "balanced", index % 40, `formation:${index}`);
-      const baseline = buildSeat("4-3-3基准", STANDARD_FORMATIONS["4-3-3"], "balanced", index % 40, `formation:${index}`);
+      const subject = lineupMode === "seededPositionAware"
+        ? buildSeededFormationSeat(name, name, "balanced", "possession", `formation:${name}:${index}:subject`, "balanced", "balanced", draftChoiceCount)
+        : buildSeat(name, specification, "balanced", index % 40, `formation:${index}`);
+      const baseline = lineupMode === "seededPositionAware"
+        ? buildSeededFormationSeat("4-3-3基准", "4-3-3", "balanced", "possession", `formation:${name}:${index}:baseline`, "balanced", "balanced", draftChoiceCount)
+        : buildSeat("4-3-3基准", STANDARD_FORMATIONS["4-3-3"], "balanced", index % 40, `formation:${index}`);
       const result = play(...(subjectIndex === 0 ? [subject, baseline] : [baseline, subject]), `formation:${name}:${index}`);
       addOutcome(outcomes, result, subjectIndex);
     }
@@ -1337,7 +1372,7 @@ const data = positionOnly || renderOnly
       analysisDimensions: balanceConfig.analysisDimensions,
       config,
       randomBaseline: runRandomBaseline(config.randomMatches, config.draftChoiceCount ?? 3, config.lineupMode),
-      formations: runFormationComparisons(config.formationMatches),
+      formations: runFormationComparisons(config.formationMatches, config.draftChoiceCount ?? 3, config.lineupMode),
       tactics: runTacticMatrix(config.tacticMatches),
       styles: runStyleMatrix(config.styleMatches),
       directionFocus: runFocusMatrix(config.focusMatches),

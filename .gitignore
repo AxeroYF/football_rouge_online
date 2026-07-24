@@ -61,6 +61,10 @@ Desktop.ini
 # Local runtime data / generated QA artifacts
 # ==============================
 data/versus-accounts.json
+data/yellowdogs-league.json
+data/yellowdogs-league.json.bak
 outputs/
 handoff/artifacts/
 handoff/*.zip
+.tmp-browser-*.json
+.tmp-browser-*.json.bak

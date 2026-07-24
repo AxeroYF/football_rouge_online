@@ -163,7 +163,7 @@ function hydrateTeam(seat, index, seed) {
       ...source,
       assignedRole,
       boardPosition: { ...position },
-      state: { ...source.state, fitness: 100 },
+      state: { ...source.state, fitness: seat.preserveFitness ? Math.max(35, Math.min(100, Number(source.state?.fitness ?? 100))) : 100 },
     }, VERSUS_TRAIT_CARDS, seed);
     return {
       ...hydrated,
@@ -180,6 +180,8 @@ function hydrateTeam(seat, index, seed) {
     importedLineup: Boolean(seat.importedLineup),
     tactic: seat.tactic,
     style: seat.style ?? "possession",
+    tacticalPlans:seat.tacticalPlans ? structuredClone(seat.tacticalPlans) : null,
+    activePlan:seat.tacticalPlans ? "opening" : null,
     attackFocus: seat.attackFocus ?? "balanced",
     defenseFocus: seat.defenseFocus ?? "balanced",
     markingTargetId: null,
@@ -200,6 +202,20 @@ function scoreState(match, team) {
   return team.score > opponent.score ? "leading" : team.score < opponent.score ? "trailing" : "tied";
 }
 
+function applySituationalPlan(match, team) {
+  if (!team.tacticalPlans) return;
+  const state = scoreState(match, team);
+  const planKey = state === "leading" ? "leading" : state === "trailing" ? "trailing" : "opening";
+  if (team.activePlan === planKey) return;
+  const plan = team.tacticalPlans[planKey];
+  if (!plan || !TACTICS[plan.tactic] || !MATCH_STYLES[plan.style]) return;
+  team.activePlan = planKey;
+  team.tactic = plan.tactic;
+  team.style = plan.style;
+  const labels = { opening:"开局/平局", leading:"领先", trailing:"落后" };
+  event(match, "tactical", team.index, `${team.name}切换为${labels[planKey]}方案：${TACTICS[plan.tactic].name} · ${MATCH_STYLES[plan.style].name}。`, { importance:"stage", plan:planKey, tactic:plan.tactic, style:plan.style });
+}
+
 function attribute(match, team, player, key) {
   return traitAdjustedAttribute(player, key, player.attributes?.[key] ?? 50, {
     minute: match.minute,
@@ -217,11 +233,19 @@ export function versusPositionFit(player, assignedRole = player.assignedRole) {
   const primaryGroup = roleGroup(player.role);
   if (assignedRole === player.role) return 1;
   if (assignedRole === player.secondaryRole) return 0.9;
-  if ((assignedRole === "LWB" && [player.role, player.secondaryRole].includes("LB")) || (assignedRole === "RWB" && [player.role, player.secondaryRole].includes("RB"))) return 0.94;
+  if ((assignedRole === "LWB" && [player.role, player.secondaryRole].includes("LB")) || (assignedRole === "RWB" && [player.role, player.secondaryRole].includes("RB"))) return clamp(Math.max(0.97, baseFit), 0.97, 1.02);
   if (assignedGroup === "GK") return Math.min(baseFit, 0.38);
   if (primaryGroup === "GK") return 0.52;
   if (assignedGroup === primaryGroup) return Math.min(baseFit, 0.78);
   return Math.min(baseFit, 0.56);
+}
+
+export function versusWingbackSupport(player, assignedRole = player.assignedRole) {
+  const naturalRole = assignedRole === "LWB" ? "LB" : assignedRole === "RWB" ? "RB" : null;
+  if (!naturalRole || ![player.role, player.secondaryRole].includes(naturalRole)) return 0;
+  const weights = { crossing:0.27, pace:0.2, acceleration:0.16, passing:0.13, stamina:0.13, workRate:0.11 };
+  const ability = Object.entries(weights).reduce((sum, [key, weight]) => sum + Number(player.attributes?.[key] ?? 50) * weight, 0);
+  return clamp(ability / 100 * versusPositionFit(player, assignedRole), 0, 1);
 }
 
 function familiarity(player) {
@@ -252,6 +276,17 @@ function teamStyleProfile(match, team, groups) {
   });
   const averageWideDistance = average(outfield.map((player) => Math.abs(Number(team.positions[player.id]?.x ?? 50) - 50)), 0);
   const wideStretch = clamp((averageWideDistance - 12) / 20, 0, 1);
+  const wingbackSupportScores = {
+    left: Math.max(0, ...outfield.filter((player) => player.assignedRole === "LWB").map((player) => versusWingbackSupport(player))),
+    right: Math.max(0, ...outfield.filter((player) => player.assignedRole === "RWB").map((player) => versusWingbackSupport(player))),
+  };
+  const flankSupport = {
+    left: 1 + wingbackSupportScores.left * 0.035,
+    center: 1,
+    right: 1 + wingbackSupportScores.right * 0.035,
+  };
+  const wingbackSupportAverage = (wingbackSupportScores.left + wingbackSupportScores.right) / 2;
+  const wingbackCrossSupport = 1 + wingbackSupportAverage * 0.035;
   const heightRating = clamp(50 + (average(groups.attackers.map((player) => Number(player.heightCm ?? 180)), 178) - 175) * 2.1, 45, 96);
   const scores = {
     possession: squadMetric(match, team, outfield, { passing: 0.27, firstTouch: 0.24, decisions: 0.2, dribbling: 0.17, composure: 0.12 }),
@@ -260,7 +295,8 @@ function teamStyleProfile(match, team, groups) {
       + heightRating * 0.08,
     wingPlay: squadMetric(match, team, widePlayers, { crossing: 0.28, pace: 0.2, acceleration: 0.16, dribbling: 0.16, passing: 0.12, stamina: 0.08 }) * 0.72
       + squadMetric(match, team, groups.attackers, { offBall: 0.28, heading: 0.2, pace: 0.18, finishing: 0.18, composure: 0.16 }) * 0.2
-      + clamp(42 + widePlayers.length * 5 + wideStretch * 24, 42, 92) * 0.08,
+      + clamp(42 + widePlayers.length * 5 + wideStretch * 24, 42, 92) * 0.08
+      + wingbackSupportAverage * 4,
     counterAttack: squadMetric(match, team, outfield, { pace: 0.3, acceleration: 0.18, decisions: 0.18, passing: 0.14, offBall: 0.12, composure: 0.08 }) * 0.58
       + squadMetric(match, team, groups.attackers, { pace: 0.28, acceleration: 0.2, offBall: 0.2, finishing: 0.18, composure: 0.14 }) * 0.24
       + squadMetric(match, team, groups.defenders, { tackling: 0.3, positioning: 0.28, passing: 0.18, decisions: 0.14, pace: 0.1 }) * 0.18,
@@ -273,7 +309,7 @@ function teamStyleProfile(match, team, groups) {
   const weather = style.weather[match.weather.key] ?? 1;
   const effectiveFit = fit * weather;
   const fitFactor = clamp(1 + (effectiveFit - 1) * 0.58, 0.84, 1.09);
-  return { ...style, key: team.style, score, fit, weather, effectiveFit, fitFactor, wideStretch };
+  return { ...style, key: team.style, score, fit, weather, effectiveFit, fitFactor, wideStretch, wingbackSupportScores, wingbackSupportAverage, wingbackCrossSupport, flankSupport };
 }
 
 function teamSnapshot(match, team) {
@@ -505,6 +541,7 @@ function chooseAttackType(match, attack, defense) {
     { key: "longShot", weight: 0.9 + Math.max(0, defending.defense - attacking.attack) / 85 },
   ];
   return choose(match, entries, (entry) => entry.weight * (attacking.style.attackWeights[entry.key] ?? 1)
+    * (entry.key === "cross" ? attacking.style.wingbackCrossSupport : 1)
     * (entry.key === "cross" && attacking.style.key === "wingPlay" ? 1 + attacking.style.wideStretch * 0.55 : 1)).key;
 }
 
@@ -539,7 +576,7 @@ function simulatePossession(match) {
     tackling: attribute(match, defending, defender, "tackling"), positioning: attribute(match, defending, defender, "positioning"),
     marking: attribute(match, defending, defender, "marking"), strength: attribute(match, defending, defender, "strength"),
   };
-  const attackFocusEdge = focusMultiplier(attacking.attackFocus, attackLane, 1.09, 0.96);
+  const attackFocusEdge = focusMultiplier(attacking.attackFocus, attackLane, 1.09, 0.96) * (attackSnapshot.style.flankSupport[attackLane] ?? 1);
   const defenseFocusEdge = focusMultiplier(defending.defenseFocus, oppositeLane(attackLane), 1.13, 0.96);
   const tacticalEdge = (attackSnapshot.midfield - defenseSnapshot.midfield) / 85
     + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 120
@@ -618,8 +655,9 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
   const heightEdge = attackType === "cross"
     ? (Number(shooter.heightCm ?? 180) - Number(marker?.heightCm ?? 180)) * 0.8 * attackSnapshot.style.aerialReliance
     : 0;
-  const crossWidthBoost = attackType === "cross" && attacking.style === "wingPlay"
-    ? 1 + attackSnapshot.style.wideStretch * 0.18 + (attribute(match, attacking, creator, "crossing") - 70) / 420
+  const crossWidthBoost = attackType === "cross"
+    ? (attacking.style === "wingPlay" ? 1 + attackSnapshot.style.wideStretch * 0.18 + (attribute(match, attacking, creator, "crossing") - 70) / 420 : 1)
+      * (attackSnapshot.style.flankSupport[attackLane] ?? 1)
     : 1;
   const baseXg = SHOT_BASE[attackType] ?? 0.11;
   const xg = clamp(baseXg * crossWidthBoost * (1 + (attackSnapshot.attack - defenseSnapshot.defense) / 95 + (finishing + heightEdge - markerDefense) / 150), 0.015, 0.62);
@@ -799,6 +837,7 @@ function triggerBlackWhistle(match) {
 
 function processMinute(match, minute) {
   match.minute = minute;
+  match.teams.forEach((team) => applySituationalPlan(match, team));
   if (minute === 1) event(match, "kickoff", null, `比赛开始。${match.teams[0].name}与${match.teams[1].name}进入对抗，本场裁判尺度为${match.referee.name}。`, { detail: match.referee.description });
   if (!match.blackWhistleTriggered && match.blackWhistleMinute && minute >= match.blackWhistleMinute) triggerBlackWhistle(match);
   if (match.weather.key === "storm" && !match.lightningTriggered && minute >= match.lightningMinute) triggerLightning(match);
@@ -908,9 +947,11 @@ function buildReport(match) {
       markingTargetName: match.teams[team.index === 0 ? 1 : 0].players.find((player) => player.id === team.markingTargetId)?.name ?? null,
       formation: analyzeElevenFormation(activePlayers(team), team.positions).name,
       activeCount: activePlayers(team).length,
+      positions: structuredClone(team.positions),
       stats: { ...team.stats, possession: Number((team.stats.possession / possessionTotal * 100).toFixed(1)), xg: Number(team.stats.xg.toFixed(2)) },
       players: team.players.map((player) => ({
-        id: player.id, name: player.name, role: player.assignedRole, rating: player.rating,
+        id: player.id, name: player.name, role: player.assignedRole, assignedRole: player.assignedRole,
+        overall: player.overall, position: structuredClone(team.positions[player.id] ?? player.boardPosition ?? { x:50, y:50 }), rating: player.rating,
         heightCm: player.heightCm, nationality: player.nationality, club: player.club,
         fitness: Number(player.state.fitness.toFixed(1)), active: player.active, sentOff: player.sentOff, injury: player.injury,
         stats: player.matchStats,

@@ -1,10 +1,10 @@
 {
-  "outputVersion": "v10-seeded",
-  "seed": "versus-balance-v10-seeded",
+  "outputVersion": "v11-midfield-wingbacks-seeded",
+  "seed": "versus-balance-v11-midfield-wingbacks-seeded",
   "design": {
     "baseline": "seededPositionAware",
-    "comparisonVersion": "v9-detailed",
-    "description": "使用随机种子从完整球员池生成位置合理阵容，并统计阵型、比赛思路和比赛战术在随机对手环境中的表现。"
+    "comparisonVersion": "v10-seeded",
+    "description": "使用随机种子从完整球员池生成位置合理阵容；加入多排中场的出球与边防权衡，以及边后卫客串边翼卫的边路支持。"
   },
   "targets": {
     "averageTotalGoals": {
@@ -33,13 +33,14 @@
     }
   },
   "analysisDimensions": {
-    "seededLineups": ["fullPlayerPool", "formationRoleSlots", "threeCandidateSelection", "primaryAndSecondaryPositionFit"],
-    "metaMatchups": ["formationVsField", "tacticVsField", "styleVsField", "formationStyle", "formationTactic", "styleTactic", "headToHeadMatrices"],
+    "seededLineups": ["fullPlayerPool", "formationRoleSlots", "threeCandidateSelection", "primaryAndSecondaryPositionFit", "fullbackAsWingback"],
+    "formationStructures": ["midfieldLineCount", "midfieldLineSizes", "buildupMultiplier", "wideCoverage", "wideDefenseMultiplier", "transitionRiskMultiplier", "wingbackSupport"],
+    "metaMatchups": ["formationVsField", "midfieldShapeVsField", "tacticVsField", "styleVsField", "formationStyle", "formationTactic", "styleTactic", "headToHeadMatrices"],
     "goalTiming": ["exactMinute", "15MinuteBuckets", "firstGoalMinute", "extraTimeGoals"],
     "goalIntervals": ["betweenAnyGoals", "betweenSameTeamGoals"],
     "scorers": ["assignedRole", "roleGroup", "assistRole", "attackType", "goalXg"],
     "matchContext": ["formation", "tactic", "style", "attackFocus", "defenseFocus", "weather", "referee"],
-    "rawMatchFields": ["score", "regulationScore", "penalties", "teamStrategies", "teamPhysicalProfile", "teamStats", "goalSequence"]
+    "rawMatchFields": ["score", "regulationScore", "penalties", "teamStrategies", "teamPhysicalProfile", "teamFormationStructure", "teamWingbacks", "teamStats", "goalSequence"]
   },
   "quick": {
     "lineupMode": "seededPositionAware",

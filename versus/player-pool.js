@@ -149,7 +149,32 @@ const RAW_PLAYERS = {
 罗宾·罗夫斯|GK|80|right|荷兰|奈梅亨
 纪尧姆·雷斯特|GK|82|left|法国|图卢兹
 詹姆斯·特拉福德|GK|83|right|英格兰|曼城
-铃木彩艳|GK|84|right|日本|帕尔马`,
+铃木彩艳|GK|84|right|日本|帕尔马
+戈登·班克斯|GK|92|right|英格兰|传奇球员
+彼得·希尔顿|GK|90|right|英格兰|传奇球员
+大卫·希曼|GK|89|right|英格兰|传奇球员
+帕特·詹宁斯|GK|89|right|北爱尔兰|传奇球员
+米歇尔·普雷德霍姆|GK|91|right|比利时|传奇球员
+让-马里·普法夫|GK|90|right|比利时|传奇球员
+詹卢卡·帕柳卡|GK|90|right|意大利|传奇球员
+安杰洛·佩鲁齐|GK|89|right|意大利|传奇球员
+弗朗切斯科·托尔多|GK|90|right|意大利|传奇球员
+克里斯蒂安·阿比亚蒂|GK|87|right|意大利|传奇球员
+安东尼·苏比萨雷塔|GK|90|right|西班牙|传奇球员
+路易斯·阿尔科纳达|GK|89|right|西班牙|传奇球员
+里卡多·萨莫拉|GK|92|right|西班牙|传奇球员
+里纳特·达萨耶夫|GK|91|right|俄罗斯|传奇球员
+内维尔·索撒尔|GK|89|right|威尔士|传奇球员
+耶日·杜德克|GK|86|right|波兰|传奇球员
+布鲁斯·格罗贝拉|GK|87|right|津巴布韦|传奇球员
+谢伊·吉文|GK|87|right|爱尔兰|传奇球员
+乌戈·洛里斯|GK|89|left|法国|传奇球员
+格雷戈里·库佩|GK|87|right|法国|传奇球员
+塞尔希奥·戈耶切亚|GK|88|right|阿根廷|传奇球员
+王大雷|GK|80|right|中国|山东泰山
+颜骏凌|GK|80|right|中国|上海海港
+赵贤祐|GK|82|right|韩国|蔚山HD
+中村航辅|GK|81|right|日本|波尔蒂芒人`,
   DEF: `
 范戴克|CB|90|right
 鲁本·迪亚斯|CB|89|right
@@ -275,7 +300,32 @@ const RAW_PLAYERS = {
 乔·斯卡利|RB|81|right|美国|门兴格拉德巴赫
 伊万·弗雷斯内达|RB|81|right|西班牙|葡萄牙体育
 阿尔瑙·马丁内斯|RB|83|right|西班牙|赫罗纳
-尤金·蒙茨|CB|80|right|德国|圣保利`,
+尤金·蒙茨|CB|80|right|德国|圣保利
+利利安·图拉姆|RB|92|right|法国|传奇球员
+洛朗·布兰科|CB|91|right|法国|传奇球员
+拉斐尔·瓦拉内|CB|89|right|法国|传奇球员
+雅普·斯塔姆|CB|92|right|荷兰|传奇球员
+罗纳德·科曼|CB|92|right|荷兰|传奇球员
+费尔南多·耶罗|CB|91|right|西班牙|传奇球员
+加埃塔诺·西雷阿|CB|93|right|意大利|传奇球员
+克劳迪奥·詹蒂莱|CB|90|right|意大利|传奇球员
+亚历山德罗·科斯塔库塔|CB|90|right|意大利|传奇球员
+朱塞佩·贝尔戈米|RB|91|right|意大利|传奇球员
+安德烈亚斯·布雷默|LB|91|both|德国|传奇球员
+卡洛斯·阿尔贝托|RB|93|right|巴西|传奇球员
+尼尔顿·桑托斯|LB|93|left|巴西|传奇球员
+贾钦托·法切蒂|LB|92|left|意大利|传奇球员
+保罗·布莱特纳|LB|91|left|德国|传奇球员
+丹尼·布林德|CB|89|left|荷兰|传奇球员
+弗兰克·德波尔|CB|90|left|荷兰|传奇球员
+马里奥·耶佩斯|CB|87|right|哥伦比亚|传奇球员
+伊万·科尔多巴|CB|89|right|哥伦比亚|传奇球员
+卡洛斯·加马拉|CB|89|right|巴拉圭|传奇球员
+马丁·德米凯利斯|CB|87|right|阿根廷|传奇球员
+布拉尼斯拉夫·伊万诺维奇|RB|88|right|塞尔维亚|传奇球员
+莱顿·贝恩斯|LB|87|left|英格兰|传奇球员
+巴勃罗·萨巴莱塔|RB|87|right|阿根廷|传奇球员
+塞萨尔·阿斯皮利奎塔|RB|87|right|西班牙|传奇球员`,
   MID: `
 罗德里|DM|91|right
 赖斯|DM|88|right
@@ -401,7 +451,32 @@ const RAW_PLAYERS = {
 安德烈·桑托斯|DM|83|left|巴西|切尔西
 恩佐·米约|AM|83|right|法国|斯图加特
 洛夫罗·马耶尔|AM|84|left|克罗地亚|沃尔夫斯堡
-马丁·巴图里纳|AM|84|right|克罗地亚|科莫`,
+马丁·巴图里纳|AM|84|right|克罗地亚|科莫
+博比·查尔顿|AM|94|right|英格兰|传奇球员
+雷蒙·科帕|AM|93|right|法国|传奇球员
+迪迪|DM|94|right|巴西|传奇球员
+热尔松|DM|92|left|巴西|传奇球员
+法尔考|DM|92|right|巴西|传奇球员
+通尼尼奥·塞雷佐|DM|90|right|巴西|传奇球员
+胡安·塞巴斯蒂安·贝隆|DM|90|right|阿根廷|传奇球员
+费尔南多·雷东多|DM|92|left|阿根廷|传奇球员
+迭戈·西蒙尼|DM|88|right|阿根廷|传奇球员
+何塞普·瓜迪奥拉|DM|89|right|西班牙|传奇球员
+路易斯·苏亚雷斯·米拉蒙特斯|AM|93|right|西班牙|传奇球员
+米歇尔·普拉蒂尼|AM|95|right|法国|传奇球员
+阿兰·吉雷瑟|AM|90|right|法国|传奇球员
+让·蒂加纳|DM|90|right|法国|传奇球员
+米夏埃尔·巴拉克|AM|91|right|德国|传奇球员
+施特凡·埃芬博格|DM|89|right|德国|传奇球员
+德扬·斯坦科维奇|DM|88|right|塞尔维亚|传奇球员
+罗伯特·普罗辛内茨基|AM|89|right|克罗地亚|传奇球员
+兹沃尼米尔·博班|AM|90|right|克罗地亚|传奇球员
+图加伊·克里莫格鲁|DM|87|right|土耳其|传奇球员
+中田英寿|AM|88|right|日本|传奇球员
+朴智星|RM|87|right|韩国|传奇球员
+哈维尔·马斯切拉诺|DM|89|right|阿根廷|传奇球员
+迈克尔·埃辛|DM|90|right|加纳|传奇球员
+克劳德·马克莱莱|DM|92|right|法国|传奇球员`,
   ATT: `
 姆巴佩|ST|93|right
 哈兰德|ST|92|left
@@ -527,7 +602,32 @@ C罗|ST|94|right
 乔瓦尼·昆达|RW|84|left|葡萄牙|葡萄牙体育
 弗朗西斯科·孔塞桑|RW|85|left|葡萄牙|尤文图斯
 阿卜杜勒卡迪尔·厄米尔|RW|82|left|土耳其|诺维奇
-马格内斯·阿克利乌什|RW|85|left|法国|摩纳哥`,
+马格内斯·阿克利乌什|RW|85|left|法国|摩纳哥
+费伦茨·普斯卡什|ST|97|left|匈牙利|传奇球员
+阿尔弗雷多·迪斯蒂法诺|ST|97|right|阿根廷|传奇球员
+盖德·穆勒|ST|96|right|德国|传奇球员
+罗伯托·巴乔|ST|94|right|意大利|传奇球员
+亚历山德罗·德尔·皮耶罗|ST|93|right|意大利|传奇球员
+弗朗切斯科·托蒂|ST|94|right|意大利|传奇球员
+乔治·维阿|ST|93|right|利比里亚|传奇球员
+米罗斯拉夫·克洛泽|ST|91|right|德国|传奇球员
+大卫·比利亚|ST|92|right|西班牙|传奇球员
+劳尔·冈萨雷斯|ST|93|left|西班牙|传奇球员
+雨果·桑切斯|ST|93|left|墨西哥|传奇球员
+肯佩斯|ST|93|left|阿根廷|传奇球员
+保罗·罗西|ST|92|right|意大利|传奇球员
+奥马尔·西沃里|ST|93|left|阿根廷|传奇球员
+丹尼斯·劳|ST|92|right|苏格兰|传奇球员
+乔治·贝斯特|RW|94|right|北爱尔兰|传奇球员
+斯坦利·马修斯|RW|93|right|英格兰|传奇球员
+托斯唐|ST|92|left|巴西|传奇球员
+雅伊济尼奥|RW|93|right|巴西|传奇球员
+里奥内尔·斯卡洛尼|RW|85|right|阿根廷|传奇球员
+克劳迪奥·卡尼吉亚|ST|90|right|阿根廷|传奇球员
+恩佐·弗朗西斯科利|ST|91|right|乌拉圭|传奇球员
+迭戈·弗兰|ST|91|right|乌拉圭|传奇球员
+马塞洛·萨拉斯|ST|90|left|智利|传奇球员
+伊万·萨莫拉诺|ST|90|right|智利|传奇球员`,
 };
 
 const ROLE_PROFILES = Object.freeze({
@@ -673,7 +773,7 @@ function parsePlayer(line, pool, index) {
 
 export const REAL_PLAYER_POOLS = Object.freeze(Object.fromEntries(Object.entries(RAW_PLAYERS).map(([pool, text]) => {
   const players = text.trim().split("\n").map((line, index) => parsePlayer(line.trim(), pool, index));
-  if (players.length !== 125) throw new Error(`${pool} player pool must contain exactly 125 players, received ${players.length}`);
+  if (players.length !== 150) throw new Error(`${pool} player pool must contain exactly 150 players, received ${players.length}`);
   return [pool, Object.freeze(players)];
 })));
 

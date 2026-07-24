@@ -1,6 +1,8 @@
 const app = document.querySelector("#app");
 const roomStatus = document.querySelector("#room-status");
 const leaveButton = document.querySelector("#leave-room");
+const accountStatus = document.querySelector("#account-status");
+const accountLogoutButton = document.querySelector("#account-logout");
 const toastElement = document.querySelector("#toast");
 const SESSION_KEY = "football_test1_versus_room_v1";
 const ACCOUNT_KEY = "football_test1_versus_account_v1";
@@ -45,6 +47,18 @@ let lastAnimatedEventId = null;
 let liveBroadcasts = [];
 let spectatorSession = null;
 let spectatorPolling = null;
+let authMode = "login";
+let leagueMode = false;
+let league = null;
+let leagueTab = "overview";
+let leagueBoard = "scorers";
+let leagueStatsScope = "league";
+let leagueRoundPage = null;
+let leagueHistoryTeamId = null;
+let leagueStartingIds = null;
+let leaguePositions = null;
+let leagueInboxMessageId = null;
+let leagueShowChemistry = true;
 
 function escapeHtml(value) {
   return String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -94,8 +108,12 @@ async function api(path, options = {}) {
 
 function updateChrome() {
   const active = Boolean(room && session);
+  const leagueActive = Boolean(leagueMode);
+  accountStatus.hidden = !account;
+  accountLogoutButton.hidden = !account || active || leagueActive;
   roomStatus.hidden = !active;
-  leaveButton.hidden = !active;
+  leaveButton.hidden = !active && !leagueActive;
+  if (account) accountStatus.innerHTML = `<small>当前账号</small><b>${escapeHtml(account.profile.nickname)}</b>`;
   roomStatus.classList.toggle("reconnecting", connectionState !== "online");
   if (active) roomStatus.innerHTML = `<i></i><span>${connectionState === "online" ? "房间" : "重连中"}</span><b>${escapeHtml(room.code)}</b><span>${({ lobby:"等待好友",draft:"限时选秀",tactics:"战术准备",match:"比赛中",report:"比赛结束" })[room.phase] ?? room.phase}</span>`;
 }
@@ -132,10 +150,19 @@ function profileMarkup(profile = account?.profile) {
   return `<section class="account-history"><header><div><h2>${escapeHtml(profile.nickname)} <small>@${escapeHtml(profile.id)}</small></h2></div><b>${summary.wins}胜 ${summary.losses}负</b></header><div class="career-stats"><span>场次<b>${summary.played}</b></span><span>进球<b>${summary.goals}</b></span><span>助攻<b>${summary.assists}</b></span><span>总比分<b>${summary.goalsFor}:${summary.goalsAgainst}</b></span></div><div class="history-list">${recent}</div></section>`;
 }
 
-function historyTeamMarkup(team) {
-  const strategy = `${TACTICS[team.tactic] ?? team.tactic} · ${STYLES[team.style] ?? team.style} · 主攻${FOCUSES[team.attackFocus] ?? team.attackFocus} · 主守${FOCUSES[team.defenseFocus] ?? team.defenseFocus}`;
+function historyTeamMarkup(team, hideStrategy = false) {
+  const strategy = hideStrategy ? "战术不公开" : `${TACTICS[team.tactic] ?? team.tactic} · ${STYLES[team.style] ?? team.style} · 主攻${FOCUSES[team.attackFocus] ?? team.attackFocus} · 主守${FOCUSES[team.defenseFocus] ?? team.defenseFocus}`;
   const players = [...team.players].sort((left, right) => right.rating - left.rating);
-  return `<section class="history-team"><header><div><h3>${escapeHtml(team.name)}</h3><small>${escapeHtml(team.formation)} · ${escapeHtml(strategy)}</small></div><b>${team.stats.xg} xG</b></header><div class="history-player-list">${players.map((player) => `<div><span><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[player.role] ?? player.role}${player.sentOff ? " · 红牌" : player.injury ? " · 伤退" : ""}</small></span><em>${player.stats.goals}球 ${player.stats.assists}助</em><strong>${Number(player.rating).toFixed(1)}</strong></div>`).join("")}</div></section>`;
+  const averageRating = players.length ? players.reduce((sum, player) => sum + Number(player.rating ?? 0), 0) / players.length : 0;
+  const pitch = team.players.map((player) => {
+    const position = player.position ?? team.positions?.[player.id] ?? { x:50, y:50 };
+    const x = Math.max(4, Math.min(96, Number(position.x ?? 50)));
+    const y = Math.max(4, Math.min(96, Number(position.y ?? 50)));
+    const status = player.sentOff ? "红牌" : player.injury ? "伤退" : player.active === false ? "离场" : "";
+    const role = ROLE_LABELS[player.assignedRole ?? player.role] ?? player.assignedRole ?? player.role;
+    return `<div class="history-magnet ${status ? "inactive" : ""}" style="left:${x}%;top:${y}%" title="${escapeHtml(`${player.name} · ${role} · 综合能力 ${player.overall} · 比赛评分 ${Number(player.rating).toFixed(1)}${status ? ` · ${status}` : ""}`)}"><b>${escapeHtml(player.name)}</b><small>${escapeHtml(role)}${status ? ` · ${status}` : ""}</small><span><em>能力</em>${Number(player.overall ?? 0)}</span><strong><em>评分</em>${Number(player.rating ?? 0).toFixed(1)}</strong></div>`;
+  }).join("");
+  return `<section class="history-team"><header><div><h3>${escapeHtml(team.name)}</h3><small>${escapeHtml(team.formation)} · ${escapeHtml(strategy)}</small></div><b>${team.stats.xg} xG · 平均评分 ${averageRating.toFixed(1)}</b></header><div class="history-pitch"><div class="pitch-lines"></div><span class="zone-label att">前场</span><span class="zone-label mid">中场</span><span class="zone-label def">后场</span><span class="zone-label gk">门将</span>${pitch}</div><div class="history-player-list">${players.map((player) => `<div><span><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[player.assignedRole ?? player.role] ?? player.assignedRole ?? player.role}${player.sentOff ? " · 红牌" : player.injury ? " · 伤退" : ""}</small></span><em>${player.stats.goals}球 ${player.stats.assists}助</em><span class="history-player-values"><small>能力</small><b>${Number(player.overall ?? 0)}</b></span><span class="history-player-values rating"><small>评分</small><b>${Number(player.rating ?? 0).toFixed(1)}</b></span></div>`).join("")}</div></section>`;
 }
 
 function historyMatchMarkup(detail) {
@@ -144,7 +171,7 @@ function historyMatchMarkup(detail) {
   const displayScore = detail.aggregateScore ?? detail.score;
   const won = detail.winnerIndex === viewerIndex;
   const timeline = detail.importantEvents?.length ? detail.importantEvents.map(reportTimelineItem).join("") : `<p class="history-empty">本场没有重点事件。</p>`;
-  return `<header class="history-detail-head"><button class="icon-button" data-close-history aria-label="关闭">×</button><div><small>${new Date(detail.playedAt).toLocaleString()} · 房间 ${escapeHtml(detail.roomCode)} · 第 ${detail.round} 局</small><h2>${won ? "本场获胜" : "本场失利"}</h2></div></header><div class="history-detail-score"><span>${escapeHtml(detail.teams[viewerIndex].name)}</span><b>${displayScore[viewerIndex]} : ${displayScore[opponentIndex]}</b><span>${escapeHtml(detail.teams[opponentIndex].name)}</span>${detail.aggregateBaseScore ? `<small>首回合 ${detail.aggregateBaseScore[viewerIndex]}:${detail.aggregateBaseScore[opponentIndex]} · 第二回合 ${detail.score[viewerIndex]}:${detail.score[opponentIndex]}</small>` : ""}${detail.penalties ? `<small>点球 ${detail.penalties[viewerIndex]} : ${detail.penalties[opponentIndex]}</small>` : ""}<em>${weatherIcon(detail.weather)} ${escapeHtml(detail.weather?.name ?? "未知天气")}</em></div><div class="history-detail-grid"><section class="report-panel timeline-panel"><h2>重点事件</h2><div class="match-timeline">${timeline}</div></section><section class="report-panel compact-stats-panel"><h2>比赛统计</h2>${matchStatsMarkup(detail, [viewerIndex, opponentIndex])}</section></div><div class="history-team-grid">${[viewerIndex, opponentIndex].map((index) => historyTeamMarkup(detail.teams[index])).join("")}</div>`;
+  return `<header class="history-detail-head"><button class="icon-button" data-close-history aria-label="关闭">×</button><div><small>${new Date(detail.playedAt).toLocaleString()} · ${escapeHtml(detail.roomCode)} · 第 ${detail.round} 轮</small><h2>${displayScore[viewerIndex] === displayScore[opponentIndex] ? "本场战平" : won ? "本场获胜" : "本场失利"}</h2></div></header><div class="history-detail-score"><span>${escapeHtml(detail.teams[viewerIndex].name)}</span><b>${displayScore[viewerIndex]} : ${displayScore[opponentIndex]}</b><span>${escapeHtml(detail.teams[opponentIndex].name)}</span>${detail.aggregateBaseScore ? `<small>首回合 ${detail.aggregateBaseScore[viewerIndex]}:${detail.aggregateBaseScore[opponentIndex]} · 第二回合 ${detail.score[viewerIndex]}:${detail.score[opponentIndex]}</small>` : ""}${detail.penalties ? `<small>点球 ${detail.penalties[viewerIndex]} : ${detail.penalties[opponentIndex]}</small>` : ""}<em>${weatherIcon(detail.weather)} ${escapeHtml(detail.weather?.name ?? "未知天气")}</em></div><div class="history-detail-grid"><section class="report-panel timeline-panel"><h2>重点事件</h2><div class="match-timeline">${timeline}</div></section><section class="report-panel compact-stats-panel"><h2>比赛统计</h2>${matchStatsMarkup(detail, [viewerIndex, opponentIndex])}</section></div><div class="history-team-grid">${[viewerIndex, opponentIndex].map((index) => historyTeamMarkup(detail.teams[index], Boolean(detail.hideStrategies))).join("")}</div>`;
 }
 
 function closeHistoryMatch() {
@@ -171,11 +198,12 @@ async function openHistoryMatch(matchId) {
   }
 }
 
-function broadcastListMarkup() {
-  const matches = liveBroadcasts.length
-    ? liveBroadcasts.map((broadcast) => `<button class="broadcast-card" data-watch-room="${escapeHtml(broadcast.code)}"><span><i>LIVE</i><small>${broadcast.minute}' · ${weatherIcon(broadcast.weather)} ${escapeHtml(broadcast.weather?.name ?? "比赛中")}</small></span><div><b>${escapeHtml(broadcast.teams[0].name)}</b><strong>${broadcast.score[0]} : ${broadcast.score[1]}</strong><b>${escapeHtml(broadcast.teams[1].name)}</b></div><em>${broadcast.spectatorCount} 人正在观看 · 进入直播 ›</em></button>`).join("")
+function broadcastListMarkup(leagueOnly = false) {
+  const broadcasts = leagueOnly ? liveBroadcasts.filter((broadcast) => String(broadcast.code).startsWith("YDL-")) : liveBroadcasts;
+  const matches = broadcasts.length
+    ? broadcasts.map((broadcast) => `<button class="broadcast-card" data-watch-room="${escapeHtml(broadcast.code)}"><span><i>LIVE</i><small>${broadcast.minute}' · ${weatherIcon(broadcast.weather)} ${escapeHtml(broadcast.weather?.name ?? "比赛中")}</small></span><div><b>${escapeHtml(broadcast.teams[0].name)}</b><strong>${broadcast.score[0]} : ${broadcast.score[1]}</strong><b>${escapeHtml(broadcast.teams[1].name)}</b></div><em>${broadcast.spectatorCount} 人正在观看 · 进入直播 ›</em></button>`).join("")
     : `<p class="broadcast-empty">当前没有正在进行的公开比赛。</p>`;
-  return `<section class="broadcast-hub"><header><div><small>FT1 TELEVISION</small><h2>比赛电视台</h2></div><b>${liveBroadcasts.length} 场直播</b></header><div class="broadcast-list">${matches}</div></section>`;
+  return `<section class="broadcast-hub ${leagueOnly ? "league-television" : ""}"><header><div><small>${leagueOnly ? "YDL TELEVISION" : "FT1 TELEVISION"}</small><h2>${leagueOnly ? "黄狗联赛电视台" : "比赛电视台"}</h2></div><b>${broadcasts.length} 场直播</b></header><div class="broadcast-list">${matches}</div></section>`;
 }
 
 async function refreshBroadcasts() {
@@ -184,7 +212,7 @@ async function refreshBroadcasts() {
     const value = await api("/api/versus/broadcasts");
     liveBroadcasts = value.broadcasts ?? [];
     const hub = document.querySelector(".broadcast-hub");
-    if (hub) hub.outerHTML = broadcastListMarkup();
+    if (hub) hub.outerHTML = broadcastListMarkup(leagueMode && leagueTab === "television");
   } catch { /* 房间轮询会继续处理网络状态 */ }
 }
 
@@ -272,21 +300,57 @@ async function closeBroadcast(notifyServer = true) {
 }
 
 async function bindIdentity() {
-  const name = document.querySelector("#player-name")?.value.trim() ?? account?.profile?.nickname ?? "";
-  const value = await api("/api/versus/identity", { method:"POST", body:{ name, accountToken:account?.accountToken ?? null } });
-  storeAccount({ accountToken:value.accountToken, profile:value.profile });
-  return { playerId:value.profile.id, accountToken:value.accountToken, name:name || value.profile.nickname };
+  if (!account?.profile?.id || !account?.accountToken) throw new Error("请先登录账号");
+  return { playerId:account.profile.id, accountToken:account.accountToken, name:account.profile.nickname };
+}
+
+function renderAuth() {
+  room = null;
+  updateChrome();
+  const registering = authMode === "register";
+  app.innerHTML = `<section class="auth-shell"><div class="auth-brand"><p class="eyebrow">PLAYER ACCOUNT</p><h1>${registering ? "创建你的球队身份" : "欢迎回到比赛"}</h1></div><form class="auth-panel" id="auth-form"><div class="auth-tabs" role="tablist"><button type="button" data-auth-mode="login" class="${registering ? "" : "active"}">登录</button><button type="button" data-auth-mode="register" class="${registering ? "active" : ""}">注册</button></div><label class="field"><span>昵称</span><input id="auth-nickname" autocomplete="username" value="${escapeHtml(account?.profile?.nickname ?? "")}" required autofocus /></label><label class="field"><span>密码</span><input id="auth-password" type="password" autocomplete="${registering ? "new-password" : "current-password"}" required /></label><button class="button primary wide" type="submit">${registering ? "注册并进入" : "登录"}</button><p class="auth-error" id="auth-error"></p></form></section>`;
+  app.querySelectorAll("[data-auth-mode]").forEach((button) => { button.onclick = () => { authMode = button.dataset.authMode; renderAuth(); }; });
+  document.querySelector("#auth-form").onsubmit = authenticate;
+}
+
+async function authenticate(event) {
+  event.preventDefault();
+  const submit = event.currentTarget.querySelector("button[type=submit]");
+  const error = document.querySelector("#auth-error");
+  submit.disabled = true;
+  error.textContent = authMode === "register" ? "正在创建账号…" : "正在登录…";
+  try {
+    const value = await api(`/api/versus/${authMode}`, { method:"POST", body:{ nickname:document.querySelector("#auth-nickname").value, password:document.querySelector("#auth-password").value, legacyAccountToken:account?.accountToken ?? null } });
+    storeAccount({ accountToken:value.accountToken, profile:value.profile });
+    renderLanding();
+  } catch (authError) {
+    error.textContent = authError.message;
+    submit.disabled = false;
+  }
+}
+
+function logoutAccount() {
+  clearTimeout(polling);
+  stopRoomStream();
+  storeSession(null);
+  storeAccount(null);
+  room = null;
+  authMode = "login";
+  renderAuth();
 }
 
 function renderLanding() {
+  leagueMode = false;
+  league = null;
   room = null;
   updateChrome();
   const developerControls = publicHosting ? "" : `<div class="divider">开发者测试</div><div class="developer-actions"><button class="button secondary" id="dev-full-flow">单人完整流程</button><button class="button secondary" id="dev-quick-start">快速进入比赛</button></div>`;
-  app.innerHTML = `<section class="landing"><div class="landing-copy"><h1>选出你的十一人，<span>和好友正面对决。</span></h1>${profileMarkup()}</div><section class="room-console"><h2>好友对战</h2><label class="field"><span>昵称</span><input id="player-name" maxlength="18" autocomplete="nickname" value="${escapeHtml(account?.profile?.nickname ?? "")}" placeholder="输入昵称" /></label>${account?.profile ? `<p class="bound-player-id">玩家ID <b>${escapeHtml(account.profile.id)}</b></p>` : ""}<label class="field"><span>自定义分享码</span><input id="custom-room-code" maxlength="20" autocomplete="off" placeholder="可选，至少6位" /></label><div class="competition-create"><button class="button primary wide" id="create-room">快速比赛<small>一回合决胜</small></button><button class="button secondary wide" id="create-tournament">锦标赛<small>两回合 · 次回合补强</small></button></div><div class="divider">加入已有房间</div><label class="field"><span>分享码</span><input id="room-code" maxlength="20" autocomplete="off" placeholder="输入分享码" /></label><button class="button secondary wide" id="join-room">加入房间</button>${developerControls}</section></section>`;
+  app.innerHTML = `<section class="landing"><div class="landing-copy"><h1>选出你的十一人，<span>决定比赛的方式。</span></h1>${profileMarkup()}</div><section class="room-console mode-console"><h2>${escapeHtml(account.profile.nickname)}</h2><p class="bound-player-id">玩家ID <b>${escapeHtml(account.profile.id)}</b></p><label class="field"><span>自定义分享码</span><input id="custom-room-code" maxlength="20" autocomplete="off" placeholder="快速比赛与锦标赛可选" /></label><div class="competition-create mode-selector"><button class="mode-button mode-quick" id="create-room">快速比赛</button><button class="mode-button mode-cup" id="create-tournament">锦标赛</button><button class="mode-button mode-league" id="open-league">黄狗联赛</button></div><div class="divider">加入已有好友房间</div><label class="field"><span>分享码</span><input id="room-code" maxlength="20" autocomplete="off" placeholder="输入分享码" /></label><button class="button secondary wide" id="join-room">加入房间</button>${developerControls}</section></section>`;
   document.querySelector(".landing-copy")?.insertAdjacentHTML("beforeend", broadcastListMarkup());
   refreshBroadcasts();
   document.querySelector("#create-room").onclick = () => createRoom("quick");
   document.querySelector("#create-tournament").onclick = () => createRoom("tournament");
+  document.querySelector("#open-league").onclick = openLeague;
   document.querySelector("#join-room").onclick = () => joinRoom();
   const fullFlowButton = document.querySelector("#dev-full-flow");
   const quickStartButton = document.querySelector("#dev-quick-start");
@@ -296,9 +360,393 @@ function renderLanding() {
   document.querySelector("#custom-room-code").oninput = (event) => { event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""); };
 }
 
+function leagueIdentity(extra = {}) {
+  return { playerId:account.profile.id, accountToken:account.accountToken, ...extra };
+}
+
+async function leagueRequest(path, body = {}) {
+  const value = await api(`/api/versus/league${path}`, { method:"POST", body:leagueIdentity(body) });
+  league = value.league;
+  renderLeague();
+  return league;
+}
+
+async function openLeague() {
+  leagueMode = true;
+  leagueStartingIds = null;
+  leaguePositions = null;
+  room = null;
+  storeSession(null);
+  updateChrome();
+  app.innerHTML = `<section class="league-loading"><p class="eyebrow">YELLOWDOGS LEAGUE</p><h1>正在读取联赛数据…</h1></section>`;
+  try { await leagueRequest(""); }
+  catch (error) { leagueMode = false; showToast(error.message); renderLanding(); }
+}
+
+function leagueStandingRows() {
+  return league.teams.map((team) => {
+    const badges = (team.championBadges ?? []).map((badge) => `<span class="champion-badge" title="${escapeHtml(`${badge.season}赛季冠军`)}"><i>♛</i>${escapeHtml(badge.season)}</span>`).join("");
+    const owner = team.ownerName ? `<small>${escapeHtml(team.ownerName)} · <span class="league-owner-id">${escapeHtml(team.ownerId)}</span>${badges}</small>` : "";
+    return `<tr class="${league.ownTeam?.id === team.id ? "is-own" : ""}"><td><b>${team.rank}</b></td><td><span class="club-type">${team.isAi ? "AI" : "玩家"}</span><button class="league-team-link" data-league-team-detail="${team.id}">${escapeHtml(team.name)}</button>${owner}</td><td>${team.table.played}</td><td>${team.table.won}</td><td>${team.table.drawn}</td><td>${team.table.lost}</td><td>${team.table.goalsFor}:${team.table.goalsAgainst}</td><td>${team.table.goalsFor - team.table.goalsAgainst > 0 ? "+" : ""}${team.table.goalsFor - team.table.goalsAgainst}</td><td><strong>${team.table.points}</strong></td></tr>`;
+  }).join("");
+}
+
+function leagueJoinMarkup() {
+  const create = league.aiSlotsRemaining > 0
+    ? `<form class="league-create-team" id="league-create-team-form"><label class="field"><span>球队名称</span><input name="teamName" maxlength="30" autocomplete="off" required autofocus /></label><button class="button primary wide" type="submit">创建球队并开始选秀</button></form>`
+    : `<p class="league-empty">当前10支球队都已由真人创建，新玩家将在后续扩容时加入。</p>`;
+  return `<section class="league-shell league-join"><header class="league-hero"><div><p class="eyebrow">S1 · YELLOWDOGS LEAGUE</p><h1>创建你的球队</h1></div><div class="league-clock"><small>比赛时段</small><b>10:00—22:00</b><span>每20分钟一轮 · 服务器离线暂停</span></div></header><div class="league-create-shell"><div><small>CREATE A CLUB</small><h2>球队将加入当前联赛</h2><p>剩余席位 ${league.aiSlotsRemaining}/10</p></div>${create}</div><button class="button secondary" data-league-back>返回首页</button></section>`;
+}
+
+function leagueDraftMarkup() {
+  const selected = league.draft.selectedPlayers;
+  const counts = league.draft.counts;
+  const draftPoolOrder = ["ATT", "MID", "DEF", "GK"];
+  const poolButtons = draftPoolOrder.map((pool) => `<button class="league-pool-draw pool-${pool}" data-league-draw="${pool}" ${league.draft.allowedPools.includes(pool) ? "" : "disabled"}><span>${pool}</span><b>${LINE_LABELS[pool]}</b><small>翻开3张球员卡</small></button>`).join("");
+  const offer = league.draft.offer.length
+    ? `<div class="league-card-offer"><header><small>${LINE_LABELS[league.draft.offerPool]}候选</small><h2>从三张卡牌中签下一人</h2></header><div class="league-flip-grid">${league.draft.offer.map((player,index) => `<button class="league-flip-card" style="--delay:${index * 90}ms" data-league-choose="${player.id}"><span class="grade grade-${player.grade}">${player.grade}</span><small>${ROLE_LABELS[player.role] ?? player.role}</small><h3>${escapeHtml(player.name)}</h3><p>${escapeHtml(player.nationality)} · ${escapeHtml(player.club)}</p><strong>${player.overall}<em>能力</em></strong><b>签下球员</b></button>`).join("")}</div></div>`
+    : selected.length === 22
+      ? `<div class="league-draft-complete"><span>22/22</span><h2>注册名单已经选满</h2><p>确认后将接管球队并从下一轮开始比赛。</p><button class="button primary" data-league-finish>确认22人名单</button></div>`
+      : `<div class="league-pool-stage"><header><small>PICK A POSITION</small><h2>选择下一次翻卡的位置</h2></header><div class="league-pool-grid">${poolButtons}</div><p>每次由服务器随机翻开3张未被真人拥有的球员卡。该模式不提供传奇保底。</p></div>`;
+  const roster = selected.length ? selected.map((player,index) => `<div class="league-drafted-player"><span>${index + 1}</span><i class="grade grade-${player.grade}">${player.grade}</i><b>${escapeHtml(player.name)}<small>${ROLE_LABELS[player.role] ?? player.role}</small></b><strong>${player.overall}</strong></div>`).join("") : `<p class="league-empty">尚未签下球员</p>`;
+  return `<section class="league-shell"><header class="league-work-head"><div><p class="eyebrow">22-PLAYER DRAFT · 3 CHOICES</p><h1>翻卡建立注册名单</h1></div><div class="draft-total"><small>已签下</small><b>${selected.length}<em>/22</em></b></div></header><div class="league-card-draft-layout"><main>${offer}</main><aside class="league-drafted-list"><header><div><small>MY 22</small><h2>已签球员</h2></div><button class="button secondary danger" data-league-reset ${selected.length ? "" : "disabled"}>重置</button></header><div class="league-draft-side-counts"><span>前场 <b>${counts.ATT}</b></span><span>中场 <b>${counts.MID}</b></span><span>后场 <b>${counts.DEF}</b></span><span>门将 <b>${counts.GK}</b></span></div><div class="league-drafted-roster">${roster}</div></aside></div></section>`;
+}
+
+function leagueMatchRow(match, historyTeamId = null) {
+  const canOpen = match.hasDetails && (!historyTeamId || match.homeId === historyTeamId || match.awayId === historyTeamId);
+  return `<button type="button" class="league-result ${match.hasPlayerTeam ? "has-player" : ""}" ${canOpen ? `data-league-match-detail="${escapeHtml(match.id)}"` : "disabled"}><span>第 ${match.round} 轮</span><b>${escapeHtml(match.homeName)}</b><strong>${match.score[0]} : ${match.score[1]}</strong><b>${escapeHtml(match.awayName)}</b><small>${canOpen ? "查看比赛 ›" : escapeHtml(match.formations?.join(" vs ") ?? "")}</small></button>`;
+}
+
+function leagueMatchCentreMarkup() {
+  const rounds = league.matchRounds ?? [];
+  if (!rounds.length) return `<p class="league-empty">联赛尚未进行比赛。</p>`;
+  const availableRounds = rounds.map((entry) => entry.round).sort((a,b) => a - b);
+  if (!availableRounds.includes(leagueRoundPage)) leagueRoundPage = availableRounds.at(-1);
+  const roundIndex = availableRounds.indexOf(leagueRoundPage);
+  const selectedRound = rounds.find((entry) => entry.round === leagueRoundPage);
+  if (!league.teams.some((team) => team.id === leagueHistoryTeamId)) leagueHistoryTeamId = league.ownTeam.id;
+  const historyTeam = league.teams.find((team) => team.id === leagueHistoryTeamId) ?? league.ownTeam;
+  const history = league.recentMatches.filter((match) => match.homeId === historyTeam.id || match.awayId === historyTeam.id);
+  const teamOptions = league.teams.map((team) => `<option value="${team.id}" ${team.id === historyTeam.id ? "selected" : ""}>${escapeHtml(team.name)}</option>`).join("");
+  return `<div class="league-match-centre"><section><header><div><small>ROUND RESULTS</small><h3>第 ${leagueRoundPage} 轮赛果</h3></div><nav class="league-round-pager"><button class="icon-button" data-league-round="${availableRounds[roundIndex - 1] ?? ""}" ${roundIndex <= 0 ? "disabled" : ""} aria-label="上一轮">‹</button><span>${roundIndex + 1}/${availableRounds.length}</span><button class="icon-button" data-league-round="${availableRounds[roundIndex + 1] ?? ""}" ${roundIndex >= availableRounds.length - 1 ? "disabled" : ""} aria-label="下一轮">›</button></nav></header><div>${selectedRound.matches.map((match) => leagueMatchRow(match)).join("")}</div></section><section><header><div><small>TEAM HISTORY</small><h3>${escapeHtml(historyTeam.name)}历史战绩</h3></div><select data-league-history-team aria-label="选择球队">${teamOptions}</select></header><div class="league-history-list">${history.length ? history.map((match) => leagueMatchRow(match, historyTeam.id)).join("") : `<p class="league-empty">这支球队还没有比赛记录。</p>`}</div></section></div>`;
+}
+
+function leagueOverviewMarkup() {
+  const report = league.report;
+  return `<div class="league-dashboard-grid"><section class="league-panel standings-panel"><header><div><small>LEAGUE TABLE</small><h2>积分榜</h2></div><b>${league.season.currentRound}/${league.season.totalRounds} 轮</b></header><div class="league-table-wrap"><table class="league-table"><thead><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进失</th><th>净胜</th><th>分</th></tr></thead><tbody>${leagueStandingRows()}</tbody></table></div></section><aside class="league-report"><header><small>DAILY REPORT</small><h2>${escapeHtml(report.headline)}</h2></header><div class="report-rank"><span>当前排名</span><b>${report.rank}<em>/10</em></b></div><dl><div><dt>赛季战绩</dt><dd>${report.record}</dd></div><div><dt>今日战绩</dt><dd>${report.today.wins}胜 ${report.today.draws}平 ${report.today.losses}负</dd></div><div><dt>积分</dt><dd>${report.points}</dd></div><div><dt>本队最佳</dt><dd>${report.bestPlayer ? `${escapeHtml(report.bestPlayer.name)} · ${report.bestPlayer.averageRating}` : "等待首场比赛"}</dd></div><div><dt>可用球员</dt><dd>${report.availability.available}/${report.availability.total}</dd></div></dl></aside><section class="league-panel recent-panel"><header><div><small>MATCH CENTRE</small><h2>赛果与球队战绩</h2></div>${league.developer && league.season.status === "active" ? `<button class="button secondary" data-league-simulate>模拟下一轮</button>` : ""}</header>${leagueMatchCentreMarkup()}</section>${leagueDailyReportMarkup(report)}</div>`;
+}
+
+function leagueDailyReportMarkup(report) {
+  const results = report.today.results.length ? report.today.results.map((match) => `<div class="daily-result result-${match.result}"><span>第${match.round}轮 · ${match.venue === "home" ? "主场" : "客场"}</span><b>${escapeHtml(match.opponentName)}</b><strong>${match.scoreFor}:${match.scoreAgainst}</strong><small>${escapeHtml(match.formation)}</small></div>`).join("") : `<p class="league-empty">今日尚无比赛。</p>`;
+  const topPlayers = report.topPlayers.length ? report.topPlayers.map((player,index) => `<div class="daily-player"><span>${index + 1}</span><b>${escapeHtml(player.name)}<small>${player.goals}球 · ${player.assists}助</small></b><strong>${player.averageRating.toFixed(2)}</strong></div>`).join("") : `<p class="league-empty">比赛后生成今日球员表现。</p>`;
+  const unavailable = [
+    ...report.availability.injured.map((player) => `<div class="availability-item injury"><b>${escapeHtml(player.name)}</b><span>伤缺 ${player.rounds} 轮</span></div>`),
+    ...report.availability.suspended.map((player) => `<div class="availability-item suspension"><b>${escapeHtml(player.name)}</b><span>停赛 ${player.rounds} 轮</span></div>`),
+    ...report.availability.lowFitness.slice(0, 6).map((player) => `<div class="availability-item low-fitness"><b>${escapeHtml(player.name)}</b><span>体能 ${player.fitness}</span></div>`),
+  ].join("") || `<div class="availability-item all-available"><b>阵容完整</b><span>全队均可正常出场</span></div>`;
+  const history = league.reportHistory.filter((entry) => entry.date !== report.date).slice(0, 6).map((entry) => `<span><b>${escapeHtml(entry.date.slice(5))}</b>${entry.today.wins}胜${entry.today.draws}平${entry.today.losses}负</span>`).join("");
+  return `<section class="league-panel league-daily-report"><header><div><small>CLUB DAILY BRIEF · ${escapeHtml(report.date)}</small><h2>球队当日报告</h2></div><b>${escapeHtml(report.headline)}</b></header><div class="daily-kpis"><span><small>今日比赛</small><b>${report.today.played}</b></span><span><small>今日进失</small><b>${report.today.goalsFor}:${report.today.goalsAgainst}</b></span><span><small>平均体能</small><b>${report.availability.averageFitness}</b></span><span><small>金币变化</small><b>${report.economy.coinChange > 0 ? "+" : ""}${report.economy.coinChange}</b></span></div><div class="daily-report-grid"><section><h3>今日赛果</h3><div class="daily-results-list">${results}</div></section><section><h3>球员表现</h3>${topPlayers}</section><section><h3>球队可用性</h3><div class="daily-availability">${unavailable}</div></section><section><h3>战术与下一步</h3><dl class="daily-tactics"><div><dt>主要阵型</dt><dd>${escapeHtml(report.tactics.formation ?? "尚未确定")}</dd></div><div><dt>比赛思路</dt><dd>${escapeHtml(TACTICS[report.tactics.tactic] ?? report.tactics.tactic)}</dd></div><div><dt>主要打法</dt><dd>${escapeHtml(STYLES[report.tactics.style] ?? report.tactics.style)}</dd></div></dl><p>${escapeHtml(report.managerNote)}</p></section></div>${history ? `<footer class="daily-history"><small>近期日报</small>${history}</footer>` : ""}</section>`;
+}
+
+function leaguePlayerStatus(player) {
+  if (player.state.suspension) return `停赛 ${player.state.suspension}轮`;
+  if (player.state.injuryRounds) return `伤缺 ${player.state.injuryRounds}轮`;
+  return `体能 ${Math.round(player.state.fitness)}`;
+}
+
+function leaguePlayerTooltip(player, assignedRole = player.role) {
+  const keys = player.pool === "GK" ? ["goalkeeping", "reflexes", "passing", "composure"] : player.pool === "DEF" ? ["tackling", "pace", "stamina", "passing"] : player.pool === "MID" ? ["passing", "dribbling", "stamina", "tackling"] : ["finishing", "pace", "dribbling", "composure"];
+  const attributes = keys.map((key) => `${STAT_LABELS[key] ?? key} ${Math.round(player.attributes?.[key] ?? 0)}`).join(" · ");
+  return `${player.nationality ?? ""}${player.club ? ` · ${player.club}` : ""}\n综合能力：${player.overall}\n主位置：${ROLE_LABELS[player.role] ?? player.role} · 副位置：${ROLE_LABELS[player.secondaryRole] ?? "无"}\n当前位置：${ROLE_LABELS[assignedRole] ?? assignedRole}\n身高：${Math.round(player.heightCm ?? 0)}cm · ${leaguePlayerStatus(player)}\n${attributes}`;
+}
+
+function leagueBoardMagnet(player, position, assignedRole) {
+  const fit = positionFit(player, assignedRole);
+  const status = leaguePlayerStatus(player);
+  const tooltip = leaguePlayerTooltip(player, assignedRole);
+  return `<button type="button" class="magnet league-squad-magnet grade-${player.grade.toLowerCase()} fit-${fit} ${player.state.suspension || player.state.injuryRounds ? "unavailable" : ""}" data-league-magnet="${player.id}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%"><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[assignedRole] ?? assignedRole} · ${status}</small><i>${player.overall}</i></button>`;
+}
+
+function leagueBenchMagnet(player) {
+  const tooltip = leaguePlayerTooltip(player);
+  return `<button type="button" class="magnet bench-magnet league-bench-magnet grade-${player.grade.toLowerCase()} fit-primary ${player.state.suspension || player.state.injuryRounds ? "unavailable" : ""}" data-league-bench-magnet="${player.id}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}"><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[player.role] ?? player.role} · ${leaguePlayerStatus(player)}</small><i>${player.overall}</i></button>`;
+}
+
+function leagueNextMatchMarkup() {
+  const next = league.report?.nextOpponent;
+  if (!next) return `<section class="league-next-match complete"><span>赛季赛程已完成</span><b>等待管理员开启新赛季</b></section>`;
+  const startsAt = new Date(next.startsAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
+  return `<section class="league-next-match"><div><small>NEXT MATCH · 第${next.round}轮</small><b>${startsAt}</b></div><div><small>${next.venue === "home" ? "主场" : "客场"}对手</small><strong>${escapeHtml(next.name)}</strong></div><div><small>天气</small><strong>${weatherIcon(next.weather)} ${escapeHtml(next.weather.name)}</strong><span>降水 ${next.weather.precipitation}% · 风力 ${next.weather.wind}</span></div><div><small>裁判尺度</small><strong>${escapeHtml(next.referee.name)}</strong><span>${escapeHtml(next.referee.description)}</span></div></section>`;
+}
+
+function leagueBackpackMarkup() {
+  const offers = league.rewardOffers ?? [];
+  const tiers = league.shop.tiers;
+  if (!offers.length) return `<section class="league-panel league-backpack-empty"><small>PLAYER PACK INVENTORY</small><h2>背包中暂无卡包</h2><p>每轮比赛奖励和开发者邮件发放的卡包都会存放在这里。</p></section>`;
+  const sections = tiers.map((tier) => {
+    const tierOffers = offers.filter((offer) => (offer.tierId ?? "standard") === tier.id);
+    if (!tierOffers.length) return "";
+    const pools = ["ATT", "MID", "DEF", "GK"].map((pool) => {
+      const poolOffers = tierOffers.filter((offer) => offer.pool === pool);
+      if (!poolOffers.length) return "";
+      return `<section class="backpack-pool"><header><b>${LINE_LABELS[pool]}</b><span>${poolOffers.length}份</span></header><div>${poolOffers.map((offer) => `<button type="button" class="backpack-pack tier-${tier.id}" data-league-reward-open="${offer.id}"><span>${pool}</span><b>${escapeHtml(tier.name)}</b><small>${offer.source === "admin" ? "邮件奖励" : `第${offer.round}轮奖励`}</small><em>打开卡包 ›</em></button>`).join("")}</div></section>`;
+    }).join("");
+    return `<section class="backpack-tier"><header><div><small>${tier.id.toUpperCase()} PACKS</small><h2>${escapeHtml(tier.name)}</h2></div><b>${tierOffers.length}份</b></header><p>${escapeHtml(tier.guarantee)}</p><div class="backpack-pool-grid">${pools}</div></section>`;
+  }).join("");
+  return `<section class="league-backpack"><header><div><small>PLAYER PACK INVENTORY</small><h2>球员卡包背包</h2></div><b>${offers.length}份待开启</b></header>${sections}</section>`;
+}
+
+function leagueRewardPanelMarkup() {
+  return "";
+}
+
+function leagueMatchPlanMarkup(state, label, note) {
+  const fallback = state === "opening" ? { tactic:league.ownTeam.tactic, style:league.ownTeam.style } : state === "leading" ? { tactic:"defensive", style:"counterAttack" } : { tactic:"positive", style:"highPress" };
+  const plan = league.ownTeam.tacticalPlans?.[state] ?? fallback;
+  return `<section class="league-match-plan"><header><b>${label}</b><small>${note}</small></header><label class="field"><span>比赛思路</span><select name="${state}Tactic">${Object.entries(TACTICS).map(([key,value]) => `<option value="${key}" ${plan.tactic === key ? "selected" : ""}>${value}</option>`).join("")}</select></label><label class="field"><span>战术打法</span><select name="${state}Style">${Object.entries(STYLES).map(([key,value]) => `<option value="${key}" ${plan.style === key ? "selected" : ""}>${value}</option>`).join("")}</select></label></section>`;
+}
+
+function leagueSquadMarkup() {
+  const roster = league.ownTeam.roster;
+  if (!leagueStartingIds || leagueStartingIds.length !== 11 || leagueStartingIds.some((id) => !roster.some((player) => player.id === id))) {
+    leagueStartingIds = roster.filter((player) => player.starter).map((player) => player.id).slice(0, 11);
+    leaguePositions = structuredClone(league.ownTeam.positions);
+  }
+  const startingSet = new Set(leagueStartingIds);
+  const starters = roster.filter((player) => startingSet.has(player.id));
+  const bench = roster.filter((player) => !startingSet.has(player.id));
+  leaguePositions ??= structuredClone(league.ownTeam.positions);
+  const shape = formationFromPositions(starters, leaguePositions);
+  const magnets = starters.map((player) => leagueBoardMagnet(player, leaguePositions[player.id] ?? { x:50, y:50 }, shape.roles[player.id])).join("");
+  const chemistryLines = leagueChemistryLinesMarkup(starters, leaguePositions, shape.roles);
+  return `<form class="league-tactics-layout tactics-layout" id="league-squad-form">${leagueNextMatchMarkup()}<section class="board-panel league-board-panel">${pitchMarkup(`${chemistryLines}${magnets}`, "league-tactics-pitch")}<section class="tournament-bench league-bench"><header><b>替补席 · ${bench.length}人</b><small>拖动磁贴覆盖场上球员完成替换</small></header><div class="bench-magnet-list">${bench.map(leagueBenchMagnet).join("")}</div></section></section><aside class="control-panel league-plan-controls"><div class="shape-box"><span><b>${shape.valid ? "阵型有效" : "需要调整"}</b></span><strong>${shape.name}</strong></div><div class="line-counts">${Object.entries(shape.counts).map(([key,count]) => `<span>${LINE_LABELS[key]}<b>${count}</b></span>`).join("")}</div>${shape.valid ? "" : `<p class="valid-note bad">${shape.message}</p>`}<label class="chemistry-toggle"><input type="checkbox" data-league-chemistry-toggle ${leagueShowChemistry ? "checked" : ""}><span><b>默契连线</b><small>${league.ownTeam.chemistryLinks.length ? `已形成 ${league.ownTeam.chemistryLinks.length} 组默契` : "共同比赛后逐步形成"}</small></span></label><label class="league-fitness-threshold"><span><b>体力红线</b><output data-fitness-threshold-output>${league.ownTeam.fitnessThreshold ?? 65}</output></span><input type="range" name="fitnessThreshold" min="45" max="90" step="5" value="${league.ownTeam.fitnessThreshold ?? 65}"><small>低于红线时，有对应位置且体力充足的替补将自动出场。</small></label><section class="league-match-plans"><header><b>赛中战术</b><small>根据实时比分自动切换</small></header>${leagueMatchPlanMarkup("opening", "开局 / 平局", "开场与追平后")}${leagueMatchPlanMarkup("leading", "领先", "比分领先时")}${leagueMatchPlanMarkup("trailing", "落后", "比分落后时")}</section><div class="direction-fields"><label class="field"><span>主攻方向</span><select name="attackFocus">${focusOptions(league.ownTeam.attackFocus)}</select></label><label class="field"><span>主要防区</span><select name="defenseFocus">${focusOptions(league.ownTeam.defenseFocus)}</select></label></div><button class="button primary wide" type="submit" ${shape.valid ? "" : "disabled"}>保存下一轮阵容与计划</button><p class="league-auto-note">伤停与体力轮换只改变本轮实际出场阵容，不会改变你保存的主力阵容。默契只在相邻的同一阵线球员之间积累。</p>${leagueRewardPanelMarkup()}</aside></form>`;
+}
+
+function leagueChemistryLinesMarkup(starters, positions, roles) {
+  if (!leagueShowChemistry) return "";
+  const starterIds = new Set(starters.map((player) => player.id));
+  const group = (role) => role === "GK" ? "GK" : ["CB", "LB", "RB", "LWB", "RWB"].includes(role) ? "DEF" : ["ST", "LW", "RW"].includes(role) ? "ATT" : "MID";
+  const lines = (league.ownTeam.chemistryLinks ?? []).filter((link) => {
+    const [firstId, secondId] = link.playerIds;
+    const first = positions[firstId];
+    const second = positions[secondId];
+    return starterIds.has(firstId) && starterIds.has(secondId) && first && second
+      && group(roles[firstId]) !== "GK" && group(roles[firstId]) === group(roles[secondId])
+      && Math.abs(first.y - second.y) <= 12 && Math.hypot(first.x - second.x, first.y - second.y) <= 36;
+  }).map((link) => {
+    const [firstId, secondId] = link.playerIds;
+    return `<line x1="${positions[firstId].x}" y1="${positions[firstId].y}" x2="${positions[secondId].x}" y2="${positions[secondId].y}" data-chemistry="${link.value}"><title>默契度 ${link.value} · 加成 ${(link.bonus * 100).toFixed(2)}%</title></line>`;
+  }).join("");
+  return lines ? `<svg class="league-chemistry-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="球员默契连线">${lines}</svg>` : "";
+}
+
+function swapLeagueStarter(benchId, starterId) {
+  const index = leagueStartingIds.indexOf(starterId);
+  if (index < 0) return;
+  leagueStartingIds[index] = benchId;
+  leaguePositions[benchId] = { ...(leaguePositions[starterId] ?? { x:50, y:45 }) };
+  delete leaguePositions[starterId];
+  renderLeague();
+}
+
+function bindLeagueSquad() {
+  const pitch = document.querySelector("#league-tactics-pitch");
+  document.querySelectorAll("[data-league-magnet]").forEach((magnet) => magnet.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    const playerId = magnet.dataset.leagueMagnet;
+    const startPosition = { ...leaguePositions[playerId] };
+    let moved = false;
+    magnet.setPointerCapture(event.pointerId);
+    magnet.classList.add("dragging");
+    const move = (moveEvent) => {
+      moved = true;
+      const rect = pitch.getBoundingClientRect();
+      const x = Math.max(8, Math.min(92, ((moveEvent.clientX - rect.left) / rect.width) * 100));
+      const y = Math.max(6, Math.min(94, ((moveEvent.clientY - rect.top) / rect.height) * 100));
+      leaguePositions[playerId] = { x:Math.round(x), y:Math.round(y) };
+      magnet.style.left = `${x}%`; magnet.style.top = `${y}%`;
+    };
+    const up = () => {
+      magnet.classList.remove("dragging");
+      magnet.removeEventListener("pointermove", move);
+      if (moved && hasMultipleGoalkeepers(leaguePositions, playerId, leaguePositions[playerId])) {
+        leaguePositions[playerId] = startPosition;
+        showToast("门将位置最多只能安排一名球员");
+      }
+      if (moved) renderLeague();
+    };
+    magnet.addEventListener("pointermove", move);
+    magnet.addEventListener("pointerup", up, { once:true });
+  }));
+  document.querySelectorAll("[data-league-bench-magnet]").forEach((magnet) => magnet.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const ghost = magnet.cloneNode(true);
+    let target = null;
+    ghost.removeAttribute("data-league-bench-magnet");
+    ghost.classList.remove("bench-magnet", "league-bench-magnet");
+    ghost.classList.add("bench-drag-ghost");
+    document.body.appendChild(ghost);
+    const move = (pointerEvent) => {
+      ghost.style.left = `${pointerEvent.clientX}px`; ghost.style.top = `${pointerEvent.clientY}px`;
+      const next = document.elementFromPoint(pointerEvent.clientX, pointerEvent.clientY)?.closest("[data-league-magnet]") ?? null;
+      if (next !== target) { target?.classList.remove("swap-target"); target = next; target?.classList.add("swap-target"); }
+    };
+    const finish = (pointerEvent) => {
+      move(pointerEvent); target?.classList.remove("swap-target"); ghost.remove();
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", cancel);
+      if (target) swapLeagueStarter(magnet.dataset.leagueBenchMagnet, target.dataset.leagueMagnet);
+    };
+    const cancel = () => {
+      target?.classList.remove("swap-target"); ghost.remove();
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", cancel);
+    };
+    move(event);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish, { once:true });
+    window.addEventListener("pointercancel", cancel, { once:true });
+  }));
+}
+
+function leagueLeaderboardRows(entries, metric) {
+  return entries.length ? entries.map((entry,index) => `<tr><td>${index + 1}</td><td><b>${escapeHtml(entry.playerName)}</b><small>${escapeHtml(entry.teamName)}</small></td><td>${entry.appearances}</td><td><strong>${metric(entry)}</strong></td></tr>`).join("") : `<tr><td colspan="4" class="league-empty">完成比赛后生成数据。</td></tr>`;
+}
+
+function leagueStatsMarkup() {
+  const configs = { scorers:["射手榜","进球",(entry) => entry.goals], assists:["助攻榜","助攻",(entry) => entry.assists], ratings:["评分榜","评分",(entry) => entry.averageRating.toFixed(2)], saves:["扑救榜","扑救",(entry) => entry.saves], cards:["纪律榜","红 / 黄",(entry) => `${entry.redCards} / ${entry.yellowCards}`] };
+  const [title,label,metric] = configs[leagueBoard];
+  const entries = leagueStatsScope === "team" ? league.teamLeaderboards[leagueBoard] : league.leaderboards[leagueBoard];
+  return `<section class="league-panel leaderboard-panel"><header><div><small>COMPETITION STATS</small><h2>${title}</h2></div><div class="league-scope-toggle"><button data-league-stats-scope="league" class="${leagueStatsScope === "league" ? "active" : ""}">全联赛</button><button data-league-stats-scope="team" class="${leagueStatsScope === "team" ? "active" : ""}">本球队</button></div></header><div class="league-board-tabs">${Object.entries(configs).map(([key,value]) => `<button type="button" data-league-board="${key}" class="${leagueBoard === key ? "active" : ""}">${value[0]}</button>`).join("")}</div><table class="league-table"><thead><tr><th>#</th><th>球员</th><th>出场</th><th>${label}</th></tr></thead><tbody>${leagueLeaderboardRows(entries, metric)}</tbody></table></section>`;
+}
+
+function leagueMarketMarkup() {
+  const listings = league.listings.length ? league.listings.map((item) => `<div class="market-row"><span class="grade grade-${item.player.grade}">${item.player.grade}</span><b>${escapeHtml(item.player.name)}<small>${escapeHtml(item.sellerTeamName)} · ${ROLE_LABELS[item.player.role] ?? item.player.role} · 能力 ${item.player.overall}</small></b><strong>${item.price}<small>金币</small></strong>${item.sellerId === account.profile.id ? `<button class="button secondary" data-market-cancel="${item.id}">撤回</button>` : `<button class="button primary" data-market-buy="${item.id}">购买</button>`}</div>`).join("") : `<p class="league-empty">目前没有真人球队挂牌球员。</p>`;
+  const own = league.ownTeam.roster.map((player) => `<div class="market-own-row"><b>${escapeHtml(player.name)}<small>${ROLE_LABELS[player.role] ?? player.role} · 能力 ${player.overall} · 参考 ${player.referencePrice} · 最低 ${player.minimumPrice}</small></b><input type="number" min="${player.minimumPrice}" value="${player.minimumPrice}" id="market-price-${player.id}"/><button class="button secondary" data-market-list="${player.id}" ${player.listed ? "disabled" : ""}>${player.listed ? "已挂牌" : "挂牌"}</button><button class="button secondary danger" data-market-release="${player.id}" data-release-value="${player.releaseValue}">解约</button></div>`).join("");
+  return `<div class="league-market"><section class="league-panel"><header><div><small>TRANSFER MARKET</small><h2>真人交易市场</h2></div><b>${league.wallet.balance} 金币</b></header><div>${listings}</div></section><section class="league-panel"><header><div><small>SELL PLAYERS</small><h2>我的球员</h2></div><span>成交收取5%手续费</span></header><div class="market-own-list">${own}</div></section></div>`;
+}
+
+function leagueInboxMarkup() {
+  const messages = league.inbox ?? [];
+  if (!messages.length) return `<section class="league-panel league-inbox-empty"><h2>收件箱暂无消息</h2><p>比赛周战报、球队日报、伤停和奖励通知会发送到这里。</p></section>`;
+  if (!messages.some((message) => message.id === leagueInboxMessageId)) leagueInboxMessageId = null;
+  const selected = messages.find((message) => message.id === leagueInboxMessageId) ?? null;
+  const typeLabels = { "daily-report":"球队日报", matchweek:"比赛周", medical:"队医报告", reward:"阶段奖励", transfer:"转会消息", lineup:"阵容轮换", notice:"联赛通知" };
+  const list = messages.map((message) => {
+    const time = new Date(message.createdAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
+    return `<button type="button" class="league-mail-item ${message.id === selected?.id ? "active" : ""} ${message.readAt ? "read" : "unread"}" data-league-inbox-message="${escapeHtml(message.id)}"><span>${escapeHtml(typeLabels[message.type] ?? "联赛通知")}<time>${time}</time></span><b>${escapeHtml(message.title)}</b><small>${escapeHtml(message.summary)}</small></button>`;
+  }).join("");
+  const reader = selected ? leagueInboxDetailMarkup(selected) : `<div class="league-mail-placeholder"><b>选择一封邮件</b><p>点击左侧邮件后会标记为已读并显示完整内容。</p></div>`;
+  return `<div class="league-inbox"><aside class="league-mail-list"><header><div><small>CLUB INBOX</small><h2>收件箱</h2></div><b>${messages.length}</b></header><div>${list}</div></aside><main class="league-mail-reader">${reader}</main></div>`;
+}
+
+function leagueInboxDetailMarkup(message) {
+  const sentAt = new Date(message.createdAt).toLocaleString("zh-CN", { year:"numeric", month:"long", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
+  const header = `<header><div><small>${escapeHtml(sentAt)}</small><h2>${escapeHtml(message.title)}</h2><p>${escapeHtml(message.summary)}</p></div><div class="league-mail-actions">${message.matchId ? `<button type="button" class="button secondary" data-league-match-detail="${message.matchId}">查看比赛</button>` : ""}<button type="button" class="button secondary danger" data-league-inbox-delete="${escapeHtml(message.id)}">删除邮件</button></div></header>`;
+  if (message.type === "daily-report" && message.report) return `${header}${leagueDailyReportMarkup(message.report)}`;
+  if (message.type === "matchweek") {
+    const payload = message.payload ?? {};
+    const results = (payload.results ?? []).map((match) => leagueMatchRow(match, league.ownTeam.id)).join("");
+    const alerts = [...(payload.injured ?? []).map((player) => `${escapeHtml(player.name)}伤缺${player.rounds}轮`), ...(payload.suspended ?? []).map((player) => `${escapeHtml(player.name)}停赛${player.rounds}轮`)];
+    const next = payload.next ? `<section class="mail-next-match"><small>下一轮</small><b>${payload.next.venue === "home" ? "主场" : "客场"} · ${escapeHtml(payload.next.name)}</b><span>${weatherIcon(payload.next.weather)} ${escapeHtml(payload.next.weather.name)} · 裁判 ${escapeHtml(payload.next.referee.name)}</span></section>` : "";
+    return `${header}<div class="league-mail-body"><p>${escapeHtml(message.body)}</p><div class="mail-kpis"><span><small>当前排名</small><b>${payload.rank ?? "-"}</b></span><span><small>联赛积分</small><b>${payload.points ?? "-"}</b></span><span><small>阵容提醒</small><b>${alerts.length}</b></span></div>${next}${alerts.length ? `<section class="mail-alert"><b>阵容可用性</b><p>${alerts.join("；")}</p></section>` : ""}<section class="mail-round-results"><h3>本轮全部赛果</h3>${results}</section></div>`;
+  }
+  return `${header}<div class="league-mail-body"><p>${escapeHtml(message.body)}</p>${message.type === "reward" && (message.payload?.offerId || message.payload?.offerIds?.length) ? `<button type="button" class="button primary" data-league-tab="backpack">前往背包查看卡包</button>` : ""}</div>`;
+}
+
+function leagueShopMarkup() {
+  const offer = league.shop.offer;
+  const rosterFull = league.ownTeam.roster.length >= 33;
+  const pools = ["ATT", "MID", "DEF", "GK"];
+  if (offer) return `<section class="league-panel league-shop"><header><div><small>OPENED PACK · ${escapeHtml(offer.tier.guarantee)}</small><h2>${escapeHtml(offer.tier.name)} · ${LINE_LABELS[offer.pool]}三选一</h2></div><b>${league.wallet.balance} 金币</b></header><div class="league-shop-offer">${offer.players.map((player,index) => `<button class="league-flip-card" style="--delay:${index * 90}ms" data-shop-choose="${player.id}"><span class="grade grade-${player.grade}">${player.grade}</span><small>${ROLE_LABELS[player.role] ?? player.role}</small><h3>${escapeHtml(player.name)}</h3><p>${escapeHtml(player.nationality)} · ${escapeHtml(player.club)}</p><strong>${player.overall}<em>能力</em></strong><b>签下球员</b></button>`).join("")}</div><p class="league-shop-note">选择一人加入球队，其余两张卡将返回公共球员池。</p></section>`;
+  const tiers = league.shop.tiers.map((tier) => `<section class="league-pack-tier tier-${tier.id}"><header><div><b>${escapeHtml(tier.name)}</b><small>${escapeHtml(tier.guarantee)}</small></div><strong>${tier.price}<small>金币</small></strong></header><div class="league-pack-grid">${pools.map((pool) => `<button class="league-pack" data-shop-buy="${pool}" data-shop-tier="${tier.id}" ${rosterFull || league.wallet.balance < tier.price ? "disabled" : ""}><span>${pool}</span><div><b>${LINE_LABELS[pool]}</b><small>随机3张 · 选择1人</small></div><strong>${tier.price}<small>金币</small></strong></button>`).join("")}</div></section>`).join("");
+  return `<section class="league-panel league-shop"><header><div><small>PLAYER PACKS</small><h2>球员卡包商店</h2></div><b>${league.wallet.balance} 金币</b></header><div class="league-shop-intro"><div><strong>选择卡包档位和位置</strong><span>每包翻开3名未被其他玩家拥有的球员，并从中签下1人；购买次数不限。</span></div><span>球队名单 ${league.ownTeam.roster.length}/33</span></div>${rosterFull ? `<p class="league-shop-warning">当前33人名单已满。请先在交易市场出售或解约一名球员，再购买卡包。</p>` : ""}<div class="league-tier-list">${tiers}</div></section>`;
+}
+
+function renderLeague() {
+  leagueMode = true;
+  updateChrome();
+  if (league.draft) app.innerHTML = leagueDraftMarkup();
+  else if (!league.ownTeam) app.innerHTML = leagueJoinMarkup();
+  else {
+    const content = leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
+    const teamSettings = leagueTab === "overview" ? `<form class="league-team-settings" id="league-team-name-form"><div><small>球队设置</small><b>修改球队名称</b></div><input name="teamName" maxlength="30" value="${escapeHtml(league.ownTeam.name)}" required><button class="button secondary" type="submit">保存名称</button></form>` : "";
+    app.innerHTML = `<section class="league-shell"><header class="league-top"><div><p class="eyebrow">${escapeHtml(league.season.name)} · ROUND ${league.season.currentRound}/${league.season.totalRounds}</p><h1>YellowDogs League</h1></div><div class="league-team-mark"><small>${escapeHtml(account.profile.nickname)}</small><b>${escapeHtml(league.ownTeam.name)}</b><span>${league.wallet.balance} 金币</span></div></header><nav class="league-nav"><button class="${leagueTab === "overview" ? "active" : ""}" data-league-tab="overview">联赛总览</button><button class="${leagueTab === "squad" ? "active" : ""}" data-league-tab="squad">阵容战术</button><button class="${leagueTab === "inbox" ? "active" : ""}" data-league-tab="inbox">收件箱${league.inboxUnreadCount ? `<span>${league.inboxUnreadCount}</span>` : ""}</button><button class="${leagueTab === "backpack" ? "active" : ""}" data-league-tab="backpack">背包${league.rewardOffers.length ? `<span>${league.rewardOffers.length}</span>` : ""}</button><button class="${leagueTab === "television" ? "active" : ""}" data-league-tab="television">电视台</button><button class="${leagueTab === "stats" ? "active" : ""}" data-league-tab="stats">数据榜单</button><button class="${leagueTab === "shop" ? "active" : ""}" data-league-tab="shop">球员商店</button><button class="${leagueTab === "market" ? "active" : ""}" data-league-tab="market">交易市场</button></nav>${teamSettings}${content}</section>`;
+    if (leagueTab === "squad") bindLeagueSquad();
+    if (leagueTab === "television") refreshBroadcasts();
+  }
+}
+
+function closeLeagueDialog() {
+  document.querySelector("#league-dialog-overlay")?.remove();
+}
+
+function openLeagueDialog(content, className = "") {
+  closeLeagueDialog();
+  document.body.insertAdjacentHTML("beforeend", `<div class="league-dialog-overlay" id="league-dialog-overlay"><section class="league-dialog ${className}">${content}</section></div>`);
+  const overlay = document.querySelector("#league-dialog-overlay");
+  overlay.addEventListener("click", (event) => { if (event.target === overlay || event.target.closest("[data-close-league-dialog]")) closeLeagueDialog(); });
+  return overlay;
+}
+
+function openLeagueConfirm({ title, text, confirmText = "确认", onConfirm }) {
+  const overlay = openLeagueDialog(`<header><div><small>YELLOWDOGS LEAGUE</small><h2>${escapeHtml(title)}</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="league-confirm-body"><p>${escapeHtml(text)}</p><div><button class="button secondary" data-close-league-dialog>取消</button><button class="button primary" data-confirm-league-action>${escapeHtml(confirmText)}</button></div></div>`, "league-confirm-dialog");
+  overlay.querySelector("[data-confirm-league-action]").onclick = async (event) => {
+    event.currentTarget.disabled = true;
+    try { await onConfirm(); closeLeagueDialog(); }
+    catch (error) { event.currentTarget.disabled = false; showToast(error.message); }
+  };
+}
+
+async function openLeagueMatch(matchId) {
+  const overlay = openLeagueDialog(`<header><div><small>LEAGUE MATCH</small><h2>正在读取比赛详情…</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header>`, "league-match-dialog");
+  try {
+    const value = await api("/api/versus/league/match/detail", { method:"POST", body:leagueIdentity({ matchId }) });
+    value.match.hideStrategies = true;
+    const dialog = overlay.querySelector(".league-dialog");
+    if (dialog) dialog.innerHTML = historyMatchMarkup(value.match).replaceAll("data-close-history", "data-close-league-dialog");
+  } catch (error) { closeLeagueDialog(); showToast(error.message); }
+}
+
+function leaguePublicPitch(team) {
+  return `<div class="league-public-pitch"><div class="pitch-lines"></div>${team.starters.map((player) => { const tooltip = leaguePlayerTooltip({ ...player, state:{ fitness:100, suspension:0, injuryRounds:0 } }, player.role); return `<button type="button" class="league-public-magnet grade-${player.grade.toLowerCase()}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${player.position.x}%;top:${player.position.y}%"><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[player.role] ?? player.role} · ${player.overall}</small></button>`; }).join("")}</div>`;
+}
+
+async function openLeagueTeam(teamId) {
+  const overlay = openLeagueDialog(`<header><div><small>CLUB PROFILE</small><h2>正在读取球队资料…</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header>`, "league-team-dialog");
+  try {
+    const value = await api("/api/versus/league/team/detail", { method:"POST", body:leagueIdentity({ teamId }) });
+    const team = value.team;
+    const history = team.history.length ? team.history.map((match) => leagueMatchRow(match, team.id)).join("") : `<p class="league-empty">还没有比赛记录。</p>`;
+    overlay.querySelector(".league-dialog").innerHTML = `<header><div><small>${team.isAi ? "AI CLUB" : "PLAYER CLUB"}</small><h2>${escapeHtml(team.name)}</h2><p>${escapeHtml(team.formation ?? "阵型待定")} · ${team.table.won}胜 ${team.table.drawn}平 ${team.table.lost}负</p></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="league-team-detail-grid"><section><h3>当前阵型</h3>${leaguePublicPitch(team)}</section><section><h3>现有球员名单 · ${team.roster.length}人</h3><div class="league-public-roster">${team.roster.map((player) => `<div><span class="grade grade-${player.grade}">${player.grade}</span><b>${escapeHtml(player.name)}<small>${ROLE_LABELS[player.role] ?? player.role}</small></b><strong>${player.overall}</strong></div>`).join("")}</div></section></div><section class="league-team-history"><h3>历史战绩</h3>${history}</section>`;
+    overlay.querySelectorAll("[data-league-match-detail]").forEach((button) => button.onclick = () => openLeagueMatch(button.dataset.leagueMatchDetail));
+  } catch (error) { closeLeagueDialog(); showToast(error.message); }
+}
+
+async function openLeagueReward(offerId) {
+  let offer = league.rewardOffers.find((entry) => entry.id === offerId);
+  if (!offer) return;
+  if (!offer.players?.length) {
+    try {
+      await leagueRequest("/reward/open", { offerId });
+      offer = league.rewardOffers.find((entry) => entry.id === offerId);
+    } catch (error) { showToast(error.message); return; }
+  }
+  if (!offer?.players?.length) return;
+  const overlay = openLeagueDialog(`<header><div><small>ROUND ${offer.round} REWARD</small><h2>${LINE_LABELS[offer.pool]}随机球员卡包</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="league-reward-choices">${offer.players.map((player,index) => `<button class="league-flip-card" style="--delay:${index * 90}ms" data-reward-choose="${player.id}"><span class="grade grade-${player.grade}">${player.grade}</span><small>${ROLE_LABELS[player.role] ?? player.role}</small><h3>${escapeHtml(player.name)}</h3><p>${escapeHtml(player.nationality)} · ${escapeHtml(player.club)}</p><strong>${player.overall}<em>能力</em></strong><b>签下球员</b></button>`).join("")}</div>`, "league-reward-dialog");
+  overlay.querySelectorAll("[data-reward-choose]").forEach((button) => button.onclick = async () => {
+    button.disabled = true;
+    try { await leagueRequest("/reward/choose", { offerId, leaguePlayerId:button.dataset.rewardChoose }); closeLeagueDialog(); showToast("奖励球员已加入球队"); }
+    catch (error) { button.disabled = false; showToast(error.message); }
+  });
+}
+
 async function createDeveloperRoom(quickStart) {
   try {
-    const value = await api("/api/versus/dev-room", { method:"POST", body:{ name:document.querySelector("#player-name").value || "开发者",quickStart } });
+    const value = await api("/api/versus/dev-room", { method:"POST", body:{ name:account?.profile?.nickname ?? "开发者",quickStart } });
     storeSession({ code:value.room.code, token:value.token });
     room = value.room;
     localPositions = null;
@@ -400,6 +848,22 @@ function inferAssignedRoles(roster, positions) {
     else role = entry.y < midfieldReferenceY ? "AM" : "DM";
     return [entry.id, role];
   }));
+}
+
+function inferFormationName(roster, positions) {
+  const roles = inferAssignedRoles(roster, positions);
+  const roleGroup = (role) => role === "GK" ? "GK" : ["CB", "LB", "RB", "LWB", "RWB"].includes(role) ? "DEF" : ["ST", "LW", "RW"].includes(role) ? "ATT" : "MID";
+  const counts = { GK:0, DEF:0, MID:0, ATT:0 };
+  Object.values(roles).forEach((role) => { counts[roleGroup(role)] += 1; });
+  const midfieldY = roster.filter((player) => roleGroup(roles[player.id]) === "MID").map((player) => Number(positions[player.id]?.y)).filter(Number.isFinite).sort((left, right) => left - right);
+  const midfieldLines = midfieldY.length ? [1] : [];
+  for (let index = 1; index < midfieldY.length; index += 1) {
+    if (midfieldY[index] - midfieldY[index - 1] >= 8) midfieldLines.push(1);
+    else midfieldLines[midfieldLines.length - 1] += 1;
+  }
+  return midfieldLines.length > 1
+    ? [counts.DEF, ...midfieldLines.reverse(), counts.ATT].join("-")
+    : `${counts.DEF}-${counts.MID}-${counts.ATT}`;
 }
 
 function positionFit(player, assignedRole) {
@@ -697,11 +1161,10 @@ function liveStatusMarkers(player) {
   ].join("")}</span>`;
 }
 
-function liveMagnet(player, editable, useLocalPosition = false) {
-  const position = useLocalPosition ? (localPositions?.[player.id] ?? player.position ?? { x:50,y:50 }) : (player.position ?? { x:50,y:50 });
+function liveMagnet(player, editable, position = player.position ?? { x:50,y:50 }, assignedRole = player.assignedRole) {
   const status = player.sentOff ? "红牌" : player.injury ? "伤退" : "";
-  const tooltip = playerTooltip(player, player.assignedRole);
-  return `<button class="magnet live-magnet grade-${String(player.grade ?? "C").toLowerCase()} rating-${Math.floor(player.rating)} ${status ? "inactive" : ""}" data-live-magnet="${player.id}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" ${editable && player.active ? "" : "disabled"}>${liveStatusMarkers(player)}<b>${escapeHtml(player.name)}</b><small>${status || `${ROLE_LABELS[player.assignedRole] ?? player.assignedRole} · 体能 ${Math.round(player.fitness)}`}</small><i class="live-rating">${player.rating.toFixed(1)}</i></button>`;
+  const tooltip = playerTooltip(player, assignedRole);
+  return `<button class="magnet live-magnet grade-${String(player.grade ?? "C").toLowerCase()} rating-${Math.floor(player.rating)} ${status ? "inactive" : ""}" data-live-magnet="${player.id}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" ${editable && player.active ? "" : "disabled"}>${liveStatusMarkers(player)}<b>${escapeHtml(player.name)}</b><small>${status || `${ROLE_LABELS[assignedRole] ?? assignedRole} · 体能 ${Math.round(player.fitness)}`}</small><i class="live-rating">${player.rating.toFixed(1)}</i></button>`;
 }
 
 function matchStatsMarkup(match, teamOrder = [0, 1]) {
@@ -721,7 +1184,11 @@ function livePitchMarkup(team, options = {}) {
   const pauseTitle = room.match.pause?.kind === "halftime" ? "中场调整" : "双方战术调整";
   const submitted = Boolean(room.match.pause?.submitted?.[room.viewerIndex]);
   const pauseNote = own ? (submitted ? "已提交，等待倒计时结束" : "双方均可调整，倒计时不会提前结束") : "比赛将在倒计时结束后继续";
-  return `<div class="pitch live-pitch ${own ? "own-live-pitch" : "opponent-live-pitch"}" id="${own ? "live-pitch" : "opponent-live-pitch"}"><div class="pitch-lines"></div><span class="zone-label att">前场</span><span class="zone-label mid">中场</span><span class="zone-label def">后场</span><span class="zone-label gk">门将</span>${team.players.filter((player) => player.active || player.sentOff || player.injury).map((player) => liveMagnet(player, own && paused && !submitted, own)).join("")}${paused ? `<div class="pause-ribbon"><b>${pauseTitle}</b><strong>${clockText(room.match.pause.remainingMs)}</strong><small>${pauseNote}</small></div>` : ""}</div>`;
+  const shownPlayers = team.players.filter((player) => player.active || player.sentOff || player.injury);
+  const activePlayers = team.players.filter((player) => player.active);
+  const previewing = own && paused && !submitted;
+  const previewRoles = previewing ? inferAssignedRoles(activePlayers, localPositions) : {};
+  return `<div class="pitch live-pitch ${own ? "own-live-pitch" : "opponent-live-pitch"}" id="${own ? "live-pitch" : "opponent-live-pitch"}"><div class="pitch-lines"></div><span class="zone-label att">前场</span><span class="zone-label mid">中场</span><span class="zone-label def">后场</span><span class="zone-label gk">门将</span>${shownPlayers.map((player) => liveMagnet(player, previewing, previewing ? (localPositions?.[player.id] ?? player.position) : player.position, previewRoles[player.id] ?? player.assignedRole)).join("")}${paused ? `<div class="pause-ribbon"><b>${pauseTitle}</b><strong>${clockText(room.match.pause.remainingMs)}</strong><small>${pauseNote}</small></div>` : ""}</div>`;
 }
 
 function liveTeamPanel(team, options = {}) {
@@ -732,7 +1199,8 @@ function liveTeamPanel(team, options = {}) {
   const opponent = room.match.teams[room.viewerIndex === 0 ? 1 : 0];
   const markingOptions = opponent.players.filter((player) => player.active).map((player) => `<option value="${escapeHtml(player.id)}" ${localMarkingTargetId === player.id ? "selected" : ""}>${escapeHtml(player.name)} · ${ROLE_LABELS[player.assignedRole] ?? player.assignedRole} · ${player.rating.toFixed(1)}</option>`).join("");
   const submitted = Boolean(room.match.pause?.submitted?.[room.viewerIndex]);
-  return `<section class="live-team-panel ${own ? "own-team-panel" : "opponent-team-panel"}"><header><div><h2>${escapeHtml(team.name)}${team.importedLineup ? `<span class="lineup-origin-badge">自带阵容</span>` : ""}</h2><small>${team.formation} · ${team.activeCount} 人</small></div>${own ? `<button class="button pause-button" id="pause-match" ${canPause ? "" : "disabled"}>${room.match.pauseUsed[room.viewerIndex] ? "暂停已使用" : room.match.pause ? "调整中" : "战术暂停"}</button>` : `<span class="strategy-private">${title}</span>`}</header>${livePitchMarkup(team, { own, paused:Boolean(room.match.pause) })}${own && !adjusting ? `<footer>${title} · 主攻${FOCUSES[team.attackFocus]} · 主守${FOCUSES[team.defenseFocus]}</footer>` : ""}${adjusting && own ? `<div class="pause-move-hint">拖动球员并调整双方策略；完整保留 30 秒</div><div class="live-tactic-controls"><label class="field"><span>比赛思路</span><select id="live-tactic-select" ${submitted ? "disabled" : ""}>${Object.entries(TACTICS).map(([key,label]) => `<option value="${key}" ${localTactic === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field"><span>比赛战术</span><select id="live-style-select" ${submitted ? "disabled" : ""}>${Object.entries(STYLES).map(([key,label]) => `<option value="${key}" ${localStyle === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field"><span>主攻方向</span><select id="live-attack-focus" ${submitted ? "disabled" : ""}>${focusOptions(localAttackFocus)}</select></label><label class="field"><span>主守方向</span><select id="live-defense-focus" ${submitted ? "disabled" : ""}>${focusOptions(localDefenseFocus)}</select></label><label class="field marking-target-field"><span>重点盯防</span><select id="live-marking-select" ${submitted ? "disabled" : ""}><option value="">不设置</option>${markingOptions}</select></label><button class="button primary" id="apply-live-tactics" ${submitted ? "disabled" : ""}>${submitted ? "已提交，等待继续" : "提交本次调整"}</button></div>` : ""}</section>`;
+  const displayedFormation = own && adjusting && !submitted ? inferFormationName(team.players.filter((player) => player.active), localPositions) : team.formation;
+  return `<section class="live-team-panel ${own ? "own-team-panel" : "opponent-team-panel"}"><header><div><h2>${escapeHtml(team.name)}${team.importedLineup ? `<span class="lineup-origin-badge">自带阵容</span>` : ""}</h2><small>${displayedFormation} · ${team.activeCount} 人</small></div>${own ? `<button class="button pause-button" id="pause-match" ${canPause ? "" : "disabled"}>${room.match.pauseUsed[room.viewerIndex] ? "暂停已使用" : room.match.pause ? "调整中" : "战术暂停"}</button>` : `<span class="strategy-private">${title}</span>`}</header>${livePitchMarkup(team, { own, paused:Boolean(room.match.pause) })}${own && !adjusting ? `<footer>${title} · 主攻${FOCUSES[team.attackFocus]} · 主守${FOCUSES[team.defenseFocus]}</footer>` : ""}${adjusting && own ? `<div class="pause-move-hint">拖动球员并调整双方策略；完整保留 30 秒</div><div class="live-tactic-controls"><label class="field"><span>比赛思路</span><select id="live-tactic-select" ${submitted ? "disabled" : ""}>${Object.entries(TACTICS).map(([key,label]) => `<option value="${key}" ${localTactic === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field"><span>比赛战术</span><select id="live-style-select" ${submitted ? "disabled" : ""}>${Object.entries(STYLES).map(([key,label]) => `<option value="${key}" ${localStyle === key ? "selected" : ""}>${label}</option>`).join("")}</select></label><label class="field"><span>主攻方向</span><select id="live-attack-focus" ${submitted ? "disabled" : ""}>${focusOptions(localAttackFocus)}</select></label><label class="field"><span>主守方向</span><select id="live-defense-focus" ${submitted ? "disabled" : ""}>${focusOptions(localDefenseFocus)}</select></label><label class="field marking-target-field"><span>重点盯防</span><select id="live-marking-select" ${submitted ? "disabled" : ""}><option value="">不设置</option>${markingOptions}</select></label><button class="button primary" id="apply-live-tactics" ${submitted ? "disabled" : ""}>${submitted ? "已提交，等待继续" : "提交本次调整"}</button></div>` : ""}</section>`;
 }
 
 function renderMatch() {
@@ -808,6 +1276,7 @@ function bindLiveMagnets() {
     draggingMagnet = true;
     const playerId = magnet.dataset.liveMagnet;
     const startPosition = { ...localPositions[playerId] };
+    let moved = false;
     magnet.setPointerCapture(event.pointerId);
     magnet.classList.add("dragging");
     const move = (moveEvent) => {
@@ -815,9 +1284,10 @@ function bindLiveMagnets() {
       const x = Math.max(8,Math.min(92,((moveEvent.clientX-rect.left)/rect.width)*100));
       const y = Math.max(6,Math.min(94,((moveEvent.clientY-rect.top)/rect.height)*100));
       localPositions[playerId] = { x:Math.round(x),y:Math.round(y) };
+      moved = true;
       magnet.style.left = `${x}%`; magnet.style.top = `${y}%`;
     };
-    const up = () => { draggingMagnet = false; magnet.classList.remove("dragging"); magnet.removeEventListener("pointermove",move); magnet.removeEventListener("pointerup",up); if (hasMultipleGoalkeepers(localPositions, playerId, localPositions[playerId])) { localPositions[playerId] = startPosition; showToast("门将位置最多只能安排一名球员"); renderMatch(); } };
+    const up = () => { draggingMagnet = false; magnet.classList.remove("dragging"); magnet.removeEventListener("pointermove",move); magnet.removeEventListener("pointerup",up); if (moved && hasMultipleGoalkeepers(localPositions, playerId, localPositions[playerId])) { localPositions[playerId] = startPosition; showToast("门将位置最多只能安排一名球员"); } if (moved) renderMatch(); };
     magnet.addEventListener("pointermove",move);
     magnet.addEventListener("pointerup",up,{once:true});
   }));
@@ -920,6 +1390,7 @@ async function exportLineup() {
 }
 
 function render() {
+  if (!account || !account.profile?.passwordSet) return renderAuth();
   const nextPhase = room?.phase ?? "landing";
   const phaseChanged = nextPhase !== renderedPhase;
   renderedPhase = nextPhase;
@@ -1058,7 +1529,8 @@ function startPolling() {
   schedulePolling(200);
 }
 
-leaveButton.onclick = () => { clearTimeout(polling); stopRoomStream(); storeSession(null); room = null; localPositions = null; localStartingIds = null; localTactic = "balanced"; localStyle = "possession"; localAttackFocus = "balanced"; localDefenseFocus = "balanced"; lineupSeedInput = ""; exportedLineupCode = ""; renderLanding(); };
+leaveButton.onclick = () => { clearTimeout(polling); stopRoomStream(); storeSession(null); room = null; leagueMode = false; league = null; localPositions = null; localStartingIds = null; localTactic = "balanced"; localStyle = "possession"; localAttackFocus = "balanced"; localDefenseFocus = "balanced"; lineupSeedInput = ""; exportedLineupCode = ""; renderLanding(); };
+accountLogoutButton.onclick = logoutAccount;
 
 app.addEventListener("focusin", (event) => {
   if (!event.target.matches("select, input")) return;
@@ -1080,6 +1552,96 @@ app.addEventListener("click", (event) => {
   if (historyButton) openHistoryMatch(historyButton.dataset.historyMatch);
   const watchButton = event.target.closest("[data-watch-room]");
   if (watchButton) startWatching(watchButton.dataset.watchRoom);
+  const draftDraw = event.target.closest("[data-league-draw]");
+  if (draftDraw) leagueRequest("/draft/draw", { pool:draftDraw.dataset.leagueDraw }).catch((error) => showToast(error.message));
+  const draftChoice = event.target.closest("[data-league-choose]");
+  if (draftChoice) leagueRequest("/draft/choose", { leaguePlayerId:draftChoice.dataset.leagueChoose }).catch((error) => showToast(error.message));
+  if (event.target.closest("[data-league-reset]") && window.confirm("重置后会释放已经签下的全部球员，确定重新选秀？")) leagueRequest("/draft/reset").catch((error) => showToast(error.message));
+  if (event.target.closest("[data-league-finish]")) leagueRequest("/draft/finish").then(() => { leagueTab = "overview"; showToast("球队接管完成，将从下一轮开始参赛"); }).catch((error) => showToast(error.message));
+  if (event.target.closest("[data-league-back]")) renderLanding();
+  const leagueTabButton = event.target.closest("[data-league-tab]");
+  if (leagueTabButton) {
+    const nextTab = leagueTabButton.dataset.leagueTab;
+    if (nextTab === "squad" && leagueTab !== "squad") { leagueStartingIds = null; leaguePositions = null; }
+    leagueTab = nextTab;
+    renderLeague();
+  }
+  const inboxMessage = event.target.closest("[data-league-inbox-message]");
+  if (inboxMessage) {
+    leagueInboxMessageId = inboxMessage.dataset.leagueInboxMessage;
+    const message = league.inbox.find((entry) => entry.id === leagueInboxMessageId);
+    if (message && !message.readAt) leagueRequest("/inbox/read", { messageId:leagueInboxMessageId }).catch((error) => showToast(error.message));
+    else renderLeague();
+  }
+  const inboxDelete = event.target.closest("[data-league-inbox-delete]");
+  if (inboxDelete) {
+    const messageId = inboxDelete.dataset.leagueInboxDelete;
+    const message = league.inbox.find((entry) => entry.id === messageId);
+    if (message) openLeagueConfirm({ title:"删除邮件", text:`确定删除“${message.title}”吗？删除后无法恢复。`, confirmText:"删除", onConfirm:() => { leagueInboxMessageId = null; return leagueRequest("/inbox/delete", { messageId }); } });
+  }
+  const leagueBoardButton = event.target.closest("[data-league-board]");
+  if (leagueBoardButton) { leagueBoard = leagueBoardButton.dataset.leagueBoard; renderLeague(); }
+  const statsScope = event.target.closest("[data-league-stats-scope]");
+  if (statsScope) { leagueStatsScope = statsScope.dataset.leagueStatsScope; renderLeague(); }
+  const leagueRound = event.target.closest("[data-league-round]");
+  if (leagueRound?.dataset.leagueRound) { leagueRoundPage = Number(leagueRound.dataset.leagueRound); renderLeague(); }
+  const leagueTeamDetail = event.target.closest("[data-league-team-detail]");
+  if (leagueTeamDetail) openLeagueTeam(leagueTeamDetail.dataset.leagueTeamDetail);
+  const leagueMatchDetail = event.target.closest("[data-league-match-detail]");
+  if (leagueMatchDetail) openLeagueMatch(leagueMatchDetail.dataset.leagueMatchDetail);
+  const rewardOpen = event.target.closest("[data-league-reward-open]");
+  if (rewardOpen) openLeagueReward(rewardOpen.dataset.leagueRewardOpen);
+  if (event.target.closest("[data-league-simulate]")) leagueRequest("/simulate").then(() => showToast("下一轮模拟完成")).catch((error) => showToast(error.message));
+  const marketList = event.target.closest("[data-market-list]");
+  if (marketList) { const leaguePlayerId = marketList.dataset.marketList; const price = document.querySelector(`#market-price-${CSS.escape(leaguePlayerId)}`)?.value; leagueRequest("/market/list", { leaguePlayerId, price }).then(() => showToast("球员已挂牌")).catch((error) => showToast(error.message)); }
+  const marketCancel = event.target.closest("[data-market-cancel]");
+  if (marketCancel) leagueRequest("/market/cancel", { listingId:marketCancel.dataset.marketCancel }).then(() => showToast("挂牌已撤回")).catch((error) => showToast(error.message));
+  const marketBuy = event.target.closest("[data-market-buy]");
+  if (marketBuy) leagueRequest("/market/buy", { listingId:marketBuy.dataset.marketBuy }).then(() => showToast("交易完成")).catch((error) => showToast(error.message));
+  const marketRelease = event.target.closest("[data-market-release]");
+  if (marketRelease && window.confirm(`解约后获得参考身价60%的金币（${marketRelease.dataset.releaseValue}金币），确定继续？`)) leagueRequest("/player/release", { leaguePlayerId:marketRelease.dataset.marketRelease }).then(() => showToast("球员已解约")).catch((error) => showToast(error.message));
+  const shopBuy = event.target.closest("[data-shop-buy]");
+  if (shopBuy) {
+    const tier = league.shop.tiers.find((entry) => entry.id === shopBuy.dataset.shopTier);
+    if (tier) openLeagueConfirm({ title:"确认购买卡包", text:`花费 ${tier.price} 金币购买${tier.name}（${LINE_LABELS[shopBuy.dataset.shopBuy]}）？`, confirmText:"购买并开包", onConfirm:() => leagueRequest("/shop/buy", { pool:shopBuy.dataset.shopBuy, tierId:tier.id }) });
+  }
+  const shopChoice = event.target.closest("[data-shop-choose]");
+  if (shopChoice) leagueRequest("/shop/choose", { leaguePlayerId:shopChoice.dataset.shopChoose }).then(() => showToast("新球员已加入注册名单")).catch((error) => showToast(error.message));
+});
+
+app.addEventListener("change", (event) => {
+  if (event.target.matches("[data-league-chemistry-toggle]")) {
+    leagueShowChemistry = event.target.checked;
+    renderLeague();
+    return;
+  }
+  if (event.target.matches("[data-league-history-team]")) {
+    leagueHistoryTeamId = event.target.value;
+    renderLeague();
+  }
+  if (event.target.matches('[name="fitnessThreshold"]')) {
+    const output = document.querySelector("[data-fitness-threshold-output]");
+    if (output) output.value = event.target.value;
+  }
+});
+
+app.addEventListener("submit", (event) => {
+  if (event.target.id === "league-create-team-form") {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    leagueRequest("/draft/start", { teamName:form.get("teamName") }).catch((error) => showToast(error.message));
+    return;
+  }
+  if (event.target.id === "league-team-name-form") {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    leagueRequest("/team/rename", { teamName:form.get("teamName") }).then(() => showToast("球队名称已更新")).catch((error) => showToast(error.message));
+    return;
+  }
+  if (event.target.id !== "league-squad-form") return;
+  event.preventDefault();
+  const form = new FormData(event.target);
+  leagueRequest("/team", { starterIds:leagueStartingIds, positions:leaguePositions, fitnessThreshold:form.get("fitnessThreshold"), tacticalPlans:{ opening:{ tactic:form.get("openingTactic"), style:form.get("openingStyle") }, leading:{ tactic:form.get("leadingTactic"), style:form.get("leadingStyle") }, trailing:{ tactic:form.get("trailingTactic"), style:form.get("trailingStyle") } }, attackFocus:form.get("attackFocus"), defenseFocus:form.get("defenseFocus") }).then(() => showToast("下一轮阵容、体力红线和赛中战术已保存")).catch((error) => showToast(error.message));
 });
 
 document.addEventListener("visibilitychange", () => { if (session) schedulePolling(document.hidden ? 3000 : 0); });
@@ -1092,7 +1654,22 @@ async function bootstrap() {
     const config = await response.json();
     publicHosting = Boolean(config.publicOnly);
   } catch { publicHosting = false; }
-  if (session) { startRoomStream(); refresh(); } else renderLanding();
+  if (account?.profile?.id && account?.accountToken) {
+    try {
+      const value = await api("/api/versus/profile", { method:"POST", body:{ playerId:account.profile.id, accountToken:account.accountToken } });
+      storeAccount({ ...account, profile:value.profile });
+    } catch {
+      storeAccount(null);
+      storeSession(null);
+    }
+  }
+  if (account && !account.profile?.passwordSet) {
+    authMode = "register";
+    storeSession(null);
+    renderAuth();
+  } else if (!account) renderAuth();
+  else if (session) { startRoomStream(); refresh(); }
+  else renderLanding();
 }
 
 bootstrap();

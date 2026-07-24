@@ -1,10 +1,11 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { REAL_PLAYER_BY_ID, REAL_PLAYERS } from "./player-pool.js";
 import { VERSUS_TRAIT_BY_ID, VERSUS_TRAIT_CARDS } from "./trait-pool.js";
 import { createLineupSeed, parseLineupSeed } from "./lineup-seed.js";
+import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import {
   advanceVersusMatch,
   createVersusMatch,
@@ -34,11 +35,36 @@ const DRAFT_DURATION_MS = 120_000;
 const TACTICS_DURATION_MS = 75_000;
 const SPECTATOR_TTL_MS = 12_000;
 const S_GRADE_PLAYERS = REAL_PLAYERS.filter((player) => player.grade === "S");
-const DEFAULT_ACCOUNTS_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data/versus-accounts.json");
+const DEFAULT_ACCOUNTS_PATH = process.env.VERSUS_ACCOUNTS_PATH
+  ? path.resolve(process.env.VERSUS_ACCOUNTS_PATH)
+  : path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data/versus-accounts.json");
 const SHARED_LINEUPS = new Map();
 
 function token(bytes = 18) {
   return randomBytes(bytes).toString("base64url");
+}
+
+function cleanCredential(value, label) {
+  if (typeof value !== "string" || value.length === 0) throw new Error(`${label}不能为空`);
+  return value;
+}
+
+function passwordHash(password) {
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, 64);
+  return `scrypt$${salt.toString("base64url")}$${hash.toString("base64url")}`;
+}
+
+function passwordMatches(password, encoded) {
+  try {
+    const [algorithm, saltText, hashText] = String(encoded ?? "").split("$");
+    if (algorithm !== "scrypt" || !saltText || !hashText) return false;
+    const expected = Buffer.from(hashText, "base64url");
+    const actual = scryptSync(password, Buffer.from(saltText, "base64url"), expected.length);
+    return expected.length === actual.length && timingSafeEqual(expected, actual);
+  } catch {
+    return false;
+  }
 }
 
 function roomCode(random = Math.random) {
@@ -236,7 +262,58 @@ export class VersusRoomService {
 
   saveAccounts() {
     if (!this.accountsPath) return;
-    writeFileSync(this.accountsPath, JSON.stringify({ version: 3, accounts: Object.fromEntries(this.accounts), lineups: Object.fromEntries(this.lineups) }, null, 2));
+    writeFileSync(this.accountsPath, JSON.stringify({ version: 5, accounts: Object.fromEntries(this.accounts), lineups: Object.fromEntries(this.lineups) }, null, 2));
+  }
+
+  accountByNickname(nickname) {
+    return [...this.accounts.values()].find((account) => account.nickname === nickname) ?? null;
+  }
+
+  register(nicknameValue, passwordValue, legacyAccountToken = null) {
+    const nickname = cleanCredential(nicknameValue, "昵称");
+    const password = cleanCredential(passwordValue, "密码");
+    const legacyAccount = legacyAccountToken
+      ? [...this.accounts.values()].find((account) => account.token === legacyAccountToken)
+      : null;
+    if (legacyAccount && !legacyAccount.passwordHash) {
+      const nicknameOwner = this.accountByNickname(nickname);
+      if (nicknameOwner && nicknameOwner !== legacyAccount) throw new Error("该昵称已经被占用，请换一个昵称完成旧账号升级");
+      legacyAccount.nickname = nickname;
+      legacyAccount.passwordHash = passwordHash(password);
+      legacyAccount.lastSeenAt = this.now();
+      this.saveAccounts();
+      return { accountToken: legacyAccount.token, profile: this.publicProfile(legacyAccount) };
+    }
+    const existing = this.accountByNickname(nickname);
+    if (existing) {
+      if (existing.passwordHash) throw new Error("该昵称已经注册");
+      throw new Error("该昵称属于旧版账号，请在原设备上完成注册");
+    }
+    const id = generatedPlayerId(this.accounts);
+    const account = {
+      key: id.toLowerCase(),
+      id,
+      token: token(24),
+      nickname,
+      passwordHash: passwordHash(password),
+      createdAt: this.now(),
+      lastSeenAt: this.now(),
+      summary: normalizeSummary(),
+      matches: [],
+    };
+    this.accounts.set(account.key, account);
+    this.saveAccounts();
+    return { accountToken: account.token, profile: this.publicProfile(account) };
+  }
+
+  login(nicknameValue, passwordValue) {
+    const nickname = cleanCredential(nicknameValue, "昵称");
+    const password = cleanCredential(passwordValue, "密码");
+    const account = [...this.accounts.values()].find((candidate) => candidate.nickname === nickname && candidate.passwordHash) ?? null;
+    if (!account?.passwordHash || !passwordMatches(password, account.passwordHash)) throw new Error("昵称或密码错误");
+    account.lastSeenAt = this.now();
+    this.saveAccounts();
+    return { accountToken: account.token, profile: this.publicProfile(account) };
   }
 
   bindAccount(playerIdValue, accountToken = null, nickname = "") {
@@ -258,6 +335,7 @@ export class VersusRoomService {
         id,
         token: token(24),
         nickname: cleanName(nickname, id),
+        passwordHash: null,
         createdAt: this.now(),
         summary: normalizeSummary(),
         matches: [],
@@ -283,7 +361,7 @@ export class VersusRoomService {
       ownFormation: detail?.teams?.[viewerIndex]?.formation ?? null,
       opponentFormation: detail?.teams?.[viewerIndex === 0 ? 1 : 0]?.formation ?? null,
     }));
-    return clone({ id: account.id, nickname: account.nickname, summary: normalizeSummary(account.summary), matches });
+    return clone({ id: account.id, nickname: account.nickname, passwordSet: Boolean(account.passwordHash), summary: normalizeSummary(account.summary), matches });
   }
 
   profile(playerIdValue, accountToken) {
@@ -295,7 +373,7 @@ export class VersusRoomService {
     const match = account.matches.find((candidate) => candidate.id === matchId);
     if (!match) throw new Error("找不到这场历史对局");
     if (!match.detail) throw new Error("这场对局来自旧版本，当时没有保存详细赛后数据");
-    return clone({ ...match.detail, viewerIndex: match.viewerIndex });
+    return clone({ ...hydrateHistoricalMatchDetail(match.detail), viewerIndex: match.viewerIndex });
   }
 
   cleanup() {
@@ -501,11 +579,15 @@ export class VersusRoomService {
         markingTargetName: team.markingTargetName,
         formation: team.formation,
         activeCount: team.activeCount,
+        positions: clone(team.positions ?? {}),
         stats: team.stats,
         players: team.players.map((player) => ({
           id: player.id,
           name: player.name,
           role: player.role,
+          assignedRole: player.assignedRole ?? player.role,
+          overall: player.overall,
+          position: clone(player.position ?? team.positions?.[player.id] ?? { x:50, y:50 }),
           rating: player.rating,
           fitness: player.fitness,
           active: player.active,

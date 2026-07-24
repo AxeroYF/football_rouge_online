@@ -1,0 +1,100 @@
+.admin-pitch {
+  position: relative;
+  min-height: 600px;
+  overflow: hidden;
+  border: 6px solid #5f472d;
+  background: repeating-linear-gradient(90deg, #155239 0 12.5%, #195c3e 12.5% 25%);
+  box-shadow: inset 0 0 70px rgba(0, 0, 0, .35);
+}
+
+.admin-pitch-lines {
+  position: absolute;
+  inset: 16px;
+  border: 2px solid rgba(255, 255, 255, .5);
+}
+
+.admin-pitch-lines::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 2px solid rgba(255, 255, 255, .45);
+}
+
+.admin-pitch-lines::after {
+  content: "";
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  left: 50%;
+  top: 50%;
+  border: 2px solid rgba(255, 255, 255, .45);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.admin-zone {
+  position: absolute;
+  left: 12px;
+  color: rgba(255, 255, 255, .45);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.admin-zone.att { top: 15%; }
+.admin-zone.mid { top: 46%; }
+.admin-zone.def { top: 71%; }
+.admin-zone.gk { bottom: 5%; }
+
+.admin-magnet {
+  position: absolute;
+  z-index: 2;
+  width: 104px;
+  min-height: 58px;
+  padding: 6px 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 5px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 255, 255, .75);
+  border-radius: 4px;
+  color: #092018;
+  background: var(--lime);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, .3);
+}
+
+.admin-magnet > b,
+.admin-magnet > small {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-magnet > b { font-size: 9px; }
+.admin-magnet > small { font-size: 7px; }
+.admin-magnet > span,
+.admin-magnet > strong { display: flex; gap: 3px; font-size: 10px; }
+.admin-magnet > strong { justify-self: end; }
+.admin-magnet em { font-size: 6px; font-style: normal; opacity: .65; }
+.admin-magnet.inactive {
+  opacity: .55;
+  color: var(--ink);
+  border-color: var(--red);
+  background: #3a2020;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .admin-pitch { min-height: 720px; }
+}
+
+@media (max-width: 560px) {
+  .admin-pitch { min-height: 560px; border-width: 4px; }
+  .admin-magnet { width: 82px; min-height: 52px; padding: 5px; }
+  .admin-magnet > b { font-size: 8px; }
+  .admin-magnet > small { font-size: 6px; }
+  .admin-magnet > span,
+  .admin-magnet > strong { font-size: 9px; }
+}

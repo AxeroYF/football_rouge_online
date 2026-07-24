@@ -147,6 +147,39 @@ export function analyzeElevenFormation(players = [], positions = {}) {
   };
 }
 
+function midfieldStructureProfile(players, positions, roles) {
+  const midfielders = players
+    .filter((player) => roleGroup(roles[player.id]) === "MID")
+    .map((player) => ({ id:player.id, x:Number(positions[player.id]?.x), y:Number(positions[player.id]?.y) }))
+    .filter((player) => Number.isFinite(player.x) && Number.isFinite(player.y))
+    .sort((left, right) => right.y - left.y);
+  const lines = [];
+  midfielders.forEach((player) => {
+    const line = lines.at(-1);
+    if (!line || line.averageY - player.y >= 8) lines.push({ players:[player], averageY:player.y });
+    else {
+      line.players.push(player);
+      line.averageY = line.players.reduce((sum, entry) => sum + entry.y, 0) / line.players.length;
+    }
+  });
+  const leftCovered = midfielders.some((player) => player.x <= 32);
+  const rightCovered = midfielders.some((player) => player.x >= 68);
+  const wideCoverage = (Number(leftCovered) + Number(rightCovered)) / 2;
+  const extraLines = Math.max(0, lines.length - 1);
+  const uncoveredWideRisk = extraLines * (1 - wideCoverage);
+  return {
+    lineCount: lines.length,
+    lineSizes: lines.map((line) => line.players.length),
+    layered: lines.length > 1,
+    leftCovered,
+    rightCovered,
+    wideCoverage,
+    buildupMultiplier: 1 + Math.min(0.045, extraLines * 0.018),
+    wideDefenseMultiplier: Math.max(0.9, 1 - uncoveredWideRisk * 0.022),
+    transitionRiskMultiplier: 1 + uncoveredWideRisk * 0.045,
+  };
+}
+
 export function formationStructureProfile(players = [], positions = {}) {
   const formation = analyzeElevenFormation(players, positions);
   const assignedGroups = Object.fromEntries(Object.entries(formation.roles).map(([id, role]) => [id, roleGroup(role)]));
@@ -159,12 +192,13 @@ export function formationStructureProfile(players = [], positions = {}) {
     const assigned = assignedGroups[player.id];
     return natural !== assigned && natural !== "GK" && assigned !== "GK";
   }).length;
+  const midfieldStructure = midfieldStructureProfile(players, positions, formation.roles);
   const lineValue = (values, count) => values[Math.min(count, values.length - 1)];
   const goalkeeper = assignedKeepers.length === 0
     ? 0.28
     : (naturalKeeperInGoal ? 1 : 0.38) * Math.pow(0.82, Math.max(0, assignedKeepers.length - 1));
-  const defense = lineValue([0.38, 0.56, 0.78, 0.95, 1, 1, 0.94, 0.85, 0.74, 0.62, 0.5, 0.4], formation.counts.DEF);
-  const midfield = lineValue([0.55, 0.72, 0.92, 1, 1.02, 1, 0.94, 0.84, 0.73, 0.62, 0.52, 0.44], formation.counts.MID);
+  const defense = lineValue([0.38, 0.56, 0.78, 0.95, 1, 1, 0.94, 0.85, 0.74, 0.62, 0.5, 0.4], formation.counts.DEF) * midfieldStructure.wideDefenseMultiplier;
+  const midfield = lineValue([0.55, 0.72, 0.92, 1, 1.02, 1, 0.94, 0.84, 0.73, 0.62, 0.52, 0.44], formation.counts.MID) * midfieldStructure.buildupMultiplier;
   const attack = lineValue([0.58, 0.94, 1, 1.02, 0.99, 0.9, 0.78, 0.67, 0.57, 0.48, 0.41, 0.35], formation.counts.ATT);
   const coherence = Math.pow(0.72, emergencyKeepers) * Math.pow(0.92, displacedKeepers) * Math.pow(0.97, crossLineMismatches);
   const transitionRisk = 1
@@ -174,7 +208,8 @@ export function formationStructureProfile(players = [], positions = {}) {
     + Math.max(0, 1 - coherence) * 0.8;
   return {
     ...formation,
-    multipliers: { goalkeeper, defense, midfield, attack, coherence, transitionRisk },
+    midfieldStructure,
+    multipliers: { goalkeeper, defense, midfield, attack, coherence, transitionRisk: transitionRisk * midfieldStructure.transitionRiskMultiplier },
     mismatches: { emergencyKeepers, displacedKeepers, crossLineMismatches },
   };
 }

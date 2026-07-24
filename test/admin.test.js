@@ -25,6 +25,10 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.ok(Array.isArray(dashboard.value.dashboard.players));
   assert.ok(Array.isArray(dashboard.value.dashboard.formations));
   assert.ok(dashboard.value.dashboard.players.every((player) => !("token" in player)));
+  const league = await request("/api/admin/league", { token:login.value.token });
+  assert.equal(league.statusCode, 200);
+  assert.equal(league.value.league.teams.length, 10);
+  assert.ok(league.value.league.pools.ATT.total > 0);
   const player = dashboard.value.dashboard.players[0];
   if (player) {
     const detail = await request(`/api/admin/players/${encodeURIComponent(player.id)}`, { token:login.value.token });

@@ -1,0 +1,92 @@
+.admin-section-nav {
+  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+}
+
+.admin-section-nav button {
+  min-height: 48px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #071611;
+  font-weight: 900;
+}
+
+.admin-section-nav button:last-child { border-right: 0; }
+.admin-section-nav button.active { color: #071411; background: var(--lime); }
+
+.league-admin-actions {
+  margin-top: 18px;
+  padding: 15px 17px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto auto auto auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(255, 155, 85, .5);
+  background: #1b160f;
+}
+
+.league-admin-actions > div { display: grid; }
+.league-admin-actions small { color: var(--orange); font-size: 9px; letter-spacing: .16em; }
+.league-admin-actions span { color: var(--muted); font-size: 10px; }
+.league-admin-actions .warning { color: var(--orange); border-color: rgba(255, 155, 85, .55); }
+.league-admin-actions .danger { color: var(--red); border-color: rgba(255, 89, 100, .55); }
+.league-admin-actions .full-reset { color: #fff; background: #7f1d2d; }
+.league-admin-grid { grid-template-columns: 1.15fr .85fr; }
+.league-team-panel,
+.league-allocation-panel,
+.league-backup-panel,
+.league-reward-mail-panel,
+.league-badge-panel { grid-column: 1 / -1; }
+.league-reward-mail-form {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  background: #091914;
+}
+.league-reward-mail-form label { min-width: 0; display: grid; gap: 6px; }
+.league-reward-mail-form label span { color: var(--muted); font-size: 10px; font-weight: 800; }
+.league-reward-mail-form select { width: 100%; min-width: 0; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); color: var(--ink); background: #071411; }
+.league-reward-mail-form button { min-height: 42px; white-space: nowrap; }
+.league-badge-form {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(180px, .45fr) auto;
+  gap: 10px;
+  align-items: end;
+  border-bottom: 1px solid var(--line);
+  background: #15170d;
+}
+.league-badge-form label { min-width: 0; display: grid; gap: 6px; }
+.league-badge-form label span { color: var(--muted); font-size: 10px; font-weight: 800; }
+.league-badge-form select { width: 100%; min-width: 0; min-height: 42px; padding: 0 10px; border: 1px solid #5f5628; color: var(--ink); background: #11150c; }
+.league-badge-form button { min-height: 42px; color: #181407; border-color: #f5d34a; background: #f5d34a; font-weight: 900; white-space: nowrap; }
+.admin-champion-badge { padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(245,211,74,.65); color: #f5d34a; background: rgba(245,211,74,.09); font-size: 10px; font-weight: 950; }
+.admin-champion-badge i { font-size: 15px; font-style: normal; }
+.league-admin-grid .table-wrap { max-height: 430px; }
+.league-allocation-panel .table-wrap { max-height: 650px; }
+
+@media (max-width: 900px) {
+  .league-admin-grid { grid-template-columns: 1fr; }
+  .league-admin-actions { grid-template-columns: 1fr 1fr; }
+  .league-admin-actions > div { grid-column: 1 / -1; }
+  .league-team-panel,
+  .league-allocation-panel,
+  .league-backup-panel,
+  .league-reward-mail-panel,
+  .league-badge-panel { grid-column: 1; }
+  .league-reward-mail-form { grid-template-columns: 1fr 1fr; }
+  .league-badge-form { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .league-admin-actions { grid-template-columns: 1fr; }
+  .league-admin-actions > div { grid-column: auto; }
+  .league-admin-actions button { width: 100%; }
+  .league-reward-mail-form { grid-template-columns: 1fr; }
+  .league-badge-form { grid-template-columns: 1fr; }
+}
