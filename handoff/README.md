@@ -1,24 +1,27 @@
-# 11人制好友对战交接包
+# Football Simulator / YellowDogs League 交接包
 
-更新时间：2026-07-23（Asia/Shanghai）  
+更新时间：2026-07-25（Asia/Shanghai）  
 项目目录：`D:\Project\game_test`
 
 ## 阅读顺序
 
-1. `CURRENT_STATE.md`：当前功能、最新参数、模拟基线、验证结果和风险。
-2. `NEW_CHAT_PROMPT.md`：新对话启动提示词。
-3. `artifacts/11人制对战-综合平衡报告-v9-detailed.md`：传统分组阵容的117,700场结果。
-4. `artifacts/11人制对战-综合平衡报告-v10-seeded.md`：位置合理随机种子阵容的117,700场结果，优先参考。
-5. 需要逐场原始数据时再读取对应JSON；不要直接把数百万字节JSON全部塞入对话。
+1. `NEW_CHAT_PROMPT.md`：复制到新对话，要求接手者先核对实时状态。
+2. `CURRENT_STATE.md`：当前功能、正式赛季快照、紧急修复、验证结果和风险。
+3. `MANIFEST.md`：交接包文件清单。
 
-## 重要交接原则
+## 关键原则
 
-- 7人制 `game/` 与11人制 `versus/` 必须保持边界。
-- 2026-07-23的最新平衡修改晚于v9/v10报告，旧报告是改动前基线，不是当前结果。
-- 用户要求自行运行完整模拟；除非再次明确要求，接手者不要主动跑快速或完整模拟。
-- 当前工作区很脏，保留所有用户修改，不要清理、重置或覆盖无关文件。
-- 最新可信验证是 `node --test test/versus.test.js` 32项通过；项目全量测试目前不能宣称通过。
+- 当前主开发重点是 `versus/` 下的 YellowDogs League（YDL）、黄狗冠军杯和11人制模拟内核。
+- 工作区包含大量未提交改动及正式运行数据；禁止 `git reset --hard`、`git clean` 或覆盖用户文件。
+- 正式联赛存档是 `data/yellowdogs-league.json`。读取可以，未经用户明确要求不要模拟、重置或编辑。
+- `npm run tunnel` 使用正式存档并会推进联赛；测试必须用 `statePath:null` 或独立副本，不能影响 tunnel。
+- 服务端代码修改后必须重启 `npm run demo` 或 `npm run tunnel` 才会加载；静态前端文件会即时读取，可能出现前端新、服务端旧的不一致。
+- 本交接包不包含账号、钱包、联赛存档或密码等敏感数据。
 
-## 包内容
+## 最新验证
 
-交接包只保存说明与模拟产物，不包含完整源码。压缩包为 `football-versus-handoff-20260723.zip`。
+- `node --test test/league.test.js`：42/42通过。
+- `npm run build`：通过。
+- 体力红线机制已用纯内存正式存档副本预演，未写入正式数据。
+
+压缩包：`football-ydl-handoff-20260725.zip`

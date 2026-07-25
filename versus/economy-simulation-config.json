@@ -1,0 +1,77 @@
+{
+  "outputVersion": "ydl-economy-v1",
+  "seed": "yellowdogs-league-economy-v1",
+  "iterationsPerTier": 100000,
+  "choiceCount": 3,
+  "packTiers": [
+    {
+      "id": "standard",
+      "price": 3500,
+      "guaranteeGrades": []
+    },
+    {
+      "id": "advanced",
+      "price": 5000,
+      "guaranteeGrades": ["S", "A", "B"]
+    },
+    {
+      "id": "elite",
+      "price": 6500,
+      "guaranteeGrades": ["S", "A"]
+    }
+  ],
+  "economy": {
+    "releaseRate": 0.45,
+    "minimumListingRate": 0.5,
+    "marketFeeRate": 0
+  },
+  "strategies": [
+    {
+      "id": "release",
+      "type": "release"
+    },
+    {
+      "id": "market-floor",
+      "type": "marketThenRelease",
+      "listingRate": 0.5,
+      "sellThroughByGrade": {
+        "S": 0.98,
+        "A": 0.85,
+        "B": 0.62,
+        "C": 0.38
+      }
+    },
+    {
+      "id": "market-80pct",
+      "type": "marketThenRelease",
+      "listingRate": 0.8,
+      "sellThroughByGrade": {
+        "S": 0.82,
+        "A": 0.58,
+        "B": 0.3,
+        "C": 0.12
+      }
+    },
+    {
+      "id": "market-reference",
+      "type": "marketThenRelease",
+      "listingRate": 1,
+      "sellThroughByGrade": {
+        "S": 0.68,
+        "A": 0.42,
+        "B": 0.18,
+        "C": 0.06
+      }
+    }
+  ],
+  "bankrollSimulation": {
+    "playersPerTierAndStrategy": 20000,
+    "startingCoins": 10000,
+    "maximumPacksPerPlayer": 100
+  },
+  "warningThresholds": {
+    "averageNetCoinsPerPack": 0,
+    "profitablePackRate": 0.1,
+    "bankrollGrowthRate": 0.05
+  }
+}

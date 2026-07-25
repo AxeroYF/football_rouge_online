@@ -1,0 +1,98 @@
+{
+  "outputVersion": "s2-ydl-tactical-randomized",
+  "seed": "ydl-s2-randomized-20260724-834721",
+  "traitsMode": "none",
+  "design": {
+    "mode": "YellowDogsLeague",
+    "baseline": "seededPositionAware",
+    "playerPool": "current700",
+    "description": "Comprehensive S2 YDL simulation with seed-dependent player drafts, formations, tactics, styles, weather, referees, fitness-sensitive attributes and tactical-fit comparisons.",
+    "principle": "A coherent formation and a style suited to the selected players should outperform incoherent or mismatched tactics without creating a single dominant strategy."
+  },
+  "targets": {
+    "averageTotalGoals": {
+      "minimum": 4.2,
+      "ideal": 4.5,
+      "maximum": 4.8
+    },
+    "shotsOnTargetRatePercent": {
+      "minimum": 48,
+      "ideal": 55,
+      "maximum": 61
+    },
+    "regulationDrawRatePercent": {
+      "minimum": 20,
+      "ideal": 24,
+      "maximum": 29
+    },
+    "formationWinRatePercent": {
+      "minimum": 43,
+      "maximum": 57
+    },
+    "tacticWinRatePercent": {
+      "minimum": 45,
+      "maximum": 55
+    },
+    "styleWinRatePercent": {
+      "minimum": 45,
+      "maximum": 55
+    },
+    "tacticalFitWinRateGapPercent": {
+      "minimum": 10,
+      "ideal": 18,
+      "maximum": 26
+    },
+    "firstGoalMinute": {
+      "minimum": 15,
+      "ideal": 24,
+      "maximum": 34
+    },
+    "scorelessMatchRatePercent": {
+      "minimum": 2,
+      "ideal": 5,
+      "maximum": 10
+    }
+  },
+  "analysisDimensions": {
+    "ydlLineups": ["full700PlayerPool", "threeCandidateDraft", "uniqueOpposingRandomBaseline", "noTraitCards", "primaryAndSecondaryPositionFit", "fitnessAndAvailability"],
+    "scoring": ["goals", "xg", "shots", "shotsOnTarget", "shotAccuracy", "goalIntervals", "scoreDistribution", "highScoreOutliers"],
+    "tacticalCore": ["formationVsField", "tacticVsField", "styleVsField", "formationStyle", "formationTactic", "styleTactic", "headToHeadMatrices", "adaptedVsUnfitSquads"],
+    "formationStructures": ["midfieldLineCount", "midfieldLineSizes", "buildupMultiplier", "wideCoverage", "transitionRisk", "wingbackSupport"],
+    "matchContext": ["weather", "referee", "attackFocus", "defenseFocus", "playerAbility", "positionFamiliarity", "physicalProfile", "redCardsAndInjuries"],
+    "rawMatchFields": ["seed", "score", "regulationScore", "teamStrategies", "teamPhysicalProfile", "teamFormationStructure", "teamStats", "goalSequence"]
+  },
+  "quick": {
+    "lineupMode": "seededPositionAware",
+    "draftChoiceCount": 3,
+    "randomMatches": 2000,
+    "formationMatches": 120,
+    "tacticMatches": 60,
+    "styleMatches": 70,
+    "focusMatches": 70,
+    "weatherStyleMatches": 50,
+    "refereeStyleMatches": 50,
+    "positionMatches": 120,
+    "abilityMatches": 180,
+    "styleFitMatches": 60,
+    "physicalMatches": 120,
+    "goalEventMatches": 2500,
+    "rawMatchSampleLimit": 150
+  },
+  "full": {
+    "lineupMode": "seededPositionAware",
+    "draftChoiceCount": 3,
+    "randomMatches": 25000,
+    "formationMatches": 1200,
+    "tacticMatches": 350,
+    "styleMatches": 400,
+    "focusMatches": 400,
+    "weatherStyleMatches": 300,
+    "refereeStyleMatches": 300,
+    "positionMatches": 1000,
+    "abilityMatches": 1500,
+    "styleFitMatches": 350,
+    "physicalMatches": 1000,
+    "goalEventMatches": 30000,
+    "rawMatchSampleLimit": 2500
+  }
+}

@@ -17,7 +17,7 @@ test("管理员后台拒绝错误密码和未授权数据访问", async () => {
 });
 
 test("管理员登录后可以读取去敏玩家列表和竞技统计", async () => {
-  const login = await request("/api/admin/login", { method:"POST", body:{ password:"19971027" }, address:"127.0.0.2" });
+  const login = await request("/api/admin/login", { method:"POST", body:{ password:"19971019" }, address:"127.0.0.2" });
   assert.equal(login.statusCode, 200);
   assert.match(login.value.token, /^[A-Za-z0-9_-]+$/);
   const dashboard = await request("/api/admin/dashboard", { token:login.value.token });

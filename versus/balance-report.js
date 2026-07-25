@@ -59,6 +59,8 @@ const STANDARD_FORMATIONS = {
   "4-3-2-1": { counts: [1, 4, 5, 1], midfieldLines: [3, 2] },
   "4-1-2-1-2": { counts: [1, 4, 4, 2], midfieldLines: [1, 2, 1] },
 };
+const LEGEND_PLAYERS = REAL_PLAYERS.filter((player) => player.legendAbility);
+const LEGEND_PLAYER_IDS = new Set(LEGEND_PLAYERS.map((player) => player.id));
 const ABNORMAL_FORMATIONS = {
   "2-3-5（双后卫）": { counts: [1, 2, 3, 5] },
   "1-4-5（单后卫）": { counts: [1, 1, 4, 5] },
@@ -68,7 +70,7 @@ const ABNORMAL_FORMATIONS = {
 
 function hash(value) {
   let state = 2166136261;
-  for (const character of String(value)) {
+  for (const character of `${balanceConfig.seed ?? "versus-balance"}:${String(value)}`) {
     state ^= character.charCodeAt(0);
     state = Math.imul(state, 16777619);
   }
@@ -76,6 +78,7 @@ function hash(value) {
 }
 
 function traitIds(player, salt) {
+  if (balanceConfig.traitsMode === "none") return [];
   const group = roleGroup(player.role);
   const compatible = VERSUS_TRAIT_CARDS.filter((trait) => {
     const eligible = trait.eligibleRoleGroups ?? [];
@@ -182,9 +185,9 @@ function seededDraftPlayer(role, used, seed, choiceCount = 3) {
   return offered.sort((left, right) => right.overall - left.overall || hash(`${seed}:pick:${left.id}`) - hash(`${seed}:pick:${right.id}`))[0];
 }
 
-function buildSeededFormationSeat(name, formationName, tactic, style, seed, attackFocus = "balanced", defenseFocus = "balanced", choiceCount = 3) {
+function buildSeededFormationSeat(name, formationName, tactic, style, seed, attackFocus = "balanced", defenseFocus = "balanced", choiceCount = 3, unavailableIds = new Set()) {
   const slots = seededFormationSlots(STANDARD_FORMATIONS[formationName]);
-  const used = new Set();
+  const used = new Set(unavailableIds);
   const players = [];
   const positions = {};
   slots.forEach((slot, index) => {
@@ -359,14 +362,15 @@ function withStyleFit(style, direction) {
 function play(home, away, seed, weather = null, referee = null, options = {}) {
   const physicalProfiles = [teamPhysicalProfile(home), teamPhysicalProfile(away)];
   const recordEvents = options.recordEvents === true;
-  const match = createVersusMatch([home, away], { now: 0, seed, recordEvents, ...(weather ? { weather } : {}), ...(referee ? { referee } : {}) });
+  const effectiveSeed = `${balanceConfig.seed ?? "versus-balance"}:${seed}`;
+  const match = createVersusMatch([home, away], { now: 0, seed:effectiveSeed, recordEvents, ...(weather ? { weather } : {}), ...(referee ? { referee } : {}) });
   advanceVersusMatch(match, REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS);
   const regulationScore = match.teams.map((team) => team.score);
   if (!match.finished) advanceVersusMatch(match, REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + EXTRA_DURATION_MS);
   if (!match.finished) advanceVersusMatch(match, REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + EXTRA_DURATION_MS + PENALTY_KICK_INTERVAL_MS * 30);
   tickProgress();
   return {
-    seed,
+    seed:effectiveSeed,
     score: match.teams.map((team) => team.score),
     regulationScore,
     winnerIndex: match.winnerIndex,
@@ -537,7 +541,7 @@ function runRandomBaseline(matches, draftChoiceCount = 3, lineupMode = "legacyGr
       ? buildSeededFormationSeat("主队", homeFormation, homeTactic, homeStyle, `random-lineup:${index}:home`, homeAttackFocus, homeDefenseFocus, draftChoiceCount)
       : buildSeat("主队", STANDARD_FORMATIONS[homeFormation], homeTactic, index % 40, `random:${index}`, homeStyle, homeAttackFocus, homeDefenseFocus);
     const awaySeat = lineupMode === "seededPositionAware"
-      ? buildSeededFormationSeat("客队", awayFormation, awayTactic, awayStyle, `random-lineup:${index}:away`, awayAttackFocus, awayDefenseFocus, draftChoiceCount)
+      ? buildSeededFormationSeat("客队", awayFormation, awayTactic, awayStyle, `random-lineup:${index}:away`, awayAttackFocus, awayDefenseFocus, draftChoiceCount, new Set(homeSeat.players.map((player) => player.id)))
       : buildSeat("客队", STANDARD_FORMATIONS[awayFormation], awayTactic, index % 40, `random:${index}`, awayStyle, awayAttackFocus, awayDefenseFocus);
     const result = play(
       homeSeat,
@@ -579,6 +583,111 @@ function runRandomBaseline(matches, draftChoiceCount = 3, lineupMode = "legacyGr
       styleMatchups: summarizeMetaMatchups(meta.styleMatchups),
     },
   };
+}
+
+function cloneSeat(seat) {
+  return {
+    ...seat,
+    players: seat.players.map((player) => ({ ...player, attributes:{ ...player.attributes }, traits:[...(player.traits ?? [])] })),
+    positions: Object.fromEntries(Object.entries(seat.positions).map(([id, position]) => [id, { ...position }])),
+  };
+}
+
+function insertLegends(seat, legends) {
+  const selected = [];
+  for (const legend of legends) {
+    const group = roleGroup(legend.role);
+    const candidates = seat.players.map((player, index) => ({ player, index })).filter(({ player }) => roleGroup(player.role) === group && !LEGEND_PLAYER_IDS.has(player.id));
+    const target = candidates.sort((left, right) => {
+      const leftScore = Number(left.player.role === legend.role) * 3 + Number(left.player.secondaryRole === legend.role);
+      const rightScore = Number(right.player.role === legend.role) * 3 + Number(right.player.secondaryRole === legend.role);
+      return rightScore - leftScore || left.index - right.index;
+    })[0];
+    if (!target) continue;
+    const oldId = target.player.id;
+    seat.players[target.index] = { ...legend, attributes:{ ...legend.attributes }, traits:[] };
+    seat.positions[legend.id] = seat.positions[oldId];
+    delete seat.positions[oldId];
+    selected.push(legend);
+  }
+  return selected;
+}
+
+function buildLegendSeat(name, formationName, tactic, style, seed, legends, unavailableIds = new Set(), draftChoiceCount = 3) {
+  const excluded = new Set([...unavailableIds, ...LEGEND_PLAYER_IDS]);
+  const seat = buildSeededFormationSeat(name, formationName, tactic, style, seed, "balanced", "balanced", draftChoiceCount, excluded);
+  const selected = insertLegends(seat, legends);
+  return { ...seat, legendIds:selected.map((player) => player.id), legendNames:selected.map((player) => player.name) };
+}
+
+function legendCandidatesForSeat(seat, count, seed) {
+  const capacity = seat.players.reduce((result, player) => {
+    const group = roleGroup(player.role);
+    result[group] = (result[group] ?? 0) + 1;
+    return result;
+  }, {});
+  const selected = [];
+  for (const legend of [...LEGEND_PLAYERS].sort((left, right) => hash(`${seed}:${left.id}`) - hash(`${seed}:${right.id}`))) {
+    const group = roleGroup(legend.role);
+    if (!capacity[group]) continue;
+    selected.push(legend);
+    capacity[group] -= 1;
+    if (selected.length === count) break;
+  }
+  return selected;
+}
+
+function legendTacticalProfile(index) {
+  const profiles = [
+    { formation:"4-2-3-1", tactic:"balanced", style:"possession" },
+    { formation:"4-3-3", tactic:"positive", style:"wingPlay" },
+    { formation:"3-4-3", tactic:"defensive", style:"counterAttack" },
+    { formation:"4-4-2", tactic:"balanced", style:"longBall" },
+    { formation:"4-3-2-1", tactic:"positive", style:"highPress" },
+  ];
+  return profiles[index % profiles.length];
+}
+
+function runLegendImpact(individualMatches, stackMatches, draftChoiceCount = 3) {
+  const individual = {};
+  for (const legend of LEGEND_PLAYERS) {
+    const outcomes = emptyOutcomes();
+    for (let index = 0; index < individualMatches; index += 1) {
+      const profile = legendTacticalProfile(index + hash(legend.id));
+      const subject = buildLegendSeat("传奇对照", profile.formation, profile.tactic, profile.style, `legend:${legend.id}:${index}`, [legend], new Set(), draftChoiceCount);
+      const opponent = buildLegendSeat("基准对照", profile.formation, profile.tactic, profile.style, `legend-base:${legend.id}:${index}`, [], new Set(subject.players.map((player) => player.id)), draftChoiceCount);
+      const homeFirst = index % 2 === 0;
+      const result = play(homeFirst ? subject : opponent, homeFirst ? opponent : subject, `legend-individual:${legend.id}:${index}`);
+      addOutcome(outcomes, result, homeFirst ? 0 : 1);
+    }
+    individual[legend.id] = {
+      name:legend.name,
+      ability:legend.legendAbility?.name ?? null,
+      effect:legend.legendAbility?.summary ?? null,
+      ...outcomeSummary(outcomes),
+    };
+  }
+  const stacks = {};
+  for (const count of [0, 1, 2, 3, 5]) {
+    const outcomes = emptyOutcomes();
+    const compositions = {};
+    for (let index = 0; index < stackMatches; index += 1) {
+      const profile = legendTacticalProfile(index + count * 17);
+      const subject = buildLegendSeat("多传奇球队", profile.formation, profile.tactic, profile.style, `legend-stack-team:${count}:${index}`, [], new Set(), draftChoiceCount);
+      const legends = legendCandidatesForSeat(subject, count, `legend-stack:${count}:${index}`);
+      const selected = insertLegends(subject, legends);
+      subject.legendIds = selected.map((player) => player.id);
+      subject.legendNames = selected.map((player) => player.name);
+      const opponent = buildLegendSeat("无传奇基准", profile.formation, profile.tactic, profile.style, `legend-stack-base:${count}:${index}`, [], new Set(subject.players.map((player) => player.id)), draftChoiceCount);
+      const homeFirst = index % 2 === 0;
+      const result = play(homeFirst ? subject : opponent, homeFirst ? opponent : subject, `legend-stack:${count}:${index}`);
+      addOutcome(outcomes, result, homeFirst ? 0 : 1);
+      const composition = subject.legendNames.join(" / ") || "无传奇";
+      compositions[composition] = (compositions[composition] ?? 0) + 1;
+    }
+    stacks[count] = { legendCount:count, ...outcomeSummary(outcomes), compositions };
+  }
+  return { individual, stacks, constraints:{ teamSnapshotMultiplierCap:1.05, testedLegendCounts:[0, 1, 2, 3, 5] } };
 }
 
 const GOAL_MINUTE_BUCKETS = [
@@ -1171,6 +1280,23 @@ function markdownV3(data) {
   const seededFormationRows = Object.entries(seededMeta?.formationVsField ?? {}).map(([key, value]) => `| ${key} | ${value.matches} | ${value.winRate}% | ${value.goalsFor} | ${value.goalsAgainst} |`).join("\n");
   const seededTacticRows = Object.entries(seededMeta?.tacticVsField ?? {}).map(([key, value]) => `| ${TACTICS[key] ?? key} | ${value.matches} | ${value.winRate}% | ${value.goalsFor} | ${value.goalsAgainst} |`).join("\n");
   const seededStyleRows = Object.entries(seededMeta?.styleVsField ?? {}).map(([key, value]) => `| ${STYLES[key] ?? key} | ${value.matches} | ${value.winRate}% | ${value.goalsFor} | ${value.goalsAgainst} |`).join("\n");
+  const legendIndividualRows = Object.values(data.legendImpact?.individual ?? {}).map((value) => `| ${value.name} | ${value.ability ?? "-"} | ${value.matches} | ${value.winRate}% | ${value.goalsFor} | ${value.goalsAgainst} |`).join("\n");
+  const legendStackRows = Object.values(data.legendImpact?.stacks ?? {}).map((value) => `| ${value.legendCount} | ${value.matches} | ${value.winRate}% | ${value.goalsFor} | ${value.goalsAgainst} |`).join("\n");
+  const legendSection = data.legendImpact ? `
+## 传奇能力与多传奇叠加
+
+逐名传奇均对照相同阵型、同打法、无传奇的随机化球队；主客场交替。胜率代表该传奇所在球队的最终胜率。
+
+| 传奇球员 | 专属能力 | 场次 | 胜率 | 场均进球 | 场均失球 |
+|---|---|---:|---:|---:|---:|
+${legendIndividualRows}
+
+多传奇组随机抽取不同传奇组合，并保持对手无传奇。全队快照类加成封顶为 ${Math.round((data.legendImpact.constraints?.teamSnapshotMultiplierCap ?? 1.05) * 100 - 100)}%，用于检查叠加是否失控。
+
+| 首发传奇数量 | 场次 | 胜率 | 场均进球 | 场均失球 |
+|---:|---:|---:|---:|---:|
+${legendStackRows}
+` : "";
   return `# 11人制好友对战综合平衡报告 ${outputVersion}
 
 生成时间：${data.generatedAt}  
@@ -1326,6 +1452,8 @@ ${physicalRows}
 |---|---:|---:|---:|---:|---:|
 ${shortageRows}
 
+${legendSection}
+
 ## 平衡评估
 
 1. **整体节奏。** 场均${perMatch(totals.goals, totals.matches)}球、${perMatch(totals.shots, totals.matches)}次射门；常规时间${percentage(totals.regulationDraws, totals.matches)}战平，${percentage(totals.penaltyShootouts, totals.matches)}进入点球大战。
@@ -1358,7 +1486,9 @@ config.totalMatches = config.randomMatches
   + 4 * config.abilityMatches
   + Object.keys(STYLES).length * 2 * config.styleFitMatches
   + 8 * config.physicalMatches
-  + (config.goalEventMatches ?? 0);
+  + (config.goalEventMatches ?? 0)
+  + LEGEND_PLAYERS.length * (config.legendIndividualMatches ?? 0)
+  + [0, 1, 2, 3, 5].length * (config.legendStackMatches ?? 0);
 const positionOnly = process.env.BALANCE_POSITION_ONLY === "1";
 const renderOnly = process.argv.includes("--render-only");
 if (!renderOnly) startProgress(positionOnly ? 4 * config.positionMatches : config.totalMatches);
@@ -1383,6 +1513,7 @@ const data = positionOnly || renderOnly
       styleFitImpact: runStyleFitImpact(config.styleFitMatches),
       physicalImpact: runPhysicalImpact(config.physicalMatches),
       goalEventAnalysis: runGoalEventAnalysis(config.goalEventMatches ?? 0, config.rawMatchSampleLimit ?? 0, config.draftChoiceCount ?? 3, config.lineupMode),
+      ...(config.legendIndividualMatches || config.legendStackMatches ? { legendImpact:runLegendImpact(config.legendIndividualMatches ?? 0, config.legendStackMatches ?? 0, config.draftChoiceCount ?? 3) } : {}),
     };
 if (positionOnly) {
   data.generatedAt = new Date().toISOString();

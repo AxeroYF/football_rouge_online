@@ -221,7 +221,7 @@ test("inbox delivers reports and matchweeks while nearby same-line starters buil
   assert.ok(boosted.leagueChemistryBonus <= .015);
 });
 
-test("team can be renamed and a paid three-choice pack signs one unique player", () => {
+test("team can be renamed and a paid mixed-pool pack signs one unique player", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("shop-owner", "Shop Owner");
   join(service, user, "Old Name");
@@ -232,7 +232,8 @@ test("team can be renamed and a paid three-choice pack signs one unique player",
   const positionsBefore = structuredClone(team.positions);
   const balanceBefore = renamed.wallet.balance;
   const pack = service.buyPack(user, "ATT");
-  assert.equal(pack.wallet.balance, balanceBefore - 2500);
+  assert.equal(pack.wallet.balance, balanceBefore - 3500);
+  assert.equal(pack.shop.offer.pool, "MIXED");
   assert.equal(pack.shop.offer.players.length, 3);
   const playerId = pack.shop.offer.players[0].id;
   const signed = service.choosePack(user, playerId);
@@ -269,12 +270,14 @@ test("advanced and elite packs charge their tier price and honor grade guarantee
   join(service, user, "Tier FC");
   service.wallet(user.id).balance = 20000;
   const elite = service.buyPack(user, "ATT", "elite");
-  assert.equal(elite.wallet.balance, 15000);
+  assert.equal(elite.wallet.balance, 13500);
+  assert.equal(elite.shop.offer.pool, "MIXED");
   assert.equal(elite.shop.offer.tier.id, "elite");
   assert.ok(elite.shop.offer.players.some((player) => ["S", "A"].includes(player.grade)));
   service.choosePack(user, elite.shop.offer.players[0].id);
   const advanced = service.buyPack(user, "MID", "advanced");
-  assert.equal(advanced.wallet.balance, 11500);
+  assert.equal(advanced.wallet.balance, 8500);
+  assert.equal(advanced.shop.offer.pool, "MIXED");
   assert.ok(advanced.shop.offer.players.some((player) => ["S", "A", "B"].includes(player.grade)));
 });
 
@@ -293,12 +296,33 @@ test("post-draft roster expands to 33 and released players return to the unique 
   const releasedId = team.rosterIds.at(-1);
   const releasedPlayer = service.view(user).ownTeam.roster.find((player) => player.id === releasedId);
   const balanceBeforeRelease = service.wallet(user.id).balance;
-  assert.equal(releasedPlayer.releaseValue, Math.floor(releasedPlayer.referencePrice * .6));
+  assert.equal(releasedPlayer.releaseValue, Math.floor(releasedPlayer.referencePrice * .45));
   service.releasePlayer(user, releasedId);
   assert.equal(service.wallet(user.id).balance, balanceBeforeRelease + releasedPlayer.releaseValue);
   assert.equal(service.unavailablePlayerIds().has(releasedId), false);
   assert.equal(service.view(user).ownTeam.roster.length, 32);
   assert.doesNotThrow(() => service.buyPack(user, "ATT"));
+});
+
+test("admin economy view summarizes current-season packs signings releases and coin ledger", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("economy-admin-owner", "Economy Manager");
+  join(service, user, "Economy FC");
+  service.wallet(user.id).balance = 20000;
+  const bought = service.buyPack(user, null, "advanced");
+  const player = bought.shop.offer.players[0];
+  service.choosePack(user, player.id);
+  service.releasePlayer(user, player.id);
+
+  const economy = service.adminView().economy.find((entry) => entry.accountId === user.id);
+  assert.ok(economy);
+  assert.equal(economy.balance, 20000 - 5000 + economy.releases[0].amount);
+  assert.equal(economy.shopPackCounts.find((entry) => entry.tierId === "advanced").count, 1);
+  assert.equal(economy.signings.find((entry) => entry.type === "pack-sign").player.id, player.id);
+  assert.equal(economy.releases[0].player.id, player.id);
+  assert.ok(economy.income > 0);
+  assert.equal(economy.expense, 5000);
+  assert.ok(economy.ledger.some((entry) => entry.type === "pack-buy" && entry.tierId === "advanced"));
 });
 
 test("admin season controls preserve human squads, reset wallets to 10000 and archive results", () => {
@@ -364,11 +388,79 @@ test("daily backups retain seven days and full reset removes all league ownershi
   assert.ok(readdirSync(backupDir).some((name) => name.startsWith("before-full-reset-")));
 });
 
+test("fresh season increments the season while clearing all YDL assets for a new draft", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("fresh-season", "Fresh Season");
+  join(service, user, "Fresh FC");
+  service.state.season.name = "S2";
+  service.wallet(user.id).balance = 32100;
+  service.startFreshSeason();
+  assert.equal(service.state.season.name, "S3");
+  assert.equal(service.state.season.status, "registration");
+  assert.equal(service.state.season.nextRoundAt, null);
+  assert.equal(service.accountTeam(user.id), null);
+  assert.deepEqual(service.state.wallets, {});
+  assert.deepEqual(service.state.drafts, {});
+  assert.deepEqual(service.state.listings, []);
+  assert.equal(service.state.cup.status, "waiting");
+  assert.equal(service.state.season.currentRound, 0);
+});
+
+test("fresh-season registration waits for admin before league simulation starts", () => {
+  let currentTime = NOW;
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => currentTime, rng:() => .37 });
+  service.startFreshSeason();
+  const user = account("registration-owner", "Registration Owner");
+  join(service, user, "Registration FC");
+  assert.equal(service.state.teams.filter((team) => team.ownerId).length, 1);
+  assert.equal(service.state.teams.filter((team) => !team.ownerId).length, 9);
+  assert.deepEqual(service.view(user).schedule.fixtures, []);
+  assert.equal(service.tick(), false);
+  assert.throws(() => service.simulateNextRound(), /报名选人阶段/);
+  currentTime = Date.parse("2026-07-23T11:55:00+08:00");
+  service.startLeagueSimulation();
+  assert.equal(service.state.season.status, "active");
+  assert.equal(service.state.season.nextRoundAt, Date.parse("2026-07-23T12:00:00+08:00"));
+  assert.equal(service.state.season.firstRoundAt, Date.parse("2026-07-23T12:00:00+08:00"));
+  assert.equal(service.view(user).schedule.fixtures.length, 18);
+  assert.throws(() => service.startLeagueSimulation(), /已经开启/);
+});
+
+test("cup schedule follows the manually started league timeline", () => {
+  let currentTime = NOW;
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => currentTime, rng:() => .37 });
+  service.startFreshSeason();
+  currentTime = Date.parse("2026-07-23T11:55:00+08:00");
+  service.startLeagueSimulation();
+  service.startCup();
+  assert.equal(service.state.season.firstRoundAt, Date.parse("2026-07-23T12:00:00+08:00"));
+  assert.equal(service.state.cup.nextRoundAt, Date.parse("2026-07-23T12:10:00+08:00"));
+  currentTime = Date.parse("2026-07-23T12:11:00+08:00");
+  service.simulatePendingCupEvent();
+  assert.equal(service.state.cup.nextRoundAt, Date.parse("2026-07-23T12:30:00+08:00"));
+});
+
+test("admin can grant distinct S2 and S3 cup champion badges", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("cup-badge", "Cup Champion");
+  join(service, user, "Cup FC");
+  service.awardChampionBadge({ accountId:user.id, season:"S2", competition:"cup" });
+  service.awardChampionBadge({ accountId:user.id, season:"S3", competition:"cup" });
+  const badges = service.accountTeam(user.id).championBadges;
+  assert.deepEqual(badges.map((badge) => [badge.competition, badge.season]), [["cup", "S2"], ["cup", "S3"]]);
+  assert.throws(() => service.awardChampionBadge({ accountId:user.id, season:"S2", competition:"cup" }));
+});
+
 test("10队联赛每轮完成5场并在三轮后结算榜单和金币", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW });
   const user = account("player-a", "甲");
   join(service, user, "ydl-team-1");
+  const beforeRound = service.view(user);
   service.simulateNextRound();
+  const afterRound = service.view(user);
+  assert.ok(afterRound.updatedAt > beforeRound.updatedAt);
+  assert.equal(afterRound.season.currentRound, 1);
+  assert.ok(afterRound.teams.every((team) => team.table.played === 1));
   service.simulateNextRound();
   service.simulateNextRound();
   assert.equal(service.state.matches.length, 15);
@@ -406,8 +498,8 @@ test("交易需要名单空位并完成球员唯一所有权转移", () => {
   const sellerPositionsBefore = structuredClone(sellerTeam.positions);
   service.state.wallets[buyer.id].balance = 50000;
   const publicPlayer = service.view(seller).ownTeam.roster.find((player) => player.id === playerId);
-  assert.equal(publicPlayer.minimumPrice, Math.ceil(publicPlayer.referencePrice * .8));
-  assert.throws(() => service.listPlayer(seller, playerId, publicPlayer.minimumPrice - 1), /80%/);
+  assert.equal(publicPlayer.minimumPrice, Math.ceil(publicPlayer.referencePrice * .5));
+  assert.throws(() => service.listPlayer(seller, playerId, publicPlayer.minimumPrice - 1), /50%/);
   const price = publicPlayer.minimumPrice;
   const listingView = service.listPlayer(seller, playerId, price);
   const listing = listingView.listings.find((entry) => entry.playerId === playerId);
@@ -426,11 +518,15 @@ test("round results, team history and saved match details expose complete public
   join(service, user, "Original Club Name");
   service.simulateNextRound();
   const renamed = service.renameTeam(user, "Renamed Club");
-  assert.equal(renamed.matchRounds.length, 1);
+  assert.equal(renamed.matchRounds.length, 18);
   assert.equal(renamed.matchRounds[0].matches.length, 5);
   const ownSummary = renamed.matchRounds[0].matches.find((match) => match.homeId === renamed.ownTeam.id || match.awayId === renamed.ownTeam.id);
   assert.ok([ownSummary.homeName, ownSummary.awayName].includes("Renamed Club"));
   assert.equal(ownSummary.hasPlayerTeam, true);
+  const futureOwnFixture = renamed.matchRounds[1].matches.find((match) => match.homeId === renamed.ownTeam.id || match.awayId === renamed.ownTeam.id);
+  assert.equal(futureOwnFixture.pending, true);
+  assert.equal(futureOwnFixture.score, null);
+  assert.equal(futureOwnFixture.hasDetails, false);
   const publicTeam = service.teamDetail(user, renamed.ownTeam.id);
   assert.equal(publicTeam.history.length, 1);
   assert.equal(publicTeam.starters.length, 11);
@@ -442,6 +538,24 @@ test("round results, team history and saved match details expose complete public
   assert.ok(detail.teams.every((team) => team.players.length === 11));
   assert.ok(detail.teams.every((team) => team.players.every((player) => Number.isFinite(player.rating) && Number.isFinite(player.overall) && Number.isFinite(player.position.x))));
   assert.ok(renamed.teamLeaderboards.ratings.every((entry) => entry.teamId === renamed.ownTeam.id));
+});
+
+test("player schedule exposes confirmed league fixtures with stable kickoff times and results", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("schedule-owner", "Schedule Manager");
+  join(service, user, "Calendar FC");
+  let fixtures = service.view(user).schedule.fixtures;
+  assert.equal(fixtures.length, 18);
+  assert.equal(fixtures[0].startsAt, service.state.season.nextRoundAt);
+  assert.equal(fixtures[1].startsAt - fixtures[0].startsAt, 20 * 60 * 1000);
+  assert.ok(fixtures.every((fixture) => fixture.competition === "league" && fixture.opponentId && fixture.status === "scheduled"));
+
+  service.simulateNextRound();
+  fixtures = service.view(user).schedule.fixtures;
+  assert.equal(fixtures[0].status, "complete");
+  assert.ok(fixtures[0].matchId);
+  assert.equal(fixtures[0].score.length, 2);
+  assert.equal(fixtures[1].status, "scheduled");
 });
 
 test("every round grants two random-position packs while coins still settle every third round", () => {
@@ -524,9 +638,11 @@ test("admin schedules a tiered position pack by round and mails every player tea
     assert.equal(offer.round, 2);
     assert.equal(offer.pool, "MID");
     assert.equal(offer.tierId, "advanced");
-    assert.equal(offer.players.length, 3);
-    assert.ok(offer.players.some((player) => ["S", "A", "B"].includes(player.grade)));
+    assert.equal(offer.players.length, 0);
     assert.ok(view.inbox.some((message) => message.payload?.grantId === offer.grantId && message.round === 2));
+    const opened = service.openRewardPack(user, offer.id).rewardOffers.find((entry) => entry.id === offer.id);
+    assert.equal(opened.players.length, 3);
+    assert.ok(opened.players.some((player) => ["S", "A", "B"].includes(player.grade)));
   }
   const grant = service.adminView().rewardGrants[0];
   assert.equal(grant.status, "sent");
@@ -539,6 +655,58 @@ test("admin schedules a tiered position pack by round and mails every player tea
   service.chooseRewardPack(first, offer.id, offer.players[0].id);
   assert.deepEqual(firstTeam.preferredStarterIds, startersBefore);
   assert.deepEqual(firstTeam.positions, positionsBefore);
+});
+
+test("admin team-created rewards reach existing and future teams exactly once", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const first = account("team-created-first", "First Builder");
+  const second = account("team-created-second", "Second Builder");
+  join(service, first, "First Builder FC");
+
+  const scheduled = service.scheduleAdminRewardPack({ trigger:"team-created", packType:"mixed-advanced" });
+  const grant = scheduled.rewardGrants[0];
+  assert.equal(grant.trigger, "team-created");
+  assert.equal(grant.status, "active");
+  assert.equal(grant.recipientCount, 1);
+  assert.equal(service.view(first).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
+  assert.ok(service.view(first).inbox.some((message) => message.payload?.grantId === grant.id && message.title === "建队完成卡包奖励"));
+
+  join(service, second, "Second Builder FC");
+  assert.equal(service.view(second).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
+  service.dispatchTeamCreatedRewardGrants();
+  assert.equal(service.view(first).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
+  assert.equal(service.view(second).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
+  const updated = service.adminView().rewardGrants.find((entry) => entry.id === grant.id);
+  assert.equal(updated.recipientCount, 2);
+  assert.deepEqual(new Set(updated.recipientIds), new Set([first.id, second.id]));
+});
+
+test("admin can mail mixed-pool packs and a one-player random legend pack", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("admin-mixed-owner", "Mixed Manager");
+  join(service, user, "Mixed Reward FC");
+  assert.ok(service.adminView().adminPackTypes.some((entry) => entry.id === "mixed-standard"));
+  assert.ok(service.adminView().adminPackTypes.some((entry) => entry.id === "random-legend"));
+
+  service.scheduleAdminRewardPack({ round:1, packType:"mixed-standard" });
+  service.simulateNextRound();
+  let view = service.view(user);
+  const mixed = view.rewardOffers.find((offer) => offer.source === "admin" && offer.pool === "MIXED");
+  assert.ok(mixed);
+  assert.equal(mixed.players.length, 0);
+  const openedMixed = service.openRewardPack(user, mixed.id).rewardOffers.find((offer) => offer.id === mixed.id);
+  assert.equal(openedMixed.players.length, 3);
+  assert.equal(new Set(openedMixed.players.map((player) => player.id)).size, 3);
+
+  service.scheduleAdminRewardPack({ round:2, packType:"random-legend" });
+  service.simulateNextRound();
+  view = service.view(user);
+  const legend = view.rewardOffers.find((offer) => offer.source === "admin" && offer.pool === "LEGEND");
+  assert.ok(legend);
+  const openedLegend = service.openRewardPack(user, legend.id).rewardOffers.find((offer) => offer.id === legend.id);
+  assert.equal(openedLegend.players.length, 1);
+  assert.equal(openedLegend.players[0].grade, "S");
+  assert.equal(service.openRewardPack(user, legend.id).rewardOffers.find((offer) => offer.id === legend.id).players[0].id, openedLegend.players[0].id);
 });
 
 test("scheduled player fixtures are broadcast live and finalize after match time", () => {
@@ -555,18 +723,204 @@ test("scheduled player fixtures are broadcast live and finalize after match time
   assert.equal(watched.broadcast.spectators.length, 1);
   currentTime += 4 * 60 * 1000;
   assert.deepEqual(service.broadcasts(), []);
+  const finalView = service.watchView(broadcasts[0].code, watched.spectatorToken);
+  assert.equal(finalView.live, false);
+  assert.equal(finalView.match.report?.score.join(":"), finalView.match.score.join(":"));
+  assert.ok(finalView.matchId);
+  assert.deepEqual(service.leaveWatch(broadcasts[0].code, watched.spectatorToken), { left:true });
   assert.equal(service.state.season.currentRound, 1);
   assert.equal(service.state.matches.length, 5);
 });
 
-test("lightweight league fitness remains competitive across unattended rounds", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW });
+test("admin cup uses a modified Swiss stage then resolves a two-leg knockout champion", () => {
+  let currentTime = NOW;
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => currentTime, rng:() => .37 });
+  service.startCup();
+  assert.equal(service.state.cup.status, "active");
+  assert.equal(service.state.cup.swissRounds.length, 1);
+  const openingCupFixture = service.teamSchedule(service.state.teams[0].id).find((fixture) => fixture.competition === "cup");
+  assert.deepEqual([openingCupFixture.competitionName, openingCupFixture.label], ["黄狗冠军杯", "瑞士轮第1轮"]);
+  for (let index = 0; index < 20 && service.state.cup.status !== "completed"; index += 1) {
+    service.startScheduledCupEvent();
+    currentTime += 10 * 60 * 1000;
+  }
+  assert.ok(service.state.cup.swissRounds.length >= 3 && service.state.cup.swissRounds.length <= 5);
+  assert.equal(service.state.cup.status, "completed");
+  assert.ok(service.state.cup.championId);
+  assert.equal(service.cupStandings().filter((team) => team.status === "qualified").length, 8);
+  assert.equal(service.cupStandings().filter((team) => team.status === "eliminated").length, 2);
+  assert.equal(service.state.cup.knockout.quarterfinals.length, 4);
+  assert.equal(service.state.cup.knockout.semifinals.length, 2);
+  assert.equal(service.state.cup.knockout.final.length, 1);
+  assert.equal(service.state.cup.knockout.final[0].legs.length, 1);
+});
+
+test("admin league simulation also settles the pending cup event between league rounds", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  service.startCup();
+  service.simulateNextRound();
+  assert.equal(service.state.season.currentRound, 1);
+  assert.equal(service.state.cup.swissRounds[0].status, "complete");
+  assert.equal(service.state.cup.swissRounds.length, 2);
+  assert.equal(service.state.matches.filter((match) => match.competition === "cup" && match.cupRound === 1).length, 5);
+});
+
+test("Swiss stage settles every match with a winner and never awards draw points", () => {
+  let currentTime = NOW;
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => currentTime, rng:() => .37 });
+  service.startCup();
+  while (service.state.cup.stage === "swiss") {
+    service.startScheduledCupEvent();
+    currentTime += 10 * 60 * 1000;
+  }
+  assert.equal(service.state.cup.swissRounds.every((round) => round.fixtures.every((fixture) => fixture.winnerId)), true);
+  assert.equal(service.cupStandings().every((team) => team.drawn === 0 && team.played === team.won + team.lost), true);
+  assert.equal(service.cupStandings().filter((team) => team.status === "qualified").length, 8);
+  assert.equal(service.cupStandings().filter((team) => team.status === "eliminated").length, 2);
+  assert.equal(service.state.matches.filter((match) => match.competition === "cup" && match.cupStage === "swiss").length, service.state.cup.swissRounds.reduce((total, round) => total + round.fixtures.length, 0));
+});
+
+test("the eighth-ranked team fills the bracket when a final Swiss round produces three eliminations", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  service.startCup();
+  const ids = service.state.teams.map((team) => team.id);
+  ids.forEach((id, index) => {
+    const table = service.state.cup.table[id];
+    table.points = 12 - index;
+    table.goalsFor = 20 - index;
+    table.status = index < 7 ? "qualified" : "eliminated";
+  });
+  service.state.cup.swissRounds = [{ number:3, status:"pending", fixtures:[] }];
+  service.completeCupEvent({ id:"cup-swiss-3", stage:"swiss", round:3, leg:1, status:"running" });
+  const standings = service.cupStandings();
+  assert.equal(standings[7].id, ids[7]);
+  assert.equal(standings[7].status, "qualified");
+  assert.equal(standings.filter((team) => team.status === "qualified").length, 8);
+  assert.equal(service.state.cup.knockout.quarterfinals.length, 4);
+  assert.ok(service.state.cup.knockout.quarterfinals.flatMap((tie) => tie.teams).includes(ids[7]));
+});
+
+test("an odd Swiss field eliminates ninth place before a final six-team seeding round", () => {
+  let currentTime = Date.parse("2026-07-23T13:42:00+08:00");
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => currentTime, rng:() => .37 });
+  service.startCup();
+  const standingsOrder = service.state.teams.map((team) => team.id);
+  standingsOrder.forEach((teamId, index) => {
+    Object.assign(service.state.cup.table[teamId], { played:3, won:index < 2 ? 3 : index === 9 ? 0 : 1, lost:index < 2 ? 0 : index === 9 ? 3 : 2, points:index < 2 ? 9 : 8 - index, goalsFor:10 - index, goalsAgainst:index, status:index < 2 ? "qualified" : index === 9 ? "eliminated" : "active" });
+  });
+  const rankNine = service.cupStandings().find((team) => team.rank === 9);
+  assert.equal(rankNine.status, "active");
+  service.state.cup.swissRounds = [{ number:3, status:"complete", fixtures:[] }];
+  const event = { id:"cup-swiss-3", stage:"swiss", round:3, leg:1, status:"complete", fixtureIds:[] };
+  service.state.cup.events = [event];
+  service.state.season.nextRoundAt = Date.parse("2026-07-23T13:40:00+08:00");
+  service.completeCupEvent(event);
+  assert.equal(service.state.cup.swissRounds[0].automaticEliminationId, rankNine.id);
+  assert.equal(service.state.cup.table[rankNine.id].status, "eliminated");
+  assert.equal(service.state.cup.knockout.quarterfinals.length, 0);
+  assert.equal(service.state.cup.swissRounds.length, 2);
+  assert.equal(service.state.cup.swissRounds[1].number, 4);
+  assert.equal(service.state.cup.swissRounds[1].fixtures.length, 3);
+  assert.deepEqual(new Set(service.state.cup.swissRounds[1].fixtures.flatMap((fixture) => [fixture.homeId, fixture.awayId])), new Set(service.cupStandings().filter((team) => team.status === "active").map((team) => team.id)));
+  assert.equal(service.state.season.nextRoundAt, Date.parse("2026-07-23T14:00:00+08:00"));
+  assert.equal(service.state.cup.nextRoundAt, Date.parse("2026-07-23T14:10:00+08:00"));
+  service.completeCupEvent(event);
+  assert.equal(service.state.cup.swissRounds.length, 2);
+});
+
+test("a 3-0 Swiss qualifier takes priority over a 3-1 qualifier regardless of goal difference", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  service.startCup();
+  const [perfectId, laterId] = service.state.teams.map((team) => team.id);
+  Object.values(service.state.cup.table).forEach((table) => { table.points = 0; table.won = 0; table.lost = 3; table.goalsFor = 0; table.goalsAgainst = 10; });
+  Object.assign(service.state.cup.table[perfectId], { played:3, won:3, lost:0, points:9, goalsFor:3, goalsAgainst:2, status:"qualified" });
+  Object.assign(service.state.cup.table[laterId], { played:4, won:3, lost:1, points:9, goalsFor:20, goalsAgainst:2, status:"qualified" });
+  const standings = service.cupStandings();
+  assert.equal(standings[0].id, perfectId);
+  assert.equal(standings[1].id, laterId);
+});
+
+test("Swiss pairings use current cup standings and quarterfinal seeds occupy the intended bracket halves", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  service.startCup();
+  const ids = service.state.teams.map((team) => team.id);
+  ids.forEach((id, index) => {
+    service.state.cup.table[id].points = 20 - index;
+    service.state.cup.table[id].goalsFor = 20 - index;
+  });
+  const secondSwissRound = service.createSwissRound();
+  const topSeedFixture = secondSwissRound.fixtures.find((fixture) => fixture.homeId === ids[0] || fixture.awayId === ids[0]);
+  const openingFixture = service.state.cup.swissRounds[0].fixtures.find((fixture) => fixture.homeId === ids[0] || fixture.awayId === ids[0]);
+  const openingOpponent = openingFixture.homeId === ids[0] ? openingFixture.awayId : openingFixture.homeId;
+  const expectedOpponent = ids.slice(1).find((id) => id !== openingOpponent);
+  assert.ok(topSeedFixture);
+  assert.equal(topSeedFixture.homeId === ids[0] ? topSeedFixture.awayId : topSeedFixture.homeId, expectedOpponent);
+
+  ids.forEach((id, index) => { service.state.cup.table[id].status = index < 8 ? "qualified" : "eliminated"; });
+  service.state.cup.swissRounds = [1, 2, 3, 4].map((number) => ({ number, status:number === 4 ? "pending" : "complete", fixtures:[] }));
+  const finalSwissEvent = { id:"cup-swiss-4", stage:"swiss", round:4, leg:1, status:"running" };
+  service.completeCupEvent(finalSwissEvent);
+  const quarterfinalPairs = service.state.cup.knockout.quarterfinals.map((tie) => tie.teams);
+  assert.deepEqual(quarterfinalPairs, [[ids[0], ids[7]], [ids[3], ids[4]], [ids[2], ids[5]], [ids[1], ids[6]]]);
+});
+
+test("cup rewards are limited to knockout advancement and champion, and cup matches mail reports", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("cup-reward-owner", "Cup Reward Manager");
+  join(service, user, "Cup Reward FC");
+  const team = service.accountTeam(user.id);
+  service.startCup();
+  const swissEvent = service.state.cup.events[0];
+  assert.equal(service.view(user).rewardOffers.some((offer) => offer.source === "cup"), false);
+
+  const fixture = service.cupEventFixtures(swissEvent).find((entry) => entry.homeId === team.id || entry.awayId === team.id);
+  const home = service.state.teams.find((entry) => entry.id === fixture.homeId);
+  const away = service.state.teams.find((entry) => entry.id === fixture.awayId);
+  const record = { id:"cup-mail-test", round:swissEvent.round, homeId:home.id, awayId:away.id, homeName:home.name, awayName:away.name, score:[2, 1], formations:[], report:{} };
+  service.createCupMatchInbox(home, away, record, swissEvent);
+  const report = service.view(user).inbox.find((message) => message.id.includes("cup-matchweek:"));
+  assert.ok(report);
+  assert.equal(report.type, "matchweek");
+  assert.equal(report.payload.competition, "cup");
+  assert.equal(report.payload.stage, "swiss");
+  assert.equal(report.payload.results[0].id, record.id);
+
+  const advance = service.grantCupReward(team.id, { id:"cup-quarterfinals-leg2", stage:"quarterfinals", round:5, leg:2 }, "advance");
+  assert.ok(advance);
+  assert.equal(advance.source, "cup");
+  assert.equal(advance.tierId, "advanced");
+  assert.ok(["ATT", "MID", "DEF", "GK"].includes(advance.pool));
+  const champion = service.grantCupReward(team.id, { id:"cup-final-leg2", stage:"final", round:7, leg:2 }, "champion");
+  assert.ok(champion);
+  assert.equal(champion.source, "cup");
+  assert.equal(champion.tierId, "legend");
+  assert.equal(champion.pool, "LEGEND");
+  assert.equal(service.view(user).inbox.filter((message) => message.id.startsWith("cup-reward:")).length, 2);
+});
+
+test("league and cup suspensions are isolated while injuries remain shared", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("discipline-owner", "Discipline Manager");
+  join(service, user, "Discipline FC");
+  const team = service.accountTeam(user.id);
+  const starterId = team.preferredStarterIds.find((id) => team.rosterIds.some((candidate) => !team.preferredStarterIds.includes(candidate) && REAL_PLAYERS.find((player) => player.id === candidate)?.pool === REAL_PLAYERS.find((player) => player.id === id)?.pool));
+  team.playerState[starterId].cupSuspension = 1;
+  assert.equal(service.selectActualLineup(team, 1, "league").lineup.some((player) => player.id === starterId), true);
+  assert.equal(service.selectActualLineup(team, 1, "cup").lineup.some((player) => player.id === starterId), false);
+  team.playerState[starterId].injuryRounds = 1;
+  assert.equal(service.selectActualLineup(team, 1, "league").lineup.some((player) => player.id === starterId), false);
+  assert.equal(service.selectActualLineup(team, 1, "cup").lineup.some((player) => player.id === starterId), false);
+});
+
+test("lightweight league fitness remains playable while penalizing an unchanged lineup", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("fitness-owner", "Fitness Owner");
   join(service, user, "Fitness FC");
   const team = service.accountTeam(user.id);
   for (let round = 0; round < 9; round += 1) service.simulateNextRound();
   const starterFitness = team.preferredStarterIds.map((id) => team.playerState[id].fitness);
   const average = starterFitness.reduce((sum, value) => sum + value, 0) / starterFitness.length;
-  assert.ok(Math.min(...starterFitness) >= 75);
-  assert.ok(average >= 85);
+  assert.ok(Math.min(...starterFitness) >= 67);
+  assert.ok(average >= 74);
+  assert.ok(average <= 85);
 });

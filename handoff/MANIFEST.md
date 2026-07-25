@@ -1,17 +1,11 @@
 # 交接包清单
 
-更新时间：2026-07-23
+更新时间：2026-07-25
 
-- `README.md`：阅读顺序和交接原则。
-- `CURRENT_STATE.md`：产品规则、当前实现、最新参数、模拟基线、文件索引和风险。
-- `NEW_CHAT_PROMPT.md`：可直接发送给新对话的启动提示词。
-- `artifacts/11人制对战-综合平衡报告-v9-detailed.md`：117,700场传统分组阵容报告。
-- `artifacts/11人制对战-综合平衡数据-v9-detailed.json`：v9原始数据与逐场样本。
-- `artifacts/11人制对战-综合平衡报告-v10-seeded.md`：117,700场位置合理随机种子报告。
-- `artifacts/11人制对战-综合平衡数据-v10-seeded.json`：v10原始数据与逐场样本。
-- `artifacts/11人制对战-综合平衡报告-v4.md`、`数据-v4.json`：历史基线，保留用于回溯。
-- `football-versus-handoff-20260723.zip`：本清单全部内容的压缩包。
+- `README.md`：阅读顺序、安全边界和验证摘要。
+- `CURRENT_STATE.md`：YDL、冠军杯、经济、后台、正式赛季和紧急修复的完整状态。
+- `NEW_CHAT_PROMPT.md`：新对话启动提示词。
+- `artifacts/`：旧版11人制平衡报告和原始数据，保留用于历史比较；当前S2传奇模拟结果位于工作区 `outputs/`，未重复打包。
+- `football-ydl-handoff-20260725.zip`：上述说明与历史报告，不含源码和正式数据。
 
-2026-07-23第二批代码新增 `versus/top-player-profiles.js`，并修改比赛事件链、SSE联机、历史战绩和admin阵型展示。交接包中的源码仍以 `D:\Project\game_test` 工作区为准。
-
-交接包不包含源码；源码位置为 `D:\Project\game_test`。
+源码与正式数据仍以 `D:\Project\game_test` 工作区为准。

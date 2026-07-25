@@ -217,6 +217,7 @@ function publicPlayer(player) {
     signature: player.signature,
     archetype: player.archetype,
     individualized: player.individualized,
+    legendAbility: player.legendAbility ?? null,
   };
 }
 
@@ -587,6 +588,7 @@ export class VersusRoomService {
           role: player.role,
           assignedRole: player.assignedRole ?? player.role,
           overall: player.overall,
+          legendAbility: player.legendAbility ?? null,
           position: clone(player.position ?? team.positions?.[player.id] ?? { x:50, y:50 }),
           rating: player.rating,
           fitness: player.fitness,

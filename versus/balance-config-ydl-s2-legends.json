@@ -1,0 +1,67 @@
+{
+  "outputVersion": "s2-ydl-legends-randomized",
+  "seed": "ydl-s2-legends-randomized-20260724-918274",
+  "traitsMode": "none",
+  "design": {
+    "mode": "YellowDogsLeague",
+    "baseline": "seededPositionAware",
+    "playerPool": "current700",
+    "legendSystem": "fourteen server-unique S-grade legends with position and tactic conditional abilities; team snapshot modifiers are capped at five percent.",
+    "description": "Comprehensive randomized S2 YDL simulation. It measures scoring, tactical fit, formations, player quality, individual legend impact, and multi-legend stacking against no-legend baselines.",
+    "principle": "Lineup structure and tactical fit remain the primary source of advantage. Legends improve the football actions they are known for, but cannot replace a coherent formation or be stacked without limits."
+  },
+  "targets": {
+    "averageTotalGoals": { "minimum": 4.2, "ideal": 4.5, "maximum": 4.8 },
+    "shotsOnTargetRatePercent": { "minimum": 48, "ideal": 55, "maximum": 61 },
+    "legendIndividualWinRatePercent": { "minimum": 51, "ideal": 54, "maximum": 58 },
+    "threeLegendWinRatePercent": { "minimum": 57, "ideal": 62, "maximum": 68 },
+    "fiveLegendWinRatePercent": { "minimum": 62, "ideal": 68, "maximum": 74 },
+    "formationWinRatePercent": { "minimum": 43, "maximum": 57 },
+    "tacticalFitWinRateGapPercent": { "minimum": 10, "ideal": 18, "maximum": 26 }
+  },
+  "analysisDimensions": {
+    "ydlLineups": ["full700PlayerPool", "threeCandidateDraft", "uniqueOpposingRandomBaseline", "noTraitCards", "primaryAndSecondaryPositionFit", "fitnessAndAvailability"],
+    "scoring": ["goals", "xg", "shots", "shotsOnTarget", "shotAccuracy", "goalIntervals", "scoreDistribution", "highScoreOutliers"],
+    "tacticalCore": ["formationVsField", "tacticVsField", "styleVsField", "formationStyle", "formationTactic", "styleTactic", "adaptedVsUnfitSquads"],
+    "legendAnalysis": ["individualLegendVsNoLegend", "randomizedZeroOneTwoThreeFiveLegendStacks", "teamModifierCap", "formationAndTacticConditionalActivation", "compositionSamples"],
+    "matchContext": ["weather", "referee", "attackFocus", "defenseFocus", "playerAbility", "positionFamiliarity", "physicalProfile", "redCardsAndInjuries"]
+  },
+  "quick": {
+    "lineupMode": "seededPositionAware",
+    "draftChoiceCount": 3,
+    "randomMatches": 2000,
+    "formationMatches": 120,
+    "tacticMatches": 60,
+    "styleMatches": 70,
+    "focusMatches": 70,
+    "weatherStyleMatches": 50,
+    "refereeStyleMatches": 50,
+    "positionMatches": 120,
+    "abilityMatches": 180,
+    "styleFitMatches": 60,
+    "physicalMatches": 120,
+    "goalEventMatches": 2500,
+    "rawMatchSampleLimit": 150,
+    "legendIndividualMatches": 180,
+    "legendStackMatches": 450
+  },
+  "full": {
+    "lineupMode": "seededPositionAware",
+    "draftChoiceCount": 3,
+    "randomMatches": 25000,
+    "formationMatches": 1200,
+    "tacticMatches": 350,
+    "styleMatches": 400,
+    "focusMatches": 400,
+    "weatherStyleMatches": 300,
+    "refereeStyleMatches": 300,
+    "positionMatches": 1000,
+    "abilityMatches": 1500,
+    "styleFitMatches": 350,
+    "physicalMatches": 1000,
+    "goalEventMatches": 30000,
+    "rawMatchSampleLimit": 2500,
+    "legendIndividualMatches": 1200,
+    "legendStackMatches": 3000
+  }
+}

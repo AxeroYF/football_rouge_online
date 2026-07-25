@@ -1,6 +1,7 @@
 import { normalizePlayerSchema } from "../game/public/schema.js";
 import { LEGEND_PROFILES } from "../game/public/legends.js";
 import { applyTopPlayerProfile, TOP_PLAYER_PROFILES } from "./top-player-profiles.js";
+import { legendAbilityForName } from "./legend-abilities.js";
 
 export const VERSUS_LINES = Object.freeze({
   GK: Object.freeze({ label: "门将", roles: ["GK"] }),
@@ -18,8 +19,8 @@ const ARGENTINA_PLAYER_NAMES = new Set([
 
 export function versusPlayerGrade(name, overall) {
   if (VERSUS_LEGEND_NAMES.has(name)) return "S";
-  if (overall >= 89) return "A";
-  if (overall >= 83) return "B";
+  if (overall >= 86) return "A";
+  if (overall >= 81) return "B";
   return "C";
 }
 
@@ -174,7 +175,32 @@ const RAW_PLAYERS = {
 王大雷|GK|80|right|中国|山东泰山
 颜骏凌|GK|80|right|中国|上海海港
 赵贤祐|GK|82|right|韩国|蔚山HD
-中村航辅|GK|81|right|日本|波尔蒂芒人`,
+中村航辅|GK|81|right|日本|波尔蒂芒人
+若安·加西亚|GK|85|right|西班牙|巴塞罗那|191
+卢卡斯·舍瓦利耶|GK|86|right|法国|巴黎圣日耳曼|189
+米莱·斯维拉尔|GK|86|right|塞尔维亚|罗马|189
+米凯莱·迪格雷戈里奥|GK|85|right|意大利|尤文图斯|192
+埃利亚·卡普里莱|GK|82|right|意大利|卡利亚里|191
+耶万·迪乌夫|GK|82|right|塞内加尔|尼斯|191
+赫罗尼莫·鲁利|GK|83|right|阿根廷|马赛|189
+马特维·萨福诺夫|GK|83|right|俄罗斯|巴黎圣日耳曼|192
+卢卡斯·佩里|GK|83|right|巴西|利兹联|197
+瓦尔特·贝尼特斯|GK|82|right|阿根廷|水晶宫|191
+凯文·特拉普|GK|82|right|德国|巴黎FC|189
+让·比特兹|GK|81|right|法国|科莫|189
+乔治·彼得罗维奇|GK|83|right|塞尔维亚|伯恩茅斯|194
+马兹·赫尔曼森|GK|82|right|丹麦|西汉姆联|187
+巴特·费布鲁亨|GK|84|right|荷兰|布莱顿|194
+迪恩·亨德森|GK|84|right|英格兰|水晶宫|188
+诺亚·阿图博卢|GK|82|right|德国|弗赖堡|190
+罗宾·曾特纳|GK|82|right|德国|美因茨|194
+芬恩·达门|GK|80|right|德国|奥格斯堡|188
+莫里茨·尼古拉斯|GK|81|right|德国|门兴格拉德巴赫|193
+戴维·索里亚|GK|81|right|西班牙|赫塔费|192
+塞尔希奥·埃雷拉|GK|81|right|西班牙|奥萨苏纳|192
+奥尔扬·尼兰德|GK|80|right|挪威|塞维利亚|192
+布里斯·桑巴|GK|83|right|法国|雷恩|187
+菲利普·科恩|GK|80|right|瑞士|摩纳哥|190`,
   DEF: `
 范戴克|CB|90|right
 鲁本·迪亚斯|CB|89|right
@@ -325,7 +351,32 @@ const RAW_PLAYERS = {
 布拉尼斯拉夫·伊万诺维奇|RB|88|right|塞尔维亚|传奇球员
 莱顿·贝恩斯|LB|87|left|英格兰|传奇球员
 巴勃罗·萨巴莱塔|RB|87|right|阿根廷|传奇球员
-塞萨尔·阿斯皮利奎塔|RB|87|right|西班牙|传奇球员`,
+塞萨尔·阿斯皮利奎塔|RB|87|right|西班牙|传奇球员
+保·库巴西|CB|86|right|西班牙|巴塞罗那|184
+迪恩·赫伊森|CB|86|right|西班牙|皇家马德里|195
+皮耶罗·因卡皮耶|CB|85|left|厄瓜多尔|勒沃库森|184
+杰里米·弗林蓬|RB|86|right|荷兰|利物浦|172
+约雷尔·哈托|LB|84|left|荷兰|切尔西|182
+克里斯蒂安·莫斯克拉|CB|84|right|西班牙|阿森纳|191
+里卡多·卡拉菲奥里|LB|85|left|意大利|阿森纳|188
+莱尼·约罗|CB|84|right|法国|曼联|190
+穆里略·圣地亚哥|CB|84|left|巴西|诺丁汉森林|184
+拉扬·艾特-努里|LB|84|left|阿尔及利亚|曼城|180
+马克桑斯·拉克鲁瓦|CB|83|right|法国|水晶宫|190
+特雷沃·查洛巴|CB|83|right|英格兰|切尔西|192
+马克·格伊|CB|85|right|英格兰|水晶宫|182
+瓦尔德马·安东|CB|83|right|德国|多特蒙德|189
+尼科·施洛特贝克|CB|86|left|德国|多特蒙德|191
+戴维·劳姆|LB|84|left|德国|RB莱比锡|180
+亚历杭德罗·格里马尔多|LB|86|left|西班牙|勒沃库森|171
+若纳唐·塔|CB|86|right|德国|拜仁慕尼黑|195
+卡斯特洛·卢克巴|CB|84|left|法国|RB莱比锡|184
+洛伊克·巴代|CB|84|right|法国|勒沃库森|191
+奥迪隆·科苏努|CB|83|right|科特迪瓦|亚特兰大|191
+萨姆·别克马|CB|84|right|荷兰|那不勒斯|188
+亚历山德罗·布翁焦尔诺|CB|85|left|意大利|那不勒斯|190
+卢卡斯·贝拉尔多|CB|82|left|巴西|巴黎圣日耳曼|186
+威廉·帕乔|CB|85|left|厄瓜多尔|巴黎圣日耳曼|187`,
   MID: `
 罗德里|DM|91|right
 赖斯|DM|88|right
@@ -476,7 +527,32 @@ const RAW_PLAYERS = {
 朴智星|RM|87|right|韩国|传奇球员
 哈维尔·马斯切拉诺|DM|89|right|阿根廷|传奇球员
 迈克尔·埃辛|DM|90|right|加纳|传奇球员
-克劳德·马克莱莱|DM|92|right|法国|传奇球员`,
+克劳德·马克莱莱|DM|92|right|法国|传奇球员
+德西雷·杜埃|AM|86|right|法国|巴黎圣日耳曼|181
+埃利奥特·安德森|DM|84|right|英格兰|诺丁汉森林|179
+安杰洛·施蒂勒|DM|85|right|德国|斯图加特|183
+费利克斯·恩梅查|DM|84|right|德国|多特蒙德|190
+费尔明·洛佩斯|AM|85|right|西班牙|巴塞罗那|174
+萨穆埃莱·里奇|DM|84|right|意大利|AC米兰|181
+马努·科内|DM|84|right|法国|罗马|185
+尼科洛·罗韦拉|DM|84|right|意大利|拉齐奥|180
+埃德松·席尔瓦|DM|85|right|巴西|亚特兰大|183
+恩佐·勒费埃|AM|82|left|法国|桑德兰|173
+罗密欧·拉维亚|DM|83|right|比利时|切尔西|181
+本杰明·安德烈|DM|84|right|法国|里尔|180
+哈维·西蒙斯|AM|86|right|荷兰|托特纳姆热刺|179
+摩根·吉布斯-怀特|AM|85|right|英格兰|诺丁汉森林|171
+凯夫伦·图拉姆|DM|85|right|法国|尤文图斯|192
+蒂贾尼·赖因德斯|AM|86|right|荷兰|曼城|185
+马丁·苏比门迪|DM|86|right|西班牙|阿森纳|181
+亚历克斯·巴埃纳|AM|85|right|西班牙|马德里竞技|175
+科比·梅努|DM|84|right|英格兰|曼联|180
+拉扬·谢尔基|AM|86|left|法国|曼城|177
+阿图尔·费尔梅伦|DM|83|right|比利时|马赛|180
+拉明·卡马拉|DM|83|right|塞内加尔|摩纳哥|189
+安德雷·桑托斯|DM|84|right|巴西|切尔西|180
+巴勃罗·巴里奥斯|DM|85|right|西班牙|马德里竞技|181
+马克·卡萨多|DM|84|right|西班牙|巴塞罗那|172`,
   ATT: `
 姆巴佩|ST|93|right
 哈兰德|ST|92|left
@@ -627,8 +703,86 @@ C罗|ST|94|right
 恩佐·弗朗西斯科利|ST|91|right|乌拉圭|传奇球员
 迭戈·弗兰|ST|91|right|乌拉圭|传奇球员
 马塞洛·萨拉斯|ST|90|left|智利|传奇球员
-伊万·萨莫拉诺|ST|90|right|智利|传奇球员`,
+伊万·萨莫拉诺|ST|90|right|智利|传奇球员
+维克托·哲凯赖什|ST|88|right|瑞典|阿森纳|187
+约安·维萨|ST|84|right|刚果民主共和国|纽卡斯尔联|176
+布赖恩·姆伯莫|RW|86|left|喀麦隆|曼联|171
+马特乌斯·库尼亚|ST|85|right|巴西|曼联|184
+安东尼·埃兰加|LW|84|right|瑞典|纽卡斯尔联|178
+穆罕默德·库杜斯|RW|84|left|加纳|托特纳姆热刺|177
+诺尼·马杜埃凯|RW|84|left|英格兰|阿森纳|182
+埃贝雷奇·埃泽|LW|85|right|英格兰|阿森纳|178
+约纳坦·布卡特|ST|84|right|德国|法兰克福|183
+德尼兹·翁达夫|ST|83|right|德国|斯图加特|179
+维克托·博尼费斯|ST|84|right|尼日利亚|勒沃库森|190
+凯南·伊尔迪兹|LW|86|right|土耳其|尤文图斯|187
+阿德莫拉·卢克曼|LW|86|right|尼日利亚|亚特兰大|174
+拉斯穆斯·霍伊伦|ST|83|left|丹麦|那不勒斯|191
+莫伊塞·基恩|ST|85|right|意大利|佛罗伦萨|183
+安热-约安·邦尼|ST|82|right|法国|国际米兰|189
+弗朗切斯科·皮奥·埃斯波西托|ST|82|left|意大利|国际米兰|191
+安特·布迪米尔|ST|84|left|克罗地亚|奥萨苏纳|190
+阿约塞·佩雷斯|ST|83|right|西班牙|比利亚雷亚尔|178
+乔治·米卡乌塔泽|ST|84|right|格鲁吉亚|比利亚雷亚尔|176
+梅森·格林伍德|RW|85|left|英格兰|马赛|181
+伊戈尔·派尚|LW|84|right|巴西|马赛|168
+伊曼纽尔·埃梅加|ST|83|right|荷兰|斯特拉斯堡|195
+布拉德利·巴尔科拉|LW|86|right|法国|巴黎圣日耳曼|182
+拉明·亚马尔|RW|89|left|西班牙|巴塞罗那|180`,
 };
+
+export const VERSUS_PLAYER_BALANCE_TARGETS = Object.freeze({
+  GK: Object.freeze({ S: 1, A: 27, B: 84, C: 63 }),
+  DEF: Object.freeze({ S: 1, A: 33, B: 84, C: 57 }),
+  MID: Object.freeze({ S: 5, A: 34, B: 84, C: 52 }),
+  ATT: Object.freeze({ S: 7, A: 32, B: 84, C: 52 }),
+});
+
+const GRADE_OVERALL_BANDS = Object.freeze({
+  A: Object.freeze({ maximum: 89, minimum: 86 }),
+  B: Object.freeze({ maximum: 85, minimum: 81 }),
+  C: Object.freeze({ maximum: 80, minimum: 76 }),
+});
+
+function rawPlayerRows(pool, text) {
+  return text.trim().split("\n").map((line, index) => {
+    const [name, role, overallText] = line.trim().split("|");
+    return { pool, line: line.trim(), index, name, role, listedOverall: Number(overallText) };
+  });
+}
+
+function tierOverall(grade, rank, count) {
+  const band = GRADE_OVERALL_BANDS[grade];
+  if (!band || count <= 1) return band?.maximum ?? 90;
+  return Math.round(band.maximum - (rank / (count - 1)) * (band.maximum - band.minimum));
+}
+
+function buildBalancedPlayerMeta() {
+  const meta = new Map();
+  Object.entries(RAW_PLAYERS).forEach(([pool, text]) => {
+    const rows = rawPlayerRows(pool, text);
+    const legends = rows.filter((row) => VERSUS_LEGEND_NAMES.has(row.name));
+    const target = VERSUS_PLAYER_BALANCE_TARGETS[pool];
+    if (rows.length !== 175) throw new Error(`${pool} player pool must contain exactly 175 players, received ${rows.length}`);
+    if (legends.length !== target.S) throw new Error(`${pool} legend count must be ${target.S}, received ${legends.length}`);
+    legends.forEach((row) => meta.set(`${pool}:${row.index}`, { overall: row.listedOverall, grade: "S" }));
+    const ranked = rows
+      .filter((row) => !VERSUS_LEGEND_NAMES.has(row.name))
+      .sort((left, right) => right.listedOverall - left.listedOverall || left.index - right.index);
+    let offset = 0;
+    ["A", "B", "C"].forEach((grade) => {
+      const count = target[grade];
+      ranked.slice(offset, offset + count).forEach((row, rank) => {
+        meta.set(`${pool}:${row.index}`, { overall: tierOverall(grade, rank, count), grade });
+      });
+      offset += count;
+    });
+    if (offset !== ranked.length) throw new Error(`${pool} balance targets cover ${offset} non-legends, received ${ranked.length}`);
+  });
+  return meta;
+}
+
+const BALANCED_PLAYER_META = buildBalancedPlayerMeta();
 
 const ROLE_PROFILES = Object.freeze({
   GK: {
@@ -737,7 +891,9 @@ function databaseHeight(name, role, listedHeight) {
 
 function parsePlayer(line, pool, index) {
   const [name, role, overallText, preferredFoot, listedNationality, listedClub, listedHeight] = line.split("|");
-  const overall = Number(overallText);
+  const listedOverall = Number(overallText);
+  const balance = BALANCED_PLAYER_META.get(`${pool}:${index}`);
+  const overall = balance?.overall ?? listedOverall;
   const individualized = applyTopPlayerProfile(name, overall, scaleProfile(role, overall));
   const profile = individualized.profile;
   const attributes = individualized.attributes;
@@ -763,17 +919,18 @@ function parsePlayer(line, pool, index) {
     club,
     pool,
     overall,
-    grade: versusPlayerGrade(name, overall),
+    grade: balance?.grade ?? versusPlayerGrade(name, overall),
     signature: profile?.signature ?? null,
     archetype: profile?.archetype ?? null,
     individualized: Boolean(profile),
+    legendAbility: legendAbilityForName(name),
     traits: [],
   });
 }
 
 export const REAL_PLAYER_POOLS = Object.freeze(Object.fromEntries(Object.entries(RAW_PLAYERS).map(([pool, text]) => {
   const players = text.trim().split("\n").map((line, index) => parsePlayer(line.trim(), pool, index));
-  if (players.length !== 150) throw new Error(`${pool} player pool must contain exactly 150 players, received ${players.length}`);
+  if (players.length !== 175) throw new Error(`${pool} player pool must contain exactly 175 players, received ${players.length}`);
   return [pool, Object.freeze(players)];
 })));
 

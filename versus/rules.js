@@ -1,5 +1,5 @@
 import { roleGroup } from "../game/public/schema.js";
-import { REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, VERSUS_LINES, VERSUS_PLAYER_GRADE_WEIGHTS } from "./player-pool.js";
+import { REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, VERSUS_LINES, VERSUS_PLAYER_GRADE_WEIGHTS } from "./player-pool.js";
 
 export const VERSUS_TEAM_SIZE = 11;
 export const VERSUS_TACTICS = Object.freeze(["allOutAttack", "positive", "balanced", "defensive", "parkBus"]);
@@ -93,6 +93,21 @@ export function drawUniquePlayers(pool, selectedIds, rng = Math.random, count = 
     choices.push(takeWeightedPlayer(available, rng));
   }
   return choices;
+}
+
+export function drawUniqueMixedPlayers(selectedIds, rng = Math.random, count = 3, pinnedPlayers = []) {
+  const selected = new Set(selectedIds);
+  const pinned = pinnedPlayers.filter((player) => player && !selected.has(player.id)).slice(0, count);
+  const pinnedIds = new Set(pinned.map((player) => player.id));
+  const available = REAL_PLAYERS.filter((player) => !selected.has(player.id) && !pinnedIds.has(player.id));
+  const choices = [...pinned];
+  while (choices.length < count && available.length) choices.push(takeWeightedPlayer(available, rng));
+  for (const player of pinned) {
+    const currentIndex = choices.findIndex((choice) => choice.id === player.id);
+    choices.splice(currentIndex, 1);
+    choices.splice(Math.floor(rng() * (choices.length + 1)), 0, player);
+  }
+  return choices.slice(0, count);
 }
 
 export function defaultElevenPositions(players = []) {

@@ -3,7 +3,7 @@ import { versusRooms } from "./room-service.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { yellowDogsLeague } from "./league-service.js";
 
-const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971027";
+const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971019";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_LOGIN_FAILURES = 8;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -208,6 +208,14 @@ export async function handleAdminApi(request, response, pathname, readJson, send
       yellowDogsLeague.simulateNextRound();
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
     }
+    if (request.method === "POST" && pathname === "/api/admin/league/start-simulation") {
+      const body = await readJson(request);
+      if (body.confirm !== "START_LEAGUE_SIMULATION") throw new Error("需要确认开启联赛推进");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startLeagueSimulation() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/cup/start") {
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startCup() });
+    }
     if (request.method === "POST" && pathname === "/api/admin/league/reward-pack") {
       const body = await readJson(request);
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.scheduleAdminRewardPack(body) });
@@ -225,6 +233,11 @@ export async function handleAdminApi(request, response, pathname, readJson, send
       const body = await readJson(request);
       if (body.confirm !== "NEW_SEASON") throw new Error("需要确认开启新赛季");
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startNewSeason() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/fresh-season") {
+      const body = await readJson(request);
+      if (body.confirm !== "FRESH_SEASON_YDL") throw new Error("需要确认开启全新赛季");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startFreshSeason() });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/full-reset") {
       const body = await readJson(request);

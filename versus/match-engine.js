@@ -3,6 +3,7 @@ import { positionFitScore, roleGroup } from "../game/public/schema.js";
 import { hydratePlayerTraits, traitAdjustedAttribute, traitPositionFit } from "../game/public/trait-runtime.js";
 import { analyzeElevenFormation, formationStructureProfile, sanitizePositions } from "./rules.js";
 import { VERSUS_TRAIT_CARDS } from "./trait-pool.js";
+import { legendAbilityForName } from "./legend-abilities.js";
 
 export const REGULAR_DURATION_MS = 120_000;
 export const EXTRA_DURATION_MS = 30_000;
@@ -24,7 +25,7 @@ export const VERSUS_REFEREES = Object.freeze({
 });
 
 const TACTICS = Object.freeze({
-  allOutAttack: { name: "全力进攻", attack: 1.27, defense: 0.74, tempo: 1.18, press: 1.18, risk: 1.46, width: 1.1, fatigue: 1.2 },
+  allOutAttack: { name: "全力进攻", attack: 1.23, defense: 0.74, tempo: 1.14, press: 1.17, risk: 1.52, width: 1.08, fatigue: 1.2 },
   positive: { name: "积极进攻", attack: 1.09, defense: 0.9, tempo: 1.06, press: 1.07, risk: 1.24, width: 1.03, fatigue: 1.09 },
   balanced: { name: "攻守平衡", attack: 1, defense: 1, tempo: 1, press: 1, risk: 1, width: 1, fatigue: 1 },
   defensive: { name: "防守反击", attack: 0.91, defense: 1.09, tempo: 0.92, press: 0.84, risk: 0.9, width: 0.95, fatigue: 0.94, counter: 1.24 },
@@ -33,10 +34,10 @@ const TACTICS = Object.freeze({
 
 const MATCH_STYLES = Object.freeze({
   possession: {
-    name: "密集短传", attack: 0.98, midfield: 1.02, defense: 0.98, risk: 0.94, fatigue: 1.03, press: 0.94,
+    name: "密集短传", attack: 0.96, midfield: 1.01, defense: 0.98, risk: 0.96, fatigue: 1.03, press: 0.94,
     aerialReliance: 0.12,
     weather: { sunny: 1.01, rain: 0.98, storm: 0.96, snow: 0.97 },
-    attackWeights: { throughBall: 1.25, cross: 0.7, cutback: 1.45, counter: 0.65, longShot: 0.8 },
+    attackWeights: { throughBall: 1.2, cross: 0.72, cutback: 1.34, counter: 0.65, longShot: 0.82 },
   },
   longBall: {
     name: "长传冲吊", attack: 1.06, midfield: 0.97, defense: 0.98, risk: 1.04, fatigue: 1, press: 0.9,
@@ -142,7 +143,7 @@ function refereeTeamModifiers(match, team) {
   }, {});
   const modifiers = { attack: 1, midfield: 1, defense: 1 };
   if (key === "strict") {
-    if (team.style === "possession") { modifiers.attack *= 1.02; modifiers.midfield *= 1.03; }
+    if (team.style === "possession") { modifiers.attack *= 1.01; modifiers.midfield *= 1.015; }
     if (["balanced", "positive"].includes(team.tactic)) { modifiers.attack *= 1.008; modifiers.midfield *= 1.012; }
     if ((lineCounts.MID ?? 0) >= 4) modifiers.midfield *= 1.008;
   }
@@ -154,6 +155,115 @@ function refereeTeamModifiers(match, team) {
   return modifiers;
 }
 
+function legendId(player) {
+  return player?.legendAbility?.id ?? legendAbilityForName(player?.name)?.id ?? null;
+}
+
+function legendPlayers(team) {
+  return activePlayers(team).filter((player) => legendId(player));
+}
+
+function legendRoleActive(player, roles) {
+  return roles.includes(player?.assignedRole);
+}
+
+function legendLane(team, player) {
+  return laneFromPosition(team.positions[player.id]);
+}
+
+function hasLegend(team, abilityId, roles = null) {
+  return legendPlayers(team).some((player) => legendId(player) === abilityId && (!roles || legendRoleActive(player, roles)));
+}
+
+function teamLegendModifiers(match, team, structure) {
+  const modifiers = { attack:1, midfield:1, defense:1, transitionRisk:1 };
+  const players = legendPlayers(team);
+  const midfieldYs = players.length ? activePlayers(team)
+    .filter((player) => roleGroup(player.assignedRole) === "MID")
+    .map((player) => Number(team.positions[player.id]?.y ?? 50)) : [];
+  const layeredMidfield = midfieldYs.length >= 3 && Math.max(...midfieldYs) - Math.min(...midfieldYs) >= 8;
+  for (const player of players) {
+    const id = legendId(player);
+    if (id === "libero" && legendRoleActive(player, ["CB", "DM"])) {
+      const full = structure.counts?.DEF === 3 || team.style === "possession" || team.tactic === "balanced";
+      modifiers.midfield *= full ? 1.018 : 1.009;
+      modifiers.defense *= full ? 1.012 : 1.006;
+      modifiers.transitionRisk *= full ? 0.96 : 0.98;
+    }
+    if (id === "midfield-metronome" && roleGroup(player.assignedRole) === "MID" && legendLane(team, player) === "center") {
+      modifiers.midfield *= layeredMidfield ? 1.018 : 1.009;
+    }
+    if (id === "precision-dispatch" && roleGroup(player.assignedRole) === "MID" && ["possession", "longBall"].includes(team.style)) modifiers.midfield *= 1.018;
+    if (id === "magician" && ["AM", "LM", "RM", "LW", "RW"].includes(player.assignedRole)) modifiers.defense *= 0.99;
+    if (id === "right-side-core" && ["RW", "RM", "AM", "ST"].includes(player.assignedRole)) {
+      const rightCover = activePlayers(team).some((entry) => roleGroup(entry.assignedRole) === "DEF" && Number(team.positions[entry.id]?.x ?? 50) >= 68);
+      if (!rightCover) modifiers.transitionRisk *= 1.02;
+    }
+    if (id === "king-zone" && legendLane(team, player) === "center" && ["AM", "ST", "DM"].includes(player.assignedRole)) modifiers.transitionRisk *= 1.015;
+    if (id === "complete-core" && ["ST", "AM"].includes(player.assignedRole)) {
+      const full = team.tactic === "balanced";
+      modifiers.attack *= full ? 1.02 : 1.01;
+      modifiers.midfield *= full ? 1.02 : 1.01;
+      modifiers.transitionRisk *= full ? 0.98 : 0.99;
+    }
+  }
+  return {
+    attack:clamp(modifiers.attack, 0.98, 1.05),
+    midfield:clamp(modifiers.midfield, 0.98, 1.05),
+    defense:clamp(modifiers.defense, 0.98, 1.05),
+    transitionRisk:clamp(modifiers.transitionRisk, 0.95, 1.05),
+    count:players.length,
+  };
+}
+
+function legendPlayerMultiplier(match, team, player, effect, context = {}) {
+  const id = legendId(player);
+  if (!id) return 1;
+  const lane = legendLane(team, player);
+  const centralMidfielder = roleGroup(player.assignedRole) === "MID" && lane === "center";
+  const attackingRole = roleGroup(player.assignedRole) === "ATT" || player.assignedRole === "AM";
+  const trailingLate = match.minute >= 70 && team.score <= match.teams[team.index === 0 ? 1 : 0].score;
+  const opponent = match.teams[team.index === 0 ? 1 : 0];
+  const lowBlockOpponent = opponent?.style === "lowBlock" || ["defensive", "parkBus"].includes(opponent?.tactic);
+  if (["creatorWeight", "duel"].includes(effect)) {
+    if (id === "midfield-metronome" && centralMidfielder) return 1.07;
+    if (id === "precision-dispatch" && centralMidfielder && ["possession", "longBall"].includes(team.style)) return 1.08;
+    if (id === "master-control" && ["AM", "DM"].includes(player.assignedRole) && lane === "center") return trailingLate ? 1.1 : 1.08;
+    if (id === "magician" && ["AM", "LM", "RM", "LW", "RW"].includes(player.assignedRole)) return 1.1;
+    if (id === "right-side-core" && attackingRole && ["right", "center"].includes(lane)) return 1.08;
+    if (id === "phenomenon" && roleGroup(player.assignedRole) === "ATT") return 1 + 0.1 * clamp((Number(player.state?.fitness ?? 100) - 45) / 20, 0, 1);
+    if (id === "king-zone" && attackingRole && lane === "center") return match.referee?.key === "strict" ? 1.1 : 1.09;
+    if (id === "complete-core" && ["ST", "AM"].includes(player.assignedRole)) return 1.03;
+  }
+  if (effect === "creation") {
+    if (id === "master-control" && ["AM", "DM"].includes(player.assignedRole) && lane === "center") return trailingLate ? 1.07 : 1.05;
+    if (id === "magician" && ["AM", "LM", "RM", "LW", "RW"].includes(player.assignedRole)) return 1.05;
+    if (id === "bending-cross" && context.attackType === "cross" && ["RM", "RW", "DM", "AM"].includes(player.assignedRole)) return 1.08;
+    if (id === "right-side-core" && ["right", "center"].includes(lane) && ["throughBall", "cutback"].includes(context.attackType)) return 1.05;
+  }
+  if (["shooterWeight", "finish"].includes(effect)) {
+    if (id === "depth-burst" && attackingRole && ["counter", "throughBall"].includes(context.attackType)) return lowBlockOpponent ? 1.025 : 1.07;
+    if (id === "box-finisher" && roleGroup(player.assignedRole) === "ATT" && ["cross", "cutback"].includes(context.attackType)) return effect === "shooterWeight" ? 1.09 : 1.06;
+    if (id === "decisive-force" && roleGroup(player.assignedRole) === "ATT" && context.attackType === "cross") return trailingLate ? 1.12 : 1.1;
+    if (id === "decisive-force" && roleGroup(player.assignedRole) === "ATT" && trailingLate) return 1.05;
+    if (id === "phenomenon" && roleGroup(player.assignedRole) === "ATT" && context.attackType !== "cross") return 1 + 0.07 * clamp((Number(player.state?.fitness ?? 100) - 45) / 20, 0, 1);
+    if (id === "complete-core" && ["ST", "AM"].includes(player.assignedRole)) return 1.03;
+  }
+  return 1;
+}
+
+function legendAttackTypeMultiplier(match, team, attackType) {
+  let multiplier = 1;
+  if (hasLegend(team, "precision-dispatch", ["DM", "AM", "LM", "RM"]) && ["throughBall", "longShot"].includes(attackType)) multiplier *= 1.08;
+  if (hasLegend(team, "bending-cross", ["RM", "RW", "DM", "AM"]) && attackType === "cross") multiplier *= 1.1;
+  if (hasLegend(team, "depth-burst", ["ST", "LW", "RW", "AM"]) && ["counter", "throughBall"].includes(attackType)) {
+    const opponent = match.teams[team.index === 0 ? 1 : 0];
+    multiplier *= opponent?.style === "lowBlock" || ["defensive", "parkBus"].includes(opponent?.tactic) ? 1.03 : 1.09;
+  }
+  if (hasLegend(team, "right-side-core", ["RW", "RM", "AM", "ST"]) && ["throughBall", "cutback"].includes(attackType)) multiplier *= 1.06;
+  return clamp(multiplier, 1, 1.16);
+}
+
 function hydrateTeam(seat, index, seed) {
   const players = seat.players.map((source) => {
     const position = seat.positions[source.id];
@@ -161,6 +271,7 @@ function hydrateTeam(seat, index, seed) {
     const assignedRole = formation.roles[source.id] ?? source.role;
     const hydrated = hydratePlayerTraits({
       ...source,
+      legendAbility: source.legendAbility ?? legendAbilityForName(source.name),
       assignedRole,
       boardPosition: { ...position },
       state: { ...source.state, fitness: seat.preserveFitness ? Math.max(35, Math.min(100, Number(source.state?.fitness ?? 100))) : 100 },
@@ -337,15 +448,16 @@ function teamSnapshot(match, team) {
   const goalkeeping = average(keepers.map((player) => playerMetric(match, team, player, { goalkeeping: 0.55, reflexes: 0.3, positioning: 0.1, composure: 0.05 })), 18);
   const aerial = average(players.map((player) => playerMetric(match, team, player, { heading: 0.38, jumping: 0.27, strength: 0.2, positioning: 0.15 }) + (Number(player.heightCm ?? 180) - 180) * 0.55));
   const pace = average(players.map((player) => playerMetric(match, team, player, { pace: 0.58, acceleration: 0.3, agility: 0.12 })));
+  const legends = teamLegendModifiers(match, team, structure);
   return {
-    players, defenders, midfielders, attackers, keepers, tactic, style, deficit, countPenalty, linePenalty, structure,
+    players, defenders, midfielders, attackers, keepers, tactic, style, deficit, countPenalty, linePenalty, structure, legends,
     width,
-    attack: attack * tactic.attack * style.attack * style.fitFactor * referee.attack * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.attack * structure.multipliers.coherence,
-    midfield: midfield * Math.sqrt(tactic.attack * tactic.defense) * style.midfield * style.fitFactor * referee.midfield * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.midfield * structure.multipliers.coherence,
-    defense: defense * tactic.defense * style.defense * (0.82 + style.fitFactor * 0.18) * referee.defense * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.defense * structure.multipliers.coherence,
+    attack: attack * tactic.attack * style.attack * style.fitFactor * referee.attack * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.attack * structure.multipliers.coherence * legends.attack,
+    midfield: midfield * Math.sqrt(tactic.attack * tactic.defense) * style.midfield * style.fitFactor * referee.midfield * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.midfield * structure.multipliers.coherence * legends.midfield,
+    defense: defense * tactic.defense * style.defense * (0.82 + style.fitFactor * 0.18) * referee.defense * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.defense * structure.multipliers.coherence * legends.defense,
     goalkeeping: goalkeeping * (deficit ? 0.96 : 1) * structure.multipliers.goalkeeper,
     aerial, pace,
-    transitionRisk: tactic.risk * style.risk * structure.multipliers.transitionRisk * (1 + Math.max(0, attackers.length - 3) * 0.08 + deficit * 0.13) * (markingTarget ? 1.035 : 1),
+    transitionRisk: tactic.risk * style.risk * structure.multipliers.transitionRisk * (1 + Math.max(0, attackers.length - 3) * 0.08 + deficit * 0.13) * (markingTarget ? 1.035 : 1) * legends.transitionRisk,
   };
 }
 
@@ -409,7 +521,8 @@ function oppositeLane(lane) {
 function chooseCreator(match, team, snapshot) {
   return choose(match, snapshot.players.filter((player) => roleGroup(player.assignedRole) !== "GK"), (player) =>
     playerMetric(match, team, player, { passing: 0.35, vision: 0.28, decisions: 0.2, dribbling: 0.17 })
-      * focusMultiplier(team.attackFocus, laneFromPosition(team.positions[player.id]), 1.55, 0.78));
+      * focusMultiplier(team.attackFocus, laneFromPosition(team.positions[player.id]), 1.55, 0.78)
+      * legendPlayerMultiplier(match, team, player, "creatorWeight"));
 }
 
 function chooseDefender(match, team, snapshot, creator) {
@@ -455,7 +568,9 @@ function maybeDiscipline(match, attacking, defending, creator, defender, defense
   const stylePress = defenseSnapshot.style.press * defenseSnapshot.style.fitFactor;
   const rough = defenseSnapshot.style;
   const referee = match.referee ?? VERSUS_REFEREES.standard;
-  const probability = (0.045 + Math.max(0, aggression - discipline) / 620 + TACTICS[defending.tactic].press * stylePress * 0.025) * (rough.foulMultiplier ?? 1) * referee.foul;
+  const foulDraw = legendId(creator) === "king-zone" && ["AM", "ST", "DM"].includes(creator.assignedRole) && legendLane(attacking, creator) === "center"
+    ? (match.referee?.key === "strict" ? 1.14 : 1.12) : 1;
+  const probability = (0.045 + Math.max(0, aggression - discipline) / 620 + TACTICS[defending.tactic].press * stylePress * 0.025) * (rough.foulMultiplier ?? 1) * referee.foul * foulDraw;
   if (!chance(match, probability)) return false;
   defending.stats.fouls += 1;
   defender.matchStats.fouls += 1;
@@ -542,7 +657,8 @@ function chooseAttackType(match, attack, defense) {
   ];
   return choose(match, entries, (entry) => entry.weight * (attacking.style.attackWeights[entry.key] ?? 1)
     * (entry.key === "cross" ? attacking.style.wingbackCrossSupport : 1)
-    * (entry.key === "cross" && attacking.style.key === "wingPlay" ? 1 + attacking.style.wideStretch * 0.55 : 1)).key;
+    * (entry.key === "cross" && attacking.style.key === "wingPlay" ? 1 + attacking.style.wideStretch * 0.55 : 1)
+    * legendAttackTypeMultiplier(match, attack.team, entry.key)).key;
 }
 
 function simulatePossession(match) {
@@ -560,13 +676,16 @@ function simulatePossession(match) {
   const defenseSnapshot = snapshots[defendingIndex];
   attacking.stats.possession += 1;
   attacking.stats.attacks += 1;
-  applyFatigue(match, attacking);
-  applyFatigue(match, defending, 2.2);
+  // The higher baseline sequence rate preserves the previous per-match
+  // fitness curve by distributing fatigue over slightly shorter sequences.
+  applyFatigue(match, attacking, 2.73);
+  applyFatigue(match, defending, 2);
   const creator = chooseCreator(match, attacking, attackSnapshot);
   creator.teamIndex = attackingIndex;
   const attackLane = laneFromPosition(attacking.positions[creator.id]);
   const defender = chooseDefender(match, defending, defenseSnapshot, creator);
-  const creatorValue = playerMetric(match, attacking, creator, { passing: 0.28, vision: 0.22, dribbling: 0.2, decisions: 0.16, pace: 0.14 }) * match.weather.control;
+  const creatorValue = playerMetric(match, attacking, creator, { passing: 0.28, vision: 0.22, dribbling: 0.2, decisions: 0.16, pace: 0.14 }) * match.weather.control
+    * legendPlayerMultiplier(match, attacking, creator, "duel");
   const defenderValue = playerMetric(match, defending, defender, { tackling: 0.29, positioning: 0.24, marking: 0.17, pace: 0.16, strength: 0.14 });
   const creatorBreakdown = {
     passing: attribute(match, attacking, creator, "passing"), vision: attribute(match, attacking, creator, "vision"),
@@ -615,8 +734,9 @@ function simulatePossession(match) {
     creatorRole: creator.assignedRole, defenderRole: defender.assignedRole, attackLane, attackType, duelProbability: Number(duelProbability.toFixed(3)),
     detail: `${duelDetail} ${creator.name}赢下对抗后选择“${typeText}”；本方转换风险 ${attackSnapshot.transitionRisk.toFixed(2)}，对方防线强度 ${Math.round(defenseSnapshot.defense)}。`,
   });
-  const creationProbability = clamp(0.52 + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 105
-    + (attackSnapshot.tactic.attack - 1) * 0.32 + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.08, 0.16, 0.9);
+  const creationProbability = clamp((0.52 + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 105
+    + (attackSnapshot.tactic.attack - 1) * 0.32 + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.08)
+    * legendPlayerMultiplier(match, attacking, creator, "creation", { attackType }), 0.16, 0.9);
   if (!chance(match, creationProbability)) {
     const coveringDefender = choose(match, activePlayers(defending).filter((player) => player.id !== defender.id), (player) =>
       playerMetric(match, defending, player, { positioning: 0.35, marking: 0.25, pace: 0.2, decisions: 0.2 }));
@@ -641,7 +761,8 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
     const groupWeight = { ATT: 3.2, MID: 1.1, DEF: 0.35 }[roleGroup(player.assignedRole)] ?? 0.2;
     return groupWeight * playerMetric(match, attacking, player, attackType === "cross"
       ? { heading: 0.36, jumping: 0.2, strength: 0.14, offBall: 0.18, composure: 0.12 }
-      : { finishing: 0.36, offBall: 0.2, pace: 0.14, composure: 0.18, dribbling: 0.12 });
+      : { finishing: 0.36, offBall: 0.2, pace: 0.14, composure: 0.18, dribbling: 0.12 })
+      * legendPlayerMultiplier(match, attacking, player, "shooterWeight", { attackType });
   });
   shooter.teamIndex = attacking.index;
   const goalkeeper = activePlayers(defending).find((player) => roleGroup(player.assignedRole) === "GK") ?? activePlayers(defending)[0];
@@ -651,7 +772,8 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
     : attackType === "longShot" ? { longShots: 0.48, composure: 0.2, finishing: 0.18, firstTouch: 0.14 }
       : { finishing: 0.44, composure: 0.22, offBall: 0.18, firstTouch: 0.16 });
   const markerDefense = marker ? playerMetric(match, defending, marker, { positioning: 0.28, marking: 0.24, pace: 0.18, strength: 0.15, jumping: 0.15 }) : 25;
-  const keeperValue = goalkeeper ? playerMetric(match, defending, goalkeeper, { goalkeeping: 0.5, reflexes: 0.3, positioning: 0.12, composure: 0.08 }) : 12;
+  const keeperLegendFactor = goalkeeper && legendId(goalkeeper) === "high-wall" && ["cross", "longShot"].includes(attackType) ? 1.08 : 1;
+  const keeperValue = goalkeeper ? playerMetric(match, defending, goalkeeper, { goalkeeping: 0.5, reflexes: 0.3, positioning: 0.12, composure: 0.08 }) * keeperLegendFactor : 12;
   const heightEdge = attackType === "cross"
     ? (Number(shooter.heightCm ?? 180) - Number(marker?.heightCm ?? 180)) * 0.8 * attackSnapshot.style.aerialReliance
     : 0;
@@ -660,12 +782,13 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
       * (attackSnapshot.style.flankSupport[attackLane] ?? 1)
     : 1;
   const baseXg = SHOT_BASE[attackType] ?? 0.11;
+  const legendFinishFactor = legendPlayerMultiplier(match, attacking, shooter, "finish", { attackType });
   const xg = clamp(baseXg * crossWidthBoost * (1 + (attackSnapshot.attack - defenseSnapshot.defense) / 95 + (finishing + heightEdge - markerDefense) / 150), 0.015, 0.62);
-  const goalProbability = clamp(xg * (0.97 + finishing / 116) * (1.48 - keeperValue / 190), 0.01, 0.78);
+  const goalProbability = clamp(xg * (0.97 + finishing / 116) * (1.48 - keeperValue / 190) * legendFinishFactor, 0.01, 0.78);
   attacking.stats.shots += 1;
   attacking.stats.xg += xg;
   shooter.matchStats.shots += 1;
-  const onTarget = chance(match, clamp(0.31 + finishing / 210, 0.32, 0.72));
+  const onTarget = chance(match, clamp(0.25 + finishing / 240, 0.28, 0.64));
   const technique = shotDescription(match, attackType, shooter);
   if (onTarget) {
     attacking.stats.shotsOnTarget += 1;
@@ -696,7 +819,8 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
     if (goalkeeper) { goalkeeper.matchStats.saves += 1; updateRating(goalkeeper, 0.13 + xg * 0.25); }
     updateRating(shooter, xg > 0.25 ? -0.12 : -0.03);
     const saveStyle = saveDescription(match, goalkeeper, xg);
-    const looseBall = Boolean(goalkeeper && chance(match, clamp(0.12 + xg * 0.35 - keeperValue / 900, 0.08, 0.28)));
+    const looseBallFactor = goalkeeper && legendId(goalkeeper) === "high-wall" ? 0.8 : 1;
+    const looseBall = Boolean(goalkeeper && chance(match, clamp((0.12 + xg * 0.35 - keeperValue / 900) * looseBallFactor, 0.06, 0.28)));
     event(match, "save", defending.index, `${shooter.name}以${technique}完成攻门，${goalkeeper?.name ?? "防守球员"}${saveStyle}${looseBall ? "，但皮球脱手留在禁区内" : "并控制住皮球"}。`, {
       chainId, technique, saveStyle, looseBall,
       actorId: goalkeeper?.id, opponentId: shooter.id, creatorId: creator.id, shooterRole: shooter.assignedRole,
@@ -717,7 +841,7 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
         attacking.stats.shots += 1;
         attacking.stats.xg += reboundXg;
         rebounder.matchStats.shots += 1;
-        const reboundOnTarget = chance(match, clamp(0.4 + reboundAttack / 220, 0.42, 0.78));
+        const reboundOnTarget = chance(match, clamp(0.31 + reboundAttack / 250, 0.34, 0.66));
         if (reboundOnTarget) {
           attacking.stats.shotsOnTarget += 1;
           rebounder.matchStats.shotsOnTarget += 1;
@@ -841,8 +965,10 @@ function processMinute(match, minute) {
   if (minute === 1) event(match, "kickoff", null, `比赛开始。${match.teams[0].name}与${match.teams[1].name}进入对抗，本场裁判尺度为${match.referee.name}。`, { detail: match.referee.description });
   if (!match.blackWhistleTriggered && match.blackWhistleMinute && minute >= match.blackWhistleMinute) triggerBlackWhistle(match);
   if (match.weather.key === "storm" && !match.lightningTriggered && minute >= match.lightningMinute) triggerLightning(match);
-  // 每个比赛分钟都进行一次节奏判定，平均约每两分钟形成一次可播报攻防。
-  if (chance(match, 0.5)) simulatePossession(match);
+  // Slightly denser normal build-up without changing shot accuracy or finishing.
+  // This lifts the baseline number of settled attacking sequences while keeping
+  // tactical multipliers as the differentiator between those sequences.
+  if (chance(match, 0.55)) simulatePossession(match);
   if (minute % 11 === 0) maybeRegularInjury(match);
 }
 
@@ -953,6 +1079,7 @@ function buildReport(match) {
         id: player.id, name: player.name, role: player.assignedRole, assignedRole: player.assignedRole,
         overall: player.overall, position: structuredClone(team.positions[player.id] ?? player.boardPosition ?? { x:50, y:50 }), rating: player.rating,
         heightCm: player.heightCm, nationality: player.nationality, club: player.club,
+        grade: player.grade, legendAbility: player.legendAbility ?? null,
         fitness: Number(player.state.fitness.toFixed(1)), active: player.active, sentOff: player.sentOff, injury: player.injury,
         stats: player.matchStats,
       })).sort((left, right) => right.rating - left.rating),
@@ -1178,6 +1305,7 @@ export function publicMatch(match, now = Date.now(), viewerIndex = null, revealA
         secondaryRole: player.secondaryRole, grade: player.grade,
         heightCm: player.heightCm, nationality: player.nationality, club: player.club,
         traits: player.traitDefinitions?.map(({ id, name, summary }) => ({ id, name, summary })) ?? [],
+        legendAbility: player.legendAbility ?? null,
         overall: player.overall, position: team.positions[player.id], active: player.active,
         sentOff: player.sentOff, injury: player.injury, fitness: Number(player.state.fitness.toFixed(1)),
         rating: player.rating, stats: player.matchStats,

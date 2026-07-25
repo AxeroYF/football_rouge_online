@@ -24,6 +24,7 @@ import {
   VERSUS_TEAM_SIZE,
   analyzeElevenFormation,
   defaultElevenPositions,
+  drawUniqueMixedPlayers,
   drawUniquePlayers,
   formationStructureProfile,
 } from "../versus/rules.js";
@@ -151,28 +152,41 @@ test("重复昵称的旧账号可以改用唯一昵称升级", () => {
   assert.equal(service.accounts.get(first.profile.id.toLowerCase()).passwordHash, null);
 });
 
-test("十一人对战拥有四个各150人的唯一真实球员池", () => {
+test("十一人对战拥有四个各175人的唯一真实球员池和稳定评级梯次", () => {
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([key, players]) => [key, players.length])), {
-    GK: 150,
-    DEF: 150,
-    MID: 150,
-    ATT: 150,
+    GK: 175,
+    DEF: 175,
+    MID: 175,
+    ATT: 175,
   });
-  assert.equal(REAL_PLAYERS.length, 600);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 600);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.name)).size, 600);
+  assert.equal(REAL_PLAYERS.length, 700);
+  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 700);
+  assert.equal(new Set(REAL_PLAYERS.map((player) => player.name)).size, 700);
+  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, REAL_PLAYERS.filter((player) => player.grade === grade).length])), { S:14, A:126, B:336, C:224 });
+  assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => [pool, Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, players.filter((player) => player.grade === grade).length]))])), {
+    GK:{ S:1, A:27, B:84, C:63 },
+    DEF:{ S:1, A:33, B:84, C:57 },
+    MID:{ S:5, A:34, B:84, C:52 },
+    ATT:{ S:7, A:32, B:84, C:52 },
+  });
+  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "A").every((player) => player.overall >= 86 && player.overall <= 89));
+  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "B").every((player) => player.overall >= 81 && player.overall <= 85));
+  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "C").every((player) => player.overall >= 76 && player.overall <= 80));
+  assert.ok(Object.values(REAL_PLAYER_POOLS).every((players) => players.slice(150).every((player, index) => player.id.endsWith(String(index + 151).padStart(3, "0")))));
   assert.ok(REAL_PLAYERS.every((player) => player.nationality && player.club));
   assert.ok(REAL_PLAYERS.every((player) => Number.isFinite(player.heightCm) && player.heightCm >= 165 && player.heightCm <= 202));
   assert.ok(new Set(REAL_PLAYERS.map((player) => player.heightCm)).size > 20);
   assert.deepEqual(REAL_PLAYERS.filter((player) => player.grade === "S").map((player) => player.name).sort(),
     ["C罗", "克罗斯", "哈兰德", "姆巴佩", "库尔图瓦", "梅西", "莫德里奇", "贝利", "齐达内", "贝肯鲍尔", "大罗", "罗纳尔迪尼奥", "马拉多纳", "贝克汉姆"].sort());
+  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "S").every((player) => player.legendAbility?.id && player.legendAbility?.summary));
+  assert.equal(new Set(REAL_PLAYERS.filter((player) => player.grade === "S").map((player) => player.legendAbility.id)).size, 14);
   assert.ok(REAL_PLAYERS.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
   assert.ok(REAL_PLAYERS.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
   assert.ok(REAL_PLAYER_POOLS.GK.every((player) => player.secondaryRole === null));
   assert.equal(INDIVIDUALIZED_PLAYERS.length, 100);
   assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.signature && player.archetype && player.nationality && player.club));
   assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));
-  assert.equal(INDIVIDUALIZED_PLAYERS.at(-1).overall, 90);
+  assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.overall >= 76 && player.overall <= 99));
 });
 
 test("副位置减益小于完全陌生位置减益", () => {
@@ -200,6 +214,16 @@ test("位置池三选一不会出现已被选中的球员", () => {
   assert.equal(choices.length, 3);
   assert.ok(choices.every((player) => !firstThree.includes(player.id)));
   assert.equal(new Set(choices.map((player) => player.id)).size, 3);
+});
+
+test("混池三选一排除已拥有球员并保留指定保底", () => {
+  const unavailable = REAL_PLAYERS.slice(0, 12).map((player) => player.id);
+  const guaranteed = REAL_PLAYERS.find((player) => player.grade === "S" && !unavailable.includes(player.id));
+  const choices = drawUniqueMixedPlayers(unavailable, () => .37, 3, [guaranteed]);
+  assert.equal(choices.length, 3);
+  assert.equal(new Set(choices.map((player) => player.id)).size, 3);
+  assert.ok(choices.every((player) => !unavailable.includes(player.id)));
+  assert.ok(choices.some((player) => player.id === guaranteed.id));
 });
 
 test("三选一卡牌按左中右位置分散发放", () => {

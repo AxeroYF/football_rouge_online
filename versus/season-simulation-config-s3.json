@@ -1,0 +1,1119 @@
+{
+  "outputVersion": "s3-final-squads-v1",
+  "seed": "S3-2026-07-25-ms08kc8v-monte-carlo",
+  "iterations": 100,
+  "sampleSeasonCount": 3,
+  "outputPath": "../outputs/ydl-s3-final-squads-season-simulation.json",
+  "sourceSnapshot": {
+    "seasonId": "S3-2026-07-25-ms08kc8v",
+    "seasonName": "S3",
+    "capturedAt": "2026-07-25T10:39:23.695Z",
+    "policy": "使用赛季结束后的完整名单和当前首发；体力、伤停、停赛、默契及积分重置"
+  },
+  "cup": {
+    "enabled": true,
+    "startAfterLeagueRound": 0
+  },
+  "teams": [
+    {
+      "id": "ydl-team-1",
+      "name": "潘帕斯老鼠AFA",
+      "coach": "Axero",
+      "rosterIds": [
+        "real-att-092",
+        "real-att-137",
+        "real-mid-092",
+        "real-def-079",
+        "real-def-060",
+        "real-def-039",
+        "real-def-010",
+        "real-mid-093",
+        "real-gk-048",
+        "real-mid-073",
+        "real-mid-020",
+        "real-gk-136",
+        "real-def-094",
+        "real-mid-140",
+        "real-att-096",
+        "real-mid-012",
+        "real-def-096",
+        "real-def-045",
+        "real-mid-129",
+        "real-att-126",
+        "real-mid-063",
+        "real-mid-096",
+        "real-gk-042",
+        "real-gk-084",
+        "real-mid-156"
+      ],
+      "preferredStarterIds": [
+        "real-att-137",
+        "real-mid-092",
+        "real-def-079",
+        "real-def-060",
+        "real-def-039",
+        "real-mid-093",
+        "real-mid-073",
+        "real-mid-020",
+        "real-gk-136",
+        "real-def-094",
+        "real-att-126"
+      ],
+      "positions": {
+        "real-att-137": {
+          "x": 61,
+          "y": 17
+        },
+        "real-mid-092": {
+          "x": 61,
+          "y": 38
+        },
+        "real-def-079": {
+          "x": 84,
+          "y": 71
+        },
+        "real-def-060": {
+          "x": 62,
+          "y": 72
+        },
+        "real-def-039": {
+          "x": 45,
+          "y": 72
+        },
+        "real-mid-093": {
+          "x": 61,
+          "y": 54
+        },
+        "real-mid-073": {
+          "x": 46,
+          "y": 37
+        },
+        "real-mid-020": {
+          "x": 47,
+          "y": 55
+        },
+        "real-gk-136": {
+          "x": 50,
+          "y": 90
+        },
+        "real-def-094": {
+          "x": 21,
+          "y": 71
+        },
+        "real-att-126": {
+          "x": 46,
+          "y": 17
+        }
+      },
+      "tactic": "defensive",
+      "style": "roughPlay",
+      "attackFocus": "balanced",
+      "defenseFocus": "center",
+      "fitnessThreshold": 75,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "defensive",
+          "style": "roughPlay"
+        },
+        "leading": {
+          "tactic": "balanced",
+          "style": "possession"
+        },
+        "trailing": {
+          "tactic": "positive",
+          "style": "possession"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-2",
+      "name": "利雅得胜利足球俱乐部",
+      "coach": "黄狗",
+      "rosterIds": [
+        "real-att-010",
+        "real-att-077",
+        "real-mid-047",
+        "real-mid-042",
+        "real-mid-083",
+        "real-mid-050",
+        "real-def-036",
+        "real-def-097",
+        "real-def-128",
+        "real-def-009",
+        "real-def-032",
+        "real-def-059",
+        "real-att-011",
+        "real-mid-080",
+        "real-mid-086",
+        "real-def-076",
+        "real-gk-037",
+        "real-att-001",
+        "real-def-049",
+        "real-def-140",
+        "real-att-086",
+        "real-def-007",
+        "real-def-093",
+        "real-gk-139",
+        "real-def-150",
+        "real-def-008",
+        "real-mid-077",
+        "real-mid-079",
+        "real-def-050",
+        "real-mid-114",
+        "real-gk-006",
+        "real-def-047"
+      ],
+      "preferredStarterIds": [
+        "real-def-008",
+        "real-att-001",
+        "real-mid-077",
+        "real-def-047",
+        "real-mid-047",
+        "real-def-076",
+        "real-gk-037",
+        "real-att-086",
+        "real-def-093",
+        "real-mid-079",
+        "real-def-049"
+      ],
+      "positions": {
+        "real-def-008": {
+          "x": 45,
+          "y": 71
+        },
+        "real-att-001": {
+          "x": 61,
+          "y": 7
+        },
+        "real-mid-077": {
+          "x": 28,
+          "y": 31
+        },
+        "real-def-047": {
+          "x": 70,
+          "y": 71
+        },
+        "real-mid-047": {
+          "x": 74,
+          "y": 50
+        },
+        "real-def-076": {
+          "x": 90,
+          "y": 64
+        },
+        "real-gk-037": {
+          "x": 50,
+          "y": 90
+        },
+        "real-att-086": {
+          "x": 27,
+          "y": 9
+        },
+        "real-def-093": {
+          "x": 10,
+          "y": 59
+        },
+        "real-mid-079": {
+          "x": 69,
+          "y": 31
+        },
+        "real-def-049": {
+          "x": 23,
+          "y": 67
+        }
+      },
+      "tactic": "balanced",
+      "style": "wingPlay",
+      "attackFocus": "center",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 65,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "balanced",
+          "style": "wingPlay"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "counterAttack"
+        },
+        "trailing": {
+          "tactic": "positive",
+          "style": "highPress"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-3",
+      "name": "九龙巴士",
+      "coach": "AuI",
+      "rosterIds": [
+        "real-def-006",
+        "real-att-049",
+        "real-att-062",
+        "real-mid-124",
+        "real-def-157",
+        "real-def-145",
+        "real-mid-004",
+        "real-def-149",
+        "real-def-083",
+        "real-def-035",
+        "real-def-016",
+        "real-att-150",
+        "real-def-147",
+        "real-att-153",
+        "real-mid-153",
+        "real-att-128",
+        "real-att-127",
+        "real-mid-091",
+        "real-mid-022",
+        "real-gk-005",
+        "real-gk-003",
+        "real-mid-149",
+        "real-def-033",
+        "real-def-106",
+        "real-att-107",
+        "real-mid-107",
+        "real-mid-035",
+        "real-def-014",
+        "real-def-066",
+        "real-gk-008",
+        "real-def-172",
+        "real-mid-147",
+        "real-att-171"
+      ],
+      "preferredStarterIds": [
+        "real-def-006",
+        "real-def-145",
+        "real-def-083",
+        "real-def-035",
+        "real-def-147",
+        "real-att-128",
+        "real-att-127",
+        "real-mid-091",
+        "real-mid-022",
+        "real-gk-003",
+        "real-mid-149"
+      ],
+      "positions": {
+        "real-def-006": {
+          "x": 51,
+          "y": 70
+        },
+        "real-def-145": {
+          "x": 33,
+          "y": 71
+        },
+        "real-def-083": {
+          "x": 16,
+          "y": 69
+        },
+        "real-def-035": {
+          "x": 69,
+          "y": 71
+        },
+        "real-def-147": {
+          "x": 85,
+          "y": 69
+        },
+        "real-att-128": {
+          "x": 59,
+          "y": 21
+        },
+        "real-att-127": {
+          "x": 38,
+          "y": 23
+        },
+        "real-mid-091": {
+          "x": 61,
+          "y": 58
+        },
+        "real-mid-022": {
+          "x": 50,
+          "y": 42
+        },
+        "real-gk-003": {
+          "x": 50,
+          "y": 90
+        },
+        "real-mid-149": {
+          "x": 40,
+          "y": 57
+        }
+      },
+      "tactic": "defensive",
+      "style": "longBall",
+      "attackFocus": "center",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 85,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "defensive",
+          "style": "longBall"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "counterAttack"
+        },
+        "trailing": {
+          "tactic": "positive",
+          "style": "longBall"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-4",
+      "name": "北京龟安",
+      "coach": "天津泰达",
+      "rosterIds": [
+        "real-def-131",
+        "real-def-139",
+        "real-def-092",
+        "real-mid-060",
+        "real-mid-028",
+        "real-att-144",
+        "real-mid-076",
+        "real-att-099",
+        "real-def-126",
+        "real-gk-049",
+        "real-att-134",
+        "real-att-078",
+        "real-def-132",
+        "real-att-139",
+        "real-mid-136",
+        "real-att-007"
+      ],
+      "preferredStarterIds": [
+        "real-def-131",
+        "real-def-139",
+        "real-mid-028",
+        "real-att-144",
+        "real-mid-076",
+        "real-att-099",
+        "real-def-126",
+        "real-gk-049",
+        "real-def-132",
+        "real-att-078",
+        "real-att-139"
+      ],
+      "positions": {
+        "real-def-131": {
+          "x": 39,
+          "y": 69
+        },
+        "real-def-139": {
+          "x": 18,
+          "y": 69
+        },
+        "real-mid-028": {
+          "x": 44,
+          "y": 39
+        },
+        "real-att-144": {
+          "x": 25,
+          "y": 23
+        },
+        "real-mid-076": {
+          "x": 54,
+          "y": 52
+        },
+        "real-att-099": {
+          "x": 75,
+          "y": 30
+        },
+        "real-def-126": {
+          "x": 82,
+          "y": 69
+        },
+        "real-gk-049": {
+          "x": 50,
+          "y": 90
+        },
+        "real-def-132": {
+          "x": 61,
+          "y": 69
+        },
+        "real-att-078": {
+          "x": 62,
+          "y": 14
+        },
+        "real-att-139": {
+          "x": 44,
+          "y": 12
+        }
+      },
+      "tactic": "balanced",
+      "style": "highPress",
+      "attackFocus": "balanced",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 65,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "balanced",
+          "style": "highPress"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "counterAttack"
+        },
+        "trailing": {
+          "tactic": "positive",
+          "style": "highPress"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-5",
+      "name": "黄狗美国分部",
+      "coach": "唱反调",
+      "rosterIds": [
+        "real-mid-018",
+        "real-def-135",
+        "real-def-061",
+        "real-mid-095",
+        "real-mid-025",
+        "real-def-133",
+        "real-def-042",
+        "real-att-081",
+        "real-gk-126",
+        "real-def-138",
+        "real-mid-074",
+        "real-att-076",
+        "real-def-099",
+        "real-att-131",
+        "real-def-095",
+        "real-mid-078",
+        "real-gk-128",
+        "real-def-144",
+        "real-att-095",
+        "real-mid-003",
+        "real-mid-041",
+        "real-mid-088",
+        "real-def-054"
+      ],
+      "preferredStarterIds": [
+        "real-mid-003",
+        "real-def-135",
+        "real-def-099",
+        "real-def-133",
+        "real-att-076",
+        "real-gk-128",
+        "real-att-095",
+        "real-def-138",
+        "real-mid-074",
+        "real-def-042",
+        "real-mid-095"
+      ],
+      "positions": {
+        "real-mid-003": {
+          "x": 46,
+          "y": 53
+        },
+        "real-def-135": {
+          "x": 81,
+          "y": 69
+        },
+        "real-def-099": {
+          "x": 60,
+          "y": 53
+        },
+        "real-def-133": {
+          "x": 40,
+          "y": 72
+        },
+        "real-att-076": {
+          "x": 21,
+          "y": 19
+        },
+        "real-gk-128": {
+          "x": 50,
+          "y": 90
+        },
+        "real-att-095": {
+          "x": 54,
+          "y": 9
+        },
+        "real-def-138": {
+          "x": 18,
+          "y": 69
+        },
+        "real-mid-074": {
+          "x": 47,
+          "y": 32
+        },
+        "real-def-042": {
+          "x": 57,
+          "y": 72
+        },
+        "real-mid-095": {
+          "x": 59,
+          "y": 32
+        }
+      },
+      "tactic": "defensive",
+      "style": "counterAttack",
+      "attackFocus": "left",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 90,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "defensive",
+          "style": "counterAttack"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "counterAttack"
+        },
+        "trailing": {
+          "tactic": "allOutAttack",
+          "style": "longBall"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-6",
+      "name": "天津泰达",
+      "coach": "子非鱼",
+      "rosterIds": [
+        "real-def-052",
+        "real-def-046",
+        "real-def-141",
+        "real-def-001",
+        "real-mid-021",
+        "real-mid-084",
+        "real-att-136",
+        "real-gk-035",
+        "real-mid-130",
+        "real-mid-015",
+        "real-gk-138",
+        "real-att-130",
+        "real-def-041",
+        "real-mid-044",
+        "real-att-091",
+        "real-att-175",
+        "real-def-021",
+        "real-def-154",
+        "real-gk-044",
+        "real-gk-156",
+        "real-def-034",
+        "real-mid-081",
+        "real-mid-061",
+        "real-mid-116",
+        "real-gk-041",
+        "real-att-122",
+        "real-att-111",
+        "real-att-060",
+        "real-mid-011"
+      ],
+      "preferredStarterIds": [
+        "real-def-052",
+        "real-def-046",
+        "real-def-001",
+        "real-mid-021",
+        "real-att-091",
+        "real-gk-035",
+        "real-mid-130",
+        "real-mid-015",
+        "real-att-130",
+        "real-def-041",
+        "real-mid-044"
+      ],
+      "positions": {
+        "real-def-052": {
+          "x": 82,
+          "y": 69
+        },
+        "real-def-046": {
+          "x": 18,
+          "y": 69
+        },
+        "real-def-001": {
+          "x": 39,
+          "y": 69
+        },
+        "real-mid-021": {
+          "x": 50,
+          "y": 36
+        },
+        "real-att-091": {
+          "x": 59,
+          "y": 13
+        },
+        "real-gk-035": {
+          "x": 50,
+          "y": 90
+        },
+        "real-mid-130": {
+          "x": 35,
+          "y": 43
+        },
+        "real-mid-015": {
+          "x": 50,
+          "y": 56
+        },
+        "real-att-130": {
+          "x": 42,
+          "y": 21
+        },
+        "real-def-041": {
+          "x": 61,
+          "y": 69
+        },
+        "real-mid-044": {
+          "x": 69,
+          "y": 42
+        }
+      },
+      "tactic": "positive",
+      "style": "possession",
+      "attackFocus": "balanced",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 75,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "positive",
+          "style": "possession"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "possession"
+        },
+        "trailing": {
+          "tactic": "positive",
+          "style": "longBall"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-7",
+      "name": "里德马家皇",
+      "coach": "皇马毒瘤姆巴佩",
+      "rosterIds": [
+        "real-gk-127",
+        "real-att-019",
+        "real-def-063",
+        "real-def-013",
+        "real-def-057",
+        "real-mid-016",
+        "real-mid-094",
+        "real-att-143",
+        "real-def-082",
+        "real-mid-132",
+        "real-mid-127",
+        "real-mid-071",
+        "real-def-136",
+        "real-att-132",
+        "real-def-037",
+        "real-att-090",
+        "real-def-048",
+        "real-gk-034",
+        "real-mid-128",
+        "real-att-146",
+        "real-mid-126",
+        "real-att-094"
+      ],
+      "preferredStarterIds": [
+        "real-def-063",
+        "real-mid-071",
+        "real-mid-016",
+        "real-mid-094",
+        "real-def-136",
+        "real-att-132",
+        "real-def-037",
+        "real-att-090",
+        "real-def-048",
+        "real-gk-034",
+        "real-mid-128"
+      ],
+      "positions": {
+        "real-def-063": {
+          "x": 84,
+          "y": 66
+        },
+        "real-mid-071": {
+          "x": 41,
+          "y": 31
+        },
+        "real-mid-016": {
+          "x": 42,
+          "y": 51
+        },
+        "real-mid-094": {
+          "x": 57,
+          "y": 32
+        },
+        "real-def-136": {
+          "x": 20,
+          "y": 66
+        },
+        "real-att-132": {
+          "x": 41,
+          "y": 13
+        },
+        "real-def-037": {
+          "x": 67,
+          "y": 71
+        },
+        "real-att-090": {
+          "x": 59,
+          "y": 13
+        },
+        "real-def-048": {
+          "x": 43,
+          "y": 71
+        },
+        "real-gk-034": {
+          "x": 51,
+          "y": 86
+        },
+        "real-mid-128": {
+          "x": 59,
+          "y": 51
+        }
+      },
+      "tactic": "defensive",
+      "style": "counterAttack",
+      "attackFocus": "center",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 90,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "defensive",
+          "style": "counterAttack"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "lowBlock"
+        },
+        "trailing": {
+          "tactic": "defensive",
+          "style": "possession"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-8",
+      "name": "皇家马德里",
+      "coach": "皇马",
+      "rosterIds": [
+        "real-att-003",
+        "real-att-027",
+        "real-att-079",
+        "real-gk-038",
+        "real-def-077",
+        "real-def-002",
+        "real-mid-001",
+        "real-mid-075",
+        "real-att-074",
+        "real-att-097",
+        "real-def-078",
+        "real-def-166",
+        "real-mid-043",
+        "real-mid-002",
+        "real-att-080",
+        "real-def-080",
+        "real-att-087",
+        "real-def-019",
+        "real-mid-014",
+        "real-mid-013",
+        "real-def-127",
+        "real-gk-131",
+        "real-def-130",
+        "real-att-082",
+        "real-att-083",
+        "real-att-004"
+      ],
+      "preferredStarterIds": [
+        "real-att-003",
+        "real-att-082",
+        "real-gk-038",
+        "real-def-077",
+        "real-mid-075",
+        "real-att-097",
+        "real-def-080",
+        "real-mid-014",
+        "real-mid-001",
+        "real-def-127",
+        "real-def-130"
+      ],
+      "positions": {
+        "real-att-003": {
+          "x": 13,
+          "y": 26
+        },
+        "real-att-082": {
+          "x": 87,
+          "y": 22
+        },
+        "real-gk-038": {
+          "x": 50,
+          "y": 90
+        },
+        "real-def-077": {
+          "x": 83,
+          "y": 75
+        },
+        "real-mid-075": {
+          "x": 52,
+          "y": 35
+        },
+        "real-att-097": {
+          "x": 51,
+          "y": 10
+        },
+        "real-def-080": {
+          "x": 16,
+          "y": 76
+        },
+        "real-mid-014": {
+          "x": 58,
+          "y": 54
+        },
+        "real-mid-001": {
+          "x": 44,
+          "y": 54
+        },
+        "real-def-127": {
+          "x": 42,
+          "y": 76
+        },
+        "real-def-130": {
+          "x": 60,
+          "y": 76
+        }
+      },
+      "tactic": "allOutAttack",
+      "style": "wingPlay",
+      "attackFocus": "center",
+      "defenseFocus": "center",
+      "fitnessThreshold": 85,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "allOutAttack",
+          "style": "wingPlay"
+        },
+        "leading": {
+          "tactic": "defensive",
+          "style": "wingPlay"
+        },
+        "trailing": {
+          "tactic": "allOutAttack",
+          "style": "wingPlay"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-9",
+      "name": "武汉理工大学",
+      "coach": "罗哥",
+      "rosterIds": [
+        "real-att-032",
+        "real-mid-137",
+        "real-att-141",
+        "real-mid-031",
+        "real-def-003",
+        "real-att-100",
+        "real-mid-150",
+        "real-att-129",
+        "real-def-137",
+        "real-gk-001",
+        "real-def-070",
+        "real-mid-005",
+        "real-mid-019",
+        "real-att-015",
+        "real-gk-009",
+        "real-att-041",
+        "real-att-085",
+        "real-att-002",
+        "real-att-174",
+        "real-mid-139",
+        "real-mid-082",
+        "real-att-045",
+        "real-def-171",
+        "real-gk-012",
+        "real-def-040",
+        "real-att-075"
+      ],
+      "preferredStarterIds": [
+        "real-mid-137",
+        "real-att-075",
+        "real-def-003",
+        "real-att-100",
+        "real-mid-150",
+        "real-def-137",
+        "real-gk-001",
+        "real-mid-005",
+        "real-mid-019",
+        "real-att-041",
+        "real-att-002"
+      ],
+      "positions": {
+        "real-mid-137": {
+          "x": 54,
+          "y": 40
+        },
+        "real-att-075": {
+          "x": 78,
+          "y": 23
+        },
+        "real-def-003": {
+          "x": 67,
+          "y": 69
+        },
+        "real-att-100": {
+          "x": 43,
+          "y": 18
+        },
+        "real-mid-150": {
+          "x": 44,
+          "y": 54
+        },
+        "real-def-137": {
+          "x": 81,
+          "y": 45
+        },
+        "real-gk-001": {
+          "x": 50,
+          "y": 90
+        },
+        "real-mid-005": {
+          "x": 51,
+          "y": 69
+        },
+        "real-mid-019": {
+          "x": 35,
+          "y": 69
+        },
+        "real-att-041": {
+          "x": 27,
+          "y": 43
+        },
+        "real-att-002": {
+          "x": 60,
+          "y": 17
+        }
+      },
+      "tactic": "allOutAttack",
+      "style": "highPress",
+      "attackFocus": "right",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 90,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "allOutAttack",
+          "style": "highPress"
+        },
+        "leading": {
+          "tactic": "parkBus",
+          "style": "counterAttack"
+        },
+        "trailing": {
+          "tactic": "allOutAttack",
+          "style": "highPress"
+        }
+      }
+    },
+    {
+      "id": "ydl-team-10",
+      "name": "传奇捕鼠队",
+      "coach": "卢卡·莫德里奇",
+      "rosterIds": [
+        "real-att-005",
+        "real-mid-174",
+        "real-mid-027",
+        "real-def-018",
+        "real-def-086",
+        "real-def-058",
+        "real-gk-134",
+        "real-def-064",
+        "real-att-084",
+        "real-mid-135",
+        "real-def-062",
+        "real-def-134",
+        "real-att-135",
+        "real-def-075",
+        "real-gk-039",
+        "real-att-123",
+        "real-gk-144",
+        "real-gk-033"
+      ],
+      "preferredStarterIds": [
+        "real-att-135",
+        "real-mid-174",
+        "real-mid-027",
+        "real-def-134",
+        "real-def-058",
+        "real-gk-039",
+        "real-def-075",
+        "real-att-084",
+        "real-mid-135",
+        "real-def-086",
+        "real-att-123"
+      ],
+      "positions": {
+        "real-att-135": {
+          "x": 50,
+          "y": 19
+        },
+        "real-mid-174": {
+          "x": 64,
+          "y": 54
+        },
+        "real-mid-027": {
+          "x": 52,
+          "y": 42
+        },
+        "real-def-134": {
+          "x": 61,
+          "y": 71
+        },
+        "real-def-058": {
+          "x": 40,
+          "y": 70
+        },
+        "real-gk-039": {
+          "x": 50,
+          "y": 90
+        },
+        "real-def-075": {
+          "x": 82,
+          "y": 69
+        },
+        "real-att-084": {
+          "x": 20,
+          "y": 28
+        },
+        "real-mid-135": {
+          "x": 39,
+          "y": 53
+        },
+        "real-def-086": {
+          "x": 19,
+          "y": 71
+        },
+        "real-att-123": {
+          "x": 83,
+          "y": 29
+        }
+      },
+      "tactic": "allOutAttack",
+      "style": "highPress",
+      "attackFocus": "balanced",
+      "defenseFocus": "balanced",
+      "fitnessThreshold": 75,
+      "tacticalPlans": {
+        "opening": {
+          "tactic": "allOutAttack",
+          "style": "highPress"
+        },
+        "leading": {
+          "tactic": "balanced",
+          "style": "highPress"
+        },
+        "trailing": {
+          "tactic": "positive",
+          "style": "highPress"
+        }
+      }
+    }
+  ]
+}
