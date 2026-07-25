@@ -1,4 +1,5 @@
 :root { color-scheme:dark; --bg:#071411; --panel:#0d201a; --panel2:#122920; --line:#294338; --ink:#edf5ed; --muted:#91a59b; --lime:#c9f05c; --cyan:#71d9d0; --orange:#ff805d; --red:#ff5964; --shadow:0 20px 55px rgba(0,0,0,.35); font-family:Inter,"Microsoft YaHei",sans-serif; }
+html[data-environment="test"] body::after { content:"S4 测试服"; position:fixed; right:10px; bottom:10px; z-index:1000; padding:7px 10px; color:#071411; background:#ffcf4a; border:2px solid #071411; font-size:12px; font-weight:950; pointer-events:none; }
 * { box-sizing:border-box; }
 body { min-width:320px; margin:0; color:var(--ink); background:radial-gradient(circle at 50% -20%,#19392d 0,transparent 38%),var(--bg); }
 button,input,select { font:inherit; }

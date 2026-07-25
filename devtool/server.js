@@ -19,6 +19,8 @@ const adminDirectory = path.resolve(here, "../admin/public");
 const port = Number(process.env.DEVTOOL_PORT ?? 4310);
 const host = process.env.VERSUS_HOST ?? "127.0.0.1";
 const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
+const environment = process.env.APP_ENV ?? "production";
+const environmentLabel = process.env.APP_LABEL ?? "正式服";
 const maximumBodyBytes = 8 * 1024 * 1024;
 
 const mimeTypes = {
@@ -57,11 +59,11 @@ async function readJson(request) {
 async function handleApi(request, response, pathname) {
   if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson);
   if (request.method === "GET" && pathname === "/api/versus/config") {
-    return sendJson(response, 200, { ok: true, publicOnly });
+    return sendJson(response, 200, { ok: true, publicOnly, environment, environmentLabel });
   }
   if (publicOnly) {
     if (request.method === "GET" && pathname === "/api/health") {
-      return sendJson(response, 200, { ok: true, publicOnly: true });
+      return sendJson(response, 200, { ok: true, publicOnly:true, environment, environmentLabel });
     }
     if (pathname === "/api/versus/dev-room" || !pathname.startsWith("/api/versus/")) {
       return sendJson(response, 404, { ok: false, error: "API not found" });
@@ -75,7 +77,7 @@ async function handleApi(request, response, pathname) {
     return handleVersusApi(request, response, pathname, readJson, sendJson);
   }
   if (request.method === "GET" && pathname === "/api/health") {
-    return sendJson(response, 200, { ok: true, localOnly: true });
+    return sendJson(response, 200, { ok: true, localOnly:true, environment, environmentLabel });
   }
   if (request.method === "GET" && pathname === "/api/state") {
     return sendJson(response, 200, { ok: true, state: await loadDatabase() });

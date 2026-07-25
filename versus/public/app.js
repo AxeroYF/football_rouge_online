@@ -33,6 +33,12 @@ let controlInteraction = false;
 let controlReleaseTimer = null;
 let lineupSeedInput = "";
 let exportedLineupCode = "";
+
+function applyEnvironment(config = {}) {
+  if (config.environment !== "test") return;
+  document.documentElement.dataset.environment = "test";
+  document.title = `${config.environmentLabel ?? "S4 测试服"} | ${document.title}`;
+}
 let publicHosting = false;
 let toastTimer = null;
 let renderedPhase = null;
@@ -1857,6 +1863,7 @@ async function bootstrap() {
     const response = await fetch("/api/versus/config", { cache:"no-store" });
     const config = await response.json();
     publicHosting = Boolean(config.publicOnly);
+    applyEnvironment(config);
   } catch { publicHosting = false; }
   if (account?.profile?.id && account?.accountToken) {
     try {

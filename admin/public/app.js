@@ -10,6 +10,16 @@ let dashboard = null;
 let competitionTab = "formations";
 let leagueData = null;
 
+async function loadEnvironment() {
+  try {
+    const response = await fetch("/api/versus/config", { cache:"no-store" });
+    const config = await response.json();
+    if (config.environment !== "test") return;
+    document.documentElement.dataset.environment = "test";
+    document.title = `${config.environmentLabel ?? "S4 测试服"} | ${document.title}`;
+  } catch {}
+}
+
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (character) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;" })[character]);
 const dateText = (value) => value ? new Date(Number(value)).toLocaleString() : "—";
 const shortDate = (value) => value ? new Date(Number(value)).toLocaleDateString() : "—";
@@ -283,4 +293,5 @@ async function openMatch(id) {
 logoutButton.onclick = async () => { try { await api("/api/admin/logout", { method:"POST" }); } catch {} renderLogin(); };
 modal.onclick = (event) => { if (event.target === modal) closeModal(); };
 document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !modal.hidden) closeModal(); });
+await loadEnvironment();
 if (token) loadDashboard(); else renderLogin();
