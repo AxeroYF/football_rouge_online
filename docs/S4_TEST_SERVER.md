@@ -6,7 +6,7 @@ S4 开发使用独立 Git worktree 和独立运行数据。不要直接在正式
 
 | 项目 | 正式服 | S4 测试服 |
 |---|---|---|
-| 源码目录 | `D:\Project\game_test` | `D:\Project\game_test_s4` |
+| 源码目录 | `D:\Project\game_test` | `D:\Project\game_test\.worktrees\s4` |
 | Git 分支 | `codex/versus-baseline-20260723` | `codex/s4-card-upgrade` |
 | 本地端口 | `4318` | `4328` |
 | 账号数据 | `data/versus-accounts.json` | `data/s4-test/versus-accounts.json` |
@@ -23,7 +23,7 @@ S4 开发使用独立 Git worktree 和独立运行数据。不要直接在正式
 cd D:\Project\game_test
 git add .gitignore package.json devtool/server.js devtool/test-environment.js devtool/test-server.js devtool/test-tunnel.js versus/public/app.js versus/public/styles.css admin/public/app.js docs/S4_TEST_SERVER.md
 git commit -m "chore: add isolated S4 test server"
-git worktree add D:\Project\game_test_s4 -b codex/s4-card-upgrade HEAD
+git worktree add D:\Project\game_test\.worktrees\s4 -b codex/s4-card-upgrade HEAD
 ```
 
 ## 日常启动
@@ -38,7 +38,7 @@ npm run tunnel
 测试服在 S4 worktree 中运行：
 
 ```powershell
-cd D:\Project\game_test_s4
+cd D:\Project\game_test\.worktrees\s4
 npm run test-tunnel
 ```
 

@@ -69,3 +69,4 @@ handoff/artifacts/
 handoff/*.zip
 .tmp-browser-*.json
 .tmp-browser-*.json.bak
+.worktrees/
