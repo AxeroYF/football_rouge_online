@@ -11,20 +11,20 @@ export function inferElevenBoardRoles(entries = []) {
     .filter((entry) => entry?.id && Number.isFinite(Number(entry?.position?.x)) && Number.isFinite(Number(entry?.position?.y)))
     .map((entry) => ({ id: entry.id, x: Number(entry.position.x), y: Number(entry.position.y) }));
   const roles = {};
-  const midfielders = normalized.filter((entry) => entry.y >= 27 && entry.y < 59);
-  const wideMidfielders = midfielders.filter((entry) => entry.x < 38 || entry.x > 62);
+  const midfielders = normalized.filter((entry) => entry.y >= 29 && entry.y < 62);
+  const wideMidfielders = midfielders.filter((entry) => entry.x < 35 || entry.x > 65);
   const midfieldReferenceY = wideMidfielders.length
     ? wideMidfielders.reduce((sum, entry) => sum + entry.y, 0) / wideMidfielders.length
     : 46;
   for (const entry of normalized) {
-    if (entry.y >= 82) roles[entry.id] = "GK";
-    else if (entry.y >= 66) roles[entry.id] = entry.x < 30 ? "LB" : entry.x > 70 ? "RB" : "CB";
-    else if (entry.y >= 55 && entry.x < 25) roles[entry.id] = "LWB";
-    else if (entry.y >= 55 && entry.x > 75) roles[entry.id] = "RWB";
-    else if (entry.y >= 59) roles[entry.id] = "CB";
-    else if (entry.y < 27) roles[entry.id] = entry.x < 38 ? "LW" : entry.x > 62 ? "RW" : "ST";
-    else if (entry.x < 38) roles[entry.id] = "LM";
-    else if (entry.x > 62) roles[entry.id] = "RM";
+    if (entry.y >= 84) roles[entry.id] = "GK";
+    else if (entry.y >= 67) roles[entry.id] = entry.x < 28 ? "LB" : entry.x > 72 ? "RB" : "CB";
+    else if (entry.y >= 56 && entry.x < 24) roles[entry.id] = "LWB";
+    else if (entry.y >= 56 && entry.x > 76) roles[entry.id] = "RWB";
+    else if (entry.y >= 62) roles[entry.id] = "CB";
+    else if (entry.y < 29) roles[entry.id] = entry.x < 35 ? "LW" : entry.x > 65 ? "RW" : "ST";
+    else if (entry.x < 35) roles[entry.id] = "LM";
+    else if (entry.x > 65) roles[entry.id] = "RM";
     else roles[entry.id] = entry.y < midfieldReferenceY ? "AM" : "DM";
   }
   return roles;
@@ -198,6 +198,63 @@ function midfieldStructureProfile(players, positions, roles) {
 export function formationStructureProfile(players = [], positions = {}) {
   const formation = analyzeElevenFormation(players, positions);
   const assignedGroups = Object.fromEntries(Object.entries(formation.roles).map(([id, role]) => [id, roleGroup(role)]));
+  const clampMetric = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+  const averageMetric = (values, fallback = 0) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : fallback;
+  const linePositions = Object.fromEntries(["DEF", "MID", "ATT"].map((group) => [group, players
+    .filter((player) => assignedGroups[player.id] === group && positions[player.id])
+    .map((player) => ({ x:Number(positions[player.id].x), y:Number(positions[player.id].y) }))]));
+  const lineHeights = {
+    defense:averageMetric(linePositions.DEF.map((position) => position.y), 69),
+    midfield:averageMetric(linePositions.MID.map((position) => position.y), 45),
+    attack:averageMetric(linePositions.ATT.map((position) => position.y), 19),
+  };
+  const lineGaps = {
+    defenseToMidfield:Math.max(0, lineHeights.defense - lineHeights.midfield),
+    midfieldToAttack:Math.max(0, lineHeights.midfield - lineHeights.attack),
+  };
+  const maximumLineGap = Math.max(lineGaps.defenseToMidfield, lineGaps.midfieldToAttack);
+  const teamLength = Math.max(0, lineHeights.defense - lineHeights.attack);
+  const midfieldNearestDistances = linePositions.MID.length > 1 ? linePositions.MID.map((position, index, entries) => Math.min(...entries
+    .filter((_, otherIndex) => otherIndex !== index)
+    .map((other) => Math.hypot((position.x - other.x) * 0.78, position.y - other.y)))) : [];
+  const midfieldSpacing = midfieldNearestDistances.length ? averageMetric(midfieldNearestDistances, 24) : 34;
+  const lineConnection = clampMetric(1.055 - Math.max(0, maximumLineGap - 20) / 58, 0.72, 1.055);
+  const verticalCompactness = clampMetric(1.045 - Math.max(0, teamLength - 44) / 90 - Math.max(0, 34 - teamLength) / 120, 0.76, 1.045);
+  const midfieldCompactness = clampMetric(1.055 - Math.max(0, midfieldSpacing - 18) / 70, 0.76, 1.055);
+  const deepDefense = clampMetric((lineHeights.defense - 61) / 25, 0, 1);
+  const highDefense = clampMetric((68 - lineHeights.defense) / 27, 0, 1);
+  const boxProtection = clampMetric(0.965 + deepDefense * 0.105 - highDefense * 0.045 + (verticalCompactness - 0.9) * 0.08, 0.9, 1.09);
+  const pressingCohesion = clampMetric(0.91 + highDefense * 0.13 + (lineConnection - 0.9) * 0.24 + (verticalCompactness - 0.9) * 0.2, 0.8, 1.11);
+  const highLineExposure = 1 + highDefense * 0.08;
+  const disconnectionRisk = clampMetric((1 + Math.max(0, maximumLineGap - 23) * 0.012 + Math.max(0, midfieldSpacing - 28) * 0.006) * highLineExposure, 1, 1.5);
+  const possessionSupport = clampMetric(0.94 + (lineConnection - 0.9) * 0.38 + (midfieldCompactness - 0.9) * 0.32 + (verticalCompactness - 0.9) * 0.22, 0.78, 1.09);
+  const longBallSupport = clampMetric(0.965 + Math.max(0, maximumLineGap - 22) * 0.004 + Math.max(0, teamLength - 47) * 0.0025, 0.94, 1.11);
+  const counterSupport = clampMetric(0.96 + deepDefense * 0.055 + Math.max(0, teamLength - 44) * 0.002, 0.94, 1.09);
+  const geometry = {
+    lineHeights,
+    lineGaps,
+    maximumLineGap,
+    teamLength,
+    midfieldSpacing,
+    lineConnection,
+    verticalCompactness,
+    midfieldCompactness,
+    deepDefense,
+    highDefense,
+    boxProtection,
+    pressingCohesion,
+    highLineExposure,
+    disconnectionRisk,
+    styleFits:{
+      possession:possessionSupport,
+      longBall:longBallSupport,
+      wingPlay:clampMetric(0.98 + (lineConnection - 0.9) * 0.14, 0.93, 1.06),
+      counterAttack:counterSupport,
+      highPress:pressingCohesion,
+      lowBlock:boxProtection,
+      roughPlay:clampMetric(0.98 + (verticalCompactness - 0.9) * 0.08, 0.95, 1.04),
+    },
+  };
   const assignedKeepers = players.filter((player) => assignedGroups[player.id] === "GK");
   const naturalKeeperInGoal = assignedKeepers.some((player) => roleGroup(player.role) === "GK");
   const emergencyKeepers = assignedKeepers.filter((player) => roleGroup(player.role) !== "GK").length;
@@ -224,6 +281,7 @@ export function formationStructureProfile(players = [], positions = {}) {
   return {
     ...formation,
     midfieldStructure,
+    geometry,
     multipliers: { goalkeeper, defense, midfield, attack, coherence, transitionRisk: transitionRisk * midfieldStructure.transitionRiskMultiplier },
     mismatches: { emergencyKeepers, displacedKeepers, crossLineMismatches },
   };

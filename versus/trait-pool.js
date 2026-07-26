@@ -18,51 +18,51 @@ function versusTrait(id, summary, rules, overrides = {}) {
 }
 
 const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
-  versusTrait("aerial-beacon", "头球与弹跳各+5，但速度-2。", [
-    { hook: "attribute", add: { heading: 5, jumping: 5, pace: -2 } },
-  ]),
-  versusTrait("touchline-flywheel", "出任边路位置时速度+3、传中+4。", [
-    { hook: "attribute", add: { pace: 3, crossing: 4 }, when: { roleIsWide: true } },
-  ]),
-  versusTrait("shadow-marker", "盯人与抢断各+4，但速度-2。", [
-    { hook: "attribute", add: { marking: 4, tackling: 4, pace: -2 } },
-  ]),
-  versusTrait("set-piece-toolbox", "定位球能力+7。", [
-    { hook: "attribute", add: { setPieces: 7 } },
-  ]),
-  versusTrait("rain-boots", "降雨超过60时灵活+4。", [
-    { hook: "attribute", add: { agility: 4 }, when: { precipitationGte: 60 } },
-  ]),
-  versusTrait("sweeper-keeper", "传球+5，但扑救反应-2。", [
-    { hook: "attribute", add: { passing: 5, reflexes: -2 } },
-  ]),
-  versusTrait("lone-finisher", "射门与冷静各+7，但传球-3。", [
-    { hook: "attribute", add: { finishing: 7, composure: 7, passing: -3 } },
-  ]),
-  versusTrait("big-stage", "70分钟后比分持平或落后时，决策与冷静各+6。", [
-    { hook: "attribute", add: { decisions: 6, composure: 6 }, when: { minuteGte: 70, scoreState: ["tied", "trailing"] } },
-  ]),
-  versusTrait("opening-sprint", "前20分钟速度与无球各+7；65分钟后速度-3。", [
-    { hook: "attribute", add: { pace: 7, offBall: 7 }, when: { minuteLte: 20 } },
-    { hook: "attribute", add: { pace: -3 }, when: { minuteGte: 65 } },
-  ]),
-  versusTrait("stoppage-time-expert", "85分钟后冷静+8。", [
-    { hook: "attribute", add: { composure: 8 }, when: { minuteGte: 85 } },
-  ]),
-  versusTrait("double-edged-core", "视野+6、射门+4；体能低于40时决策-5。", [
-    { hook: "attribute", add: { vision: 6, finishing: 4 } },
-    { hook: "attribute", add: { decisions: -5 }, when: { fitnessLte: 40 } },
-  ]),
+  versusTrait("aerial-beacon", "身高+20cm，获得ST位置熟练度，头球能力提升。", [
+    { hook: "height", addCm: 20 },
+    { hook: "position", familiarRoles: ["ST"] },
+    { hook: "attribute", add: { heading: 5, jumping: 5 } },
+  ], { name: "打点激素" }),
+  versusTrait("touchline-flywheel", "该球员在场上时，全队在雷暴天气不会被雷击。", [
+    { hook: "teamLightningProtection", immune: true },
+  ], { name: "避雷针" }),
+  versusTrait("shadow-marker", "该球员在场上时，自动和周围球员获得满值默契线。", [
+    { hook: "chemistry", linkNearby: true, value: 100 },
+  ], { name: "都是哥们" }),
+  versusTrait("set-piece-toolbox", "该球员在场上时，如果遇到黑哨事件，本队视为拥有11名阿根廷球员。", [
+    { hook: "argentinaCount", minimum: 11 },
+  ], { name: "因凡蒂诺救救我" }),
+  versusTrait("rain-boots", "该球员在雨天、雷暴、雪天比赛时，综合能力值提升10%。", [
+    { hook: "allAttributes", multiply: 1.1, when: { weather: ["rain", "storm", "snow"] } },
+  ], { name: "反向晴天娃娃" }),
+  versusTrait("sweeper-keeper", "该球员在比赛第75分钟后，综合能力值提升10%。", [
+    { hook: "allAttributes", multiply: 1.1, when: { minuteGte: 75 } },
+  ], { name: "本质大心脏" }),
+  versusTrait("lone-finisher", "该球员可以适配任何国家队或俱乐部羁绊。", [
+    { hook: "affinityWildcard", nationality: true, club: true },
+  ], { name: "变色龙" }),
+  versusTrait("big-stage", "该球员造点球的概率提升，但因假摔获得黄牌的概率也提升。", [
+    { hook: "penaltyDraw", foulMultiplier: 1.35, penaltyMultiplier: 1.75, simulationYellowChance: 0.24 },
+  ], { name: "跳水王子" }),
+  versusTrait("opening-sprint", "该球员所在球队使用伐木战术时，综合能力提升5%。", [
+    { hook: "allAttributes", multiply: 1.05, when: { teamStyle: "roughPlay" } },
+  ], { name: "铁血蓝白" }),
+  versusTrait("stoppage-time-expert", "该球员的体力值固定为90，不会随着比赛消耗变化。", [
+    { hook: "fixedFitness", value: 90 },
+  ], { name: "996" }),
+  versusTrait("double-edged-core", "该球员的边路相关属性获得提升，并解锁LW/RW位置熟练度。", [
+    { hook: "attribute", add: { pace: 5, acceleration: 5, dribbling: 4, crossing: 5, offBall: 3 } },
+    { hook: "position", familiarRoles: ["LW", "RW"] },
+  ], { name: "借过一下" }),
   versusTrait("utility-player", "除门将外，出任任何陌生位置都不受位置不熟惩罚。", [
     { hook: "position", ignoreOutOfPositionPenalty: true, eligibleRoleGroups: ["DEF", "MID", "ATT"] },
   ], { name: "全能战士", tags: ["position", "flexibility"] }),
-  versusTrait("muddy-knees", "降雨达到35时抢断+5。", [
-    { hook: "attribute", add: { tackling: 5 }, when: { precipitationGte: 35 } },
-  ]),
-  versusTrait("pace-budget", "前30分钟速度-2；70分钟后速度与耐力各+4。", [
-    { hook: "attribute", add: { pace: -2 }, when: { minuteLte: 30 } },
-    { hook: "attribute", add: { pace: 4, stamina: 4 }, when: { minuteGte: 70 } },
-  ]),
+  versusTrait("muddy-knees", "该球员在比赛中一定会扑出对方主罚的第一粒点球。", [
+    { hook: "firstPenaltySave", guaranteed: true },
+  ], { name: "一夫当关" }),
+  versusTrait("pace-budget", "该球员不会被红牌罚下。", [
+    { hook: "redCardImmune", immune: true },
+  ], { name: "普拉蒂尼是我爹" }),
   versusTrait("clean-tackle", "抢断+3。", [
     { hook: "attribute", add: { tackling: 3 } },
   ]),
@@ -95,8 +95,29 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
   ]),
 ]);
 
-export const VERSUS_TRAIT_CARDS = Object.freeze([...VERSUS_ADAPTED_TRAIT_CARDS, ...VERSUS_NEW_TRAIT_BATCH]);
+export const VERSUS_TRAIT_CARDS = Object.freeze(
+  [...VERSUS_ADAPTED_TRAIT_CARDS, ...VERSUS_NEW_TRAIT_BATCH].map((trait) => structuredClone(trait)),
+);
 export { VERSUS_ADAPTED_TRAIT_CARDS, VERSUS_NEW_TRAIT_BATCH };
 
 export const VERSUS_TRAIT_BY_ID = Object.freeze(Object.fromEntries(VERSUS_TRAIT_CARDS.map((trait) => [trait.id, trait])));
 export const VERSUS_EXCLUDED_TRAIT_IDS = Object.freeze(TRAIT_CARDS.filter((trait) => !VERSUS_TRAIT_BY_ID[trait.id]).map((trait) => trait.id));
+
+export const YDL_TRAIT_IDS = Object.freeze([
+  "aerial-beacon",
+  "touchline-flywheel",
+  "shadow-marker",
+  "set-piece-toolbox",
+  "rain-boots",
+  "sweeper-keeper",
+  "lone-finisher",
+  "big-stage",
+  "opening-sprint",
+  "stoppage-time-expert",
+  "double-edged-core",
+  "utility-player",
+  "muddy-knees",
+  "pace-budget",
+]);
+export const YDL_TRAIT_CARDS = Object.freeze(YDL_TRAIT_IDS.map((id) => VERSUS_TRAIT_BY_ID[id]));
+export const YDL_TRAIT_BY_ID = Object.freeze(Object.fromEntries(YDL_TRAIT_CARDS.map((trait) => [trait.id, trait])));

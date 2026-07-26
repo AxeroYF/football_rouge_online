@@ -63,6 +63,8 @@ Desktop.ini
 data/versus-accounts.json
 data/yellowdogs-league.json
 data/yellowdogs-league.json.bak
+data/yellowdogs-league-backups/
+data/ydl-content-overrides.backup.json
 data/s4-test/
 outputs/
 handoff/artifacts/

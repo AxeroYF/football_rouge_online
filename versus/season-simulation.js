@@ -78,6 +78,7 @@ function configuredTeam(source, index) {
     rosterIds:[...source.rosterIds],
     preferredStarterIds:[...source.preferredStarterIds],
     positions:structuredClone(source.positions),
+    positionPresets:structuredClone(source.positionPresets ?? { position1:source.positions, position2:source.positions, position3:source.positions }),
     tactic:source.tactic,
     style:source.style,
     attackFocus:source.attackFocus ?? "balanced",
@@ -92,13 +93,37 @@ function configuredTeam(source, index) {
   };
 }
 
+function simulationS4Assets(teams, now) {
+  const cards = {};
+  const ownerships = {};
+  let sequence = 1;
+  teams.forEach((team) => team.rosterIds.forEach((playerId) => {
+    const id = `simulation-card-${sequence++}`;
+    cards[id] = {
+      id,
+      playerId,
+      ownerId:team.ownerId,
+      upgradeLevel:0,
+      traitIds:[],
+      acquisitionSource:"season-simulation",
+      externalAcquisition:false,
+      status:"active",
+      createdAt:now,
+      acquiredAt:now,
+    };
+    if (!REAL_PLAYER_BY_ID[playerId]?.legendAbility && !ownerships[playerId]) ownerships[playerId] = team.ownerId;
+  }));
+  return { schemaVersion:1, nextCardSequence:sequence, ownerships, cards, transactions:[] };
+}
+
 function buildService(config, iteration) {
   let now = Date.UTC(2026, 0, 1, 2, 0, 0) + iteration * 86_400_000;
   const service = new YellowDogsLeagueService({ statePath:null, backupDir:null, now:() => now, rng:seededRandom(`${config.seed}:rng:${iteration}`) });
   const teams = config.teams.map(configuredTeam);
   const seasonId = `simulation-${config.seed}-${iteration}`;
   service.state = {
-    version:1,
+    version:2,
+    ruleset:"S4",
     season:{ id:seasonId, name:"SIM", date:localDateKey(new Date(now)), status:"active", currentRound:0, totalRounds:18, nextRoundAt:now, firstRoundAt:now, startedAt:now, completedAt:null },
     teams,
     rounds:roundRobin(teams.map((team) => team.id)),
@@ -114,6 +139,8 @@ function buildService(config, iteration) {
     shopOffers:{},
     rewardOffers:{},
     adminPackGrants:[],
+    s4Packs:{ schemaVersion:1, nextSequence:1, inventory:{}, offers:{}, grants:[], legacyRetiredAt:now },
+    s4Assets:simulationS4Assets(teams, now),
     liveRound:null,
     liveCupRound:null,
     cup:emptyCup(),
@@ -308,6 +335,7 @@ export function configFromState(state, options = {}) {
     rosterIds:[...team.rosterIds],
     preferredStarterIds:[...team.preferredStarterIds],
     positions:structuredClone(team.positions),
+    positionPresets:structuredClone(team.positionPresets ?? { position1:team.positions, position2:team.positions, position3:team.positions }),
     tactic:team.tactic,
     style:team.style,
     attackFocus:team.attackFocus,

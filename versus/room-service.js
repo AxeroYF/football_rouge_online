@@ -197,7 +197,7 @@ function drawTraits(player, excludedIds = [], rng = Math.random) {
 
 function publicTrait(traitId) {
   const trait = VERSUS_TRAIT_BY_ID[traitId];
-  return trait ? { id: trait.id, name: trait.name, summary: trait.summary, rarity: trait.rarity, category: trait.category } : null;
+  return trait ? { id: trait.id, name: trait.name, summary: trait.summary, category: trait.category } : null;
 }
 
 function publicPlayer(player) {

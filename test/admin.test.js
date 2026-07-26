@@ -29,6 +29,18 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal(league.statusCode, 200);
   assert.equal(league.value.league.teams.length, 10);
   assert.ok(league.value.league.pools.ATT.total > 0);
+  assert.equal(league.value.league.s4Assets.schemaVersion, 1);
+  assert.equal(league.value.league.s4PlayerCatalog.length, 550);
+  assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅西"));
+  assert.ok(Array.isArray(league.value.league.s4CardGrants));
+  const content = await request("/api/admin/content", { token:login.value.token });
+  assert.equal(content.statusCode, 200);
+  assert.equal(content.value.content.players.length, 550);
+  assert.ok(content.value.content.traits.length > 0);
+  assert.deepEqual(content.value.content.roleGroups, ["ANY", "GK", "DEF", "MID", "ATT"]);
+  assert.deepEqual(content.value.content.playerRoles, ["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
+  assert.ok(content.value.content.traits.every((trait) => !("rarity" in trait)));
+  assert.ok(content.value.content.players.find((entry) => entry.name === "布冯" && entry.overall === 85));
   const player = dashboard.value.dashboard.players[0];
   if (player) {
     const detail = await request(`/api/admin/players/${encodeURIComponent(player.id)}`, { token:login.value.token });

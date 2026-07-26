@@ -2,6 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { versusRooms } from "./room-service.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { yellowDogsLeague } from "./league-service.js";
+import { updateYdlPlayer, updateYdlTrait, ydlContentView } from "./ydl-content-store.js";
 
 const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971019";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -204,6 +205,17 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     }
     if (request.method === "GET" && pathname === "/api/admin/dashboard") return sendJson(response, 200, { ok: true, dashboard: buildDashboard() });
     if (request.method === "GET" && pathname === "/api/admin/league") return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
+    if (request.method === "GET" && pathname === "/api/admin/content") return sendJson(response, 200, { ok:true, content:ydlContentView() });
+    const contentPlayerMatch = pathname.match(/^\/api\/admin\/content\/players\/([^/]+)$/);
+    if (request.method === "POST" && contentPlayerMatch) {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, player:await updateYdlPlayer(decodeURIComponent(contentPlayerMatch[1]), body) });
+    }
+    const contentTraitMatch = pathname.match(/^\/api\/admin\/content\/traits\/([^/]+)$/);
+    if (request.method === "POST" && contentTraitMatch) {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, trait:await updateYdlTrait(decodeURIComponent(contentTraitMatch[1]), body) });
+    }
     if (request.method === "POST" && pathname === "/api/admin/league/simulate") {
       yellowDogsLeague.simulateNextRound();
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
@@ -216,10 +228,15 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "POST" && pathname === "/api/admin/league/cup/start") {
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startCup() });
     }
-    if (request.method === "POST" && pathname === "/api/admin/league/reward-pack") {
+    if (request.method === "POST" && pathname === "/api/admin/league/s4-packs/grant") {
       const body = await readJson(request);
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.scheduleAdminRewardPack(body) });
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantS4PacksFromAdmin(body) });
     }
+    if (request.method === "POST" && pathname === "/api/admin/league/s4-cards/grant") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantS4PlayerCardsFromAdmin(body) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/reward-pack") throw new Error("旧赛季礼包发放逻辑已经下架");
     if (request.method === "POST" && pathname === "/api/admin/league/champion-badge") {
       const body = await readJson(request);
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.awardChampionBadge(body) });

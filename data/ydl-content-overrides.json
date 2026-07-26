@@ -1,0 +1,806 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-26T16:21:03.506Z",
+  "players": {
+    "s4-fc26-231443": {
+      "name": "登贝莱",
+      "overall": 89,
+      "grade": "A",
+      "role": "RW",
+      "secondaryRole": "RM",
+      "nationality": "法国",
+      "club": "巴黎圣日耳曼",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 82,
+        "firstTouch": 93,
+        "dribbling": 92,
+        "crossing": 83,
+        "finishing": 89,
+        "longShots": 84,
+        "heading": 73,
+        "setPieces": 77,
+        "tackling": 43,
+        "marking": 48,
+        "positioning": 46,
+        "vision": 79,
+        "decisions": 90,
+        "composure": 87,
+        "offBall": 94,
+        "discipline": 74,
+        "pace": 90,
+        "acceleration": 92,
+        "strength": 68,
+        "stamina": 75,
+        "agility": 93,
+        "jumping": 83,
+        "workRate": 75,
+        "aggression": 57,
+        "goalkeeping": 7,
+        "reflexes": 7
+      }
+    },
+    "s4-fc26-209331": {
+      "name": "萨拉赫",
+      "overall": 89,
+      "grade": "A",
+      "role": "RW",
+      "secondaryRole": "ST",
+      "nationality": "埃及",
+      "club": "利物浦",
+      "heightCm": 175,
+      "attributes": {
+        "passing": 84,
+        "firstTouch": 89,
+        "dribbling": 89,
+        "crossing": 88,
+        "finishing": 93,
+        "longShots": 77,
+        "heading": 58,
+        "setPieces": 81,
+        "tackling": 41,
+        "marking": 37,
+        "positioning": 46,
+        "vision": 85,
+        "decisions": 93,
+        "composure": 92,
+        "offBall": 92,
+        "discipline": 75,
+        "pace": 88,
+        "acceleration": 87,
+        "strength": 74,
+        "stamina": 87,
+        "agility": 85,
+        "jumping": 78,
+        "workRate": 87,
+        "aggression": 62,
+        "goalkeeping": 7,
+        "reflexes": 7
+      }
+    },
+    "s4-fc26-264309": {
+      "name": "居莱尔",
+      "overall": 85,
+      "grade": "B",
+      "role": "RM",
+      "secondaryRole": "AM",
+      "nationality": "土耳其",
+      "club": "皇家马德里",
+      "heightCm": 175,
+      "attributes": {
+        "passing": 77,
+        "firstTouch": 77,
+        "dribbling": 77,
+        "crossing": 78,
+        "finishing": 70,
+        "longShots": 75,
+        "heading": 35,
+        "setPieces": 72,
+        "tackling": 46,
+        "marking": 46,
+        "positioning": 48,
+        "vision": 76,
+        "decisions": 70,
+        "composure": 71,
+        "offBall": 73,
+        "discipline": 66,
+        "pace": 64,
+        "acceleration": 67,
+        "strength": 37,
+        "stamina": 64,
+        "agility": 75,
+        "jumping": 45,
+        "workRate": 64,
+        "aggression": 36,
+        "goalkeeping": 2,
+        "reflexes": 2
+      }
+    },
+    "legend-messi": {
+      "name": "梅西",
+      "overall": 96,
+      "grade": "S",
+      "role": "RW",
+      "secondaryRole": "RM",
+      "nationality": "阿根廷",
+      "club": "巴塞罗那",
+      "heightCm": 170,
+      "attributes": {
+        "passing": 92,
+        "firstTouch": 99,
+        "dribbling": 97,
+        "crossing": 94,
+        "finishing": 91,
+        "longShots": 94,
+        "heading": 67,
+        "setPieces": 93,
+        "tackling": 37,
+        "marking": 27,
+        "positioning": 37,
+        "vision": 87,
+        "decisions": 87,
+        "composure": 99,
+        "offBall": 93,
+        "discipline": 85,
+        "pace": 85,
+        "acceleration": 91,
+        "strength": 75,
+        "stamina": 77,
+        "agility": 91,
+        "jumping": 77,
+        "workRate": 77,
+        "aggression": 51,
+        "goalkeeping": 15,
+        "reflexes": 15
+      }
+    },
+    "legend-cristiano-ronaldo": {
+      "name": "C罗",
+      "overall": 94,
+      "grade": "S",
+      "role": "ST",
+      "secondaryRole": "LW",
+      "nationality": "葡萄牙",
+      "club": "皇家马德里",
+      "heightCm": 187,
+      "attributes": {
+        "passing": 80,
+        "firstTouch": 91,
+        "dribbling": 86,
+        "crossing": 82,
+        "finishing": 94,
+        "longShots": 90,
+        "heading": 93,
+        "setPieces": 90,
+        "tackling": 34,
+        "marking": 30,
+        "positioning": 33,
+        "vision": 84,
+        "decisions": 88,
+        "composure": 97,
+        "offBall": 95,
+        "discipline": 78,
+        "pace": 82,
+        "acceleration": 79,
+        "strength": 86,
+        "stamina": 83,
+        "agility": 82,
+        "jumping": 99,
+        "workRate": 83,
+        "aggression": 68,
+        "goalkeeping": 14,
+        "reflexes": 14
+      }
+    },
+    "legend-ronaldo-nazario": {
+      "name": "大罗",
+      "overall": 96,
+      "grade": "S",
+      "role": "ST",
+      "secondaryRole": "LW",
+      "nationality": "巴西",
+      "club": "皇家马德里",
+      "heightCm": 183,
+      "attributes": {
+        "passing": 79,
+        "firstTouch": 91,
+        "dribbling": 95,
+        "crossing": 68,
+        "finishing": 99,
+        "longShots": 89,
+        "heading": 85,
+        "setPieces": 77,
+        "tackling": 37,
+        "marking": 35,
+        "positioning": 56,
+        "vision": 76,
+        "decisions": 89,
+        "composure": 98,
+        "offBall": 99,
+        "discipline": 72,
+        "pace": 98,
+        "acceleration": 99,
+        "strength": 89,
+        "stamina": 81,
+        "agility": 86,
+        "jumping": 82,
+        "workRate": 79,
+        "aggression": 70,
+        "goalkeeping": 10,
+        "reflexes": 10
+      }
+    },
+    "s4-fc26-244257": {
+      "name": "布尔卡特",
+      "overall": 84,
+      "grade": "B",
+      "role": "ST",
+      "secondaryRole": "AM",
+      "nationality": "德国",
+      "club": "法兰克福",
+      "heightCm": 181,
+      "attributes": {
+        "passing": 68,
+        "firstTouch": 82,
+        "dribbling": 82,
+        "crossing": 72,
+        "finishing": 87,
+        "longShots": 77,
+        "heading": 75,
+        "setPieces": 62,
+        "tackling": 37,
+        "marking": 46,
+        "positioning": 45,
+        "vision": 63,
+        "decisions": 84,
+        "composure": 77,
+        "offBall": 86,
+        "discipline": 65,
+        "pace": 84,
+        "acceleration": 83,
+        "strength": 77,
+        "stamina": 79,
+        "agility": 77,
+        "jumping": 80,
+        "workRate": 79,
+        "aggression": 73,
+        "goalkeeping": 9,
+        "reflexes": 9
+      }
+    },
+    "s4-fc26-234824": {
+      "name": "维萨",
+      "overall": 84,
+      "grade": "B",
+      "role": "ST",
+      "secondaryRole": "AM",
+      "nationality": "刚果民主共和国",
+      "club": "纽卡斯尔联",
+      "heightCm": 176,
+      "attributes": {
+        "passing": 70,
+        "firstTouch": 81,
+        "dribbling": 81,
+        "crossing": 73,
+        "finishing": 86,
+        "longShots": 77,
+        "heading": 82,
+        "setPieces": 64,
+        "tackling": 23,
+        "marking": 26,
+        "positioning": 29,
+        "vision": 73,
+        "decisions": 85,
+        "composure": 75,
+        "offBall": 86,
+        "discipline": 66,
+        "pace": 86,
+        "acceleration": 84,
+        "strength": 69,
+        "stamina": 79,
+        "agility": 84,
+        "jumping": 87,
+        "workRate": 79,
+        "aggression": 68,
+        "goalkeeping": 9,
+        "reflexes": 9
+      }
+    },
+    "s4-fc26-165153": {
+      "name": "本泽马",
+      "overall": 87,
+      "grade": "A",
+      "role": "ST",
+      "secondaryRole": "AM",
+      "nationality": "法国",
+      "club": "皇家马德里",
+      "heightCm": 185,
+      "attributes": {
+        "passing": 82,
+        "firstTouch": 87,
+        "dribbling": 84,
+        "crossing": 87,
+        "finishing": 87,
+        "longShots": 81,
+        "heading": 87,
+        "setPieces": 75,
+        "tackling": 22,
+        "marking": 44,
+        "positioning": 42,
+        "vision": 76,
+        "decisions": 85,
+        "composure": 85,
+        "offBall": 89,
+        "discipline": 71,
+        "pace": 76,
+        "acceleration": 75,
+        "strength": 82,
+        "stamina": 79,
+        "agility": 78,
+        "jumping": 84,
+        "workRate": 79,
+        "aggression": 64,
+        "goalkeeping": 9,
+        "reflexes": 9
+      }
+    },
+    "s4-retired-carles-puyol": {
+      "name": "普约尔",
+      "overall": 83,
+      "grade": "B",
+      "role": "CB",
+      "secondaryRole": "DM",
+      "nationality": "西班牙",
+      "club": "巴塞罗那",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 61,
+        "firstTouch": 60,
+        "dribbling": 41,
+        "crossing": 36,
+        "finishing": 32,
+        "longShots": 38,
+        "heading": 89,
+        "setPieces": 40,
+        "tackling": 96,
+        "marking": 96,
+        "positioning": 95,
+        "vision": 55,
+        "decisions": 80,
+        "composure": 76,
+        "offBall": 41,
+        "discipline": 70,
+        "pace": 66,
+        "acceleration": 63,
+        "strength": 90,
+        "stamina": 76,
+        "agility": 59,
+        "jumping": 84,
+        "workRate": 86,
+        "aggression": 81,
+        "goalkeeping": 7,
+        "reflexes": 7
+      }
+    },
+    "s4-fc26-239301": {
+      "name": "利马",
+      "overall": 80,
+      "grade": "B",
+      "role": "CB",
+      "secondaryRole": "DM",
+      "nationality": "阿根廷",
+      "club": "曼联",
+      "heightCm": 178,
+      "attributes": {
+        "passing": 76,
+        "firstTouch": 76,
+        "dribbling": 74,
+        "crossing": 75,
+        "finishing": 51,
+        "longShots": 63,
+        "heading": 74,
+        "setPieces": 60,
+        "tackling": 82,
+        "marking": 80,
+        "positioning": 80,
+        "vision": 71,
+        "decisions": 79,
+        "composure": 78,
+        "offBall": 61,
+        "discipline": 56,
+        "pace": 66,
+        "acceleration": 69,
+        "strength": 76,
+        "stamina": 72,
+        "agility": 68,
+        "jumping": 87,
+        "workRate": 72,
+        "aggression": 91,
+        "goalkeeping": 7,
+        "reflexes": 7
+      }
+    },
+    "s4-fc26-260592": {
+      "name": "舍什科",
+      "overall": 81,
+      "grade": "B",
+      "role": "ST",
+      "secondaryRole": "AM",
+      "nationality": "斯洛文尼亚",
+      "club": "曼联",
+      "heightCm": 195,
+      "attributes": {
+        "passing": 67,
+        "firstTouch": 82,
+        "dribbling": 79,
+        "crossing": 64,
+        "finishing": 82,
+        "longShots": 76,
+        "heading": 83,
+        "setPieces": 64,
+        "tackling": 40,
+        "marking": 46,
+        "positioning": 43,
+        "vision": 57,
+        "decisions": 74,
+        "composure": 78,
+        "offBall": 82,
+        "discipline": 65,
+        "pace": 84,
+        "acceleration": 80,
+        "strength": 84,
+        "stamina": 85,
+        "agility": 76,
+        "jumping": 94,
+        "workRate": 85,
+        "aggression": 63,
+        "goalkeeping": 9,
+        "reflexes": 9
+      }
+    },
+    "legend-modric": {
+      "name": "莫德里奇",
+      "overall": 91,
+      "grade": "S",
+      "role": "AM",
+      "secondaryRole": "DM",
+      "nationality": "克罗地亚",
+      "club": "皇家马德里",
+      "heightCm": 172,
+      "attributes": {
+        "passing": 91,
+        "firstTouch": 93,
+        "dribbling": 91,
+        "crossing": 93,
+        "finishing": 73,
+        "longShots": 85,
+        "heading": 60,
+        "setPieces": 87,
+        "tackling": 76,
+        "marking": 75,
+        "positioning": 78,
+        "vision": 91,
+        "decisions": 84,
+        "composure": 96,
+        "offBall": 81,
+        "discipline": 77,
+        "pace": 73,
+        "acceleration": 77,
+        "strength": 63,
+        "stamina": 74,
+        "agility": 94,
+        "jumping": 71,
+        "workRate": 74,
+        "aggression": 65,
+        "goalkeeping": 13,
+        "reflexes": 13
+      }
+    }
+  },
+  "traits": {
+    "aerial-beacon": {
+      "name": "打点激素",
+      "summary": "身高+20cm,获得ST为主位置，头球能力提升",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "heading": 5,
+            "jumping": 5,
+            "pace": -2
+          }
+        }
+      ]
+    },
+    "touchline-flywheel": {
+      "name": "避雷针",
+      "summary": "该球员在场上时，全队在雷暴天气不会被劈",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": 3,
+            "crossing": 4
+          },
+          "when": {
+            "roleIsWide": true
+          }
+        }
+      ]
+    },
+    "shadow-marker": {
+      "name": "都是哥们",
+      "summary": "该球员在场上时，自动和周围球员获得默契线",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "marking": 4,
+            "tackling": 4,
+            "pace": -2
+          }
+        }
+      ]
+    },
+    "set-piece-toolbox": {
+      "name": "因凡蒂诺救救我",
+      "summary": "该球员在场上时，如果遇到黑哨事件，视为11名阿根廷人",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "setPieces": 7
+          }
+        }
+      ]
+    },
+    "rain-boots": {
+      "name": "反向晴天娃娃",
+      "summary": "该球员在雨天、雷暴、雪天比赛时，综合能力值提升10%",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "agility": 4
+          },
+          "when": {
+            "precipitationGte": 60
+          }
+        }
+      ]
+    },
+    "sweeper-keeper": {
+      "name": "本质大心脏",
+      "summary": "该球员在比赛的75分钟后，综合能力值提升10%",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "passing": 5,
+            "reflexes": -2
+          }
+        }
+      ]
+    },
+    "lone-finisher": {
+      "name": "变色龙",
+      "summary": "该球员可以适配任何国家队或者俱乐部羁绊",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "finishing": 7,
+            "composure": 7,
+            "passing": -3
+          }
+        }
+      ]
+    },
+    "big-stage": {
+      "name": "跳水王子",
+      "summary": "该球员造点球的概率提升，但是获得黄牌的概率也提升",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "decisions": 6,
+            "composure": 6
+          },
+          "when": {
+            "minuteGte": 70,
+            "scoreState": [
+              "tied",
+              "trailing"
+            ]
+          }
+        }
+      ]
+    },
+    "opening-sprint": {
+      "name": "铁血蓝白",
+      "summary": "该球员所在球队使用伐木战术时，综合能力提升5%",
+      "eligibleRoleGroups": [
+        "ANY",
+        "GK",
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": 7,
+            "offBall": 7
+          },
+          "when": {
+            "minuteLte": 20
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": -3
+          },
+          "when": {
+            "minuteGte": 65
+          }
+        }
+      ]
+    },
+    "chameleon-role": {
+      "name": "变色龙2",
+      "summary": "出任任何位置时，位置适配最低为70%。",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "position",
+          "minimumFit": 0.7
+        }
+      ]
+    },
+    "stoppage-time-expert": {
+      "name": "996",
+      "summary": "该球员的体力值固定为90，不会随着比赛消耗变化。",
+      "eligibleRoleGroups": [
+        "ANY",
+        "GK",
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "composure": 8
+          },
+          "when": {
+            "minuteGte": 85
+          }
+        }
+      ]
+    },
+    "double-edged-core": {
+      "name": "借过一下",
+      "summary": "该球员的边路相关属性获得提升，解锁LW/RW位置的熟练度",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "vision": 6,
+            "finishing": 4
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "decisions": -5
+          },
+          "when": {
+            "fitnessLte": 40
+          }
+        }
+      ]
+    },
+    "utility-player": {
+      "name": "全能战士",
+      "summary": "除门将外，出任任何陌生位置都不受到减益，都视为具有熟练度",
+      "eligibleRoleGroups": [
+        "DEF",
+        "MID",
+        "ATT"
+      ],
+      "rules": [
+        {
+          "hook": "position",
+          "ignoreOutOfPositionPenalty": true,
+          "eligibleRoleGroups": [
+            "DEF",
+            "MID",
+            "ATT"
+          ]
+        }
+      ]
+    },
+    "muddy-knees": {
+      "name": "一夫当关",
+      "summary": "该球员在比赛中一定会扑出对方主罚的第一粒点球",
+      "eligibleRoleGroups": [
+        "GK"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "tackling": 5
+          },
+          "when": {
+            "precipitationGte": 35
+          }
+        }
+      ]
+    },
+    "pace-budget": {
+      "name": "普拉蒂尼是我爹",
+      "summary": "该球员不会被红牌罚下",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": -2
+          },
+          "when": {
+            "minuteLte": 30
+          }
+        },
+        {
+          "hook": "attribute",
+          "add": {
+            "pace": 4,
+            "stamina": 4
+          },
+          "when": {
+            "minuteGte": 70
+          }
+        }
+      ]
+    }
+  }
+}

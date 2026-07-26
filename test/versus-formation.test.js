@@ -1,7 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { REAL_PLAYER_POOLS } from "../versus/player-pool.js";
-import { analyzeElevenFormation, defaultElevenPositions, formationStructureProfile } from "../versus/rules.js";
+import { analyzeElevenFormation, defaultElevenPositions, formationStructureProfile, inferElevenBoardRoles } from "../versus/rules.js";
+
+test("position recognition uses balanced pitch zones and wide channels", () => {
+  const roles = inferElevenBoardRoles([
+    { id:"gk", position:{ x:50, y:90 } },
+    { id:"lb", position:{ x:20, y:72 } },
+    { id:"cb", position:{ x:50, y:72 } },
+    { id:"rb", position:{ x:80, y:72 } },
+    { id:"lwb", position:{ x:20, y:60 } },
+    { id:"dm", position:{ x:50, y:56 } },
+    { id:"lm", position:{ x:25, y:44 } },
+    { id:"am", position:{ x:50, y:35 } },
+    { id:"lw", position:{ x:25, y:20 } },
+    { id:"st", position:{ x:50, y:20 } },
+    { id:"rw", position:{ x:75, y:20 } },
+  ]);
+  assert.deepEqual(roles, {
+    gk:"GK", lb:"LB", cb:"CB", rb:"RB", lwb:"LWB",
+    dm:"DM", lm:"LM", am:"AM", lw:"LW", st:"ST", rw:"RW",
+  });
+});
 
 test("formation recognition distinguishes 4-5-1 from 4-2-3-1", () => {
   const players = [
@@ -78,4 +98,37 @@ test("layered midfield improves buildup but exposes uncovered wide areas", () =>
   assert.equal(coveredDiamond.midfieldStructure.wideCoverage, 1);
   assert.ok(coveredDiamond.multipliers.defense > diamond.multipliers.defense);
   assert.ok(coveredDiamond.multipliers.transitionRisk < diamond.multipliers.transitionRisk);
+});
+
+test("line heights and distances distinguish short passing, direct play, deep blocks and high pressing", () => {
+  const players = [
+    ...REAL_PLAYER_POOLS.GK.slice(0, 1),
+    ...REAL_PLAYER_POOLS.DEF.slice(0, 4),
+    ...REAL_PLAYER_POOLS.MID.slice(0, 3),
+    ...REAL_PLAYER_POOLS.ATT.slice(0, 3),
+  ];
+  const compactPositions = defaultElevenPositions(players);
+  players.slice(1, 5).forEach((player) => { compactPositions[player.id].y = 65; });
+  players.slice(5, 8).forEach((player) => { compactPositions[player.id].y = 47; });
+  players.slice(8).forEach((player) => { compactPositions[player.id].y = 27; });
+  const disconnectedPositions = structuredClone(compactPositions);
+  players.slice(1, 5).forEach((player) => { disconnectedPositions[player.id].y = 82; });
+  players.slice(5, 8).forEach((player) => { disconnectedPositions[player.id].y = 50; });
+  players.slice(8).forEach((player) => { disconnectedPositions[player.id].y = 10; });
+  const compact = formationStructureProfile(players, compactPositions);
+  const disconnected = formationStructureProfile(players, disconnectedPositions);
+  assert.equal(compact.name, disconnected.name);
+  assert.ok(compact.geometry.styleFits.possession > disconnected.geometry.styleFits.possession);
+  assert.ok(disconnected.geometry.styleFits.longBall > compact.geometry.styleFits.longBall);
+  assert.ok(disconnected.geometry.disconnectionRisk > compact.geometry.disconnectionRisk);
+
+  const deepPositions = structuredClone(compactPositions);
+  players.slice(1, 5).forEach((player) => { deepPositions[player.id].y = 80; });
+  const highPositions = structuredClone(compactPositions);
+  players.slice(1, 5).forEach((player) => { highPositions[player.id].y = 62; });
+  const deep = formationStructureProfile(players, deepPositions);
+  const high = formationStructureProfile(players, highPositions);
+  assert.ok(deep.geometry.boxProtection > high.geometry.boxProtection);
+  assert.ok(high.geometry.pressingCohesion > deep.geometry.pressingCohesion);
+  assert.ok(high.geometry.highLineExposure > deep.geometry.highLineExposure);
 });

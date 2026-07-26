@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>S4 新版球员卡 Demo</title>
+  <style>
+    :root {
+      color-scheme:dark;
+      --bg:#060d0b;
+      --panel:#0c1714;
+      --line:#263732;
+      --ink:#f2f5ef;
+      --muted:#84928c;
+      --lime:#d6ff59;
+      --cyan:#68d4c8;
+      --purple:#d9ccff;
+      --purple-deep:#74649f;
+      --gold:#f5cc55;
+      --gold-deep:#7a5b12;
+      --red:#b20f21;
+      font-family:Inter,"Microsoft YaHei",system-ui,sans-serif;
+    }
+    * { box-sizing:border-box; }
+    body {
+      min-width:320px;
+      margin:0;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 72% -10%,rgba(72,112,91,.28),transparent 34%),
+        linear-gradient(180deg,#08110e,var(--bg) 34%);
+    }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    .demo-shell { width:min(1440px,calc(100% - 40px)); margin:auto; padding:36px 0 70px; }
+    .demo-head { display:flex; justify-content:space-between; align-items:end; gap:28px; margin-bottom:25px; }
+    .eyebrow { margin:0 0 7px; color:var(--cyan); font-size:10px; font-weight:900; letter-spacing:.2em; }
+    h1 { margin:0; font-size:clamp(32px,5vw,62px); line-height:.98; }
+    .demo-head>p { max-width:520px; margin:0; color:var(--muted); font-size:13px; line-height:1.7; }
+    .demo-tag { display:inline-flex; margin-top:14px; padding:6px 9px; border:1px solid rgba(214,255,89,.45); color:var(--lime); background:rgba(214,255,89,.06); font-size:10px; font-weight:900; }
+    .concept-tabs { margin-bottom:12px; padding:7px; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; border:1px solid var(--line); background:#07110e; }
+    .concept-tabs button { min-height:52px; padding:8px 10px; border:1px solid transparent; color:var(--muted); background:transparent; text-align:left; }
+    .concept-tabs button b,.concept-tabs button small { display:block; }
+    .concept-tabs button b { color:var(--ink); font-size:12px; }
+    .concept-tabs button small { margin-top:3px; font-size:9px; }
+    .concept-tabs button.active { border-color:var(--lime); background:rgba(214,255,89,.07); }
+    .concept-tabs button.active b { color:var(--lime); }
+    [data-concept-panel][hidden] { display:none; }
+    .inventory { border:1px solid var(--line); background:rgba(8,19,16,.88); box-shadow:0 30px 80px rgba(0,0,0,.34); }
+    .inventory-head { min-height:78px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:18px; border-bottom:1px solid var(--line); background:#0c1915; }
+    .inventory-head small,.inventory-head b { display:block; }
+    .inventory-head small { color:var(--muted); font-size:10px; }
+    .inventory-head b { margin-top:5px; font-size:20px; }
+    .inventory-count { text-align:right; }
+    .inventory-count strong { color:var(--lime); font-size:24px; }
+    .toolbar { padding:12px; display:grid; grid-template-columns:minmax(220px,1fr) repeat(2,minmax(130px,180px)) auto; gap:8px; border-bottom:1px solid var(--line); }
+    .toolbar input,.toolbar select { min-height:42px; padding:0 12px; border:1px solid var(--line); outline:0; color:var(--ink); background:#07110e; }
+    .toolbar input:focus,.toolbar select:focus { border-color:var(--cyan); }
+    .density { display:flex; border:1px solid var(--line); }
+    .density button { min-width:44px; border:0; color:var(--muted); background:#07110e; }
+    .density button.active { color:#07110e; background:var(--lime); }
+    .legend { padding:12px 16px; display:flex; gap:18px; flex-wrap:wrap; border-bottom:1px solid var(--line); color:var(--muted); font-size:11px; }
+    .legend span { display:flex; align-items:center; gap:7px; }
+    .legend i { width:16px; height:10px; display:block; border-radius:2px; background:#1a2823; }
+    .legend .purple { background:var(--purple); }
+    .legend .gold { background:var(--gold); }
+    .legend .red { background:var(--red); box-shadow:inset 0 0 0 1px var(--gold); }
+    .card-grid { --card-min:210px; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(var(--card-min),1fr)); gap:12px; }
+    .card-grid.compact { --card-min:178px; gap:8px; }
+    .player-card {
+      --accent:#73958a;
+      --metal-bright:color-mix(in srgb,var(--accent) 78%,white);
+      --metal-dark:color-mix(in srgb,var(--accent) 38%,#020605);
+      position:relative;
+      min-width:0;
+      aspect-ratio:4/5;
+      min-height:270px;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      border:2px solid transparent;
+      color:var(--ink);
+      background:
+        linear-gradient(145deg,rgba(255,255,255,.055),transparent 32%) padding-box,
+        linear-gradient(160deg,#17241f 0,#0b1512 64%,#101c18 100%) padding-box,
+        linear-gradient(132deg,var(--metal-bright) 0 8%,var(--metal-dark) 20%,var(--accent) 43%,#f5f0da 51%,var(--metal-dark) 58%,var(--accent) 82%,var(--metal-bright)) border-box;
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.75),
+        inset 0 1px 0 rgba(255,255,255,.18),
+        0 12px 25px rgba(0,0,0,.3);
+      text-align:left;
+      transition:.16s ease;
+    }
+    .player-card:hover { transform:translateY(-4px); box-shadow:inset 0 0 0 1px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.25),0 18px 35px rgba(0,0,0,.42),0 0 18px color-mix(in srgb,var(--accent) 15%,transparent); }
+    .player-card::before {
+      content:"";
+      position:absolute;
+      width:190px;
+      height:190px;
+      right:-92px;
+      top:40px;
+      border:1px solid color-mix(in srgb,var(--accent) 22%,transparent);
+      border-radius:50%;
+      box-shadow:0 0 0 24px color-mix(in srgb,var(--accent) 4%,transparent),0 0 0 50px color-mix(in srgb,var(--accent) 3%,transparent);
+    }
+    .player-card.grade-s { --accent:#e9c55e; }
+    .player-card.grade-a { --accent:#62d2c8; }
+    .player-card.grade-b { --accent:#b7a0aa; }
+    .player-card.grade-c { --accent:#85bd70; }
+    .card-head { position:relative; z-index:2; display:flex; align-items:flex-start; gap:9px; }
+    .overall { font-size:40px; font-weight:950; line-height:.9; letter-spacing:-.06em; font-variant-numeric:tabular-nums; text-shadow:0 1px 0 #000,0 0 10px rgba(255,255,255,.08); }
+    .identity { display:grid; gap:3px; }
+    .position { padding:3px 6px; color:#07110e; background:var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 0 rgba(0,0,0,.38); font-size:16px; font-weight:950; line-height:1; }
+    .upgrade {
+      position:absolute;
+      z-index:4;
+      right:0;
+      top:0;
+      min-width:58px;
+      height:50px;
+      padding:7px 7px 0 14px;
+      display:grid;
+      place-items:start end;
+      clip-path:polygon(22% 0,100% 0,100% 100%,0 0);
+      font-size:18px;
+      font-weight:950;
+      line-height:1;
+      text-shadow:0 1px 0 rgba(0,0,0,.24);
+      box-shadow:inset -2px 2px 0 rgba(255,255,255,.34),inset 0 -2px 0 rgba(0,0,0,.24);
+    }
+    .upgrade-mid { color:#302548; background:linear-gradient(180deg,#f7f3ff 0,#d9ccff 35%,#a995d0 72%,#796899 100%); }
+    .upgrade-high { color:#302000; background:linear-gradient(180deg,#fff4b5 0,#f5cc55 38%,#b8871c 74%,#7d5a0d 100%); }
+    .upgrade-max {
+      min-width:68px;
+      height:59px;
+      padding-top:8px;
+      color:var(--gold);
+      background:linear-gradient(180deg,#ef4052 0,#c71125 43%,#8c0715 76%,#620007 100%);
+      text-shadow:0 1px 0 #4b0007,0 0 9px rgba(255,213,89,.26);
+    }
+    .portrait {
+      position:relative;
+      flex:1;
+      min-height:92px;
+      display:grid;
+      place-items:center;
+    }
+    .portrait span {
+      position:relative;
+      width:92px;
+      height:92px;
+      display:grid;
+      place-items:center;
+      border:2px solid transparent;
+      border-radius:50%;
+      color:var(--metal-bright);
+      background:
+        radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--accent) 14%,#101b17),#07100d 72%) padding-box,
+        conic-gradient(from 24deg,var(--metal-dark),var(--metal-bright),var(--accent),#2a302c,var(--metal-bright),var(--metal-dark)) border-box;
+      box-shadow:inset 0 0 20px rgba(0,0,0,.56),0 0 0 1px rgba(0,0,0,.72),0 0 18px color-mix(in srgb,var(--accent) 10%,transparent);
+      font-size:38px;
+      font-weight:950;
+      letter-spacing:-.03em;
+      text-shadow:0 2px 0 #000,0 0 14px color-mix(in srgb,var(--accent) 20%,transparent);
+    }
+    .portrait span::after { content:"球员评级"; position:absolute; left:50%; bottom:-17px; width:70px; transform:translateX(-50%); color:var(--muted); font-size:7px; font-weight:800; letter-spacing:.12em; text-align:center; text-shadow:none; }
+    .card-copy { position:relative; z-index:2; }
+    .card-copy h2 { margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:clamp(20px,2vw,28px); line-height:1.05; }
+    .card-copy p { margin:6px 0 0; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px; }
+    .card-foot { position:relative; z-index:2; margin-top:13px; padding-top:10px; display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end; border-top:1px solid rgba(255,255,255,.1); }
+    .card-foot small,.card-foot b { display:block; }
+    .card-foot small { margin-bottom:3px; color:var(--muted); font-size:8px; }
+    .card-foot b { font-size:11px; }
+    .card-foot>strong { max-width:96px; color:var(--accent); font-size:10px; text-align:right; line-height:1.35; }
+    .card-foot>strong:empty { display:none; }
+    .max-card {
+      --metal-bright:#ffe792;
+      --metal-dark:#63000a;
+      background:
+        linear-gradient(145deg,rgba(238,36,59,.18),transparent 31%) padding-box,
+        linear-gradient(160deg,#261519,#0e1110 66%) padding-box,
+        linear-gradient(132deg,#ffe98d 0 7%,#75000b 18%,#e12438 37%,#ffe78a 50%,#650008 59%,#c9182c 79%,#f5cc55) border-box;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,231,145,.26),0 14px 34px rgba(83,0,12,.32);
+    }
+    .compact .player-card { min-height:238px; padding:11px; }
+    .compact .overall { font-size:32px; }
+    .compact .portrait span { width:72px; height:72px; font-size:23px; }
+    .compact .card-copy h2 { font-size:20px; }
+    .compact .card-foot { margin-top:9px; }
+    .concept-intro { padding:16px 18px; display:flex; justify-content:space-between; align-items:end; gap:20px; border-bottom:1px solid var(--line); background:#091411; }
+    .concept-intro small { color:var(--cyan); font-size:9px; font-weight:900; letter-spacing:.15em; }
+    .concept-intro h2 { margin:4px 0 0; font-size:22px; }
+    .concept-intro p { max-width:540px; margin:0; color:var(--muted); font-size:11px; line-height:1.6; }
+    .sample-state { position:absolute; left:10px; top:10px; z-index:5; padding:4px 6px; color:#07110e; background:#b9c5bf; font-size:8px; font-weight:950; letter-spacing:.06em; }
+
+    /* 方案 B：横向球探档案 */
+    .dossier-grid { padding:16px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .dossier-card {
+      --accent:#68d4c8;
+      position:relative;
+      min-width:0;
+      min-height:205px;
+      padding:48px 16px 15px;
+      display:grid;
+      grid-template-columns:100px minmax(0,1fr) 82px;
+      gap:15px;
+      align-items:center;
+      overflow:hidden;
+      border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));
+      color:var(--ink);
+      background:linear-gradient(110deg,#13221d,#091310 72%);
+      text-align:left;
+    }
+    .dossier-card::after { content:"SCOUT FILE"; position:absolute; right:10px; bottom:5px; color:rgba(255,255,255,.035); font-size:28px; font-weight:950; letter-spacing:.08em; }
+    .dossier-photo { width:90px; height:112px; display:grid; place-items:center; border:1px solid color-mix(in srgb,var(--accent) 40%,transparent); color:var(--accent); background:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 7px,transparent 7px 14px); font-size:24px; font-weight:950; }
+    .dossier-main { min-width:0; }
+    .dossier-main>small { color:var(--accent); font-size:10px; font-weight:950; }
+    .dossier-main h3 { margin:6px 0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:23px; }
+    .dossier-main>p { margin:0; color:var(--muted); font-size:10px; }
+    .dossier-data { margin-top:17px; display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid rgba(255,255,255,.09); }
+    .dossier-data span { padding:8px 5px 0; border-right:1px solid rgba(255,255,255,.07); color:var(--muted); font-size:8px; }
+    .dossier-data span:first-child { padding-left:0; }
+    .dossier-data b { display:block; margin-top:3px; color:var(--ink); font-size:10px; }
+    .dossier-score { align-self:stretch; display:grid; place-content:center; border-left:1px solid rgba(255,255,255,.1); text-align:center; }
+    .dossier-score strong { color:var(--accent); font-size:45px; line-height:1; }
+    .dossier-score small { margin-top:5px; color:var(--muted); font-size:8px; }
+    .dossier-upgrade { position:absolute; right:0; top:0; min-width:74px; padding:8px 10px; color:#31234e; background:var(--purple); font-weight:950; text-align:center; }
+    .dossier-upgrade.gold { color:#382700; background:var(--gold); }
+    .dossier-upgrade.max { color:var(--gold); background:var(--red); }
+    .dossier-card.state-base .sample-state { background:#a9b6b0; }
+    .dossier-card.state-mid { --accent:#cbbcff; }
+    .dossier-card.state-high { --accent:#f5cc55; }
+    .dossier-card.state-max { --accent:#ff4054; background:linear-gradient(110deg,#31151a,#0d1110 72%); }
+
+    /* 方案 C：赛事海报 */
+    .poster-grid { padding:18px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; background:radial-gradient(circle at 50% 0,rgba(245,204,85,.06),transparent 45%); }
+    .poster-card {
+      --accent:#68d4c8;
+      position:relative;
+      min-width:0;
+      min-height:340px;
+      padding:14px;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      overflow:hidden;
+      border:1px solid color-mix(in srgb,var(--accent) 65%,#242f2b);
+      color:var(--ink);
+      background:linear-gradient(180deg,#172721,#0a1210);
+      text-align:left;
+    }
+    .poster-card::before { content:attr(data-overall); position:absolute; left:-10px; top:34px; color:color-mix(in srgb,var(--accent) 10%,transparent); font-size:150px; font-weight:950; letter-spacing:-.12em; line-height:1; }
+    .poster-top { position:relative; z-index:2; display:flex; justify-content:space-between; align-items:start; }
+    .poster-top span { color:var(--accent); font-size:11px; font-weight:950; letter-spacing:.08em; }
+    .poster-top strong { font-size:32px; line-height:1; }
+    .poster-hero { position:relative; z-index:2; display:grid; place-items:center; }
+    .poster-hero span { width:112px; height:152px; display:grid; place-items:center; border-bottom:4px solid var(--accent); color:var(--accent); background:linear-gradient(180deg,transparent,rgba(255,255,255,.04)); font-size:32px; font-weight:950; }
+    .poster-copy { position:relative; z-index:2; padding:13px; color:#07110e; background:var(--accent); }
+    .poster-copy h3 { margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:20px; }
+    .poster-copy p { margin:5px 0 0; opacity:.67; font-size:9px; }
+    .poster-upgrade { position:absolute; z-index:4; right:12px; top:48px; width:54px; height:54px; display:grid; place-items:center; border:1px solid #fff; border-radius:50%; color:#392b00; background:var(--gold); box-shadow:0 0 0 5px rgba(0,0,0,.4); font-size:18px; font-weight:950; }
+    .poster-upgrade.purple { color:#342650; background:var(--purple); }
+    .poster-upgrade.max { color:var(--gold); border-color:var(--gold); background:var(--red); }
+    .poster-card.state-base { --accent:#9baca5; }
+    .poster-card.state-mid { --accent:#d9ccff; }
+    .poster-card.state-high { --accent:#f5cc55; }
+    .poster-card.state-max { --accent:#e22439; background:linear-gradient(180deg,#36161b,#0b1010); }
+    .poster-card.state-max .poster-copy { color:var(--gold); background:var(--red); }
+
+    /* 方案 D：高密度数据卡 */
+    .data-stack { padding:12px; display:grid; gap:6px; }
+    .data-card {
+      --accent:#68d4c8;
+      position:relative;
+      min-width:0;
+      min-height:82px;
+      padding:9px 10px 9px 12px;
+      display:grid;
+      grid-template-columns:54px 56px minmax(150px,1.6fr) minmax(120px,1fr) 78px 68px;
+      gap:10px;
+      align-items:center;
+      border:1px solid var(--line);
+      border-left:4px solid var(--accent);
+      color:var(--ink);
+      background:#0b1613;
+      text-align:left;
+    }
+    .data-card:hover { border-color:var(--accent); }
+    .data-card .sample-state { position:static; justify-self:start; padding:3px 5px; }
+    .data-rating { color:var(--accent); font-size:30px; font-weight:950; text-align:center; }
+    .data-name { min-width:0; }
+    .data-name b,.data-name small { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .data-name b { font-size:15px; }
+    .data-name small { margin-top:4px; color:var(--muted); font-size:9px; }
+    .data-position b,.data-position small { display:block; }
+    .data-position b { font-size:11px; }
+    .data-position small { margin-top:3px; color:var(--muted); font-size:8px; }
+    .data-grade { color:var(--muted); font-size:10px; text-align:center; }
+    .data-upgrade { min-width:58px; padding:8px 6px; color:#342650; background:var(--purple); font-size:15px; font-weight:950; text-align:center; }
+    .data-upgrade.base { color:var(--muted); background:#15211d; font-size:9px; }
+    .data-upgrade.gold { color:#382700; background:var(--gold); }
+    .data-upgrade.max { color:var(--gold); background:var(--red); }
+    .data-card.state-base { --accent:#87968f; }
+    .data-card.state-mid { --accent:#d9ccff; }
+    .data-card.state-high { --accent:#f5cc55; }
+    .data-card.state-max { --accent:#e22439; background:linear-gradient(90deg,rgba(178,15,33,.16),#0b1613 28%); }
+    .notes { margin-top:18px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    .note { padding:15px; border:1px solid var(--line); background:#0b1613; }
+    .note b { display:block; margin-bottom:5px; font-size:13px; }
+    .note p { margin:0; color:var(--muted); font-size:11px; line-height:1.6; }
+    @media(max-width:780px) {
+      .demo-shell { width:min(100% - 20px,1440px); padding-top:22px; }
+      .demo-head { display:grid; }
+      .toolbar { grid-template-columns:1fr 1fr; }
+      .toolbar input { grid-column:1/-1; }
+      .notes { grid-template-columns:1fr 1fr; }
+      .concept-tabs { grid-template-columns:1fr 1fr; }
+      .dossier-grid { grid-template-columns:1fr; }
+      .poster-grid { grid-template-columns:1fr 1fr; }
+      .data-card { grid-template-columns:44px 48px minmax(120px,1fr) 60px; }
+      .data-position,.data-grade { display:none; }
+    }
+    @media(max-width:480px) {
+      .toolbar { grid-template-columns:1fr; }
+      .toolbar input { grid-column:auto; }
+      .density { min-height:42px; }
+      .notes { grid-template-columns:1fr; }
+      .concept-tabs { grid-template-columns:1fr; }
+      .concept-intro { display:grid; }
+      .dossier-card { min-height:180px; padding:44px 10px 10px; grid-template-columns:72px minmax(0,1fr) 58px; gap:9px; }
+      .dossier-photo { width:66px; height:92px; font-size:18px; }
+      .dossier-main h3 { font-size:18px; }
+      .dossier-data span:nth-child(3) { display:none; }
+      .dossier-data { grid-template-columns:1fr 1fr; }
+      .dossier-score strong { font-size:34px; }
+      .poster-grid { padding:10px; gap:8px; }
+      .poster-card { min-height:275px; padding:9px; }
+      .poster-hero span { width:82px; height:112px; font-size:24px; }
+      .poster-copy { padding:9px; }
+      .poster-copy h3 { font-size:15px; }
+      .data-card { grid-template-columns:38px 42px minmax(100px,1fr) 52px; gap:6px; }
+      .data-card .sample-state { display:none; }
+      .data-rating { font-size:24px; }
+      .data-name b { font-size:12px; }
+      .data-upgrade { min-width:48px; font-size:12px; }
+      .card-grid { --card-min:150px; padding:10px; gap:8px; }
+      .player-card { min-height:230px; padding:10px; }
+      .overall { font-size:31px; }
+      .portrait span { width:68px; height:68px; font-size:21px; }
+      .card-copy h2 { font-size:18px; }
+      .upgrade { min-width:52px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="demo-shell">
+    <header class="demo-head">
+      <div>
+        <p class="eyebrow">S4 · BACKPACK PLAYER CARD SYSTEM</p>
+        <h1>新版球员卡视觉 Demo</h1>
+        <span class="demo-tag">仅视觉提案 · 暂未接入正式背包</span>
+      </div>
+      <p>这版优先解决大量球员卡共存时的识别效率：能力、位置和姓名形成第一阅读层，评级与归属退到第二层，强化等级始终固定在右上角。</p>
+    </header>
+
+    <nav class="concept-tabs" aria-label="球员卡设计方案">
+      <button type="button" class="active" data-concept="a"><b>方案 A · 藏品卡</b><small>纵向陈列 / 信息均衡</small></button>
+      <button type="button" data-concept="b"><b>方案 B · 球探档案</b><small>横向结构 / 信息更完整</small></button>
+      <button type="button" data-concept="c"><b>方案 C · 赛事海报</b><small>强视觉 / 强化成就感</small></button>
+      <button type="button" data-concept="d"><b>方案 D · 数据卡</b><small>超高密度 / 管理效率</small></button>
+    </nav>
+
+    <section class="inventory" data-concept-panel="a">
+      <header class="inventory-head">
+        <div><small>PLAYER CARD INVENTORY</small><b>我的球员卡</b></div>
+        <div class="inventory-count"><small>共持有</small><strong>128</strong> 张</div>
+      </header>
+      <div class="toolbar">
+        <input type="search" placeholder="搜索球员姓名、俱乐部、国家队…" aria-label="搜索球员卡" />
+        <select aria-label="位置筛选"><option>全部位置</option><option>前场</option><option>中场</option><option>后场</option><option>门将</option></select>
+        <select aria-label="强化筛选"><option>全部强化等级</option><option>未强化</option><option>+1 ～ +4</option><option>+5 ～ +7</option><option>+8</option></select>
+        <div class="density" aria-label="卡片密度"><button type="button" class="active" data-density="normal" title="标准视图">▦</button><button type="button" data-density="compact" title="紧凑视图">▦▦</button></div>
+      </div>
+      <div class="legend">
+        <span><i></i>未强化：无角标</span>
+        <span><i class="purple"></i>+1 ～ +4：淡紫色</span>
+        <span><i class="gold"></i>+5 ～ +7：金色</span>
+        <span><i class="red"></i>+8：大红底、金色数字</span>
+      </div>
+
+      <div class="card-grid" id="card-grid">
+        <button class="player-card grade-a" type="button">
+          <div class="card-head"><strong class="overall">85</strong><div class="identity"><b class="position">CAM</b></div></div>
+          <div class="portrait"><span>A</span></div>
+          <div class="card-copy"><h2>居莱尔</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>皇家马德里 / 土耳其</b></div><strong></strong></footer>
+        </button>
+
+        <button class="player-card grade-b" type="button">
+          <span class="upgrade upgrade-mid">+2</span>
+          <div class="card-head"><strong class="overall">82</strong><div class="identity"><b class="position">CM</b></div></div>
+          <div class="portrait"><span>B</span></div>
+          <div class="card-copy"><h2>麦卡利斯特</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>利物浦 / 阿根廷</b></div><strong></strong></footer>
+        </button>
+
+        <button class="player-card grade-a" type="button">
+          <span class="upgrade upgrade-mid">+4</span>
+          <div class="card-head"><strong class="overall">88</strong><div class="identity"><b class="position">CB</b></div></div>
+          <div class="portrait"><span>A</span></div>
+          <div class="card-copy"><h2>萨利巴</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>阿森纳 / 法国</b></div><strong></strong></footer>
+        </button>
+
+        <button class="player-card grade-s" type="button">
+          <span class="upgrade upgrade-high">+5</span>
+          <div class="card-head"><strong class="overall">91</strong><div class="identity"><b class="position">ST</b></div></div>
+          <div class="portrait"><span>S</span></div>
+          <div class="card-copy"><h2>哈兰德</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>曼彻斯特城 / 挪威</b></div><strong>空中霸主</strong></footer>
+        </button>
+
+        <button class="player-card grade-a" type="button">
+          <span class="upgrade upgrade-high">+6</span>
+          <div class="card-head"><strong class="overall">89</strong><div class="identity"><b class="position">CM</b></div></div>
+          <div class="portrait"><span>A</span></div>
+          <div class="card-copy"><h2>贝林厄姆</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>皇家马德里 / 英格兰</b></div><strong>中场发动机</strong></footer>
+        </button>
+
+        <button class="player-card grade-s" type="button">
+          <span class="upgrade upgrade-high">+7</span>
+          <div class="card-head"><strong class="overall">92</strong><div class="identity"><b class="position">RW</b></div></div>
+          <div class="portrait"><span>S</span></div>
+          <div class="card-copy"><h2>梅西</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>迈阿密国际 / 阿根廷</b></div><strong>小快灵</strong></footer>
+        </button>
+
+        <button class="player-card grade-s max-card" type="button">
+          <span class="upgrade upgrade-max">+8</span>
+          <div class="card-head"><strong class="overall">94</strong><div class="identity"><b class="position">ST</b></div></div>
+          <div class="portrait"><span>S</span></div>
+          <div class="card-copy"><h2>克里斯蒂亚诺·罗纳尔多</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>利雅得胜利 / 葡萄牙</b></div><strong>禁区之王<br>永动机</strong></footer>
+        </button>
+
+        <button class="player-card grade-c" type="button">
+          <span class="upgrade upgrade-mid">+1</span>
+          <div class="card-head"><strong class="overall">76</strong><div class="identity"><b class="position">GK</b></div></div>
+          <div class="portrait"><span>C</span></div>
+          <div class="card-copy"><h2>特拉福德</h2></div>
+          <footer class="card-foot"><div><small>俱乐部 / 国家队</small><b>曼彻斯特城 / 英格兰</b></div><strong></strong></footer>
+        </button>
+      </div>
+    </section>
+
+    <section class="inventory" data-concept-panel="b" hidden>
+      <div class="concept-intro">
+        <div><small>CONCEPT B · SCOUT DOSSIER</small><h2>横向球探档案</h2></div>
+        <p>把姓名与完整身份信息放在中心，能力值单独占据右侧评分栏。适合桌面端查看球员详情，也方便未来加入身高、惯用脚和特性摘要。</p>
+      </div>
+      <div class="dossier-grid">
+        <button class="dossier-card state-base" type="button">
+          <span class="sample-state">未强化</span><div class="dossier-photo">居莱</div>
+          <div class="dossier-main"><small>CAM · 评级 A</small><h3>居莱尔</h3><p>皇家马德里 · 土耳其</p><div class="dossier-data"><span>副位置<b>RW</b></span><span>身高<b>175cm</b></span><span>归属<b>所有权</b></span></div></div>
+          <div class="dossier-score"><strong>85</strong><small>能力值</small></div>
+        </button>
+        <button class="dossier-card state-mid" type="button">
+          <span class="sample-state">中强化</span><span class="dossier-upgrade">+3</span><div class="dossier-photo">萨利</div>
+          <div class="dossier-main"><small>CB · 评级 A</small><h3>萨利巴</h3><p>阿森纳 · 法国</p><div class="dossier-data"><span>副位置<b>RB</b></span><span>身高<b>192cm</b></span><span>归属<b>所有权</b></span></div></div>
+          <div class="dossier-score"><strong>88</strong><small>能力值</small></div>
+        </button>
+        <button class="dossier-card state-high" type="button">
+          <span class="sample-state">高强化</span><span class="dossier-upgrade gold">+6</span><div class="dossier-photo">哈兰</div>
+          <div class="dossier-main"><small>ST · 评级 S</small><h3>哈兰德</h3><p>曼彻斯特城 · 挪威</p><div class="dossier-data"><span>副位置<b>—</b></span><span>特性<b>1 / 2</b></span><span>归属<b>所有权</b></span></div></div>
+          <div class="dossier-score"><strong>91</strong><small>能力值</small></div>
+        </button>
+        <button class="dossier-card state-max" type="button">
+          <span class="sample-state">满强化</span><span class="dossier-upgrade max">+8</span><div class="dossier-photo">梅西</div>
+          <div class="dossier-main"><small>RW · 评级 S · 传奇</small><h3>梅西</h3><p>传奇球员 · 阿根廷</p><div class="dossier-data"><span>副位置<b>CAM</b></span><span>特性<b>2 / 2</b></span><span>归属<b>传奇卡</b></span></div></div>
+          <div class="dossier-score"><strong>92</strong><small>能力值</small></div>
+        </button>
+      </div>
+    </section>
+
+    <section class="inventory" data-concept-panel="c" hidden>
+      <div class="concept-intro">
+        <div><small>CONCEPT C · MATCHDAY POSTER</small><h2>赛事海报卡</h2></div>
+        <p>更接近收藏品和球星海报，强化等级采用独立奖章。能力值作为巨型背景水印，+8 会明显改变整张卡的气氛，成就感最强。</p>
+      </div>
+      <div class="poster-grid">
+        <button class="poster-card state-base" data-overall="85" type="button">
+          <span class="sample-state">未强化</span><div class="poster-top"><span>CAM · A</span><strong>85</strong></div><div class="poster-hero"><span>居莱</span></div><div class="poster-copy"><h3>居莱尔</h3><p>皇家马德里 · 土耳其</p></div>
+        </button>
+        <button class="poster-card state-mid" data-overall="88" type="button">
+          <span class="sample-state">中强化</span><span class="poster-upgrade purple">+3</span><div class="poster-top"><span>CB · A</span><strong>88</strong></div><div class="poster-hero"><span>萨利</span></div><div class="poster-copy"><h3>萨利巴</h3><p>阿森纳 · 法国</p></div>
+        </button>
+        <button class="poster-card state-high" data-overall="91" type="button">
+          <span class="sample-state">高强化</span><span class="poster-upgrade">+6</span><div class="poster-top"><span>ST · S</span><strong>91</strong></div><div class="poster-hero"><span>哈兰</span></div><div class="poster-copy"><h3>哈兰德</h3><p>曼彻斯特城 · 挪威</p></div>
+        </button>
+        <button class="poster-card state-max" data-overall="92" type="button">
+          <span class="sample-state">满强化</span><span class="poster-upgrade max">+8</span><div class="poster-top"><span>RW · S</span><strong>92</strong></div><div class="poster-hero"><span>梅西</span></div><div class="poster-copy"><h3>梅西</h3><p>传奇球员 · 阿根廷</p></div>
+        </button>
+      </div>
+    </section>
+
+    <section class="inventory" data-concept-panel="d" hidden>
+      <div class="concept-intro">
+        <div><small>CONCEPT D · DATA INVENTORY</small><h2>超高密度数据卡</h2></div>
+        <p>以背包管理效率为第一目标。每张卡只占一行，适合数百张重复卡、批量选择和合卡操作；强化等级始终位于最右侧。</p>
+      </div>
+      <div class="data-stack">
+        <button class="data-card state-base" type="button"><span class="sample-state">基础</span><strong class="data-rating">85</strong><div class="data-name"><b>居莱尔</b><small>皇家马德里 · 土耳其</small></div><div class="data-position"><b>CAM / RW</b><small>主位置 / 副位置</small></div><span class="data-grade">评级 A</span><strong class="data-upgrade base">未强化</strong></button>
+        <button class="data-card state-mid" type="button"><span class="sample-state">中强化</span><strong class="data-rating">88</strong><div class="data-name"><b>萨利巴</b><small>阿森纳 · 法国</small></div><div class="data-position"><b>CB / RB</b><small>主位置 / 副位置</small></div><span class="data-grade">评级 A</span><strong class="data-upgrade">+3</strong></button>
+        <button class="data-card state-high" type="button"><span class="sample-state">高强化</span><strong class="data-rating">91</strong><div class="data-name"><b>哈兰德</b><small>曼彻斯特城 · 挪威</small></div><div class="data-position"><b>ST / —</b><small>特性 1 / 2</small></div><span class="data-grade">评级 S</span><strong class="data-upgrade gold">+6</strong></button>
+        <button class="data-card state-max" type="button"><span class="sample-state">满强化</span><strong class="data-rating">92</strong><div class="data-name"><b>梅西</b><small>传奇球员 · 阿根廷</small></div><div class="data-position"><b>RW / CAM</b><small>特性 2 / 2</small></div><span class="data-grade">评级 S</span><strong class="data-upgrade max">+8</strong></button>
+        <button class="data-card state-mid" type="button"><span class="sample-state">中强化</span><strong class="data-rating">82</strong><div class="data-name"><b>麦卡利斯特</b><small>利物浦 · 阿根廷</small></div><div class="data-position"><b>CM / CDM</b><small>主位置 / 副位置</small></div><span class="data-grade">评级 B</span><strong class="data-upgrade">+2</strong></button>
+        <button class="data-card state-high" type="button"><span class="sample-state">高强化</span><strong class="data-rating">89</strong><div class="data-name"><b>贝林厄姆</b><small>皇家马德里 · 英格兰</small></div><div class="data-position"><b>CM / CAM</b><small>特性 1 / 2</small></div><span class="data-grade">评级 A</span><strong class="data-upgrade gold">+7</strong></button>
+      </div>
+    </section>
+
+    <section class="notes">
+      <article class="note"><b>第一阅读层</b><p>能力值、位置和姓名始终高对比，快速滚动时也能识别球员。</p></article>
+      <article class="note"><b>强化角标</b><p>颜色只用于强化阶段，避免与球员评级颜色互相争抢视觉权重。</p></article>
+      <article class="note"><b>大量卡片</b><p>标准与紧凑两种密度共用同一卡片结构，可承接数百张卡。</p></article>
+      <article class="note"><b>强化入口</b><p>整张卡片可点击，后续进入球员详情和同名合卡页面。</p></article>
+    </section>
+  </main>
+  <script>
+    const grid = document.querySelector("#card-grid");
+    document.querySelectorAll("[data-concept]").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-concept]").forEach((item) => item.classList.toggle("active", item === button));
+      document.querySelectorAll("[data-concept-panel]").forEach((panel) => {
+        panel.hidden = panel.dataset.conceptPanel !== button.dataset.concept;
+      });
+    }));
+    document.querySelectorAll("[data-density]").forEach((button) => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-density]").forEach((item) => item.classList.toggle("active", item === button));
+      grid.classList.toggle("compact", button.dataset.density === "compact");
+    }));
+  </script>
+</body>
+</html>

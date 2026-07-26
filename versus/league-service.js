@@ -6,6 +6,27 @@ import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS } from "./player-pool.js";
 import { analyzeElevenFormation, drawUniqueMixedPlayers, drawUniquePlayers, inferElevenBoardRoles, sanitizePositions } from "./rules.js";
 import { roleGroup } from "../game/public/schema.js";
+import { YDL_TRAIT_BY_ID } from "./trait-pool.js";
+import { applyS4BondBonuses, createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
+import {
+  assertS4AssetInvariants,
+  cardsForOwner,
+  createS4Card,
+  ensureS4Assets,
+  isRosterExemptCard,
+  ownershipOwner,
+  publicS4AssetsForOwner,
+  publicS4Card,
+  recordS4AssetTransaction,
+  recycleS4Card,
+  representativeCard,
+  returnPlayerOwnershipToSystem,
+  rosterFamilyUsesSlot,
+  rosterSlotUsage,
+  S4_ROSTER_LIMIT,
+  transferPlayerOwnership,
+  transferS4Card,
+} from "./s4-assets.js";
 
 const DEFAULT_STATE_PATH = process.env.YELLOWDOGS_LEAGUE_PATH
   ? path.resolve(process.env.YELLOWDOGS_LEAGUE_PATH)
@@ -13,6 +34,18 @@ const DEFAULT_STATE_PATH = process.env.YELLOWDOGS_LEAGUE_PATH
 const TEAM_COUNT = 10;
 const DRAFT_ROSTER_SIZE = 22;
 const CLUB_ROSTER_LIMIT = 33;
+const POSITION_PRESET_KEYS = Object.freeze(["position1", "position2", "position3"]);
+export const S4_PACK_CATALOG = Object.freeze([
+  Object.freeze({ id:"legend-random", name:"传奇随机卡包", price:12000, kind:"legend", pool:"LEGEND", selectionMode:"choice", description:"随机展示3名传奇球员，选择其中1张球员卡。" }),
+  Object.freeze({ id:"private-mixed", name:"私有池全位置随机礼包", price:2200, kind:"private", pool:"MIXED", selectionMode:"direct", description:"从你拥有所有权的全部非传奇球员中随机获得1张卡。" }),
+  Object.freeze({ id:"private-att", name:"私有池前场随机礼包", price:1800, kind:"private", pool:"ATT", selectionMode:"direct", description:"从你拥有所有权的前场球员中随机获得1张卡。" }),
+  Object.freeze({ id:"private-mid", name:"私有池中场随机礼包", price:1800, kind:"private", pool:"MID", selectionMode:"direct", description:"从你拥有所有权的中场球员中随机获得1张卡。" }),
+  Object.freeze({ id:"private-def", name:"私有池后场随机礼包", price:1800, kind:"private", pool:"DEF", selectionMode:"direct", description:"从你拥有所有权的后场球员中随机获得1张卡。" }),
+  Object.freeze({ id:"private-gk", name:"私有池门将随机礼包", price:1600, kind:"private", pool:"GK", selectionMode:"direct", description:"从你拥有所有权的门将中随机获得1张卡。" }),
+  Object.freeze({ id:"public-random", name:"公共池随机礼包", price:6000, kind:"public", pool:"MIXED", selectionMode:"choice", description:"从尚未被占用所有权的非传奇球员中随机展示3人，选择1张卡并获得其所有权。" }),
+]);
+const S4_PACK_BY_ID = Object.freeze(Object.fromEntries(S4_PACK_CATALOG.map((pack) => [pack.id, pack])));
+const S4_MAX_PACK_PURCHASE_QUANTITY = 100;
 const PACK_TIERS = Object.freeze({
   standard:Object.freeze({ id:"standard", name:"基础卡包", price:3500, guaranteeGrades:[], guarantee:"全位置混池·随机品质" }),
   advanced:Object.freeze({ id:"advanced", name:"进阶卡包", price:5000, guaranteeGrades:["S", "A", "B"], guarantee:"全位置混池·至少1名B级以上" }),
@@ -38,12 +71,20 @@ const LEAGUE_FITNESS_DRAIN_FACTOR = 0.36;
 const CHEMISTRY_GAIN_PER_MATCH = 6;
 const CHEMISTRY_VISIBLE_THRESHOLD = 30;
 const CHEMISTRY_MAX_BONUS = 0.015;
+export const S4_BOND_CATALOG = Object.freeze(createS4BondCatalog(REAL_PLAYERS));
 const INITIAL_WALLET_BALANCE = 10000;
 const DEFAULT_FITNESS_THRESHOLD = 65;
 const REWARD_MULTIPLIER = 5;
+const CUP_ADVANCE_COIN_REWARD = 2200;
+const CUP_CHAMPION_COIN_REWARD = 12000;
+const S4_SINGLE_CARD_RELEASE_RATE = 0.45;
+const S4_FORCED_CARD_RECOVERY_RATE = 0.25;
+const S4_OWNERSHIP_RETURN_RATE = 0.1;
+export const S4_ENHANCEMENT_MAX_LEVEL = 8;
+export const S4_ENHANCEMENT_EQUAL_CHANCES = Object.freeze([100, 90, 78, 65, 52, 40, 30, 22]);
+export const S4_ENHANCEMENT_PROTECTION_COSTS = Object.freeze([0, 0, 0, 500, 900, 1600, 2800, 5000]);
 const CHAMPION_BADGE_SEASONS = Object.freeze(["S0", "S1", "S2"]);
 const CUP_CHAMPION_BADGE_SEASONS = Object.freeze(["S2", "S3"]);
-const rewardPackCount = (roundNumber) => roundNumber % 3 === 0 ? 2 : 1;
 const TEAM_NAMES = ["上海海港", "上海申花", "北京国安", "山东泰山", "成都蓉城", "天津津门虎", "浙江队", "河南队", "武汉三镇", "深圳新鹏城"];
 const TACTICS = new Set(["allOutAttack", "positive", "balanced", "defensive", "parkBus"]);
 const STYLES = new Set(["possession", "longBall", "wingPlay", "counterAttack", "highPress", "lowBlock", "roughPlay"]);
@@ -53,6 +94,10 @@ const CUP_STAGE_NAMES = Object.freeze({ quarterfinals:"四分之一决赛", semi
 const clone = (value) => structuredClone(value);
 const localDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const playerSummary = (player) => ({ id:player.id, name:player.name, role:player.role, secondaryRole:player.secondaryRole, pool:player.pool, overall:player.overall, grade:player.grade, nationality:player.nationality, club:player.club, heightCm:player.heightCm, preferredFoot:player.preferredFoot, attributes:clone(player.attributes ?? {}), legendAbility:clone(player.legendAbility ?? null) });
+const publicLeagueS4Card = (state, card) => ({
+  ...publicS4Card(state, card),
+  traits:(card.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]).map((id) => ({ id, name:YDL_TRAIT_BY_ID[id].name })),
+});
 const publicPackTier = (tier) => ({ id:tier.id, name:tier.name, price:tier.price, guarantee:tier.guarantee });
 const rewardPackTier = (tierId) => tierId === ADMIN_LEGEND_TIER.id ? ADMIN_LEGEND_TIER : PACK_TIERS[tierId] ?? PACK_TIERS.standard;
 
@@ -68,6 +113,17 @@ function settleAutomatedMatch(match, startedAt) {
 
 function makeId(prefix, value) {
   return `${prefix}-${String(value).replace(/[^a-zA-Z0-9_-]/g, "").slice(-28)}-${Date.now().toString(36)}`;
+}
+
+export function s4EnhancementChance(mainLevelValue, materialLevelValue) {
+  const mainLevel = Math.max(0, Math.min(S4_ENHANCEMENT_MAX_LEVEL - 1, Math.floor(Number(mainLevelValue) || 0)));
+  const materialLevel = Math.max(0, Math.min(S4_ENHANCEMENT_MAX_LEVEL, Math.floor(Number(materialLevelValue) || 0)));
+  const equalChance = S4_ENHANCEMENT_EQUAL_CHANCES[mainLevel];
+  const distance = materialLevel - mainLevel;
+  const adjusted = distance < 0
+    ? equalChance * (.52 ** Math.abs(distance))
+    : equalChance * (1.35 ** distance);
+  return Math.max(1, Math.min(100, Math.round(adjusted)));
 }
 
 function roundRobin(teamIds) {
@@ -101,15 +157,16 @@ function initialTeam(index) {
     rosterIds:[],
     preferredStarterIds:[],
     positions:{},
+    positionPresets:{},
     tactic:["positive", "balanced", "defensive", "balanced", "allOutAttack"][index % 5],
     style:["possession", "wingPlay", "counterAttack", "highPress", "longBall", "lowBlock"][index % 6],
     attackFocus:["balanced", "left", "center", "right"][index % 4],
     defenseFocus:"balanced",
     fitnessThreshold:DEFAULT_FITNESS_THRESHOLD,
     tacticalPlans:{
-      opening:{ tactic:["positive", "balanced", "defensive", "balanced", "allOutAttack"][index % 5], style:["possession", "wingPlay", "counterAttack", "highPress", "longBall", "lowBlock"][index % 6] },
-      leading:{ tactic:"defensive", style:"counterAttack" },
-      trailing:{ tactic:"positive", style:"highPress" },
+      opening:{ tactic:["positive", "balanced", "defensive", "balanced", "allOutAttack"][index % 5], style:["possession", "wingPlay", "counterAttack", "highPress", "longBall", "lowBlock"][index % 6], positionPreset:"position1" },
+      leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" },
+      trailing:{ tactic:"positive", style:"highPress", positionPreset:"position3" },
     },
     playerState:{},
     chemistry:{},
@@ -122,7 +179,8 @@ function initialTeam(index) {
 function createState(now, seasonName = "S1") {
   const teams = Array.from({ length:TEAM_COUNT }, (_, index) => initialTeam(index));
   return {
-    version:1,
+    version:2,
+    ruleset:"S4",
     season:{ id:`${seasonName}-${localDateKey(new Date(now))}`, name:seasonName, date:localDateKey(new Date(now)), status:"active", currentRound:0, totalRounds:18, nextRoundAt:null, firstRoundAt:null, startedAt:now, completedAt:null },
     teams,
     rounds:roundRobin(teams.map((team) => team.id)),
@@ -138,6 +196,8 @@ function createState(now, seasonName = "S1") {
     shopOffers:{},
     rewardOffers:{},
     adminPackGrants:[],
+    s4Assets:{ schemaVersion:1, nextCardSequence:1, ownerships:{}, cards:{}, traitOffers:{}, transactions:[] },
+    s4Packs:{ schemaVersion:1, nextSequence:1, inventory:{}, offers:{}, batchOpenings:{}, grants:[], cardGrants:[], legacyRetiredAt:now },
     liveRound:null,
     liveCupRound:null,
     cup:{ status:"waiting", stage:"waiting", participants:[], table:{}, swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null },
@@ -197,7 +257,7 @@ function loadState(filePath, now) {
   for (const candidate of [filePath, `${filePath}.bak`]) {
     try {
       const state = JSON.parse(readFileSync(candidate, "utf8"));
-      if (state?.version === 1 && state?.teams?.length === TEAM_COUNT) return state;
+      if ([1, 2].includes(state?.version) && state?.teams?.length === TEAM_COUNT) return state;
     } catch { /* 尝试备份文件 */ }
   }
   throw new Error("YellowDogs League 存档损坏，主文件和备份均无法读取");
@@ -210,6 +270,18 @@ function minimumPrice(player) {
 
 function minimumListingPrice(player) {
   return Math.ceil(minimumPrice(player) * .5);
+}
+
+function s4CardReferenceValue(player, upgradeLevel = 0) {
+  return Math.floor(minimumPrice(player) * (1 + Math.max(0, Number(upgradeLevel)) * .55));
+}
+
+function s4SingleCardReleaseValue(player, upgradeLevel = 0) {
+  return Math.floor(s4CardReferenceValue(player, upgradeLevel) * S4_SINGLE_CARD_RELEASE_RATE);
+}
+
+function s4ForcedCardRecoveryValue(player, upgradeLevel = 0) {
+  return Math.floor(s4CardReferenceValue(player, upgradeLevel) * S4_FORCED_CARD_RECOVERY_RATE);
 }
 
 function chemistryPairKey(firstId, secondId) {
@@ -314,12 +386,15 @@ function playerRoleFit(player, assignedRole) {
 
 function removeRosterPlayerPreservingShape(team, playerId) {
   const wasStarter = team.preferredStarterIds.includes(playerId);
-  const vacatedPosition = team.positions[playerId] ? { ...team.positions[playerId] } : null;
+  const presets = team.positionPresets ?? Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions ?? {})]));
+  const vacatedPositions = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, presets[key]?.[playerId] ? { ...presets[key][playerId] } : null]));
   const roles = inferElevenBoardRoles(team.preferredStarterIds.map((id) => ({ id, position:team.positions[id] })));
   const assignedRole = roles[playerId] ?? REAL_PLAYER_BY_ID[playerId]?.role;
   team.rosterIds = team.rosterIds.filter((id) => id !== playerId);
   team.preferredStarterIds = team.preferredStarterIds.filter((id) => id !== playerId);
-  delete team.positions[playerId];
+  POSITION_PRESET_KEYS.forEach((key) => { delete presets[key][playerId]; });
+  team.positionPresets = presets;
+  team.positions = clone(presets.position1);
   if (!wasStarter) return;
   const replacement = team.rosterIds
     .filter((id) => !team.preferredStarterIds.includes(id))
@@ -328,7 +403,8 @@ function removeRosterPlayerPreservingShape(team, playerId) {
     .sort((left, right) => playerRoleFit(right, assignedRole) - playerRoleFit(left, assignedRole) || right.overall - left.overall)[0];
   if (!replacement) return;
   team.preferredStarterIds.push(replacement.id);
-  team.positions[replacement.id] = vacatedPosition ?? { x:50, y:50 };
+  POSITION_PRESET_KEYS.forEach((key) => { presets[key][replacement.id] = vacatedPositions[key] ?? { x:50, y:50 }; });
+  team.positions = clone(presets.position1);
 }
 
 function aiLineup(teamIndex, roundNumber, humanOwned) {
@@ -344,9 +420,10 @@ function publicTeam(team, includeRoster = false) {
   return {
     id:team.id, name:team.name, isAi:!team.ownerId, ownerId:team.ownerId, ownerName:team.ownerName, championBadges:clone(team.championBadges ?? []), table:{ ...team.table }, form:[...team.form], tactic:team.tactic, style:team.style, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus,
     fitnessThreshold:team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD,
-    tacticalPlans:clone(team.tacticalPlans ?? { opening:{ tactic:team.tactic, style:team.style }, leading:{ tactic:"defensive", style:"counterAttack" }, trailing:{ tactic:"positive", style:"highPress" } }),
+    tacticalPlans:clone(team.tacticalPlans ?? { opening:{ tactic:team.tactic, style:team.style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"highPress", positionPreset:"position3" } }),
     roster:includeRoster ? team.rosterIds.map((id) => ({ ...playerSummary(REAL_PLAYER_BY_ID[id]), state:{ fitness:100, suspension:0, cupSuspension:0, injuryRounds:0, ...(team.playerState[id] ?? {}) }, starter:team.preferredStarterIds.includes(id), listed:false })) : undefined,
     positions:includeRoster ? { ...team.positions } : undefined,
+    positionPresets:includeRoster ? clone(team.positionPresets ?? Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, team.positions ?? {}]))) : undefined,
     chemistryLinks:includeRoster ? publicChemistryLinks(team) : undefined,
     formation:team.preferredStarterIds.length === 11 ? analyzeElevenFormation(team.preferredStarterIds.map((id) => REAL_PLAYER_BY_ID[id]), team.positions).name : null,
   };
@@ -362,6 +439,32 @@ export class YellowDogsLeagueService {
       : options.backupDir;
     this.lastBackupMaintenanceDate = null;
     this.state = loadState(this.statePath, this.now());
+    ensureS4Assets(this.state);
+    if (!this.state.s4Packs) {
+      this.state.s4Packs = { schemaVersion:1, nextSequence:1, inventory:{}, offers:{}, batchOpenings:{}, grants:[], legacyRetiredAt:this.now() };
+      this.state.shopOffers = {};
+      this.state.rewardOffers = {};
+      this.state.adminPackGrants = [];
+    }
+    this.state.version = 2;
+    this.state.ruleset = "S4";
+    this.state.s4Packs.schemaVersion = 1;
+    this.state.s4Packs.nextSequence = Math.max(1, Number(this.state.s4Packs.nextSequence ?? 1));
+    this.state.s4Packs.inventory ??= {};
+    this.state.s4Packs.offers ??= {};
+    this.state.s4Packs.batchOpenings ??= {};
+    this.state.s4Packs.grants ??= [];
+    this.state.s4Packs.cardGrants ??= [];
+    for (const team of this.state.teams) {
+      if (!team.ownerId) continue;
+      for (const playerId of team.rosterIds ?? []) {
+        if (!cardsForOwner(this.state, team.ownerId, playerId).length) this.grantS4Card(team, playerId, {
+          grantOwnership:true,
+          acquisitionSource:"legacy-migration",
+          acquiredAt:team.joinedAt ?? this.now(),
+        });
+      }
+    }
     this.state.shopOffers ??= {};
     this.state.rewardOffers ??= {};
     this.state.adminPackGrants ??= [];
@@ -381,7 +484,13 @@ export class YellowDogsLeagueService {
       team.chemistry ??= {};
       team.championBadges ??= [];
       team.fitnessThreshold = Math.max(45, Math.min(90, Number(team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD)));
-      team.tacticalPlans ??= { opening:{ tactic:team.tactic, style:team.style }, leading:{ tactic:"defensive", style:"counterAttack" }, trailing:{ tactic:"positive", style:"highPress" } };
+      team.positionPresets ??= Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions ?? {})]));
+      POSITION_PRESET_KEYS.forEach((key) => { team.positionPresets[key] ??= clone(team.positions ?? {}); });
+      team.tacticalPlans ??= { opening:{ tactic:team.tactic, style:team.style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"highPress", positionPreset:"position3" } };
+      ["opening", "leading", "trailing"].forEach((state, index) => {
+        team.tacticalPlans[state] ??= state === "opening" ? { tactic:team.tactic, style:team.style } : state === "leading" ? { tactic:"defensive", style:"counterAttack" } : { tactic:"positive", style:"highPress" };
+        team.tacticalPlans[state].positionPreset = POSITION_PRESET_KEYS.includes(team.tacticalPlans[state].positionPreset) ? team.tacticalPlans[state].positionPreset : POSITION_PRESET_KEYS[index];
+      });
     });
     if (this.state.season.status === "active" && (!this.state.season.nextRoundAt || this.state.season.nextRoundAt < this.now())) this.state.season.nextRoundAt = nextSlot(this.now());
     if (this.state.season.status === "registration") this.state.season.nextRoundAt = null;
@@ -420,6 +529,7 @@ export class YellowDogsLeagueService {
   }
 
   save(options = {}) {
+    assertS4AssetInvariants(this.state);
     this.state.updatedAt = Math.max(this.now(), Number(this.state.updatedAt ?? 0) + 1);
     if (this.statePath) {
       atomicWrite(this.statePath, this.state);
@@ -427,8 +537,434 @@ export class YellowDogsLeagueService {
     }
   }
 
+  playerCards(accountId, playerId = null) {
+    return cardsForOwner(this.state, accountId, playerId);
+  }
+
+  representativeCard(accountId, playerId) {
+    return representativeCard(this.state, accountId, playerId);
+  }
+
+  rosterSlotsUsed(accountId) {
+    return rosterSlotUsage(this.state, accountId);
+  }
+
+  ensureRosterFamily(team, playerId) {
+    if (!team.rosterIds.includes(playerId)) team.rosterIds.push(playerId);
+    team.playerState[playerId] ??= { fitness:100, suspension:0, cupSuspension:0, injuryRounds:0 };
+  }
+
+  removeEmptyRosterFamily(team, playerId) {
+    if (this.playerCards(team.ownerId, playerId).length) return false;
+    removeRosterPlayerPreservingShape(team, playerId);
+    delete team.playerState[playerId];
+    removePlayerChemistry(team, playerId);
+    return true;
+  }
+
+  grantS4Card(team, playerId, options = {}) {
+    const alreadyUsesSlot = rosterFamilyUsesSlot(this.state, team.ownerId, playerId);
+    const willOwnRights = options.grantOwnership !== false && !REAL_PLAYER_BY_ID[playerId]?.legendAbility;
+    const externalExempt = Boolean(options.externalAcquisition)
+      && Number(options.upgradeLevel ?? 0) >= 3
+      && !willOwnRights;
+    if (!alreadyUsesSlot && !externalExempt && this.rosterSlotsUsed(team.ownerId) >= S4_ROSTER_LIMIT) {
+      throw new Error("33人名单已满，请先出售或解约一名占用名额的球员");
+    }
+    const card = createS4Card(this.state, {
+      playerId,
+      ownerId:team.ownerId,
+      upgradeLevel:options.upgradeLevel ?? 0,
+      traitIds:options.traitIds ?? [],
+      acquisitionSource:options.acquisitionSource ?? "system",
+      externalAcquisition:Boolean(options.externalAcquisition),
+      acquiredAt:options.acquiredAt ?? this.now(),
+      grantOwnership:willOwnRights,
+    });
+    this.ensureRosterFamily(team, playerId);
+    recordS4AssetTransaction(this.state, {
+      id:makeId("asset", `${team.ownerId}-${card.id}`),
+      type:"card-created",
+      playerId,
+      cardIds:[card.id],
+      toOwnerId:team.ownerId,
+      metadata:{ acquisitionSource:card.acquisitionSource, grantOwnership:willOwnRights },
+      createdAt:this.now(),
+    });
+    return card;
+  }
+
+  s4PackInventory(accountId) {
+    return this.state.s4Packs.inventory[accountId] ?? (this.state.s4Packs.inventory[accountId] = []);
+  }
+
+  publicS4PackItem(item) {
+    const pack = S4_PACK_BY_ID[item.packType];
+    return {
+      id:item.id,
+      packType:item.packType,
+      name:pack?.name ?? item.packType,
+      kind:pack?.kind ?? "unknown",
+      pool:pack?.pool ?? null,
+      selectionMode:pack?.selectionMode ?? "direct",
+      description:pack?.description ?? "",
+      source:item.source,
+      grantId:item.grantId ?? null,
+      status:item.status,
+      createdAt:item.createdAt,
+      openedAt:item.openedAt ?? null,
+    };
+  }
+
+  grantS4Pack(accountId, packType, quantity = 1, options = {}) {
+    const pack = S4_PACK_BY_ID[String(packType ?? "")];
+    const count = Math.floor(Number(quantity));
+    if (!pack) throw new Error("请选择有效的S4礼包");
+    if (!Number.isInteger(count) || count < 1 || count > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次礼包数量必须为1至${S4_MAX_PACK_PURCHASE_QUANTITY}`);
+    const team = this.accountTeam(accountId);
+    if (!team) throw new Error("礼包接收者尚未完成建队");
+    const inventory = this.s4PackInventory(accountId);
+    const created = [];
+    for (let index = 0; index < count; index += 1) {
+      const sequence = this.state.s4Packs.nextSequence++;
+      const item = {
+        id:`s4-pack-${pack.id}-${String(accountId).replace(/[^a-zA-Z0-9_-]/g, "")}-${this.now().toString(36)}-${sequence.toString(36)}`,
+        packType:pack.id,
+        ownerId:accountId,
+        source:options.source ?? "admin",
+        grantId:options.grantId ?? null,
+        status:"unopened",
+        createdAt:this.now(),
+      };
+      inventory.push(item);
+      created.push(item);
+    }
+    return created;
+  }
+
+  randomS4Players(candidates, count) {
+    const available = [...candidates];
+    const selected = [];
+    while (selected.length < count && available.length) {
+      const index = Math.floor(this.rng() * available.length);
+      selected.push(available.splice(Math.max(0, Math.min(available.length - 1, index)), 1)[0]);
+    }
+    return selected;
+  }
+
+  privatePackCandidates(accountId, pack) {
+    return Object.entries(this.state.s4Assets.ownerships)
+      .filter(([, ownerId]) => ownerId === accountId)
+      .map(([playerId]) => REAL_PLAYER_BY_ID[playerId])
+      .filter((player) => player && (pack.pool === "MIXED" || player.pool === pack.pool));
+  }
+
+  publicPackCandidates() {
+    const reserved = new Set(Object.values(this.state.s4Packs.offers)
+      .filter((offer) => offer?.kind === "public" && offer.status === "pending")
+      .flatMap((offer) => offer.playerIds ?? []));
+    return REAL_PLAYERS.filter((player) => !player.legendAbility && !ownershipOwner(this.state, player.id) && !reserved.has(player.id));
+  }
+
+  legendPackCandidates() {
+    return REAL_PLAYERS.filter((player) => player.legendAbility);
+  }
+
+  buyS4Packs(account, packType, quantity = 1) {
+    const team = this.accountTeam(account.id);
+    const pack = S4_PACK_BY_ID[String(packType ?? "")];
+    const count = Math.floor(Number(quantity));
+    if (!team) throw new Error("你还没有加入联赛");
+    if (!pack) throw new Error("该礼包已下架或不存在");
+    if (!Number.isInteger(count) || count < 1 || count > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次最多购买${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
+    const total = pack.price * count;
+    if (this.wallet(account.id).balance < total) throw new Error("金币不足");
+    this.wallet(account.id).balance -= total;
+    const items = this.grantS4Pack(account.id, pack.id, count, { source:"shop" });
+    this.state.ledger.push({
+      id:makeId("ledger", `${account.id}-${pack.id}-${count}`),
+      accountId:account.id,
+      amount:-total,
+      type:"s4-pack-buy",
+      packType:pack.id,
+      quantity:count,
+      packIds:items.map((item) => item.id),
+      createdAt:this.now(),
+    });
+    this.save();
+    return this.view(account);
+  }
+
+  openS4Pack(account, packIdValue) {
+    const team = this.accountTeam(account.id);
+    const item = this.s4PackInventory(account.id).find((candidate) => candidate.id === String(packIdValue ?? ""));
+    const pack = S4_PACK_BY_ID[item?.packType];
+    if (!team || !item || item.status !== "unopened" || !pack) throw new Error("找不到可开启的S4礼包");
+    if (this.state.s4Packs.offers[account.id]?.status === "pending") throw new Error("请先完成当前礼包的三选一");
+    if (this.state.s4Packs.batchOpenings[account.id]?.status === "active") throw new Error("请先完成当前批量开包");
+
+    if (pack.selectionMode === "direct") {
+      const result = this.openDirectS4Pack(account, team, item, pack);
+      this.save();
+      return { ...this.view(account), packOpening:result };
+    }
+
+    this.createS4ChoiceOffer(account, item, pack);
+    this.save();
+    return this.view(account);
+  }
+
+  openDirectS4Pack(account, team, item, pack) {
+    const candidates = this.privatePackCandidates(account.id, pack);
+    if (!candidates.length) throw new Error(`${pack.name}当前没有可抽取的私有池球员`);
+    const player = this.randomS4Players(candidates, 1)[0];
+    const card = this.grantS4Card(team, player.id, {
+      grantOwnership:false,
+      acquisitionSource:"private-pack",
+    });
+    item.status = "opened";
+    item.openedAt = this.now();
+    item.resultPlayerId = player.id;
+    item.resultCardId = card.id;
+    this.state.ledger.push({ id:makeId("ledger", item.id), accountId:account.id, amount:0, type:"s4-pack-open", packType:pack.id, packId:item.id, playerId:player.id, cardId:card.id, createdAt:this.now() });
+    recordS4AssetTransaction(this.state, {
+      id:makeId("asset-pack", item.id),
+      type:"private-pack-card",
+      playerId:player.id,
+      cardIds:[card.id],
+      toOwnerId:account.id,
+      metadata:{ packId:item.id, packType:pack.id },
+      createdAt:this.now(),
+    });
+    return { mode:"direct", packId:item.id, player:playerSummary(player), card:publicLeagueS4Card(this.state, card) };
+  }
+
+  createS4ChoiceOffer(account, item, pack, batch = null) {
+    const candidates = pack.kind === "legend" ? this.legendPackCandidates() : this.publicPackCandidates();
+    const choices = this.randomS4Players(candidates, 3);
+    if (choices.length !== 3) throw new Error(`${pack.name}当前不足3名可选球员`);
+    const offer = {
+      id:makeId("s4-pack-offer", item.id),
+      packId:item.id,
+      packType:pack.id,
+      ownerId:account.id,
+      kind:pack.kind,
+      playerIds:choices.map((player) => player.id),
+      status:"pending",
+      createdAt:this.now(),
+      batchId:batch?.id ?? null,
+      batchIndex:batch ? batch.results.length + 1 : null,
+      batchTotal:batch?.packIds.length ?? null,
+    };
+    item.status = "choosing";
+    this.state.s4Packs.offers[account.id] = offer;
+    return offer;
+  }
+
+  publicS4BatchResult(result) {
+    const player = REAL_PLAYER_BY_ID[result.playerId];
+    const card = this.state.s4Assets.cards[result.cardId];
+    return {
+      mode:result.mode,
+      packId:result.packId,
+      player:playerSummary(player),
+      card:publicLeagueS4Card(this.state, card),
+      ownershipGranted:Boolean(result.ownershipGranted),
+    };
+  }
+
+  openS4PacksBatch(account, packIdValues) {
+    const team = this.accountTeam(account.id);
+    const packIds = [...new Set((Array.isArray(packIdValues) ? packIdValues : []).map(String).filter(Boolean))];
+    if (!team) throw new Error("你还没有加入联赛");
+    if (!packIds.length || packIds.length > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`每次批量打开1至${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
+    if (this.state.s4Packs.offers[account.id]?.status === "pending" || this.state.s4Packs.batchOpenings[account.id]?.status === "active") throw new Error("请先完成当前开包流程");
+    const inventory = this.s4PackInventory(account.id);
+    const items = packIds.map((packId) => inventory.find((item) => item.id === packId));
+    if (items.some((item) => !item || item.status !== "unopened")) throw new Error("批量打开中包含不可用的礼包");
+    const packTypes = new Set(items.map((item) => item.packType));
+    if (packTypes.size !== 1) throw new Error("每次只能批量打开同一种礼包");
+    const pack = S4_PACK_BY_ID[items[0].packType];
+    if (!pack) throw new Error("礼包已下架或不存在");
+
+    if (pack.selectionMode === "direct") {
+      const results = items.map((item) => this.openDirectS4Pack(account, team, item, pack));
+      this.save();
+      return {
+        ...this.view(account),
+        packBatchOpening:{ id:makeId("s4-pack-batch", `${account.id}-${pack.id}`), mode:"direct", complete:true, packType:pack.id, total:results.length, results },
+      };
+    }
+
+    const batch = {
+      id:makeId("s4-pack-batch", `${account.id}-${pack.id}`),
+      ownerId:account.id,
+      packType:pack.id,
+      packIds,
+      results:[],
+      status:"active",
+      createdAt:this.now(),
+    };
+    this.state.s4Packs.batchOpenings[account.id] = batch;
+    this.createS4ChoiceOffer(account, items[0], pack, batch);
+    this.save();
+    return this.view(account);
+  }
+
+  chooseS4Pack(account, offerIdValue, playerIdValue) {
+    const team = this.accountTeam(account.id);
+    const offer = this.state.s4Packs.offers[account.id];
+    const playerId = String(playerIdValue ?? "");
+    const item = this.s4PackInventory(account.id).find((candidate) => candidate.id === offer?.packId);
+    const pack = S4_PACK_BY_ID[offer?.packType];
+    if (!team || !offer || offer.status !== "pending" || offer.id !== String(offerIdValue ?? "") || !offer.playerIds.includes(playerId) || !item || !pack) {
+      throw new Error("只能选择当前礼包展示的球员");
+    }
+    if (offer.kind === "public" && ownershipOwner(this.state, playerId)) throw new Error("该球员所有权已经被其他玩家获得，请重新开启礼包");
+    const card = this.grantS4Card(team, playerId, {
+      grantOwnership:offer.kind === "public",
+      acquisitionSource:offer.kind === "public" ? "public-pack" : "legend-pack",
+    });
+    offer.status = "selected";
+    offer.selectedPlayerId = playerId;
+    offer.cardId = card.id;
+    offer.closedAt = this.now();
+    item.status = "opened";
+    item.openedAt = this.now();
+    item.resultPlayerId = playerId;
+    item.resultCardId = card.id;
+    delete this.state.s4Packs.offers[account.id];
+    this.state.ledger.push({ id:makeId("ledger", item.id), accountId:account.id, amount:0, type:"s4-pack-open", packType:pack.id, packId:item.id, playerId, cardId:card.id, ownershipGranted:offer.kind === "public", createdAt:this.now() });
+    const packOpening = { mode:"choice", packId:item.id, player:playerSummary(REAL_PLAYER_BY_ID[playerId]), card:publicLeagueS4Card(this.state, card), ownershipGranted:offer.kind === "public" };
+    const batch = offer.batchId ? this.state.s4Packs.batchOpenings[account.id] : null;
+    if (batch?.id === offer.batchId && batch.status === "active") {
+      batch.results.push({ mode:"choice", packId:item.id, playerId, cardId:card.id, ownershipGranted:offer.kind === "public" });
+      if (batch.results.length < batch.packIds.length) {
+        const nextPackId = batch.packIds[batch.results.length];
+        const nextItem = this.s4PackInventory(account.id).find((candidate) => candidate.id === nextPackId);
+        if (!nextItem || nextItem.status !== "unopened") throw new Error("批量开包队列中的下一份礼包不可用");
+        this.createS4ChoiceOffer(account, nextItem, pack, batch);
+        this.save();
+        return { ...this.view(account), packOpening, packBatchOpening:{ id:batch.id, mode:"choice", complete:false, packType:batch.packType, total:batch.packIds.length, completed:batch.results.length } };
+      }
+      batch.status = "complete";
+      batch.completedAt = this.now();
+      const batchResult = {
+        id:batch.id,
+        mode:"choice",
+        complete:true,
+        packType:batch.packType,
+        total:batch.packIds.length,
+        results:batch.results.map((result) => this.publicS4BatchResult(result)),
+      };
+      delete this.state.s4Packs.batchOpenings[account.id];
+      this.save();
+      return { ...this.view(account), packOpening, packBatchOpening:batchResult };
+    }
+    this.save();
+    return { ...this.view(account), packOpening };
+  }
+
+  grantS4PacksFromAdmin(body = {}) {
+    const pack = S4_PACK_BY_ID[String(body.packType ?? "")];
+    const quantity = Math.floor(Number(body.quantity ?? 1));
+    if (!pack) throw new Error("请选择有效的S4礼包");
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次最多发放${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
+    const mode = body.recipientMode === "specified" ? "specified" : "all";
+    const requestedIds = [...new Set((Array.isArray(body.accountIds) ? body.accountIds : String(body.accountIds ?? "").split(/[\s,，;；]+/)).map(String).filter(Boolean))];
+    const teams = this.state.teams.filter((team) => team.ownerId && (mode === "all" || requestedIds.includes(team.ownerId)));
+    if (!teams.length) throw new Error(mode === "all" ? "当前没有已完成建队的玩家" : "没有找到指定的已建队玩家");
+    if (mode === "specified") {
+      const found = new Set(teams.map((team) => team.ownerId));
+      const missing = requestedIds.filter((id) => !found.has(id));
+      if (missing.length) throw new Error(`以下玩家尚未完成建队或不存在：${missing.join("、")}`);
+    }
+    const grant = {
+      id:makeId("s4-pack-grant", `${pack.id}-${mode}`),
+      packType:pack.id,
+      quantity,
+      recipientMode:mode,
+      recipientIds:teams.map((team) => team.ownerId),
+      recipientCount:teams.length,
+      createdAt:this.now(),
+    };
+    teams.forEach((team) => {
+      this.grantS4Pack(team.ownerId, pack.id, quantity, { source:"admin", grantId:grant.id });
+      this.pushInbox(team, {
+        id:`s4-pack-grant:${grant.id}:${team.ownerId}`,
+        type:"reward",
+        title:"S4礼包已经发放",
+        summary:`管理员向你发放了${quantity}份${pack.name}。`,
+        body:`${quantity}份${pack.name}已经进入礼包背包，可以随时开启。`,
+        payload:{ grantId:grant.id, packType:pack.id, quantity },
+      });
+    });
+    this.state.s4Packs.grants.push(grant);
+    this.save();
+    return this.adminView();
+  }
+
+  grantS4PlayerCardsFromAdmin(body = {}) {
+    const accountId = String(body.accountId ?? "");
+    const playerId = String(body.playerId ?? "");
+    const upgradeLevel = Number(body.upgradeLevel);
+    const quantity = Number(body.quantity ?? 1);
+    const team = this.accountTeam(accountId);
+    const player = REAL_PLAYER_BY_ID[playerId];
+    if (!team) throw new Error("请选择已经完成建队的玩家");
+    if (!player) throw new Error("请选择有效的球员");
+    if (!Number.isInteger(upgradeLevel) || upgradeLevel < 0 || upgradeLevel > 8) throw new Error("强化等级必须为0至8的整数");
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次最多发放${S4_MAX_PACK_PURCHASE_QUANTITY}张球员卡`);
+    const currentOwner = ownershipOwner(this.state, playerId);
+    const grantOwnership = !player.legendAbility && !currentOwner;
+    const grant = {
+      id:makeId("s4-card-grant", `${accountId}-${playerId}-${upgradeLevel}`),
+      accountId,
+      teamId:team.id,
+      teamName:team.name,
+      ownerName:team.ownerName,
+      playerId,
+      playerName:player.name,
+      upgradeLevel,
+      quantity,
+      ownershipGranted:grantOwnership,
+      createdAt:this.now(),
+    };
+    const cards = Array.from({ length:quantity }, () => this.grantS4Card(team, playerId, {
+      upgradeLevel,
+      grantOwnership,
+      externalAcquisition:true,
+      acquisitionSource:"admin-player-card",
+    }));
+    this.state.ledger.push({
+      id:makeId("ledger", grant.id),
+      accountId,
+      amount:0,
+      type:"admin-player-card-grant",
+      playerId,
+      cardIds:cards.map((card) => card.id),
+      upgradeLevel,
+      quantity,
+      grantId:grant.id,
+      createdAt:this.now(),
+    });
+    this.pushInbox(team, {
+      id:`s4-card-grant:${grant.id}:${accountId}`,
+      type:"reward",
+      title:"指定球员卡已经发放",
+      summary:`管理员向你发放了${quantity}张${player.name}${upgradeLevel ? ` +${upgradeLevel}` : ""}球员卡。`,
+      body:`球员卡已经进入背包。${grantOwnership ? "你同时获得了该非传奇球员的所有权。" : "本次发放没有改变该球员的所有权归属。"}`,
+      payload:{ grantId:grant.id, playerId, playerName:player.name, upgradeLevel, quantity, cardIds:cards.map((card) => card.id), ownershipGranted:grantOwnership },
+    });
+    (this.state.s4Packs.cardGrants ??= []).push(grant);
+    this.save();
+    return this.adminView();
+  }
+
   ownedPlayerIds(exceptAccountId = null) {
-    return new Set(this.state.teams.filter((team) => team.ownerId && team.ownerId !== exceptAccountId).flatMap((team) => team.rosterIds));
+    return new Set(Object.entries(this.state.s4Assets.ownerships)
+      .filter(([, ownerId]) => ownerId !== exceptAccountId)
+      .map(([playerId]) => playerId));
   }
 
   reservedPlayerIds(exceptAccountId = null) {
@@ -436,6 +972,7 @@ export class YellowDogsLeagueService {
       ...Object.entries(this.state.drafts).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, draft]) => draft.selectedIds),
       ...Object.entries(this.state.shopOffers).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, offer]) => offer.playerIds ?? []),
       ...Object.entries(this.state.rewardOffers).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, offers]) => (offers ?? []).flatMap((offer) => offer.playerIds ?? [])),
+      ...Object.entries(this.state.s4Packs.offers).filter(([accountId, offer]) => accountId !== exceptAccountId && offer?.status === "pending").flatMap(([, offer]) => offer.playerIds ?? []),
     ]);
   }
 
@@ -478,15 +1015,64 @@ export class YellowDogsLeagueService {
     return entry;
   }
 
-  notifyLegendSigning(team, player, source) {
-    if (!team?.ownerId || player?.grade !== "S") return;
-    this.state.teams.filter((entry) => entry.ownerId && entry.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
-      id:makeId("legend-signing", `${team.id}-${player.id}`),
-      type:"notice",
-      title:`${team.name}签下传奇球员`,
-      summary:`${team.ownerName ?? "玩家"}获得了 ${player.name}（能力 ${player.overall}）。`,
-      body:`${team.name}通过${source}签下S级传奇球员 ${player.name}，他的主位置是${player.role}，综合能力为 ${player.overall}。`,
-      payload:{ teamId:team.id, teamName:team.name, ownerName:team.ownerName, playerId:player.id, playerName:player.name, overall:player.overall, source },
+  notifyEnhancementSuccess(team, player, card, details) {
+    const upgradeLevel = Number(card?.upgradeLevel ?? 0);
+    if (!team?.ownerId || !details?.success || upgradeLevel < 5 || upgradeLevel > 8) return;
+    const chance = Number(details.chance ?? 0);
+    const ownerName = team.ownerName ?? "玩家";
+    const playerInfo = `${player.club ?? "自由球员"} / ${player.nationality ?? "未知国家队"} / ${player.role} / 能力 ${player.overall}`;
+    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
+      id:`enhancement-success:${details.resultId}:${recipient.ownerId}`,
+      type:"announcement",
+      title:`${player.name}强化至+${upgradeLevel}`,
+      summary:`${ownerName}以${chance}%的成功率，将${player.name}强化至+${upgradeLevel}。`,
+      body:`玩家${ownerName}（${team.name}）完成了${player.name}的+${upgradeLevel}强化。本次使用+${details.beforeLevel}主卡与+${details.materialLevel}副卡，合成成功率为${chance}%。球员信息：${playerInfo}。`,
+      payload:{
+        accountId:team.ownerId,
+        ownerName,
+        teamId:team.id,
+        teamName:team.name,
+        playerId:player.id,
+        playerName:player.name,
+        club:player.club,
+        nationality:player.nationality,
+        role:player.role,
+        overall:player.overall,
+        beforeLevel:Number(details.beforeLevel),
+        materialLevel:Number(details.materialLevel),
+        upgradeLevel,
+        chance,
+      },
+    }));
+  }
+
+  notifyEnhancementTraitBinding(team, player, card, trait, offer) {
+    if (!team?.ownerId || !trait || ![5, 8].includes(Number(card?.upgradeLevel))) return;
+    const ownerName = team.ownerName ?? "玩家";
+    const chance = Number(offer?.chance ?? 0);
+    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
+      id:`enhancement-trait:${offer.id}:${recipient.ownerId}`,
+      type:"announcement",
+      title:`${player.name} +${card.upgradeLevel}绑定特性`,
+      summary:`${ownerName}为${player.name}绑定了特性“${trait.name}”。`,
+      body:`玩家${ownerName}（${team.name}）为+${card.upgradeLevel}的${player.name}绑定了特性“${trait.name}”。特性效果：${trait.summary ?? "特性效果由联赛后台配置。"}${chance ? ` 本次关键等级强化的成功率为${chance}%。` : ""}`,
+      payload:{
+        accountId:team.ownerId,
+        ownerName,
+        teamId:team.id,
+        teamName:team.name,
+        playerId:player.id,
+        playerName:player.name,
+        club:player.club,
+        nationality:player.nationality,
+        role:player.role,
+        overall:player.overall,
+        upgradeLevel:Number(card.upgradeLevel),
+        chance,
+        traitId:trait.id,
+        traitName:trait.name,
+        traitSummary:trait.summary ?? "",
+      },
     }));
   }
 
@@ -604,17 +1190,35 @@ export class YellowDogsLeagueService {
 
   view(account, options = {}) {
     const team = this.accountTeam(account.id);
-    if (team && this.ensureRewardPacks(account.id)) this.save();
     const draft = this.state.drafts[account.id] ?? null;
+    const pendingTraitOffer = Object.values(this.state.s4Assets.traitOffers ?? {}).find((offer) => offer.ownerId === account.id && offer.status === "pending") ?? null;
     const listingByPlayer = new Map(this.state.listings.filter((item) => item.status === "active").map((item) => [item.playerId, item]));
     const ownTeam = team ? publicTeam(team, true) : null;
     if (ownTeam) ownTeam.roster.forEach((player) => {
       const source = REAL_PLAYER_BY_ID[player.id];
+      const cards = this.playerCards(account.id, player.id);
+      const activeCard = cards[0] ?? null;
       player.listed = listingByPlayer.has(player.id);
       player.referencePrice = minimumPrice(source);
       player.minimumPrice = minimumListingPrice(source);
-      player.releaseValue = Math.floor(minimumPrice(source) * .45);
+      player.cards = cards.map((card) => publicLeagueS4Card(this.state, card));
+      player.activeCardId = activeCard?.id ?? null;
+      player.upgradeLevel = Number(activeCard?.upgradeLevel ?? 0);
+      player.ownsRights = ownershipOwner(this.state, player.id) === account.id;
+      player.rosterSlotUsed = rosterFamilyUsesSlot(this.state, account.id, player.id);
+      player.releaseValue = Number(activeCard?.upgradeLevel ?? 0) <= 1
+        ? s4SingleCardReleaseValue(source, activeCard?.upgradeLevel)
+          + (player.ownsRights && cards.length === 1 ? Math.floor(minimumPrice(source) * S4_OWNERSHIP_RETURN_RATE) : 0)
+        : null;
     });
+    if (ownTeam) ownTeam.s4Assets = publicS4AssetsForOwner(this.state, account.id);
+    if (ownTeam) {
+      const starters = ownTeam.roster.filter((player) => team.preferredStarterIds.includes(player.id)).map((player) => {
+        const activeCard = player.cards.find((card) => card.id === player.activeCardId) ?? player.cards[0];
+        return { ...player, traits:(activeCard?.traits ?? []).map((trait) => trait.id) };
+      });
+      ownTeam.bonds = evaluateS4LineupBonds(starters, S4_BOND_CATALOG);
+    }
     return clone({
       updatedAt:this.state.updatedAt,
       season:this.state.season,
@@ -623,6 +1227,7 @@ export class YellowDogsLeagueService {
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20, serverPause:true, fixtures:team ? this.teamSchedule(team.id) : [] },
       teams:this.standings().map((entry) => ({ ...publicTeam(this.state.teams.find((teamEntry) => teamEntry.id === entry.id)), rank:entry.rank })),
       ownTeam,
+      bondCatalog:S4_BOND_CATALOG,
       draft:draft ? {
         teamId:draft.teamId,
         selectedIds:[...draft.selectedIds],
@@ -635,11 +1240,43 @@ export class YellowDogsLeagueService {
       aiSlotsRemaining:this.state.teams.filter((entry) => !entry.ownerId && !Object.values(this.state.drafts).some((item) => item.teamId === entry.id)).length,
       wallet:this.wallet(account.id),
       shop:{
-        tiers:Object.values(PACK_TIERS).map(publicPackTier),
-        offer:this.state.shopOffers[account.id] ? {
-          pool:this.state.shopOffers[account.id].pool,
-          tier:publicPackTier(PACK_TIERS[this.state.shopOffers[account.id].tierId] ?? PACK_TIERS.standard),
-          players:this.state.shopOffers[account.id].playerIds.map((id) => playerSummary(REAL_PLAYER_BY_ID[id])),
+        catalog:S4_PACK_CATALOG.map((pack) => ({ ...pack })),
+        maxPurchaseQuantity:S4_MAX_PACK_PURCHASE_QUANTITY,
+      },
+      enhancement:{
+        maxLevel:S4_ENHANCEMENT_MAX_LEVEL,
+        equalLevelChances:[...S4_ENHANCEMENT_EQUAL_CHANCES],
+        protectionCosts:[...S4_ENHANCEMENT_PROTECTION_COSTS],
+        lowerMaterialMultiplier:.52,
+        higherMaterialMultiplier:1.35,
+        traitOffer:pendingTraitOffer ? {
+          id:pendingTraitOffer.id,
+          cardId:pendingTraitOffer.cardId,
+          playerId:pendingTraitOffer.playerId,
+          playerName:REAL_PLAYER_BY_ID[pendingTraitOffer.playerId]?.name,
+          upgradeLevel:pendingTraitOffer.upgradeLevel,
+          traits:pendingTraitOffer.traitIds.map((id) => ({
+            id,
+            name:YDL_TRAIT_BY_ID[id]?.name ?? id,
+            summary:YDL_TRAIT_BY_ID[id]?.summary ?? "特性效果由联赛后台配置。",
+            eligibleRoleGroups:[...(YDL_TRAIT_BY_ID[id]?.eligibleRoleGroups ?? ["ANY"])],
+          })),
+        } : null,
+      },
+      s4Packs:{
+        inventory:this.s4PackInventory(account.id).filter((item) => ["unopened", "choosing"].includes(item.status)).map((item) => this.publicS4PackItem(item)),
+        offer:this.state.s4Packs.offers[account.id]?.status === "pending" ? {
+          ...clone(this.state.s4Packs.offers[account.id]),
+          players:this.state.s4Packs.offers[account.id].playerIds.map((id) => playerSummary(REAL_PLAYER_BY_ID[id])),
+          playerIds:undefined,
+        } : null,
+        batchOpening:this.state.s4Packs.batchOpenings[account.id]?.status === "active" ? {
+          id:this.state.s4Packs.batchOpenings[account.id].id,
+          packType:this.state.s4Packs.batchOpenings[account.id].packType,
+          total:this.state.s4Packs.batchOpenings[account.id].packIds.length,
+          completed:this.state.s4Packs.batchOpenings[account.id].results.length,
+          remaining:this.state.s4Packs.batchOpenings[account.id].packIds.length - this.state.s4Packs.batchOpenings[account.id].results.length,
+          status:"active",
         } : null,
       },
       leaderboards:this.leaderboards(),
@@ -647,11 +1284,13 @@ export class YellowDogsLeagueService {
       teamLeaderboards:team ? this.leaderboards(team.id) : { scorers:[], assists:[], ratings:[], saves:[], cards:[] },
       matchRounds:this.matchRounds(),
       recentMatches:this.state.matches.slice().reverse().map((match) => this.matchSummary(match)),
-      rewardOffers:(this.state.rewardOffers[account.id] ?? []).map((offer) => {
-        const tier = PACK_TIERS[offer.tierId] ?? PACK_TIERS.standard;
-        return { ...offer, tierId:tier.id, tier:publicPackTier(tier), players:(offer.playerIds ?? []).map((id) => playerSummary(REAL_PLAYER_BY_ID[id])), playerIds:undefined };
-      }),
-      listings:this.state.listings.filter((item) => item.status === "active").map((item) => ({ ...item, player:playerSummary(REAL_PLAYER_BY_ID[item.playerId]), sellerTeamName:this.state.teams.find((entry) => entry.id === item.sellerTeamId)?.name ?? "未知球队" })),
+      rewardOffers:[],
+      listings:this.state.listings.filter((item) => item.status === "active").map((item) => ({
+        ...item,
+        player:playerSummary(REAL_PLAYER_BY_ID[item.playerId]),
+        card:item.cardId && this.state.s4Assets.cards[item.cardId] ? publicLeagueS4Card(this.state, this.state.s4Assets.cards[item.cardId]) : null,
+        sellerTeamName:this.state.teams.find((entry) => entry.id === item.sellerTeamId)?.name ?? "未知球队",
+      })),
       inbox:team ? this.inbox(team) : [],
       inboxUnreadCount:team ? (this.state.inbox[team.id] ?? []).filter((message) => !message.readAt).length : 0,
       report:team ? this.teamReport(team) : null,
@@ -788,9 +1427,13 @@ export class YellowDogsLeagueService {
       ? team.preferredStarterIds.map((id) => REAL_PLAYER_BY_ID[id]).filter(Boolean)
       : this.actualLineup(team, Math.max(1, this.state.season.currentRound + 1));
     const positions = this.actualPositions(team, lineup);
+    const publicPlayer = (player) => ({
+      ...playerSummary(player),
+      upgradeLevel:Number(this.representativeCard(team.ownerId, player.id)?.upgradeLevel ?? 0),
+    });
     const roster = team.ownerId
-      ? team.rosterIds.map((id) => playerSummary(REAL_PLAYER_BY_ID[id]))
-      : lineup.map(playerSummary);
+      ? team.rosterIds.map((id) => publicPlayer(REAL_PLAYER_BY_ID[id]))
+      : lineup.map(publicPlayer);
     return clone({
       id:team.id,
       name:team.name,
@@ -798,7 +1441,7 @@ export class YellowDogsLeagueService {
       ownerName:team.ownerName,
       table:{ ...team.table },
       formation:lineup.length === 11 ? analyzeElevenFormation(lineup, positions).name : null,
-      starters:lineup.map((player) => ({ ...playerSummary(player), position:{ ...positions[player.id] } })),
+      starters:lineup.map((player) => ({ ...publicPlayer(player), position:{ ...positions[player.id] } })),
       roster,
       history:this.teamHistory(team.id),
       isOwn:team.ownerId === account.id,
@@ -924,7 +1567,12 @@ export class YellowDogsLeagueService {
     team.rosterIds = [...draft.selectedIds];
     team.preferredStarterIds = pickStartingIds(team.rosterIds);
     team.positions = leagueBoardPositions(team.preferredStarterIds.map((id) => REAL_PLAYER_BY_ID[id]));
+    team.positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions)]));
     team.playerState = Object.fromEntries(team.rosterIds.map((id) => [id, { fitness:100, suspension:0, injuryRounds:0 }]));
+    team.rosterIds.forEach((playerId) => this.grantS4Card(team, playerId, {
+      grantOwnership:true,
+      acquisitionSource:"initial-draft",
+    }));
     delete this.state.drafts[account.id];
     this.wallet(account.id);
     if (this.state.season.currentRound > 0) {
@@ -938,8 +1586,6 @@ export class YellowDogsLeagueService {
         payload:{ accountId:account.id, ownerName:account.nickname, teamId:team.id, teamName:team.name, replacedTeamName, joinRound },
       }));
     }
-    team.rosterIds.map((id) => REAL_PLAYER_BY_ID[id]).filter((player) => player?.grade === "S").forEach((player) => this.notifyLegendSigning(team, player, "建队选秀"));
-    this.dispatchTeamCreatedRewardGrants(team);
     this.updateDailyReports();
     this.save();
     return this.view(account);
@@ -951,11 +1597,17 @@ export class YellowDogsLeagueService {
     const starters = [...new Set(body.starterIds ?? [])];
     if (starters.length !== 11 || starters.some((id) => !team.rosterIds.includes(id))) throw new Error("必须从注册名单中选择11名首发");
     const players = starters.map((id) => REAL_PLAYER_BY_ID[id]);
-    const positions = sanitizePositions(players, body.positions ?? team.positions);
-    const formation = analyzeElevenFormation(players, positions);
-    if (!formation.valid) throw new Error(formation.message);
+    const submittedPresets = body.positionPresets;
+    const positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => {
+      const source = submittedPresets?.[key] ?? (!submittedPresets ? body.positions : null) ?? team.positionPresets?.[key] ?? team.positions;
+      const sanitized = sanitizePositions(players, source);
+      const formation = analyzeElevenFormation(players, sanitized);
+      if (!formation.valid) throw new Error(`${key === "position1" ? "站位1" : key === "position2" ? "站位2" : "站位3"}：${formation.message}`);
+      return [key, sanitized];
+    }));
     team.preferredStarterIds = starters;
-    team.positions = positions;
+    team.positionPresets = positionPresets;
+    team.positions = clone(positionPresets.position1);
     if (TACTICS.has(body.tactic)) team.tactic = body.tactic;
     if (STYLES.has(body.style)) team.style = body.style;
     if (FOCUSES.has(body.attackFocus)) team.attackFocus = body.attackFocus;
@@ -963,9 +1615,13 @@ export class YellowDogsLeagueService {
     const threshold = Number(body.fitnessThreshold);
     if (Number.isFinite(threshold)) team.fitnessThreshold = Math.max(45, Math.min(90, Math.round(threshold / 5) * 5));
     const plans = body.tacticalPlans ?? {};
-    team.tacticalPlans = Object.fromEntries(["opening", "leading", "trailing"].map((state) => {
-      const fallback = state === "opening" ? { tactic:team.tactic, style:team.style } : team.tacticalPlans?.[state] ?? { tactic:state === "leading" ? "defensive" : "positive", style:state === "leading" ? "counterAttack" : "highPress" };
-      return [state, { tactic:TACTICS.has(plans[state]?.tactic) ? plans[state].tactic : fallback.tactic, style:STYLES.has(plans[state]?.style) ? plans[state].style : fallback.style }];
+    team.tacticalPlans = Object.fromEntries(["opening", "leading", "trailing"].map((state, index) => {
+      const fallback = state === "opening" ? { tactic:team.tactic, style:team.style, positionPreset:"position1" } : team.tacticalPlans?.[state] ?? { tactic:state === "leading" ? "defensive" : "positive", style:state === "leading" ? "counterAttack" : "highPress", positionPreset:POSITION_PRESET_KEYS[index] };
+      return [state, {
+        tactic:TACTICS.has(plans[state]?.tactic) ? plans[state].tactic : fallback.tactic,
+        style:STYLES.has(plans[state]?.style) ? plans[state].style : fallback.style,
+        positionPreset:POSITION_PRESET_KEYS.includes(plans[state]?.positionPreset) ? plans[state].positionPreset : fallback.positionPreset ?? POSITION_PRESET_KEYS[index],
+      }];
     }));
     team.tactic = team.tacticalPlans.opening.tactic;
     team.style = team.tacticalPlans.opening.style;
@@ -1018,7 +1674,7 @@ export class YellowDogsLeagueService {
     if (!team) throw new Error("你还没有加入联赛");
     if (!tier) throw new Error("请选择有效的卡包档位");
     if (this.state.shopOffers[account.id]) return this.view(account);
-    if (team.rosterIds.length >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先出售或解约一名球员");
+    if (this.rosterSlotsUsed(account.id) >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先出售或解约一名球员");
     const wallet = this.wallet(account.id);
     if (wallet.balance < tier.price) throw new Error("金币不足");
     const unavailable = [...this.unavailablePlayerIds(account.id), ...team.rosterIds];
@@ -1034,25 +1690,68 @@ export class YellowDogsLeagueService {
     const team = this.accountTeam(account.id);
     const offer = this.state.shopOffers[account.id];
     if (!team || !offer?.playerIds.includes(playerId)) throw new Error("只能选择当前卡包中的球员");
-    if (team.rosterIds.length >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先腾出一个位置");
+    if (this.rosterSlotsUsed(account.id) >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先腾出一个位置");
     if (this.unavailablePlayerIds(account.id).has(playerId)) throw new Error("该球员已经被其他玩家签下");
-    team.rosterIds.push(playerId);
-    team.playerState[playerId] = { fitness:100, suspension:0, injuryRounds:0 };
+    this.grantS4Card(team, playerId, { grantOwnership:true, acquisitionSource:"new-player-pack" });
     delete this.state.shopOffers[account.id];
     this.state.ledger.push({ id:makeId("ledger", `${account.id}-${playerId}`), accountId:account.id, amount:0, type:"pack-sign", playerId, tierId:offer.tierId ?? "standard", source:"shop", createdAt:this.now() });
-    this.notifyLegendSigning(team, REAL_PLAYER_BY_ID[playerId], "球员商店卡包");
     this.save();
     return this.view(account);
   }
 
   listPlayer(account, playerId, priceValue) {
+    const card = this.representativeCard(account.id, playerId);
+    if (!card) throw new Error("球员不在你的卡片资产中");
+    return this.listCard(account, card.id, priceValue);
+  }
+
+  listCard(account, cardIdValue, priceValue) {
+    const team = this.accountTeam(account.id);
+    const card = this.state.s4Assets.cards[String(cardIdValue ?? "")];
+    const player = REAL_PLAYER_BY_ID[card?.playerId];
+    const price = Math.floor(Number(priceValue));
+    if (!team || !card || card.status !== "active" || card.ownerId !== account.id || !player) throw new Error("球员卡不在你的资产中");
+    if (!Number.isFinite(price) || price < minimumListingPrice(player)) throw new Error(`挂牌价不能低于参考身价的50%（${minimumListingPrice(player)}金币）`);
+    if (this.state.listings.some((item) => item.status === "active" && item.playerId === card.playerId)) throw new Error("该球员已有一项资产正在挂牌");
+    const includesOwnership = ownershipOwner(this.state, card.playerId) === account.id
+      && this.playerCards(account.id, card.playerId).length === 1;
+    this.state.listings.push({
+      id:makeId("listing", card.id),
+      kind:"card",
+      cardId:card.id,
+      playerId:card.playerId,
+      includesOwnership,
+      sellerId:account.id,
+      sellerTeamId:team.id,
+      price,
+      status:"active",
+      createdAt:this.now(),
+    });
+    this.save();
+    return this.view(account);
+  }
+
+  listOwnership(account, playerId, priceValue, retainedCardId = null) {
     const team = this.accountTeam(account.id);
     const player = REAL_PLAYER_BY_ID[playerId];
+    const cards = this.playerCards(account.id, playerId);
     const price = Math.floor(Number(priceValue));
-    if (!team?.rosterIds.includes(playerId) || !player) throw new Error("球员不在你的注册名单中");
-    if (!Number.isFinite(price) || price < minimumListingPrice(player)) throw new Error(`挂牌价不能低于参考身价的50%（${minimumListingPrice(player)}金币）`);
-    if (this.state.listings.some((item) => item.status === "active" && item.playerId === playerId)) throw new Error("球员已经挂牌");
-    this.state.listings.push({ id:makeId("listing", playerId), playerId, sellerId:account.id, sellerTeamId:team.id, price, status:"active", createdAt:this.now() });
+    if (!team || !player || ownershipOwner(this.state, playerId) !== account.id || !cards.length) throw new Error("你不拥有该球员所有权");
+    if (!Number.isFinite(price) || price < minimumListingPrice(player)) throw new Error(`所有权挂牌价不能低于${minimumListingPrice(player)}金币`);
+    if (this.state.listings.some((item) => item.status === "active" && item.playerId === playerId)) throw new Error("请先撤回该球员的其他挂牌");
+    const retained = retainedCardId ? cards.find((card) => card.id === retainedCardId) : cards[0];
+    if (!retained) throw new Error("请选择所有权成交后希望保留的球员卡");
+    this.state.listings.push({
+      id:makeId("ownership-listing", playerId),
+      kind:"ownership",
+      playerId,
+      retainedCardId:retained.id,
+      sellerId:account.id,
+      sellerTeamId:team.id,
+      price,
+      status:"active",
+      createdAt:this.now(),
+    });
     this.save();
     return this.view(account);
   }
@@ -1066,17 +1765,253 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
+  enhanceS4Card(account, mainCardIdValue, materialCardIdValue, useProtection = false) {
+    const team = this.accountTeam(account.id);
+    const mainCard = this.state.s4Assets.cards[String(mainCardIdValue ?? "")];
+    const materialCard = this.state.s4Assets.cards[String(materialCardIdValue ?? "")];
+    if (!team) throw new Error("你还没有加入联赛");
+    if (!mainCard || mainCard.status !== "active" || mainCard.ownerId !== account.id) throw new Error("请选择有效的主卡");
+    if (!materialCard || materialCard.status !== "active" || materialCard.ownerId !== account.id) throw new Error("请选择有效的副卡");
+    if (mainCard.id === materialCard.id) throw new Error("主卡和副卡不能是同一张卡");
+    if (mainCard.playerId !== materialCard.playerId) throw new Error("强化只允许使用同名球员卡");
+    if (Object.values(this.state.s4Assets.traitOffers ?? {}).some((offer) => offer.status === "pending" && offer.cardId === mainCard.id)) throw new Error("请先为主卡选择强化特性");
+    const mainLevel = Number(mainCard.upgradeLevel ?? 0);
+    const materialLevel = Number(materialCard.upgradeLevel ?? 0);
+    if (mainLevel >= S4_ENHANCEMENT_MAX_LEVEL) throw new Error("主卡已经达到最高强化等级");
+    const blockedByListing = this.state.listings.some((item) => item.status === "active"
+      && (item.cardId === mainCard.id
+        || item.cardId === materialCard.id
+        || item.kind === "ownership" && item.playerId === mainCard.playerId));
+    if (blockedByListing) throw new Error("请先撤回相关球员资产挂牌");
+
+    const protectionUsed = Boolean(useProtection) && mainLevel >= 3;
+    const protectionCost = protectionUsed ? S4_ENHANCEMENT_PROTECTION_COSTS[mainLevel] : 0;
+    if (this.wallet(account.id).balance < protectionCost) throw new Error("金币不足，无法自动购买当前等级的保卡道具");
+    const chance = s4EnhancementChance(mainLevel, materialLevel);
+    const success = this.rng() * 100 < chance;
+    if (protectionCost) this.wallet(account.id).balance -= protectionCost;
+    recycleS4Card(this.state, materialCard.id, "enhancement-material", this.now());
+    mainCard.upgradeLevel = success ? mainLevel + 1 : mainLevel >= 3 && !protectionUsed ? mainLevel - 1 : mainLevel;
+    const player = REAL_PLAYER_BY_ID[mainCard.playerId];
+    const resultId = makeId("enhancement", `${account.id}-${mainCard.id}`);
+    let traitOffer = null;
+    const requiredTraitCount = mainCard.upgradeLevel >= 8 ? 2 : mainCard.upgradeLevel >= 5 ? 1 : 0;
+    if (success && requiredTraitCount > mainCard.traitIds.length && [5, 8].includes(mainCard.upgradeLevel)) {
+      const eligibleTraits = Object.values(YDL_TRAIT_BY_ID)
+        .filter((trait) => !mainCard.traitIds.includes(trait.id))
+        .filter((trait) => trait.eligibleRoleGroups?.includes("ANY") || trait.eligibleRoleGroups?.includes(roleGroup(player.role)));
+      const traitIds = [];
+      const available = [...eligibleTraits];
+      while (traitIds.length < 3 && available.length) {
+        const index = Math.floor(this.rng() * available.length);
+        traitIds.push(available.splice(index, 1)[0].id);
+      }
+      traitOffer = {
+        id:makeId("enhancement-trait", mainCard.id),
+        ownerId:account.id,
+        cardId:mainCard.id,
+        playerId:mainCard.playerId,
+        upgradeLevel:mainCard.upgradeLevel,
+        chance,
+        beforeLevel:mainLevel,
+        materialLevel,
+        traitIds,
+        status:"pending",
+        createdAt:this.now(),
+      };
+      this.state.s4Assets.traitOffers[traitOffer.id] = traitOffer;
+    }
+    this.state.ledger.push({
+      id:makeId("ledger", resultId),
+      accountId:account.id,
+      amount:-protectionCost,
+      type:"s4-card-enhancement",
+      playerId:mainCard.playerId,
+      mainCardId:mainCard.id,
+      materialCardId:materialCard.id,
+      beforeLevel:mainLevel,
+      materialLevel,
+      afterLevel:mainCard.upgradeLevel,
+      chance,
+      success,
+      protectionUsed,
+      createdAt:this.now(),
+    });
+    recordS4AssetTransaction(this.state, {
+      id:resultId,
+      type:"card-enhancement",
+      playerId:mainCard.playerId,
+      cardIds:[mainCard.id, materialCard.id],
+      fromOwnerId:account.id,
+      amount:-protectionCost,
+      metadata:{ beforeLevel:mainLevel, materialLevel, afterLevel:mainCard.upgradeLevel, chance, success, protectionUsed },
+      createdAt:this.now(),
+    });
+    this.notifyEnhancementSuccess(team, player, mainCard, {
+      resultId,
+      success,
+      chance,
+      beforeLevel:mainLevel,
+      materialLevel,
+    });
+    assertS4AssetInvariants(this.state);
+    this.save();
+    return {
+      ...this.view(account),
+      enhancementResult:{
+        id:resultId,
+        success,
+        chance,
+        beforeLevel:mainLevel,
+        materialLevel,
+        afterLevel:Number(mainCard.upgradeLevel),
+        protectionUsed,
+        protectionCost,
+        player:playerSummary(player),
+        card:publicLeagueS4Card(this.state, mainCard),
+        traitOffer:traitOffer ? {
+          id:traitOffer.id,
+          cardId:traitOffer.cardId,
+          upgradeLevel:traitOffer.upgradeLevel,
+          traits:traitOffer.traitIds.map((id) => ({
+            id,
+            name:YDL_TRAIT_BY_ID[id]?.name ?? id,
+            summary:YDL_TRAIT_BY_ID[id]?.summary ?? "特性效果由联赛后台配置。",
+            eligibleRoleGroups:[...(YDL_TRAIT_BY_ID[id]?.eligibleRoleGroups ?? ["ANY"])],
+          })),
+        } : null,
+      },
+    };
+  }
+
+  chooseS4EnhancementTrait(account, offerIdValue, traitIdValue) {
+    const offer = this.state.s4Assets.traitOffers?.[String(offerIdValue ?? "")];
+    const traitId = String(traitIdValue ?? "");
+    const card = this.state.s4Assets.cards[offer?.cardId];
+    if (!offer || offer.status !== "pending" || offer.ownerId !== account.id) throw new Error("强化特性候选不存在或已经完成");
+    if (!offer.traitIds.includes(traitId) || !YDL_TRAIT_BY_ID[traitId]) throw new Error("请选择有效的强化特性");
+    if (!card || card.status !== "active" || card.ownerId !== account.id) throw new Error("对应球员卡已经不可用");
+    card.traitIds = [...new Set([...(card.traitIds ?? []), traitId])];
+    offer.status = "chosen";
+    offer.chosenTraitId = traitId;
+    offer.chosenAt = this.now();
+    const player = REAL_PLAYER_BY_ID[card.playerId];
+    const trait = YDL_TRAIT_BY_ID[traitId];
+    this.notifyEnhancementTraitBinding(this.accountTeam(account.id), player, card, trait, offer);
+    recordS4AssetTransaction(this.state, {
+      id:makeId("enhancement-trait-choice", offer.id),
+      type:"enhancement-trait-choice",
+      playerId:card.playerId,
+      cardIds:[card.id],
+      fromOwnerId:account.id,
+      metadata:{ offerId:offer.id, traitId, upgradeLevel:card.upgradeLevel },
+      createdAt:this.now(),
+    });
+    this.save();
+    return {
+      ...this.view(account),
+      enhancementTraitResult:{
+        offerId:offer.id,
+        player:playerSummary(player),
+        card:publicLeagueS4Card(this.state, card),
+        trait:{ id:trait.id, name:trait.name },
+      },
+    };
+  }
+
+  releaseCard(account, cardIdValue, confirmOwnershipReturn = false) {
+    const team = this.accountTeam(account.id);
+    const card = this.state.s4Assets.cards[String(cardIdValue ?? "")];
+    const player = REAL_PLAYER_BY_ID[card?.playerId];
+    if (!team || !card || card.status !== "active" || card.ownerId !== account.id || !player) throw new Error("不能解约该球员卡");
+    if (Number(card.upgradeLevel ?? 0) >= 2) throw new Error("+2及以上强化卡无法解约");
+    if (this.state.listings.some((item) => item.status === "active" && (item.cardId === card.id || item.playerId === card.playerId && item.kind === "ownership"))) throw new Error("请先撤回球员资产挂牌");
+    const familyCards = this.playerCards(account.id, card.playerId);
+    const returnsOwnership = ownershipOwner(this.state, card.playerId) === account.id && familyCards.length === 1;
+    if (returnsOwnership && !confirmOwnershipReturn) throw new Error("这是该球员最后一张卡，解约将同时返还球员所有权，请确认");
+    if (team.rosterIds.length <= 11 && familyCards.length === 1) throw new Error("不能解约该球员，球队必须保留至少11名可用球员");
+    const cardAmount = s4SingleCardReleaseValue(player, card.upgradeLevel);
+    const ownershipAmount = returnsOwnership ? Math.floor(minimumPrice(player) * S4_OWNERSHIP_RETURN_RATE) : 0;
+    if (returnsOwnership) returnPlayerOwnershipToSystem(this.state, card.playerId, account.id);
+    recycleS4Card(this.state, card.id, returnsOwnership ? "last-card-and-ownership-return" : "single-card-release", this.now());
+    this.removeEmptyRosterFamily(team, card.playerId);
+    const amount = cardAmount + ownershipAmount;
+    this.wallet(account.id).balance += amount;
+    this.state.ledger.push({ id:makeId("ledger", card.id), accountId:account.id, amount, type:"release", playerId:card.playerId, cardId:card.id, ownershipReturned:returnsOwnership, createdAt:this.now() });
+    recordS4AssetTransaction(this.state, {
+      id:makeId("asset-release", card.id),
+      type:returnsOwnership ? "last-card-release-and-ownership-return" : "single-card-release",
+      playerId:card.playerId,
+      cardIds:[card.id],
+      fromOwnerId:account.id,
+      amount,
+      createdAt:this.now(),
+    });
+    this.save();
+    return this.view(account);
+  }
+
+  directTradeCard(sellerAccount, buyerAccount, cardId, priceValue) {
+    this.listCard(sellerAccount, cardId, priceValue);
+    const listing = this.state.listings.find((item) => item.status === "active" && item.cardId === cardId && item.sellerId === sellerAccount.id);
+    if (!listing) throw new Error("无法创建单卡交易");
+    listing.channel = "direct-trade";
+    try {
+      return this.buyListing(buyerAccount, listing.id);
+    } catch (error) {
+      listing.status = "cancelled";
+      listing.closedAt = this.now();
+      this.save();
+      throw error;
+    }
+  }
+
+  directTradeOwnership(sellerAccount, buyerAccount, playerId, priceValue, retainedCardId = null) {
+    this.listOwnership(sellerAccount, playerId, priceValue, retainedCardId);
+    const listing = this.state.listings.find((item) => item.status === "active" && item.kind === "ownership" && item.playerId === playerId && item.sellerId === sellerAccount.id);
+    if (!listing) throw new Error("无法创建所有权交易");
+    listing.channel = "direct-trade";
+    try {
+      return this.buyListing(buyerAccount, listing.id);
+    } catch (error) {
+      listing.status = "cancelled";
+      listing.closedAt = this.now();
+      this.save();
+      throw error;
+    }
+  }
+
   releasePlayer(account, playerId) {
+    const card = this.representativeCard(account.id, playerId);
+    if (!card) throw new Error("不能解约该球员");
+    return this.releaseCard(account, card.id, true);
+  }
+
+  returnOwnership(account, playerId) {
     const team = this.accountTeam(account.id);
     const player = REAL_PLAYER_BY_ID[playerId];
-    if (!team?.rosterIds.includes(playerId) || team.rosterIds.length <= 11) throw new Error("不能解约该球员");
-    if (this.state.listings.some((item) => item.status === "active" && item.playerId === playerId)) throw new Error("请先撤回球员挂牌");
-    removeRosterPlayerPreservingShape(team, playerId);
-    delete team.playerState[playerId];
-    removePlayerChemistry(team, playerId);
-    const amount = Math.floor(minimumPrice(player) * .45);
+    const cards = this.playerCards(account.id, playerId);
+    if (!team || !player || ownershipOwner(this.state, playerId) !== account.id || !cards.length) throw new Error("你不拥有该球员所有权");
+    if (this.state.listings.some((item) => item.status === "active" && item.playerId === playerId)) throw new Error("请先撤回该球员的全部挂牌");
+    const retained = cards[0];
+    const recovered = cards.slice(1);
+    const recoveryAmount = recovered.reduce((sum, card) => sum + s4ForcedCardRecoveryValue(player, card.upgradeLevel), 0);
+    recovered.forEach((card) => recycleS4Card(this.state, card.id, "ownership-return-liquidation", this.now()));
+    returnPlayerOwnershipToSystem(this.state, playerId, account.id);
+    const ownershipAmount = Math.floor(minimumPrice(player) * S4_OWNERSHIP_RETURN_RATE);
+    const amount = recoveryAmount + ownershipAmount;
     this.wallet(account.id).balance += amount;
-    this.state.ledger.push({ id:makeId("ledger", playerId), accountId:account.id, amount, type:"release", playerId, createdAt:this.now() });
+    this.state.ledger.push({ id:makeId("ledger", `ownership-return-${playerId}`), accountId:account.id, amount, type:"ownership-return", playerId, retainedCardId:retained.id, recoveredCardIds:recovered.map((card) => card.id), createdAt:this.now() });
+    recordS4AssetTransaction(this.state, {
+      id:makeId("asset-ownership-return", playerId),
+      type:"ownership-return",
+      playerId,
+      cardIds:recovered.map((card) => card.id),
+      fromOwnerId:account.id,
+      amount,
+      metadata:{ retainedCardId:retained.id },
+      createdAt:this.now(),
+    });
     this.save();
     return this.view(account);
   }
@@ -1086,37 +2021,94 @@ export class YellowDogsLeagueService {
     const listing = this.state.listings.find((item) => item.id === listingId && item.status === "active");
     if (!buyer || !listing || listing.sellerId === account.id) throw new Error("当前无法购买这名球员");
     const seller = this.state.teams.find((team) => team.id === listing.sellerTeamId && team.ownerId === listing.sellerId);
-    if (!seller?.rosterIds.includes(listing.playerId) || seller.rosterIds.length <= 11) throw new Error("卖方必须保留至少11名注册球员");
-    if (buyer.rosterIds.length >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先解约或出售一名球员");
+    if (!seller?.rosterIds.includes(listing.playerId)) throw new Error("卖方已不再持有这名球员");
     if (this.wallet(account.id).balance < listing.price) throw new Error("金币不足");
+    const player = REAL_PLAYER_BY_ID[listing.playerId];
+    let transferredCard = null;
+    let recoveredCards = [];
+    let recoveryAmount = 0;
+    let ownershipTransferred = false;
+
+    if (listing.kind === "ownership") {
+      if (ownershipOwner(this.state, listing.playerId) !== listing.sellerId) throw new Error("卖方已不再拥有该球员所有权");
+      const sellerCards = this.playerCards(listing.sellerId, listing.playerId);
+      const buyerCards = this.playerCards(account.id, listing.playerId);
+      if (!sellerCards.length) throw new Error("卖方所有权缺少锚点卡");
+      if (!buyerCards.length && sellerCards.length === 1 && seller.rosterIds.length <= 11) throw new Error("卖方必须保留至少11名可用球员");
+      const buyerAlreadyUsesSlot = rosterFamilyUsesSlot(this.state, account.id, listing.playerId);
+      if (!buyerAlreadyUsesSlot && this.rosterSlotsUsed(account.id) >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，无法接收该球员所有权");
+      let retained = sellerCards.find((card) => card.id === listing.retainedCardId) ?? sellerCards[0];
+      if (!buyerCards.length) {
+        const candidates = sellerCards.filter((card) => card.id !== retained.id);
+        transferredCard = candidates.at(-1) ?? sellerCards[0];
+        if (transferredCard.id === retained.id) retained = null;
+        transferS4Card(this.state, transferredCard.id, account.id, listing.channel === "direct-trade" ? "direct-trade" : "market", this.now());
+        this.ensureRosterFamily(buyer, listing.playerId);
+      }
+      const retainedId = retained?.id ?? null;
+      recoveredCards = sellerCards.filter((card) => card.id !== retainedId && card.id !== transferredCard?.id);
+      recoveredCards.forEach((card) => recycleS4Card(this.state, card.id, "ownership-sale-liquidation", this.now()));
+      recoveryAmount = recoveredCards.reduce((sum, card) => sum + s4ForcedCardRecoveryValue(player, card.upgradeLevel), 0);
+      transferPlayerOwnership(this.state, listing.playerId, listing.sellerId, account.id);
+      ownershipTransferred = true;
+      this.removeEmptyRosterFamily(seller, listing.playerId);
+    } else {
+      const card = this.state.s4Assets.cards[listing.cardId];
+      if (!card || card.status !== "active" || card.ownerId !== listing.sellerId) throw new Error("挂牌球员卡已不可交易");
+      const sellerCards = this.playerCards(listing.sellerId, listing.playerId);
+      if (sellerCards.length === 1 && seller.rosterIds.length <= 11) throw new Error("卖方必须保留至少11名可用球员");
+      const includesOwnership = ownershipOwner(this.state, listing.playerId) === listing.sellerId && sellerCards.length === 1;
+      const buyerAlreadyUsesSlot = rosterFamilyUsesSlot(this.state, account.id, listing.playerId);
+      const willUseSlot = includesOwnership || Number(card.upgradeLevel ?? 0) < 3;
+      if (!buyerAlreadyUsesSlot && willUseSlot && this.rosterSlotsUsed(account.id) >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，无法接收这张球员卡");
+      transferS4Card(this.state, card.id, account.id, listing.channel === "direct-trade" ? "direct-trade" : "market", this.now());
+      transferredCard = card;
+      this.ensureRosterFamily(buyer, listing.playerId);
+      if (includesOwnership) {
+        transferPlayerOwnership(this.state, listing.playerId, listing.sellerId, account.id);
+        ownershipTransferred = true;
+      }
+      this.removeEmptyRosterFamily(seller, listing.playerId);
+    }
+
     this.wallet(account.id).balance -= listing.price;
-    this.wallet(listing.sellerId).balance += Math.floor(listing.price * .95);
-    buyer.rosterIds.push(listing.playerId);
-    buyer.playerState[listing.playerId] = seller.playerState[listing.playerId] ?? { fitness:100, suspension:0, injuryRounds:0 };
-    removeRosterPlayerPreservingShape(seller, listing.playerId);
-    delete seller.playerState[listing.playerId];
-    removePlayerChemistry(seller, listing.playerId);
+    const saleIncome = Math.floor(listing.price * .95);
+    this.wallet(listing.sellerId).balance += saleIncome + recoveryAmount;
     listing.status = "sold";
     listing.buyerId = account.id;
+    listing.transferredCardId = transferredCard?.id ?? null;
+    listing.ownershipTransferred = ownershipTransferred;
+    listing.recoveredCardIds = recoveredCards.map((card) => card.id);
+    listing.recoveryAmount = recoveryAmount;
     listing.closedAt = this.now();
     this.state.ledger.push(
-      { id:makeId("ledger", listing.id), accountId:account.id, amount:-listing.price, type:"transfer-buy", playerId:listing.playerId, counterpartyId:listing.sellerId, listingId:listing.id, createdAt:this.now() },
-      { id:makeId("ledger", `${listing.id}-seller`), accountId:listing.sellerId, amount:Math.floor(listing.price * .95), type:"transfer-sale", playerId:listing.playerId, counterpartyId:account.id, listingId:listing.id, createdAt:this.now() },
+      { id:makeId("ledger", listing.id), accountId:account.id, amount:-listing.price, type:ownershipTransferred ? "ownership-buy" : "card-buy", playerId:listing.playerId, cardId:transferredCard?.id ?? null, counterpartyId:listing.sellerId, listingId:listing.id, createdAt:this.now() },
+      { id:makeId("ledger", `${listing.id}-seller`), accountId:listing.sellerId, amount:saleIncome + recoveryAmount, type:ownershipTransferred ? "ownership-sale" : "card-sale", playerId:listing.playerId, cardId:transferredCard?.id ?? null, counterpartyId:account.id, listingId:listing.id, createdAt:this.now() },
     );
-    const player = REAL_PLAYER_BY_ID[listing.playerId];
+    recordS4AssetTransaction(this.state, {
+      id:makeId("asset-market", listing.id),
+      type:ownershipTransferred ? "ownership-market-transfer" : "single-card-market-transfer",
+      playerId:listing.playerId,
+      cardIds:[...(transferredCard ? [transferredCard.id] : []), ...recoveredCards.map((card) => card.id)],
+      fromOwnerId:listing.sellerId,
+      toOwnerId:account.id,
+      amount:listing.price,
+      metadata:{ listingId:listing.id, ownershipTransferred, recoveryAmount },
+      createdAt:this.now(),
+    });
     this.pushInbox(buyer, {
       id:`transfer-buy:${listing.id}`,
       type:"transfer",
       title:`签下 ${player.name}`,
-      summary:`转会费 ${listing.price} 金币，球员已加入注册名单。`,
-      body:`${player.name}（能力 ${player.overall}）已从 ${seller.name} 转入球队。新球员需要通过共同比赛逐步建立默契。`,
+      summary:`支付 ${listing.price} 金币，${ownershipTransferred ? "球员所有权及对应卡片" : "球员卡"}已到账。`,
+      body:`${player.name}已从${seller.name}转入球队。${transferredCard && isRosterExemptCard(this.state, transferredCard) ? "该卡强化等级达到+3且来自市场，不占用33人大名单额度。" : "该资产计入当前名单规则。"}`,
     });
     this.pushInbox(seller, {
       id:`transfer-sale:${listing.id}`,
       type:"transfer",
       title:`${player.name} 转会完成`,
-      summary:`扣除手续费后到账 ${Math.floor(listing.price * .95)} 金币。`,
-      body:`${player.name} 已转会至 ${buyer.name}，他在本队积累的默契关系已经清除。`,
+      summary:`扣除手续费并计入强制回收补偿后到账 ${saleIncome + recoveryAmount} 金币。`,
+      body:`${player.name}相关资产已转移至${buyer.name}。${ownershipTransferred ? "球员所有权也已同步转移。" : "你仍保有该球员所有权及剩余卡片。"}`,
     });
     this.save();
     return this.view(account);
@@ -1171,15 +2163,16 @@ export class YellowDogsLeagueService {
     return this.selectActualLineup(team, roundNumber).lineup;
   }
 
-  actualPositions(team, lineup) {
+  actualPositions(team, lineup, positionPreset = "position1") {
     const fallback = leagueBoardPositions(lineup);
     if (!team.ownerId) return fallback;
+    const savedPositions = team.positionPresets?.[positionPreset] ?? team.positions;
     const lineupIds = new Set(lineup.map((player) => player.id));
     const replacementSlots = team.preferredStarterIds
-      .filter((id) => !lineupIds.has(id) && team.positions[id])
-      .map((id) => ({ ...team.positions[id] }));
-    return Object.fromEntries(lineup.map((player) => [player.id, team.positions[player.id]
-      ? { ...team.positions[player.id] }
+      .filter((id) => !lineupIds.has(id) && savedPositions[id])
+      .map((id) => ({ ...savedPositions[id] }));
+    return Object.fromEntries(lineup.map((player) => [player.id, savedPositions[player.id]
+      ? { ...savedPositions[player.id] }
       : replacementSlots.shift() ?? fallback[player.id]]));
   }
 
@@ -1196,15 +2189,37 @@ export class YellowDogsLeagueService {
   }
 
   chemistryAdjustedLineup(team, lineup, positions) {
-    if (!team.ownerId) return lineup;
-    const links = publicChemistryLinks(team, lineup.map((player) => player.id), positions);
+    const links = team.ownerId ? publicChemistryLinks(team, lineup.map((player) => player.id), positions) : [];
     const valuesByPlayer = new Map();
     links.forEach((link) => link.playerIds.forEach((id) => {
       const values = valuesByPlayer.get(id) ?? [];
       values.push(link.value);
       valuesByPlayer.set(id, values);
     }));
-    return lineup.map((player) => {
+    const lineupWithCards = lineup.map((player) => {
+      const card = this.representativeCard(team.ownerId, player.id);
+      return {
+        ...player,
+        upgradeLevel:Number(card?.upgradeLevel ?? 0),
+        traits:(card?.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]),
+      };
+    });
+    eligibleChemistryPairs(lineupWithCards, positions).forEach((pair) => {
+      const pairPlayers = pair.playerIds.map((id) => lineupWithCards.find((player) => player.id === id)).filter(Boolean);
+      const traitRule = pairPlayers.flatMap((player) => player.traits.map((id) => YDL_TRAIT_BY_ID[id]))
+        .filter(Boolean)
+        .flatMap((trait) => trait.rules ?? [])
+        .find((rule) => rule.hook === "chemistry" && rule.linkNearby);
+      if (!traitRule) return;
+      pair.playerIds.forEach((id) => {
+        const values = valuesByPlayer.get(id) ?? [];
+        values.push(Number(traitRule.value ?? 100));
+        valuesByPlayer.set(id, values);
+      });
+    });
+    const bonds = evaluateS4LineupBonds(lineupWithCards, S4_BOND_CATALOG);
+    const bondedLineup = applyS4BondBonuses(lineupWithCards, bonds);
+    return bondedLineup.map((player) => {
       const values = valuesByPlayer.get(player.id) ?? [];
       if (!values.length) return player;
       const chemistry = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -1230,8 +2245,13 @@ export class YellowDogsLeagueService {
     const away = this.state.teams.find((team) => team.id === fixture.awayId);
     const selections = [home, away].map((team) => this.selectActualLineup(team, roundNumber, options.competitionMode ?? "league"));
     const lineups = selections.map((selection) => selection.lineup);
-    const positions = [home, away].map((team, index) => this.actualPositions(team, lineups[index]));
-    const seats = [home, away].map((team, index) => ({ name:team.name, players:this.chemistryAdjustedLineup(team, lineups[index], positions[index]), positions:positions[index], tactic:team.tacticalPlans?.opening?.tactic ?? team.tactic, style:team.tacticalPlans?.opening?.style ?? team.style, tacticalPlans:team.tacticalPlans, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus, preserveFitness:true }));
+    const teams = [home, away];
+    const positionPresets = teams.map((team, index) => Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, this.actualPositions(team, lineups[index], key)])));
+    const positions = teams.map((team, index) => {
+      const openingPreset = team.tacticalPlans?.opening?.positionPreset ?? "position1";
+      return clone(positionPresets[index][openingPreset] ?? positionPresets[index].position1);
+    });
+    const seats = teams.map((team, index) => ({ name:team.name, players:this.chemistryAdjustedLineup(team, lineups[index], positions[index]), positions:positions[index], positionPresets:positionPresets[index], tactic:team.tacticalPlans?.opening?.tactic ?? team.tactic, style:team.tacticalPlans?.opening?.style ?? team.style, tacticalPlans:team.tacticalPlans, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus, preserveFitness:true }));
     const conditions = this.fixtureConditions(fixture, roundNumber);
     const match = createVersusMatch(seats, { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode:options.competitionMode ?? "league", legNumber:options.legNumber ?? 1, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false });
     match.leagueAutoRotations = selections.map((selection) => selection.rotations);
@@ -1543,56 +2563,58 @@ export class YellowDogsLeagueService {
         this.wallet(team.ownerId).balance += amount;
         this.state.ledger.push({ id:makeId("ledger", `${team.id}-${roundNumber}`), accountId:team.ownerId, amount, type:"three-round-reward", round:roundNumber, createdAt:this.now() });
       }
-      this.state.ledger.push({ id:makeId("ledger", `${team.id}-${roundNumber}-packs`), accountId:team.ownerId, amount:0, type:"round-pack-reward", round:roundNumber, createdAt:this.now() });
-      const offers = Array.from({ length:rewardPackCount(roundNumber) }, (_, slot) => this.createRewardPack(team.ownerId, roundNumber, slot)).filter(Boolean);
-      this.pushInbox(team, {
+      if (amount) this.pushInbox(team, {
         id:`reward:${this.state.season.id}:${roundNumber}`,
         type:"reward",
-        title:`第${roundNumber}轮比赛奖励已送达`,
-        summary:`获得 ${offers.length} 份随机位置球员卡包${amount ? `和 ${amount} 金币` : ""}。`,
-        body:amount
-          ? `最近三轮取得 ${wins} 胜 ${draws} 平，阶段金币已经到账。${offers.length}份本轮赠送卡包已放入背包。`
-          : `${offers.length}份本轮赠送卡包已放入背包。金币将在每三轮比赛后统一结算。`,
+        title:`第${roundNumber}轮阶段金币已结算`,
+        summary:`最近三轮取得 ${wins} 胜 ${draws} 平，获得 ${amount} 金币。`,
+        body:"旧赛季每轮球员卡包已经下架；S4礼包只通过新商店、活动或管理员发放。",
         round:roundNumber,
-        payload:{ amount, wins, draws, offerIds:offers.map((offer) => offer.id), pools:offers.map((offer) => offer.pool) },
+        payload:{ amount, wins, draws },
       });
     });
   }
 
   createRewardPack(accountId, roundNumber, slot = 0) {
-    const team = this.accountTeam(accountId);
-    if (!team) return null;
-    this.state.rewardOffers[accountId] ??= [];
-    if (this.rewardPackSlots(accountId, roundNumber).has(slot)) return null;
-    const pools = ["ATT", "MID", "DEF", "GK"];
-    const pool = pools[Math.floor(this.rng() * pools.length)];
-    const offer = { id:makeId("reward", `${accountId}-${roundNumber}-${slot}`), round:roundNumber, slot, pool, tierId:"standard", playerIds:[], createdAt:this.now() };
-    this.state.rewardOffers[accountId].push(offer);
-    return offer;
+    void accountId;
+    void roundNumber;
+    void slot;
+    return null;
   }
 
   grantCupReward(teamId, event, kind) {
     const team = this.state.teams.find((entry) => entry.id === teamId);
     if (!team?.ownerId) return null;
     const awardKey = `${event.id}:${kind}`;
-    this.state.rewardOffers[team.ownerId] ??= [];
-    if (this.state.rewardOffers[team.ownerId].some((offer) => offer.cupAwardKey === awardKey)) return null;
-    const pool = kind === "champion" ? "LEGEND" : ["ATT", "MID", "DEF", "GK"][Math.floor(this.rng() * 4)];
-    const tierId = kind === "champion" ? "legend" : "advanced";
-    const offer = { id:makeId("cup-reward", `${team.ownerId}-${awardKey}`), round:event.round, pool, tierId, source:"cup", cupAwardKey:awardKey, cupStage:event.stage, cupLeg:event.leg, playerIds:[], createdAt:this.now() };
-    this.state.rewardOffers[team.ownerId].push(offer);
+    if (this.state.ledger.some((entry) => entry.type === "cup-coin-reward" && entry.accountId === team.ownerId && entry.grantId === awardKey)) return null;
+    const amount = kind === "champion" ? CUP_CHAMPION_COIN_REWARD : CUP_ADVANCE_COIN_REWARD;
+    const ledgerEntry = {
+      id:makeId("ledger", `${team.id}-${awardKey}`),
+      accountId:team.ownerId,
+      amount,
+      type:"cup-coin-reward",
+      grantId:awardKey,
+      competition:"cup",
+      stage:event.stage,
+      award:kind,
+      round:event.round,
+      createdAt:this.now(),
+    };
+    this.wallet(team.ownerId).balance += amount;
+    this.state.ledger.push(ledgerEntry);
     const stageName = CUP_STAGE_NAMES[event.stage] ?? "决赛";
-    const rewardName = kind === "champion" ? "随机传奇卡包" : "高级随机位置卡包";
     this.pushInbox(team, {
       id:`cup-reward:${this.state.season.id}:${awardKey}:${team.id}`,
       type:"reward",
       title:kind === "champion" ? "黄狗冠军杯冠军奖励已送达" : `黄狗冠军杯${stageName}晋级奖励已送达`,
-      summary:`获得 1 份${rewardName}。`,
-      body:kind === "champion" ? "恭喜夺得黄狗冠军杯冠军。随机传奇卡包已经存入背包，打开后将获得1名当前可用的S级传奇球员。" : `恭喜晋级黄狗冠军杯${stageName === "四分之一决赛" ? "半决赛" : "决赛"}。高级随机位置卡包已经存入背包。`,
+      summary:`获得 ${amount} 金币。`,
+      body:kind === "champion"
+        ? `恭喜夺得黄狗冠军杯冠军，冠军奖励 ${amount} 金币已经发放到账。`
+        : `恭喜晋级黄狗冠军杯${stageName === "四分之一决赛" ? "半决赛" : "决赛"}，晋级奖励 ${amount} 金币已经发放到账。`,
       round:event.round,
-      payload:{ offerId:offer.id, offerIds:[offer.id], competition:"cup", stage:event.stage, award:kind },
+      payload:{ amount, competition:"cup", stage:event.stage, award:kind, grantId:awardKey },
     });
-    return offer;
+    return ledgerEntry;
   }
 
   openRewardPack(account, offerIdValue) {
@@ -1630,16 +2652,8 @@ export class YellowDogsLeagueService {
   }
 
   ensureRewardPacks(accountId) {
-    const rewardRounds = new Set(this.state.ledger
-      .filter((entry) => entry.accountId === accountId && ["round-pack-reward", "three-round-reward"].includes(entry.type))
-      .map((entry) => entry.round));
-    let changed = false;
-    rewardRounds.forEach((roundNumber) => {
-      for (let slot = 0; slot < rewardPackCount(roundNumber); slot += 1) {
-        if (!this.rewardPackSlots(accountId, roundNumber).has(slot) && this.createRewardPack(accountId, roundNumber, slot)) changed = true;
-      }
-    });
-    return changed;
+    void accountId;
+    return false;
   }
 
   createAdminRewardPack(accountId, grant) {
@@ -1765,18 +2779,14 @@ export class YellowDogsLeagueService {
     const offers = this.state.rewardOffers[account.id] ?? [];
     const offer = offers.find((entry) => entry.id === offerIdValue);
     if (!team || !offer?.playerIds.includes(playerId)) throw new Error("只能选择赠送卡包中的球员");
-    if (team.rosterIds.length >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先腾出一个位置");
+    if (this.rosterSlotsUsed(account.id) >= CLUB_ROSTER_LIMIT) throw new Error("33人名单已满，请先腾出一个位置");
     if (team.rosterIds.includes(playerId) || this.unavailablePlayerIds(account.id).has(playerId)) throw new Error("该球员已经被其他玩家签下");
-    team.rosterIds.push(playerId);
-    team.playerState[playerId] = { fitness:100, suspension:0, injuryRounds:0 };
+    this.grantS4Card(team, playerId, {
+      grantOwnership:true,
+      acquisitionSource:offer.source === "admin" ? "admin-pack" : offer.source === "cup" ? "cup-pack" : "round-pack",
+    });
     this.state.rewardOffers[account.id] = offers.filter((entry) => entry.id !== offer.id);
     this.state.ledger.push({ id:makeId("ledger", `${offer.id}-${playerId}`), accountId:account.id, amount:0, type:offer.source === "admin" ? "three-round-pack-sign" : offer.source === "cup" ? "cup-pack-sign" : "round-pack-sign", round:offer.round, source:offer.source, grantId:offer.grantId, rewardSlot:Number.isInteger(Number(offer.slot)) ? Number(offer.slot) : undefined, playerId, createdAt:this.now() });
-    const signingSource = offer.source === "admin"
-      ? "开发者奖励卡包"
-      : offer.source === "cup"
-        ? "黄狗冠军杯冠军奖励"
-        : "每轮比赛奖励卡包";
-    this.notifyLegendSigning(team, REAL_PLAYER_BY_ID[playerId], signingSource);
     this.save();
     return this.view(account);
   }
@@ -1787,7 +2797,6 @@ export class YellowDogsLeagueService {
     round.status = "complete";
     this.state.season.currentRound = round.number;
     this.payRewards(round.number);
-    this.dispatchAdminRewardGrants(round.number);
     if (round.number >= this.state.season.totalRounds) { this.state.season.status = "completed"; this.state.season.completedAt = this.now(); }
     else this.state.season.nextRoundAt = nextSlot(this.now());
     this.createRoundInbox(round.number);
@@ -2259,11 +3268,18 @@ export class YellowDogsLeagueService {
       "release":"球员解约",
       "transfer-buy":"转会市场买入",
       "transfer-sale":"转会市场售出",
+      "card-buy":"单卡买入",
+      "card-sale":"单卡售出",
+      "ownership-buy":"球员所有权买入",
+      "ownership-sale":"球员所有权售出",
+      "ownership-return":"球员所有权返还系统",
       "three-round-reward":"联赛金币奖励",
+      "cup-coin-reward":"杯赛金币奖励",
       "round-pack-reward":"每轮卡包奖励",
       "round-pack-sign":"每轮卡包签约",
       "three-round-pack-sign":"后台奖励包签约",
       "cup-pack-sign":"杯赛奖励包签约",
+      "admin-player-card-grant":"后台指定球员卡发放",
     };
     return this.state.teams.filter((team) => team.ownerId).map((team) => {
       const entries = this.state.ledger.filter((entry) => entry.accountId === team.ownerId).map((entry) => {
@@ -2281,10 +3297,10 @@ export class YellowDogsLeagueService {
       }).sort((left, right) => right.createdAt - left.createdAt);
       const income = entries.reduce((total, entry) => total + Math.max(0, Number(entry.amount) || 0), 0);
       const expense = entries.reduce((total, entry) => total + Math.abs(Math.min(0, Number(entry.amount) || 0)), 0);
-      const shopPacks = entries.filter((entry) => entry.type === "pack-buy");
-      const signings = entries.filter((entry) => ["pack-sign", "round-pack-sign", "three-round-pack-sign", "cup-pack-sign"].includes(entry.type));
+      const shopPacks = entries.filter((entry) => entry.type === "s4-pack-buy");
+      const signings = entries.filter((entry) => ["pack-sign", "round-pack-sign", "three-round-pack-sign", "cup-pack-sign", "admin-player-card-grant"].includes(entry.type));
       const releases = entries.filter((entry) => entry.type === "release");
-      const transfers = entries.filter((entry) => ["transfer-buy", "transfer-sale"].includes(entry.type));
+      const transfers = entries.filter((entry) => ["transfer-buy", "transfer-sale", "card-buy", "card-sale", "ownership-buy", "ownership-sale", "ownership-return"].includes(entry.type));
       return {
         accountId:team.ownerId,
         ownerName:team.ownerName,
@@ -2294,7 +3310,11 @@ export class YellowDogsLeagueService {
         income,
         expense,
         net:income - expense,
-        shopPackCounts:Object.values(PACK_TIERS).map((tier) => ({ tierId:tier.id, tierName:tier.name, count:shopPacks.filter((entry) => (entry.tierId ?? "standard") === tier.id).length })),
+        shopPackCounts:S4_PACK_CATALOG.map((pack) => ({
+          tierId:pack.id,
+          tierName:pack.name,
+          count:shopPacks.filter((entry) => entry.packType === pack.id).reduce((sum, entry) => sum + Number(entry.quantity ?? 1), 0),
+        })),
         signings,
         releases,
         transfers,
@@ -2304,8 +3324,12 @@ export class YellowDogsLeagueService {
   }
 
   adminView() {
+    ensureS4Assets(this.state);
     const owned = new Map();
-    this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => owned.set(id, team)));
+    Object.entries(this.state.s4Assets.ownerships).forEach(([playerId, accountId]) => {
+      const team = this.accountTeam(accountId);
+      if (team) owned.set(playerId, team);
+    });
     const reserved = new Map();
     Object.entries(this.state.drafts).forEach(([accountId, draft]) => draft.selectedIds.forEach((id) => reserved.set(id, { accountId, teamName:draft.teamName })));
     const pools = Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => {
@@ -2313,10 +3337,20 @@ export class YellowDogsLeagueService {
       const drafting = players.filter((player) => reserved.has(player.id)).length;
       return [pool, { total:players.length, selected, drafting, available:players.length - selected - drafting }];
     }));
-    const allocations = REAL_PLAYERS.filter((player) => owned.has(player.id) || reserved.has(player.id)).map((player) => {
+    const allocations = REAL_PLAYERS.filter((player) => owned.has(player.id) || reserved.has(player.id) || Object.values(this.state.s4Assets.cards).some((card) => card.status === "active" && card.playerId === player.id)).map((player) => {
       const team = owned.get(player.id);
       const draft = reserved.get(player.id);
-      return { ...playerSummary(player), status:team ? "owned" : "drafting", teamId:team?.id ?? null, teamName:team?.name ?? draft?.teamName ?? null, ownerName:team?.ownerName ?? null };
+      const circulating = Object.values(this.state.s4Assets.cards).filter((card) => card.status === "active" && card.playerId === player.id);
+      return {
+        ...playerSummary(player),
+        status:team ? "owned" : draft ? "drafting" : "cards-circulating",
+        teamId:team?.id ?? null,
+        teamName:team?.name ?? draft?.teamName ?? null,
+        ownerName:team?.ownerName ?? null,
+        cardCount:circulating.length,
+        cardHolderCount:new Set(circulating.map((card) => card.ownerId)).size,
+        highestUpgrade:Math.max(0, ...circulating.map((card) => Number(card.upgradeLevel ?? 0))),
+      };
     });
     return clone({
       season:this.state.season,
@@ -2324,17 +3358,26 @@ export class YellowDogsLeagueService {
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20 },
       teams:this.standings().map((entry) => {
         const team = this.state.teams.find((candidate) => candidate.id === entry.id);
-        return { ...entry, ...publicTeam(team), ownerId:team.ownerId, rosterCount:team.rosterIds.length };
+        return { ...entry, ...publicTeam(team), ownerId:team.ownerId, rosterCount:team.ownerId ? this.rosterSlotsUsed(team.ownerId) : team.rosterIds.length, rosterFamilyCount:team.rosterIds.length };
       }),
       pools,
       allocations,
       drafts:Object.entries(this.state.drafts).map(([accountId, draft]) => ({ accountId, teamName:draft.teamName, selectedCount:draft.selectedIds.length, startedAt:draft.startedAt })),
       matches:this.state.matches.length,
       backups:this.backupView(),
-      packTiers:Object.values(PACK_TIERS).map(publicPackTier),
-      adminPackTypes:ADMIN_PACK_TYPES.map((entry) => ({ ...entry, tier:publicPackTier(rewardPackTier(entry.tierId)) })),
+      s4PackCatalog:S4_PACK_CATALOG.map((pack) => ({ ...pack })),
+      s4PackGrants:this.state.s4Packs.grants.slice().sort((left, right) => right.createdAt - left.createdAt),
+      s4PlayerCatalog:REAL_PLAYERS.map((player) => ({ id:player.id, name:player.name, role:player.role, secondaryRole:player.secondaryRole, pool:player.pool, overall:player.overall, grade:player.grade, nationality:player.nationality, club:player.club })),
+      s4CardGrants:(this.state.s4Packs.cardGrants ?? []).slice().sort((left, right) => right.createdAt - left.createdAt),
       economy:this.adminEconomyView(),
-      rewardGrants:(this.state.adminPackGrants ?? []).slice().sort((left, right) => right.createdAt - left.createdAt),
+      s4Assets:{
+        schemaVersion:this.state.s4Assets.schemaVersion,
+        ownershipCount:Object.keys(this.state.s4Assets.ownerships).length,
+        activeCardCount:Object.values(this.state.s4Assets.cards).filter((card) => card.status === "active").length,
+        recycledCardCount:Object.values(this.state.s4Assets.cards).filter((card) => card.status === "recycled").length,
+        recentTransactions:this.state.s4Assets.transactions.slice(-100).reverse(),
+      },
+      rewardGrants:[],
       lastFullResetAt:this.state.lastFullResetAt ?? null,
       archives:(this.state.archives ?? []).map((archive) => ({ reason:archive.reason, archivedAt:archive.archivedAt, season:archive.season, matchCount:archive.matches?.length ?? 0 })),
     });

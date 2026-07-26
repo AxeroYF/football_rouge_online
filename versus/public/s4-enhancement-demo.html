@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>S4 球员强化测试</title>
+  <link rel="stylesheet" href="./styles.css">
+  <style>
+    body{min-height:100vh;background:#06110e}
+    #app{width:min(1680px,calc(100% - 28px));padding:20px 0 36px}
+    .enhancement-demo-head{margin-bottom:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(93,130,112,.48);border-radius:20px;background:linear-gradient(145deg,#10241d,#081813)}
+    .enhancement-demo-head h1{margin:0;font-size:26px}
+    .enhancement-demo-head>div{display:flex;align-items:center;gap:10px}
+    .enhancement-demo-head b{color:var(--league-yellow);font-size:16px}
+    .demo-refresh{min-height:42px;padding:0 18px;border:1px solid var(--league-yellow);border-radius:11px;color:#15190f;background:linear-gradient(145deg,#ffe878,#dcb039);font-weight:950;cursor:pointer}
+    .demo-shell{display:grid;grid-template-columns:minmax(620px,.85fr) minmax(700px,1.15fr);gap:16px}
+    .demo-shell .enhancement-flow{min-height:560px}
+    .demo-shell .enhancement-card-grid{max-height:760px}
+    .demo-card-count{display:flex;align-items:center;gap:12px}
+    .demo-card-count select{min-height:38px;padding:0 10px;border:1px solid var(--line);border-radius:9px;color:var(--ink);background:#071713;font-weight:850}
+    @media(max-width:1400px){.demo-shell{grid-template-columns:1fr}.demo-shell .enhancement-card-grid{max-height:600px}}
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <div class="toast" id="toast"></div>
+  <script>
+    const LEVEL_COUNTS = [32,16,12,10,8,7,7,8];
+    const EQUAL_CHANCES = [100,90,78,65,52,40,30,22];
+    const PROTECTION_COSTS = [0,0,0,500,900,1600,2800,5000];
+    const TRAITS = [
+      { name:"高中锋", summary:"身高增加20cm，并开放中锋位置限制。", roles:"前场" },
+      { name:"禁区嗅觉", summary:"在禁区内获得更强的跑位与终结能力。", roles:"前场" },
+      { name:"一脚出球", summary:"快速传递时提升传球与决策表现。", roles:"中场 · 前场" },
+      { name:"永动机", summary:"比赛后段仍能保持高强度覆盖能力。", roles:"全位置" },
+      { name:"大场面先生", summary:"关键比赛与比赛末段获得能力提升。", roles:"全位置" },
+      { name:"任意球大师", summary:"显著强化直接任意球与定位球能力。", roles:"中场 · 前场" },
+    ];
+    const app = document.querySelector("#app");
+    const toast = document.querySelector("#toast");
+    let cards = [];
+    let mainId = null;
+    let materialId = null;
+    let useProtection = false;
+    let wallet = 100000;
+    let phase = "idle";
+    let result = null;
+    let traitPickerOpen = false;
+    let levelFilter = "ALL";
+
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const getCard = (id) => cards.find((card) => card.id === id);
+    const band = (level) => level >= 8 ? "max" : level >= 5 ? "high" : level >= 1 ? "mid" : "base";
+    const chanceFor = (mainLevel, materialLevel) => {
+      const distance = materialLevel - mainLevel;
+      const value = distance < 0 ? EQUAL_CHANCES[mainLevel] * (.52 ** Math.abs(distance)) : EQUAL_CHANCES[mainLevel] * (1.35 ** distance);
+      return Math.max(1,Math.min(100,Math.round(value)));
+    };
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+    function resetDemo() {
+      cards = [];
+      let sequence = 1;
+      LEVEL_COUNTS.forEach((count, level) => {
+        for (let index = 0; index < count; index += 1) cards.push({ id:`messi-${sequence++}`, level, traits:[] });
+      });
+      mainId = null;
+      materialId = null;
+      useProtection = false;
+      wallet = 100000;
+      phase = "idle";
+      result = null;
+      traitPickerOpen = false;
+      render();
+    }
+    function cardMarkup(card, attributes = "") {
+      const upgrade = card.level ? `<span class="s4-player-card-upgrade band-${band(card.level)}">+${card.level}</span>` : "";
+      const traits = card.traits.length ? `<strong class="s4-player-card-traits">${card.traits.join("<br>")}</strong>` : "";
+      return `<button type="button" class="s4-player-card compact grade-s band-${band(card.level)}" ${attributes}>
+        ${upgrade}
+        <div class="s4-player-card-head"><strong>91</strong><b>RW</b></div>
+        <div class="s4-player-card-grade"><span>S</span></div>
+        <div class="s4-player-card-name"><h3>梅西</h3></div>
+        <footer><b>迈阿密国际 / 阿根廷</b>${traits}</footer>
+      </button>`;
+    }
+    function slotMarkup(slot, card) {
+      if (!card) return `<div class="enhancement-card-slot empty" data-drop="${slot}"><b>${slot === "main" ? "主卡" : "副卡"}</b><span>+</span></div>`;
+      return `<div class="enhancement-card-slot filled" data-drop="${slot}"><b>${slot === "main" ? "主卡" : "副卡"}</b>${cardMarkup(card,`draggable="true" data-slot-card="${slot}" data-card-id="${card.id}"`)}</div>`;
+    }
+    function render() {
+      const main = getCard(mainId);
+      const material = getCard(materialId);
+      if (!main) mainId = null;
+      if (!material) materialId = null;
+      const selected = new Set([mainId,materialId,result?.card?.id].filter(Boolean));
+      const visible = cards.filter((card) => !selected.has(card.id) && (levelFilter === "ALL" || card.level === Number(levelFilter))).sort((left,right) => right.level - left.level || left.id.localeCompare(right.id));
+      const chance = main && material && main.level < 8 ? chanceFor(main.level,material.level) : 0;
+      const protectionAvailable = Boolean(main && main.level >= 3 && main.level < 8);
+      if (!protectionAvailable) useProtection = false;
+      const cost = protectionAvailable ? PROTECTION_COSTS[main.level] : 0;
+      const canEnhance = Boolean(main && material && main.level < 8 && phase !== "scanning" && (!useProtection || wallet >= cost));
+      const resultAttributes = result && !result.pendingTraits?.length ? `draggable="true" data-result-card="${result.card.id}"` : "";
+      const bindTraitButton = result?.pendingTraits?.length ? `<button class="enhancement-bind-trait" data-open-traits>绑定特性</button>` : "";
+      const traitPicker = result?.pendingTraits?.length && traitPickerOpen ? `<div class="enhancement-trait-picker">
+        <header><div><h2>选择绑定特性</h2><b>梅西 · +${result.after}</b></div><button data-close-traits>×</button></header>
+        <div class="enhancement-trait-card-grid">${result.pendingTraits.map((trait,index) => `<button class="enhancement-trait-card tone-${index + 1}" data-demo-trait="${trait.name}"><span class="enhancement-trait-card-index">0${index + 1}</span><i></i><h3>${trait.name}</h3><p>${trait.summary}</p><b>${trait.roles}</b><strong>选择并绑定</strong></button>`).join("")}</div>
+      </div>` : "";
+      const resultMarkup = result
+        ? `${cardMarkup(result.card,resultAttributes)}<h3>${result.success ? "强化成功" : result.after < result.before ? "强化失败 · 降级" : "强化失败 · 保级"}</h3><b>+${result.before} → +${result.after}</b>${bindTraitButton}`
+        : `<div class="enhancement-result-empty"><span>+</span><b>结果</b></div>`;
+      app.innerHTML = `<header class="enhancement-demo-head"><h1>S4 球员强化测试</h1><div><b>${wallet} 金币</b><button class="demo-refresh" data-refresh>一键刷新 100 张梅西</button></div></header>
+        <div class="demo-shell phase-${phase}">
+          <section class="enhancement-composer">
+            <header><h2>球员强化</h2><b>${cards.length} 张梅西</b></header>
+            <div class="enhancement-flow">
+              ${slotMarkup("main",main)}
+              ${slotMarkup("material",material)}
+              <div class="enhancement-action">
+                <strong>${chance ? `${chance}%` : "—"}</strong>
+                <button class="enhancement-trigger" data-enhance ${canEnhance ? "" : "disabled"}>${phase === "scanning" ? "合成中" : "强化"}</button>
+                <label class="${protectionAvailable ? "" : "disabled"}"><input type="checkbox" data-protection ${useProtection ? "checked" : ""} ${protectionAvailable ? "" : "disabled"}><span>使用保卡道具</span><b>${cost} 金币</b></label>
+              </div>
+              <div class="enhancement-result-frame">${resultMarkup}</div>
+            </div>
+            ${traitPicker}
+          </section>
+          <section class="enhancement-warehouse" data-warehouse>
+            <header><h2>梅西卡仓库</h2><div class="demo-card-count"><select data-level-filter><option value="ALL">全部等级</option>${[0,1,2,3,4,5,6,7,8].map((level) => `<option value="${level}" ${levelFilter === String(level) ? "selected" : ""}>${level ? `+${level}` : "未强化"}</option>`).join("")}</select><b>${visible.length}/${cards.length}</b></div></header>
+            <div class="backpack-card-grid compact enhancement-card-grid">${visible.map((card) => cardMarkup(card,`draggable="true" data-card="${card.id}"`)).join("") || `<div class="enhancement-warehouse-empty">当前筛选没有卡片</div>`}</div>
+          </section>
+        </div>`;
+    }
+    function assign(cardId, slot = null) {
+      const card = getCard(cardId);
+      if (!card || phase === "scanning") return;
+      const target = slot || (mainId ? "material" : "main");
+      if (target === "main") {
+        if (materialId === cardId) materialId = null;
+        mainId = cardId;
+      } else {
+        if (mainId === cardId) return showToast("主卡和副卡不能相同");
+        materialId = cardId;
+      }
+      result = null;
+      traitPickerOpen = false;
+      phase = "idle";
+      render();
+    }
+    async function enhance() {
+      const main = getCard(mainId);
+      const material = getCard(materialId);
+      if (!main || !material || main.level >= 8 || phase === "scanning") return;
+      const before = main.level;
+      const chance = chanceFor(main.level,material.level);
+      const protectedCard = useProtection && main.level >= 3;
+      const cost = protectedCard ? PROTECTION_COSTS[main.level] : 0;
+      if (wallet < cost) return;
+      wallet -= cost;
+      phase = "scanning";
+      result = null;
+      render();
+      await delay(1000);
+      const success = Math.random() * 100 < chance;
+      cards = cards.filter((card) => card.id !== material.id);
+      mainId = null;
+      materialId = null;
+      main.level = success ? main.level + 1 : main.level >= 3 && !protectedCard ? main.level - 1 : main.level;
+      const milestone = success && (main.level === 5 || main.level === 8);
+      const availableTraits = TRAITS.filter((trait) => !main.traits.includes(trait.name)).sort(() => Math.random() - .5).slice(0,3);
+      result = { success, before, after:main.level, card:main, pendingTraits:milestone ? availableTraits : [] };
+      traitPickerOpen = false;
+      phase = success ? "success" : "failure";
+      render();
+      setTimeout(() => { if (phase !== "scanning") { phase = "idle"; render(); } },1300);
+    }
+    app.addEventListener("click",(event) => {
+      if (event.target.closest("[data-refresh]")) return resetDemo();
+      const card = event.target.closest("[data-card]");
+      if (card) return assign(card.dataset.card);
+      const slot = event.target.closest("[data-slot-card]");
+      if (slot) {
+        if (slot.dataset.slotCard === "main") mainId = null;
+        else materialId = null;
+        result = null;
+        return render();
+      }
+      if (event.target.closest("[data-enhance]")) return enhance();
+      if (event.target.closest("[data-open-traits]")) {
+        traitPickerOpen = true;
+        return render();
+      }
+      if (event.target.closest("[data-close-traits]")) {
+        traitPickerOpen = false;
+        return render();
+      }
+      const trait = event.target.closest("[data-demo-trait]");
+      if (trait && result) {
+        result.card.traits.push(trait.dataset.demoTrait);
+        result.pendingTraits = [];
+        traitPickerOpen = false;
+        phase = "success";
+        render();
+        showToast(`已绑定特性：${trait.dataset.demoTrait}`);
+      }
+    });
+    app.addEventListener("change",(event) => {
+      if (event.target.matches("[data-protection]")) { useProtection = event.target.checked; render(); }
+      if (event.target.matches("[data-level-filter]")) { levelFilter = event.target.value; render(); }
+    });
+    app.addEventListener("dragstart",(event) => {
+      const card = event.target.closest("[data-card],[data-slot-card],[data-result-card]");
+      if (!card) return;
+      event.dataTransfer.setData("text/card",card.dataset.card || card.dataset.cardId || card.dataset.resultCard);
+      event.dataTransfer.effectAllowed = "move";
+      card.classList.add("is-dragging");
+    });
+    app.addEventListener("dragend",(event) => event.target.closest(".s4-player-card")?.classList.remove("is-dragging"));
+    app.addEventListener("dragover",(event) => {
+      const target = event.target.closest("[data-drop],[data-warehouse]");
+      if (!target) return;
+      event.preventDefault();
+      target.classList.add("enhancement-drag-over");
+    });
+    app.addEventListener("dragleave",(event) => {
+      const target = event.target.closest("[data-drop],[data-warehouse]");
+      if (target && !target.contains(event.relatedTarget)) target.classList.remove("enhancement-drag-over");
+    });
+    app.addEventListener("drop",(event) => {
+      const target = event.target.closest("[data-drop],[data-warehouse]");
+      if (!target) return;
+      event.preventDefault();
+      const cardId = event.dataTransfer.getData("text/card");
+      if (target.matches("[data-warehouse]")) {
+        if (mainId === cardId) mainId = null;
+        if (materialId === cardId) materialId = null;
+        if (result?.card?.id === cardId) result = null;
+        return render();
+      }
+      assign(cardId,target.dataset.drop);
+    });
+    resetDemo();
+  </script>
+</body>
+</html>

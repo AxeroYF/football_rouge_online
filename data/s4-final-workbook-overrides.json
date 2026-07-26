@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-07-26T06:35:57.934Z",
+  "sourceWorkbook": "outputs/s4-player-550-review-20260726/S4球员库550与退役名将校对.xlsx",
+  "players": {
+    "s4-retired-gianluigi-buffon": {
+      "displayNameZh": "布冯",
+      "suggestedOverall": 85
+    },
+    "s4-retired-iker-casillas": {
+      "displayNameZh": "卡西利亚斯"
+    },
+    "s4-retired-petr-cech": {
+      "displayNameZh": "切赫",
+      "suggestedOverall": 85
+    },
+    "s4-retired-edwin-van-der-sar": {
+      "displayNameZh": "范德萨"
+    },
+    "s4-retired-oliver-kahn": {
+      "displayNameZh": "卡恩"
+    },
+    "s4-retired-paolo-maldini": {
+      "displayNameZh": "保罗马尔蒂尼"
+    },
+    "s4-retired-franco-baresi": {
+      "displayNameZh": "巴雷西"
+    },
+    "s4-retired-alessandro-nesta": {
+      "displayNameZh": "内斯塔"
+    },
+    "s4-retired-fabio-cannavaro": {
+      "displayNameZh": "卡纳瓦罗"
+    },
+    "s4-retired-carles-puyol": {
+      "displayNameZh": "普约二"
+    },
+    "s4-retired-rio-ferdinand": {
+      "displayNameZh": "费迪南德"
+    },
+    "s4-retired-john-terry": {
+      "displayNameZh": "特里"
+    },
+    "s4-retired-nemanja-vidic": {
+      "displayNameZh": "维迪奇"
+    },
+    "s4-retired-philipp-lahm": {
+      "displayNameZh": "拉姆",
+      "suggestedOverall": 84
+    },
+    "s4-retired-cafu": {
+      "displayNameZh": "卡福"
+    },
+    "s4-retired-javier-zanetti": {
+      "displayNameZh": "萨内蒂"
+    },
+    "s4-retired-marcelo": {
+      "displayNameZh": "马塞洛",
+      "suggestedOverall": 86
+    },
+    "s4-retired-roberto-carlos": {
+      "displayNameZh": "罗伯特卡洛斯"
+    },
+    "s4-retired-ashley-cole": {
+      "displayNameZh": "阿什利科尔"
+    },
+    "s4-retired-giorgio-chiellini": {
+      "displayNameZh": "基耶利尼"
+    },
+    "s4-retired-xavi": {
+      "displayNameZh": "哈维巴恩斯"
+    },
+    "s4-retired-andres-iniesta": {
+      "displayNameZh": "因涅斯塔"
+    },
+    "s4-retired-andrea-pirlo": {
+      "displayNameZh": "皮尔洛"
+    },
+    "s4-retired-paul-scholes": {
+      "displayNameZh": "斯科尔斯"
+    },
+    "s4-retired-steven-gerrard": {
+      "displayNameZh": "杰拉德"
+    },
+    "s4-retired-frank-lampard": {
+      "displayNameZh": "兰帕德"
+    },
+    "s4-retired-patrick-vieira": {
+      "displayNameZh": "维埃拉"
+    },
+    "s4-retired-claude-makelele": {
+      "displayNameZh": "马克莱莱"
+    },
+    "s4-retired-yaya-toure": {
+      "displayNameZh": "亚亚图雷"
+    },
+    "s4-retired-kaka": {
+      "displayNameZh": "卡卡"
+    },
+    "s4-retired-luis-figo": {
+      "displayNameZh": "路易斯菲戈"
+    },
+    "s4-retired-pavel-nedved": {
+      "displayNameZh": "内德维德"
+    },
+    "s4-retired-clarence-seedorf": {
+      "displayNameZh": "西多夫"
+    },
+    "s4-retired-juan-roman-riquelme": {
+      "displayNameZh": "里克尔梅"
+    },
+    "s4-retired-gennaro-gattuso": {
+      "displayNameZh": "加图索"
+    },
+    "s4-retired-thierry-henry": {
+      "displayNameZh": "亨利"
+    },
+    "s4-retired-wayne-rooney": {
+      "displayNameZh": "鲁尼"
+    },
+    "s4-retired-didier-drogba": {
+      "displayNameZh": "德罗巴"
+    },
+    "s4-retired-samuel-eto-o": {
+      "displayNameZh": "埃托奥"
+    },
+    "s4-retired-andriy-shevchenko": {
+      "displayNameZh": "舍甫琴科"
+    },
+    "s4-retired-zlatan-ibrahimovic": {
+      "displayNameZh": "伊布拉希莫维奇"
+    },
+    "s4-retired-sergio-aguero": {
+      "displayNameZh": "阿圭罗"
+    },
+    "s4-retired-fernando-torres": {
+      "displayNameZh": "托雷斯"
+    },
+    "s4-retired-gabriel-batistuta": {
+      "displayNameZh": "巴蒂斯图塔"
+    },
+    "s4-retired-dennis-bergkamp": {
+      "displayNameZh": "博格坎普"
+    },
+    "s4-retired-eusebio": {
+      "displayNameZh": "尤西比奥"
+    },
+    "s4-retired-marco-van-basten": {
+      "displayNameZh": "范巴斯滕"
+    },
+    "s4-retired-johan-cruyff": {
+      "displayNameZh": "克鲁伊夫"
+    },
+    "s4-retired-george-best": {
+      "displayNameZh": "乔治贝斯特"
+    },
+    "s4-retired-romario": {
+      "displayNameZh": "罗马里奥"
+    }
+  }
+}

@@ -1,3 +1,5 @@
+import { roleGroup } from "./schema.js";
+
 const PHYSICAL_ATTRIBUTES = new Set(["pace", "acceleration", "strength", "stamina", "agility", "jumping", "workRate"]);
 
 const LEGEND_TEMPLATES = Object.freeze([
@@ -35,7 +37,19 @@ export function hydratePlayerTraits(player, catalog = [], seed = "match") {
   const definitions = byId.size
     ? playerTraitIds(player).map((id) => byId.get(id)).filter(Boolean)
     : (player.traitDefinitions ?? []);
-  const output = { ...player, traitDefinitions: definitions };
+  const heightIncrease = definitions.flatMap((trait) => trait.rules ?? [])
+    .filter((rule) => rule.hook === "height")
+    .reduce((sum, rule) => sum + (Number(rule.addCm) || 0), 0);
+  const fixedFitness = definitions.flatMap((trait) => trait.rules ?? [])
+    .filter((rule) => rule.hook === "fixedFitness")
+    .reduce((value, rule) => Math.max(value, Number(rule.value) || 0), 0);
+  const output = {
+    ...player,
+    baseHeightCm:Number(player.baseHeightCm ?? player.heightCm ?? 180),
+    heightCm:Math.max(140, Math.min(240, Number(player.baseHeightCm ?? player.heightCm ?? 180) + heightIncrease)),
+    state:fixedFitness ? { ...(player.state ?? {}), fitness:fixedFitness } : player.state,
+    traitDefinitions:definitions,
+  };
   const copyRule = definitions.flatMap((trait) => trait.rules ?? []).find((rule) => rule.hook === "copyRandomLegend");
   if (copyRule) {
     const template = LEGEND_TEMPLATES[hashText(`${seed}:${player.id}:legend`) % LEGEND_TEMPLATES.length];
@@ -65,6 +79,7 @@ export function traitConditionMatches(when, player, context = {}) {
     pitchQualityLte: () => Number(context.pitchQuality ?? 100) <= Number(when.pitchQualityLte),
     scoreState: () => (Array.isArray(when.scoreState) ? when.scoreState : [when.scoreState]).includes(scoreState),
     weather: () => (Array.isArray(when.weather) ? when.weather : [when.weather]).includes(context.weather?.type),
+    teamStyle: () => (Array.isArray(when.teamStyle) ? when.teamStyle : [when.teamStyle]).includes(context.teamStyle),
     venue: () => (Array.isArray(when.venue) ? when.venue : [when.venue]).includes(context.venue ?? "home"),
     activeRole: () => role === when.activeRole || (when.activeRole === "ATT" && ["ST", "LW", "RW"].includes(role)),
     activeRoleNot: () => role !== when.activeRoleNot,
@@ -104,9 +119,26 @@ export function traitAdjustedAttribute(player, attribute, baseValue, context = {
   return Math.max(1, Math.min(99, value));
 }
 
-export function traitPositionFit(player, originalFit) {
-  const floor = traitRules(player, "position").reduce((value, rule) => Math.max(value, Number(rule.minimumFit) || (rule.ignoreOutOfPositionPenalty ? 1 : 0)), 0);
+export function traitPositionFit(player, originalFit, assignedRole = player?.assignedRole ?? player?.role) {
+  const floor = traitRules(player, "position").reduce((value, rule) => {
+    const assignedGroup = roleGroup(assignedRole);
+    if (Array.isArray(rule.familiarRoles) && rule.familiarRoles.includes(assignedRole)) return Math.max(value, 1);
+    if (rule.ignoreOutOfPositionPenalty) {
+      const eligible = rule.eligibleRoleGroups ?? ["ANY"];
+      if (eligible.includes("ANY") || eligible.includes(assignedRole) || eligible.includes(assignedGroup)) return Math.max(value, 1);
+    }
+    return Math.max(value, Number(rule.minimumFit) || 0);
+  }, 0);
   return Math.max(originalFit, floor);
+}
+
+export function traitAffinityMatches(player, type, value) {
+  if (player?.[type] === value) return true;
+  return hasTraitRule(player, "affinityWildcard", (rule) => Boolean(rule[type]));
+}
+
+export function fixedTraitFitness(player) {
+  return traitRules(player, "fixedFitness").reduce((value, rule) => Math.max(value, Number(rule.value) || 0), 0) || null;
 }
 
 export function hasTraitRule(player, hook, predicate = () => true) {

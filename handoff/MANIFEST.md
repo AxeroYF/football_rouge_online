@@ -1,11 +1,10 @@
 # 交接包清单
 
-更新时间：2026-07-25
+更新时间：2026-07-27
 
-- `README.md`：阅读顺序、安全边界和验证摘要。
-- `CURRENT_STATE.md`：YDL、冠军杯、经济、后台、正式赛季和紧急修复的完整状态。
-- `NEW_CHAT_PROMPT.md`：新对话启动提示词。
-- `artifacts/`：旧版11人制平衡报告和原始数据，保留用于历史比较；当前S2传奇模拟结果位于工作区 `outputs/`，未重复打包。
-- `football-ydl-handoff-20260725.zip`：上述说明与历史报告，不含源码和正式数据。
+- `README.md`：入口、安全边界和验证摘要。
+- `CURRENT_STATE.md`：S4 产品、代码、数据、已知限制和局域网测试说明。
+- `NEW_CHAT_PROMPT.md`：新任务接手提示词。
+- `football-ydl-s4-handoff-20260727.zip`：上述文档的便携压缩包，不包含源码、账号或联赛存档。
 
-源码与正式数据仍以 `D:\Project\game_test` 工作区为准。
+源码和运行数据以 `D:\Project\game_test\.worktrees\s4` 为准。

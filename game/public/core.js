@@ -283,7 +283,8 @@ export function generatePlayer(role, traits = [], rng = Math.random, index = 0, 
   const stage = options.stage ?? 1;
   const usedNames = options.usedNames ?? [];
   const group = roleGroup(role);
-  const position = POSITION_GROUPS[group].includes(role) ? role : randomItem(POSITION_GROUPS[group], rng);
+  const generatablePositions = POSITION_GROUPS[group].filter((position) => POSITION_ATTRIBUTE_ADJUSTMENTS[position]);
+  const position = generatablePositions.includes(role) ? role : randomItem(generatablePositions, rng);
   const archetype = randomItem(PLAYER_ARCHETYPES[archetypeGroup(position)], rng);
   const physical = randomItem(PHYSICAL_PROFILES, rng);
   const career = weightedChoice(CAREER_STAGES, rng);

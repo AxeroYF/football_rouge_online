@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { INDIVIDUALIZED_PLAYERS, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS } from "../versus/player-pool.js";
+import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
 import { VersusRoomService } from "../versus/room-service.js";
 import { createLineupSeed, parseLineupSeed } from "../versus/lineup-seed.js";
 import { hydrateHistoricalMatchDetail } from "../versus/history-detail.js";
@@ -152,28 +153,28 @@ test("重复昵称的旧账号可以改用唯一昵称升级", () => {
   assert.equal(service.accounts.get(first.profile.id.toLowerCase()).passwordHash, null);
 });
 
-test("十一人对战拥有四个各175人的唯一真实球员池和稳定评级梯次", () => {
+test("S4十一人对战拥有550人的分位置真实球员池和稳定评级梯次", () => {
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([key, players]) => [key, players.length])), {
-    GK: 175,
-    DEF: 175,
-    MID: 175,
-    ATT: 175,
+    GK: 55,
+    DEF: 165,
+    MID: 165,
+    ATT: 165,
   });
-  assert.equal(REAL_PLAYERS.length, 700);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 700);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.name)).size, 700);
-  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, REAL_PLAYERS.filter((player) => player.grade === grade).length])), { S:14, A:126, B:336, C:224 });
+  assert.equal(REAL_PLAYERS.length, 550);
+  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 550);
+  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, REAL_PLAYERS.filter((player) => player.grade === grade).length])), { S:14, A:117, B:233, C:186 });
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => [pool, Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, players.filter((player) => player.grade === grade).length]))])), {
-    GK:{ S:1, A:27, B:84, C:63 },
-    DEF:{ S:1, A:33, B:84, C:57 },
-    MID:{ S:5, A:34, B:84, C:52 },
-    ATT:{ S:7, A:32, B:84, C:52 },
+    GK:{ S:1, A:12, B:23, C:19 },
+    DEF:{ S:1, A:35, B:70, C:59 },
+    MID:{ S:5, A:35, B:70, C:55 },
+    ATT:{ S:7, A:35, B:70, C:53 },
   });
   assert.ok(REAL_PLAYERS.filter((player) => player.grade === "A").every((player) => player.overall >= 86 && player.overall <= 89));
-  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "B").every((player) => player.overall >= 81 && player.overall <= 85));
-  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "C").every((player) => player.overall >= 76 && player.overall <= 80));
-  assert.ok(Object.values(REAL_PLAYER_POOLS).every((players) => players.slice(150).every((player, index) => player.id.endsWith(String(index + 151).padStart(3, "0")))));
+  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "B").every((player) => player.overall >= 80 && player.overall <= 99));
+  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "C").every((player) => player.overall >= 75 && player.overall <= 79));
   assert.ok(REAL_PLAYERS.every((player) => player.nationality && player.club));
+  assert.ok(REAL_PLAYERS.every((player) => ATTRIBUTE_NAMES.every((key) => Number.isFinite(player.attributes[key]) && player.attributes[key] >= 1 && player.attributes[key] <= 99)));
+  assert.ok(REAL_PLAYERS.every((player) => Number.isFinite(player.referenceOverall) && player.referenceAttributes));
   assert.ok(REAL_PLAYERS.every((player) => Number.isFinite(player.heightCm) && player.heightCm >= 165 && player.heightCm <= 202));
   assert.ok(new Set(REAL_PLAYERS.map((player) => player.heightCm)).size > 20);
   assert.deepEqual(REAL_PLAYERS.filter((player) => player.grade === "S").map((player) => player.name).sort(),
@@ -181,9 +182,16 @@ test("十一人对战拥有四个各175人的唯一真实球员池和稳定评�
   assert.ok(REAL_PLAYERS.filter((player) => player.grade === "S").every((player) => player.legendAbility?.id && player.legendAbility?.summary));
   assert.equal(new Set(REAL_PLAYERS.filter((player) => player.grade === "S").map((player) => player.legendAbility.id)).size, 14);
   assert.ok(REAL_PLAYERS.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
+  assert.deepEqual(
+    Object.fromEntries(["布冯", "切赫", "拉姆", "马塞洛"].map((name) => {
+      const player = REAL_PLAYERS.find((candidate) => candidate.name === name);
+      return [name, player?.overall];
+    })),
+    { 布冯:85, 切赫:85, 拉姆:84, 马塞洛:86 },
+  );
   assert.ok(REAL_PLAYERS.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
   assert.ok(REAL_PLAYER_POOLS.GK.every((player) => player.secondaryRole === null));
-  assert.equal(INDIVIDUALIZED_PLAYERS.length, 100);
+  assert.equal(INDIVIDUALIZED_PLAYERS.length, 14);
   assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.signature && player.archetype && player.nationality && player.club));
   assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));
   assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.overall >= 76 && player.overall <= 99));
@@ -418,7 +426,7 @@ test("赛后阵容可以导入新房间跳过选秀并在比赛中公开来源�
   const source = sourceService.createDeveloperRoom("阵容来源", true);
   sourceNow += REGULAR_DURATION_MS + 1;
   let sourceRoom = sourceService.getRoom(source.room.code);
-  if (sourceRoom.phase !== "report") {
+  for (let step = 0; sourceRoom.phase !== "report" && step < 8; step += 1) {
     sourceNow += 30_001;
     sourceRoom = sourceService.getRoom(source.room.code);
   }
@@ -509,6 +517,55 @@ test("比赛战术适配取决于球员能力并受到天气修正", () => {
   const possessionStorm = publicMatch(createVersusMatch([matchSeat("短传队", 0, "balanced", "possession"), matchSeat("对手", 24)], { now:0,seed:"short-storm",weather:"storm" }), 0, 0);
   assert.ok(longBallStorm.teams[0].styleFit > longBallSunny.teams[0].styleFit);
   assert.ok(possessionStorm.teams[0].styleFit < possessionSunny.teams[0].styleFit);
+});
+
+test("赛中站位切换的客串减益轻于开场直接站错", () => {
+  const openingWrong = matchSeat("开场错位", 0, "balanced", "possession");
+  const switched = matchSeat("赛中变阵", 0, "balanced", "possession");
+  const defenderId = openingWrong.players.find((player) => player.pool === "DEF").id;
+  const attackerId = openingWrong.players.find((player) => player.pool === "ATT").id;
+  const wrongPositions = structuredClone(openingWrong.positions);
+  [wrongPositions[defenderId], wrongPositions[attackerId]] = [wrongPositions[attackerId], wrongPositions[defenderId]];
+  openingWrong.positions = structuredClone(wrongPositions);
+  switched.positionPresets = { position1:structuredClone(switched.positions), position2:structuredClone(wrongPositions), position3:structuredClone(switched.positions) };
+  switched.tacticalPlans = {
+    opening:{ tactic:"balanced", style:"possession", positionPreset:"position1" },
+    leading:{ tactic:"balanced", style:"possession", positionPreset:"position2" },
+    trailing:{ tactic:"balanced", style:"possession", positionPreset:"position3" },
+  };
+  const wrongView = publicMatch(createVersusMatch([openingWrong, matchSeat("对手A", 24)], { now:0, seed:"opening-wrong", weather:"sunny" }), 0, 0);
+  const switchedMatch = createVersusMatch([switched, matchSeat("对手B", 24)], { now:0, seed:"in-match-switch", weather:"sunny" });
+  switchedMatch.teams[0].score = 1;
+  advanceVersusMatch(switchedMatch, 3000);
+  const switchedView = publicMatch(switchedMatch, 3000, 0);
+  assert.equal(switchedView.teams[0].inMatchPositionAdjustment, true);
+  assert.deepEqual(switchedView.teams[0].positions, wrongPositions);
+  assert.ok(switchedView.teams[0].styleFit > wrongView.teams[0].styleFit);
+});
+
+test("相同阵型的线距和防线高度会改变战术适配", () => {
+  const shapedSeat = (name, style, defenseY, midfieldY, attackY) => {
+    const seat = matchSeat(name, 0, "balanced", style);
+    seat.players.forEach((player) => {
+      if (player.pool === "DEF") seat.positions[player.id].y = defenseY;
+      if (player.pool === "MID") seat.positions[player.id].y = midfieldY;
+      if (player.pool === "ATT") seat.positions[player.id].y = attackY;
+    });
+    return seat;
+  };
+  const styleFit = (seat, seed) => publicMatch(createVersusMatch([seat, matchSeat(`对手-${seed}`, 24)], { now:0, seed, weather:"sunny" }), 0, 0).teams[0].styleFit;
+  const compactPossession = styleFit(shapedSeat("紧凑短传", "possession", 65, 47, 27), "compact-possession");
+  const disconnectedPossession = styleFit(shapedSeat("脱节短传", "possession", 82, 50, 10), "disconnected-possession");
+  const compactLongBall = styleFit(shapedSeat("紧凑长传", "longBall", 65, 47, 27), "compact-longball");
+  const disconnectedLongBall = styleFit(shapedSeat("脱节长传", "longBall", 82, 50, 10), "disconnected-longball");
+  assert.ok(compactPossession > disconnectedPossession);
+  assert.ok(disconnectedLongBall > compactLongBall);
+  const deepBlock = styleFit(shapedSeat("深位防守", "lowBlock", 80, 55, 28), "deep-block");
+  const highBlock = styleFit(shapedSeat("高位防守", "lowBlock", 62, 45, 25), "high-block");
+  const highPress = styleFit(shapedSeat("高位压迫", "highPress", 62, 45, 25), "high-press");
+  const deepPress = styleFit(shapedSeat("深位压迫", "highPress", 80, 55, 28), "deep-press");
+  assert.ok(deepBlock > highBlock);
+  assert.ok(highPress > deepPress);
 });
 
 test("两翼齐飞根据边路球员能力获得战术适配收益", () => {

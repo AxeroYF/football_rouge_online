@@ -1,0 +1,1478 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-07-26T06:15:10.155Z",
+  "sourceWorkbook": "outputs/s4-player-rebuild-20260726/S4候选球员库500.xlsx",
+  "players": {
+    "s4-fc26-212831": {
+      "displayNameZh": "阿利松"
+    },
+    "s4-fc26-230621": {
+      "displayNameZh": "多纳鲁马"
+    },
+    "s4-fc26-200389": {
+      "displayNameZh": "奥布拉克"
+    },
+    "s4-fc26-215698": {
+      "displayNameZh": "迈尼昂"
+    },
+    "s4-fc26-177683": {
+      "displayNameZh": "索默"
+    },
+    "s4-fc26-220901": {
+      "displayNameZh": "大卫拉亚"
+    },
+    "s4-fc26-235073": {
+      "displayNameZh": "科贝尔"
+    },
+    "s4-fc26-192448": {
+      "displayNameZh": "特尔施特根"
+    },
+    "s4-fc26-210257": {
+      "displayNameZh": "埃德松"
+    },
+    "s4-fc26-202811": {
+      "displayNameZh": "大马丁"
+    },
+    "s4-fc26-193080": {
+      "displayNameZh": "德赫亚"
+    },
+    "s4-fc26-185122": {
+      "displayNameZh": "古拉奇"
+    },
+    "s4-fc26-230869": {
+      "displayNameZh": "乌奈西蒙"
+    },
+    "s4-fc26-204935": {
+      "displayNameZh": "皮克福德"
+    },
+    "s4-fc26-262621": {
+      "displayNameZh": "马马尔达什维利"
+    },
+    "s4-fc26-167495": {
+      "displayNameZh": "诺伊尔"
+    },
+    "s4-fc26-186153": {
+      "displayNameZh": "什琴斯尼"
+    },
+    "s4-fc26-234577": {
+      "displayNameZh": "迪奥戈科斯塔"
+    },
+    "s4-fc26-252154": {
+      "displayNameZh": "卡尔内塞基"
+    },
+    "s4-fc26-259532": {
+      "displayNameZh": "霍安加西亚"
+    },
+    "s4-fc26-227127": {
+      "displayNameZh": "雷米罗"
+    },
+    "s4-fc26-251752": {
+      "displayNameZh": "舍瓦利耶"
+    },
+    "s4-fc26-199641": {
+      "displayNameZh": "塞尔斯"
+    },
+    "s4-fc26-193698": {
+      "displayNameZh": "鲍曼"
+    },
+    "s4-fc26-215316": {
+      "displayNameZh": "鲁利"
+    },
+    "s4-fc26-240091": {
+      "displayNameZh": "维卡里奥"
+    },
+    "s4-fc26-230872": {
+      "displayNameZh": "斯韦拉尔"
+    },
+    "s4-fc26-225116": {
+      "displayNameZh": "梅里特"
+    },
+    "s4-fc26-224987": {
+      "displayNameZh": "普罗韦代尔"
+    },
+    "s4-fc26-192984": {
+      "displayNameZh": "卡斯特尔斯"
+    },
+    "s4-fc26-209981": {
+      "displayNameZh": "布努"
+    },
+    "s4-fc26-223885": {
+      "displayNameZh": "努贝尔"
+    },
+    "s4-fc26-233306": {
+      "displayNameZh": "迪恩亨德森"
+    },
+    "s4-fc26-235840": {
+      "displayNameZh": "迪格里格里奥"
+    },
+    "s4-fc26-243952": {
+      "displayNameZh": "卢宁"
+    },
+    "s4-fc26-223952": {
+      "displayNameZh": "索里亚"
+    },
+    "s4-fc26-188943": {
+      "displayNameZh": "特拉普"
+    },
+    "s4-fc26-203841": {
+      "displayNameZh": "波普"
+    },
+    "s4-fc26-230670": {
+      "displayNameZh": "卢卡斯佩里"
+    },
+    "s4-fc26-190941": {
+      "displayNameZh": "赫拉德茨基"
+    },
+    "s4-fc26-210385": {
+      "displayNameZh": "鲁伊席尔瓦"
+    },
+    "s4-fc26-210676": {
+      "displayNameZh": "法尔科内"
+    },
+    "s4-fc26-226753": {
+      "displayNameZh": "奥辣辣"
+    },
+    "s4-fc26-192563": {
+      "displayNameZh": "莱诺"
+    },
+    "s4-fc26-204883": {
+      "displayNameZh": "桑巴"
+    },
+    "s4-fc26-241671": {
+      "displayNameZh": "利瓦科维奇"
+    },
+    "s4-fc26-250753": {
+      "displayNameZh": "特鲁宾"
+    },
+    "s4-fc26-201269": {
+      "displayNameZh": "伦诺夫"
+    },
+    "s4-fc26-226300": {
+      "displayNameZh": "卡科尔"
+    },
+    "s4-fc26-203376": {
+      "displayNameZh": "范戴克"
+    },
+    "s4-fc26-235212": {
+      "displayNameZh": "阿什拉夫"
+    },
+    "s4-fc26-232580": {
+      "displayNameZh": "加布里埃尔"
+    },
+    "s4-fc26-237383": {
+      "displayNameZh": "巴斯托尼"
+    },
+    "s4-fc26-213331": {
+      "displayNameZh": "塔"
+    },
+    "s4-fc26-241486": {
+      "displayNameZh": "孔德"
+    },
+    "s4-fc26-207865": {
+      "displayNameZh": "马尔基尼奥斯"
+    },
+    "s4-fc26-243715": {
+      "displayNameZh": "萨利巴"
+    },
+    "s4-fc26-205452": {
+      "displayNameZh": "吕迪格"
+    },
+    "s4-fc26-237678": {
+      "displayNameZh": "柯纳特",
+      "club": "Real Madrid",
+      "league": "LALIGA EA SPORTS"
+    },
+    "s4-fc26-252145": {
+      "displayNameZh": "努诺门德斯"
+    },
+    "s4-fc26-239818": {
+      "displayNameZh": "鲁本迪亚斯"
+    },
+    "s4-fc26-231281": {
+      "displayNameZh": "阿诺德"
+    },
+    "s4-fc26-256196": {
+      "displayNameZh": "帕乔"
+    },
+    "s4-fc26-226268": {
+      "displayNameZh": "迪马尔科"
+    },
+    "s4-fc26-239580": {
+      "displayNameZh": "布雷默"
+    },
+    "s4-fc26-204963": {
+      "displayNameZh": "卡瓦哈尔"
+    },
+    "s4-fc26-229558": {
+      "displayNameZh": "于帕梅卡诺"
+    },
+    "s4-fc26-204525": {
+      "displayNameZh": "伊尼戈马丁内斯"
+    },
+    "s4-fc26-247819": {
+      "displayNameZh": "施罗德贝克"
+    },
+    "s4-fc26-210514": {
+      "displayNameZh": "坎赛洛"
+    },
+    "s4-fc26-226161": {
+      "displayNameZh": "马科斯略伦特"
+    },
+    "s4-fc26-232656": {
+      "displayNameZh": "特奥"
+    },
+    "s4-fc26-234396": {
+      "displayNameZh": "阿方索戴维斯"
+    },
+    "s4-fc26-226851": {
+      "displayNameZh": "帕瓦尔"
+    },
+    "s4-fc26-233096": {
+      "displayNameZh": "邓弗里斯",
+      "club": "Real Madrid",
+      "league": "LALIGA EA SPORTS"
+    },
+    "s4-fc26-240130": {
+      "displayNameZh": "米利唐"
+    },
+    "s4-fc26-251517": {
+      "displayNameZh": "格瓦迪奥尔"
+    },
+    "s4-fc26-239231": {
+      "displayNameZh": "库尼亚"
+    },
+    "s4-fc26-248550": {
+      "displayNameZh": "维维安"
+    },
+    "s4-fc26-199845": {
+      "displayNameZh": "阿切尔比"
+    },
+    "s4-fc26-198176": {
+      "displayNameZh": "德弗里"
+    },
+    "s4-fc26-204638": {
+      "displayNameZh": "奥尔班"
+    },
+    "s4-fc26-263578": {
+      "displayNameZh": "巴尔德"
+    },
+    "s4-fc26-247103": {
+      "displayNameZh": "汉茨科"
+    },
+    "s4-fc26-217870": {
+      "displayNameZh": "迪洛伦佐"
+    },
+    "s4-fc26-253149": {
+      "displayNameZh": "弗林鹏"
+    },
+    "s4-fc26-278016": {
+      "displayNameZh": "穆里略"
+    },
+    "s4-fc26-208920": {
+      "displayNameZh": "阿克"
+    },
+    "s4-fc26-256197": {
+      "displayNameZh": "因卡皮耶"
+    },
+    "s4-fc26-244263": {
+      "displayNameZh": "拉赫马尼"
+    },
+    "s4-fc26-231936": {
+      "displayNameZh": "本杰明怀特"
+    },
+    "s4-fc26-229582": {
+      "displayNameZh": "曼奇尼"
+    },
+    "s4-fc26-216460": {
+      "displayNameZh": "希门内斯"
+    },
+    "s4-fc26-238095": {
+      "displayNameZh": "米林科维奇"
+    },
+    "s4-fc26-233486": {
+      "displayNameZh": "勒诺尔芒"
+    },
+    "s4-fc26-253163": {
+      "displayNameZh": "阿劳霍"
+    },
+    "s4-fc26-208333": {
+      "displayNameZh": "埃姆雷詹"
+    },
+    "s4-fc26-225375": {
+      "displayNameZh": "莱默尔"
+    },
+    "s4-fc26-243576": {
+      "displayNameZh": "波罗"
+    },
+    "s4-fc26-216267": {
+      "displayNameZh": "罗伯逊"
+    },
+    "s4-fc26-229348": {
+      "displayNameZh": "罗宾逊"
+    },
+    "s4-fc26-197445": {
+      "displayNameZh": "阿拉巴"
+    },
+    "s4-fc26-236703": {
+      "displayNameZh": "劳姆"
+    },
+    "s4-fc26-220793": {
+      "displayNameZh": "达文森桑切斯"
+    },
+    "s4-fc26-227678": {
+      "displayNameZh": "孔萨"
+    },
+    "s4-fc26-251805": {
+      "displayNameZh": "廷伯"
+    },
+    "s4-fc26-227647": {
+      "displayNameZh": "米特尔施泰特"
+    },
+    "s4-fc26-264453": {
+      "displayNameZh": "范德芬"
+    },
+    "s4-fc26-260908": {
+      "displayNameZh": "凯尔凯兹"
+    },
+    "s4-fc26-278349": {
+      "displayNameZh": "赫伊森"
+    },
+    "s4-fc26-210047": {
+      "displayNameZh": "法比安舍尔"
+    },
+    "s4-fc26-203574": {
+      "displayNameZh": "斯通斯"
+    },
+    "s4-fc26-201024": {
+      "displayNameZh": "库利巴利"
+    },
+    "s4-fc26-229237": {
+      "displayNameZh": "阿坎吉"
+    },
+    "s4-fc26-241159": {
+      "displayNameZh": "马克盖伊"
+    },
+    "s4-fc26-235243": {
+      "displayNameZh": "徳利赫特"
+    },
+    "s4-fc26-192366": {
+      "displayNameZh": "奥塔门迪"
+    },
+    "s4-fc26-278046": {
+      "displayNameZh": "库巴西"
+    },
+    "s4-fc26-229476": {
+      "displayNameZh": "安东"
+    },
+    "s4-fc26-243241": {
+      "displayNameZh": "布翁焦尔诺"
+    },
+    "s4-fc26-210413": {
+      "displayNameZh": "罗马尼奥利"
+    },
+    "s4-fc26-212218": {
+      "displayNameZh": "拉波尔特"
+    },
+    "s4-fc26-232488": {
+      "displayNameZh": "罗梅罗"
+    },
+    "s4-fc26-247257": {
+      "displayNameZh": "伊巴涅斯"
+    },
+    "s4-fc26-237086": {
+      "displayNameZh": "金玟哉"
+    },
+    "s4-fc26-207862": {
+      "displayNameZh": "金特尔"
+    },
+    "s4-fc26-200724": {
+      "displayNameZh": "纳乔"
+    },
+    "s4-fc26-236532": {
+      "displayNameZh": "科赫"
+    },
+    "s4-fc26-251809": {
+      "displayNameZh": "波特曼"
+    },
+    "s4-fc26-258648": {
+      "displayNameZh": "奥古斯托"
+    },
+    "s4-fc26-237646": {
+      "displayNameZh": "穆尼奥斯"
+    },
+    "s4-fc26-247263": {
+      "displayNameZh": "塔普索巴"
+    },
+    "s4-fc26-228618": {
+      "displayNameZh": "费兰门迪",
+      "club": "Leverkusen",
+      "league": "Bundesliga"
+    },
+    "s4-fc26-211688": {
+      "displayNameZh": "加亚"
+    },
+    "s4-fc26-239301": {
+      "displayNameZh": "利桑德罗马丁内斯"
+    },
+    "s4-fc26-184392": {
+      "displayNameZh": "达米安"
+    },
+    "s4-fc26-261865": {
+      "displayNameZh": "古铁雷斯"
+    },
+    "s4-fc26-242641": {
+      "displayNameZh": "艾特努里"
+    },
+    "s4-fc26-238074": {
+      "displayNameZh": "里斯詹姆斯"
+    },
+    "s4-fc26-200888": {
+      "displayNameZh": "达尼洛佩雷拉"
+    },
+    "s4-fc26-236403": {
+      "displayNameZh": "恩迪卡"
+    },
+    "s4-fc26-232756": {
+      "displayNameZh": "托莫里"
+    },
+    "s4-fc26-257179": {
+      "displayNameZh": "伊纳西奥"
+    },
+    "s4-fc26-242835": {
+      "displayNameZh": "巴莱尔迪"
+    },
+    "s4-fc26-220814": {
+      "displayNameZh": "卢卡斯"
+    },
+    "s4-fc26-232363": {
+      "displayNameZh": "什克里尼亚尔"
+    },
+    "s4-fc26-243854": {
+      "displayNameZh": "西马坎"
+    },
+    "s4-fc26-244749": {
+      "displayNameZh": "阿格尔德"
+    },
+    "s4-fc26-212190": {
+      "displayNameZh": "聚勒"
+    },
+    "s4-fc26-228805": {
+      "displayNameZh": "赖略"
+    },
+    "s4-fc26-251479": {
+      "displayNameZh": "德克伊珀"
+    },
+    "s4-fc26-268889": {
+      "displayNameZh": "卡雷拉斯"
+    },
+    "s4-fc26-259583": {
+      "displayNameZh": "乌多吉"
+    },
+    "s4-fc26-231591": {
+      "displayNameZh": "加兰"
+    },
+    "s4-fc26-239093": {
+      "displayNameZh": "克洛斯"
+    },
+    "s4-fc26-186345": {
+      "displayNameZh": "特里皮尔"
+    },
+    "s4-fc26-200458": {
+      "displayNameZh": "迪涅"
+    },
+    "s4-fc26-259694": {
+      "displayNameZh": "明戈萨"
+    },
+    "s4-fc26-236401": {
+      "displayNameZh": "马兹拉维"
+    },
+    "s4-fc26-224656": {
+      "displayNameZh": "奥拉艾纳"
+    },
+    "s4-fc26-209889": {
+      "displayNameZh": "拉斐尔格雷罗"
+    },
+    "s4-fc26-223697": {
+      "displayNameZh": "戈森斯"
+    },
+    "s4-fc26-252802": {
+      "displayNameZh": "辛戈"
+    },
+    "s4-fc26-229880": {
+      "displayNameZh": "万比萨卡"
+    },
+    "s4-fc26-229905": {
+      "displayNameZh": "巴尔达奇克"
+    },
+    "s4-fc26-257278": {
+      "displayNameZh": "泰亚特"
+    },
+    "s4-fc26-228579": {
+      "displayNameZh": "亨里希斯"
+    },
+    "s4-fc26-262138": {
+      "displayNameZh": "卢克巴"
+    },
+    "s4-fc26-258908": {
+      "displayNameZh": "范黑克"
+    },
+    "s4-fc26-262859": {
+      "displayNameZh": "科尔维尔"
+    },
+    "s4-fc26-266127": {
+      "displayNameZh": "刘易斯霍尔"
+    },
+    "s4-fc26-229668": {
+      "displayNameZh": "埃尔莫索"
+    },
+    "s4-fc26-241464": {
+      "displayNameZh": "保托雷斯"
+    },
+    "s4-fc26-255654": {
+      "displayNameZh": "卡卢卢"
+    },
+    "s4-fc26-262118": {
+      "displayNameZh": "利夫拉门托"
+    },
+    "s4-fc26-269493": {
+      "displayNameZh": "阿莱克斯桑德罗"
+    },
+    "s4-fc26-213661": {
+      "displayNameZh": "克里斯藤森"
+    },
+    "s4-fc26-189881": {
+      "displayNameZh": "斯莫林"
+    },
+    "s4-fc26-220440": {
+      "displayNameZh": "朗格莱"
+    },
+    "s4-fc26-212602": {
+      "displayNameZh": "迭戈略伦特"
+    },
+    "s4-fc26-266872": {
+      "displayNameZh": "加蒂"
+    },
+    "s4-fc26-203263": {
+      "displayNameZh": "马奎尔"
+    },
+    "s4-fc26-202695": {
+      "displayNameZh": "塔尔科夫斯基"
+    },
+    "s4-fc26-246875": {
+      "displayNameZh": "科苏努"
+    },
+    "s4-fc26-270531": {
+      "displayNameZh": "奥斯曼迪奥曼德"
+    },
+    "s4-fc26-253124": {
+      "displayNameZh": "努内斯"
+    },
+    "s4-fc26-183512": {
+      "displayNameZh": "贝尔奇切"
+    },
+    "s4-fc26-258966": {
+      "displayNameZh": "坎比亚索"
+    },
+    "s4-fc26-248165": {
+      "displayNameZh": "拉蒂乌"
+    },
+    "s4-fc26-220651": {
+      "displayNameZh": "安赫尔"
+    },
+    "s4-fc26-234574": {
+      "displayNameZh": "达洛特"
+    },
+    "s4-fc26-235152": {
+      "displayNameZh": "卡德奥卢"
+    },
+    "s4-fc26-248465": {
+      "displayNameZh": "马特森"
+    },
+    "s4-fc26-188377": {
+      "displayNameZh": "凯尔沃克"
+    },
+    "s4-fc26-233084": {
+      "displayNameZh": "莫里纳"
+    },
+    "s4-fc26-224196": {
+      "displayNameZh": "本塞拜尼"
+    },
+    "s4-fc26-212091": {
+      "displayNameZh": "罗迪涅"
+    },
+    "s4-fc26-251804": {
+      "displayNameZh": "德斯特"
+    },
+    "s4-fc26-209331": {
+      "displayNameZh": "萨拉赫"
+    },
+    "s4-fc26-252371": {
+      "displayNameZh": "贝林厄姆"
+    },
+    "s4-fc26-231866": {
+      "displayNameZh": "罗德里"
+    },
+    "s4-fc26-212622": {
+      "displayNameZh": "基米希"
+    },
+    "s4-fc26-277643": {
+      "displayNameZh": "亚马尔"
+    },
+    "s4-fc26-251854": {
+      "displayNameZh": "佩德里"
+    },
+    "s4-fc26-233419": {
+      "displayNameZh": "拉菲尼亚"
+    },
+    "s4-fc26-255253": {
+      "displayNameZh": "维蒂尼亚"
+    },
+    "s4-fc26-239053": {
+      "displayNameZh": "巴尔韦德"
+    },
+    "s4-fc26-256630": {
+      "displayNameZh": "维尔茨"
+    },
+    "s4-fc26-256790": {
+      "displayNameZh": "穆西亚拉"
+    },
+    "s4-fc26-257534": {
+      "displayNameZh": "帕尔默"
+    },
+    "s4-fc26-228702": {
+      "displayNameZh": "弗朗基德容"
+    },
+    "s4-fc26-192985": {
+      "displayNameZh": "德布劳内"
+    },
+    "s4-fc26-256079": {
+      "displayNameZh": "凯赛多"
+    },
+    "s4-fc26-239837": {
+      "displayNameZh": "麦卡利斯特"
+    },
+    "s4-fc26-212198": {
+      "displayNameZh": "布鲁诺费尔南德斯"
+    },
+    "s4-fc26-234378": {
+      "displayNameZh": "赖斯"
+    },
+    "s4-fc26-222665": {
+      "displayNameZh": "厄德高"
+    },
+    "s4-fc26-224232": {
+      "displayNameZh": "巴雷拉"
+    },
+    "s4-fc26-247851": {
+      "displayNameZh": "吉马良斯"
+    },
+    "s4-fc26-247827": {
+      "displayNameZh": "奥利赛"
+    },
+    "s4-fc26-211110": {
+      "displayNameZh": "迪巴拉"
+    },
+    "s4-fc26-208128": {
+      "displayNameZh": "恰尔汗奥卢"
+    },
+    "s4-fc26-256516": {
+      "displayNameZh": "尼科威廉姆斯"
+    },
+    "s4-fc26-241096": {
+      "displayNameZh": "托纳利"
+    },
+    "s4-fc26-240638": {
+      "displayNameZh": "赖因德斯"
+    },
+    "s4-fc26-272834": {
+      "displayNameZh": "若昂内维斯"
+    },
+    "s4-fc26-246104": {
+      "displayNameZh": "赫拉分贝赫"
+    },
+    "s4-fc26-237238": {
+      "displayNameZh": "麦克托米奈"
+    },
+    "s4-fc26-244260": {
+      "displayNameZh": "奥尔莫"
+    },
+    "s4-fc26-226271": {
+      "displayNameZh": "法比安卢伊斯"
+    },
+    "s4-fc26-199503": {
+      "displayNameZh": "扎卡"
+    },
+    "s4-fc26-241084": {
+      "displayNameZh": "路易斯迪亚斯"
+    },
+    "s4-fc26-215914": {
+      "displayNameZh": "坎特"
+    },
+    "s4-fc26-216393": {
+      "displayNameZh": "蒂勒曼斯"
+    },
+    "s4-fc26-241637": {
+      "displayNameZh": "楚阿梅尼"
+    },
+    "s4-fc26-212616": {
+      "displayNameZh": "德保罗"
+    },
+    "s4-fc26-244675": {
+      "displayNameZh": "桑塞特"
+    },
+    "s4-fc26-223848": {
+      "displayNameZh": "米林科维奇"
+    },
+    "s4-fc26-257279": {
+      "displayNameZh": "巴埃纳"
+    },
+    "s4-fc26-218667": {
+      "displayNameZh": "贝尔纳多席尔瓦",
+      "club": "Real Madrid",
+      "league": "LALIGA EA SPORTS"
+    },
+    "s4-fc26-242516": {
+      "displayNameZh": "加克波"
+    },
+    "s4-fc26-247090": {
+      "displayNameZh": "恩佐费尔南德斯"
+    },
+    "s4-fc26-231521": {
+      "displayNameZh": "帕拉西奥斯"
+    },
+    "s4-fc26-210035": {
+      "displayNameZh": "格里马尔多"
+    },
+    "s4-fc26-222077": {
+      "displayNameZh": "洛卡特利"
+    },
+    "s4-fc26-220502": {
+      "displayNameZh": "扎卡尼"
+    },
+    "s4-fc26-224293": {
+      "displayNameZh": "鲁本内维斯"
+    },
+    "s4-fc26-245367": {
+      "displayNameZh": "哈维西蒙斯"
+    },
+    "s4-fc26-197781": {
+      "displayNameZh": "伊斯科"
+    },
+    "s4-fc26-220697": {
+      "displayNameZh": "麦迪逊"
+    },
+    "s4-fc26-241852": {
+      "displayNameZh": "迪亚比"
+    },
+    "s4-fc26-204485": {
+      "displayNameZh": "马赫雷斯"
+    },
+    "s4-fc26-210008": {
+      "displayNameZh": "拉比奥特"
+    },
+    "s4-fc26-236772": {
+      "displayNameZh": "索博斯洛伊"
+    },
+    "s4-fc26-248243": {
+      "displayNameZh": "卡马文加"
+    },
+    "s4-fc26-192883": {
+      "displayNameZh": "姆希塔良"
+    },
+    "s4-fc26-223959": {
+      "displayNameZh": "卢卡斯托雷拉"
+    },
+    "s4-fc26-244669": {
+      "displayNameZh": "尤尔曼"
+    },
+    "s4-fc26-228813": {
+      "displayNameZh": "加西亚"
+    },
+    "s4-fc26-247394": {
+      "displayNameZh": "库卢塞夫斯基"
+    },
+    "s4-fc26-216201": {
+      "displayNameZh": "伊尼亚基威廉姆斯"
+    },
+    "s4-fc26-207410": {
+      "displayNameZh": "科瓦契奇"
+    },
+    "s4-fc26-240243": {
+      "displayNameZh": "库尼亚"
+    },
+    "s4-fc26-225193": {
+      "displayNameZh": "梅里诺"
+    },
+    "s4-fc26-240950": {
+      "displayNameZh": "贡萨尔维斯"
+    },
+    "s4-fc26-208722": {
+      "displayNameZh": "马内"
+    },
+    "s4-fc26-216435": {
+      "displayNameZh": "洛伯特卡"
+    },
+    "s4-fc26-209989": {
+      "displayNameZh": "托马斯帕特伊"
+    },
+    "s4-fc26-250959": {
+      "displayNameZh": "斯蒂勒"
+    },
+    "s4-fc26-236987": {
+      "displayNameZh": "卡马拉"
+    },
+    "s4-fc26-235794": {
+      "displayNameZh": "埃泽"
+    },
+    "s4-fc26-264240": {
+      "displayNameZh": "加维"
+    },
+    "s4-fc26-186942": {
+      "displayNameZh": "京多安"
+    },
+    "s4-fc26-224371": {
+      "displayNameZh": "鲍温"
+    },
+    "s4-fc26-212194": {
+      "displayNameZh": "布兰特"
+    },
+    "s4-fc26-213345": {
+      "displayNameZh": "科曼"
+    },
+    "s4-fc26-229391": {
+      "displayNameZh": "帕利尼亚"
+    },
+    "s4-fc26-248148": {
+      "displayNameZh": "苏比门迪"
+    },
+    "s4-fc26-227236": {
+      "displayNameZh": "安吉萨"
+    },
+    "s4-fc26-229261": {
+      "displayNameZh": "扎卡里亚"
+    },
+    "s4-fc26-266866": {
+      "displayNameZh": "埃德松"
+    },
+    "s4-fc26-246863": {
+      "displayNameZh": "恩梅查"
+    },
+    "s4-fc26-223334": {
+      "displayNameZh": "乔林顿"
+    },
+    "s4-fc26-209658": {
+      "displayNameZh": "格雷茨卡"
+    },
+    "s4-fc26-256853": {
+      "displayNameZh": "蒂尔曼"
+    },
+    "s4-fc26-260247": {
+      "displayNameZh": "摩根罗杰斯"
+    },
+    "s4-fc26-243245": {
+      "displayNameZh": "科克曲"
+    },
+    "s4-fc26-210411": {
+      "displayNameZh": "奥塔维奥"
+    },
+    "s4-fc26-225201": {
+      "displayNameZh": "贝伦格尔"
+    },
+    "s4-fc26-209499": {
+      "displayNameZh": "法比尼奥"
+    },
+    "s4-fc26-226226": {
+      "displayNameZh": "洛塞尔索"
+    },
+    "s4-fc26-255565": {
+      "displayNameZh": "三笘薰"
+    },
+    "s4-fc26-222492": {
+      "displayNameZh": "萨内"
+    },
+    "s4-fc26-222737": {
+      "displayNameZh": "马尔科姆"
+    },
+    "s4-fc26-236496": {
+      "displayNameZh": "贡多齐"
+    },
+    "s4-fc26-236015": {
+      "displayNameZh": "怀特"
+    },
+    "s4-fc26-272449": {
+      "displayNameZh": "巴里奥斯"
+    },
+    "s4-fc26-233556": {
+      "displayNameZh": "奥尔索利尼"
+    },
+    "s4-fc26-210602": {
+      "displayNameZh": "道萨里"
+    },
+    "s4-fc26-251470": {
+      "displayNameZh": "德凯特拉雷"
+    },
+    "s4-fc26-231416": {
+      "displayNameZh": "卢克巴吉奥"
+    },
+    "s4-fc26-192318": {
+      "displayNameZh": "格策"
+    },
+    "s4-fc26-246147": {
+      "displayNameZh": "格林伍德"
+    },
+    "s4-fc26-189513": {
+      "displayNameZh": "帕雷霍"
+    },
+    "s4-fc26-213648": {
+      "displayNameZh": "赫伊别尔"
+    },
+    "s4-fc26-216547": {
+      "displayNameZh": "拉法"
+    },
+    "s4-fc26-232639": {
+      "displayNameZh": "堂安律"
+    },
+    "s4-fc26-206113": {
+      "displayNameZh": "格纳布里"
+    },
+    "s4-fc26-237681": {
+      "displayNameZh": "久保健英"
+    },
+    "s4-fc26-244778": {
+      "displayNameZh": "特林康"
+    },
+    "s4-fc26-231410": {
+      "displayNameZh": "布拉欣"
+    },
+    "s4-fc26-272500": {
+      "displayNameZh": "巴勒巴"
+    },
+    "s4-fc26-238216": {
+      "displayNameZh": "加拉格尔"
+    },
+    "s4-fc26-219683": {
+      "displayNameZh": "托利索"
+    },
+    "s4-fc26-239807": {
+      "displayNameZh": "弗拉泰西"
+    },
+    "s4-fc26-208574": {
+      "displayNameZh": "科斯蒂奇"
+    },
+    "s4-fc26-210881": {
+      "displayNameZh": "麦金"
+    },
+    "s4-fc26-247246": {
+      "displayNameZh": "图拉姆"
+    },
+    "s4-fc26-202648": {
+      "displayNameZh": "达德尔"
+    },
+    "s4-fc26-240679": {
+      "displayNameZh": "库普梅纳斯"
+    },
+    "s4-fc26-234060": {
+      "displayNameZh": "扬赫尔埃雷拉"
+    },
+    "s4-fc26-212523": {
+      "displayNameZh": "塔利斯卡"
+    },
+    "s4-fc26-235944": {
+      "displayNameZh": "布莱斯门德斯"
+    },
+    "s4-fc26-235805": {
+      "displayNameZh": "基耶萨"
+    },
+    "s4-fc26-253396": {
+      "displayNameZh": "小西蒙尼"
+    },
+    "s4-fc26-259516": {
+      "displayNameZh": "卡尔多索"
+    },
+    "s4-fc26-193747": {
+      "displayNameZh": "科克曲"
+    },
+    "s4-fc26-216352": {
+      "displayNameZh": "布罗佐维奇"
+    },
+    "s4-fc26-208461": {
+      "displayNameZh": "德卢恩"
+    },
+    "s4-fc26-225309": {
+      "displayNameZh": "阿米里"
+    },
+    "s4-fc26-212242": {
+      "displayNameZh": "安德里希"
+    },
+    "s4-fc26-245630": {
+      "displayNameZh": "福法纳"
+    },
+    "s4-fc26-216354": {
+      "displayNameZh": "克拉马里奇"
+    },
+    "s4-fc26-264309": {
+      "displayNameZh": "居莱尔",
+      "referenceOverall": 85
+    },
+    "s4-fc26-232411": {
+      "displayNameZh": "恩昆库"
+    },
+    "s4-fc26-222509": {
+      "displayNameZh": "塞瓦略斯"
+    },
+    "s4-fc26-239482": {
+      "displayNameZh": "加莱诺"
+    },
+    "s4-fc26-232498": {
+      "displayNameZh": "伊西"
+    },
+    "s4-fc26-251852": {
+      "displayNameZh": "阿德耶米"
+    },
+    "s4-fc26-202024": {
+      "displayNameZh": "弗罗伊勒"
+    },
+    "s4-fc26-213516": {
+      "displayNameZh": "里卡多奥尔塔"
+    },
+    "s4-fc26-263205": {
+      "displayNameZh": "伊尔马兹"
+    },
+    "s4-fc26-213666": {
+      "displayNameZh": "奇克"
+    },
+    "s4-fc26-231443": {
+      "displayNameZh": "登贝莱"
+    },
+    "s4-fc26-202126": {
+      "displayNameZh": "凯恩"
+    },
+    "s4-fc26-238794": {
+      "displayNameZh": "维尼修斯"
+    },
+    "s4-fc26-233731": {
+      "displayNameZh": "伊萨克"
+    },
+    "s4-fc26-246669": {
+      "displayNameZh": "萨卡"
+    },
+    "s4-fc26-231478": {
+      "displayNameZh": "劳塔罗马丁内斯"
+    },
+    "s4-fc26-188545": {
+      "displayNameZh": "莱万多夫斯基"
+    },
+    "s4-fc26-247635": {
+      "displayNameZh": "克瓦拉茨赫利亚"
+    },
+    "s4-fc26-246191": {
+      "displayNameZh": "阿尔瓦雷斯"
+    },
+    "s4-fc26-215441": {
+      "displayNameZh": "吉拉西"
+    },
+    "s4-fc26-232293": {
+      "displayNameZh": "奥斯梅恩"
+    },
+    "s4-fc26-241651": {
+      "displayNameZh": "哲凯赖什"
+    },
+    "s4-fc26-194765": {
+      "displayNameZh": "格列兹曼"
+    },
+    "s4-fc26-243014": {
+      "displayNameZh": "姆伯莫"
+    },
+    "s4-fc26-271421": {
+      "displayNameZh": "杜埃"
+    },
+    "s4-fc26-200104": {
+      "displayNameZh": "孙兴慜"
+    },
+    "s4-fc26-165153": {
+      "displayNameZh": "本泽马"
+    },
+    "s4-fc26-228093": {
+      "displayNameZh": "马科斯图拉姆"
+    },
+    "s4-fc26-234236": {
+      "displayNameZh": "希克"
+    },
+    "s4-fc26-237692": {
+      "displayNameZh": "福登"
+    },
+    "s4-fc26-243812": {
+      "displayNameZh": "罗德里戈"
+    },
+    "s4-fc26-227796": {
+      "displayNameZh": "普利希奇"
+    },
+    "s4-fc26-221697": {
+      "displayNameZh": "沃特金斯"
+    },
+    "s4-fc26-230899": {
+      "displayNameZh": "卢克曼"
+    },
+    "s4-fc26-216549": {
+      "displayNameZh": "瑟洛特"
+    },
+    "s4-fc26-264652": {
+      "displayNameZh": "巴尔科拉"
+    },
+    "s4-fc26-256675": {
+      "displayNameZh": "马尔穆什"
+    },
+    "s4-fc26-241721": {
+      "displayNameZh": "莱奥"
+    },
+    "s4-fc26-192505": {
+      "displayNameZh": "卢卡库"
+    },
+    "s4-fc26-215590": {
+      "displayNameZh": "阿约塞"
+    },
+    "s4-fc26-242964": {
+      "displayNameZh": "安东尼戈登",
+      "club": "FC Barcelona",
+      "league": "LALIGA EA SPORTS"
+    },
+    "s4-fc26-242458": {
+      "displayNameZh": "多夫比克"
+    },
+    "s4-fc26-241461": {
+      "displayNameZh": "费兰托雷斯"
+    },
+    "s4-fc26-257289": {
+      "displayNameZh": "埃基蒂克"
+    },
+    "s4-fc26-192629": {
+      "displayNameZh": "阿斯帕斯"
+    },
+    "s4-fc26-207421": {
+      "displayNameZh": "特罗萨德"
+    },
+    "s4-fc26-243580": {
+      "displayNameZh": "奥鹏达"
+    },
+    "s4-fc26-241850": {
+      "displayNameZh": "雷特吉"
+    },
+    "s4-fc26-236610": {
+      "displayNameZh": "莫伊斯基恩"
+    },
+    "s4-fc26-229188": {
+      "displayNameZh": "帕维里迪斯"
+    },
+    "s4-fc26-183898": {
+      "displayNameZh": "迪马利亚"
+    },
+    "s4-fc26-210935": {
+      "displayNameZh": "贝拉尔迪"
+    },
+    "s4-fc26-246430": {
+      "displayNameZh": "弗拉霍维奇"
+    },
+    "s4-fc26-236461": {
+      "displayNameZh": "马特塔"
+    },
+    "s4-fc26-244257": {
+      "displayNameZh": ""
+    },
+    "s4-fc26-243630": {
+      "displayNameZh": "乔纳森戴维"
+    },
+    "s4-fc26-235790": {
+      "displayNameZh": "哈夫茨"
+    },
+    "s4-fc26-230142": {
+      "displayNameZh": "奥雅萨瓦尔"
+    },
+    "s4-fc26-234824": {
+      "displayNameZh": ""
+    },
+    "s4-fc26-235410": {
+      "displayNameZh": "恩内斯里"
+    },
+    "s4-fc26-188335": {
+      "displayNameZh": "布迪米尔"
+    },
+    "s4-fc26-192123": {
+      "displayNameZh": "克里斯伍德"
+    },
+    "s4-fc26-215333": {
+      "displayNameZh": "萨帕塔"
+    },
+    "s4-fc26-270409": {
+      "displayNameZh": "萨维尼奥"
+    },
+    "s4-fc26-255475": {
+      "displayNameZh": "安东尼戈登"
+    },
+    "s4-fc26-251566": {
+      "displayNameZh": "马丁内利"
+    },
+    "s4-fc26-181458": {
+      "displayNameZh": "佩里西奇"
+    },
+    "s4-fc26-212228": {
+      "displayNameZh": "伊万托尼"
+    },
+    "s4-fc26-206085": {
+      "displayNameZh": "墨菲"
+    },
+    "s4-fc26-208418": {
+      "displayNameZh": "卡拉斯科"
+    },
+    "s4-fc26-257470": {
+      "displayNameZh": "埃兰加"
+    },
+    "s4-fc26-236632": {
+      "displayNameZh": "内雷斯"
+    },
+    "s4-fc26-208093": {
+      "displayNameZh": "莫雷诺"
+    },
+    "s4-fc26-216409": {
+      "displayNameZh": "波利塔诺"
+    },
+    "s4-fc26-201153": {
+      "displayNameZh": "莫拉塔"
+    },
+    "s4-fc26-188567": {
+      "displayNameZh": "奥巴梅扬"
+    },
+    "s4-fc26-237679": {
+      "displayNameZh": "穆阿尼"
+    },
+    "s4-fc26-231652": {
+      "displayNameZh": "班萨"
+    },
+    "s4-fc26-214096": {
+      "displayNameZh": "蒂姆"
+    },
+    "s4-fc26-247679": {
+      "displayNameZh": "博尼费斯"
+    },
+    "s4-fc26-180930": {
+      "displayNameZh": "哲科"
+    },
+    "s4-fc26-201399": {
+      "displayNameZh": "伊卡尔迪"
+    },
+    "s4-fc26-251570": {
+      "displayNameZh": "谢尔基"
+    },
+    "s4-fc26-260592": {
+      "displayNameZh": "塞斯科"
+    },
+    "s4-fc26-206517": {
+      "displayNameZh": "格拉利什"
+    },
+    "s4-fc26-234579": {
+      "displayNameZh": "基尼奥内斯"
+    },
+    "s4-fc26-264697": {
+      "displayNameZh": "阿穆拉"
+    },
+    "s4-fc26-245155": {
+      "displayNameZh": "库杜斯"
+    },
+    "s4-fc26-239380": {
+      "displayNameZh": "诺亚朗"
+    },
+    "s4-fc26-254796": {
+      "displayNameZh": "马杜埃凯",
+      "referenceOverall": 82
+    },
+    "s4-fc26-243586": {
+      "displayNameZh": "阿尤布卡比"
+    },
+    "s4-fc26-246242": {
+      "displayNameZh": "布莱迪亚"
+    },
+    "s4-fc26-225539": {
+      "displayNameZh": "索兰克"
+    },
+    "s4-fc26-238900": {
+      "displayNameZh": "德米罗维奇"
+    },
+    "s4-fc26-230666": {
+      "displayNameZh": "赫苏斯"
+    },
+    "s4-fc26-256903": {
+      "displayNameZh": "贡萨洛拉莫斯"
+    },
+    "s4-fc26-234742": {
+      "displayNameZh": "哈维巴恩斯"
+    },
+    "s4-fc26-246420": {
+      "displayNameZh": "多库",
+      "suggestedOverall": 83
+    },
+    "s4-fc26-259197": {
+      "displayNameZh": "杰克逊"
+    },
+    "s4-fc26-237712": {
+      "displayNameZh": "卡斯特利亚诺斯"
+    },
+    "s4-fc26-243593": {
+      "displayNameZh": "劳里恩特"
+    },
+    "s4-fc26-224179": {
+      "displayNameZh": "伊格尼西亚斯"
+    },
+    "s4-fc26-244176": {
+      "displayNameZh": "昂达夫"
+    },
+    "s4-fc26-256612": {
+      "displayNameZh": "伊万尼尔逊"
+    },
+    "s4-fc26-233049": {
+      "displayNameZh": "桑乔"
+    },
+    "s4-fc26-258580": {
+      "displayNameZh": "阿克蒂尔科奥卢"
+    },
+    "s4-fc26-220834": {
+      "displayNameZh": "阿森西奥"
+    },
+    "s4-fc26-246172": {
+      "displayNameZh": "丘库埃泽"
+    },
+    "s4-fc26-246321": {
+      "displayNameZh": "前田大然"
+    },
+    "s4-fc26-253072": {
+      "displayNameZh": "达尔文努内斯"
+    },
+    "s4-fc26-225951": {
+      "displayNameZh": "德尼布安加"
+    },
+    "s4-fc26-238004": {
+      "displayNameZh": "古德蒙德松"
+    },
+    "s4-fc26-193301": {
+      "displayNameZh": "拉卡泽特"
+    },
+    "s4-fc26-240753": {
+      "displayNameZh": "古伊里"
+    },
+    "s4-fc26-258444": {
+      "displayNameZh": "盖桑"
+    },
+    "s4-fc26-231184": {
+      "displayNameZh": "古鲁泽塔"
+    },
+    "s4-fc26-252042": {
+      "displayNameZh": "若昂佩德罗"
+    },
+    "s4-fc26-243780": {
+      "displayNameZh": "李刚仁"
+    },
+    "s4-fc26-205855": {
+      "displayNameZh": "马尔科科瓦亚"
+    },
+    "s4-fc26-236786": {
+      "displayNameZh": "马丁特里尔"
+    },
+    "s4-fc26-254117": {
+      "displayNameZh": "拜尔"
+    },
+    "s4-fc26-245152": {
+      "displayNameZh": "圣地亚哥吉梅内斯"
+    },
+    "s4-fc26-213761": {
+      "displayNameZh": "哈默德"
+    },
+    "s4-fc26-251421": {
+      "displayNameZh": "布伦兰约翰逊"
+    },
+    "s4-fc26-252037": {
+      "displayNameZh": "法比奥席尔瓦"
+    },
+    "s4-fc26-226710": {
+      "displayNameZh": "斯卡马卡"
+    },
+    "s4-fc26-247172": {
+      "displayNameZh": "杜兰"
+    },
+    "s4-fc26-176580": {
+      "displayNameZh": "苏亚雷斯"
+    },
+    "s4-fc26-254022": {
+      "displayNameZh": "沃尔特马德"
+    },
+    "s4-fc26-205431": {
+      "displayNameZh": "菲尔克鲁格"
+    },
+    "s4-fc26-277581": {
+      "displayNameZh": "萨穆"
+    },
+    "s4-fc26-258911": {
+      "displayNameZh": "阿罗科达雷"
+    },
+    "s4-fc26-205175": {
+      "displayNameZh": "米利克"
+    },
+    "s4-fc26-277797": {
+      "displayNameZh": "阿尔梅达"
+    },
+    "s4-fc26-178509": {
+      "displayNameZh": "吉鲁"
+    },
+    "s4-fc26-223710": {
+      "displayNameZh": "穆里奇"
+    },
+    "s4-fc26-255223": {
+      "displayNameZh": "阿迪利"
+    },
+    "s4-fc26-237034": {
+      "displayNameZh": "库乔"
+    },
+    "s4-fc26-225403": {
+      "displayNameZh": "詹卡赫韦奇"
+    },
+    "s4-fc26-241602": {
+      "displayNameZh": "阿里亚斯"
+    },
+    "s4-fc26-239977": {
+      "displayNameZh": "尼古拉斯库恩"
+    },
+    "s4-fc26-244622": {
+      "displayNameZh": "普阿多"
+    },
+    "s4-fc26-231943": {
+      "displayNameZh": "里查利森"
+    },
+    "s4-fc26-206467": {
+      "displayNameZh": "普利亚"
+    },
+    "s4-fc26-211368": {
+      "displayNameZh": "布鲁马"
+    },
+    "s4-fc26-217998": {
+      "displayNameZh": "阿朗戈"
+    },
+    "s4-fc26-186146": {
+      "displayNameZh": "维尔贝克"
+    },
+    "s4-fc26-221992": {
+      "displayNameZh": "洛萨诺"
+    },
+    "s4-fc26-243032": {
+      "displayNameZh": "杜罗"
+    },
+    "s4-fc26-241788": {
+      "displayNameZh": "塔雷米"
+    },
+    "s4-fc26-242374": {
+      "displayNameZh": "穆萨巴罗"
+    },
+    "s4-fc26-208919": {
+      "displayNameZh": "瑞安高尔德"
+    },
+    "s4-fc26-200260": {
+      "displayNameZh": "伯古伊斯"
+    }
+  }
+}

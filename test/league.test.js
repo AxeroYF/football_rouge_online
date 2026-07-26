@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { YellowDogsLeagueService } from "../versus/league-service.js";
+import { s4EnhancementChance, YellowDogsLeagueService } from "../versus/league-service.js";
 import { REAL_PLAYERS } from "../versus/player-pool.js";
 import { advanceVersusMatch } from "../versus/match-engine.js";
 
@@ -66,7 +66,7 @@ test("manual draft permits any positional composition", () => {
   const result = service.finishDraft(user);
   assert.equal(result.ownTeam.name, "All Attack FC");
   assert.equal(result.ownTeam.roster.length, 22);
-  assert.ok(result.ownTeam.roster.every((player) => player.id.startsWith("real-att-")));
+  assert.ok(result.ownTeam.roster.every((player) => player.pool === "ATT"));
   assert.equal(result.ownTeam.roster.filter((player) => player.starter).length, 11);
   assert.equal(Object.keys(result.ownTeam.positions).length, 11);
 });
@@ -127,6 +127,23 @@ test("fitness red line rotates a fresh same-line substitute and reports the chan
   team.fitnessThreshold = 80;
   team.playerState[tiredId].fitness = 60;
   team.playerState[replacementId].fitness = 100;
+  team.positionPresets.position2[tiredId] = { x:31, y:48 };
+  team.positionPresets.position3[tiredId] = { x:69, y:34 };
+  team.tacticalPlans.leading.positionPreset = "position2";
+  team.tacticalPlans.trailing.positionPreset = "position3";
+  const fixturePreview = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
+  const created = service.createFixtureMatch(fixturePreview, 1, NOW);
+  const previewTeamIndex = fixturePreview.homeId === team.id ? 0 : 1;
+  const previewOpponentIndex = previewTeamIndex === 0 ? 1 : 0;
+  const previewRotation = created.match.leagueAutoRotations[previewTeamIndex].find((entry) => entry.outId === tiredId);
+  assert.ok(previewRotation);
+  assert.deepEqual(created.match.teams[previewTeamIndex].positionPresets.position2[previewRotation.inId], { x:31, y:48 });
+  assert.deepEqual(created.match.teams[previewTeamIndex].positionPresets.position3[previewRotation.inId], { x:69, y:34 });
+  created.match.teams[previewTeamIndex].score = 2;
+  created.match.teams[previewOpponentIndex].score = 0;
+  advanceVersusMatch(created.match, NOW + 3000);
+  assert.deepEqual(created.match.teams[previewTeamIndex].positions[previewRotation.inId], { x:31, y:48 });
+  assert.deepEqual(created.match.teams[previewTeamIndex].players.find((player) => player.id === previewRotation.inId).boardPosition, { x:31, y:48 });
   service.simulateNextRound();
   const match = service.state.matches.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
   const teamIndex = match.homeId === team.id ? 0 : 1;
@@ -146,20 +163,30 @@ test("league match switches opening, leading and trailing tactical plans with th
   const user = account("situational-tactics", "Situational Manager");
   join(service, user, "Situational FC");
   const team = service.accountTeam(user.id);
+  const positionPresets = {
+    position1:structuredClone(team.positions),
+    position2:structuredClone(team.positions),
+    position3:structuredClone(team.positions),
+  };
+  const movableId = team.preferredStarterIds.find((id) => REAL_PLAYERS.find((player) => player.id === id)?.pool === "MID");
+  positionPresets.position2[movableId] = { x:28, y:48 };
+  positionPresets.position3[movableId] = { x:72, y:34 };
   service.saveTeam(user, {
     starterIds:team.preferredStarterIds,
-    positions:team.positions,
+    positions:positionPresets.position1,
+    positionPresets,
     fitnessThreshold:65,
-    tacticalPlans:{ opening:{ tactic:"balanced", style:"possession" }, leading:{ tactic:"parkBus", style:"lowBlock" }, trailing:{ tactic:"allOutAttack", style:"highPress" } },
+    tacticalPlans:{ opening:{ tactic:"balanced", style:"possession", positionPreset:"position1" }, leading:{ tactic:"parkBus", style:"lowBlock", positionPreset:"position2" }, trailing:{ tactic:"allOutAttack", style:"highPress", positionPreset:"position3" } },
     attackFocus:"balanced",
     defenseFocus:"balanced",
   });
   const saved = service.view(user).ownTeam;
   assert.deepEqual(saved.tacticalPlans, {
-    opening:{ tactic:"balanced", style:"possession" },
-    leading:{ tactic:"parkBus", style:"lowBlock" },
-    trailing:{ tactic:"allOutAttack", style:"highPress" },
+    opening:{ tactic:"balanced", style:"possession", positionPreset:"position1" },
+    leading:{ tactic:"parkBus", style:"lowBlock", positionPreset:"position2" },
+    trailing:{ tactic:"allOutAttack", style:"highPress", positionPreset:"position3" },
   });
+  assert.deepEqual(saved.positionPresets, positionPresets);
   const fixture = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
   const created = service.createFixtureMatch(fixture, 1, NOW);
   const ownIndex = fixture.homeId === team.id ? 0 : 1;
@@ -169,11 +196,14 @@ test("league match switches opening, leading and trailing tactical plans with th
   advanceVersusMatch(created.match, NOW + 3000);
   assert.equal(created.match.teams[ownIndex].tactic, "parkBus");
   assert.equal(created.match.teams[ownIndex].style, "lowBlock");
+  assert.deepEqual(created.match.teams[ownIndex].positions[movableId], { x:28, y:48 });
+  assert.deepEqual(created.match.teams[ownIndex].players.find((player) => player.id === movableId).boardPosition, { x:28, y:48 });
   created.match.teams[ownIndex].score = 0;
   created.match.teams[opponentIndex].score = 20;
   advanceVersusMatch(created.match, NOW + 6000);
   assert.equal(created.match.teams[ownIndex].tactic, "allOutAttack");
   assert.equal(created.match.teams[ownIndex].style, "highPress");
+  assert.deepEqual(created.match.teams[ownIndex].positions[movableId], { x:72, y:34 });
   assert.ok(created.match.events.some((event) => event.type === "tactical" && event.plan === "leading"));
   assert.ok(created.match.events.some((event) => event.type === "tactical" && event.plan === "trailing"));
 });
@@ -221,7 +251,7 @@ test("inbox delivers reports and matchweeks while nearby same-line starters buil
   assert.ok(boosted.leagueChemistryBonus <= .015);
 });
 
-test("team can be renamed and a paid mixed-pool pack signs one unique player", () => {
+test("team can be renamed and private-pool packs support bulk purchase and direct duplicate cards", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("shop-owner", "Shop Owner");
   join(service, user, "Old Name");
@@ -230,21 +260,21 @@ test("team can be renamed and a paid mixed-pool pack signs one unique player", (
   const team = service.accountTeam(user.id);
   const startersBefore = [...team.preferredStarterIds];
   const positionsBefore = structuredClone(team.positions);
+  const cardsBefore = service.playerCards(user.id).length;
   const balanceBefore = renamed.wallet.balance;
-  const pack = service.buyPack(user, "ATT");
-  assert.equal(pack.wallet.balance, balanceBefore - 3500);
-  assert.equal(pack.shop.offer.pool, "MIXED");
-  assert.equal(pack.shop.offer.players.length, 3);
-  const playerId = pack.shop.offer.players[0].id;
-  const signed = service.choosePack(user, playerId);
-  assert.equal(signed.shop.offer, null);
-  assert.equal(signed.ownTeam.roster.some((player) => player.id === playerId), true);
-  assert.equal(signed.ownTeam.roster.length, 23);
+  const bought = service.buyS4Packs(user, "private-mixed", 3);
+  assert.equal(bought.wallet.balance, balanceBefore - 6600);
+  assert.equal(bought.s4Packs.inventory.length, 3);
+  const opened = service.openS4Pack(user, bought.s4Packs.inventory[0].id);
+  assert.equal(opened.packOpening.mode, "direct");
+  assert.equal(opened.s4Packs.inventory.length, 2);
+  assert.equal(service.playerCards(user.id).length, cardsBefore + 1);
+  assert.equal(service.state.s4Assets.ownerships[opened.packOpening.player.id], user.id);
   assert.deepEqual(team.preferredStarterIds, startersBefore);
   assert.deepEqual(team.positions, positionsBefore);
 });
 
-test("signing a legendary player sends a league-wide inbox notice to other players", () => {
+test("signing a legendary player no longer sends a league-wide inbox notice", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const first = account("legend-observer", "Observer");
   const second = account("legend-owner", "Legend Owner");
@@ -257,72 +287,73 @@ test("signing a legendary player sends a league-wide inbox notice to other playe
   assert.equal(fillers.length, 2);
   service.state.shopOffers[second.id] = { pool:legend.pool, tierId:"elite", playerIds:[legend.id, ...fillers.map((player) => player.id)], purchasedAt:NOW };
   service.choosePack(second, legend.id);
-  const notice = service.view(first).inbox.find((message) => message.payload?.playerId === legend.id && message.payload?.teamId === secondTeam.id);
-  assert.ok(notice);
-  assert.match(notice.title, /签下传奇球员/);
-  assert.match(notice.body, new RegExp(legend.name));
-  assert.equal(service.view(second).inbox.some((message) => message.id === notice.id), false);
+  assert.equal(service.view(first).inbox.some((message) => message.id.startsWith("legend-signing:")), false);
 });
 
-test("advanced and elite packs charge their tier price and honor grade guarantees", () => {
+test("legend and public packs use three choices with distinct ownership behavior", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("tier-shop", "Tier Shop");
   join(service, user, "Tier FC");
-  service.wallet(user.id).balance = 20000;
-  const elite = service.buyPack(user, "ATT", "elite");
-  assert.equal(elite.wallet.balance, 13500);
-  assert.equal(elite.shop.offer.pool, "MIXED");
-  assert.equal(elite.shop.offer.tier.id, "elite");
-  assert.ok(elite.shop.offer.players.some((player) => ["S", "A"].includes(player.grade)));
-  service.choosePack(user, elite.shop.offer.players[0].id);
-  const advanced = service.buyPack(user, "MID", "advanced");
-  assert.equal(advanced.wallet.balance, 8500);
-  assert.equal(advanced.shop.offer.pool, "MIXED");
-  assert.ok(advanced.shop.offer.players.some((player) => ["S", "A", "B"].includes(player.grade)));
+  service.wallet(user.id).balance = 30000;
+
+  let view = service.buyS4Packs(user, "legend-random", 1);
+  view = service.openS4Pack(user, view.s4Packs.inventory[0].id);
+  assert.equal(view.s4Packs.offer.players.length, 3);
+  assert.equal(view.s4Packs.offer.players.every((player) => player.grade === "S"), true);
+  const legendId = view.s4Packs.offer.players[0].id;
+  view = service.chooseS4Pack(user, view.s4Packs.offer.id, legendId);
+  assert.equal(view.packOpening.ownershipGranted, false);
+  assert.notEqual(service.state.s4Assets.ownerships[legendId], user.id);
+
+  view = service.buyS4Packs(user, "public-random", 1);
+  view = service.openS4Pack(user, view.s4Packs.inventory[0].id);
+  assert.equal(view.s4Packs.offer.players.length, 3);
+  assert.equal(view.s4Packs.offer.players.every((player) => player.grade !== "S"), true);
+  const publicId = view.s4Packs.offer.players[0].id;
+  view = service.chooseS4Pack(user, view.s4Packs.offer.id, publicId);
+  assert.equal(view.packOpening.ownershipGranted, true);
+  assert.equal(service.state.s4Assets.ownerships[publicId], user.id);
 });
 
-test("post-draft roster expands to 33 and released players return to the unique pool", () => {
+test("public packs respect the 33-family roster limit and released last cards return ownership", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("expanded-roster", "Expanded Roster");
   join(service, user, "Expanded FC");
   service.wallet(user.id).balance = 100000;
+  let view = service.buyS4Packs(user, "public-random", 12);
   for (let index = 0; index < 11; index += 1) {
-    const pack = service.buyPack(user, ["ATT", "MID", "DEF", "GK"][index % 4]);
-    service.choosePack(user, pack.shop.offer.players[0].id);
+    view = service.openS4Pack(user, view.s4Packs.inventory[0].id);
+    view = service.chooseS4Pack(user, view.s4Packs.offer.id, view.s4Packs.offer.players[0].id);
   }
-  const team = service.accountTeam(user.id);
-  assert.equal(team.rosterIds.length, 33);
-  assert.throws(() => service.buyPack(user, "ATT"), /33人名单已满/);
-  const releasedId = team.rosterIds.at(-1);
-  const releasedPlayer = service.view(user).ownTeam.roster.find((player) => player.id === releasedId);
-  const balanceBeforeRelease = service.wallet(user.id).balance;
-  assert.equal(releasedPlayer.releaseValue, Math.floor(releasedPlayer.referencePrice * .45));
+  assert.equal(service.view(user).ownTeam.s4Assets.rosterSlotsUsed, 33);
+  view = service.openS4Pack(user, view.s4Packs.inventory[0].id);
+  const blockedPlayerId = view.s4Packs.offer.players[0].id;
+  assert.throws(() => service.chooseS4Pack(user, view.s4Packs.offer.id, blockedPlayerId), /33人名单已满/);
+
+  const releasedId = service.accountTeam(user.id).rosterIds.at(-1);
   service.releasePlayer(user, releasedId);
-  assert.equal(service.wallet(user.id).balance, balanceBeforeRelease + releasedPlayer.releaseValue);
-  assert.equal(service.unavailablePlayerIds().has(releasedId), false);
-  assert.equal(service.view(user).ownTeam.roster.length, 32);
-  assert.doesNotThrow(() => service.buyPack(user, "ATT"));
+  assert.equal(service.state.s4Assets.ownerships[releasedId], undefined);
+  assert.equal(service.view(user).ownTeam.s4Assets.rosterSlotsUsed, 32);
+  assert.doesNotThrow(() => service.chooseS4Pack(user, service.view(user).s4Packs.offer.id, blockedPlayerId));
 });
 
-test("admin economy view summarizes current-season packs signings releases and coin ledger", () => {
+test("admin economy view summarizes S4 bulk purchases and duplicate-card releases", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("economy-admin-owner", "Economy Manager");
   join(service, user, "Economy FC");
   service.wallet(user.id).balance = 20000;
-  const bought = service.buyPack(user, null, "advanced");
-  const player = bought.shop.offer.players[0];
-  service.choosePack(user, player.id);
-  service.releasePlayer(user, player.id);
+  const bought = service.buyS4Packs(user, "private-mixed", 2);
+  const opened = service.openS4Pack(user, bought.s4Packs.inventory[0].id);
+  service.releaseCard(user, opened.packOpening.card.id);
 
   const economy = service.adminView().economy.find((entry) => entry.accountId === user.id);
   assert.ok(economy);
-  assert.equal(economy.balance, 20000 - 5000 + economy.releases[0].amount);
-  assert.equal(economy.shopPackCounts.find((entry) => entry.tierId === "advanced").count, 1);
-  assert.equal(economy.signings.find((entry) => entry.type === "pack-sign").player.id, player.id);
-  assert.equal(economy.releases[0].player.id, player.id);
+  assert.equal(economy.balance, 20000 - 4400 + economy.releases[0].amount);
+  assert.equal(economy.shopPackCounts.find((entry) => entry.tierId === "private-mixed").count, 2);
+  assert.equal(economy.releases[0].player.id, opened.packOpening.player.id);
   assert.ok(economy.income > 0);
-  assert.equal(economy.expense, 5000);
-  assert.ok(economy.ledger.some((entry) => entry.type === "pack-buy" && entry.tierId === "advanced"));
+  assert.equal(economy.expense, 4400);
+  assert.ok(economy.ledger.some((entry) => entry.type === "s4-pack-buy" && entry.packType === "private-mixed" && entry.quantity === 2));
 });
 
 test("admin season controls preserve human squads, reset wallets to 10000 and archive results", () => {
@@ -530,6 +561,7 @@ test("round results, team history and saved match details expose complete public
   const publicTeam = service.teamDetail(user, renamed.ownTeam.id);
   assert.equal(publicTeam.history.length, 1);
   assert.equal(publicTeam.starters.length, 11);
+  assert.ok(publicTeam.starters.every((player) => Number.isInteger(player.upgradeLevel)));
   assert.equal("tactic" in publicTeam, false);
   assert.equal("style" in publicTeam, false);
   const detail = service.matchDetail(user, ownSummary.id);
@@ -537,6 +569,7 @@ test("round results, team history and saved match details expose complete public
   assert.ok(detail.teams.some((team) => team.name === "Renamed Club"));
   assert.ok(detail.teams.every((team) => team.players.length === 11));
   assert.ok(detail.teams.every((team) => team.players.every((player) => Number.isFinite(player.rating) && Number.isFinite(player.overall) && Number.isFinite(player.position.x))));
+  assert.ok(detail.teams.every((team) => team.players.every((player) => Number.isInteger(player.upgradeLevel))));
   assert.ok(renamed.teamLeaderboards.ratings.every((entry) => entry.teamId === renamed.ownTeam.id));
 });
 
@@ -558,155 +591,291 @@ test("player schedule exposes confirmed league fixtures with stable kickoff time
   assert.equal(fixtures[1].status, "scheduled");
 });
 
-test("every round grants two random-position packs while coins still settle every third round", () => {
+test("league rounds no longer grant old-season packs while coins still settle every third round", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("reward-owner", "Reward Owner");
   join(service, user, "Reward FC");
   const startingBalance = service.wallet(user.id).balance;
   service.simulateNextRound();
   let view = service.view(user);
-  assert.equal(view.rewardOffers.length, 1);
+  assert.equal(view.rewardOffers.length, 0);
+  assert.equal(view.s4Packs.inventory.length, 0);
   assert.equal(service.wallet(user.id).balance, startingBalance);
-  assert.equal(view.rewardOffers.every((offer) => offer.round === 1), true);
-  assert.equal(view.inbox.some((message) => message.id.includes(":1") && message.payload?.offerIds?.length === 1), true);
   service.simulateNextRound();
   service.simulateNextRound();
   view = service.view(user);
-  assert.equal(view.rewardOffers.length, 4);
-  assert.deepEqual(Object.fromEntries([1, 2, 3].map((round) => [round, view.rewardOffers.filter((offer) => offer.round === round).length])), { 1:1, 2:1, 3:2 });
+  assert.equal(view.rewardOffers.length, 0);
+  assert.equal(view.s4Packs.inventory.length, 0);
   const rewardLedger = service.state.ledger.find((entry) => entry.type === "three-round-reward" && entry.round === 3);
   const recent = service.state.matches.filter((match) => match.round <= 3 && (match.homeId === view.ownTeam.id || match.awayId === view.ownTeam.id));
   const wins = recent.filter((match) => { const index = match.homeId === view.ownTeam.id ? 0 : 1; return match.score[index] > match.score[index === 0 ? 1 : 0]; }).length;
   const draws = recent.filter((match) => match.score[0] === match.score[1]).length;
   assert.equal(rewardLedger.amount, (300 + wins * 90 + draws * 35) * 5);
-  assert.equal(view.rewardOffers[0].round, 1);
-  assert.equal(view.rewardOffers[0].tierId, "standard");
-  assert.equal(view.rewardOffers[0].tier.id, "standard");
-  assert.ok(["ATT", "MID", "DEF", "GK"].includes(view.rewardOffers[0].pool));
-  assert.equal(view.rewardOffers.every((offer) => offer.players.length === 0), true);
-  view = service.openRewardPack(user, view.rewardOffers[0].id);
-  assert.equal(view.rewardOffers[0].players.length, 3);
-  const playerId = view.rewardOffers[0].players[0].id;
-  const team = service.accountTeam(user.id);
-  const startersBefore = [...team.preferredStarterIds];
-  const positionsBefore = structuredClone(team.positions);
-  const claimed = service.chooseRewardPack(user, view.rewardOffers[0].id, playerId);
-  assert.equal(claimed.rewardOffers.length, 3);
-  assert.equal(claimed.ownTeam.roster.length, 23);
-  assert.equal(claimed.ownTeam.roster.some((player) => player.id === playerId), true);
-  assert.deepEqual(team.preferredStarterIds, startersBefore);
-  assert.deepEqual(team.positions, positionsBefore);
-  assert.equal(service.view(user).rewardOffers.length, 3);
+  assert.ok(view.inbox.some((message) => message.round === 3 && message.title.includes("金币")));
 });
 
-test("missing round rewards are topped up to two packs without duplicating claimed packs", () => {
+test("S4 bulk purchase limits are enforced and unopened inventory persists", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("legacy-reward-owner", "Legacy Reward Owner");
   join(service, user, "Legacy Reward FC");
-  service.simulateNextRound();
-  service.simulateNextRound();
-  service.simulateNextRound();
-  const offers = service.state.rewardOffers[user.id];
-  offers.splice(1, 1);
-  delete offers[0].slot;
-  delete offers[0].tierId;
-  assert.equal(service.view(user).rewardOffers.length, 4);
-  const first = service.view(user).rewardOffers[0];
-  assert.equal(first.tierId, "standard");
-  assert.equal(first.tier.id, "standard");
-  const opened = service.openRewardPack(user, first.id).rewardOffers.find((offer) => offer.id === first.id);
-  service.chooseRewardPack(user, first.id, opened.players[0].id);
-  assert.equal(service.view(user).rewardOffers.length, 3);
-  assert.equal(service.state.ledger.filter((entry) => entry.accountId === user.id && entry.type === "round-pack-sign" && entry.round === first.round).length, 1);
+  service.wallet(user.id).balance = 300000;
+  const cardsBefore = service.playerCards(user.id).length;
+  const view = service.buyS4Packs(user, "private-gk", 100);
+  assert.equal(view.s4Packs.inventory.length, 100);
+  assert.equal(service.view(user).s4Packs.inventory.length, 100);
+  assert.equal(service.playerCards(user.id).length, cardsBefore);
+  assert.throws(() => service.buyS4Packs(user, "private-gk", 101), /单次最多购买100份礼包/);
 });
 
-test("admin schedules a tiered position pack by round and mails every player team", () => {
+test("直接随机礼包支持批量开启并一次返回全部球员卡结果", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("direct-batch-pack-owner", "Direct Batch Owner");
+  join(service, user, "Direct Batch FC");
+  service.wallet(user.id).balance = 100000;
+  const cardsBefore = service.playerCards(user.id).length;
+  const bought = service.buyS4Packs(user, "private-mixed", 10);
+  const packIds = bought.s4Packs.inventory.map((item) => item.id);
+  const opened = service.openS4PacksBatch(user, packIds);
+  assert.equal(opened.packBatchOpening.mode, "direct");
+  assert.equal(opened.packBatchOpening.complete, true);
+  assert.equal(opened.packBatchOpening.results.length, 10);
+  assert.ok(opened.packBatchOpening.results.every((result) => result.player && result.card));
+  assert.equal(opened.s4Packs.inventory.length, 0);
+  assert.equal(service.playerCards(user.id).length, cardsBefore + 10);
+});
+
+test("三选一礼包批量开启会逐包生成候选直到全部选择完成", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("choice-batch-pack-owner", "Choice Batch Owner");
+  join(service, user, "Choice Batch FC");
+  service.wallet(user.id).balance = 100000;
+  let view = service.buyS4Packs(user, "legend-random", 3);
+  const packIds = view.s4Packs.inventory.map((item) => item.id);
+  view = service.openS4PacksBatch(user, packIds);
+  assert.equal(view.s4Packs.batchOpening.total, 3);
+  assert.equal(view.s4Packs.offer.batchIndex, 1);
+  assert.equal(view.s4Packs.offer.batchTotal, 3);
+
+  for (let index = 1; index <= 3; index += 1) {
+    const offer = view.s4Packs.offer;
+    view = service.chooseS4Pack(user, offer.id, offer.players[0].id);
+    if (index < 3) {
+      assert.equal(view.packBatchOpening.complete, false);
+      assert.equal(view.s4Packs.batchOpening.completed, index);
+      assert.equal(view.s4Packs.offer.batchIndex, index + 1);
+    }
+  }
+
+  assert.equal(view.packBatchOpening.complete, true);
+  assert.equal(view.packBatchOpening.results.length, 3);
+  assert.equal(view.s4Packs.batchOpening, null);
+  assert.equal(view.s4Packs.offer, null);
+  assert.equal(view.s4Packs.inventory.length, 0);
+});
+
+test("admin immediately grants S4 packs to all player teams and sends inbox notices", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const first = account("admin-reward-first", "First Manager");
   const second = account("admin-reward-second", "Second Manager");
   join(service, first, "First Reward FC");
   join(service, second, "Second Reward FC");
-  const scheduled = service.scheduleAdminRewardPack({ round:2, pool:"MID", tierId:"advanced" });
-  assert.equal(scheduled.rewardGrants[0].status, "scheduled");
-  service.simulateNextRound();
-  assert.equal(service.view(first).rewardOffers.some((offer) => offer.source === "admin"), false);
-  service.simulateNextRound();
+  const result = service.grantS4PacksFromAdmin({ packType:"private-mid", quantity:2, recipientMode:"all" });
+  const grant = result.s4PackGrants.at(-1);
+  assert.equal(grant.packType, "private-mid");
+  assert.equal(grant.recipientCount, 2);
   for (const user of [first, second]) {
     const view = service.view(user);
-    const offer = view.rewardOffers.find((entry) => entry.source === "admin");
-    assert.ok(offer);
-    assert.equal(offer.round, 2);
-    assert.equal(offer.pool, "MID");
-    assert.equal(offer.tierId, "advanced");
-    assert.equal(offer.players.length, 0);
-    assert.ok(view.inbox.some((message) => message.payload?.grantId === offer.grantId && message.round === 2));
-    const opened = service.openRewardPack(user, offer.id).rewardOffers.find((entry) => entry.id === offer.id);
-    assert.equal(opened.players.length, 3);
-    assert.ok(opened.players.some((player) => ["S", "A", "B"].includes(player.grade)));
+    const granted = view.s4Packs.inventory.filter((item) => item.grantId === grant.id);
+    assert.equal(granted.length, 2);
+    assert.ok(view.inbox.some((message) => message.payload?.grantId === grant.id && message.payload?.quantity === 2));
   }
-  const grant = service.adminView().rewardGrants[0];
-  assert.equal(grant.status, "sent");
-  assert.equal(grant.recipientCount, 2);
-  assert.equal(grant.failedCount, 0);
-  const firstTeam = service.accountTeam(first.id);
-  const startersBefore = [...firstTeam.preferredStarterIds];
-  const positionsBefore = structuredClone(firstTeam.positions);
-  const offer = service.view(first).rewardOffers.find((entry) => entry.source === "admin");
-  service.chooseRewardPack(first, offer.id, offer.players[0].id);
-  assert.deepEqual(firstTeam.preferredStarterIds, startersBefore);
-  assert.deepEqual(firstTeam.positions, positionsBefore);
 });
 
-test("admin team-created rewards reach existing and future teams exactly once", () => {
+test("admin specified-player grants only reach the selected completed teams", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const first = account("team-created-first", "First Builder");
   const second = account("team-created-second", "Second Builder");
   join(service, first, "First Builder FC");
-
-  const scheduled = service.scheduleAdminRewardPack({ trigger:"team-created", packType:"mixed-advanced" });
-  const grant = scheduled.rewardGrants[0];
-  assert.equal(grant.trigger, "team-created");
-  assert.equal(grant.status, "active");
-  assert.equal(grant.recipientCount, 1);
-  assert.equal(service.view(first).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
-  assert.ok(service.view(first).inbox.some((message) => message.payload?.grantId === grant.id && message.title === "建队完成卡包奖励"));
-
   join(service, second, "Second Builder FC");
-  assert.equal(service.view(second).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
-  service.dispatchTeamCreatedRewardGrants();
-  assert.equal(service.view(first).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
-  assert.equal(service.view(second).rewardOffers.filter((offer) => offer.grantId === grant.id).length, 1);
-  const updated = service.adminView().rewardGrants.find((entry) => entry.id === grant.id);
-  assert.equal(updated.recipientCount, 2);
-  assert.deepEqual(new Set(updated.recipientIds), new Set([first.id, second.id]));
+  const result = service.grantS4PacksFromAdmin({ packType:"public-random", quantity:3, recipientMode:"specified", accountIds:[second.id] });
+  const grant = result.s4PackGrants.at(-1);
+  assert.deepEqual(grant.recipientIds, [second.id]);
+  assert.equal(service.view(first).s4Packs.inventory.length, 0);
+  assert.equal(service.view(second).s4Packs.inventory.filter((item) => item.grantId === grant.id).length, 3);
 });
 
-test("admin can mail mixed-pool packs and a one-player random legend pack", () => {
+test("admin can grant every S4 pack type through the replacement grant system", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("admin-mixed-owner", "Mixed Manager");
   join(service, user, "Mixed Reward FC");
-  assert.ok(service.adminView().adminPackTypes.some((entry) => entry.id === "mixed-standard"));
-  assert.ok(service.adminView().adminPackTypes.some((entry) => entry.id === "random-legend"));
+  const types = service.adminView().s4PackCatalog.map((entry) => entry.id);
+  assert.deepEqual(types, ["legend-random", "private-mixed", "private-att", "private-mid", "private-def", "private-gk", "public-random"]);
+  types.forEach((packType) => service.grantS4PacksFromAdmin({ packType, quantity:1, recipientMode:"specified", accountIds:[user.id] }));
+  const view = service.view(user);
+  assert.equal(view.s4Packs.inventory.length, types.length);
+  assert.deepEqual(new Set(view.s4Packs.inventory.map((item) => item.packType)), new Set(types));
+});
 
-  service.scheduleAdminRewardPack({ round:1, packType:"mixed-standard" });
-  service.simulateNextRound();
-  let view = service.view(user);
-  const mixed = view.rewardOffers.find((offer) => offer.source === "admin" && offer.pool === "MIXED");
-  assert.ok(mixed);
-  assert.equal(mixed.players.length, 0);
-  const openedMixed = service.openRewardPack(user, mixed.id).rewardOffers.find((offer) => offer.id === mixed.id);
-  assert.equal(openedMixed.players.length, 3);
-  assert.equal(new Set(openedMixed.players.map((player) => player.id)).size, 3);
+test("admin can grant a specified player card at any upgrade level to any completed player", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const first = account("admin-card-first", "First Card Manager");
+  const second = account("admin-card-second", "Second Card Manager");
+  join(service, first, "First Card FC");
+  join(service, second, "Second Card FC");
+  const firstTeam = service.accountTeam(first.id);
+  const secondTeam = service.accountTeam(second.id);
+  const playerId = firstTeam.preferredStarterIds[0];
+  const before = service.playerCards(second.id, playerId).length;
 
-  service.scheduleAdminRewardPack({ round:2, packType:"random-legend" });
-  service.simulateNextRound();
-  view = service.view(user);
-  const legend = view.rewardOffers.find((offer) => offer.source === "admin" && offer.pool === "LEGEND");
-  assert.ok(legend);
-  const openedLegend = service.openRewardPack(user, legend.id).rewardOffers.find((offer) => offer.id === legend.id);
-  assert.equal(openedLegend.players.length, 1);
-  assert.equal(openedLegend.players[0].grade, "S");
-  assert.equal(service.openRewardPack(user, legend.id).rewardOffers.find((offer) => offer.id === legend.id).players[0].id, openedLegend.players[0].id);
+  const adminView = service.grantS4PlayerCardsFromAdmin({
+    accountId:second.id,
+    playerId,
+    upgradeLevel:8,
+    quantity:2,
+  });
+
+  const grantedCards = service.playerCards(second.id, playerId);
+  assert.equal(grantedCards.length, before + 2);
+  assert.ok(grantedCards.slice(0, 2).every((card) => card.upgradeLevel === 8 && card.externalAcquisition));
+  assert.equal(service.state.s4Assets.ownerships[playerId], first.id);
+  assert.ok(secondTeam.rosterIds.includes(playerId));
+  assert.equal(adminView.s4CardGrants[0].playerId, playerId);
+  assert.equal(adminView.s4CardGrants[0].upgradeLevel, 8);
+  assert.equal(adminView.s4CardGrants[0].quantity, 2);
+  assert.ok(service.view(second).inbox.some((message) => message.payload?.grantId === adminView.s4CardGrants[0].id));
+  const unownedPlayer = REAL_PLAYERS.find((player) => !player.legendAbility && !service.state.s4Assets.ownerships[player.id]);
+  service.grantS4PlayerCardsFromAdmin({ accountId:second.id, playerId:unownedPlayer.id, upgradeLevel:3, quantity:1 });
+  assert.equal(service.state.s4Assets.ownerships[unownedPlayer.id], second.id);
+  assert.ok(secondTeam.rosterIds.includes(unownedPlayer.id));
+  assert.throws(() => service.grantS4PlayerCardsFromAdmin({ accountId:second.id, playerId, upgradeLevel:9 }), /强化等级必须为0至8/);
+});
+
+test("S4同名卡强化消耗副卡并把成功主卡提升一级", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const user = account("enhancement-success", "Enhancement Success");
+  join(service, user, "Enhancement Success FC");
+  const playerId = service.accountTeam(user.id).rosterIds[0];
+  service.grantS4PlayerCardsFromAdmin({ accountId:user.id, playerId, upgradeLevel:7, quantity:2 });
+  const [main, material] = service.playerCards(user.id, playerId).filter((card) => card.upgradeLevel === 7).slice(0, 2);
+  const balanceBefore = service.wallet(user.id).balance;
+  const view = service.enhanceS4Card(user, main.id, material.id, true);
+
+  assert.equal(view.enhancementResult.success, true);
+  assert.equal(view.enhancementResult.chance, 22);
+  assert.equal(view.enhancementResult.afterLevel, 8);
+  assert.equal(service.state.s4Assets.cards[main.id].upgradeLevel, 8);
+  assert.equal(service.state.s4Assets.cards[material.id].status, "recycled");
+  assert.equal(service.wallet(user.id).balance, balanceBefore - 5000);
+  assert.equal(view.enhancementResult.traitOffer.traits.length, 3);
+  assert.ok(view.enhancementResult.traitOffer.traits.every((trait) => trait.summary && Array.isArray(trait.eligibleRoleGroups)));
+  const chosenTrait = view.enhancementResult.traitOffer.traits[0];
+  const chosen = service.chooseS4EnhancementTrait(user, view.enhancementResult.traitOffer.id, chosenTrait.id);
+  assert.equal(chosen.enhancementTraitResult.trait.id, chosenTrait.id);
+  assert.ok(service.state.s4Assets.cards[main.id].traitIds.includes(chosenTrait.id));
+});
+
+test("S4代表卡的多个YDL特性会同时进入联赛首发和默契计算", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const user = account("ydl-multi-trait", "YDL Multi Trait");
+  join(service, user, "Multi Trait FC");
+  const team = service.accountTeam(user.id);
+  const playerId = team.preferredStarterIds.find((id) => REAL_PLAYERS.find((player) => player.id === id)?.role !== "GK");
+  const card = service.representativeCard(user.id, playerId);
+  card.upgradeLevel = 8;
+  card.traitIds = ["aerial-beacon", "shadow-marker"];
+  const lineup = service.actualLineup(team, 1);
+  const positions = service.actualPositions(team, lineup);
+  const adjusted = service.chemistryAdjustedLineup(team, lineup, positions);
+  const carrier = adjusted.find((player) => player.id === playerId);
+
+  assert.equal(carrier.upgradeLevel, 8);
+  assert.deepEqual(carrier.traits, ["aerial-beacon", "shadow-marker"]);
+  assert.ok(Number(carrier.leagueChemistryBonus) > 0);
+  assert.ok(adjusted.some((player) => player.id !== playerId && Number(player.leagueChemistryBonus) > 0));
+});
+
+test("YDL比赛首发会应用国家队和俱乐部双羁绊加成", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const team = { ownerId:null };
+  const lineup = Array.from({ length:11 }, (_, index) => ({
+    ...REAL_PLAYERS[index],
+    id:`bond-lineup-${index}`,
+    nationality:"西班牙",
+    club:"皇家马德里",
+    attributes:{ ...REAL_PLAYERS[index].attributes, passing:80 },
+  }));
+  const adjusted = service.chemistryAdjustedLineup(team, lineup, {});
+  assert.ok(adjusted.every((player) => player.ydlBondBonus === .1));
+  assert.ok(adjusted.every((player) => player.ydlBondIds.length === 2));
+  assert.ok(adjusted.every((player) => player.attributes.passing === 88));
+});
+
+test("+5至+8强化成功及关键等级特性绑定会向其他玩家发送全服公告", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const observer = account("enhancement-observer", "Enhancement Observer");
+  const owner = account("enhancement-owner", "Enhancement Owner");
+  join(service, observer, "Observer FC");
+  join(service, owner, "Owner FC");
+  const ownerTeam = service.accountTeam(owner.id);
+  const expectedChances = [52, 40, 30, 22];
+
+  [4, 5, 6, 7].forEach((beforeLevel, index) => {
+    const playerId = ownerTeam.rosterIds[index];
+    service.grantS4PlayerCardsFromAdmin({ accountId:owner.id, playerId, upgradeLevel:beforeLevel, quantity:2 });
+    const [main, material] = service.playerCards(owner.id, playerId).filter((card) => card.upgradeLevel === beforeLevel).slice(0, 2);
+    const view = service.enhanceS4Card(owner, main.id, material.id, false);
+    const upgradeLevel = beforeLevel + 1;
+    const announcement = service.view(observer).inbox.find((message) =>
+      message.id.startsWith("enhancement-success:")
+      && message.payload?.playerId === playerId
+      && message.payload?.upgradeLevel === upgradeLevel);
+    assert.ok(announcement);
+    assert.equal(announcement.payload.ownerName, owner.nickname);
+    assert.equal(announcement.payload.teamName, ownerTeam.name);
+    assert.equal(announcement.payload.chance, expectedChances[index]);
+    assert.match(announcement.body, new RegExp(`${expectedChances[index]}%`));
+    assert.equal(service.view(owner).inbox.some((message) => message.id === announcement.id), false);
+
+    if ([5, 8].includes(upgradeLevel)) {
+      const trait = view.enhancementResult.traitOffer.traits[0];
+      service.chooseS4EnhancementTrait(owner, view.enhancementResult.traitOffer.id, trait.id);
+      const traitAnnouncement = service.view(observer).inbox.find((message) =>
+        message.id.startsWith("enhancement-trait:")
+        && message.payload?.playerId === playerId
+        && message.payload?.traitId === trait.id);
+      assert.ok(traitAnnouncement);
+      assert.equal(traitAnnouncement.payload.traitName, trait.name);
+      assert.match(traitAnnouncement.body, new RegExp(trait.name));
+    }
+  });
+
+  const observerAnnouncements = service.view(observer).inbox.filter((message) => message.id.startsWith("enhancement-success:"));
+  assert.deepEqual(new Set(observerAnnouncements.map((message) => message.payload.upgradeLevel)), new Set([5, 6, 7, 8]));
+  assert.equal(service.view(observer).inbox.filter((message) => message.id.startsWith("enhancement-trait:")).length, 2);
+});
+
+test("S4强化失败在+3以上降级，保卡道具会扣金币并阻止降级", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .999 });
+  const user = account("enhancement-failure", "Enhancement Failure");
+  join(service, user, "Enhancement Failure FC");
+  const playerId = service.accountTeam(user.id).rosterIds[0];
+  service.grantS4PlayerCardsFromAdmin({ accountId:user.id, playerId, upgradeLevel:4, quantity:4 });
+  let cards = service.playerCards(user.id, playerId).filter((card) => card.upgradeLevel === 4).slice(0, 4);
+  const unprotected = service.enhanceS4Card(user, cards[0].id, cards[1].id, false);
+  assert.equal(unprotected.enhancementResult.success, false);
+  assert.equal(unprotected.enhancementResult.afterLevel, 3);
+  const balanceBeforeProtection = service.wallet(user.id).balance;
+  const protectedResult = service.enhanceS4Card(user, cards[2].id, cards[3].id, true);
+  assert.equal(protectedResult.enhancementResult.success, false);
+  assert.equal(protectedResult.enhancementResult.afterLevel, 4);
+  assert.equal(protectedResult.enhancementResult.protectionUsed, true);
+  assert.equal(service.wallet(user.id).balance, balanceBeforeProtection - 900);
+});
+
+test("S4强化概率区分稳妥同级卡和娱乐式低级副卡", () => {
+  assert.equal(s4EnhancementChance(1, 1), 90);
+  assert.equal(s4EnhancementChance(7, 7), 22);
+  assert.equal(s4EnhancementChance(7, 1), 1);
 });
 
 test("scheduled player fixtures are broadcast live and finalize after match time", () => {
@@ -864,14 +1033,14 @@ test("Swiss pairings use current cup standings and quarterfinal seeds occupy the
   assert.deepEqual(quarterfinalPairs, [[ids[0], ids[7]], [ids[3], ids[4]], [ids[2], ids[5]], [ids[1], ids[6]]]);
 });
 
-test("cup rewards are limited to knockout advancement and champion, and cup matches mail reports", () => {
+test("cup rewards grant coins instead of player packs for knockout advancement and champion", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("cup-reward-owner", "Cup Reward Manager");
   join(service, user, "Cup Reward FC");
   const team = service.accountTeam(user.id);
   service.startCup();
   const swissEvent = service.state.cup.events[0];
-  assert.equal(service.view(user).rewardOffers.some((offer) => offer.source === "cup"), false);
+  assert.equal(service.view(user).s4Packs.inventory.some((item) => item.source === "cup"), false);
 
   const fixture = service.cupEventFixtures(swissEvent).find((entry) => entry.homeId === team.id || entry.awayId === team.id);
   const home = service.state.teams.find((entry) => entry.id === fixture.homeId);
@@ -885,16 +1054,19 @@ test("cup rewards are limited to knockout advancement and champion, and cup matc
   assert.equal(report.payload.stage, "swiss");
   assert.equal(report.payload.results[0].id, record.id);
 
+  const balanceBeforeRewards = service.wallet(user.id).balance;
   const advance = service.grantCupReward(team.id, { id:"cup-quarterfinals-leg2", stage:"quarterfinals", round:5, leg:2 }, "advance");
   assert.ok(advance);
-  assert.equal(advance.source, "cup");
-  assert.equal(advance.tierId, "advanced");
-  assert.ok(["ATT", "MID", "DEF", "GK"].includes(advance.pool));
+  assert.equal(advance.type, "cup-coin-reward");
+  assert.equal(advance.amount, 2200);
   const champion = service.grantCupReward(team.id, { id:"cup-final-leg2", stage:"final", round:7, leg:2 }, "champion");
   assert.ok(champion);
-  assert.equal(champion.source, "cup");
-  assert.equal(champion.tierId, "legend");
-  assert.equal(champion.pool, "LEGEND");
+  assert.equal(champion.type, "cup-coin-reward");
+  assert.equal(champion.amount, 12000);
+  assert.equal(service.wallet(user.id).balance, balanceBeforeRewards + 14200);
+  assert.equal(service.view(user).s4Packs.inventory.filter((item) => item.source === "cup").length, 0);
+  assert.equal(service.grantCupReward(team.id, { id:"cup-final-leg2", stage:"final", round:7, leg:2 }, "champion"), null);
+  assert.equal(service.wallet(user.id).balance, balanceBeforeRewards + 14200);
   assert.equal(service.view(user).inbox.filter((message) => message.id.startsWith("cup-reward:")).length, 2);
 });
 
