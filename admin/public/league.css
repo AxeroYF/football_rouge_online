@@ -24,6 +24,8 @@
 .content-list-row em { color: var(--cyan); font-size: 9px; font-style: normal; }
 .content-list-row strong { color: var(--lime); font-size: 20px; text-align: center; }
 .content-list-row strong small { color: var(--muted); }
+.content-status-badge { margin-left: 7px; padding: 2px 5px; color: #241400; border: 1px solid #f3b34c; background: #f3b34c; font-size: 8px; font-style: normal; vertical-align: middle; }
+.content-add-button { padding: 7px 10px; color: #071411; border-color: var(--lime); background: var(--lime); font-size: 10px; font-weight: 900; white-space: nowrap; }
 .content-editor { overflow: hidden; }
 .content-editor-form > header { padding: 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); background: #0d211a; }
 .content-editor-form > header h2 { margin: 3px 0 0; font-size: 26px; }
@@ -53,6 +55,11 @@
 .content-editor-form > footer { position: sticky; bottom: 0; padding: 13px 18px; display: flex; justify-content: space-between; align-items: center; gap: 15px; border-top: 1px solid var(--line); background: rgba(6,21,16,.96); }
 .content-editor-form > footer span { color: var(--muted); font-size: 10px; }
 .content-save-button { color: #071411; border-color: var(--lime); background: var(--lime); font-weight: 900; }
+.content-create-form { width: min(760px, 92vw); }
+.content-create-form > header button { min-width: 40px; font-size: 22px; }
+.content-draft-notice { color: var(--ink); background: rgba(243,179,76,.08); }
+.content-draft-notice b { color: #f3b34c; }
+.content-draft-notice p { margin: 7px 0 0; color: var(--muted); }
 
 .admin-section-nav button {
   min-height: 48px;
@@ -64,6 +71,28 @@
 
 .admin-section-nav button:last-child { border-right: 0; }
 .admin-section-nav button.active { color: #071411; background: var(--lime); }
+
+.league-recovery {
+  min-height: 420px;
+  padding: clamp(28px, 6vw, 72px);
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  border: 1px solid rgba(255, 89, 100, .48);
+  background: #15100f;
+}
+.league-recovery > small { color: var(--red); font-size: 10px; letter-spacing: .16em; }
+.league-recovery h1 { margin: 8px 0 10px; font-size: 28px; }
+.league-recovery p { max-width: 760px; margin: 0 0 10px; color: var(--ink); }
+.league-recovery .league-recovery-note { color: var(--muted); }
+.league-recovery > label { width: min(520px, 100%); margin-top: 12px; display: grid; gap: 6px; }
+.league-recovery > label span { color: var(--muted); font-size: 10px; }
+.league-recovery > label input { width: 100%; padding: 11px 12px; color: var(--ink); border: 1px solid var(--line); outline: 0; background: #061510; }
+.league-recovery > label input:focus { border-color: var(--red); }
+.league-recovery > div { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 9px; }
+.league-recovery .danger { color: #fff; border-color: var(--red); background: #7f1d2d; font-weight: 900; }
+.league-recovery .danger:disabled { cursor: not-allowed; opacity: .4; }
+.league-recovery .league-recovery-feedback { min-height: 21px; margin-top: 10px; color: var(--orange); }
 
 .league-admin-actions {
   margin-top: 18px;
@@ -87,6 +116,7 @@
 .league-allocation-panel,
 .league-backup-panel,
 .league-reward-mail-panel,
+.league-coin-grant-panel,
 .league-card-grant-panel,
 .league-badge-panel { grid-column: 1 / -1; }
 .league-economy-panel { grid-column: 1 / -1; }
@@ -117,7 +147,8 @@
 }
 .league-reward-mail-form label { min-width: 0; display: grid; gap: 6px; }
 .league-reward-mail-form label span { color: var(--muted); font-size: 10px; font-weight: 800; }
-.league-reward-mail-form select { width: 100%; min-width: 0; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); color: var(--ink); background: #071411; }
+.league-reward-mail-form input,
+.league-reward-mail-form select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); color: var(--ink); background: #071411; }
 .league-reward-mail-form select option { color: #edf6ee; background: #071411; }
 .league-reward-mail-form button { min-height: 42px; white-space: nowrap; }
 .league-card-grant-form {
@@ -198,6 +229,7 @@
   .league-allocation-panel,
   .league-backup-panel,
   .league-reward-mail-panel,
+  .league-coin-grant-panel,
   .league-card-grant-panel,
   .league-badge-panel { grid-column: 1; }
   .league-economy-panel { grid-column: 1; }

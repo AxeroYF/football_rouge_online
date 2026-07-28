@@ -1,0 +1,34 @@
+{
+  "outputVersion": "s4-season-v1",
+  "seed": "yellowdogs-s4-season-balance-v1",
+  "matches": 30000,
+  "rawMatchSampleLimit": 1000,
+  "experiments": {
+    "xTaskMatchesPerRole": 10000,
+    "formationMatchesPerCell": 1000,
+    "tacticMatchesPerCell": 600,
+    "styleMatchesPerCell": 400,
+    "upgradeMatchesPerCell": 250,
+    "traitMatchesPerCell": 500,
+    "legendMatchesPerCell": 300,
+    "dynamicPlanMatches": 5000,
+    "weatherStyleMatchesPerCell": 250,
+    "refereeStyleMatchesPerCell": 200
+  },
+  "taskThresholds": {
+    "appearances": [1, 3, 5, 10, 18],
+    "goals": [1, 3, 6, 10],
+    "penaltiesWon": [1, 3, 5],
+    "assists": [1, 3, 6, 10],
+    "tackles": [5, 15, 30, 50],
+    "yellowCards": [1, 3, 5],
+    "saves": [5, 15, 30, 50]
+  },
+  "ecosystemWeights": {
+    "standard": 35,
+    "enhanced": 30,
+    "traitHeavy": 15,
+    "legendHeavy": 10,
+    "xLed": 10
+  }
+}

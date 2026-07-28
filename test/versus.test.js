@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { INDIVIDUALIZED_PLAYERS, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS } from "../versus/player-pool.js";
+import { INDIVIDUALIZED_PLAYERS, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "../versus/player-pool.js";
 import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
 import { VersusRoomService } from "../versus/room-service.js";
 import { createLineupSeed, parseLineupSeed } from "../versus/lineup-seed.js";
@@ -160,41 +160,46 @@ test("S4十一人对战拥有550人的分位置真实球员池和稳定评级梯
     MID: 165,
     ATT: 165,
   });
-  assert.equal(REAL_PLAYERS.length, 550);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 550);
-  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, REAL_PLAYERS.filter((player) => player.grade === grade).length])), { S:14, A:117, B:233, C:186 });
+  const standardPlayers = Object.values(REAL_PLAYER_POOLS).flat();
+  assert.equal(standardPlayers.length, 550);
+  assert.equal(X_PLAYERS.length, 10);
+  assert.equal(REAL_PLAYERS.length, 560);
+  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 560);
+  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, standardPlayers.filter((player) => player.grade === grade).length])), { S:14, A:117, B:233, C:186 });
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => [pool, Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, players.filter((player) => player.grade === grade).length]))])), {
     GK:{ S:1, A:12, B:23, C:19 },
     DEF:{ S:1, A:35, B:70, C:59 },
     MID:{ S:5, A:35, B:70, C:55 },
     ATT:{ S:7, A:35, B:70, C:53 },
   });
-  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "A").every((player) => player.overall >= 86 && player.overall <= 89));
-  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "B").every((player) => player.overall >= 80 && player.overall <= 99));
-  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "C").every((player) => player.overall >= 75 && player.overall <= 79));
-  assert.ok(REAL_PLAYERS.every((player) => player.nationality && player.club));
-  assert.ok(REAL_PLAYERS.every((player) => ATTRIBUTE_NAMES.every((key) => Number.isFinite(player.attributes[key]) && player.attributes[key] >= 1 && player.attributes[key] <= 99)));
-  assert.ok(REAL_PLAYERS.every((player) => Number.isFinite(player.referenceOverall) && player.referenceAttributes));
-  assert.ok(REAL_PLAYERS.every((player) => Number.isFinite(player.heightCm) && player.heightCm >= 165 && player.heightCm <= 202));
-  assert.ok(new Set(REAL_PLAYERS.map((player) => player.heightCm)).size > 20);
-  assert.deepEqual(REAL_PLAYERS.filter((player) => player.grade === "S").map((player) => player.name).sort(),
+  assert.ok(standardPlayers.filter((player) => player.grade === "A").every((player) => player.overall >= 86 && player.overall <= 89));
+  assert.ok(standardPlayers.filter((player) => player.grade === "B").every((player) => player.overall >= 80 && player.overall <= 99));
+  assert.ok(standardPlayers.filter((player) => player.grade === "C").every((player) => player.overall >= 75 && player.overall <= 79));
+  assert.ok(standardPlayers.every((player) => player.nationality && player.club));
+  assert.ok(standardPlayers.every((player) => ATTRIBUTE_NAMES.every((key) => Number.isFinite(player.attributes[key]) && player.attributes[key] >= 1 && player.attributes[key] <= 99)));
+  assert.ok(standardPlayers.every((player) => Number.isFinite(player.referenceOverall) && player.referenceAttributes));
+  assert.ok(standardPlayers.every((player) => Number.isFinite(player.heightCm) && player.heightCm >= 165 && player.heightCm <= 202));
+  assert.ok(new Set(standardPlayers.map((player) => player.heightCm)).size > 20);
+  assert.deepEqual(standardPlayers.filter((player) => player.grade === "S").map((player) => player.name).sort(),
     ["C罗", "克罗斯", "哈兰德", "姆巴佩", "库尔图瓦", "梅西", "莫德里奇", "贝利", "齐达内", "贝肯鲍尔", "大罗", "罗纳尔迪尼奥", "马拉多纳", "贝克汉姆"].sort());
-  assert.ok(REAL_PLAYERS.filter((player) => player.grade === "S").every((player) => player.legendAbility?.id && player.legendAbility?.summary));
-  assert.equal(new Set(REAL_PLAYERS.filter((player) => player.grade === "S").map((player) => player.legendAbility.id)).size, 14);
-  assert.ok(REAL_PLAYERS.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
+  assert.ok(standardPlayers.filter((player) => player.grade === "S").every((player) => player.legendary && player.legendAbility?.id && player.legendAbility?.summary));
+  assert.ok(standardPlayers.filter((player) => player.grade !== "S").every((player) => !player.legendary && !player.legendAbility));
+  assert.ok(standardPlayers.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
   assert.deepEqual(
     Object.fromEntries(["布冯", "切赫", "拉姆", "马塞洛"].map((name) => {
-      const player = REAL_PLAYERS.find((candidate) => candidate.name === name);
+      const player = standardPlayers.find((candidate) => candidate.name === name);
       return [name, player?.overall];
     })),
     { 布冯:85, 切赫:85, 拉姆:84, 马塞洛:86 },
   );
-  assert.ok(REAL_PLAYERS.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
+  assert.ok(standardPlayers.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
   assert.ok(REAL_PLAYER_POOLS.GK.every((player) => player.secondaryRole === null));
-  assert.equal(INDIVIDUALIZED_PLAYERS.length, 14);
-  assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.signature && player.archetype && player.nationality && player.club));
-  assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));
-  assert.ok(INDIVIDUALIZED_PLAYERS.every((player) => player.overall >= 76 && player.overall <= 99));
+  const standardIndividualizedPlayers = INDIVIDUALIZED_PLAYERS.filter((player) => player.grade !== "X");
+  assert.equal(standardIndividualizedPlayers.length, 14);
+  assert.equal(INDIVIDUALIZED_PLAYERS.filter((player) => player.grade === "X").length, 10);
+  assert.ok(standardIndividualizedPlayers.every((player) => player.signature && player.archetype && player.nationality && player.club));
+  assert.ok(standardIndividualizedPlayers.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));
+  assert.ok(standardIndividualizedPlayers.every((player) => player.overall >= 76 && player.overall <= 99));
 });
 
 test("副位置减益小于完全陌生位置减益", () => {

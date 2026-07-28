@@ -1,0 +1,35 @@
+当前工作区：D:\Project\game_test\.worktrees\s4
+分支：codex/s4-card-upgrade
+HEAD：1d4c6b0
+统计：29个已修改文件 + 2个未跟踪文件 = 31个
+
+M admin/public/app.js
+M admin/public/league.css
+M data/s4-retired-famous-players-50.json
+M data/ydl-content-overrides.json
+M test/admin.test.js
+M test/league.test.js
+M test/s4-assets.test.js
+M test/versus.test.js
+M test/ydl-bonds.test.js
+M test/ydl-content-store.test.js
+M test/ydl-traits.test.js
+M versus/admin-api.js
+M versus/api.js
+M versus/balance-report.js
+M versus/history-detail.js
+M versus/league-service.js
+M versus/legend-abilities.js
+M versus/match-engine.js
+M versus/player-pool-s4-generated.js
+M versus/player-pool.js
+M versus/public/app.js
+M versus/public/bond-rules.js
+M versus/public/styles.css
+M versus/rules.js
+M versus/s4-assets.js
+M versus/season-simulation.js
+M versus/trait-pool.js
+M versus/ydl-content-store.js
+?? versus/s4-balance.js
+?? versus/x-player-pool.js

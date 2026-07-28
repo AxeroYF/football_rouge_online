@@ -111,7 +111,7 @@ function simulationS4Assets(teams, now) {
       createdAt:now,
       acquiredAt:now,
     };
-    if (!REAL_PLAYER_BY_ID[playerId]?.legendAbility && !ownerships[playerId]) ownerships[playerId] = team.ownerId;
+    if (REAL_PLAYER_BY_ID[playerId]?.grade !== "S" && !ownerships[playerId]) ownerships[playerId] = team.ownerId;
   }));
   return { schemaVersion:1, nextCardSequence:sequence, ownerships, cards, transactions:[] };
 }

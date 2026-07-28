@@ -18,6 +18,25 @@ function versusTrait(id, summary, rules, overrides = {}) {
 }
 
 const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
+  Object.freeze({
+    id:"custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20",
+    name:"激素紧缺",
+    rarity:"common",
+    category:"physical",
+    eligibleRoleGroups:Object.freeze(["DEF", "MID", "ATT"]),
+    tags:Object.freeze(["physical", "finishing", "pace", "dribbling"]),
+    polarity:"mixed",
+    summary:"该球员的身高下降10cm，射门、速度、盘带各提升5点。",
+    rules:Object.freeze([
+      Object.freeze({ hook:"height", addCm:-10 }),
+      Object.freeze({ hook:"attribute", add:Object.freeze({ finishing:5, pace:5, dribbling:5 }) }),
+    ]),
+    dropWeight:1,
+    maxLevel:1,
+    mode:"versus11",
+    source:"ydl-custom",
+    developerLabel:"YDL自定义正式卡",
+  }),
   versusTrait("aerial-beacon", "身高+20cm，获得ST位置熟练度，头球能力提升。", [
     { hook: "height", addCm: 20 },
     { hook: "position", familiarRoles: ["ST"] },
@@ -104,6 +123,7 @@ export const VERSUS_TRAIT_BY_ID = Object.freeze(Object.fromEntries(VERSUS_TRAIT_
 export const VERSUS_EXCLUDED_TRAIT_IDS = Object.freeze(TRAIT_CARDS.filter((trait) => !VERSUS_TRAIT_BY_ID[trait.id]).map((trait) => trait.id));
 
 export const YDL_TRAIT_IDS = Object.freeze([
+  "custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20",
   "aerial-beacon",
   "touchline-flywheel",
   "shadow-marker",

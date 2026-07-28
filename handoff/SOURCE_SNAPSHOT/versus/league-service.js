@@ -5,7 +5,7 @@ import { advanceVersusMatch, createVersusMatch, drawVersusReferee, drawVersusWea
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "./player-pool.js";
 import { analyzeElevenFormation, drawUniqueMixedPlayers, drawUniquePlayers, inferElevenBoardRoles, sanitizePositions } from "./rules.js";
-import { ATTRIBUTE_LABELS, ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../game/public/schema.js";
+import { roleGroup } from "../game/public/schema.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
 import { applyS4Enhancement, S4_ECONOMY, S4_ENHANCEMENT, S4_PACK_PRICES, S4_PRICING, s4BaseCardReferenceValue, s4CardValueMultiplier, s4EffectiveOverall, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, s4OwnershipReferenceValue } from "./s4-balance.js";
 import { applyS4BondBonuses, createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
@@ -36,16 +36,6 @@ const DRAFT_ROSTER_SIZE = 22;
 const X_PLAYER_HEIGHT_MIN = 160;
 const X_PLAYER_HEIGHT_MAX = 186;
 const X_PLAYER_ROLES = Object.freeze(["GK", "CB", "LB", "RB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
-const X_GROWTH_PACK = Object.freeze({ id:"x-growth-1", name:"X球员加成点数", points:1, price:5000, description:"获得1点X球员加成点数。" });
-const X_GROWTH_TASKS = Object.freeze([
-  Object.freeze({ id:"appearances", label:"正式比赛出场", stat:"appearances", groups:["GK", "DEF", "MID", "ATT"], milestones:[1, 3, 5, 10, 18], rewards:[1, 1, 2, 3, 5] }),
-  Object.freeze({ id:"goals", label:"进球", stat:"goals", groups:["ATT"], milestones:[1, 3, 6, 10], rewards:[1, 2, 3, 5] }),
-  Object.freeze({ id:"penaltiesWon", label:"制造点球", stat:"penaltiesWon", groups:["ATT"], milestones:[1, 3, 5], rewards:[2, 3, 5] }),
-  Object.freeze({ id:"assists", label:"助攻", stat:"assists", groups:["MID"], milestones:[1, 3, 6, 10], rewards:[1, 2, 3, 5] }),
-  Object.freeze({ id:"tackles", label:"抢断与拦截", stat:"tackles", groups:["DEF"], milestones:[5, 15, 30, 50], rewards:[1, 2, 3, 5] }),
-  Object.freeze({ id:"yellowCards", label:"获得黄牌", stat:"yellowCards", groups:["DEF"], milestones:[1, 3, 5], rewards:[1, 2, 3] }),
-  Object.freeze({ id:"saves", label:"扑救", stat:"saves", groups:["GK"], milestones:[5, 15, 30, 50], rewards:[1, 2, 3, 5] }),
-]);
 const CLUB_ROSTER_LIMIT = 33;
 const POSITION_PRESET_KEYS = Object.freeze(["position1", "position2", "position3"]);
 export const S4_PACK_CATALOG = Object.freeze([
@@ -56,7 +46,7 @@ export const S4_PACK_CATALOG = Object.freeze([
   Object.freeze({ id:"private-def", name:"私有池后场随机礼包", price:S4_PACK_PRICES["private-def"], kind:"private", pool:"DEF", selectionMode:"direct", description:"从你拥有所有权的后场球员中随机获得1张卡。" }),
   Object.freeze({ id:"private-gk", name:"私有池门将随机礼包", price:S4_PACK_PRICES["private-gk"], kind:"private", pool:"GK", selectionMode:"direct", description:"从你拥有所有权的门将中随机获得1张卡。" }),
   Object.freeze({ id:"public-random", name:"公共池随机礼包", price:S4_PACK_PRICES["public-random"], kind:"public", pool:"MIXED", selectionMode:"choice", description:"从尚未被占用所有权的非传奇球员中随机展示3人，选择1张卡并获得其所有权。" }),
-  Object.freeze({ id:"public-carnival", name:"公开池狂欢礼包", price:S4_PACK_PRICES["public-carnival"], kind:"public", pool:"MIXED", selectionMode:"choice", seasonPurchaseLimit:1, cardQuantity:50, description:"赛季限购1次。从公开池随机展示3人，选择1人并获得其所有权及50张+0基础卡。" }),
+  Object.freeze({ id:"public-carnival", name:"公开池狂欢礼包", price:S4_PACK_PRICES["public-carnival"], kind:"public", pool:"MIXED", selectionMode:"choice", seasonPurchaseLimit:1, cardQuantity:100, description:"赛季限购1次。从公开池随机展示3人，选择1人并获得其所有权及100张+0基础卡。" }),
 ]);
 const S4_PACK_BY_ID = Object.freeze(Object.fromEntries(S4_PACK_CATALOG.map((pack) => [pack.id, pack])));
 const S4_MAX_PACK_PURCHASE_QUANTITY = 100;
@@ -107,36 +97,12 @@ const CUP_STAGE_NAMES = Object.freeze({ quarterfinals:"四分之一决赛", semi
 
 const clone = (value) => structuredClone(value);
 const localDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-const clampAttribute = (value) => Math.max(1, Math.min(99, Math.round(Number(value) || 1)));
-const xPlayerAttributeTemplate = (role) => {
-  const template = REAL_PLAYERS
-    .filter((player) => !isXPlayer(player) && player.role === role)
-    .sort((left, right) => Math.abs(left.overall - 62) - Math.abs(right.overall - 62) || left.id.localeCompare(right.id))[0];
-  if (!template) throw new Error("找不到适用于该位置的球员能力模板");
-  const overallDelta = 62 - Number(template.overall);
-  return {
-    templatePlayerId:template.id,
-    attributes:Object.fromEntries(Object.entries(template.attributes ?? {}).map(([key, value]) => [key, clampAttribute(Number(value) + overallDelta)])),
-  };
-};
-const xPlayerInitialAbilityOverall = (config) => {
-  const storedTemplate = REAL_PLAYER_BY_ID[config?.templatePlayerId];
-  if (storedTemplate && !isXPlayer(storedTemplate) && storedTemplate.role === config.role) {
-    const overallDelta = 62 - Number(storedTemplate.overall);
-    const attributes = Object.fromEntries(Object.entries(storedTemplate.attributes ?? {}).map(([key, value]) => [key, clampAttribute(Number(value) + overallDelta)]));
-    return playerOverallFromAttributes(attributes, config.role);
-  }
-  return playerOverallFromAttributes(xPlayerAttributeTemplate(config.role).attributes, config.role);
-};
-const playerSummary = (player, xConfig = null) => ({ id:player.id, name:player.name, role:xConfig?.role ?? player.role, secondaryRole:xConfig?.secondaryRole ?? player.secondaryRole, pool:xConfig ? roleGroup(xConfig.role) : player.pool, overall:player.overall, grade:player.grade, nationality:player.nationality, club:player.club, heightCm:xConfig?.heightCm ?? player.heightCm, preferredFoot:player.preferredFoot, attributes:clone(xConfig?.attributes ?? player.attributes ?? {}), legendary:isS4Legend(player), xPlayer:isXPlayer(player) });
+const playerSummary = (player, xConfig = null) => ({ id:player.id, name:player.name, role:xConfig?.role ?? player.role, secondaryRole:xConfig?.secondaryRole ?? player.secondaryRole, pool:xConfig ? roleGroup(xConfig.role) : player.pool, overall:player.overall, grade:player.grade, nationality:player.nationality, club:player.club, heightCm:xConfig?.heightCm ?? player.heightCm, preferredFoot:player.preferredFoot, attributes:clone(player.attributes ?? {}), legendary:isS4Legend(player), xPlayer:isXPlayer(player) });
 const playerDirectorySummary = (player) => ({ id:player.id, name:player.name, role:player.role, secondaryRole:player.secondaryRole, pool:player.pool, overall:player.overall, grade:player.grade, nationality:player.nationality, club:player.club, legendary:isS4Legend(player), legend:isS4Legend(player), xPlayer:isXPlayer(player) });
 const publicLeagueS4Card = (state, card) => {
   const player = REAL_PLAYER_BY_ID[card.playerId];
   const effectiveOverall = player ? s4EffectiveOverall(player, card.upgradeLevel) : null;
   const referenceValue = player ? s4CardReferenceValue(player, card.upgradeLevel) : null;
-  const ownershipAnchorRequired = !isS4Legend(player)
-    && ownershipOwner(state, card.playerId) === card.ownerId
-    && cardsForOwner(state, card.ownerId, card.playerId).length === 1;
   return {
     ...publicS4Card(state, card),
     baseOverall:player?.overall ?? null,
@@ -144,7 +110,6 @@ const publicLeagueS4Card = (state, card) => {
     upgradeBonus:player ? effectiveOverall - player.overall : 0,
     referenceValue,
     minimumListingPrice:referenceValue == null ? null : Math.ceil(referenceValue * S4_PRICING.cardListingFloorRate / 100) * 100,
-    ownershipAnchorRequired,
     traits:(card.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]).map((id) => ({
       id,
       name:YDL_TRAIT_BY_ID[id].name,
@@ -562,15 +527,7 @@ export class YellowDogsLeagueService {
     this.state.xPlayers ??= { assignments:{}, configs:{} };
     this.state.xPlayers.assignments ??= {};
     this.state.xPlayers.configs ??= {};
-    this.state.xPlayers.growth ??= {};
-    X_PLAYERS.forEach((player) => {
-      player.role = null;
-      player.secondaryRole = null;
-      player.heightCm = null;
-      player.pool = "X";
-      player.attributes = Object.fromEntries(Object.keys(player.attributes ?? {}).map((key) => [key, 62]));
-      player.referenceAttributes = clone(player.attributes);
-    });
+    X_PLAYERS.forEach((player) => { player.role = null; player.secondaryRole = null; player.heightCm = null; player.pool = "X"; });
     Object.entries(this.state.xPlayers.configs).forEach(([playerId, config]) => {
       const player = REAL_PLAYER_BY_ID[playerId];
       if (!player || !isXPlayer(player) || !config?.role) return;
@@ -578,12 +535,6 @@ export class YellowDogsLeagueService {
       player.secondaryRole = config.secondaryRole ?? null;
       player.heightCm = config.heightCm;
       player.pool = roleGroup(config.role);
-      const template = config.attributes ? { attributes:config.attributes } : xPlayerAttributeTemplate(config.role);
-      config.baseAbilityOverall = xPlayerInitialAbilityOverall(config);
-      config.overall = Math.max(1, Math.min(99, 62 + playerOverallFromAttributes(template.attributes, config.role) - config.baseAbilityOverall));
-      player.attributes = clone(template.attributes);
-      player.referenceAttributes = clone(template.attributes);
-      player.overall = config.overall;
     });
     ensureS4Assets(this.state);
     if (!this.state.s4Packs) {
@@ -707,117 +658,6 @@ export class YellowDogsLeagueService {
   xPlayerSummary(playerId) {
     const player = REAL_PLAYER_BY_ID[playerId];
     return player && isXPlayer(player) ? playerSummary(player, this.xPlayerConfig(playerId)) : null;
-  }
-
-  xGrowthState(playerId) {
-    this.state.xPlayers.growth ??= {};
-    return this.state.xPlayers.growth[playerId] ??= { points:0, earnedPoints:0, purchasedPoints:0, spentPoints:0, taskClaims:{} };
-  }
-
-  accountXPlayer(accountId) {
-    const entry = Object.entries(this.state.xPlayers.assignments).find(([, ownerId]) => ownerId === accountId);
-    return entry ? REAL_PLAYER_BY_ID[entry[0]] : null;
-  }
-
-  xFormalStats(playerId) {
-    const totals = { appearances:0, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0 };
-    [this.state.playerStats, this.state.cup?.playerStats].forEach((source) => Object.values(source ?? {}).filter((entry) => entry.playerId === playerId).forEach((entry) => {
-      Object.keys(totals).forEach((key) => { totals[key] += Number(entry[key] ?? 0); });
-    }));
-    return totals;
-  }
-
-  settleXGrowthTasks(playerId) {
-    const player = REAL_PLAYER_BY_ID[playerId];
-    const config = this.xPlayerConfig(playerId);
-    if (!player || !config) return 0;
-    const growth = this.xGrowthState(playerId);
-    const stats = this.xFormalStats(playerId);
-    const group = roleGroup(config.role);
-    let awarded = 0;
-    X_GROWTH_TASKS.filter((task) => task.groups.includes(group)).forEach((task) => {
-      const completed = task.milestones.filter((milestone) => stats[task.stat] >= milestone).length;
-      const claimed = Math.max(0, Number(growth.taskClaims[task.id] ?? 0));
-      if (completed <= claimed) return;
-      const reward = task.rewards.slice(claimed, completed).reduce((sum, value) => sum + value, 0);
-      growth.taskClaims[task.id] = completed;
-      growth.points += reward;
-      growth.earnedPoints += reward;
-      awarded += reward;
-    });
-    return awarded;
-  }
-
-  publicXGrowth(accountId) {
-    const player = this.accountXPlayer(accountId);
-    if (!player) return null;
-    this.settleXGrowthTasks(player.id);
-    const config = this.xPlayerConfig(player.id);
-    const growth = this.xGrowthState(player.id);
-    const stats = this.xFormalStats(player.id);
-    const group = roleGroup(config.role);
-    const overallAttributes = new Set(PLAYER_OVERALL_ATTRIBUTE_KEYS[group] ?? []);
-    const card = this.representativeCard(accountId, player.id);
-    const upgradeLevel = Number(card?.upgradeLevel ?? 0);
-    const effectivePlayer = applyS4Enhancement({ ...playerSummary(player, config), overall:player.overall, attributes:clone(config.attributes) }, upgradeLevel);
-    const spentByField = this.state.ledger
-      .filter((entry) => entry.type === "x-growth-spend" && entry.playerId === player.id)
-      .reduce((totals, entry) => {
-        totals[entry.field] = Number(totals[entry.field] ?? 0) + Math.abs(Number(entry.points ?? 0));
-        return totals;
-      }, {});
-    const tasks = X_GROWTH_TASKS.filter((task) => task.groups.includes(group)).map((task) => {
-      const claimed = Number(growth.taskClaims[task.id] ?? 0);
-      const nextIndex = Math.min(claimed, task.milestones.length - 1);
-      return { id:task.id, label:task.label, value:stats[task.stat], milestones:[...task.milestones], rewards:[...task.rewards], completed:claimed, complete:claimed >= task.milestones.length, nextTarget:task.milestones[nextIndex] };
-    });
-    return { player:effectivePlayer, baseOverall:player.overall, effectiveOverall:effectivePlayer.overall, upgradeLevel, points:growth.points, earnedPoints:growth.earnedPoints, purchasedPoints:growth.purchasedPoints, spentPoints:growth.spentPoints, attributes:ATTRIBUTE_NAMES.map((key) => ({ key, label:ATTRIBUTE_LABELS[key], value:config.attributes[key], effectiveValue:effectivePlayer.attributes[key], bonusPoints:Number(spentByField[key] ?? 0), countsTowardOverall:overallAttributes.has(key) })), height:{ key:"heightCm", label:"身高", value:config.heightCm, effectiveValue:config.heightCm, bonusPoints:Number(spentByField.heightCm ?? 0), countsTowardOverall:false }, tasks, shop:{ ...X_GROWTH_PACK } };
-  }
-
-  buyXGrowthPoints(account, quantity = 1) {
-    if (!this.accountTeam(account.id)) throw new Error("你还没有加入联赛");
-    const player = this.accountXPlayer(account.id);
-    if (!player) throw new Error("当前球队没有X球员");
-    const count = Math.floor(Number(quantity));
-    if (!Number.isInteger(count) || count < 1 || count > 20) throw new Error("单次最多购买20份加成点数");
-    const total = X_GROWTH_PACK.price * count;
-    if (this.wallet(account.id).balance < total) throw new Error("金币不足");
-    const growth = this.xGrowthState(player.id);
-    this.wallet(account.id).balance -= total;
-    growth.points += X_GROWTH_PACK.points * count;
-    growth.purchasedPoints += X_GROWTH_PACK.points * count;
-    this.state.ledger.push({ id:makeId("ledger", `${account.id}-x-growth-${count}`), accountId:account.id, playerId:player.id, amount:-total, points:X_GROWTH_PACK.points * count, quantity:count, type:"x-growth-buy", createdAt:this.now() });
-    this.save();
-    return this.view(account);
-  }
-
-  spendXGrowthPoints(account, field, amount = 1) {
-    if (!this.accountTeam(account.id)) throw new Error("你还没有加入联赛");
-    const player = this.accountXPlayer(account.id);
-    if (!player) throw new Error("当前球队没有X球员");
-    const count = Math.floor(Number(amount));
-    if (!Number.isInteger(count) || count < 1) throw new Error("加点数量必须是正整数");
-    const config = this.xPlayerConfig(player.id);
-    const growth = this.xGrowthState(player.id);
-    if (growth.points < count) throw new Error("加成点数不足");
-    if (field === "heightCm") {
-      if (config.heightCm + count > X_PLAYER_HEIGHT_MAX) throw new Error(`身高最高为${X_PLAYER_HEIGHT_MAX}cm`);
-      config.heightCm += count;
-      player.heightCm = config.heightCm;
-    } else {
-      if (!ATTRIBUTE_NAMES.includes(field)) throw new Error("未知能力项");
-      if (Number(config.attributes[field]) + count > 99) throw new Error("单项能力最高为99");
-      config.attributes[field] += count;
-      player.attributes[field] = config.attributes[field];
-      player.referenceAttributes[field] = config.attributes[field];
-      player.overall = Math.max(1, Math.min(99, 62 + playerOverallFromAttributes(config.attributes, config.role) - Number(config.baseAbilityOverall ?? 62)));
-      config.overall = player.overall;
-    }
-    growth.points -= count;
-    growth.spentPoints += count;
-    this.state.ledger.push({ id:makeId("ledger", `${account.id}-x-spend-${field}-${count}`), accountId:account.id, playerId:player.id, amount:0, points:-count, field, type:"x-growth-spend", createdAt:this.now() });
-    this.save();
-    return this.view(account);
   }
 
   availableXPlayers(accountId) {
@@ -1598,7 +1438,7 @@ export class YellowDogsLeagueService {
         offer:(draft.offerIds ?? []).map((id) => playerSummary(REAL_PLAYER_BY_ID[id])),
         allowedPools:this.allowedDraftPools(draft),
         xPlayerId:draft.xPlayerId ?? null,
-        xPlayer:draft.xPlayerId ? playerSummary(REAL_PLAYER_BY_ID[draft.xPlayerId], { role:draft.xRole, secondaryRole:draft.xSecondaryRole, heightCm:draft.xHeightCm, attributes:draft.xAttributes }) : null,
+        xPlayer:draft.xPlayerId ? playerSummary(REAL_PLAYER_BY_ID[draft.xPlayerId], { role:draft.xRole, secondaryRole:draft.xSecondaryRole, heightCm:draft.xHeightCm }) : null,
         xRole:draft.xRole ?? null,
         xSecondaryRole:draft.xSecondaryRole ?? null,
         xHeightCm:draft.xHeightCm ?? null,
@@ -1610,7 +1450,6 @@ export class YellowDogsLeagueService {
       } : null,
       aiSlotsRemaining:this.state.teams.filter((entry) => !entry.ownerId && !Object.values(this.state.drafts).some((item) => item.teamId === entry.id)).length,
       wallet:this.wallet(account.id),
-      xGrowth:this.publicXGrowth(account.id),
       shop:{
         catalog:S4_PACK_CATALOG.map((pack) => {
           const purchasedQuantity = this.state.ledger
@@ -1878,7 +1717,7 @@ export class YellowDogsLeagueService {
       ? availableTeams[0]
       : availableTeams.sort((left, right) => (cupRanks.get(left.id) ?? TEAM_COUNT) - (cupRanks.get(right.id) ?? TEAM_COUNT))[0];
     if (!team) throw new Error("当前10支球队都已由真人接管");
-    this.state.drafts[account.id] = { teamId:team.id, teamName, selectedIds:[], offerIds:[], offerPool:null, xPlayerId:null, xRole:null, xSecondaryRole:null, xHeightCm:null, xTemplatePlayerId:null, xAttributes:null, xTraitId:null, startedAt:this.now() };
+    this.state.drafts[account.id] = { teamId:team.id, teamName, selectedIds:[], offerIds:[], offerPool:null, xPlayerId:null, xRole:null, xSecondaryRole:null, xHeightCm:null, xTraitId:null, startedAt:this.now() };
     this.save();
     return this.view(account);
   }
@@ -1927,8 +1766,6 @@ export class YellowDogsLeagueService {
     draft.xRole = null;
     draft.xSecondaryRole = null;
     draft.xHeightCm = null;
-    draft.xTemplatePlayerId = null;
-    draft.xAttributes = null;
     draft.xTraitId = null;
     this.save();
     return this.view(account);
@@ -1947,9 +1784,6 @@ export class YellowDogsLeagueService {
     draft.xRole = role;
     draft.xSecondaryRole = secondaryRole;
     draft.xHeightCm = heightCm;
-    const template = xPlayerAttributeTemplate(role);
-    draft.xTemplatePlayerId = template.templatePlayerId;
-    draft.xAttributes = template.attributes;
     draft.xTraitId = null;
     this.save();
     return this.view(account);
@@ -1975,8 +1809,6 @@ export class YellowDogsLeagueService {
     draft.xRole = null;
     draft.xSecondaryRole = null;
     draft.xHeightCm = null;
-    draft.xTemplatePlayerId = null;
-    draft.xAttributes = null;
     draft.xTraitId = null;
     draft.startedAt = this.now();
     this.save();
@@ -2004,9 +1836,6 @@ export class YellowDogsLeagueService {
     draft.xRole = "ST";
     draft.xSecondaryRole = "LW";
     draft.xHeightCm = 178;
-    const template = xPlayerAttributeTemplate(draft.xRole);
-    draft.xTemplatePlayerId = template.templatePlayerId;
-    draft.xAttributes = template.attributes;
     draft.xTraitId = this.eligibleXTraits(draft.xRole)[0]?.id ?? null;
     this.save();
     return this.view(account);
@@ -2037,14 +1866,12 @@ export class YellowDogsLeagueService {
       acquisitionSource:"initial-draft",
     }));
     this.state.xPlayers.assignments[draft.xPlayerId] = account.id;
-    this.state.xPlayers.configs[draft.xPlayerId] = { role:draft.xRole, secondaryRole:draft.xSecondaryRole, heightCm:draft.xHeightCm, templatePlayerId:draft.xTemplatePlayerId, attributes:clone(draft.xAttributes), overall:62, baseAbilityOverall:playerOverallFromAttributes(draft.xAttributes, draft.xRole) };
+    this.state.xPlayers.configs[draft.xPlayerId] = { role:draft.xRole, secondaryRole:draft.xSecondaryRole, heightCm:draft.xHeightCm };
     const xPlayer = REAL_PLAYER_BY_ID[draft.xPlayerId];
     xPlayer.role = draft.xRole;
     xPlayer.secondaryRole = draft.xSecondaryRole;
     xPlayer.heightCm = draft.xHeightCm;
     xPlayer.pool = roleGroup(draft.xRole);
-    xPlayer.attributes = clone(draft.xAttributes);
-    xPlayer.referenceAttributes = clone(draft.xAttributes);
     this.grantS4Card(team, draft.xPlayerId, { grantOwnership:true, traitIds:[draft.xTraitId], acquisitionSource:"initial-x-player" });
     delete this.state.drafts[account.id];
     this.wallet(account.id);
@@ -2276,15 +2103,7 @@ export class YellowDogsLeagueService {
     if (!materialCard || materialCard.status !== "active" || materialCard.ownerId !== account.id) throw new Error("请选择有效的副卡");
     if (mainCard.id === materialCard.id) throw new Error("主卡和副卡不能是同一张卡");
     if (this.cardLockedByTrade(mainCard.id) || this.cardLockedByTrade(materialCard.id)) throw new Error("请先处理相关球员卡交易报价");
-    const mainPlayer = REAL_PLAYER_BY_ID[mainCard.playerId];
-    const materialPlayer = REAL_PLAYER_BY_ID[materialCard.playerId];
-    if (isXPlayer(materialPlayer)) throw new Error("X级球员只能作为强化主卡");
-    if (isXPlayer(mainPlayer)) {
-      if (mainPlayer.role !== materialPlayer?.role) throw new Error("X级球员强化只能使用相同位置的普通球员卡");
-    } else if (mainCard.playerId !== materialCard.playerId) throw new Error("强化只允许使用同名球员卡");
-    if (ownershipOwner(this.state, materialCard.playerId) === account.id && cardsForOwner(this.state, account.id, materialCard.playerId).length === 1) {
-      throw new Error(`${materialPlayer.name}是该球员所有权的最后一张锚点卡，不能作为强化副卡`);
-    }
+    if (mainCard.playerId !== materialCard.playerId) throw new Error("强化只允许使用同名球员卡");
     if (Object.values(this.state.s4Assets.traitOffers ?? {}).some((offer) => offer.status === "pending" && offer.cardId === mainCard.id)) throw new Error("请先为主卡选择强化特性");
     const mainLevel = Number(mainCard.upgradeLevel ?? 0);
     const materialLevel = Number(materialCard.upgradeLevel ?? 0);
@@ -2303,12 +2122,10 @@ export class YellowDogsLeagueService {
     if (protectionCost) this.wallet(account.id).balance -= protectionCost;
     recycleS4Card(this.state, materialCard.id, "enhancement-material", this.now());
     mainCard.upgradeLevel = success ? mainLevel + 1 : protectionUsed ? mainLevel : mainLevel >= 3 ? mainLevel - 1 : mainLevel;
-    const player = mainPlayer;
+    const player = REAL_PLAYER_BY_ID[mainCard.playerId];
     const resultId = makeId("enhancement", `${account.id}-${mainCard.id}`);
     let traitOffer = null;
-    const requiredTraitCount = isXPlayer(player)
-      ? mainCard.upgradeLevel >= 8 ? 3 : mainCard.upgradeLevel >= 5 ? 2 : 1
-      : mainCard.upgradeLevel >= 8 ? 2 : mainCard.upgradeLevel >= 5 ? 1 : 0;
+    const requiredTraitCount = mainCard.upgradeLevel >= 8 ? 2 : mainCard.upgradeLevel >= 5 ? 1 : 0;
     if (success && requiredTraitCount > mainCard.traitIds.length && [5, 8].includes(mainCard.upgradeLevel)) {
       const eligibleTraits = Object.values(YDL_TRAIT_BY_ID)
         .filter((trait) => !mainCard.traitIds.includes(trait.id))
@@ -2690,14 +2507,13 @@ export class YellowDogsLeagueService {
       offer.resolvedAt = this.now();
       const publicOffer = this.cardTradeOfferView(offer);
       const importantCards = [...publicOffer.offeredCards, ...publicOffer.requestedCards]
-        .filter((entry) => entry.player.xPlayer || Number(entry.card.upgradeLevel ?? 0) >= 5);
+        .filter((entry) => Number(entry.card.upgradeLevel ?? 0) >= 5);
       this.pushInbox(fromTeam, { id:`card-trade-accepted:${offer.id}`, type:importantCards.length ? "trade-result" : "transfer", title:"球员卡交易已经达成", summary:`${toTeam.ownerName}接受了你的交易报价。`, body:`双方球员卡已经完成交换${offer.coinAmount ? `，${offer.coinAmount}金币已支付给对方。` : "。"}`, payload:{ tradeOfferId:offer.id, ...(importantCards.length ? { tradeOffer:publicOffer } : {}) } });
       if (importantCards.length) {
         const importantNames = importantCards.map((entry) => `${entry.player.name} +${entry.card.upgradeLevel}`).join("、");
-        const publicReason = offer.xTrade ? "本次成交涉及全服唯一的X级球员" : "本次成交涉及+5及以上球员卡";
         this.pushInbox(toTeam, {
           id:`card-trade-accepted:${offer.id}:receiver`, type:"trade-result", title:"重要球员卡交易已经达成",
-          summary:`你与${fromTeam.ownerName}完成交易，涉及${importantNames}。`, body:`${publicReason}，完整交易结果已记录并通知双方。`,
+          summary:`你与${fromTeam.ownerName}完成交易，涉及${importantNames}。`, body:"本次成交涉及+5及以上球员卡，完整交易结果已记录并通知双方。",
           payload:{ tradeOfferId:offer.id, tradeOffer:publicOffer },
         });
         this.state.teams
@@ -2707,7 +2523,7 @@ export class YellowDogsLeagueService {
             type:"trade-public",
             title:"重要球员卡转会公示",
             summary:`${publicOffer.fromOwnerName}与${publicOffer.toOwnerName}完成交易，涉及${importantNames}。`,
-            body:`${publicReason}，现向全服公示交易双方、球员卡与金币信息。`,
+            body:"本次玩家交易涉及+5及以上球员卡，现向全服公示交易双方、球员卡与金币信息。",
             payload:{ tradeOfferId:offer.id, tradeOffer:publicOffer },
           }));
       }
@@ -3228,11 +3044,9 @@ export class YellowDogsLeagueService {
       team.form = team.form.slice(-5);
       report.teams[index].players.forEach((player) => {
         const key = `${team.id}:${player.id}`;
-        const stat = this.state.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
-        const penaltiesWon = (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
-        stat.appearances += 1; stat.goals += player.stats.goals; stat.assists += player.stats.assists; stat.saves += player.stats.saves; stat.tackles = Number(stat.tackles ?? 0) + Number(player.stats.tackles ?? 0); stat.penaltiesWon = Number(stat.penaltiesWon ?? 0) + penaltiesWon; stat.yellowCards += player.stats.yellowCards; stat.redCards += player.stats.redCards; stat.ratingTotal += player.rating;
+        const stat = this.state.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, yellowCards:0, redCards:0, ratingTotal:0 };
+        stat.appearances += 1; stat.goals += player.stats.goals; stat.assists += player.stats.assists; stat.saves += player.stats.saves; stat.yellowCards += player.stats.yellowCards; stat.redCards += player.stats.redCards; stat.ratingTotal += player.rating;
         this.state.playerStats[key] = stat;
-        if (isXPlayer(REAL_PLAYER_BY_ID[player.id])) this.settleXGrowthTasks(player.id);
         if (team.ownerId && team.playerState[player.id]) {
           const state = team.playerState[player.id];
           const beforeMatch = Number(state.fitness ?? 100);
@@ -3278,11 +3092,9 @@ export class YellowDogsLeagueService {
       const playedPlayerIds = new Set(report.teams[index].players.map((player) => player.id));
       report.teams[index].players.forEach((player) => {
         const key = `${team.id}:${player.id}`;
-        const stat = cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
-        const penaltiesWon = (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
-        stat.appearances += 1; stat.goals += player.stats.goals; stat.assists += player.stats.assists; stat.saves += player.stats.saves; stat.tackles = Number(stat.tackles ?? 0) + Number(player.stats.tackles ?? 0); stat.penaltiesWon = Number(stat.penaltiesWon ?? 0) + penaltiesWon; stat.yellowCards += player.stats.yellowCards; stat.redCards += player.stats.redCards; stat.ratingTotal += player.rating;
+        const stat = cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, yellowCards:0, redCards:0, ratingTotal:0 };
+        stat.appearances += 1; stat.goals += player.stats.goals; stat.assists += player.stats.assists; stat.saves += player.stats.saves; stat.yellowCards += player.stats.yellowCards; stat.redCards += player.stats.redCards; stat.ratingTotal += player.rating;
         cup.playerStats[key] = stat;
-        if (isXPlayer(REAL_PLAYER_BY_ID[player.id])) this.settleXGrowthTasks(player.id);
         if (team.ownerId && team.playerState[player.id]) {
           const state = team.playerState[player.id];
           const beforeMatch = Number(state.fitness ?? 100);

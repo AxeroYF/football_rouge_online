@@ -1,28 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import os from "node:os";
-import path from "node:path";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
-import { PLAYER_OVERALL_ATTRIBUTE_KEYS } from "../game/public/schema.js";
 import { assertS4AssetInvariants, ownershipOwner } from "../versus/s4-assets.js";
 import { isXPlayer, REAL_PLAYER_BY_ID } from "../versus/player-pool.js";
 import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
 
 const NOW = Date.parse("2026-07-26T12:00:00+08:00");
 const account = (id) => ({ id, nickname:id });
-
-test("X级球员在仓库默认排序中优先于S级且磁贴使用淡红背景", () => {
-  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
-  assert.match(appSource, /PLAYER_GRADE_ORDER = Object\.freeze\(\{ X:0, S:1, A:2, B:3, C:4 \}\)/);
-  assert.match(appSource, /comparePlayerGrade\(left, right\)/);
-  assert.match(styles, /\.magnet\.grade-x\{[^}]*background:#efb7bc/);
-  assert.doesNotMatch(styles, /\.magnet\.grade-x::after\{content:"★"/);
-  assert.match(styles, /\.league-squad-magnet\.grade-x,\.league-bench-magnet\.grade-x/);
-  assert.match(styles, /\.s4-player-card\.grade-x\.band-high\{[^}]*#fff/);
-  assert.match(styles, /\.s4-player-card\.grade-x\.band-max\{[^}]*#ff8fc4/);
-});
 
 function join(service, user) {
   service.beginDraft(user, `${user.id}-team`);
@@ -784,11 +768,7 @@ test("X级球员完成位置身高特性配置且全服唯一并免占名单", (
   assert.equal(xPlayer.secondaryRole, null);
   assert.equal(xPlayer.heightCm, 186);
   assert.equal(xPlayer.cards[0].traits[0].id, trait.id);
-  assert.equal(Object.keys(xPlayer.attributes).length, 26);
-  assert.ok(new Set(Object.values(xPlayer.attributes)).size > 1);
-  assert.ok(xPlayer.attributes.goalkeeping > xPlayer.attributes.finishing);
   assert.equal(view.ownTeam.s4Assets.rosterSlotsUsed, 22);
-  assert.ok(view.playerDirectory.players.some((player) => player.id === xPlayerId && player.grade === "X"));
 
   service.beginDraft(second, "X Second");
   service.autoDraft(second);
@@ -812,138 +792,12 @@ test("X级球员不会进入普通卡包且不可后台发卡、挂牌或回收"
   assert.throws(() => service.returnOwnership(user, xPlayerId), /不可回收/);
 });
 
-test("X球员成长任务、商店加成点与27项加点会实时生效", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
-  const user = account("x-growth-owner");
-  const team = join(service, user);
-  const xPlayerId = team.rosterIds.find(isXPlayer);
-  const xPlayer = REAL_PLAYER_BY_ID[xPlayerId];
-  const statKey = `${team.id}:${xPlayerId}`;
-  service.state.playerStats[statKey] = { key:statKey, playerId:xPlayerId, teamId:team.id, appearances:1, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0, ratingTotal:7 };
-
-  let view = service.view(user);
-  assert.equal(view.xGrowth.player.id, xPlayerId);
-  assert.equal(view.xGrowth.attributes.length, 26);
-  assert.equal(view.xGrowth.height.key, "heightCm");
-  assert.equal(view.xGrowth.points, 1);
-  assert.equal(service.view(user).xGrowth.points, 1);
-
-  const walletBefore = service.wallet(user.id).balance;
-  view = service.buyXGrowthPoints(user, 6);
-  assert.equal(view.wallet.balance, walletBefore - 30000);
-  assert.equal(view.xGrowth.points, 7);
-  const keysByGroup = { GK:["goalkeeping", "reflexes", "positioning", "composure"], DEF:["tackling", "marking", "positioning", "strength", "pace"], MID:["passing", "vision", "decisions", "firstTouch", "stamina"], ATT:["finishing", "offBall", "pace", "dribbling", "composure"] };
-  const overallBefore = view.xGrowth.player.overall;
-  keysByGroup[xPlayer.pool].forEach((attributeKey) => { view = service.spendXGrowthPoints(user, attributeKey, 1); });
-  assert.ok(view.xGrowth.player.overall > overallBefore);
-  keysByGroup[xPlayer.pool].forEach((attributeKey) => {
-    assert.equal(view.xGrowth.attributes.find((attribute) => attribute.key === attributeKey).bonusPoints, 1);
-  });
-  assert.deepEqual(view.xGrowth.attributes.filter((attribute) => attribute.countsTowardOverall).map((attribute) => attribute.key).sort(), [...PLAYER_OVERALL_ATTRIBUTE_KEYS[xPlayer.pool]].sort());
-  const overallAfterAbility = view.xGrowth.player.overall;
-  const heightBefore = view.xGrowth.height.value;
-  view = service.spendXGrowthPoints(user, "heightCm", 1);
-  assert.equal(view.xGrowth.height.value, heightBefore + 1);
-  assert.equal(view.xGrowth.height.bonusPoints, 1);
-  assert.equal(view.xGrowth.height.countsTowardOverall, false);
-  assert.equal(view.xGrowth.player.overall, overallAfterAbility);
-  assert.equal(view.xGrowth.points, 7 - keysByGroup[xPlayer.pool].length - 1);
-});
-
-test("旧X球员存档重载后以62为基础总评并正确叠加强化", () => {
-  const directory = mkdtempSync(path.join(os.tmpdir(), "ydl-x-overall-"));
-  const statePath = path.join(directory, "league.json");
-  try {
-    const user = account("x-old-save-owner");
-    const first = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
-    const team = join(first, user);
-    const xPlayerId = team.rosterIds.find(isXPlayer);
-    const card = first.representativeCard(user.id, xPlayerId);
-    card.upgradeLevel = 5;
-    delete first.state.xPlayers.configs[xPlayerId].baseAbilityOverall;
-    delete first.state.xPlayers.configs[xPlayerId].overall;
-    first.save({ skipDailyBackup:true });
-
-    const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
-    const view = reloaded.view(user);
-    const xPlayer = view.ownTeam.roster.find((player) => player.id === xPlayerId);
-    assert.equal(view.xGrowth.player.overall, 67);
-    assert.equal(xPlayer.baseOverall, 62);
-    assert.equal(xPlayer.effectiveOverall, 67);
-    assert.equal(xPlayer.cards[0].effectiveOverall, 67);
-    assert.equal(view.xGrowth.baseOverall, 62);
-    assert.equal(view.xGrowth.effectiveOverall, 67);
-    assert.equal(view.xGrowth.upgradeLevel, 5);
-    assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === Math.min(99, attribute.value + 5)));
-    assert.equal(view.xGrowth.height.effectiveValue, view.xGrowth.height.value);
-  } finally {
-    rmSync(directory, { recursive:true, force:true });
-  }
-});
-
-test("X级球员只能作为主卡并使用同位置普通卡强化至三特性", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
-  const user = account("x-enhancement-owner");
-  const team = join(service, user);
-  const xPlayerId = team.rosterIds.find(isXPlayer);
-  const xPlayer = REAL_PLAYER_BY_ID[xPlayerId];
-  const xCard = service.representativeCard(user.id, xPlayerId);
-  const sameRolePlayerId = team.rosterIds.find((playerId) => !isXPlayer(playerId) && REAL_PLAYER_BY_ID[playerId].role === xPlayer.role);
-  const wrongRolePlayerId = team.rosterIds.find((playerId) => !isXPlayer(playerId) && REAL_PLAYER_BY_ID[playerId].role !== xPlayer.role);
-  const sameRoleMaterial = service.grantS4Card(team, sameRolePlayerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"test-material" });
-  const wrongRoleMaterial = service.grantS4Card(team, wrongRolePlayerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"test-material" });
-
-  assert.throws(() => service.enhanceS4Card(user, sameRoleMaterial.id, xCard.id), /只能作为强化主卡/);
-  assert.throws(() => service.enhanceS4Card(user, xCard.id, wrongRoleMaterial.id), /相同位置/);
-
-  xCard.upgradeLevel = 4;
-  let result = service.enhanceS4Card(user, xCard.id, sameRoleMaterial.id);
-  assert.equal(result.enhancementResult.afterLevel, 5);
-  assert.equal(result.enhancementResult.chance, 70);
-  service.chooseS4EnhancementTrait(user, result.enhancementResult.traitOffer.id, result.enhancementResult.traitOffer.traits[0].id);
-  assert.equal(xCard.traitIds.length, 2);
-
-  xCard.upgradeLevel = 7;
-  const maxMaterial = service.grantS4Card(team, sameRolePlayerId, { grantOwnership:false, upgradeLevel:7, acquisitionSource:"test-material" });
-  result = service.enhanceS4Card(user, xCard.id, maxMaterial.id);
-  service.chooseS4EnhancementTrait(user, result.enhancementResult.traitOffer.id, result.enhancementResult.traitOffer.traits[0].id);
-  assert.equal(xCard.upgradeLevel, 8);
-  assert.equal(xCard.traitIds.length, 3);
-});
-
-test("X级强化不能消耗其他球员的最后一张所有权锚点卡", () => {
-  [0, 1].forEach((roll, index) => {
-    const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => roll });
-    const user = account(`x-anchor-material-owner-${index}`);
-    const team = join(service, user);
-    const xPlayerId = team.rosterIds.find(isXPlayer);
-    const xPlayer = REAL_PLAYER_BY_ID[xPlayerId];
-    const xCard = service.representativeCard(user.id, xPlayerId);
-    const materialPlayerId = team.rosterIds.find((playerId) => !isXPlayer(playerId) && REAL_PLAYER_BY_ID[playerId].grade !== "S");
-    xPlayer.role = REAL_PLAYER_BY_ID[materialPlayerId].role;
-    service.xPlayerConfig(xPlayerId).role = xPlayer.role;
-    const anchorCard = service.representativeCard(user.id, materialPlayerId);
-    const xLevelBefore = xCard.upgradeLevel;
-
-    assert.equal(service.playerCards(user.id, materialPlayerId).length, 1);
-    assert.equal(service.view(user).ownTeam.roster.find((player) => player.id === materialPlayerId).cards[0].ownershipAnchorRequired, true);
-    assert.throws(() => service.enhanceS4Card(user, xCard.id, anchorCard.id), /最后一张锚点卡/);
-    assert.equal(anchorCard.status, "active");
-    assert.equal(xCard.upgradeLevel, xLevelBefore);
-    assert.equal(ownershipOwner(service.state, materialPlayerId), user.id);
-    assert.ok(team.rosterIds.includes(materialPlayerId));
-    assert.doesNotThrow(() => assertS4AssetInvariants(service.state));
-  });
-});
-
 test("X级球员只能无金币一换一且成交后完整交换归属", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const first = account("x-trade-first");
   const second = account("x-trade-second");
-  const observer = account("x-trade-observer");
   const firstTeam = join(service, first);
   const secondTeam = join(service, second);
-  join(service, observer);
   const firstXId = firstTeam.rosterIds.find(isXPlayer);
   const secondXId = secondTeam.rosterIds.find(isXPlayer);
   const firstCard = service.representativeCard(first.id, firstXId);
@@ -961,9 +815,6 @@ test("X级球员只能无金币一换一且成交后完整交换归属", () => {
   assert.equal(service.state.xPlayers.assignments[secondXId], first.id);
   assert.equal(service.rosterSlotsUsed(first.id), 22);
   assert.equal(service.rosterSlotsUsed(second.id), 22);
-  const publicMail = service.view(observer).inbox.find((message) => message.id.startsWith(`card-trade-public:${offer.id}:`));
-  assert.equal(publicMail.type, "trade-public");
-  assert.match(publicMail.body, /X级球员/);
 });
 
 test("开启全新赛季直接清空S4资产，不迁移旧名单", () => {

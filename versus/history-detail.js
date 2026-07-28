@@ -11,8 +11,9 @@ export function hydrateHistoricalMatchDetail(detail) {
   hydrated.teams = (hydrated.teams ?? []).map((team) => {
     const players = (team.players ?? []).map((player) => {
       const catalogPlayer = REAL_PLAYER_BY_ID[player.id];
+      const { legendAbility:discardedLegendAbility, signature:discardedSignature, ...publicPlayer } = player;
       return {
-        ...player,
+        ...publicPlayer,
         role: player.role ?? catalogPlayer?.role ?? "AM",
         assignedRole: player.assignedRole ?? player.role ?? catalogPlayer?.role ?? "AM",
         overall: Number.isFinite(Number(player.overall)) ? Number(player.overall) : Number(catalogPlayer?.overall ?? 0),

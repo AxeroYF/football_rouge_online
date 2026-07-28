@@ -17,6 +17,7 @@ import { defaultElevenPositions } from "../versus/rules.js";
 import { YDL_TRAIT_CARDS, YDL_TRAIT_IDS } from "../versus/trait-pool.js";
 
 const EXPECTED_NAMES = [
+  "激素紧缺",
   "打点激素",
   "避雷针",
   "都是哥们",
@@ -56,14 +57,20 @@ function matchSeat(name, offset, playerTraits = {}) {
   return { name, players, positions:defaultElevenPositions(players), tactic:"balanced", style:"possession" };
 }
 
-test("YDL后台和强化池只保留用户确认的14张特性卡", () => {
-  assert.equal(YDL_TRAIT_CARDS.length, 14);
+test("YDL后台和强化池包含15张已实现特性卡", () => {
+  assert.equal(YDL_TRAIT_CARDS.length, 15);
   assert.deepEqual(YDL_TRAIT_CARDS.map((trait) => trait.name), EXPECTED_NAMES);
-  assert.equal(new Set(YDL_TRAIT_IDS).size, 14);
+  assert.equal(new Set(YDL_TRAIT_IDS).size, 15);
   assert.ok(YDL_TRAIT_CARDS.every((trait) => trait.rules.length > 0));
 });
 
 test("YDL数值、身高、位置、羁绊和固定体力规则按说明执行", () => {
+  const shortage = carrier(["custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20"], { attributes:{ finishing:70, pace:71, dribbling:72 } });
+  assert.equal(shortage.heightCm, 160);
+  assert.equal(traitAdjustedAttribute(shortage, "finishing", 70), 75);
+  assert.equal(traitAdjustedAttribute(shortage, "pace", 71), 76);
+  assert.equal(traitAdjustedAttribute(shortage, "dribbling", 72), 77);
+
   const target = carrier(["aerial-beacon", "rain-boots", "sweeper-keeper", "opening-sprint", "stoppage-time-expert", "lone-finisher"]);
   assert.equal(target.heightCm, 190);
   assert.equal(target.state.fitness, 90);
@@ -83,20 +90,20 @@ test("YDL数值、身高、位置、羁绊和固定体力规则按说明执行",
   assert.equal(traitPositionFit({ ...utility, assignedRole:"GK" }, 0.35), 0.35);
 });
 
-test("YDL事件型特性规则进入十一人模拟且可以和传奇能力并存", () => {
+test("YDL事件型特性规则进入十一人模拟且正式比赛会清除旧传奇能力", () => {
   const homeBase = matchSeat("避雷甲", 0);
   const awayBase = matchSeat("避雷乙", 12);
   homeBase.players[1].traits = ["touchline-flywheel"];
   awayBase.players[1].traits = ["touchline-flywheel"];
   homeBase.players[1].legendAbility = { id:"test-legend", name:"测试传奇能力" };
   homeBase.players[1].traits.push("rain-boots");
-  const storm = createVersusMatch([homeBase, awayBase], { now:0, seed:"ydl-lightning-protection", weather:"storm" });
+  const storm = createVersusMatch([homeBase, awayBase], { now:0, seed:"ydl-lightning-protection", weather:"storm", competitionMode:"league" });
   storm.lightningMinute = 1;
   advanceVersusMatch(storm, 2_000);
   assert.ok(storm.events.some((event) => event.type === "lightning" && event.prevented));
   assert.equal(storm.teams.flatMap((team) => team.players).filter((player) => !player.active).length, 0);
   const legendCarrier = storm.teams[0].players.find((player) => player.id === homeBase.players[1].id);
-  assert.equal(legendCarrier.legendAbility.id, "test-legend");
+  assert.equal(legendCarrier.legendAbility, null);
   assert.deepEqual(legendCarrier.traitDefinitions.map((trait) => trait.id), ["touchline-flywheel", "rain-boots"]);
 
   const fixedSeat = matchSeat("996队", 0);

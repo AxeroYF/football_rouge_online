@@ -15,7 +15,6 @@ const STYLES = { possession:"密集短传",longBall:"长传冲吊",wingPlay:"两
 const FOCUSES = { balanced:"均衡",left:"左路",center:"中路",right:"右路" };
 const WEATHER_ICONS = { sunny:"☀️",rain:"🌧️",storm:"⛈️",snow:"❄️" };
 const STAT_LABELS = { finishing:"射门",passing:"传球",tackling:"抢断",pace:"速度",stamina:"耐力",goalkeeping:"守门",reflexes:"反应",dribbling:"盘带",composure:"镇定" };
-const X_ATTRIBUTE_LABELS = { passing:"传球",firstTouch:"停球",dribbling:"盘带",crossing:"传中",finishing:"射门",longShots:"远射",heading:"头球",setPieces:"定位球",tackling:"抢断",marking:"盯人",positioning:"站位",vision:"视野",decisions:"决策",composure:"冷静",offBall:"无球",discipline:"纪律",pace:"速度",acceleration:"加速",strength:"力量",stamina:"耐力",agility:"灵活",jumping:"弹跳",workRate:"投入",aggression:"侵略性",goalkeeping:"守门",reflexes:"反应" };
 
 let session = readSession();
 let account = readAccount();
@@ -117,11 +116,6 @@ let leagueEnhancementUseProtection = false;
 let leagueEnhancementPhase = "idle";
 let leagueEnhancementResult = null;
 let leagueEnhancementTraitSelectionOpen = false;
-const PLAYER_GRADE_ORDER = Object.freeze({ X:0, S:1, A:2, B:3, C:4 });
-
-function comparePlayerGrade(left, right) {
-  return (PLAYER_GRADE_ORDER[left.player?.grade] ?? 99) - (PLAYER_GRADE_ORDER[right.player?.grade] ?? 99);
-}
 let leagueEnhancementListingFilter = "UNLISTED";
 let leagueScheduleClockTimer = null;
 let leagueScheduleClockOffset = 0;
@@ -990,10 +984,6 @@ function leagueBackpackMarkup() {
       || leagueBackpackUpgrade === "MAX" && level >= 8;
     return matchesSearch && matchesPosition && matchesUpgrade;
   }).sort((left, right) => {
-    if (leagueBackpackSort === "upgrade") {
-      const gradeDifference = comparePlayerGrade(left, right);
-      if (gradeDifference) return gradeDifference;
-    }
     const upgradeDifference = right.card.upgradeLevel - left.card.upgradeLevel;
     if (upgradeDifference) return upgradeDifference;
     if (leagueBackpackSort === "overall") return right.player.overall - left.player.overall || left.player.name.localeCompare(right.player.name, "zh-CN");
@@ -1092,7 +1082,7 @@ function leagueEnhancementChance(mainLevel, materialLevel) {
   const equal = rules.equalLevelChances?.[mainLevel] ?? 1;
   const distance = materialLevel - mainLevel;
   const adjusted = distance < 0
-    ? equal * ((rules.lowerMaterialMultiplier ?? .6) ** Math.abs(distance))
+    ? equal * ((rules.lowerMaterialMultiplier ?? .52) ** Math.abs(distance))
     : equal * ((rules.higherMaterialMultiplier ?? 1.35) ** distance);
   return Math.max(1, Math.min(100, Math.round(adjusted)));
 }
@@ -1155,10 +1145,6 @@ function leagueEnhancementMarkup() {
     const matchesListing = leagueEnhancementListingFilter === "ALL" || !listed;
     return matchesSearch && matchesPosition && matchesUpgrade && matchesListing;
   }).sort((left, right) => {
-    if (leagueBackpackSort === "upgrade") {
-      const gradeDifference = comparePlayerGrade(left, right);
-      if (gradeDifference) return gradeDifference;
-    }
     const upgradeDifference = right.card.upgradeLevel - left.card.upgradeLevel;
     if (upgradeDifference) return upgradeDifference;
     if (leagueBackpackSort === "overall") return right.player.overall - left.player.overall || left.player.name.localeCompare(right.player.name, "zh-CN");
@@ -1167,11 +1153,9 @@ function leagueEnhancementMarkup() {
   });
   const mainLevel = Number(main?.card.upgradeLevel ?? 0);
   const materialLevel = Number(material?.card.upgradeLevel ?? 0);
-  const compatibleCards = Boolean(main && material && !material.player.xPlayer
-    && !material.card.ownershipAnchorRequired
-    && (main.player.xPlayer ? main.player.role === material.player.role : main.player.id === material.player.id));
-  const chance = compatibleCards ? leagueEnhancementChance(mainLevel, materialLevel) : 0;
-  const protectionAvailable = Boolean(main && compatibleCards && chance < 100 && mainLevel < Number(league.enhancement?.maxLevel ?? 8));
+  const samePlayer = Boolean(main && material && main.player.id === material.player.id);
+  const chance = samePlayer ? leagueEnhancementChance(mainLevel, materialLevel) : 0;
+  const protectionAvailable = Boolean(main && samePlayer && chance < 100 && mainLevel < Number(league.enhancement?.maxLevel ?? 8));
   if (!protectionAvailable) leagueEnhancementUseProtection = false;
   const failureChance = Math.max(0, 100 - chance);
   const protectionCost = protectionAvailable ? Math.ceil((failureChance * failureChance * Number(league.enhancement?.protectionCostFactor ?? .7)) / Number(league.enhancement?.protectionCostUnit ?? 100)) * Number(league.enhancement?.protectionCostUnit ?? 100) : 0;
@@ -1179,7 +1163,7 @@ function leagueEnhancementMarkup() {
   const currentOverall = main ? (main.player.grade === "S" ? Number(main.player.baseOverall ?? main.player.overall) + Number(abilityBonuses[mainLevel] ?? mainLevel) : Math.min(99, Number(main.player.baseOverall ?? main.player.overall) + Number(abilityBonuses[mainLevel] ?? mainLevel))) : null;
   const targetOverall = main ? (main.player.grade === "S" ? Number(main.player.baseOverall ?? main.player.overall) + Number(abilityBonuses[mainLevel + 1] ?? mainLevel + 1) : Math.min(99, Number(main.player.baseOverall ?? main.player.overall) + Number(abilityBonuses[mainLevel + 1] ?? mainLevel + 1))) : null;
   const insufficientCoins = leagueEnhancementUseProtection && protectionAvailable && league.wallet.balance < protectionCost;
-  const canEnhance = compatibleCards && mainLevel < Number(league.enhancement?.maxLevel ?? 8) && !insufficientCoins && leagueEnhancementPhase !== "scanning";
+  const canEnhance = samePlayer && mainLevel < Number(league.enhancement?.maxLevel ?? 8) && !insufficientCoins && leagueEnhancementPhase !== "scanning";
   const result = leagueEnhancementResult;
   const traitOffer = result?.traitOffer ?? league.enhancement?.traitOffer ?? null;
   const traitOfferEntry = traitOffer ? leagueEnhancementCardEntry(traitOffer.cardId) : null;
@@ -1211,7 +1195,7 @@ function leagueEnhancementMarkup() {
     ? warehouseCards.map(({ player, card }) => {
       const listed = leagueEnhancementCardListed(player.id, card.id);
       const attributes = listed ? `draggable="false" aria-disabled="true"` : `draggable="true" data-enhancement-card="${card.id}" data-enhancement-player="${player.id}"`;
-      return `<div class="enhancement-warehouse-card ${listed ? "listed" : ""} ${card.ownershipAnchorRequired ? "anchor-required" : ""}">${s4PlayerCardMarkup(player, { card, compact:true, attributes })}${listed ? "<span>已挂牌</span>" : card.ownershipAnchorRequired ? "<span>末张锚点 · 仅可作主卡</span>" : ""}</div>`;
+      return `<div class="enhancement-warehouse-card ${listed ? "listed" : ""}">${s4PlayerCardMarkup(player, { card, compact:true, attributes })}${listed ? "<span>已挂牌</span>" : ""}</div>`;
     }).join("")
     : `<div class="enhancement-warehouse-empty">没有符合条件的卡片</div>`;
   return `<section class="league-enhancement phase-${leagueEnhancementPhase}">
@@ -1221,7 +1205,7 @@ function leagueEnhancementMarkup() {
         ${leagueEnhancementSlotMarkup("main", main)}
         ${leagueEnhancementSlotMarkup("material", material)}
         <div class="enhancement-action">
-          <strong>${compatibleCards ? `${chance}%` : "—"}</strong>
+          <strong>${samePlayer ? `${chance}%` : "—"}</strong>
           <small>${main ? `能力 ${currentOverall} → ${targetOverall}` : "选择主卡后显示能力成长"}</small>
           <button type="button" class="enhancement-trigger" data-enhancement-submit ${canEnhance ? "" : "disabled"}>${leagueEnhancementPhase === "scanning" ? "合成中" : "强化"}</button>
           <label class="${protectionAvailable ? "" : "disabled"}"><input type="checkbox" data-enhancement-protection ${leagueEnhancementUseProtection ? "checked" : ""} ${protectionAvailable ? "" : "disabled"}><span>使用保卡道具</span><b>${protectionCost} 金币</b></label>
@@ -1600,7 +1584,7 @@ function leagueEnhancementRankingMarkup() {
     return matchesSearch && matchesPosition && matchesGrade && matchesLevel;
   });
   const rows = ranking.length ? ranking.map((entry) => `<tr><td><strong>${entry.rank}</strong></td><td><div class="enhancement-ranking-player"><i class="grade-${String(entry.player.grade).toLowerCase()}">${escapeHtml(entry.player.grade)}</i><span><b>${escapeHtml(entry.player.name)}</b><small>${escapeHtml(entry.player.club)} · ${escapeHtml(entry.player.nationality)}</small></span></div></td><td>${escapeHtml(ROLE_LABELS[entry.player.role] ?? entry.player.role)}</td><td>${entry.player.overall}</td><td><strong class="enhancement-ranking-level level-${Math.min(8, entry.upgradeLevel)}">+${entry.upgradeLevel}</strong></td><td><b>${escapeHtml(entry.ownerName)}</b><small class="ranking-team-name">${escapeHtml(entry.teamName)}</small></td></tr>`).join("") : `<tr><td colspan="6" class="league-empty">当前筛选条件下没有球员卡。</td></tr>`;
-  return `<section class="player-info-shell"><header><button type="button" class="button secondary" data-player-info-section="back">返回功能选择</button><div><small>S4 ENHANCEMENT RANKING</small><h2>强化排行榜</h2></div><b>${ranking.length} 张卡</b></header><div class="enhancement-ranking-filters"><input type="search" value="${escapeHtml(leagueEnhancementRankingSearch)}" placeholder="搜索球员、持有玩家或球队" data-enhancement-ranking-search><select data-enhancement-ranking-position><option value="ALL" ${leagueEnhancementRankingPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueEnhancementRankingPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueEnhancementRankingPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueEnhancementRankingPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueEnhancementRankingPosition === "GK" ? "selected" : ""}>门将</option></select><select data-enhancement-ranking-grade><option value="ALL" ${leagueEnhancementRankingGrade === "ALL" ? "selected" : ""}>全部评级</option>${["X", "S", "A", "B", "C"].map((grade) => `<option value="${grade}" ${leagueEnhancementRankingGrade === grade ? "selected" : ""}>${grade}级</option>`).join("")}</select><select data-enhancement-ranking-level><option value="ALL" ${leagueEnhancementRankingLevel === "ALL" ? "selected" : ""}>全部等级</option><option value="ENHANCED" ${leagueEnhancementRankingLevel === "ENHANCED" ? "selected" : ""}>+1以上</option><option value="HIGH" ${leagueEnhancementRankingLevel === "HIGH" ? "selected" : ""}>+5以上</option><option value="MAX" ${leagueEnhancementRankingLevel === "MAX" ? "selected" : ""}>仅+8</option></select></div><div class="enhancement-ranking-table"><table><thead><tr><th>排名</th><th>球员</th><th>位置</th><th>默认能力</th><th>强化</th><th>持有玩家</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  return `<section class="player-info-shell"><header><button type="button" class="button secondary" data-player-info-section="back">返回功能选择</button><div><small>S4 ENHANCEMENT RANKING</small><h2>强化排行榜</h2></div><b>${ranking.length} 张卡</b></header><div class="enhancement-ranking-filters"><input type="search" value="${escapeHtml(leagueEnhancementRankingSearch)}" placeholder="搜索球员、持有玩家或球队" data-enhancement-ranking-search><select data-enhancement-ranking-position><option value="ALL" ${leagueEnhancementRankingPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueEnhancementRankingPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueEnhancementRankingPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueEnhancementRankingPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueEnhancementRankingPosition === "GK" ? "selected" : ""}>门将</option></select><select data-enhancement-ranking-grade><option value="ALL" ${leagueEnhancementRankingGrade === "ALL" ? "selected" : ""}>全部评级</option>${["S", "A", "B", "C"].map((grade) => `<option value="${grade}" ${leagueEnhancementRankingGrade === grade ? "selected" : ""}>${grade}级</option>`).join("")}</select><select data-enhancement-ranking-level><option value="ALL" ${leagueEnhancementRankingLevel === "ALL" ? "selected" : ""}>全部等级</option><option value="ENHANCED" ${leagueEnhancementRankingLevel === "ENHANCED" ? "selected" : ""}>+1以上</option><option value="HIGH" ${leagueEnhancementRankingLevel === "HIGH" ? "selected" : ""}>+5以上</option><option value="MAX" ${leagueEnhancementRankingLevel === "MAX" ? "selected" : ""}>仅+8</option></select></div><div class="enhancement-ranking-table"><table><thead><tr><th>排名</th><th>球员</th><th>位置</th><th>默认能力</th><th>强化</th><th>持有玩家</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
 function leaguePlayerInfoMarkup() {
@@ -1636,10 +1620,8 @@ function tradeCardChoiceMarkup(entry, side) {
 function leagueCardTradeMarkup() {
   const targetTeam = league.teams.find((team) => team.ownerId === leagueTradeTargetOwnerId && !team.isAi);
   const playerOptions = league.teams.filter((team) => !team.isAi && team.ownerId && team.ownerId !== account.profile.id).map((team) => `<option value="${escapeHtml(team.ownerId)}" ${team.ownerId === leagueTradeTargetOwnerId ? "selected" : ""}>${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)}</option>`).join("");
-  const ownCards = league.ownTeam.roster.flatMap((player) => player.cards.filter((card) => player.xPlayer || Number(card.upgradeLevel ?? 0) >= 1).map((card) => ({ player, card })))
-    .sort((left, right) => comparePlayerGrade(left, right) || right.card.upgradeLevel - left.card.upgradeLevel || right.player.overall - left.player.overall);
-  const targetCards = targetTeam ? (league.playerDirectory?.enhancementRanking ?? []).filter((entry) => entry.ownerId === targetTeam.ownerId && (entry.player.xPlayer || Number(entry.upgradeLevel ?? 0) >= 1)).map((entry) => ({ player:entry.player, card:{ id:entry.cardId, upgradeLevel:entry.upgradeLevel, traits:entry.traits ?? [] } }))
-    .sort((left, right) => comparePlayerGrade(left, right) || right.card.upgradeLevel - left.card.upgradeLevel || right.player.overall - left.player.overall) : [];
+  const ownCards = league.ownTeam.roster.flatMap((player) => player.cards.filter((card) => player.xPlayer || Number(card.upgradeLevel ?? 0) >= 1).map((card) => ({ player, card })));
+  const targetCards = targetTeam ? (league.playerDirectory?.enhancementRanking ?? []).filter((entry) => entry.ownerId === targetTeam.ownerId && (entry.player.xPlayer || Number(entry.upgradeLevel ?? 0) >= 1)).map((entry) => ({ player:entry.player, card:{ id:entry.cardId, upgradeLevel:entry.upgradeLevel, traits:entry.traits ?? [] } })) : [];
   const selectedEntries = [...ownCards, ...targetCards].filter(({ card }) => leagueTradeOfferedCardIds.has(card.id) || leagueTradeRequestedCardIds.has(card.id));
   const xTradeSelected = selectedEntries.some(({ player }) => player.xPlayer);
   const xTradeReady = xTradeSelected && selectedEntries.length === 2 && selectedEntries.every(({ player }) => player.xPlayer) && leagueTradeOfferedCardIds.size === 1 && leagueTradeRequestedCardIds.size === 1;
@@ -1662,8 +1644,7 @@ function leagueMarketMarkup() {
     ? league.ownTeam.roster.filter((player) => player.ownsRights && player.pool !== "LEGEND" && !player.xPlayer).map((player) => ({ player, card:{ upgradeLevel:0, traits:[] } }))
     : league.ownTeam.roster.filter((player) => !player.xPlayer).flatMap((player) => player.cards.filter((card) => player.pool === "LEGEND" || Number(card.upgradeLevel) >= 1).map((card) => ({ player, card })));
   const filteredWarehouse = warehouseEntries.filter(({ player, card }) => marketMatches(player, leagueMarketWarehouseSearch, leagueMarketWarehousePosition)
-    && (ownership || leagueMarketWarehouseUpgrade === "ALL" || leagueMarketWarehouseUpgrade === "MID" && card.upgradeLevel <= 4 || leagueMarketWarehouseUpgrade === "HIGH" && card.upgradeLevel >= 5 && card.upgradeLevel <= 7 || leagueMarketWarehouseUpgrade === "MAX" && card.upgradeLevel >= 8))
-    .sort((left, right) => comparePlayerGrade(left, right) || right.card.upgradeLevel - left.card.upgradeLevel || right.player.overall - left.player.overall);
+    && (ownership || leagueMarketWarehouseUpgrade === "ALL" || leagueMarketWarehouseUpgrade === "MID" && card.upgradeLevel <= 4 || leagueMarketWarehouseUpgrade === "HIGH" && card.upgradeLevel >= 5 && card.upgradeLevel <= 7 || leagueMarketWarehouseUpgrade === "MAX" && card.upgradeLevel >= 8));
   const listingCards = listings.length ? listings.map(marketListingCard).join("") : `<p class="s4-market-empty">当前没有符合条件的挂牌资产。</p>`;
   const warehouseCards = filteredWarehouse.length ? filteredWarehouse.map(({ player, card }) => {
     const listed = league.listings.some((item) => item.sellerId === account.profile.id
@@ -1744,30 +1725,7 @@ function leagueShopMarkup() {
     const limitText = limited ? `<small class="league-pack-limit">赛季限购 ${pack.purchasedQuantity}/${pack.seasonPurchaseLimit}</small>` : "";
     return `<article class="league-pack-product tone-${pack.kind} ${soldOut ? "sold-out" : ""}">${s4PackVisualMarkup(pack, { className:"league-shop-pack-visual", state:soldOut ? "已购完" : limited ? "限购1份" : "" })}<div class="league-pack-product-copy"><h3>${escapeHtml(pack.name)}</h3><p>${escapeHtml(pack.description)}</p><strong>${pack.price}<small>金币</small></strong>${limitText}</div><div class="league-pack-purchase"><label for="s4-pack-quantity-${pack.id}">购买数量</label><input type="number" min="1" max="${limited ? 1 : league.shop.maxPurchaseQuantity}" value="1" id="s4-pack-quantity-${pack.id}" aria-label="购买数量" ${limited ? "disabled" : ""}><button class="button primary" type="button" data-s4-pack-buy="${pack.id}" ${soldOut || league.wallet.balance < pack.price ? "disabled" : ""}>${soldOut ? "本赛季已购买" : "购买"}</button></div></article>`;
   }).join("");
-  const growth = league.xGrowth;
-  const growthProduct = growth ? `<article class="league-pack-product tone-x-growth"><div class="x-growth-shop-icon">★<small>+${growth.shop.points}</small></div><div class="league-pack-product-copy"><h3>${escapeHtml(growth.shop.name)}</h3><p>${escapeHtml(growth.shop.description)}</p><strong>${growth.shop.price}<small>金币</small></strong></div><div class="league-pack-purchase"><label for="x-growth-quantity">购买数量</label><input type="number" min="1" max="20" value="1" id="x-growth-quantity"><button class="button primary" type="button" data-x-growth-buy ${league.wallet.balance < growth.shop.price ? "disabled" : ""}>购买</button></div></article>` : "";
-  return `<section class="league-panel league-shop"><header><div><small>S4 PLAYER PACKS</small><h2>S4礼包商店</h2></div><b>${league.wallet.balance} 金币</b></header><div class="league-shop-intro"><div><strong>新赛季卡包与成长道具</strong><span>礼包进入背包；X球员加成点数会直接到账。</span></div><span>名单额度 ${rosterSlotsUsed}/33</span></div><div class="league-pack-product-grid">${growthProduct}${packs}</div></section>`;
-}
-
-function leagueXGrowthMarkup() {
-  const growth = league.xGrowth;
-  if (!growth) return `<section class="league-panel x-growth-empty"><header><div><small>SUPERSTAR PATH</small><h2>巨星之路</h2></div></header><p class="league-empty">当前球队没有X球员。获得X球员后，成长面板会自动识别球员及位置。</p></section>`;
-  const player = growth.player;
-  const fields = [...growth.attributes, growth.height].map((field) => {
-    const isHeight = field.key === "heightCm";
-    const bonusPoints = Number(field.bonusPoints ?? 0);
-    const initialValue = Number(field.value) - bonusPoints;
-    const bonusMarkup = bonusPoints ? `<em>+${bonusPoints}</em>` : "";
-    const maxed = Number(field.value) >= (isHeight ? 186 : 99);
-    return `<article class="x-growth-field ${isHeight ? "height" : ""} ${field.countsTowardOverall ? "overall-contributor" : ""}"><span>${escapeHtml(X_ATTRIBUTE_LABELS[field.key] ?? field.label)}</span><b>${initialValue}${bonusMarkup}${isHeight ? "<small>cm</small>" : ""}</b><button type="button" data-x-growth-spend="${field.key}" ${maxed || growth.points < 1 ? "disabled" : ""}>加点 +1</button></article>`;
-  }).join("");
-  const tasks = growth.tasks.map((task) => {
-    const target = task.complete ? task.milestones.at(-1) : task.nextTarget;
-    const progress = Math.min(100, target ? task.value / target * 100 : 100);
-    const reward = task.complete ? 0 : task.rewards[task.completed];
-    return `<article class="x-growth-task ${task.complete ? "complete" : ""}"><header><b>${escapeHtml(task.label)}</b><span>${task.complete ? "全部完成" : `下一阶段 +${reward}点`}</span></header><div><i style="width:${progress}%"></i></div><p>${task.value} / ${target}<small>已完成 ${task.completed}/${task.milestones.length} 阶段</small></p></article>`;
-  }).join("");
-  return `<section class="x-growth-page"><header class="x-growth-hero"><div><small>SUPERSTAR PATH · ${escapeHtml(ROLE_LABELS[player.role] ?? player.role)}</small><h2>★ ${escapeHtml(player.name)}</h2><p>X级 · ${escapeHtml(ROLE_LABELS[player.role] ?? player.role)} · 当前总评 <b>${growth.effectiveOverall ?? player.overall}</b></p></div><aside><small>可用加成点数</small><strong>${growth.points}</strong><span>任务 ${growth.earnedPoints} · 购买 ${growth.purchasedPoints} · 已用 ${growth.spentPoints}</span></aside></header><section class="league-panel x-growth-abilities"><header><div><small>27 ADJUSTABLE VALUES</small><h2>能力与身体</h2></div><span>加点会提升能力基础值，身高不影响总评</span></header><div class="x-growth-field-grid">${fields}</div></section><section class="league-panel x-growth-tasks"><header><div><small>LEAGUE & CUP ONLY</small><h2>成长任务</h2></div><span>仅联赛与杯赛计入，友谊赛无进度</span></header><div class="x-growth-task-grid">${tasks}</div></section></section>`;
+  return `<section class="league-panel league-shop"><header><div><small>S4 PLAYER PACKS</small><h2>S4礼包商店</h2></div><b>${league.wallet.balance} 金币</b></header><div class="league-shop-intro"><div><strong>新赛季卡包</strong><span>购买的卡包会统一进入球队背包，支持单份或批量购买。</span></div><span>名单额度 ${rosterSlotsUsed}/33</span></div><div class="league-pack-product-grid">${packs}</div></section>`;
 }
 
 function renderLeague() {
@@ -1778,13 +1736,11 @@ function renderLeague() {
   if (league.draft) app.innerHTML = leagueDraftMarkup();
   else if (!league.ownTeam) app.innerHTML = leagueJoinMarkup();
   else {
-    const content = leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "x-growth" ? leagueXGrowthMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
+    const content = leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
     const rosterSlotsUsed = league.ownTeam.s4Assets?.rosterSlotsUsed ?? league.ownTeam.roster.length;
     const rosterLimit = league.ownTeam.s4Assets?.rosterLimit ?? 33;
     const resourceMarkup = `<div class="league-club-resources"><span><small>大名单</small><b>${rosterSlotsUsed}<i>/</i>${rosterLimit}</b></span><span class="league-wallet-balance"><small>球队金币</small><b>${Number(league.wallet.balance).toLocaleString("zh-CN")}</b></span></div>`;
-    app.innerHTML = `<section class="league-shell"><header class="league-top"><div><p class="eyebrow">${escapeHtml(league.season.name)} · ROUND ${league.season.currentRound}/${league.season.totalRounds}</p><h1>YellowDogs League</h1></div>${resourceMarkup}<div class="league-team-mark"><small>${escapeHtml(account.profile.nickname)}</small><div class="league-team-name-row"><b>${escapeHtml(league.ownTeam.name)}</b><button type="button" class="league-team-name-edit" data-league-team-name-edit aria-label="修改球队名称" title="修改球队名称">&#9998;</button></div></div></header><div class="league-main-layout"><nav class="league-nav"><button class="${leagueTab === "overview" ? "active" : ""}" data-league-tab="overview">联赛总览</button><button class="${leagueTab === "cup" ? "active" : ""}" data-league-tab="cup">杯赛总览</button><button class="${leagueTab === "schedule" ? "active" : ""}" data-league-tab="schedule">日程表</button><button class="${leagueTab === "squad" ? "active" : ""}" data-league-tab="squad">阵容战术</button><button class="${leagueTab === "inbox" ? "active" : ""}" data-league-tab="inbox">收件箱${league.inboxUnreadCount ? `<span>${league.inboxUnreadCount}</span>` : ""}</button><button class="${leagueTab === "backpack" ? "active" : ""}" data-league-tab="backpack">背包</button><button class="${leagueTab === "enhancement" ? "active" : ""}" data-league-tab="enhancement">球员强化</button><button class="${leagueTab === "x-growth" ? "active" : ""}" data-league-tab="x-growth">巨星之路</button><button class="${leagueTab === "players" ? "active" : ""}" data-league-tab="players">球员信息</button><button class="${leagueTab === "television" ? "active" : ""}" data-league-tab="television">电视台</button><button class="${leagueTab === "stats" ? "active" : ""}" data-league-tab="stats">数据榜单</button><button class="${leagueTab === "shop" ? "active" : ""}" data-league-tab="shop">球员商店</button><button class="${leagueTab === "market" ? "active" : ""}" data-league-tab="market">交易市场</button></nav><main class="league-page-content">${content}</main></div></section>`;
-    const xGrowthPoints = Number(league.xGrowth?.points ?? 0);
-    if (xGrowthPoints > 0) document.querySelector('[data-league-tab="x-growth"]')?.insertAdjacentHTML("beforeend", `<span title="可用加成点数">${xGrowthPoints}</span>`);
+    app.innerHTML = `<section class="league-shell"><header class="league-top"><div><p class="eyebrow">${escapeHtml(league.season.name)} · ROUND ${league.season.currentRound}/${league.season.totalRounds}</p><h1>YellowDogs League</h1></div>${resourceMarkup}<div class="league-team-mark"><small>${escapeHtml(account.profile.nickname)}</small><div class="league-team-name-row"><b>${escapeHtml(league.ownTeam.name)}</b><button type="button" class="league-team-name-edit" data-league-team-name-edit aria-label="修改球队名称" title="修改球队名称">&#9998;</button></div></div></header><div class="league-main-layout"><nav class="league-nav"><button class="${leagueTab === "overview" ? "active" : ""}" data-league-tab="overview">联赛总览</button><button class="${leagueTab === "cup" ? "active" : ""}" data-league-tab="cup">杯赛总览</button><button class="${leagueTab === "schedule" ? "active" : ""}" data-league-tab="schedule">日程表</button><button class="${leagueTab === "squad" ? "active" : ""}" data-league-tab="squad">阵容战术</button><button class="${leagueTab === "inbox" ? "active" : ""}" data-league-tab="inbox">收件箱${league.inboxUnreadCount ? `<span>${league.inboxUnreadCount}</span>` : ""}</button><button class="${leagueTab === "backpack" ? "active" : ""}" data-league-tab="backpack">背包</button><button class="${leagueTab === "enhancement" ? "active" : ""}" data-league-tab="enhancement">球员强化</button><button class="${leagueTab === "players" ? "active" : ""}" data-league-tab="players">球员信息</button><button class="${leagueTab === "television" ? "active" : ""}" data-league-tab="television">电视台</button><button class="${leagueTab === "stats" ? "active" : ""}" data-league-tab="stats">数据榜单</button><button class="${leagueTab === "shop" ? "active" : ""}" data-league-tab="shop">球员商店</button><button class="${leagueTab === "market" ? "active" : ""}" data-league-tab="market">交易市场</button></nav><main class="league-page-content">${content}</main></div></section>`;
     if (leagueTab === "squad") bindLeagueSquad();
     if (leagueTab === "television") refreshBroadcasts();
     if (leagueTab === "schedule") {
@@ -2785,15 +2741,13 @@ function assignLeagueEnhancementCard(cardId, slot = null) {
   if (targetSlot === "material") {
     const main = leagueEnhancementCardEntry(leagueEnhancementMainCardId);
     if (main?.card.id === cardId) return showToast("主卡和副卡不能是同一张卡");
-    if (entry.player.xPlayer) return showToast("X级球员只能作为强化主卡");
-    if (entry.card.ownershipAnchorRequired) return showToast("这是该球员所有权的最后一张锚点卡，只能作为主卡");
-    if (main && (main.player.xPlayer ? main.player.role !== entry.player.role : main.player.id !== entry.player.id)) return showToast(main.player.xPlayer ? "副卡必须与X级主卡位置相同" : "副卡必须是同名球员卡");
+    if (main && main.player.id !== entry.player.id) return showToast("副卡必须是同名球员卡");
     leagueEnhancementMaterialCardId = cardId;
   } else {
     if (leagueEnhancementMaterialCardId === cardId) leagueEnhancementMaterialCardId = null;
     leagueEnhancementMainCardId = cardId;
     const material = leagueEnhancementCardEntry(leagueEnhancementMaterialCardId);
-    if (material && (material.player.xPlayer || (entry.player.xPlayer ? entry.player.role !== material.player.role : entry.player.id !== material.player.id))) leagueEnhancementMaterialCardId = null;
+    if (material && material.player.id !== entry.player.id) leagueEnhancementMaterialCardId = null;
   }
   leagueEnhancementResult = null;
   leagueEnhancementTraitSelectionOpen = false;
@@ -2804,7 +2758,7 @@ function assignLeagueEnhancementCard(cardId, slot = null) {
 async function performLeagueEnhancement() {
   const main = leagueEnhancementCardEntry(leagueEnhancementMainCardId);
   const material = leagueEnhancementCardEntry(leagueEnhancementMaterialCardId);
-  if (!main || !material || material.player.xPlayer || material.card.ownershipAnchorRequired || (main.player.xPlayer ? main.player.role !== material.player.role : main.player.id !== material.player.id) || leagueEnhancementPhase === "scanning") return;
+  if (!main || !material || main.player.id !== material.player.id || leagueEnhancementPhase === "scanning") return;
   leagueEnhancementPhase = "scanning";
   leagueEnhancementResult = null;
   leagueMutationPending = true;
@@ -3118,14 +3072,6 @@ app.addEventListener("click", (event) => {
       openLeagueConfirm({ title:"确认购买S4礼包", text:`花费 ${total} 金币购买 ${quantity} 份${pack.name}？礼包将进入背包。`, confirmText:"确认购买", onConfirm:() => leagueRequest("/shop/buy-s4", { packType:pack.id, quantity }) });
     }
   }
-  const xGrowthBuy = event.target.closest("[data-x-growth-buy]");
-  if (xGrowthBuy) {
-    const quantity = Math.max(1, Math.min(20, Number(document.querySelector("#x-growth-quantity")?.value ?? 1)));
-    const total = Number(league.xGrowth?.shop.price ?? 0) * quantity;
-    openLeagueConfirm({ title:"购买X球员加成点数", text:`花费 ${total} 金币购买 ${quantity * Number(league.xGrowth.shop.points)} 点加成点数？`, confirmText:"确认购买", onConfirm:() => leagueRequest("/x-growth/buy", { quantity }).then(() => showToast("加成点数已到账")) });
-  }
-  const xGrowthSpend = event.target.closest("[data-x-growth-spend]");
-  if (xGrowthSpend) leagueRequest("/x-growth/spend", { field:xGrowthSpend.dataset.xGrowthSpend, amount:1 }).catch((error) => showToast(error.message));
 });
 
 app.addEventListener("dragstart", (event) => {

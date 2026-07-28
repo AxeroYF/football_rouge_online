@@ -56446,12 +56446,12 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "isLegend": false,
     "isRetiredFamous": true,
     "pool": "DEF",
-    "role": "CB",
-    "secondaryRole": "DM",
+    "role": "LB",
+    "secondaryRole": "CB",
     "secondaryRoleSource": "archived YellowDogs League profile",
-    "sourceMainPosition": "CB",
+    "sourceMainPosition": "LB",
     "sourceAlternativePositions": [
-      "DM"
+      "CB"
     ],
     "referenceOverall": 89,
     "suggestedOverall": 88,

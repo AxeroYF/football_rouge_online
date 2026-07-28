@@ -59,7 +59,7 @@ const STANDARD_FORMATIONS = {
   "4-3-2-1": { counts: [1, 4, 5, 1], midfieldLines: [3, 2] },
   "4-1-2-1-2": { counts: [1, 4, 4, 2], midfieldLines: [1, 2, 1] },
 };
-const LEGEND_PLAYERS = REAL_PLAYERS.filter((player) => player.legendAbility);
+const LEGEND_PLAYERS = REAL_PLAYERS.filter((player) => player.grade === "S");
 const LEGEND_PLAYER_IDS = new Set(LEGEND_PLAYERS.map((player) => player.id));
 const ABNORMAL_FORMATIONS = {
   "2-3-5（双后卫）": { counts: [1, 2, 3, 5] },
@@ -662,8 +662,8 @@ function runLegendImpact(individualMatches, stackMatches, draftChoiceCount = 3) 
     }
     individual[legend.id] = {
       name:legend.name,
-      ability:legend.legendAbility?.name ?? null,
-      effect:legend.legendAbility?.summary ?? null,
+      ability:null,
+      effect:null,
       ...outcomeSummary(outcomes),
     };
   }

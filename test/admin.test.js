@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { handleAdminApi } from "../versus/admin-api.js";
 
 async function request(pathname, { method = "GET", token = "", body = {}, address = "127.0.0.1" } = {}) {
@@ -8,6 +9,14 @@ async function request(pathname, { method = "GET", token = "", body = {}, addres
   await handleAdminApi(requestValue, {}, pathname, async () => body, (_response, statusCode, value) => { sent = { statusCode, value }; });
   return sent;
 }
+
+test("联赛旧数据冲突时后台提供开启全新赛季的恢复入口", () => {
+  const source = readFileSync(new URL("../admin/public/app.js", import.meta.url), "utf8");
+  assert.match(source, /function renderLeagueRecovery\(error\)/);
+  assert.match(source, /开启全新黄狗联赛赛季/);
+  assert.match(source, /\/api\/admin\/league\/fresh-season/);
+  assert.match(source, /else renderLeagueRecovery\(error\)/);
+});
 
 test("管理员后台拒绝错误密码和未授权数据访问", async () => {
   const unauthorized = await request("/api/admin/dashboard");
@@ -33,6 +42,7 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal(league.value.league.s4PlayerCatalog.length, 550);
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅西"));
   assert.ok(Array.isArray(league.value.league.s4CardGrants));
+  assert.ok(Array.isArray(league.value.league.coinGrants));
   const content = await request("/api/admin/content", { token:login.value.token });
   assert.equal(content.statusCode, 200);
   assert.equal(content.value.content.players.length, 550);
@@ -40,7 +50,8 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.deepEqual(content.value.content.roleGroups, ["ANY", "GK", "DEF", "MID", "ATT"]);
   assert.deepEqual(content.value.content.playerRoles, ["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
   assert.ok(content.value.content.traits.every((trait) => !("rarity" in trait)));
-  assert.ok(content.value.content.players.find((entry) => entry.name === "布冯" && entry.overall === 85));
+  assert.ok(content.value.content.traits.filter((trait) => trait.status === "active").every((trait) => trait.rules.length > 0));
+  assert.ok(content.value.content.players.find((entry) => entry.name === "布冯" && entry.overall === 90));
   const player = dashboard.value.dashboard.players[0];
   if (player) {
     const detail = await request(`/api/admin/players/${encodeURIComponent(player.id)}`, { token:login.value.token });

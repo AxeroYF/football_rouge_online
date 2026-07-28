@@ -2,7 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { versusRooms } from "./room-service.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { yellowDogsLeague } from "./league-service.js";
-import { updateYdlPlayer, updateYdlTrait, ydlContentView } from "./ydl-content-store.js";
+import { createYdlTraitDraft, updateYdlPlayer, updateYdlTrait, ydlContentView } from "./ydl-content-store.js";
 
 const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971019";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -206,6 +206,10 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "GET" && pathname === "/api/admin/dashboard") return sendJson(response, 200, { ok: true, dashboard: buildDashboard() });
     if (request.method === "GET" && pathname === "/api/admin/league") return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
     if (request.method === "GET" && pathname === "/api/admin/content") return sendJson(response, 200, { ok:true, content:ydlContentView() });
+    if (request.method === "POST" && pathname === "/api/admin/content/traits") {
+      const body = await readJson(request);
+      return sendJson(response, 201, { ok:true, trait:await createYdlTraitDraft(body) });
+    }
     const contentPlayerMatch = pathname.match(/^\/api\/admin\/content\/players\/([^/]+)$/);
     if (request.method === "POST" && contentPlayerMatch) {
       const body = await readJson(request);
@@ -231,6 +235,10 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "POST" && pathname === "/api/admin/league/s4-packs/grant") {
       const body = await readJson(request);
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantS4PacksFromAdmin(body) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/coins/grant") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantCoinsFromAdmin(body) });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/s4-cards/grant") {
       const body = await readJson(request);

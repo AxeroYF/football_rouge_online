@@ -217,16 +217,21 @@ function normalizeSuspension(suspension) {
   };
 }
 
+export const PLAYER_OVERALL_ATTRIBUTE_KEYS = Object.freeze({
+  GK:Object.freeze(["goalkeeping", "reflexes", "positioning", "composure"]),
+  DEF:Object.freeze(["tackling", "marking", "positioning", "strength", "pace"]),
+  MID:Object.freeze(["passing", "vision", "decisions", "firstTouch", "stamina"]),
+  ATT:Object.freeze(["finishing", "offBall", "pace", "dribbling", "composure"]),
+});
+
 function roughAbility(attributes, role) {
   const group = roleGroup(role);
-  const keys = group === "GK"
-    ? ["goalkeeping", "reflexes", "positioning", "composure"]
-    : group === "DEF"
-      ? ["tackling", "marking", "positioning", "strength", "pace"]
-      : group === "MID"
-        ? ["passing", "vision", "decisions", "firstTouch", "stamina"]
-        : ["finishing", "offBall", "pace", "dribbling", "composure"];
+  const keys = PLAYER_OVERALL_ATTRIBUTE_KEYS[group] ?? PLAYER_OVERALL_ATTRIBUTE_KEYS.ATT;
   return keys.reduce((sum, key) => sum + Number(attributes[key] ?? 50), 0) / keys.length;
+}
+
+export function playerOverallFromAttributes(attributes, role) {
+  return Math.round(roughAbility(attributes, role));
 }
 
 function legacyAttributeSource(player) {

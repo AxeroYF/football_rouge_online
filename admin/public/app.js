@@ -161,6 +161,7 @@ function renderLeagueAdmin() {
   const s4PlayerCatalog = leagueData.s4PlayerCatalog ?? [];
   const s4PlayerOptions = s4PlayerCatalog.map((player) => `<option value="${escapeHtml(player.id)}">${escapeHtml(player.name)} · ${escapeHtml(player.club ?? "自由球员")} · ${escapeHtml(ROLES[player.role] ?? player.role)} · ${player.overall} · ${player.grade}</option>`).join("");
   const s4CardGrantRows = (leagueData.s4CardGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${escapeHtml(grant.playerName)}</b><small>${escapeHtml(grant.playerId)}</small></td><td>${grant.upgradeLevel ? `+${grant.upgradeLevel}` : "无强化"}</td><td>${grant.quantity}张</td><td><b>${escapeHtml(grant.ownerName)}</b><small>${escapeHtml(grant.teamName)}</small></td><td>${grant.ownershipGranted ? "同时获得所有权" : "所有权不变"}</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="6">尚未发放指定球员卡</td></tr>`;
+  const coinGrantRows = (leagueData.coinGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${coinText(grant.amount)}</b><small>${escapeHtml(grant.id)}</small></td><td>${grant.recipientMode === "all" ? "全体玩家" : "指定玩家"}</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放金币</td></tr>`;
   const badgePlayerOptions = leagueData.teams.filter((team) => !team.isAi).map((team) => `<option value="${escapeHtml(team.ownerId)}">${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)} · ${escapeHtml(team.ownerId)}</option>`).join("");
   const badgeRows = leagueData.teams.flatMap((team) => (team.championBadges ?? []).map((badge) => ({ ...badge, ownerId:team.ownerId, ownerName:team.ownerName, teamName:team.name }))).sort((left,right) => Number(right.awardedAt) - Number(left.awardedAt)).map((badge) => { const isCup = badge.competition === "cup" || badge.type === "cup-champion"; return `<tr><td><span class="admin-champion-badge ${isCup ? "cup-champion-badge" : ""}"><i>${isCup ? "🏆" : "♛"}</i>${escapeHtml(badge.season)}${isCup ? " 杯赛" : " 联赛"}</span></td><td><b>${escapeHtml(badge.ownerName)}</b><small>${escapeHtml(badge.ownerId)}</small></td><td>${escapeHtml(badge.teamName)}</td><td>${dateText(badge.awardedAt)}</td></tr>`; }).join("") || `<tr><td colspan="4">尚未发放冠军徽章</td></tr>`;
   logoutButton.hidden = false;
@@ -177,6 +178,7 @@ function renderLeagueAdmin() {
   document.querySelector(".league-allocation-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-backup-panel"><header class="panel-head"><div><h2>联赛数据备份</h2><small>每天一份，自动保留最近 ${leagueData.backups.retentionDays} 天；完全重置前额外保存快照</small></div></header><div class="table-wrap"><table><thead><tr><th>文件</th><th>类型</th></tr></thead><tbody>${backupRows}</tbody></table></div></section>`);
   document.querySelector(".league-backup-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-economy-panel"><header class="panel-head"><div><h2>玩家经济明细</h2><small>当前赛季商店开包、卡包签约、解约、转会与完整金币流水</small></div><select id="league-economy-team" ${economyOptions ? "" : "disabled"}>${economyOptions || `<option>${economyVersionReady ? "暂无玩家球队" : "等待服务重启"}</option>`}</select></header><div id="league-economy-detail">${leagueEconomyDetail(leagueData.economy?.[0]?.accountId)}</div></section>`);
   document.querySelector(".league-team-panel").insertAdjacentHTML("afterend", `<section class="panel league-reward-mail-panel"><header class="panel-head"><div><h2>S4礼包发放</h2><small>旧赛季礼包已经下架；可向所有已建队玩家或指定玩家立即发放新礼包。</small></div></header><form id="league-s4-pack-grant-form" class="league-reward-mail-form"><label><span>礼包类型</span><select name="packType">${s4PackTypeOptions}</select></label><label><span>每人数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-s4-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4PackTypeOptions ? "" : "disabled"}>立即发放礼包</button></form><div class="table-wrap"><table><thead><tr><th>礼包</th><th>数量</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${s4GrantRows}</tbody></table></div></section>`);
+  document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-coin-grant-panel"><header class="panel-head"><div><h2>金币即时发放</h2><small>向所有已建队玩家或指定玩家发放金币，提交后余额立即到账并发送邮件通知。</small></div></header><form id="league-coin-grant-form" class="league-reward-mail-form"><label><span>每人金币数量</span><input name="amount" type="number" min="1" max="1000000000" step="1" value="1000" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-coin-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4RecipientOptions ? "" : "disabled"}>立即发放金币</button></form><div class="table-wrap"><table><thead><tr><th>每人金额</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${coinGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-card-grant-panel"><header class="panel-head"><div><h2>指定球员卡发放</h2><small>向任意已建队玩家发放指定球员、指定强化等级的测试卡；强化等级支持0至8级。</small></div></header><form id="league-s4-card-grant-form" class="league-card-grant-form"><label><span>接收玩家</span><select name="accountId" ${s4RecipientOptions ? "" : "disabled"}>${s4RecipientOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>搜索球员</span><input id="league-s4-player-search" placeholder="输入中文名、俱乐部、位置或ID"></label><label><span>指定球员</span><select id="league-s4-player-select" name="playerId" ${s4PlayerOptions ? "" : "disabled"}>${s4PlayerOptions || `<option>暂无球员数据</option>`}</select></label><label><span>强化等级</span><select name="upgradeLevel">${Array.from({ length:9 }, (_, level) => `<option value="${level}">${level ? `+${level}` : "无强化"}</option>`).join("")}</select></label><label><span>发放数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><button type="submit" ${s4RecipientOptions && s4PlayerOptions ? "" : "disabled"}>发放指定球员卡</button></form><div class="table-wrap"><table><thead><tr><th>球员</th><th>强化</th><th>数量</th><th>接收玩家</th><th>所有权</th><th>时间</th></tr></thead><tbody>${s4CardGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-card-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-badge-panel"><header class="panel-head"><div><h2>冠军徽章发放</h2><small>可发放皇冠联赛冠军徽章，或带赛季标记的奖杯杯赛冠军徽章</small></div></header><form id="league-badge-form" class="league-badge-form"><label><span>联赛玩家</span><select name="accountId" ${badgePlayerOptions ? "" : "disabled"}>${badgePlayerOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>冠军荣誉</span><select name="badge">${BADGE_OPTIONS.map((badge) => `<option value="${badge.competition}:${badge.season}">${badge.label}</option>`).join("")}</select></label><button type="submit" ${badgePlayerOptions ? "" : "disabled"}>发放徽章</button></form><div class="table-wrap"><table><thead><tr><th>徽章</th><th>玩家</th><th>球队</th><th>发放时间</th></tr></thead><tbody>${badgeRows}</tbody></table></div></section>`);
   bindAdminNav();
@@ -188,6 +190,26 @@ function renderLeagueAdmin() {
   };
   const economySelect = document.querySelector("#league-economy-team");
   economySelect.onchange = () => { document.querySelector("#league-economy-detail").innerHTML = leagueEconomyDetail(economySelect.value); };
+  const coinGrantForm = document.querySelector("#league-coin-grant-form");
+  const coinRecipientMode = coinGrantForm.querySelector("[name=recipientMode]");
+  const coinRecipientField = document.querySelector("#league-coin-recipient-field");
+  const syncCoinRecipients = () => {
+    const specified = coinRecipientMode.value === "specified";
+    coinRecipientField.hidden = !specified;
+    coinRecipientField.querySelector("select").disabled = !specified;
+  };
+  coinRecipientMode.onchange = syncCoinRecipients;
+  syncCoinRecipients();
+  coinGrantForm.onsubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const amount = Number(form.get("amount"));
+    const recipientMode = String(form.get("recipientMode"));
+    const accountIds = form.getAll("accountIds").map(String);
+    const scope = recipientMode === "all" ? "所有已建队玩家" : `${accountIds.length}名指定玩家`;
+    if (recipientMode === "specified" && !accountIds.length) return window.alert("请至少选择一名玩家");
+    if (window.confirm(`确认向${scope}每人发放${amount.toLocaleString()}金币？金币会立即到账。`)) runLeagueAdminAction("/api/admin/league/coins/grant", { amount, recipientMode, accountIds }, "金币已经发放并立即到账");
+  };
   document.querySelector("#league-simulate").onclick = () => runLeagueAdminAction("/api/admin/league/simulate", {}, "下一轮联赛及期间杯赛已模拟完成");
   document.querySelector("#league-start-simulation").onclick = () => {
     if (window.confirm(`确认结束 ${season.name} 报名选人阶段并开启联赛推进？首轮会安排在开启后的下一个20分钟时间档。当前已有 ${humanTeams} 支玩家球队，其余席位由AI球队保留。`)) runLeagueAdminAction("/api/admin/league/start-simulation", { confirm:"START_LEAGUE_SIMULATION" }, "联赛推进已开启，首轮时间已经安排");
@@ -314,10 +336,32 @@ async function runLeagueAdminAction(path, body, message) {
   } catch (error) { window.alert(error.message); }
 }
 
+function renderLeagueRecovery(error) {
+  logoutButton.hidden = false;
+  app.innerHTML = `${adminNavMarkup("league")}<section class="league-recovery"><small>SEASON DATA CONFLICT</small><h1>旧赛季数据与新球员评级冲突</h1><p>${escapeHtml(error.message)}</p><p class="league-recovery-note">当前旧赛季不会被迁移。开启全新赛季后，球队、球员卡、金币、背包、交易和比赛数据将清空，玩家账号会保留。</p><label><span>输入“开启全新黄狗联赛赛季”确认</span><input id="league-recovery-confirmation" autocomplete="off" placeholder="开启全新黄狗联赛赛季"></label><div><button id="league-recovery-dashboard">返回运营总览</button><button class="danger" id="league-recovery-fresh" disabled>开启全新赛季</button></div><p class="league-recovery-feedback" id="league-recovery-feedback"></p></section>`;
+  bindAdminNav();
+  document.querySelector("#league-recovery-dashboard").onclick = loadDashboard;
+  const confirmationInput = document.querySelector("#league-recovery-confirmation");
+  const freshButton = document.querySelector("#league-recovery-fresh");
+  confirmationInput.oninput = () => { freshButton.disabled = confirmationInput.value.trim() !== "开启全新黄狗联赛赛季"; };
+  freshButton.onclick = async () => {
+    const feedback = document.querySelector("#league-recovery-feedback");
+    freshButton.disabled = true;
+    feedback.textContent = "正在建立全新赛季…";
+    try {
+      leagueData = (await api("/api/admin/league/fresh-season", { method:"POST", body:{ confirm:"FRESH_SEASON_YDL" } })).league;
+      renderLeagueAdmin();
+    } catch (reason) {
+      feedback.textContent = reason.message;
+      freshButton.disabled = false;
+    }
+  };
+}
+
 async function loadLeagueAdmin() {
   app.innerHTML = `<section class="loading">正在读取黄狗联赛数据…</section>`;
   try { leagueData = (await api("/api/admin/league")).league; renderLeagueAdmin(); }
-  catch (error) { if (error.status === 401) renderLogin("登录已失效，请重新输入密码"); else app.innerHTML = `<section class="loading">${escapeHtml(error.message)}</section>`; }
+  catch (error) { if (error.status === 401) renderLogin("登录已失效，请重新输入密码"); else renderLeagueRecovery(error); }
 }
 
 const CONTENT_ROLE_LABELS = { ANY:"全位置", GK:"门将", DEF:"后场", MID:"中场", ATT:"前场" };
@@ -342,7 +386,7 @@ function contentPlayerRows(entries = contentData.players) {
 }
 
 function contentTraitRows(entries = contentData.traits) {
-  return entries.map((trait) => `<button class="content-list-row trait-row ${trait.id === selectedContentTraitId ? "active" : ""}" data-content-trait="${escapeHtml(trait.id)}"><span><b>${escapeHtml(trait.name)}</b><small>${escapeHtml(trait.summary || "尚未填写效果说明")}</small></span><em>${escapeHtml((trait.eligibleRoleGroups ?? []).map((role) => CONTENT_ROLE_LABELS[role] ?? role).join(" / "))}</em></button>`).join("");
+  return entries.map((trait) => `<button class="content-list-row trait-row ${trait.id === selectedContentTraitId ? "active" : ""}" data-content-trait="${escapeHtml(trait.id)}"><span><b>${escapeHtml(trait.name)}${trait.status === "draft" ? `<i class="content-status-badge">待实现</i>` : ""}</b><small>${escapeHtml(trait.summary || "尚未填写效果说明")}</small></span><em>${escapeHtml((trait.eligibleRoleGroups ?? []).map((role) => CONTENT_ROLE_LABELS[role] ?? role).join(" / "))}</em></button>`).join("");
 }
 
 function bindContentLists() {
@@ -428,16 +472,17 @@ function renderContentTraitEditor() {
   const editor = document.querySelector("#content-editor");
   if (!trait) return void (editor.innerHTML = `<p class="empty">请选择一张特性卡</p>`);
   const roles = contentData.roleGroups.map((role) => `<label class="content-role-check"><input type="checkbox" value="${role}"${trait.eligibleRoleGroups.includes(role) ? " checked" : ""} /><span>${escapeHtml(CONTENT_ROLE_LABELS[role])}</span></label>`).join("");
+  const isDraft = trait.status === "draft";
   editor.innerHTML = `<form id="content-trait-form" class="content-editor-form">
-    <header><div><small>${escapeHtml(trait.id)} · YDL特性卡</small><h2>${escapeHtml(trait.name)}</h2></div><strong class="role-only">位置制<small>无稀有度</small></strong></header>
+    <header><div><small>${escapeHtml(trait.id)} · ${isDraft ? "自定义特性草稿" : "YDL正式特性卡"}</small><h2>${escapeHtml(trait.name)}</h2></div><strong class="role-only">${isDraft ? "待实现" : "已生效"}<small>${isDraft ? "不进入强化池" : "比赛运行中"}</small></strong></header>
     <section><h3>卡牌内容</h3><div class="content-form-grid">
       <label><span>特性名称</span><input name="name" value="${escapeHtml(trait.name)}" required /></label>
       <label><span>内部分类</span><input value="${escapeHtml(trait.category)}" disabled /></label>
       <label class="span-all"><span>效果说明</span><textarea name="summary" rows="4" placeholder="在这里填写玩家看到的特性效果">${escapeHtml(trait.summary)}</textarea></label>
     </div></section>
     <section><h3>适用位置</h3><p class="content-help">选择“全位置”后会自动忽略其他位置；YDL特性卡不设置任何等级或稀有度。</p><div class="content-role-grid">${roles}</div></section>
-    <section><h3>效果规则 JSON</h3><p class="content-help">使用七人制后台相同的规则结构。可以先只填写效果说明，规则留为 []，之后再补。</p><textarea id="content-trait-rules" class="rules-editor" rows="14">${escapeHtml(JSON.stringify(trait.rules ?? [], null, 2))}</textarea></section>
-    <footer><span id="content-save-status">保存后新抽取及后续比赛立即使用新效果。</span><button class="content-save-button">保存特性</button></footer>
+    <section><h3>效果规则 JSON</h3><p class="content-help">${isDraft ? "新建卡暂不进入强化候选池。程序规则由开发实现并验证后再转为正式卡。" : "这里显示当前比赛运行时实际读取的 S4 规则；保存后新比赛立即使用。"}</p><textarea id="content-trait-rules" class="rules-editor" rows="14"${isDraft ? " disabled" : ""}>${escapeHtml(JSON.stringify(trait.rules ?? [], null, 2))}</textarea></section>
+    <footer><span id="content-save-status">${isDraft ? "可继续修改名称、效果说明和适用位置。" : "保存后新抽取及后续比赛立即使用新效果。"}</span><button class="content-save-button">保存特性</button></footer>
   </form>`;
   document.querySelector("#content-trait-form").onsubmit = async (event) => {
     event.preventDefault();
@@ -445,8 +490,8 @@ function renderContentTraitEditor() {
     const checkedRoles = [...document.querySelectorAll(".content-role-check input:checked")].map((input) => input.value);
     const status = document.querySelector("#content-save-status");
     try {
-      const rules = JSON.parse(document.querySelector("#content-trait-rules").value || "[]");
-      const patch = { name:form.get("name"), summary:form.get("summary"), eligibleRoleGroups:checkedRoles, rules };
+      const rules = isDraft ? undefined : JSON.parse(document.querySelector("#content-trait-rules").value || "[]");
+      const patch = { name:form.get("name"), summary:form.get("summary"), eligibleRoleGroups:checkedRoles, ...(isDraft ? {} : { rules }) };
       status.textContent = "正在保存…";
       const saved = (await api(`/api/admin/content/traits/${encodeURIComponent(trait.id)}`, { method:"POST", body:patch })).trait;
       contentData.traits[contentData.traits.findIndex((entry) => entry.id === saved.id)] = saved;
@@ -457,15 +502,46 @@ function renderContentTraitEditor() {
   };
 }
 
+function openCreateContentTrait() {
+  const roles = contentData.roleGroups.map((role) => `<label class="content-role-check"><input name="eligibleRoleGroups" type="checkbox" value="${role}"${role === "ANY" ? " checked" : ""} /><span>${escapeHtml(CONTENT_ROLE_LABELS[role])}</span></label>`).join("");
+  showModal(`<form id="content-trait-create-form" class="content-editor-form content-create-form">
+    <header><div><small>NEW YDL TRAIT</small><h2>手动添加特性卡</h2></div><button type="button" data-close>×</button></header>
+    <section><div class="content-form-grid">
+      <label><span>特性名称</span><input name="name" required autofocus /></label>
+      <label class="span-all"><span>效果说明</span><textarea name="summary" rows="5" required placeholder="清楚描述触发条件、作用对象和具体效果"></textarea></label>
+    </div></section>
+    <section><h3>适用位置</h3><div class="content-role-grid">${roles}</div></section>
+    <section class="content-draft-notice"><b>新卡会先保存为“待实现”草稿</b><p>系统自动生成内部 ID。草稿不会进入强化候选池或比赛；开发补齐程序规则并通过测试后再正式启用。</p></section>
+    <footer><span id="content-create-status">只需填写名称、效果和适用位置。</span><button class="content-save-button">创建特性卡</button></footer>
+  </form>`);
+  document.querySelector("#content-trait-create-form").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const status = document.querySelector("#content-create-status");
+    const eligibleRoleGroups = form.getAll("eligibleRoleGroups");
+    status.textContent = "正在创建…";
+    try {
+      const created = (await api("/api/admin/content/traits", {
+        method:"POST",
+        body:{ name:form.get("name"), summary:form.get("summary"), eligibleRoleGroups },
+      })).trait;
+      contentData.traits.push(created);
+      selectedContentTraitId = created.id;
+      closeModal();
+      renderContentAdmin();
+    } catch (error) { status.textContent = error.message; }
+  };
+}
+
 function renderContentAdmin() {
   logoutButton.hidden = false;
   const playerActive = contentTab === "players";
   app.innerHTML = `${adminNavMarkup("content")}<header class="page-head"><div><h1>S4球员与特性管理</h1><p>正式550人球员池与YDL位置制特性卡；保存后立即进入当前服务。</p></div><button id="content-refresh">刷新数据</button></header>
-    <section class="kpis content-kpis"><article class="kpi"><small>正式球员</small><b>${contentData.players.length}</b></article><article class="kpi"><small>传奇球员</small><b>${contentData.players.filter((player) => player.isLegend).length}</b></article><article class="kpi"><small>YDL特性卡</small><b>${contentData.traits.length}</b></article><article class="kpi"><small>特性等级</small><b>无</b></article><article class="kpi"><small>适用位置分类</small><b>${contentData.roleGroups.length}</b></article></section>
+    <section class="kpis content-kpis"><article class="kpi"><small>正式球员</small><b>${contentData.players.length}</b></article><article class="kpi"><small>传奇球员</small><b>${contentData.players.filter((player) => player.isLegend).length}</b></article><article class="kpi"><small>正式特性卡</small><b>${contentData.traits.filter((trait) => trait.status === "active").length}</b></article><article class="kpi"><small>待实现草稿</small><b>${contentData.traits.filter((trait) => trait.status === "draft").length}</b></article><article class="kpi"><small>适用位置分类</small><b>${contentData.roleGroups.length}</b></article></section>
     <div class="content-tabs"><button data-content-tab="players" class="${playerActive ? "active" : ""}">球员库管理</button><button data-content-tab="traits" class="${playerActive ? "" : "active"}">特性卡管理</button></div>
     <section class="content-workspace">
       <aside class="content-browser panel">
-        <header class="panel-head"><div><h2>${playerActive ? "S4正式球员库" : "YDL特性卡"}</h2><small>${playerActive ? "姓名、能力、评级、位置与26项属性" : "仅按适用位置分类，不区分等级"}</small></div></header>
+        <header class="panel-head"><div><h2>${playerActive ? "S4正式球员库" : "YDL特性卡"}</h2><small>${playerActive ? "姓名、能力、评级、位置与26项属性" : "正式运行卡与待实现草稿"}</small></div>${playerActive ? "" : `<button class="content-add-button" id="content-trait-create">+ 添加特性</button>`}</header>
         ${playerActive ? `<div class="content-filters"><input class="search" id="content-player-search" placeholder="搜索姓名、俱乐部或国籍" /><select id="content-player-pool"><option value="all">全部位置池</option>${Object.entries(LEAGUE_POOL_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join("")}</select><select id="content-player-grade"><option value="all">全部评级</option>${["S","A","B","C"].map((grade) => `<option>${grade}</option>`).join("")}</select></div><div class="content-list" id="content-player-list">${contentPlayerRows()}</div>`
           : `<div class="content-filters"><input class="search" id="content-trait-search" placeholder="搜索特性名称或说明" /><select id="content-trait-role"><option value="all">全部适用位置</option>${contentData.roleGroups.map((role) => `<option value="${role}">${CONTENT_ROLE_LABELS[role]}</option>`).join("")}</select></div><div class="content-list" id="content-trait-list">${contentTraitRows()}</div>`}
       </aside>
@@ -484,6 +560,7 @@ function renderContentAdmin() {
   } else {
     document.querySelector("#content-trait-search").oninput = filterContentTraits;
     document.querySelector("#content-trait-role").onchange = filterContentTraits;
+    document.querySelector("#content-trait-create").onclick = openCreateContentTrait;
     renderContentTraitEditor();
   }
   bindContentLists();

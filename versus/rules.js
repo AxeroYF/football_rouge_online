@@ -124,7 +124,7 @@ export function defaultElevenPositions(players = []) {
   return positions;
 }
 
-export function analyzeElevenFormation(players = [], positions = {}) {
+export function analyzeElevenFormation(players = [], positions = {}, options = {}) {
   const roles = inferElevenBoardRoles(players.map((player) => ({ id: player.id, position: positions[player.id] })));
   const counts = { GK: 0, DEF: 0, MID: 0, ATT: 0 };
   Object.values(roles).forEach((role) => { counts[roleGroup(role)] += 1; });
@@ -150,13 +150,13 @@ export function analyzeElevenFormation(players = [], positions = {}) {
   return {
     roles,
     counts,
-    valid: validCount && hasSingleGoalkeeper && validOutfieldLines,
+    valid: validCount && hasSingleGoalkeeper && (options.requireOutfieldLines === false || validOutfieldLines),
     name,
     message: !validCount
       ? `需要恰好 ${VERSUS_TEAM_SIZE} 名场上球员`
       : !hasSingleGoalkeeper
         ? "门将位置必须且只能有一人"
-        : !validOutfieldLines
+        : options.requireOutfieldLines !== false && !validOutfieldLines
           ? "后场、中场和前场都必须至少一人"
           : "阵型有效",
   };

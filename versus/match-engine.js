@@ -9,8 +9,9 @@ import {
   traitRules,
 } from "../game/public/trait-runtime.js";
 import { analyzeElevenFormation, formationStructureProfile, sanitizePositions } from "./rules.js";
-import { VERSUS_TRAIT_CARDS } from "./trait-pool.js";
 import { legendAbilityForName } from "./legend-abilities.js";
+import { VERSUS_TRAIT_CARDS } from "./trait-pool.js";
+import { applyS4BondBonuses, evaluateS4LineupBonds } from "./public/bond-rules.js";
 
 export const REGULAR_DURATION_MS = 120_000;
 export const EXTRA_DURATION_MS = 30_000;
@@ -163,7 +164,7 @@ function refereeTeamModifiers(match, team) {
 }
 
 function legendId(player) {
-  return player?.legendAbility?.id ?? legendAbilityForName(player?.name)?.id ?? null;
+  return player?.legendAbility?.id ?? null;
 }
 
 function legendPlayers(team) {
@@ -271,14 +272,15 @@ function legendAttackTypeMultiplier(match, team, attackType) {
   return clamp(multiplier, 1, 1.16);
 }
 
-function hydrateTeam(seat, index, seed) {
+function hydrateTeam(seat, index, seed, disableLegendAbilities = false) {
   const players = seat.players.map((source) => {
     const position = seat.positions[source.id];
     const formation = analyzeElevenFormation(seat.players, seat.positions);
     const assignedRole = formation.roles[source.id] ?? source.role;
     const hydrated = hydratePlayerTraits({
       ...source,
-      legendAbility: source.legendAbility ?? legendAbilityForName(source.name),
+      legendAbility: disableLegendAbilities ? null : source.legendAbility ?? legendAbilityForName(source.name),
+      legendary: source.legendary ?? source.grade === "S",
       assignedRole,
       boardPosition: { ...position },
       state: { ...source.state, fitness: seat.preserveFitness ? Math.max(35, Math.min(100, Number(source.state?.fitness ?? 100))) : 100 },
@@ -307,6 +309,7 @@ function hydrateTeam(seat, index, seed) {
     adjustmentBoostUntilMinute: 0,
     positions: structuredClone(seat.positions),
     positionPresets: seat.positionPresets ? structuredClone(seat.positionPresets) : null,
+    bondCatalog:seat.bondCatalog ? structuredClone(seat.bondCatalog) : null,
     players,
     score: 0,
     stats: { possession: 0, attacks: 0, shots: 0, shotsOnTarget: 0, xg: 0, fouls: 0, yellowCards: 0, redCards: 0, injuries: 0, corners: 0 },
@@ -324,6 +327,22 @@ function activeTeamHasTrait(team, hook, predicate = () => true) {
 function scoreState(match, team) {
   const opponent = match.teams[team.index === 0 ? 1 : 0];
   return team.score > opponent.score ? "leading" : team.score < opponent.score ? "trailing" : "tied";
+}
+
+function refreshTeamBonds(team) {
+  if (!team.bondCatalog) return;
+  const restoredPlayers = team.players.map((player) => ({
+    ...player,
+    attributes:structuredClone(player.ydlBondBaseAttributes ?? player.attributes),
+    ydlBondBonus:undefined,
+    ydlBondIds:undefined,
+  }));
+  const active = restoredPlayers.filter((player) => player.active);
+  const roles = Object.fromEntries(active.map((player) => [player.id, player.assignedRole]));
+  const bonds = evaluateS4LineupBonds(active, team.bondCatalog, { roles });
+  const boostedById = new Map(applyS4BondBonuses(active, bonds).map((player) => [player.id, player]));
+  team.players = restoredPlayers.map((player) => boostedById.get(player.id) ?? player);
+  team.bonds = bonds;
 }
 
 function applySituationalPlan(match, team) {
@@ -349,6 +368,7 @@ function applySituationalPlan(match, team) {
       player.boardPosition = { ...team.positions[player.id] };
       if (player.active) player.assignedRole = formation.roles[player.id] ?? player.assignedRole;
     });
+    refreshTeamBonds(team);
   }
   const labels = { opening:"开局/平局", leading:"领先", trailing:"落后" };
   event(match, "tactical", team.index, `${team.name}切换为${labels[planKey]}方案：${TACTICS[plan.tactic].name} · ${MATCH_STYLES[plan.style].name}。`, { importance:"stage", plan:planKey, tactic:plan.tactic, style:plan.style });
@@ -1172,7 +1192,8 @@ function buildReport(match) {
         id: player.id, name: player.name, role: player.assignedRole, assignedRole: player.assignedRole,
         overall: player.overall, position: structuredClone(team.positions[player.id] ?? player.boardPosition ?? { x:50, y:50 }), rating: player.rating,
         heightCm: player.heightCm, nationality: player.nationality, club: player.club,
-        grade: player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0), legendAbility: player.legendAbility ?? null,
+        grade: player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0), legendary:Boolean(player.legendary ?? player.grade === "S"),
+        ...(["league", "cup", "friendly"].includes(match.competitionMode) ? {} : { legendAbility:player.legendAbility ?? null }),
         fitness: Number(player.state.fitness.toFixed(1)), active: player.active, sentOff: player.sentOff, injury: player.injury,
         stats: player.matchStats,
       })).sort((left, right) => right.rating - left.rating),
@@ -1185,6 +1206,8 @@ function buildReport(match) {
 export function createVersusMatch(seats, options = {}) {
   const now = options.now ?? Date.now();
   const seed = options.seed ?? `${seats[0].name}:${seats[1].name}:${now}`;
+  const competitionMode = options.competitionMode ?? "quick";
+  const disableLegendAbilities = ["league", "cup", "friendly"].includes(competitionMode);
   const match = {
     version: 1,
     phase: "playing",
@@ -1194,13 +1217,13 @@ export function createVersusMatch(seats, options = {}) {
     segmentStartedAt: now,
     lastAdvancedAt: now,
     randomState: hashSeed(seed),
-    competitionMode: options.competitionMode ?? "quick",
+    competitionMode,
     legNumber: Number(options.legNumber ?? 1),
     regulationOnly: Boolean(options.regulationOnly),
     aggregateBaseScore: Array.isArray(options.aggregateBaseScore) ? options.aggregateBaseScore.map(Number) : null,
     weather: null,
     referee: null,
-    teams: seats.map((seat, index) => hydrateTeam(seat, index, seed)),
+    teams: seats.map((seat, index) => hydrateTeam(seat, index, seed, disableLegendAbilities)),
     events: [],
     recordEvents: options.recordEvents !== false,
     pauseUsed: [false, false],
@@ -1328,6 +1351,7 @@ export function updatePausedTactics(match, ownerIndex, payload = {}) {
     player.boardPosition = { ...team.positions[player.id] };
     player.assignedRole = formation.roles[player.id] ?? player.assignedRole;
   });
+  refreshTeamBonds(team);
   const markingText = markingTarget ? `，并安排重点盯防${markingTarget.name}（压缩其约14%的比赛能力，己方转换风险增加约3.5%）` : "，未设置重点盯防";
   const boostText = receivesAdjustmentBoost ? "；主动暂停调整使球队在随后15分钟获得小幅战术执行力加成" : "";
   const focusNames = { balanced:"均衡", left:"左路", center:"中路", right:"右路" };
@@ -1403,7 +1427,8 @@ export function publicMatch(match, now = Date.now(), viewerIndex = null, revealA
         secondaryRole: player.secondaryRole, grade: player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0),
         heightCm: player.heightCm, nationality: player.nationality, club: player.club,
         traits: player.traitDefinitions?.map(({ id, name, summary }) => ({ id, name, summary })) ?? [],
-        legendAbility: player.legendAbility ?? null,
+        legendary:Boolean(player.legendary ?? player.grade === "S"),
+        ...(["league", "cup", "friendly"].includes(match.competitionMode) ? {} : { legendAbility:player.legendAbility ?? null }),
         overall: player.overall, position: team.positions[player.id], active: player.active,
         sentOff: player.sentOff, injury: player.injury, fitness: Number(player.state.fitness.toFixed(1)),
         rating: player.rating, stats: player.matchStats,

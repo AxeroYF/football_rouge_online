@@ -1,26 +1,31 @@
 # Football Simulator / YellowDogs League S4 交接包
 
-更新时间：2026-07-27（Asia/Shanghai）
-当前开发工作区：`D:\Project\game_test\.worktrees\s4`
-当前分支：`codex/s4-card-upgrade`
+更新时间：2026-07-27 22:20（Asia/Shanghai）
+开发工作区：`D:\Project\game_test\.worktrees\s4`
+分支：`codex/s4-card-upgrade`
+HEAD：`1d4c6b0`
 
 ## 阅读顺序
 
-1. `NEW_CHAT_PROMPT.md`：新任务接手提示词。
-2. `CURRENT_STATE.md`：S4 已完成内容、当前限制、数据与验证状态。
-3. `MANIFEST.md`：交接包内容清单。
+1. `NEW_CHAT_PROMPT.md`：粘贴到新窗口的接手提示。
+2. `CURRENT_STATE.md`：当前完整产品与代码状态。
+3. `CHANGED_FILES.txt`：工作区全部未提交文件清单。
+4. `MANIFEST.md`：压缩包内容及安全边界。
 
-## 安全边界
+## 关键提醒
 
-- 当前工作区有大量未提交的 S4 代码、球员数据库和测试数据，禁止使用 `git reset --hard`、`git clean` 或覆盖用户文件。
-- S4 测试服存档为 `data/yellowdogs-league.json`，账号为 `data/versus-accounts.json`。启动普通服务可能推进并写入该存档。
-- 修改服务端 JavaScript 后必须重启 Node 服务；静态前端文件会实时读取。
-- 交接包不包含账号密码、正式联赛存档、钱包或玩家隐私数据。
+- 当前工作区有 31 个未提交或未跟踪文件，包含本轮全部 S4 功能，严禁 `git reset --hard`、`git clean`、覆盖或回滚无关改动。
+- 开发只关注 YDL 模式，不需要兼容旧好友对战，也不需要兼容旧赛季存档。
+- 用户将开启全新赛季；不要用旧测试服存档判断新赛季能否启动。
+- X 级球员第一阶段已经完成；成长任务、技能点与属性加点尚未设计，不要自行扩展。
+- 交接包不包含账号、钱包、玩家背包或真实联赛存档。
 
 ## 最近验证
 
-- 最近一次完整功能回归：`node --test test/*.test.js`，193/193 通过。
-- 最近一次针对性回归：`node --test test/ydl-bonds.test.js test/ydl-traits.test.js test/league.test.js`，60/60 通过。
-- 用户明确要求不代替其进行浏览器验收；当前采用代码检查和自动回归测试。
+使用全新临时赛季状态运行：
 
-压缩包：`football-ydl-s4-handoff-20260727.zip`
+```powershell
+node --test test/admin.test.js test/league.test.js test/s4-assets.test.js test/ydl-content-store.test.js test/ydl-traits.test.js test/ydl-bonds.test.js
+```
+
+结果：117/117 通过。相关 JavaScript 语法检查和 `git diff --check` 通过。

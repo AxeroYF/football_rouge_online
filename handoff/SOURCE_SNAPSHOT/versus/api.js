@@ -37,8 +37,6 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/friendlies/invite") result = { league:yellowDogsLeague.createFriendlyInvitation(account, body.targetTeamId) };
     else if (pathname === "/api/versus/league/friendlies/respond") result = { league:yellowDogsLeague.resolveFriendlyInvitation(account, body.invitationId, body.action) };
     else if (pathname === "/api/versus/league/shop/buy-s4") result = { league:yellowDogsLeague.buyS4Packs(account, body.packType, body.quantity) };
-    else if (pathname === "/api/versus/league/x-growth/buy") result = { league:yellowDogsLeague.buyXGrowthPoints(account, body.quantity) };
-    else if (pathname === "/api/versus/league/x-growth/spend") result = { league:yellowDogsLeague.spendXGrowthPoints(account, body.field, body.amount) };
     else if (pathname === "/api/versus/league/packs/open") result = { league:yellowDogsLeague.openS4Pack(account, body.packId) };
     else if (pathname === "/api/versus/league/packs/open-batch") result = { league:yellowDogsLeague.openS4PacksBatch(account, body.packIds) };
     else if (pathname === "/api/versus/league/packs/choose") result = { league:yellowDogsLeague.chooseS4Pack(account, body.offerId, body.leaguePlayerId) };

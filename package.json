@@ -24,6 +24,8 @@
     "balance:versus:render": "node versus/balance-report.js --render-only --quick",
     "balance:ydl:s2": "node versus/balance-report.js --config=balance-config-ydl-s2.json",
     "balance:ydl:s2:legends": "node versus/balance-report.js --config=balance-config-ydl-s2-legends.json",
+    "balance:ydl:s4": "node versus/s4-balance-report.js",
+    "balance:ydl:s4:fast": "node versus/s4-balance-report.js --config=s4-balance-config-fast.json",
     "simulate:economy": "node versus/economy-simulation.js --config=economy-simulation-config.json",
     "simulate:season:s3": "node versus/season-simulation.js --config=season-simulation-config-s3.json",
     "traits": "node src/trait-cli.js --seed demo --role ST",
