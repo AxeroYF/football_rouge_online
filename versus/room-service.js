@@ -254,6 +254,9 @@ export class VersusRoomService {
         Object.values(saved.accounts ?? {}).forEach((account) => {
           account.summary = normalizeSummary(account.summary);
           account.matches = (account.matches ?? []).map((match) => ({ ...match, result: match.result === "leg" ? "leg" : match.result === "win" ? "win" : "loss" }));
+          account.loginCooldownUntil = Number(account.loginCooldownUntil ?? 0);
+          account.loginCooldownReason = String(account.loginCooldownReason ?? "");
+          account.loginCooldownAppliedAt = Number(account.loginCooldownAppliedAt ?? 0);
           this.accounts.set(account.key, account);
         });
         Object.entries(saved.lineups ?? {}).forEach(([code, seed]) => this.lineups.set(code, seed));
@@ -312,6 +315,7 @@ export class VersusRoomService {
     const password = cleanCredential(passwordValue, "密码");
     const account = [...this.accounts.values()].find((candidate) => candidate.nickname === nickname && candidate.passwordHash) ?? null;
     if (!account?.passwordHash || !passwordMatches(password, account.passwordHash)) throw new Error("昵称或密码错误");
+    this.assertLoginAllowed(account);
     account.lastSeenAt = this.now();
     this.saveAccounts();
     return { accountToken: account.token, profile: this.publicProfile(account) };
@@ -352,7 +356,55 @@ export class VersusRoomService {
     const key = cleanPlayerId(playerIdValue).toLowerCase();
     const account = this.accounts.get(key);
     if (!account || account.token !== accountToken) throw new Error("玩家ID尚未绑定或绑定凭证无效");
+    this.assertLoginAllowed(account);
     return account;
+  }
+
+  assertLoginAllowed(account) {
+    const until = Number(account?.loginCooldownUntil ?? 0);
+    if (until <= this.now()) return;
+    const reason = String(account.loginCooldownReason ?? "").trim();
+    const error = new Error(`该账号已被暂停登录至${new Date(until).toLocaleString("zh-CN", { hour12:false })}${reason ? `。原因：${reason}` : ""}`);
+    error.statusCode = 423;
+    throw error;
+  }
+
+  adminAccountModeration(playerIdValue) {
+    const account = this.accounts.get(cleanPlayerId(playerIdValue).toLowerCase());
+    if (!account) throw new Error("玩家不存在");
+    const until = Number(account.loginCooldownUntil ?? 0);
+    return {
+      loginCooldownActive:until > this.now(),
+      loginCooldownUntil:until || null,
+      loginCooldownReason:String(account.loginCooldownReason ?? ""),
+      loginCooldownAppliedAt:Number(account.loginCooldownAppliedAt ?? 0) || null,
+    };
+  }
+
+  applyLoginCooldown(playerIdValue, durationMinutesValue, reasonValue) {
+    const account = this.accounts.get(cleanPlayerId(playerIdValue).toLowerCase());
+    if (!account) throw new Error("玩家不存在");
+    const durationMinutes = Number(durationMinutesValue);
+    const reason = String(reasonValue ?? "").trim().slice(0, 200);
+    if (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 43_200) throw new Error("登录冷却时长必须为1至43200分钟");
+    if (reason.length < 2) throw new Error("请填写至少2个字符的处罚原因");
+    const now = this.now();
+    account.loginCooldownUntil = now + durationMinutes * 60_000;
+    account.loginCooldownReason = reason;
+    account.loginCooldownAppliedAt = now;
+    account.token = token(24);
+    this.saveAccounts();
+    return this.adminAccountModeration(account.id);
+  }
+
+  clearLoginCooldown(playerIdValue) {
+    const account = this.accounts.get(cleanPlayerId(playerIdValue).toLowerCase());
+    if (!account) throw new Error("玩家不存在");
+    account.loginCooldownUntil = 0;
+    account.loginCooldownReason = "";
+    account.loginCooldownAppliedAt = 0;
+    this.saveAccounts();
+    return this.adminAccountModeration(account.id);
   }
 
   publicProfile(account) {
@@ -374,7 +426,7 @@ export class VersusRoomService {
     const match = account.matches.find((candidate) => candidate.id === matchId);
     if (!match) throw new Error("找不到这场历史对局");
     if (!match.detail) throw new Error("这场对局来自旧版本，当时没有保存详细赛后数据");
-    return clone({ ...hydrateHistoricalMatchDetail(match.detail), viewerIndex: match.viewerIndex });
+    return clone(hydrateHistoricalMatchDetail({ ...match.detail, viewerIndex: match.viewerIndex }));
   }
 
   cleanup() {

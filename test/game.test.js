@@ -32,11 +32,11 @@ test("七人制选秀每次提供三个不同名字且带有先天特性", () =>
   assert.ok(choices.every((player) => Number.isInteger(playerOverall(player))));
 });
 
-test("比赛天气按60/15/15/10的区间抽取", () => {
-  assert.equal(pickWeather(() => 0.599).key, "sunny");
-  assert.equal(pickWeather(() => 0.6).key, "rain");
-  assert.equal(pickWeather(() => 0.749).key, "rain");
-  assert.equal(pickWeather(() => 0.75).key, "storm");
+test("比赛天气按65/15/10/10的区间抽取", () => {
+  assert.equal(pickWeather(() => 0.649).key, "sunny");
+  assert.equal(pickWeather(() => 0.65).key, "rain");
+  assert.equal(pickWeather(() => 0.799).key, "rain");
+  assert.equal(pickWeather(() => 0.8).key, "storm");
   assert.equal(pickWeather(() => 0.899).key, "storm");
   assert.equal(pickWeather(() => 0.9).key, "snow");
 });

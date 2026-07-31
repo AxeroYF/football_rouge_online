@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ATTRIBUTE_NAMES, POSITION_GROUPS, roleGroup } from "../game/public/schema.js";
-import { isS4Legend, isXPlayer, moveRealPlayerToPool, REAL_PLAYER_BY_ID, REAL_PLAYERS } from "./player-pool.js";
+import { ATTRIBUTE_NAMES, playerOverallFromAttributes, POSITION_GROUPS, roleGroup } from "../game/public/schema.js";
+import { isS4Legend, isXPlayer, moveRealPlayerToPool, normalizedS4LegendAttributes, REAL_PLAYER_BY_ID, REAL_PLAYERS, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP } from "./player-pool.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -51,12 +51,31 @@ function normalizedRoles(value) {
   return roles.includes("ANY") ? ["ANY"] : roles;
 }
 
-function applyPlayerPatch(player, patch) {
-  if (Object.hasOwn(patch, "name")) player.name = nonEmpty(patch.name, "球员姓名");
-  if (Object.hasOwn(patch, "overall")) {
-    player.overall = clamp(patch.overall);
-    player.baseOverall = player.overall;
+function attributesForOverall(attributes, role, overall, maximum = 99) {
+  const normalized = Object.fromEntries(Object.entries(attributes ?? {}).map(([key, value]) => [key, clamp(value, 1, maximum)]));
+  const keys = roleGroup(role) === "GK" ? ["goalkeeping", "reflexes", "positioning", "composure"]
+    : roleGroup(role) === "DEF" ? ["tackling", "marking", "positioning", "strength", "pace"]
+      : roleGroup(role) === "MID" ? ["passing", "vision", "decisions", "firstTouch", "stamina"]
+        : ["finishing", "offBall", "pace", "dribbling", "composure"];
+  const target = Math.min(maximum, Math.round(Number(overall) || 1)) * keys.length;
+  let sum = keys.reduce((total, key) => total + Number(normalized[key] ?? 1), 0);
+  while (sum < target) {
+    const key = keys.filter((candidate) => normalized[candidate] < maximum).sort((left, right) => normalized[left] - normalized[right])[0];
+    if (!key) break;
+    normalized[key] += 1;
+    sum += 1;
   }
+  while (sum > target) {
+    const key = keys.filter((candidate) => normalized[candidate] > 1).sort((left, right) => normalized[right] - normalized[left])[0];
+    if (!key) break;
+    normalized[key] -= 1;
+    sum -= 1;
+  }
+  return normalized;
+}
+
+function applyPlayerPatch(player, patch, options = {}) {
+  if (Object.hasOwn(patch, "name")) player.name = nonEmpty(patch.name, "球员姓名");
   if (Object.hasOwn(patch, "grade")) {
     const grade = String(patch.grade);
     if (!["S", "A", "B", "C"].includes(grade)) throw new Error("球员评级无效");
@@ -79,11 +98,25 @@ function applyPlayerPatch(player, patch) {
   if (Object.hasOwn(patch, "club")) player.club = nonEmpty(patch.club, "俱乐部");
   if (Object.hasOwn(patch, "heightCm")) player.heightCm = clamp(patch.heightCm, 140, 220);
   if (patch.attributes && typeof patch.attributes === "object" && !Array.isArray(patch.attributes)) {
-    for (const [key, value] of Object.entries(patch.attributes)) {
+    const patchedAttributes = options.preserveOverall && Object.hasOwn(patch, "overall")
+      ? attributesForOverall(patch.attributes, player.role, patch.overall, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP)
+      : patch.attributes;
+    for (const [key, value] of Object.entries(patchedAttributes)) {
       if (!ATTRIBUTE_NAMES.includes(key)) throw new Error(`未知球员属性：${key}`);
-      player.attributes[key] = clamp(value);
+      player.attributes[key] = clamp(value, 1, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP);
     }
+    player.overall = playerOverallFromAttributes(player.attributes, player.role);
+    player.baseOverall = player.overall;
+  } else if (Object.hasOwn(patch, "overall")) {
+    const requestedOverall = clamp(patch.overall, 1, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP);
+    player.attributes = normalizedS4LegendAttributes(player.attributes, player.role, requestedOverall);
+    player.overall = playerOverallFromAttributes(player.attributes, player.role);
+    player.baseOverall = player.overall;
+  } else if (Object.hasOwn(patch, "role")) {
+    player.overall = playerOverallFromAttributes(player.attributes, player.role);
+    player.baseOverall = player.overall;
   }
+  player.referenceAttributes = clone(player.attributes);
   return player;
 }
 
@@ -127,14 +160,24 @@ function normalizeTraitDraft(id, value = {}) {
 }
 
 function applyOverrides() {
+  let migrated = false;
   for (const [id, patch] of Object.entries(overrides.players ?? {})) {
     const player = REAL_PLAYER_BY_ID[id];
-    if (player) applyPlayerPatch(player, patch);
+    if (player) {
+      applyPlayerPatch(player, patch, { preserveOverall:true });
+      const nextPatch = { ...patch, overall:player.overall, attributes:clone(player.attributes) };
+      if (JSON.stringify(nextPatch) !== JSON.stringify(patch)) migrated = true;
+      overrides.players[id] = nextPatch;
+    }
   }
+  const messiPatch = overrides.players?.["legend-messi"];
+  const messiRat = REAL_PLAYER_BY_ID["legend-messi-rat"];
+  if (messiPatch && messiRat) applyPlayerPatch(messiRat, { ...clone(messiPatch), name:"梅老鼠" }, { preserveOverall:true });
   for (const [id, patch] of Object.entries(overrides.traits ?? {})) {
     const trait = YDL_TRAIT_BY_ID[id];
     if (trait) applyTraitPatch(trait, patch);
   }
+  return migrated;
 }
 
 async function loadOverrides() {
@@ -164,7 +207,7 @@ async function loadOverrides() {
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
   }
-  applyOverrides();
+  migrated = applyOverrides() || migrated;
   if (migrated) await persist();
 }
 
@@ -228,7 +271,14 @@ export async function updateYdlPlayer(id, patch) {
   };
   const cleanPatch = Object.fromEntries(Object.entries(allowed).filter(([, value]) => value !== undefined));
   applyPlayerPatch(player, cleanPatch);
+  cleanPatch.overall = player.overall;
+  cleanPatch.attributes = clone(player.attributes);
   overrides.players[id] = { ...(overrides.players[id] ?? {}), ...clone(cleanPatch) };
+  if (id === "legend-messi" && REAL_PLAYER_BY_ID["legend-messi-rat"]) {
+    const mirroredPatch = { ...clone(cleanPatch), name:"梅老鼠" };
+    applyPlayerPatch(REAL_PLAYER_BY_ID["legend-messi-rat"], mirroredPatch);
+    overrides.players["legend-messi-rat"] = { ...(overrides.players["legend-messi-rat"] ?? {}), ...mirroredPatch };
+  }
   await persist();
   return ydlContentView().players.find((candidate) => candidate.id === id);
 }

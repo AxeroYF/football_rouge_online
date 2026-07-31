@@ -15,6 +15,10 @@
     "build:s4-player-candidates": "node devtool/build-s4-player-candidates.js",
     "apply:s4-player-localization": "node devtool/apply-s4-player-localization.js",
     "import:s4-final-workbook": "node devtool/import-s4-final-workbook.js",
+    "import:s4-player-dlc": "node devtool/import-player-dlc-to-s4.js",
+    "import:s4-dlc-profiles": "node devtool/import-player-dlc-profiles.js",
+    "sync:a-player-profiles": "node devtool/sync-a-player-profiles.js",
+    "optimize:player-profiles": "node devtool/optimize-player-profiles.js",
     "devtool": "node devtool/server.js",
     "simulate": "node src/cli.js --matches 10000 --seed demo",
     "balance:versus": "node versus/balance-report.js",
@@ -25,10 +29,17 @@
     "balance:ydl:s2": "node versus/balance-report.js --config=balance-config-ydl-s2.json",
     "balance:ydl:s2:legends": "node versus/balance-report.js --config=balance-config-ydl-s2-legends.json",
     "balance:ydl:s4": "node versus/s4-balance-report.js",
+    "balance:ydl:s4:parallel": "node versus/s4-balance-report-parallel.js",
+    "balance:ydl:s4:medium": "node versus/s4-balance-report.js --config=s4-balance-config-medium.json",
+    "balance:ydl:s4:medium:parallel": "node versus/s4-balance-report-parallel.js --config=s4-balance-config-medium.json",
     "balance:ydl:s4:fast": "node versus/s4-balance-report.js --config=s4-balance-config-fast.json",
+    "balance:ydl:s4:fast:parallel": "node versus/s4-balance-report-parallel.js --config=s4-balance-config-fast.json",
     "simulate:economy": "node versus/economy-simulation.js --config=economy-simulation-config.json",
     "simulate:season:s3": "node versus/season-simulation.js --config=season-simulation-config-s3.json",
     "traits": "node src/trait-cli.js --seed demo --role ST",
-    "test": "node --test"
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

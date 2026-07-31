@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>S4 传奇球员形象卡 · C罗 Demo</title>
+  <link rel="stylesheet" href="../versus/public/styles.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+    }
+
+    .demo {
+      width: min(100% - 32px, 880px);
+      padding: 42px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 286px;
+      gap: 58px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: rgba(7, 20, 17, .86);
+      box-shadow: var(--shadow);
+    }
+
+    .demo-copy small {
+      color: var(--league-yellow, #f5d34a);
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .18em;
+    }
+
+    .demo-copy h1 {
+      margin: 8px 0 13px;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1;
+    }
+
+    .demo-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .demo-controls {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .demo-controls button {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: var(--panel2);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .demo-controls button:hover,
+    .demo-controls button.active {
+      color: #17170b;
+      border-color: var(--league-yellow, #f5d34a);
+      background: var(--league-yellow, #f5d34a);
+    }
+
+    .demo-stage {
+      width: 286px;
+      display: grid;
+      place-items: center;
+    }
+
+    /*
+     * 卡框、背景、强化角标全部直接使用现有 S4 球员卡样式。
+     * 新版传奇卡只增加这一层人物图，且沿用卡片本身的 overflow:hidden。
+     */
+    .s4-player-card.legendary-profile-demo {
+      width: 286px;
+      min-height: 358px;
+      cursor: default;
+      isolation: isolate;
+    }
+
+    .s4-player-card.legendary-profile-demo:hover {
+      transform: none;
+    }
+
+    .s4-player-card.legendary-profile-demo::before {
+      display: none;
+    }
+
+    .legendary-profile-demo .s4-player-card-grade {
+      visibility: hidden;
+    }
+
+    .legendary-profile-image {
+      position: absolute;
+      z-index: 3;
+      left: -24%;
+      bottom: -8%;
+      width: 210%;
+      max-width: none;
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      filter:
+        drop-shadow(0 4px 2px rgba(0, 0, 0, .22))
+        drop-shadow(0 13px 12px rgba(0, 0, 0, .42));
+    }
+
+    .legendary-profile-demo .s4-player-card-upgrade {
+      z-index: 5;
+    }
+
+    .legendary-profile-demo[data-level="0"] .s4-player-card-upgrade {
+      display: none;
+    }
+
+    .demo-note {
+      margin-top: 18px;
+      padding: 10px 12px;
+      border-left: 3px solid var(--league-yellow, #f5d34a);
+      color: #b6c5bd;
+      background: rgba(245, 211, 74, .055);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 700px) {
+      .demo {
+        padding: 28px 20px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+
+      .demo-copy {
+        max-width: 520px;
+        text-align: center;
+      }
+
+      .demo-controls {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .demo {
+        width: 100%;
+        border-inline: 0;
+      }
+
+      .demo-stage {
+        transform: scale(.9);
+        margin-block: -18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="demo">
+    <section class="demo-copy">
+      <small>S4 EXISTING LEGEND CARD · PORTRAIT LAYER</small>
+      <h1>卡框不变<br>人物入框</h1>
+      <p>传奇卡继续使用当前项目中的金色卡框、背景纹理和强化色阶。人物完整裁切在卡框内部，但覆盖能力值、位置、评级、姓名与底部信息。</p>
+      <div class="demo-controls" aria-label="强化等级预览">
+        <button type="button" data-preview-level="0">基础卡</button>
+        <button type="button" class="active" data-preview-level="5">强化 +5</button>
+        <button type="button" data-preview-level="8">满强化 +8</button>
+      </div>
+      <div class="demo-note">强化等级使用原版角标，并固定在人物图层上方。</div>
+    </section>
+
+    <section class="demo-stage" aria-label="C罗传奇球员卡预览">
+      <button type="button" class="s4-player-card grade-s band-high legendary-profile-demo" data-level="5" aria-label="C罗，能力95，中锋，强化加5">
+        <span class="s4-player-card-upgrade band-high">+5</span>
+        <div class="s4-player-card-head"><strong>95</strong><b>ST</b></div>
+        <div class="s4-player-card-grade"><span>S</span></div>
+        <div class="s4-player-card-name"><h3>C罗</h3></div>
+        <footer><b>葡萄牙 · 传奇球员</b><strong class="s4-player-card-traits">禁区统治者<br>永动机</strong></footer>
+        <img class="legendary-profile-image" src="./Cristiano_Ronaldo.png" alt="" draggable="false">
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const card = document.querySelector(".legendary-profile-demo");
+    const upgrade = card.querySelector(".s4-player-card-upgrade");
+    const controls = document.querySelectorAll("[data-preview-level]");
+
+    controls.forEach((button) => {
+      button.addEventListener("click", () => {
+        const level = button.dataset.previewLevel;
+        const band = level === "8" ? "max" : level === "0" ? "base" : "high";
+
+        controls.forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+        card.classList.remove("band-base", "band-high", "band-max");
+        card.classList.add(`band-${band}`);
+        card.dataset.level = level;
+        upgrade.className = `s4-player-card-upgrade band-${band}`;
+        upgrade.textContent = `+${level}`;
+        card.setAttribute("aria-label", `C罗，能力95，中锋${level === "0" ? "，基础卡" : `，强化加${level}`}`);
+      });
+    });
+  </script>
+</body>
+</html>

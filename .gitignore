@@ -69,6 +69,9 @@ data/s4-test/
 outputs/
 handoff/artifacts/
 handoff/*.zip
+.local-s4-server.pid
+Cloud_league_data/
+*.png
 .tmp-browser-*.json
 .tmp-browser-*.json.bak
 .worktrees/

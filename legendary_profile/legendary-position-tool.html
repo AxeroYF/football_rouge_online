@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>S4 球员卡头像定位器</title>
+  <link rel="stylesheet" href="../versus/public/styles.css">
+  <style>
+    :root { --tool-gold: var(--league-yellow, #f5d34a); }
+
+    body { min-height:100vh; }
+    button,input { font:inherit; }
+
+    .tool-shell {
+      width:min(1180px,calc(100% - 32px));
+      margin:28px auto;
+      border:1px solid var(--line);
+      background:#071713;
+      box-shadow:var(--shadow);
+    }
+
+    .tool-head {
+      padding:18px 22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      border-bottom:1px solid var(--line);
+      background:#0c2019;
+    }
+
+    .tool-head small,.panel-title small {
+      color:var(--tool-gold);
+      font-size:9px;
+      font-weight:950;
+      letter-spacing:.16em;
+    }
+
+    .tool-head h1 { margin:4px 0 0;font-size:24px; }
+    .tool-head p { max-width:520px;margin:0;color:var(--muted);font-size:11px;line-height:1.6; }
+
+    .tool-layout {
+      min-height:650px;
+      display:grid;
+      grid-template-columns:260px minmax(340px,1fr) 290px;
+    }
+
+    .tool-panel {
+      min-width:0;
+      padding:16px;
+      border-right:1px solid var(--line);
+      background:#091a15;
+    }
+
+    .tool-panel:last-child { border:0;border-left:1px solid var(--line); }
+    .panel-title { margin-bottom:12px;display:flex;align-items:end;justify-content:space-between;gap:8px; }
+    .panel-title h2 { margin:3px 0 0;font-size:16px; }
+    .panel-title b { color:var(--cyan);font-size:11px; }
+
+    .file-button,.tool-button {
+      min-height:42px;
+      padding:0 13px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#10271f;
+      font-size:11px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .file-button:hover,.tool-button:hover { border-color:var(--cyan); }
+    .tool-button.primary { color:#11170e;border-color:var(--tool-gold);background:var(--tool-gold); }
+    .tool-button.danger { color:#ffb0a3;border-color:rgba(255,128,93,.45);background:rgba(255,128,93,.07); }
+    .file-button input { display:none; }
+
+    .file-actions { display:grid;grid-template-columns:1fr 1fr;gap:7px; }
+    .file-actions .file-button:first-child { grid-column:1/-1; }
+    .profile-type-field { grid-column:1/-1;display:grid;gap:6px;margin-bottom:2px; }
+    .profile-type-field span { color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.08em; }
+    .profile-type-field select {
+      width:100%;padding:10px;border:1px solid var(--line);color:var(--ink);background:#091a15;
+      font:inherit;font-size:11px;font-weight:900;outline:none;
+    }
+    .profile-type-field select:focus { border-color:var(--tool-gold); }
+
+    .profile-list {
+      max-height:505px;
+      margin-top:12px;
+      display:grid;
+      align-content:start;
+      gap:6px;
+      overflow:auto;
+    }
+
+    .profile-empty {
+      padding:26px 12px;
+      color:var(--muted);
+      border:1px dashed var(--line);
+      font-size:11px;
+      line-height:1.7;
+      text-align:center;
+    }
+
+    .profile-item {
+      min-width:0;
+      padding:9px 10px;
+      display:grid;
+      grid-template-columns:26px minmax(0,1fr) auto;
+      gap:8px;
+      align-items:center;
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#0d211a;
+      text-align:left;
+    }
+
+    .profile-item:hover,.profile-item.active { border-color:var(--tool-gold); }
+    .profile-item.active { background:rgba(245,211,74,.08); }
+    .profile-item i { width:25px;height:25px;display:grid;place-items:center;color:#091510;background:#83b894;font-size:9px;font-style:normal;font-weight:950; }
+    .profile-item.saved i { background:var(--tool-gold); }
+    .profile-item span { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:900; }
+    .profile-item small { color:var(--muted);font-size:8px; }
+
+    .stage-panel {
+      min-width:0;
+      padding:20px;
+      display:grid;
+      place-items:center;
+      background:
+        linear-gradient(rgba(113,217,208,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(113,217,208,.035) 1px,transparent 1px),
+        radial-gradient(circle at 50% 46%,rgba(245,211,74,.08),transparent 280px),
+        #06130f;
+      background-size:28px 28px,28px 28px,auto,auto;
+    }
+
+    .stage-wrap { display:grid;justify-items:center;gap:14px; }
+    .stage-help { color:var(--muted);font-size:10px;text-align:center;line-height:1.6; }
+
+    .position-card.s4-player-card {
+      width:286px;
+      min-height:358px;
+      aspect-ratio:auto;
+      isolation:isolate;
+      cursor:grab;
+      touch-action:none;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+
+    .position-card.dragging { cursor:grabbing; }
+    .position-card::before { display:none; }
+    .position-card .s4-player-card-grade { visibility:hidden; }
+    .position-card * {
+      user-select:none;
+      -webkit-user-select:none;
+      -webkit-user-drag:none;
+    }
+    .position-card .s4-player-card-upgrade { z-index:5; }
+
+    .position-image {
+      position:absolute;
+      z-index:3;
+      left:var(--profile-x,50%);
+      top:var(--profile-y,52%);
+      width:var(--profile-width,200%);
+      max-width:none;
+      height:auto;
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+      user-select:none;
+      filter:drop-shadow(0 6px 7px rgba(0,0,0,.38));
+    }
+
+    .position-card.grade-a .position-image { z-index:1; }
+    .position-image[hidden] { display:none; }
+
+    .card-grid {
+      position:absolute;
+      z-index:4;
+      inset:0;
+      pointer-events:none;
+      opacity:0;
+      background:
+        linear-gradient(90deg,transparent 49.7%,rgba(113,217,208,.6) 50%,transparent 50.3%),
+        linear-gradient(transparent 49.7%,rgba(113,217,208,.6) 50%,transparent 50.3%);
+    }
+
+    .show-grid .card-grid { opacity:.65; }
+
+    .stage-toolbar { display:flex;flex-wrap:wrap;justify-content:center;gap:7px; }
+    .stage-toolbar .tool-button { min-height:34px;padding:0 10px;font-size:9px; }
+
+    .control-stack { display:grid;gap:13px; }
+    .control-field { display:grid;gap:6px; }
+    .control-field>span { display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:10px; }
+    .control-field>span b { color:var(--ink);font-size:11px; }
+    .control-field input[type="range"] { width:100%;accent-color:var(--tool-gold); }
+    .control-field input[type="text"] {
+      width:100%;
+      min-height:39px;
+      padding:0 10px;
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#06130f;
+      font-size:11px;
+    }
+
+    .number-pair { display:grid;grid-template-columns:1fr 1fr;gap:7px; }
+    .number-pair label { display:grid;gap:4px;color:var(--muted);font-size:9px; }
+    .number-pair input {
+      width:100%;
+      min-height:37px;
+      padding:0 8px;
+      border:1px solid var(--line);
+      color:var(--ink);
+      background:#06130f;
+    }
+
+    .nudge-grid { display:grid;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,34px);justify-content:center;gap:5px; }
+    .nudge-grid button { padding:0;border:1px solid var(--line);color:var(--ink);background:#10271f;font-weight:950; }
+    .nudge-grid button:hover { border-color:var(--cyan); }
+    .nudge-grid button:nth-child(1) { grid-column:2; }
+    .nudge-grid button:nth-child(2) { grid-column:1;grid-row:2; }
+    .nudge-grid button:nth-child(3) { grid-column:2;grid-row:2; }
+    .nudge-grid button:nth-child(4) { grid-column:3;grid-row:2; }
+    .nudge-grid button:nth-child(5) { grid-column:2;grid-row:3; }
+
+    .save-actions { display:grid;grid-template-columns:1fr 1fr;gap:7px; }
+    .save-actions .primary { grid-column:1/-1; }
+
+    .json-preview {
+      max-height:120px;
+      margin:12px 0 0;
+      padding:9px;
+      overflow:auto;
+      color:#91cfc5;
+      border:1px solid var(--line);
+      background:#04100c;
+      font:9px/1.55 Consolas,monospace;
+      white-space:pre-wrap;
+      word-break:break-all;
+    }
+
+    .status {
+      min-height:18px;
+      margin-top:8px;
+      color:var(--muted);
+      font-size:9px;
+      line-height:1.5;
+    }
+
+    @media(max-width:960px) {
+      .tool-layout { grid-template-columns:220px minmax(330px,1fr); }
+      .tool-panel:last-child { grid-column:1/-1;border-top:1px solid var(--line);border-left:0; }
+      .control-stack { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .save-actions,.json-preview,.status { grid-column:1/-1; }
+    }
+
+    @media(max-width:680px) {
+      .tool-shell { width:100%;margin:0;border-inline:0; }
+      .tool-head { align-items:flex-start;display:grid; }
+      .tool-layout { display:block; }
+      .tool-panel { border-right:0;border-bottom:1px solid var(--line); }
+      .profile-list { max-height:210px; }
+      .stage-panel { min-height:500px; }
+      .control-stack { grid-template-columns:1fr; }
+      .position-card.s4-player-card { transform:scale(.92);margin-block:-14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="tool-shell">
+    <header class="tool-head">
+      <div><small>S4 PLAYER CARD PROFILE POSITIONER</small><h1>球员卡头像定位器</h1></div>
+      <p>支持传奇 S 级、A 级与 X 级卡片。导入透明 PNG，拖动人物并调整缩放；不同等级的素材队列、浏览器存档和导出 JSON 完全独立。</p>
+    </header>
+
+    <div class="tool-layout">
+      <aside class="tool-panel">
+        <div class="panel-title"><div><small>PROFILE QUEUE</small><h2>素材队列</h2></div><b id="queue-count">0 张</b></div>
+        <div class="file-actions">
+          <label class="profile-type-field"><span>卡片类型</span><select id="profile-type"><option value="legendary">传奇 S 级</option><option value="a">A 级</option><option value="x">X 级</option></select></label>
+          <label class="file-button"><span id="image-input-label">导入传奇 PNG</span><input id="image-input" type="file" accept="image/png,image/webp" multiple></label>
+          <label class="file-button">载入定位 JSON<input id="json-input" type="file" accept="application/json,.json"></label>
+          <button class="tool-button" id="load-demo" type="button">载入 C 罗示例</button>
+          <button class="tool-button danger" id="clear-all" type="button">清空</button>
+        </div>
+        <div class="profile-list" id="profile-list"><div class="profile-empty">尚未导入图片。<br>可以一次选择当前等级的全部素材。</div></div>
+      </aside>
+
+      <section class="stage-panel">
+        <div class="stage-wrap">
+          <div class="position-card s4-player-card grade-s band-high" id="position-card" aria-label="传奇卡头像定位画布">
+            <span class="s4-player-card-upgrade band-high">+5</span>
+            <div class="s4-player-card-head"><strong>95</strong><b>ST</b></div>
+            <div class="s4-player-card-grade"><span>S</span></div>
+            <div class="s4-player-card-name"><h3>传奇球员</h3></div>
+            <footer><b>国家队 · 传奇球员</b><strong class="s4-player-card-traits">传奇能力<br>专属特性</strong></footer>
+            <img class="position-image" id="position-image" alt="" draggable="false" hidden>
+            <span class="card-grid"></span>
+          </div>
+          <div class="stage-toolbar">
+            <button class="tool-button" id="previous-profile" type="button">← 上一张</button>
+            <button class="tool-button" id="toggle-grid" type="button">显示中心线</button>
+            <button class="tool-button" id="next-profile" type="button">下一张 →</button>
+          </div>
+          <div class="stage-help">在卡片内拖动人物 · 鼠标滚轮缩放 · 方向键微调 · Shift + 方向键每次移动 5%</div>
+        </div>
+      </section>
+
+      <aside class="tool-panel">
+        <div class="panel-title"><div><small>POSITION DATA</small><h2>定位参数</h2></div><b id="saved-count">0 已保存</b></div>
+        <div class="control-stack">
+          <label class="control-field"><span>球员资源键</span><input id="player-key" type="text" placeholder="例如 Cristiano_Ronaldo"></label>
+
+          <label class="control-field">
+            <span>横向位置 X <b id="x-value">50.0%</b></span>
+            <input id="x-range" type="range" min="-50" max="150" step=".1" value="50">
+          </label>
+
+          <label class="control-field">
+            <span>纵向位置 Y <b id="y-value">52.0%</b></span>
+            <input id="y-range" type="range" min="-50" max="150" step=".1" value="52">
+          </label>
+
+          <label class="control-field">
+            <span>人物宽度 <b id="width-value">200.0%</b></span>
+            <input id="width-range" type="range" min="40" max="360" step=".5" value="200">
+          </label>
+
+          <div class="number-pair">
+            <label>X 精确值<input id="x-number" type="number" min="-50" max="150" step=".1" value="50"></label>
+            <label>Y 精确值<input id="y-number" type="number" min="-50" max="150" step=".1" value="52"></label>
+          </div>
+
+          <div class="nudge-grid" aria-label="位置微调">
+            <button type="button" data-nudge-y="-1" aria-label="向上">↑</button>
+            <button type="button" data-nudge-x="-1" aria-label="向左">←</button>
+            <button type="button" id="reset-current" aria-label="重置">↺</button>
+            <button type="button" data-nudge-x="1" aria-label="向右">→</button>
+            <button type="button" data-nudge-y="1" aria-label="向下">↓</button>
+          </div>
+
+          <div class="save-actions">
+            <button class="tool-button primary" id="save-current" type="button">保存当前图片定位</button>
+            <button class="tool-button" id="copy-json" type="button">复制 JSON</button>
+            <button class="tool-button" id="download-json" type="button">下载 JSON</button>
+          </div>
+        </div>
+        <pre class="json-preview" id="json-preview">{}</pre>
+        <div class="status" id="status">等待导入球员素材。</div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const CARD_WIDTH = 286;
+    const CARD_HEIGHT = 358;
+    const DEFAULT_POSITION = Object.freeze({ xPercent:50, yPercent:52, widthPercent:200 });
+    const PROFILE_MODES = Object.freeze({
+      legendary:Object.freeze({
+        storageKey:"ydl-s4-legendary-profile-positions-v1",
+        label:"传奇 S 级",
+        inputLabel:"导入传奇 PNG",
+        downloadName:"legendary-profile-positions.json",
+        gradeClass:"grade-s",
+        grade:"S",
+        overall:"95",
+        role:"ST",
+        name:"传奇球员",
+        meta:"国家队 · 传奇球员",
+        traits:"传奇能力<br>专属特性",
+      }),
+      a:Object.freeze({
+        storageKey:"ydl-s4-a-profile-positions-v1",
+        label:"A 级",
+        inputLabel:"导入 A 级 PNG",
+        downloadName:"a-player-profile-positions.json",
+        gradeClass:"grade-a",
+        grade:"A",
+        overall:"88",
+        role:"CM",
+        name:"A 级球员",
+        meta:"国家队 · A 级球员",
+        traits:"精英能力<br>专属特性",
+      }),
+      x:Object.freeze({
+        storageKey:"ydl-s4-x-profile-positions-v1",
+        label:"X 级",
+        inputLabel:"导入 X 级 PNG",
+        downloadName:"x-player-profile-positions.json",
+        gradeClass:"grade-x",
+        grade:"X",
+        overall:"62",
+        role:"ST",
+        name:"X级球员",
+        meta:"全服唯一 · 自定义球员",
+        traits:"成长能力<br>专属特性",
+      }),
+    });
+
+    const imageInput = document.querySelector("#image-input");
+    const imageInputLabel = document.querySelector("#image-input-label");
+    const profileTypeInput = document.querySelector("#profile-type");
+    const jsonInput = document.querySelector("#json-input");
+    const listElement = document.querySelector("#profile-list");
+    const queueCount = document.querySelector("#queue-count");
+    const savedCount = document.querySelector("#saved-count");
+    const card = document.querySelector("#position-card");
+    const image = document.querySelector("#position-image");
+    const playerKeyInput = document.querySelector("#player-key");
+    const xRange = document.querySelector("#x-range");
+    const yRange = document.querySelector("#y-range");
+    const widthRange = document.querySelector("#width-range");
+    const xNumber = document.querySelector("#x-number");
+    const yNumber = document.querySelector("#y-number");
+    const xValue = document.querySelector("#x-value");
+    const yValue = document.querySelector("#y-value");
+    const widthValue = document.querySelector("#width-value");
+    const jsonPreview = document.querySelector("#json-preview");
+    const status = document.querySelector("#status");
+
+    let profileMode = "legendary";
+    let profiles = [];
+    let currentIndex = -1;
+    let importedPositions = readStoredPositions();
+    let dragState = null;
+
+    function currentMode() {
+      return PROFILE_MODES[profileMode];
+    }
+
+    function readStoredPositions() {
+      try {
+        return JSON.parse(localStorage.getItem(currentMode().storageKey) || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function updateCardMode() {
+      const mode = currentMode();
+      card.classList.remove("grade-s", "grade-a", "grade-x");
+      card.classList.add(mode.gradeClass);
+      card.querySelector(".s4-player-card-head strong").textContent = mode.overall;
+      card.querySelector(".s4-player-card-head b").textContent = mode.role;
+      card.querySelector(".s4-player-card-grade span").textContent = mode.grade;
+      card.querySelector(".s4-player-card-name h3").textContent = mode.name;
+      card.querySelector("footer>b").textContent = mode.meta;
+      card.querySelector(".s4-player-card-traits").innerHTML = mode.traits;
+      card.setAttribute("aria-label", `${mode.label}卡头像定位画布`);
+      imageInputLabel.textContent = mode.inputLabel;
+      document.querySelector("#load-demo").disabled = profileMode !== "legendary";
+    }
+
+    function switchProfileMode(nextMode) {
+      if (!PROFILE_MODES[nextMode] || nextMode === profileMode) return;
+      profiles.forEach((profile) => URL.revokeObjectURL(profile.url));
+      profileMode = nextMode;
+      profiles = [];
+      currentIndex = -1;
+      importedPositions = readStoredPositions();
+      updateCardMode();
+      selectProfile(-1);
+      updateJsonPreview();
+      status.textContent = `已切换到${currentMode().label}，请导入对应透明素材。`;
+    }
+
+    function fileKey(fileName) {
+      return String(fileName || "").replace(/\.[^.]+$/, "");
+    }
+
+    function clamp(value, minimum, maximum) {
+      return Math.max(minimum, Math.min(maximum, Number(value) || 0));
+    }
+
+    function rounded(value) {
+      return Math.round(Number(value) * 10) / 10;
+    }
+
+    function currentProfile() {
+      return profiles[currentIndex] || null;
+    }
+
+    function applyPosition(position) {
+      const x = clamp(position.xPercent, -50, 150);
+      const y = clamp(position.yPercent, -50, 150);
+      const width = clamp(position.widthPercent, 40, 360);
+      card.style.setProperty("--profile-x", `${x}%`);
+      card.style.setProperty("--profile-y", `${y}%`);
+      card.style.setProperty("--profile-width", `${width}%`);
+      xRange.value = x;
+      yRange.value = y;
+      widthRange.value = width;
+      xNumber.value = x;
+      yNumber.value = y;
+      xValue.textContent = `${Number(x).toFixed(1)}%`;
+      yValue.textContent = `${Number(y).toFixed(1)}%`;
+      widthValue.textContent = `${Number(width).toFixed(1)}%`;
+    }
+
+    function livePosition() {
+      return {
+        xPercent:rounded(xRange.value),
+        yPercent:rounded(yRange.value),
+        widthPercent:rounded(widthRange.value),
+      };
+    }
+
+    function updateProfileFromControls() {
+      const profile = currentProfile();
+      if (!profile) return;
+      profile.playerKey = playerKeyInput.value.trim() || fileKey(profile.fileName);
+      profile.position = livePosition();
+      profile.dirty = true;
+      renderList();
+      updateJsonPreview();
+    }
+
+    function selectProfile(index) {
+      if (!profiles.length) {
+        currentIndex = -1;
+        image.hidden = true;
+        playerKeyInput.value = "";
+        applyPosition(DEFAULT_POSITION);
+        renderList();
+        return;
+      }
+      currentIndex = (index + profiles.length) % profiles.length;
+      const profile = profiles[currentIndex];
+      image.src = profile.url;
+      image.alt = profile.playerKey;
+      image.hidden = false;
+      playerKeyInput.value = profile.playerKey;
+      applyPosition(profile.position);
+      renderList();
+      status.textContent = `正在定位：${profile.fileName}`;
+    }
+
+    function addFiles(fileList) {
+      const files = [...fileList].filter((file) => /^image\/(png|webp)$/i.test(file.type));
+      for (const file of files) {
+        const existing = profiles.find((profile) => profile.fileName === file.name);
+        if (existing) {
+          URL.revokeObjectURL(existing.url);
+          existing.url = URL.createObjectURL(file);
+          continue;
+        }
+        const key = fileKey(file.name);
+        const stored = importedPositions[key] || importedPositions[file.name] || {};
+        profiles.push({
+          fileName:file.name,
+          playerKey:stored.playerKey || key,
+          url:URL.createObjectURL(file),
+          position:{
+            xPercent:Number(stored.xPercent ?? DEFAULT_POSITION.xPercent),
+            yPercent:Number(stored.yPercent ?? DEFAULT_POSITION.yPercent),
+            widthPercent:Number(stored.widthPercent ?? DEFAULT_POSITION.widthPercent),
+          },
+          saved:Boolean(importedPositions[key] || importedPositions[file.name]),
+          dirty:false,
+        });
+      }
+      if (profiles.length && currentIndex < 0) selectProfile(0);
+      else renderList();
+      updateJsonPreview();
+      status.textContent = `已导入 ${files.length} 张${currentMode().label}图片，共 ${profiles.length} 张。`;
+      imageInput.value = "";
+    }
+
+    function renderList() {
+      queueCount.textContent = `${profiles.length} 张`;
+      const totalSaved = profiles.filter((profile) => profile.saved && !profile.dirty).length;
+      savedCount.textContent = `${totalSaved} 已保存`;
+      if (!profiles.length) {
+        listElement.innerHTML = `<div class="profile-empty">尚未导入图片。<br>可以一次选择全部${currentMode().label}素材。</div>`;
+        return;
+      }
+      listElement.innerHTML = profiles.map((profile,index) => `
+        <button type="button" class="profile-item ${index === currentIndex ? "active" : ""} ${profile.saved && !profile.dirty ? "saved" : ""}" data-profile-index="${index}">
+          <i>${profile.saved && !profile.dirty ? "✓" : index + 1}</i>
+          <span title="${escapeHtml(profile.fileName)}">${escapeHtml(profile.playerKey)}</span>
+          <small>${profile.dirty ? "未保存" : profile.saved ? "已保存" : "待定位"}</small>
+        </button>
+      `).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (character) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[character]));
+    }
+
+    function saveCurrent() {
+      const profile = currentProfile();
+      if (!profile) return;
+      updateProfileFromControls();
+      profile.saved = true;
+      profile.dirty = false;
+      importedPositions[profile.playerKey] = {
+        playerKey:profile.playerKey,
+        fileName:profile.fileName,
+        ...profile.position,
+      };
+      localStorage.setItem(currentMode().storageKey, JSON.stringify(importedPositions));
+      renderList();
+      updateJsonPreview();
+      status.textContent = `${profile.playerKey} 的定位参数已保存到浏览器。`;
+    }
+
+    function exportPayload() {
+      const positions = {};
+      for (const profile of profiles) {
+        const position = profile === currentProfile() ? livePosition() : profile.position;
+        positions[profile.playerKey] = {
+          fileName:profile.fileName,
+          xPercent:rounded(position.xPercent),
+          yPercent:rounded(position.yPercent),
+          widthPercent:rounded(position.widthPercent),
+        };
+      }
+      for (const [key,value] of Object.entries(importedPositions)) {
+        if (!positions[key]) positions[key] = value;
+      }
+      return {
+        schemaVersion:1,
+        profileType:profileMode,
+        grade:currentMode().grade,
+        coordinateSystem:"card-percent",
+        card:{ width:CARD_WIDTH, height:CARD_HEIGHT },
+        note:"x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
+        profiles:positions,
+      };
+    }
+
+    function updateJsonPreview() {
+      jsonPreview.textContent = JSON.stringify(exportPayload(), null, 2);
+    }
+
+    async function loadJson(file) {
+      try {
+        const parsed = JSON.parse(await file.text());
+        const positions = parsed.profiles || parsed;
+        importedPositions = { ...importedPositions, ...positions };
+        localStorage.setItem(currentMode().storageKey, JSON.stringify(importedPositions));
+        for (const profile of profiles) {
+          const stored = positions[profile.playerKey] || positions[profile.fileName] || positions[fileKey(profile.fileName)];
+          if (!stored) continue;
+          profile.playerKey = stored.playerKey || profile.playerKey;
+          profile.position = {
+            xPercent:Number(stored.xPercent ?? profile.position.xPercent),
+            yPercent:Number(stored.yPercent ?? profile.position.yPercent),
+            widthPercent:Number(stored.widthPercent ?? profile.position.widthPercent),
+          };
+          profile.saved = true;
+          profile.dirty = false;
+        }
+        if (currentProfile()) selectProfile(currentIndex);
+        updateJsonPreview();
+        status.textContent = `已载入定位文件：${file.name}`;
+      } catch (error) {
+        status.textContent = `定位 JSON 无法读取：${error.message}`;
+      } finally {
+        jsonInput.value = "";
+      }
+    }
+
+    function nudge(xAmount = 0, yAmount = 0) {
+      if (!currentProfile()) return;
+      const position = livePosition();
+      position.xPercent = clamp(position.xPercent + xAmount, -50, 150);
+      position.yPercent = clamp(position.yPercent + yAmount, -50, 150);
+      applyPosition(position);
+      updateProfileFromControls();
+    }
+
+    imageInput.addEventListener("change", () => addFiles(imageInput.files));
+    profileTypeInput.addEventListener("change", () => switchProfileMode(profileTypeInput.value));
+    jsonInput.addEventListener("change", () => jsonInput.files[0] && loadJson(jsonInput.files[0]));
+
+    document.querySelector("#load-demo").addEventListener("click", () => {
+      const existingIndex = profiles.findIndex((profile) => profile.fileName === "Cristiano_Ronaldo.png");
+      if (existingIndex >= 0) return selectProfile(existingIndex);
+      profiles.push({
+        fileName:"Cristiano_Ronaldo.png",
+        playerKey:"Cristiano_Ronaldo",
+        url:"./Cristiano_Ronaldo.png",
+        position:{ ...DEFAULT_POSITION },
+        saved:false,
+        dirty:false,
+      });
+      selectProfile(profiles.length - 1);
+      updateJsonPreview();
+      status.textContent = "已载入 C 罗示例，可以直接拖动、缩放并导出。";
+    });
+
+    listElement.addEventListener("click", (event) => {
+      const item = event.target.closest("[data-profile-index]");
+      if (item) selectProfile(Number(item.dataset.profileIndex));
+    });
+
+    document.querySelector("#previous-profile").addEventListener("click", () => selectProfile(currentIndex - 1));
+    document.querySelector("#next-profile").addEventListener("click", () => selectProfile(currentIndex + 1));
+    document.querySelector("#toggle-grid").addEventListener("click", (event) => {
+      card.classList.toggle("show-grid");
+      event.currentTarget.textContent = card.classList.contains("show-grid") ? "隐藏中心线" : "显示中心线";
+    });
+
+    for (const input of [xRange,yRange,widthRange]) {
+      input.addEventListener("input", () => {
+        applyPosition({ xPercent:xRange.value, yPercent:yRange.value, widthPercent:widthRange.value });
+        updateProfileFromControls();
+      });
+    }
+
+    xNumber.addEventListener("input", () => {
+      applyPosition({ ...livePosition(), xPercent:xNumber.value });
+      updateProfileFromControls();
+    });
+
+    yNumber.addEventListener("input", () => {
+      applyPosition({ ...livePosition(), yPercent:yNumber.value });
+      updateProfileFromControls();
+    });
+
+    playerKeyInput.addEventListener("input", updateProfileFromControls);
+
+    document.querySelectorAll("[data-nudge-x],[data-nudge-y]").forEach((button) => {
+      button.addEventListener("click", () => nudge(Number(button.dataset.nudgeX || 0), Number(button.dataset.nudgeY || 0)));
+    });
+
+    document.querySelector("#reset-current").addEventListener("click", () => {
+      applyPosition(DEFAULT_POSITION);
+      updateProfileFromControls();
+    });
+
+    document.querySelector("#save-current").addEventListener("click", saveCurrent);
+
+    document.querySelector("#copy-json").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(exportPayload(), null, 2));
+        status.textContent = "定位 JSON 已复制到剪贴板。";
+      } catch {
+        status.textContent = "浏览器未允许复制，请使用“下载 JSON”。";
+      }
+    });
+
+    document.querySelector("#download-json").addEventListener("click", () => {
+      const blob = new Blob([`${JSON.stringify(exportPayload(), null, 2)}\n`], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = currentMode().downloadName;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      status.textContent = `已下载 ${currentMode().downloadName}。`;
+    });
+
+    document.querySelector("#clear-all").addEventListener("click", () => {
+      if (!confirm("确定清空当前素材队列和浏览器中保存的全部定位参数吗？")) return;
+      profiles.forEach((profile) => URL.revokeObjectURL(profile.url));
+      profiles = [];
+      currentIndex = -1;
+      importedPositions = {};
+      localStorage.removeItem(currentMode().storageKey);
+      selectProfile(-1);
+      updateJsonPreview();
+      status.textContent = "定位数据已清空。";
+    });
+
+    card.addEventListener("pointerdown", (event) => {
+      if (!currentProfile()) return;
+      event.preventDefault();
+      dragState = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, position:livePosition() };
+      card.setPointerCapture(event.pointerId);
+      card.classList.add("dragging");
+    });
+
+    card.addEventListener("pointermove", (event) => {
+      if (!dragState || dragState.pointerId !== event.pointerId) return;
+      const xPercent = dragState.position.xPercent + (event.clientX - dragState.startX) / card.clientWidth * 100;
+      const yPercent = dragState.position.yPercent + (event.clientY - dragState.startY) / card.clientHeight * 100;
+      applyPosition({ ...dragState.position, xPercent, yPercent });
+      updateProfileFromControls();
+    });
+
+    function endDrag(event) {
+      if (!dragState || dragState.pointerId !== event.pointerId) return;
+      dragState = null;
+      card.classList.remove("dragging");
+    }
+
+    card.addEventListener("pointerup", endDrag);
+    card.addEventListener("pointercancel", endDrag);
+
+    card.addEventListener("wheel", (event) => {
+      if (!currentProfile()) return;
+      event.preventDefault();
+      const position = livePosition();
+      position.widthPercent = clamp(position.widthPercent + (event.deltaY < 0 ? 4 : -4), 40, 360);
+      applyPosition(position);
+      updateProfileFromControls();
+    }, { passive:false });
+
+    document.addEventListener("keydown", (event) => {
+      if (!currentProfile() || ["INPUT","TEXTAREA"].includes(document.activeElement?.tagName)) return;
+      const amount = event.shiftKey ? 5 : 1;
+      const directions = {
+        ArrowLeft:[-amount,0],
+        ArrowRight:[amount,0],
+        ArrowUp:[0,-amount],
+        ArrowDown:[0,amount],
+      };
+      if (!directions[event.key]) return;
+      event.preventDefault();
+      nudge(...directions[event.key]);
+    });
+
+    updateCardMode();
+    updateJsonPreview();
+    renderList();
+  </script>
+</body>
+</html>

@@ -271,7 +271,8 @@ export function formationStructureProfile(players = [], positions = {}) {
     : (naturalKeeperInGoal ? 1 : 0.38) * Math.pow(0.82, Math.max(0, assignedKeepers.length - 1));
   const defense = lineValue([0.38, 0.56, 0.78, 0.95, 1, 1, 0.94, 0.85, 0.74, 0.62, 0.5, 0.4], formation.counts.DEF) * midfieldStructure.wideDefenseMultiplier;
   const midfield = lineValue([0.55, 0.72, 0.92, 1, 1.02, 1, 0.94, 0.84, 0.73, 0.62, 0.52, 0.44], formation.counts.MID) * midfieldStructure.buildupMultiplier;
-  const attack = lineValue([0.58, 0.94, 1, 1.02, 0.99, 0.9, 0.78, 0.67, 0.57, 0.48, 0.41, 0.35], formation.counts.ATT);
+  // Narrow the automatic scoring gap between lone-striker and three-forward shapes.
+  const attack = lineValue([0.58, 0.97, 1, 1, 0.98, 0.88, 0.77, 0.66, 0.56, 0.47, 0.4, 0.35], formation.counts.ATT);
   const coherence = Math.pow(0.72, emergencyKeepers) * Math.pow(0.92, displacedKeepers) * Math.pow(0.97, crossLineMismatches);
   const transitionRisk = 1
     + Math.max(0, 1 - defense) * 1.9

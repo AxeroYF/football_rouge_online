@@ -1,0 +1,18 @@
+[Unit]
+Description=Football S4 web service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/opt/football-s4
+EnvironmentFile=/etc/football-s4.env
+ExecStart=/usr/bin/node devtool/public-server.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

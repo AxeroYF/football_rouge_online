@@ -42,13 +42,14 @@ export const S4_PACK_PRICES = Object.freeze({
   "private-mid":1300,
   "private-def":1300,
   "private-gk":1100,
-  "public-random":5000,
+  "public-random":2200,
   "public-carnival":15000,
 });
 
 export const S4_ENHANCEMENT = Object.freeze({
   maxLevel:8,
-  abilityBonuses:Object.freeze([0, 1, 2, 3, 4, 5, 6, 7, 8]),
+  abilityBonuses:Object.freeze([0, 1, 2, 3, 5, 7, 9, 11, 13]),
+  traitUnlockLevels:Object.freeze([4, 7]),
   equalLevelChances:Object.freeze([100, 100, 95, 85, 70, 55, 40, 25]),
   protectionCostFactor:.7,
   protectionCostUnit:100,

@@ -26,8 +26,8 @@ test("原创卡与5张确认测试卡共20张已转为正式规则，空白卡�
 
 test("顺风战士、身体倍棒与特别的一个会按规则改变球员能力", () => {
   const frontRunner = carrier("front-runner-essential");
-  assert.equal(traitAdjustedAttribute(frontRunner, "finishing", 80, { scoreState: "leading" }), 99);
-  assert.equal(traitAdjustedAttribute(frontRunner, "finishing", 80, { scoreState: "trailing" }), 40);
+  assert.equal(traitAdjustedAttribute(frontRunner, "finishing", 80, { scoreState: "leading" }), 86.4);
+  assert.equal(traitAdjustedAttribute(frontRunner, "finishing", 80, { scoreState: "trailing" }), 73.60000000000001);
   assert.equal(traitAdjustedAttribute(carrier("iron-health"), "pace", 80, {}), 64);
   assert.equal(traitAdjustedAttribute(carrier("special-one-loan"), "passing", 80, {}), 99);
 });
@@ -45,8 +45,8 @@ test("确认加入的5张测试卡采用修订后的评级、时间点和位置�
   assert.equal(byId.get("last-ticket").rarity, "legendary");
   assert.deepEqual(byId.get("my-flank-alone").eligibleRoleGroups, ["ATT"]);
   const latePlayer = carrier("five-minutes-before-clockout");
-  assert.equal(traitAdjustedAttribute(latePlayer, "finishing", 80, { minute: 59 }), 72);
-  assert.equal(traitAdjustedAttribute(latePlayer, "finishing", 60, { minute: 60 }), 81);
+  assert.equal(traitAdjustedAttribute(latePlayer, "finishing", 80, { minute: 59 }), 76.8);
+  assert.equal(traitAdjustedAttribute(latePlayer, "finishing", 60, { minute: 60 }), 67.2);
 });
 
 test("一脚成名在任意一次进球后激活而非限定第一次射门", () => {

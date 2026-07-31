@@ -2,6 +2,7 @@ import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
 import { loadDatabase, resetDatabase, saveDatabase } from "./store.js";
 import { runSimulation } from "./simulation.js";
 import { handleVersusApi } from "../versus/api.js";
@@ -15,6 +16,9 @@ const publicDirectory = path.join(here, "public");
 const gameDirectory = path.resolve(here, "../game/public");
 const sourceDirectory = path.resolve(here, "../src");
 const versusDirectory = path.resolve(here, "../versus/public");
+const aPlayerProfileDirectory = path.resolve(here, "../A_profile");
+const legendaryProfileDirectory = path.resolve(here, "../legendary_profile");
+const xPlayerProfileDirectory = path.resolve(here, "../x_profile");
 const adminDirectory = path.resolve(here, "../admin/public");
 const port = Number(process.env.DEVTOOL_PORT ?? 4310);
 const host = process.env.VERSUS_HOST ?? "127.0.0.1";
@@ -29,6 +33,7 @@ const mimeTypes = {
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".ico": "image/x-icon",
 };
 
@@ -37,11 +42,17 @@ function isLoopback(address = "") {
 }
 
 function sendJson(response, statusCode, value) {
+  const payload = Buffer.from(JSON.stringify(value));
+  const acceptsGzip = /\bgzip\b/i.test(response.req?.headers?.["accept-encoding"] ?? "");
+  const body = acceptsGzip && payload.length >= 1024 ? gzipSync(payload, { level:6 }) : payload;
   response.writeHead(statusCode, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
+    "content-length": body.length,
+    "vary": "accept-encoding",
+    ...(body !== payload ? { "content-encoding":"gzip" } : {}),
   });
-  response.end(JSON.stringify(value));
+  response.end(body);
 }
 
 async function readJson(request) {
@@ -140,26 +151,33 @@ function handleVersusStream(request, response, url) {
   return true;
 }
 
-async function serveStatic(response, pathname) {
+async function serveStatic(response, pathname, searchParams = new URLSearchParams()) {
   if (publicOnly && pathname === "/") {
     response.writeHead(302, { location: "/versus/", "cache-control": "no-store" });
     return response.end();
   }
   const servesGame = pathname === "/game" || pathname.startsWith("/game/");
   const servesVersus = pathname === "/versus" || pathname.startsWith("/versus/");
+  const servesAPlayerProfile = pathname.startsWith("/versus/A_profile/");
+  const servesLegendaryProfile = pathname.startsWith("/versus/legendary_profile/");
+  const servesXPlayerProfile = pathname.startsWith("/versus/x_profile/");
   const servesAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const servesSource = pathname.startsWith("/src/");
   if (publicOnly && !servesVersus && !servesAdmin) return sendJson(response, 404, { ok: false, error: "not found" });
-  const directory = servesSource ? sourceDirectory : servesAdmin ? adminDirectory : servesVersus ? versusDirectory : servesGame ? gameDirectory : publicDirectory;
+  const directory = servesSource ? sourceDirectory : servesAdmin ? adminDirectory : servesAPlayerProfile ? aPlayerProfileDirectory : servesLegendaryProfile ? legendaryProfileDirectory : servesXPlayerProfile ? xPlayerProfileDirectory : servesVersus ? versusDirectory : servesGame ? gameDirectory : publicDirectory;
   const gamePath = pathname === "/game"
     ? "/"
     : pathname.startsWith("/game/public/")
       ? pathname.slice("/game/public".length)
       : pathname.slice(5);
   const versusPath = pathname.slice("/versus".length) || "/";
+  const aPlayerProfilePath = pathname.slice("/versus/A_profile".length) || "/";
+  const legendaryProfilePath = pathname.slice("/versus/legendary_profile".length) || "/";
+  const xPlayerProfilePath = pathname.slice("/versus/x_profile".length) || "/";
   const adminPath = pathname.slice("/admin".length) || "/";
-  const requestedPath = servesSource ? pathname.slice(4) : servesAdmin ? adminPath : servesVersus ? versusPath : servesGame ? gamePath : pathname;
-  const requested = requestedPath === "/" ? "/index.html" : requestedPath;
+  const requestedPath = servesSource ? pathname.slice(4) : servesAdmin ? adminPath : servesAPlayerProfile ? aPlayerProfilePath : servesLegendaryProfile ? legendaryProfilePath : servesXPlayerProfile ? xPlayerProfilePath : servesVersus ? versusPath : servesGame ? gamePath : pathname;
+  const decodedRequestedPath = decodeURIComponent(requestedPath);
+  const requested = decodedRequestedPath === "/" ? "/index.html" : decodedRequestedPath;
   const safeRelative = path.normalize(requested).replace(/^(\.\.[/\\])+/, "");
   const filePath = path.resolve(directory, "." + path.sep + safeRelative);
   if (filePath !== directory && !filePath.startsWith(directory + path.sep)) {
@@ -169,9 +187,16 @@ async function serveStatic(response, pathname) {
     const fileStat = await stat(filePath);
     if (!fileStat.isFile()) throw new Error("not a file");
     const content = await readFile(filePath);
+    const isVersionedPlayerProfile = (
+      servesAPlayerProfile
+      || servesLegendaryProfile
+      || servesXPlayerProfile
+    ) && path.extname(filePath).toLowerCase() === ".webp"
+      && /^[a-f0-9]{12}$/.test(searchParams.get("v") ?? "");
     response.writeHead(200, {
       "content-type": mimeTypes[path.extname(filePath)] ?? "application/octet-stream",
-      "cache-control": "no-store",
+      "content-length":content.length,
+      "cache-control":isVersionedPlayerProfile ? "public, max-age=31536000, immutable" : "no-store",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
     });
@@ -193,7 +218,7 @@ const server = http.createServer(async (request, response) => {
     if (url.pathname.startsWith("/api/")) {
       await handleApi(request, response, url.pathname);
     } else {
-      await serveStatic(response, url.pathname);
+      await serveStatic(response, url.pathname, url.searchParams);
     }
   } catch (error) {
     sendJson(response, 400, {

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "profileType": "x",
+  "grade": "X",
+  "coordinateSystem": "card-percent",
+  "card": {
+    "width": 286,
+    "height": 358
+  },
+  "note": "x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
+  "profiles": {
+    "李俊良": {
+      "fileName": "李俊良.png",
+      "xPercent": 51.1,
+      "yPercent": 55.4,
+      "widthPercent": 128
+    }
+  }
+}

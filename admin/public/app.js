@@ -56,7 +56,10 @@ function renderCompetitionTable() {
 }
 
 function playerRows(players) {
-  return players.map((player) => `<tr data-player="${escapeHtml(player.id)}"><td><b>${escapeHtml(player.nickname)}</b><small>${escapeHtml(player.id)}</small></td><td>${player.summary?.played ?? 0}</td><td><strong>${player.summary?.wins ?? 0}</strong> / ${player.summary?.losses ?? 0}</td><td>${player.summary?.goals ?? 0}</td><td>${player.summary?.assists ?? 0}</td><td>${dateText(player.lastSeenAt)}</td></tr>`).join("");
+  return players.map((player) => {
+    const punishments = [player.moderation?.loginCooldownActive ? "登录冷却" : "", player.league?.rewardsSuspended ? "奖励暂停" : ""].filter(Boolean);
+    return `<tr data-player="${escapeHtml(player.id)}"><td><b>${escapeHtml(player.nickname)}</b><small>${escapeHtml(player.id)}${punishments.length ? ` · ${punishments.join(" / ")}` : ""}</small></td><td>${player.summary?.played ?? 0}</td><td><strong>${player.summary?.wins ?? 0}</strong> / ${player.summary?.losses ?? 0}</td><td>${player.summary?.goals ?? 0}</td><td>${player.summary?.assists ?? 0}</td><td>${dateText(player.lastSeenAt)}</td></tr>`;
+  }).join("");
 }
 
 function matchRows(matches) {
@@ -162,10 +165,15 @@ function renderLeagueAdmin() {
   const s4PlayerOptions = s4PlayerCatalog.map((player) => `<option value="${escapeHtml(player.id)}">${escapeHtml(player.name)} · ${escapeHtml(player.club ?? "自由球员")} · ${escapeHtml(ROLES[player.role] ?? player.role)} · ${player.overall} · ${player.grade}</option>`).join("");
   const s4CardGrantRows = (leagueData.s4CardGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${escapeHtml(grant.playerName)}</b><small>${escapeHtml(grant.playerId)}</small></td><td>${grant.upgradeLevel ? `+${grant.upgradeLevel}` : "无强化"}</td><td>${grant.quantity}张</td><td><b>${escapeHtml(grant.ownerName)}</b><small>${escapeHtml(grant.teamName)}</small></td><td>${grant.ownershipGranted ? "同时获得所有权" : "所有权不变"}</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="6">尚未发放指定球员卡</td></tr>`;
   const coinGrantRows = (leagueData.coinGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${coinText(grant.amount)}</b><small>${escapeHtml(grant.id)}</small></td><td>${grant.recipientMode === "all" ? "全体玩家" : "指定玩家"}</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放金币</td></tr>`;
+  const xGrowthGrantRows = (leagueData.xGrowthGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${grant.points}点</b><small>${escapeHtml(grant.id)}</small></td><td>全体X球员玩家</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放X球员加成点数</td></tr>`;
   const badgePlayerOptions = leagueData.teams.filter((team) => !team.isAi).map((team) => `<option value="${escapeHtml(team.ownerId)}">${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)} · ${escapeHtml(team.ownerId)}</option>`).join("");
   const badgeRows = leagueData.teams.flatMap((team) => (team.championBadges ?? []).map((badge) => ({ ...badge, ownerId:team.ownerId, ownerName:team.ownerName, teamName:team.name }))).sort((left,right) => Number(right.awardedAt) - Number(left.awardedAt)).map((badge) => { const isCup = badge.competition === "cup" || badge.type === "cup-champion"; return `<tr><td><span class="admin-champion-badge ${isCup ? "cup-champion-badge" : ""}"><i>${isCup ? "🏆" : "♛"}</i>${escapeHtml(badge.season)}${isCup ? " 杯赛" : " 联赛"}</span></td><td><b>${escapeHtml(badge.ownerName)}</b><small>${escapeHtml(badge.ownerId)}</small></td><td>${escapeHtml(badge.teamName)}</td><td>${dateText(badge.awardedAt)}</td></tr>`; }).join("") || `<tr><td colspan="4">尚未发放冠军徽章</td></tr>`;
   logoutButton.hidden = false;
   app.innerHTML = `${adminNavMarkup("league")}<header class="page-head"><div><h1>YellowDogs League</h1><p>${escapeHtml(season.name)} · ${season.status === "active" ? "进行中" : "已完成"} · 下一轮 ${dateText(season.nextRoundAt)}</p></div><button id="league-refresh">刷新联赛</button></header><section class="kpis league-admin-kpis"><article class="kpi"><small>当前赛季</small><b>${escapeHtml(season.name)}</b></article><article class="kpi"><small>联赛轮次</small><b>${season.currentRound}/${season.totalRounds}</b></article><article class="kpi"><small>已赛场次</small><b>${leagueData.matches}</b></article><article class="kpi"><small>真人球队</small><b>${humanTeams}/10</b></article><article class="kpi"><small>进行中选秀</small><b>${leagueData.drafts.length}</b></article></section><section class="league-admin-actions"><div><small>LEAGUE CONTROL</small><b>赛季运行控制</b><span>重启与新赛季都会保留真人球队、球员名单、金币和交易资产。</span></div><button id="league-simulate">立即模拟下一轮</button><button class="warning" id="league-restart">重启当前赛季</button><button class="danger" id="league-new-season">开启新赛季</button></section><div class="grid league-admin-grid"><section class="panel league-team-panel"><header class="panel-head"><div><h2>联赛球队</h2><small>积分与注册名单状态</small></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>球队</th><th>名单</th><th>赛</th><th>胜-平-负</th><th>进失</th><th>分</th></tr></thead><tbody>${leagueTeamRows()}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>球员池占用</h2><small>真人球队全服唯一，AI 不计入</small></div></header><div class="table-wrap"><table><thead><tr><th>位置池</th><th>总数</th><th>已签</th><th>选秀中</th><th>可用</th></tr></thead><tbody>${poolRows}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>进行中的选秀</h2><small>尚未确认 22 人名单的球队</small></div></header><div class="table-wrap"><table><thead><tr><th>球队/玩家</th><th>进度</th><th>开始时间</th></tr></thead><tbody>${drafts}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>赛季归档</h2><small>最近 12 次重启或换季记录</small></div></header><div class="table-wrap"><table><thead><tr><th>赛季</th><th>原因</th><th>轮次</th><th>比赛</th><th>归档时间</th></tr></thead><tbody>${archives}</tbody></table></div></section><section class="panel league-allocation-panel"><header class="panel-head"><div><h2>真人球员归属</h2><small>查看每名已签或选秀保留球员</small></div><input class="search" id="league-player-search" placeholder="搜索球员、球队或玩家" /></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>位置</th><th>能力</th><th>状态</th><th>归属</th></tr></thead><tbody id="league-allocation-body">${leagueAllocationRows()}</tbody></table></div></section></div>`;
+  const automation = leagueData.dailyAutomation ?? {};
+  document.querySelector(".league-admin-actions div span").textContent = automation.enabled
+    ? `每日自动化已启用：北京时间09:51重置，10:01自动开启杯赛；联赛沿用10:00起每20分钟整点网格。上次奖励赛季：${automation.lastRewardedSeasonId ?? "暂无"}；上次自动重置：${automation.lastResetDate ?? "暂无"}。`
+    : "每日自动化尚未启用；只有执行一次“完全重置联赛”后才会开始，并从次日按北京时间运行。";
   document.querySelector(".league-admin-kpis").insertAdjacentHTML("beforeend", `<article class="kpi"><small>S4所有权</small><b>${assetSummary.ownershipCount}</b></article><article class="kpi"><small>流通球员卡</small><b>${assetSummary.activeCardCount}</b></article><article class="kpi"><small>系统回收卡</small><b>${assetSummary.recycledCardCount}</b></article>`);
   document.querySelector(".page-head p").textContent = `${season.name} · ${seasonStatusLabel} · ${registrationOpen ? "等待管理员开启联赛推进" : `下一轮 ${dateText(season.nextRoundAt)}`}`;
   const simulateButton = document.querySelector("#league-simulate");
@@ -174,11 +182,12 @@ function renderLeagueAdmin() {
   document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button class="primary" id="league-start-simulation" ${registrationOpen ? "" : "disabled"}>${registrationOpen ? "开启联赛推进" : season.status === "active" ? "联赛推进已开启" : "赛季已结束"}</button>`);
   document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button class="danger full-reset" id="league-full-reset">完全重置联赛</button>`);
   document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button class="danger full-reset" id="league-fresh-season">开启全新赛季</button>`);
-  document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button id="league-cup-start" ${leagueData.cup?.status === "waiting" && season.status === "active" ? "" : "disabled"}>${registrationOpen ? "联赛推进后可开启杯赛" : leagueData.cup?.status === "waiting" ? "开启黄狗冠军杯" : `黄狗冠军杯：${leagueData.cup?.stage ?? "进行中"}`}</button>`);
+  document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button id="league-cup-start" ${leagueData.cup?.status === "waiting" && season.status === "active" ? "" : "disabled"}>${registrationOpen ? "联赛推进后可开启杯赛" : leagueData.cup?.status === "waiting" ? "开启黄狗冠军杯" : `黄狗冠军杯：${leagueData.cup?.stage ?? "进行中"}`}</button><button class="warning" id="league-daily-reward">手动补发当日排名奖励</button><button class="danger" id="league-daily-reset">手动立即重置联赛与杯赛</button>`);
   document.querySelector(".league-allocation-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-backup-panel"><header class="panel-head"><div><h2>联赛数据备份</h2><small>每天一份，自动保留最近 ${leagueData.backups.retentionDays} 天；完全重置前额外保存快照</small></div></header><div class="table-wrap"><table><thead><tr><th>文件</th><th>类型</th></tr></thead><tbody>${backupRows}</tbody></table></div></section>`);
   document.querySelector(".league-backup-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-economy-panel"><header class="panel-head"><div><h2>玩家经济明细</h2><small>当前赛季商店开包、卡包签约、解约、转会与完整金币流水</small></div><select id="league-economy-team" ${economyOptions ? "" : "disabled"}>${economyOptions || `<option>${economyVersionReady ? "暂无玩家球队" : "等待服务重启"}</option>`}</select></header><div id="league-economy-detail">${leagueEconomyDetail(leagueData.economy?.[0]?.accountId)}</div></section>`);
   document.querySelector(".league-team-panel").insertAdjacentHTML("afterend", `<section class="panel league-reward-mail-panel"><header class="panel-head"><div><h2>S4礼包发放</h2><small>旧赛季礼包已经下架；可向所有已建队玩家或指定玩家立即发放新礼包。</small></div></header><form id="league-s4-pack-grant-form" class="league-reward-mail-form"><label><span>礼包类型</span><select name="packType">${s4PackTypeOptions}</select></label><label><span>每人数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-s4-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4PackTypeOptions ? "" : "disabled"}>立即发放礼包</button></form><div class="table-wrap"><table><thead><tr><th>礼包</th><th>数量</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${s4GrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-coin-grant-panel"><header class="panel-head"><div><h2>金币即时发放</h2><small>向所有已建队玩家或指定玩家发放金币，提交后余额立即到账并发送邮件通知。</small></div></header><form id="league-coin-grant-form" class="league-reward-mail-form"><label><span>每人金币数量</span><input name="amount" type="number" min="1" max="1000000000" step="1" value="1000" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-coin-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4RecipientOptions ? "" : "disabled"}>立即发放金币</button></form><div class="table-wrap"><table><thead><tr><th>每人金额</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${coinGrantRows}</tbody></table></div></section>`);
+  document.querySelector(".league-coin-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-x-growth-grant-panel"><header class="panel-head"><div><h2>X球员加成点数发放</h2><small>向所有已经拥有X球员的玩家统一发放加成点数，提交后立即到账并发送邮件通知。</small></div></header><form id="league-x-growth-grant-form" class="league-reward-mail-form"><label><span>每名X球员获得点数</span><input name="points" type="number" min="1" max="1000" step="1" value="1" required></label><button type="submit" ${humanTeams ? "" : "disabled"}>向全部X球员发放</button></form><div class="table-wrap"><table><thead><tr><th>每人点数</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${xGrowthGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-card-grant-panel"><header class="panel-head"><div><h2>指定球员卡发放</h2><small>向任意已建队玩家发放指定球员、指定强化等级的测试卡；强化等级支持0至8级。</small></div></header><form id="league-s4-card-grant-form" class="league-card-grant-form"><label><span>接收玩家</span><select name="accountId" ${s4RecipientOptions ? "" : "disabled"}>${s4RecipientOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>搜索球员</span><input id="league-s4-player-search" placeholder="输入中文名、俱乐部、位置或ID"></label><label><span>指定球员</span><select id="league-s4-player-select" name="playerId" ${s4PlayerOptions ? "" : "disabled"}>${s4PlayerOptions || `<option>暂无球员数据</option>`}</select></label><label><span>强化等级</span><select name="upgradeLevel">${Array.from({ length:9 }, (_, level) => `<option value="${level}">${level ? `+${level}` : "无强化"}</option>`).join("")}</select></label><label><span>发放数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><button type="submit" ${s4RecipientOptions && s4PlayerOptions ? "" : "disabled"}>发放指定球员卡</button></form><div class="table-wrap"><table><thead><tr><th>球员</th><th>强化</th><th>数量</th><th>接收玩家</th><th>所有权</th><th>时间</th></tr></thead><tbody>${s4CardGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-card-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-badge-panel"><header class="panel-head"><div><h2>冠军徽章发放</h2><small>可发放皇冠联赛冠军徽章，或带赛季标记的奖杯杯赛冠军徽章</small></div></header><form id="league-badge-form" class="league-badge-form"><label><span>联赛玩家</span><select name="accountId" ${badgePlayerOptions ? "" : "disabled"}>${badgePlayerOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>冠军荣誉</span><select name="badge">${BADGE_OPTIONS.map((badge) => `<option value="${badge.competition}:${badge.season}">${badge.label}</option>`).join("")}</select></label><button type="submit" ${badgePlayerOptions ? "" : "disabled"}>发放徽章</button></form><div class="table-wrap"><table><thead><tr><th>徽章</th><th>玩家</th><th>球队</th><th>发放时间</th></tr></thead><tbody>${badgeRows}</tbody></table></div></section>`);
   bindAdminNav();
@@ -209,6 +218,12 @@ function renderLeagueAdmin() {
     const scope = recipientMode === "all" ? "所有已建队玩家" : `${accountIds.length}名指定玩家`;
     if (recipientMode === "specified" && !accountIds.length) return window.alert("请至少选择一名玩家");
     if (window.confirm(`确认向${scope}每人发放${amount.toLocaleString()}金币？金币会立即到账。`)) runLeagueAdminAction("/api/admin/league/coins/grant", { amount, recipientMode, accountIds }, "金币已经发放并立即到账");
+  };
+  const xGrowthGrantForm = document.querySelector("#league-x-growth-grant-form");
+  xGrowthGrantForm.onsubmit = (event) => {
+    event.preventDefault();
+    const points = Number(new FormData(event.target).get("points"));
+    if (window.confirm(`确认向所有拥有X球员的玩家每人发放${points}点加成点数？点数会立即到账。`)) runLeagueAdminAction("/api/admin/league/x-growth/grant", { points }, "X球员加成点数已经发放并立即到账");
   };
   document.querySelector("#league-simulate").onclick = () => runLeagueAdminAction("/api/admin/league/simulate", {}, "下一轮联赛及期间杯赛已模拟完成");
   document.querySelector("#league-start-simulation").onclick = () => {
@@ -315,6 +330,14 @@ function renderLeagueAdmin() {
   };
   document.querySelector("#league-cup-start").onclick = () => {
     if (window.confirm("确认开启黄狗冠军杯？将由当前10支球队进行4轮瑞士轮，前八名进入两回合淘汰赛。")) runLeagueAdminAction("/api/admin/league/cup/start", {}, "黄狗冠军杯已开启，首轮将在下一个杯赛时间档开始");
+  };
+  document.querySelector("#league-daily-reward").onclick = () => {
+    if (window.confirm("确认按当前已完成赛季排名补发每日奖励？已发放的赛季不会重复发奖。")) runLeagueAdminAction("/api/admin/league/daily-settlement/reward", {}, "当日排名奖励已补发或已确认发放");
+  };
+  document.querySelector("#league-daily-reset").onclick = () => {
+    const confirmation = window.prompt("此操作只重置联赛和杯赛进度，并恢复球员体力、伤病和停赛状态；球队、球员、金币、邮件、卡包、卡牌与交易资产均保留。\n\n请输入：立即重置每日联赛");
+    if (confirmation === "立即重置每日联赛") runLeagueAdminAction("/api/admin/league/daily-reset", { confirm:"DAILY_RESET_YDL" }, "每日联赛与杯赛已重置，玩家资产保持不变");
+    else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
   };
   document.querySelector("#league-full-reset").onclick = () => {
     const confirmation = window.prompt("此操作会移除全部玩家的YDL球队、球员、金币、交易、选秀和比赛数据。玩家账号本身保留。\n\n请输入：完全重置黄狗联赛");
@@ -584,8 +607,83 @@ function closeModal() { modal.hidden = true; modal.innerHTML = ""; }
 
 async function openPlayer(id) {
   showModal(`<header class="dialog-head"><button data-close>×</button><div><small>玩家详情</small><h2>正在读取…</h2></div></header>`);
-  try { const player = (await api(`/api/admin/players/${encodeURIComponent(id)}`)).player; const s = player.summary; showModal(`<header class="dialog-head"><button data-close>×</button><div><small>${escapeHtml(player.id)} · 注册于 ${dateText(player.createdAt)}</small><h2>${escapeHtml(player.nickname)}</h2></div></header><div class="dialog-body"><div class="detail-kpis"><span><small>比赛</small><b>${s.played}</b></span><span><small>胜 / 负</small><b>${s.wins} / ${s.losses}</b></span><span><small>进球</small><b>${s.goals}</b></span><span><small>助攻</small><b>${s.assists}</b></span></div><section class="panel"><header class="panel-head"><h2>历史比赛</h2></header><div class="match-list">${player.matches.map((match) => `<button class="match-row" ${match.matchId ? `data-match="${escapeHtml(match.matchId)}"` : "disabled"}><time>${shortDate(match.playedAt)}</time><span><b>对阵 ${escapeHtml(match.opponentName)}</b><small>${escapeHtml(match.ownFormation ?? "阵型未知")} vs ${escapeHtml(match.opponentFormation ?? "阵型未知")} · ${match.goals}球 ${match.assists}助</small></span><strong>${match.scoreFor}:${match.scoreAgainst}</strong></button>`).join("") || `<p class="empty">暂无比赛</p>`}</div></section></div>`); bindMatchRows(); }
+  try { renderPlayerDetail((await api(`/api/admin/players/${encodeURIComponent(id)}`)).player); }
   catch (error) { closeModal(); alert(error.message); }
+}
+
+function playerDisciplineMarkup(player) {
+  const cooldown = player.moderation ?? {};
+  const league = player.league ?? {};
+  const cooldownStatus = cooldown.loginCooldownActive
+    ? `<p class="discipline-status active">登录已暂停至 ${dateText(cooldown.loginCooldownUntil)}<small>${escapeHtml(cooldown.loginCooldownReason)}</small></p>`
+    : `<p class="discipline-status">当前允许正常登录</p>`;
+  const rewardStatus = league.rewardsSuspended
+    ? `<p class="discipline-status active">联赛及杯赛奖励已暂停<small>${escapeHtml(league.rewardSuspension?.reason ?? "")}</small></p>`
+    : `<p class="discipline-status">联赛及杯赛奖励正常发放</p>`;
+  return `<section class="panel discipline-panel"><header class="panel-head"><div><h2>纪律处罚</h2><small>所有操作均写入服务端记录；常规处罚可选择全服通告，强制解散会固定全服通告</small></div></header><div class="discipline-grid">
+    <form id="discipline-coins"><h3>移除金币</h3><p>当前余额：<b>${league.balance == null ? "尚未建队" : `${Number(league.balance).toLocaleString()} 金币`}</b></p><label><span>扣除数量</span><input name="amount" type="number" min="1" max="${Math.max(1, Number(league.balance ?? 1))}" value="1000" required ${league.balance == null ? "disabled" : ""}></label><label><span>处罚原因</span><textarea name="reason" maxlength="200" required></textarea></label><label class="discipline-announce"><input name="announce" type="checkbox" checked>发送全服邮件通告</label><button class="danger" ${league.balance == null ? "disabled" : ""}>确认扣除金币</button></form>
+    <form id="discipline-login"><h3>登录冷却</h3>${cooldownStatus}${cooldown.loginCooldownActive ? `<label><span>解除原因</span><textarea name="reason" maxlength="200">处罚期结束</textarea></label><input name="mode" type="hidden" value="clear">` : `<label><span>冷却时长</span><select name="durationMinutes"><option value="30">30分钟</option><option value="60">1小时</option><option value="360">6小时</option><option value="1440">1天</option><option value="4320">3天</option><option value="10080">7天</option><option value="43200">30天</option></select></label><label><span>处罚原因</span><textarea name="reason" maxlength="200" required></textarea></label>`}<label class="discipline-announce"><input name="announce" type="checkbox" checked>发送全服邮件通告</label><button class="${cooldown.loginCooldownActive ? "" : "danger"}">${cooldown.loginCooldownActive ? "解除登录限制" : "执行登录冷却"}</button></form>
+    <form id="discipline-rewards"><h3>赛事奖励</h3>${rewardStatus}<input name="suspended" type="hidden" value="${league.rewardsSuspended ? "false" : "true"}"><label><span>${league.rewardsSuspended ? "恢复原因" : "处罚原因"}</span><textarea name="reason" maxlength="200" ${league.rewardsSuspended ? "" : "required"}>${league.rewardsSuspended ? "处罚期结束" : ""}</textarea></label><label class="discipline-announce"><input name="announce" type="checkbox" checked>发送全服邮件通告</label><button class="${league.rewardsSuspended ? "" : "danger"}" ${league.teamId ? "" : "disabled"}>${league.rewardsSuspended ? "恢复后续奖励" : "暂停联赛及杯赛奖励"}</button><small>暂停期间错过的奖励不会在恢复后补发。</small></form>
+    <form id="discipline-dissolve" class="discipline-dissolve"><h3>强制解散球队（最高处罚）</h3><p>系统将回收该账户的金币、全部球员卡、所有权、强化资产、未开启礼包、未结算预测投入及X球员；清算所得金币全部补偿给其他玩家。原席位由AI接替，并立即按每日重置规则重开联赛与杯赛。</p><label><span>严重违规原因</span><textarea name="reason" maxlength="200" required></textarea></label><button class="danger" ${league.teamId ? "" : "disabled"}>强制解散并全服通告</button><small>此操作会自动创建服务端备份。提交后还需要输入“强制解散球队”进行二次确认。</small></form>
+  </div></section>`;
+}
+
+function renderPlayerDetail(player) {
+  const s = player.summary;
+  showModal(`<header class="dialog-head"><button data-close>×</button><div><small>${escapeHtml(player.id)} · 注册于 ${dateText(player.createdAt)}</small><h2>${escapeHtml(player.nickname)}</h2></div></header><div class="dialog-body"><div class="detail-kpis"><span><small>比赛</small><b>${s.played}</b></span><span><small>胜 / 负</small><b>${s.wins} / ${s.losses}</b></span><span><small>进球</small><b>${s.goals}</b></span><span><small>助攻</small><b>${s.assists}</b></span></div>${playerDisciplineMarkup(player)}<section class="panel"><header class="panel-head"><h2>历史比赛</h2></header><div class="match-list">${player.matches.map((match) => `<button class="match-row" ${match.matchId ? `data-match="${escapeHtml(match.matchId)}"` : "disabled"}><time>${shortDate(match.playedAt)}</time><span><b>对阵 ${escapeHtml(match.opponentName)}</b><small>${escapeHtml(match.ownFormation ?? "阵型未知")} vs ${escapeHtml(match.opponentFormation ?? "阵型未知")} · ${match.goals}球 ${match.assists}助</small></span><strong>${match.scoreFor}:${match.scoreAgainst}</strong></button>`).join("") || `<p class="empty">暂无比赛</p>`}</div></section></div>`);
+  bindMatchRows();
+  bindPlayerDiscipline(player);
+}
+
+function bindPlayerDiscipline(player) {
+  const run = async (path, body, confirmation) => {
+    if (!window.confirm(confirmation)) return;
+    try {
+      const value = await api(path, { method:"POST", body });
+      if (dashboard) {
+        const index = dashboard.players.findIndex((entry) => entry.id === player.id);
+        if (index >= 0) dashboard.players[index] = { ...dashboard.players[index], moderation:value.player.moderation, league:value.player.league };
+      }
+      renderPlayerDetail(value.player);
+    } catch (error) { window.alert(error.message); }
+  };
+  document.querySelector("#discipline-coins").onsubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const amount = Number(form.get("amount"));
+    run(`/api/admin/players/${encodeURIComponent(player.id)}/coins/remove`, { amount, reason:String(form.get("reason")), announce:form.has("announce") }, `确认从${player.nickname}账户扣除${amount.toLocaleString()}金币？`);
+  };
+  document.querySelector("#discipline-login").onsubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const clearing = form.get("mode") === "clear";
+    const path = `/api/admin/players/${encodeURIComponent(player.id)}/login-cooldown${clearing ? "/clear" : ""}`;
+    const body = { reason:String(form.get("reason")), announce:form.has("announce"), ...(clearing ? {} : { durationMinutes:Number(form.get("durationMinutes")) }) };
+    run(path, body, clearing ? `确认解除${player.nickname}的登录限制？` : `确认暂停${player.nickname}登录？当前账号凭证会立即失效。`);
+  };
+  document.querySelector("#discipline-rewards").onsubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const suspended = form.get("suspended") === "true";
+    run(`/api/admin/players/${encodeURIComponent(player.id)}/rewards/suspension`, { suspended, reason:String(form.get("reason")), announce:form.has("announce") }, suspended ? `确认暂停向${player.nickname}发放联赛及杯赛奖励？` : `确认恢复${player.nickname}后续赛事奖励？`);
+  };
+  document.querySelector("#discipline-dissolve").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    if (window.prompt(`这是最高等级且不可撤销的处罚。请输入“强制解散球队”以解散${player.nickname}的球队：`) !== "强制解散球队") return;
+    try {
+      const value = await api(`/api/admin/players/${encodeURIComponent(player.id)}/team/dissolve`, {
+        method:"POST",
+        body:{ reason:String(form.get("reason")), confirm:"DISSOLVE_YDL_TEAM" },
+      });
+      if (dashboard) {
+        const index = dashboard.players.findIndex((entry) => entry.id === player.id);
+        if (index >= 0) dashboard.players[index] = { ...dashboard.players[index], moderation:value.player.moderation, league:value.player.league };
+      }
+      window.alert(`球队已强制解散，共清算${Number(value.action.totalRecoveryAmount).toLocaleString()}金币并补偿给${value.action.recipientCount}位玩家。`);
+      renderPlayerDetail(value.player);
+    } catch (error) { window.alert(error.message); }
+  };
 }
 
 function teamMarkup(team) {

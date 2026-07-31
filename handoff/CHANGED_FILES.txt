@@ -1,35 +1,98 @@
-当前工作区：D:\Project\game_test\.worktrees\s4
+工作区：D:\Project\game_test\.worktrees\s4
 分支：codex/s4-card-upgrade
-HEAD：1d4c6b0
-统计：29个已修改文件 + 2个未跟踪文件 = 31个
+HEAD：f14d278（tag：S4-0728）
+更新时间：2026-07-31 22:34（Asia/Shanghai）
+
+需要交接的已修改文件：
 
 M admin/public/app.js
-M admin/public/league.css
-M data/s4-retired-famous-players-50.json
+M admin/public/styles.css
 M data/ydl-content-overrides.json
+M devtool/build.js
+M devtool/server.js
+M game/public/config.js
+M game/public/core.js
+M package.json
+M src/new-trait-batch.js
 M test/admin.test.js
+M test/game.test.js
 M test/league.test.js
+M test/new-traits.test.js
 M test/s4-assets.test.js
+M test/s4-balance-report.test.js
+M test/unified-v02.test.js
 M test/versus.test.js
-M test/ydl-bonds.test.js
-M test/ydl-content-store.test.js
-M test/ydl-traits.test.js
 M versus/admin-api.js
 M versus/api.js
-M versus/balance-report.js
 M versus/history-detail.js
 M versus/league-service.js
-M versus/legend-abilities.js
 M versus/match-engine.js
-M versus/player-pool-s4-generated.js
 M versus/player-pool.js
 M versus/public/app.js
-M versus/public/bond-rules.js
+M versus/public/index.html
 M versus/public/styles.css
+M versus/room-service.js
 M versus/rules.js
 M versus/s4-assets.js
-M versus/season-simulation.js
+M versus/s4-balance-config-fast.json
+M versus/s4-balance-config.json
+M versus/s4-balance-report.js
+M versus/s4-balance.js
 M versus/trait-pool.js
 M versus/ydl-content-store.js
-?? versus/s4-balance.js
-?? versus/x-player-pool.js
+
+需要交接的未跟踪内容：
+
+?? A_profile/（213 个文件）
+?? legendary_profile/（132 个文件）
+?? x_profile/（3 个文件）
+?? player_dlc/（33 个文件）
+?? player_dlc.txt
+?? data/player-dlc-ea-reference.csv
+?? data/player-dlc-ea-reference.json
+?? data/player-dlc-s4-final.csv
+?? data/player-dlc-s4-final.json
+?? data/s4-player-pool-with-dlc.json
+?? deploy/cloud/football-s4.service
+?? deploy/cloud/nginx-football-s4.conf
+?? deploy/cloud/football-s4.env.example
+?? devtool/optimize-player-profiles.js
+?? devtool/repair-ydl-x-enhancement-save.js
+?? devtool/player-profile-assets.js
+?? devtool/sync-a-player-profiles.js
+?? devtool/sync-legendary-profiles.js
+?? devtool/sync-x-player-profiles.js
+?? devtool/build-player-dlc-data.js
+?? devtool/build-player-dlc-workbook.mjs
+?? devtool/finalize-player-dlc-workbook.mjs
+?? devtool/import-player-dlc-profiles.js
+?? devtool/import-player-dlc-to-s4.js
+?? devtool/inspect-player-dlc-workbook.mjs
+?? versus/player-pool-s4-dlc-generated.js
+?? versus/public/a-player-profiles.js
+?? versus/public/legendary-profiles.js
+?? versus/public/s4-card-border-demo.html
+?? versus/public/x-player-profiles.js
+?? versus/s4-balance-config-medium.json
+?? versus/s4-balance-report-parallel.js
+?? versus/s4-balance-report-worker.js
+
+另有本目录 5 个 handoff 文档随本次更新进入压缩包。
+
+明确排除：
+
+- .local-s4-server.pid
+- Cloud_league_data/（包含 Day1 正式赛季数据）
+- outputs/（包含大型模拟结果与部署包）
+- data/s4-test/
+- data/versus-accounts.json
+- data/yellowdogs-league.json
+- data/yellowdogs-league-backups/
+- 服务器密码、后台密码、Cloudflare 凭据和 Origin CA 私钥
+- node_modules/、.git/、旧 handoff/SOURCE_SNAPSHOT/
+
+禁止重置、清理、覆盖或丢弃上述交接变更。
+versus/player-pool.js - 全等级26项能力按游戏OVR回归，EA仅作参考，全库默认上限96
+versus/ydl-content-store.js - 后台编辑与历史覆盖统一使用游戏能力回归规则
+test/s4-assets.test.js - 覆盖602名非X球员的OVR、26项能力和上限不变量
+test/admin.test.js - 覆盖后台26项权威及自动回算OVR逻辑

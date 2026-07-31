@@ -33,11 +33,12 @@ export const VERSUS_REFEREES = Object.freeze({
 });
 
 const TACTICS = Object.freeze({
-  allOutAttack: { name: "全力进攻", attack: 1.23, defense: 0.74, tempo: 1.14, press: 1.17, risk: 1.52, width: 1.08, fatigue: 1.2 },
-  positive: { name: "积极进攻", attack: 1.09, defense: 0.9, tempo: 1.06, press: 1.07, risk: 1.24, width: 1.03, fatigue: 1.09 },
+  // S4 Day1: compress compound mentality extremes without erasing identity.
+  allOutAttack: { name: "全力进攻", attack: 1.24, defense: 0.79, tempo: 1.12, press: 1.15, risk: 1.44, width: 1.07, fatigue: 1.17 },
+  positive: { name: "积极进攻", attack: 1.11, defense: 0.92, tempo: 1.05, press: 1.06, risk: 1.18, width: 1.02, fatigue: 1.07 },
   balanced: { name: "攻守平衡", attack: 1, defense: 1, tempo: 1, press: 1, risk: 1, width: 1, fatigue: 1 },
-  defensive: { name: "防守反击", attack: 0.91, defense: 1.09, tempo: 0.92, press: 0.84, risk: 0.9, width: 0.95, fatigue: 0.94, counter: 1.24 },
-  parkBus: { name: "全力防守", attack: 0.72, defense: 1.26, tempo: 0.78, press: 0.58, risk: 0.64, width: 0.88, fatigue: 0.86, counter: 1.35 },
+  defensive: { name: "防守反击", attack: 0.92, defense: 1.07, tempo: 0.93, press: 0.86, risk: 0.91, width: 0.96, fatigue: 0.94, counter: 1.18 },
+  parkBus: { name: "全力防守", attack: 0.8, defense: 1.17, tempo: 0.84, press: 0.68, risk: 0.74, width: 0.92, fatigue: 0.9, counter: 1.2 },
 });
 
 const MATCH_STYLES = Object.freeze({
@@ -66,7 +67,7 @@ const MATCH_STYLES = Object.freeze({
     attackWeights: { throughBall: 1.28, cross: 0.85, cutback: 0.75, counter: 1.62, longShot: 0.9 },
   },
   highPress: {
-    name: "高位压迫", attack: 1, midfield: 1.04, defense: 0.99, risk: 1.22, fatigue: 1.25, press: 1.22,
+    name: "高位压迫", attack: 1.025, midfield: 1.07, defense: 1, risk: 1.14, fatigue: 1.16, press: 1.18,
     aerialReliance: 0.22,
     weather: { sunny: 1.01, rain: 0.98, storm: 0.96, snow: 0.96 },
     attackWeights: { throughBall: 1.05, cross: 0.9, cutback: 1.16, counter: 1.14, longShot: 0.9 },
@@ -85,9 +86,43 @@ const MATCH_STYLES = Object.freeze({
   },
 });
 
+export function tacticalCombinationModifiers(tacticKey, styleKey) {
+  const modifiers = { attack:1, midfield:1, defense:1, transitionRisk:1, fatigue:1, counter:1 };
+  if (styleKey === "highPress" && tacticKey === "positive") {
+    Object.assign(modifiers, { attack:1.025, midfield:1.035, defense:1.005, transitionRisk:.96, fatigue:.97 });
+  } else if (styleKey === "highPress" && tacticKey === "allOutAttack") {
+    Object.assign(modifiers, { attack:1.02, midfield:1.03, transitionRisk:.95, fatigue:.97 });
+  } else if (styleKey === "counterAttack" && tacticKey === "defensive") {
+    Object.assign(modifiers, { attack:1.045, midfield:1.02, defense:1.01, transitionRisk:.95, counter:1.08 });
+  } else if (styleKey === "counterAttack" && tacticKey === "parkBus") {
+    Object.assign(modifiers, { attack:1.075, midfield:1.025, defense:1.005, transitionRisk:.93, counter:1.12 });
+  } else if (styleKey === "lowBlock" && tacticKey === "parkBus") {
+    Object.assign(modifiers, { defense:1.02, transitionRisk:.93 });
+  } else if (styleKey === "lowBlock" && tacticKey === "defensive") {
+    Object.assign(modifiers, { defense:1.012, transitionRisk:.96 });
+  } else if (styleKey === "wingPlay" && ["positive", "allOutAttack"].includes(tacticKey)) {
+    Object.assign(modifiers, { attack:1.015, midfield:1.01 });
+  }
+  return modifiers;
+}
+
 const SHOT_BASE = Object.freeze({ throughBall: 0.2, cross: 0.125, cutback: 0.215, counter: 0.225, longShot: 0.078, setPiece: 0.103 });
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const average = (values, fallback = 50) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : fallback;
+
+export function versusFinishingMultiplier(finishing, keeperValue, legendFinishFactor = 1, scoreDifference = 0) {
+  const qualityMultiplier = (0.97 + Number(finishing ?? 50) / 155)
+    * (1.48 - Number(keeperValue ?? 50) / 190)
+    * Number(legendFinishFactor ?? 1)
+    * 1.06;
+  const leadMultiplier = scoreDifference > 0 ? Math.max(0.86, 1 - Math.min(4, scoreDifference) * 0.035) : 1;
+  return qualityMultiplier * leadMultiplier;
+}
+
+export function versusTrailingTransitionRelief(scoreDifference, tacticKey) {
+  if (scoreDifference >= 0 || !["positive", "allOutAttack"].includes(tacticKey)) return 1;
+  return Math.max(0.9, 1 - Math.min(4, Math.abs(scoreDifference)) * 0.025);
+}
 
 function hashSeed(value) {
   let hash = 2166136261;
@@ -105,6 +140,26 @@ function random(match) {
 
 function chance(match, probability) {
   return random(match) < clamp(probability, 0, 1);
+}
+
+export function butterFingersProbability(goalkeeper = {}) {
+  const fitness = clamp(Number(goalkeeper.state?.fitness ?? goalkeeper.fitness ?? 100), 35, 100);
+  return clamp((75 - fitness) / 40 * 0.035, 0, 0.035);
+}
+
+export function superWorldieProbability(player = {}, attackType = "longShot") {
+  if (attackType !== "longShot") return 0;
+  const longShots = clamp(Number(player.attributes?.longShots ?? 50), 1, 99);
+  const eliteLongShotFactor = clamp((longShots - 70) / 29, 0, 1);
+  return 0.001 + eliteLongShotFactor ** 2 * 0.024;
+}
+
+export function ownGoalCandidateWeight(player = {}) {
+  const fitness = clamp(Number(player.state?.fitness ?? player.fitness ?? 100), 35, 100);
+  const composure = clamp(Number(player.attributes?.composure ?? 50), 1, 99);
+  const fitnessRisk = clamp((70 - fitness) / 35, 0, 1);
+  const composureRisk = clamp((65 - composure) / 40, 0, 1);
+  return 0.15 + fitnessRisk * 1.2 + composureRisk * 0.9 + fitnessRisk * composureRisk * 0.8;
 }
 
 function choose(match, entries, weight = () => 1) {
@@ -346,12 +401,12 @@ function refreshTeamBonds(team) {
 }
 
 function applySituationalPlan(match, team) {
-  if (!team.tacticalPlans) return;
+  if (!team.tacticalPlans) return false;
   const state = scoreState(match, team);
   const planKey = state === "leading" ? "leading" : state === "trailing" ? "trailing" : "opening";
-  if (team.activePlan === planKey) return;
+  if (team.activePlan === planKey) return false;
   const plan = team.tacticalPlans[planKey];
-  if (!plan || !TACTICS[plan.tactic] || !MATCH_STYLES[plan.style]) return;
+  if (!plan || !TACTICS[plan.tactic] || !MATCH_STYLES[plan.style]) return false;
   team.activePlan = planKey;
   team.tactic = plan.tactic;
   team.style = plan.style;
@@ -372,6 +427,7 @@ function applySituationalPlan(match, team) {
   }
   const labels = { opening:"开局/平局", leading:"领先", trailing:"落后" };
   event(match, "tactical", team.index, `${team.name}切换为${labels[planKey]}方案：${TACTICS[plan.tactic].name} · ${MATCH_STYLES[plan.style].name}。`, { importance:"stage", plan:planKey, tactic:plan.tactic, style:plan.style });
+  return true;
 }
 
 function attribute(match, team, player, key) {
@@ -413,11 +469,27 @@ function familiarity(player, team = null) {
   return 1 - (1 - base) * 0.58;
 }
 
+export function versusStackedEdgeRetention(player = {}) {
+  const supportSystemCount = [
+    Number(player.upgradeLevel ?? 0) > 0,
+    (player.traitDefinitions?.length ?? player.traits?.length ?? 0) > 0,
+    Number(player.leagueChemistryBonus ?? 0) > 0,
+    Number(player.ydlBondBonus ?? 0) > 0,
+  ].filter(Boolean).length;
+  return clamp(1 - Math.max(0, supportSystemCount - 1) * 0.12, 0.7, 1);
+}
+
 function playerMetric(match, team, player, weights) {
   const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
   const raw = Object.entries(weights).reduce((sum, [key, weight]) => sum + attribute(match, team, player, key) * weight, 0) / total;
   const fitness = Number(player.state?.fitness ?? 100);
-  const competitiveValue = 72 + (raw - 72) * 0.45;
+  // Compress raw card-value gaps so that formation, tactics and player roles
+  // decide more of the match than enhancement/rarity alone. When enhancement,
+  // traits, chemistry and bonds overlap, only the positive edge receives
+  // diminishing returns; ordinary cards keep their full baseline value.
+  const stackedEdgeRetention = versusStackedEdgeRetention(player);
+  const compressedEdge = (raw - 73) * 0.33;
+  const competitiveValue = 73 + (compressedEdge > 0 ? compressedEdge * stackedEdgeRetention : compressedEdge);
   const positionFactor = 1 - (1 - familiarity(player, team)) * 0.25;
   const opponent = match.teams[team.index === 0 ? 1 : 0];
   const markingFactor = opponent?.markingTargetId === player.id && player.active ? 0.86 : 1;
@@ -436,6 +508,9 @@ function teamStyleProfile(match, team, groups) {
     const x = Number(team.positions[player.id]?.x ?? 50);
     return x <= 34 || x >= 66;
   });
+  const wideAttackerCount = outfield.filter((player) => ["LW", "RW"].includes(player.assignedRole)).length;
+  // Let actual wingers strengthen a wing-play plan without letting width alone dominate.
+  const wideAttackerBoost = team.style === "wingPlay" ? clamp(wideAttackerCount * 0.012, 0, 0.024) : 0;
   const averageWideDistance = average(outfield.map((player) => Math.abs(Number(team.positions[player.id]?.x ?? 50) - 50)), 0);
   const wideStretch = clamp((averageWideDistance - 12) / 20, 0, 1);
   const wingbackSupportScores = {
@@ -469,10 +544,10 @@ function teamStyleProfile(match, team, groups) {
   const score = scores[team.style] ?? scores.possession;
   const fit = clamp(0.92 + (score - 72) / 120, 0.82, 1.12);
   const weather = style.weather[match.weather.key] ?? 1;
-  const spatialFit = geometry?.styleFits?.[team.style] ?? 1;
+  const spatialFit = (geometry?.styleFits?.[team.style] ?? 1) * (1 + wideAttackerBoost);
   const effectiveFit = fit * weather * spatialFit;
   const fitFactor = clamp(1 + (effectiveFit - 1) * 0.58, 0.84, 1.09);
-  return { ...style, key: team.style, score, fit, weather, spatialFit, effectiveFit, fitFactor, wideStretch, wingbackSupportScores, wingbackSupportAverage, wingbackCrossSupport, flankSupport };
+  return { ...style, key: team.style, score, fit, weather, spatialFit, effectiveFit, fitFactor, wideStretch, wideAttackerCount, wideAttackerBoost, wingbackSupportScores, wingbackSupportAverage, wingbackCrossSupport, flankSupport };
 }
 
 function teamSnapshot(match, team) {
@@ -484,13 +559,17 @@ function teamSnapshot(match, team) {
   const attackers = players.filter((player) => roleGroup(player.assignedRole) === "ATT");
   const keepers = players.filter((player) => roleGroup(player.assignedRole) === "GK");
   const tactic = TACTICS[team.tactic] ?? TACTICS.balanced;
+  const combination = tacticalCombinationModifiers(team.tactic, team.style);
   const opponent = match.teams[team.index === 0 ? 1 : 0];
+  const scoreDifference = Number(team.score ?? 0) - Number(opponent?.score ?? 0);
   const markingTarget = opponent?.players.find((player) => player.id === team.markingTargetId && player.active) ?? null;
   const style = teamStyleProfile(match, team, { players, defenders, midfielders, attackers, keepers, structure });
   const referee = refereeTeamModifiers(match, team);
   const adjustmentBoost = match.minute <= Number(team.adjustmentBoostUntilMinute ?? 0) ? 1.035 : 1;
   const deficit = 11 - players.length;
-  const countPenalty = Math.pow(0.87, deficit);
+  // A dismissal should matter without turning every later sequence into a
+  // second compounding penalty for the team already behind.
+  const countPenalty = Math.pow(0.93, deficit);
   const linePenalty = ["GK", "DEF", "MID", "ATT"].reduce((value, group) => value * (roles.includes(group) ? 1 : 0.78), 1);
   const outfield = players.filter((player) => roleGroup(player.assignedRole) !== "GK");
   const width = outfield.length ? Math.max(...outfield.map((player) => team.positions[player.id]?.x ?? 50)) - Math.min(...outfield.map((player) => team.positions[player.id]?.x ?? 50)) : 0;
@@ -507,15 +586,71 @@ function teamSnapshot(match, team) {
   const defensiveDepthExecution = defensivePlan ? geometry.boxProtection : 1 + (geometry.boxProtection - 1) * 0.35;
   const pressingExecution = pressingPlan ? geometry.pressingCohesion : 1 + (geometry.pressingCohesion - 1) * 0.2;
   return {
-    players, defenders, midfielders, attackers, keepers, tactic, style, deficit, countPenalty, linePenalty, structure, geometry, legends,
+    players, defenders, midfielders, attackers, keepers, tactic:{ ...tactic, counter:(tactic.counter ?? 1) * combination.counter }, style, combination, deficit, countPenalty, linePenalty, structure, geometry, legends,
     width,
-    attack: attack * tactic.attack * style.attack * style.fitFactor * referee.attack * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.attack * structure.multipliers.coherence * legends.attack,
-    midfield: midfield * Math.sqrt(tactic.attack * tactic.defense) * style.midfield * style.fitFactor * pressingExecution * referee.midfield * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.midfield * structure.multipliers.coherence * legends.midfield,
-    defense: defense * tactic.defense * style.defense * (0.82 + style.fitFactor * 0.18) * defensiveDepthExecution * referee.defense * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.defense * structure.multipliers.coherence * legends.defense,
+    attack: attack * tactic.attack * style.attack * combination.attack * style.fitFactor * referee.attack * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.attack * structure.multipliers.coherence * legends.attack,
+    midfield: midfield * Math.sqrt(tactic.attack * tactic.defense) * style.midfield * combination.midfield * style.fitFactor * pressingExecution * referee.midfield * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.midfield * structure.multipliers.coherence * legends.midfield,
+    defense: defense * tactic.defense * style.defense * combination.defense * (0.82 + style.fitFactor * 0.18) * defensiveDepthExecution * referee.defense * adjustmentBoost * countPenalty * linePenalty * structure.multipliers.defense * structure.multipliers.coherence * legends.defense,
     goalkeeping: goalkeeping * (deficit ? 0.96 : 1) * structure.multipliers.goalkeeper,
     aerial, pace,
-    transitionRisk: tactic.risk * style.risk * structure.multipliers.transitionRisk * geometry.disconnectionRisk * (1 + Math.max(0, attackers.length - 3) * 0.08 + deficit * 0.13) * (markingTarget ? 1.035 : 1) * legends.transitionRisk,
+    transitionRisk: tactic.risk * style.risk * combination.transitionRisk * structure.multipliers.transitionRisk * geometry.disconnectionRisk * (1 + Math.max(0, attackers.length - 3) * 0.06 + deficit * 0.07) * (markingTarget ? 1.025 : 1) * legends.transitionRisk * versusTrailingTransitionRelief(scoreDifference, team.tactic),
   };
+}
+
+function analysisStructureIndex(snapshot) {
+  const multipliers = snapshot.structure.multipliers;
+  const factors = [
+    multipliers.attack,
+    multipliers.midfield,
+    multipliers.defense,
+    multipliers.goalkeeper,
+    multipliers.coherence,
+  ].map((value) => Math.max(0.01, Number(value ?? 1)));
+  const geometricMean = Math.exp(factors.reduce((sum, value) => sum + Math.log(value), 0) / factors.length);
+  return geometricMean / Math.sqrt(Math.max(1, Number(multipliers.transitionRisk ?? 1)));
+}
+
+function analysisTeamSnapshot(match, team) {
+  const snapshot = teamSnapshot(match, team);
+  const players = snapshot.players;
+  return {
+    formation:snapshot.structure.name,
+    plan:team.activePlan,
+    tactic:team.tactic,
+    style:team.style,
+    structureIndex:Number(analysisStructureIndex(snapshot).toFixed(4)),
+    positionFit:Number(average(players.map((player) => familiarity(player, team)), 1).toFixed(4)),
+    tacticalFit:Number(snapshot.style.effectiveFit.toFixed(4)),
+    averageFitness:Number(average(players.map((player) => Number(player.state?.fitness ?? 100)), 100).toFixed(2)),
+    averageOverall:Number(average(players.map((player) => Number(player.overall ?? 0)), 0).toFixed(2)),
+    activeCount:players.length,
+    positions:structuredClone(team.positions),
+    players:team.players.map((player) => ({
+      id:player.id,
+      assignedRole:player.assignedRole,
+      active:Boolean(player.active),
+      sentOff:Boolean(player.sentOff),
+      injury:player.injury ? structuredClone(player.injury) : null,
+      fitness:Number(player.state?.fitness ?? 100),
+    })),
+  };
+}
+
+function recordAnalysisSnapshot(match, reason) {
+  match.analysisTimeline ??= [];
+  const snapshot = {
+    minute:Number(match.minute ?? 0),
+    reason,
+    score:match.teams.map((team) => team.score),
+    teams:match.teams.map((team) => analysisTeamSnapshot(match, team)),
+  };
+  const previous = match.analysisTimeline.at(-1);
+  if (previous?.minute === snapshot.minute) {
+    snapshot.reason = [...new Set(`${previous.reason},${reason}`.split(","))].join(",");
+    match.analysisTimeline[match.analysisTimeline.length - 1] = snapshot;
+  } else {
+    match.analysisTimeline.push(snapshot);
+  }
 }
 
 function updateRating(player, delta) {
@@ -612,7 +747,7 @@ function applyFatigue(match, team, minutes = 3) {
       return;
     }
     const stamina = attribute(match, team, player, "stamina");
-    const drain = minutes * 0.16 * tactic.fatigue * snapshot.style.fatigue * spatialPressLoad * weather.fatigue * (1.28 - stamina / 260);
+    const drain = minutes * 0.16 * tactic.fatigue * snapshot.style.fatigue * snapshot.combination.fatigue * spatialPressLoad * weather.fatigue * (1.28 - stamina / 260);
     player.state.fitness = Number(clamp(player.state.fitness - drain, 18, 100).toFixed(1));
   });
 }
@@ -649,7 +784,7 @@ function maybeDiscipline(match, attacking, defending, creator, defender, defense
     defender.matchStats.yellowCards += 1;
     defending.stats.yellowCards += 1;
     const secondYellow = defender.matchStats.yellowCards >= 2;
-    const directRed = severe && chance(match, 0.22 * (rough.redMultiplier ?? 1) * referee.red);
+    const directRed = severe && chance(match, 0.12 * (rough.redMultiplier ?? 1) * referee.red);
     if (secondYellow || directRed) {
       if (hasTraitRule(defender, "redCardImmune", (rule) => rule.immune)) {
         updateRating(defender, -0.18);
@@ -752,7 +887,7 @@ function chooseAttackType(match, attack, defense) {
   ];
   return choose(match, entries, (entry) => entry.weight * (attacking.style.attackWeights[entry.key] ?? 1)
     * (entry.key === "cross" ? attacking.style.wingbackCrossSupport : 1)
-    * (entry.key === "cross" && attacking.style.key === "wingPlay" ? 1 + attacking.style.wideStretch * 0.55 : 1)
+    * (entry.key === "cross" && attacking.style.key === "wingPlay" ? 1 + attacking.style.wideStretch * 0.55 + attacking.style.wideAttackerBoost * 0.8 : 1)
     * legendAttackTypeMultiplier(match, attack.team, entry.key)).key;
 }
 
@@ -792,10 +927,10 @@ function simulatePossession(match) {
   };
   const attackFocusEdge = focusMultiplier(attacking.attackFocus, attackLane, 1.09, 0.96) * (attackSnapshot.style.flankSupport[attackLane] ?? 1);
   const defenseFocusEdge = focusMultiplier(defending.defenseFocus, oppositeLane(attackLane), 1.13, 0.96);
-  const tacticalEdge = (attackSnapshot.midfield - defenseSnapshot.midfield) / 85
-    + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 120
-    + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.1;
-  const duelProbability = clamp(0.62 + (creatorValue - defenderValue) / 115 + tacticalEdge, 0.2, 0.88);
+  const tacticalEdge = (attackSnapshot.midfield - defenseSnapshot.midfield) / 110
+    + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 150
+    + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.06;
+  const duelProbability = clamp(0.6 + (creatorValue - defenderValue) / 145 + tacticalEdge, 0.24, 0.84);
   const laneLabel = { left:"左路", center:"中路", right:"右路" }[attackLane] ?? "中路";
   const focusNames = { balanced:"均衡", left:"左路", center:"中路", right:"右路" };
   const restartText = restartControl[attackingIndex] > 1.01
@@ -829,9 +964,9 @@ function simulatePossession(match) {
     creatorRole: creator.assignedRole, defenderRole: defender.assignedRole, attackLane, attackType, duelProbability: Number(duelProbability.toFixed(3)),
     detail: `${duelDetail} ${creator.name}赢下对抗后选择“${typeText}”；本方转换风险 ${attackSnapshot.transitionRisk.toFixed(2)}，对方防线强度 ${Math.round(defenseSnapshot.defense)}。`,
   });
-  const creationProbability = clamp((0.52 + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 105
-    + (attackSnapshot.tactic.attack - 1) * 0.32 + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.08)
-    * legendPlayerMultiplier(match, attacking, creator, "creation", { attackType }), 0.16, 0.9);
+  const creationProbability = clamp((0.52 + (attackSnapshot.attack * attackFocusEdge - defenseSnapshot.defense * defenseFocusEdge) / 140
+    + (attackSnapshot.tactic.attack - 1) * 0.28 + Math.max(0, defenseSnapshot.transitionRisk - 1) * 0.05)
+    * legendPlayerMultiplier(match, attacking, creator, "creation", { attackType }), 0.16, 0.82);
   if (!chance(match, creationProbability)) {
     const coveringDefender = choose(match, activePlayers(defending).filter((player) => player.id !== defender.id), (player) =>
       playerMetric(match, defending, player, { positioning: 0.35, marking: 0.25, pace: 0.2, decisions: 0.2 }));
@@ -873,21 +1008,66 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
     ? (Number(shooter.heightCm ?? 180) - Number(marker?.heightCm ?? 180)) * 0.8 * attackSnapshot.style.aerialReliance
     : 0;
   const crossWidthBoost = attackType === "cross"
-    ? (attacking.style === "wingPlay" ? 1 + attackSnapshot.style.wideStretch * 0.18 + (attribute(match, attacking, creator, "crossing") - 70) / 420 : 1)
+    ? (attacking.style === "wingPlay" ? 1 + attackSnapshot.style.wideStretch * 0.18 + attackSnapshot.style.wideAttackerBoost * 0.8 + (attribute(match, attacking, creator, "crossing") - 70) / 420 : 1)
       * (attackSnapshot.style.flankSupport[attackLane] ?? 1)
     : 1;
   const baseXg = SHOT_BASE[attackType] ?? 0.11;
   const legendFinishFactor = legendPlayerMultiplier(match, attacking, shooter, "finish", { attackType });
-  const xg = clamp(baseXg * crossWidthBoost * (1 + (attackSnapshot.attack - defenseSnapshot.defense) / 95 + (finishing + heightEdge - markerDefense) / 150), 0.015, 0.62);
-  const goalProbability = clamp(xg * (0.97 + finishing / 116) * (1.48 - keeperValue / 190) * legendFinishFactor, 0.01, 0.78);
+  const xg = clamp(baseXg * crossWidthBoost * (1 + (attackSnapshot.attack - defenseSnapshot.defense) / 130 + (finishing + heightEdge - markerDefense) / 190), 0.015, 0.5);
+  const scoreDifference = Number(attacking.score ?? 0) - Number(defending.score ?? 0);
+  const goalProbability = clamp(xg * versusFinishingMultiplier(finishing, keeperValue, legendFinishFactor, scoreDifference), 0.01, 0.7);
   attacking.stats.shots += 1;
   attacking.stats.xg += xg;
   shooter.matchStats.shots += 1;
-  const onTarget = chance(match, clamp(0.25 + finishing / 240, 0.28, 0.64));
+  const superWorldieChance = superWorldieProbability(shooter, attackType);
+  const superWorldie = superWorldieChance > 0 && chance(match, superWorldieChance);
+  const onTarget = superWorldie || chance(match, clamp(0.27 + finishing / 230, 0.3, 0.66));
   const technique = shotDescription(match, attackType, shooter);
   if (onTarget) {
     attacking.stats.shotsOnTarget += 1;
     shooter.matchStats.shotsOnTarget += 1;
+  }
+  if (superWorldie) {
+    attacking.score += 1;
+    match.lastGoalMinute = match.minute;
+    match.lastGoalTeamIndex = attacking.index;
+    shooter.matchStats.goals += 1;
+    const assister = creator.id === shooter.id ? null : creator;
+    if (assister) assister.matchStats.assists += 1;
+    updateRating(shooter, 1.05);
+    if (assister) updateRating(assister, 0.45);
+    if (goalkeeper) updateRating(goalkeeper, -0.12);
+    event(match, "superWorldie", attacking.index, `超级世界波！${shooter.name}在禁区外轰出不可思议的远射，皮球直挂死角！${goalkeeper?.name ?? "防守球员"}毫无办法。`, {
+      chainId, technique:"超级世界波",
+      actorId:shooter.id, opponentId:goalkeeper?.id, assistId:assister?.id ?? null,
+      creatorId:creator.id, shooterRole:shooter.assignedRole, attackLane,
+      score:[match.teams[0].score, match.teams[1].score], xg:Number(xg.toFixed(2)), attackType, importance:"major",
+      detail:`专属随机事件：${shooter.name}的远射能力为 ${Math.round(Number(shooter.attributes?.longShots ?? 50))}，从低概率远射机会中打入超级世界波。比分来到 ${match.teams[0].score}:${match.teams[1].score}。`,
+      ratings:{ [shooter.id]:shooter.rating, ...(assister ? { [assister.id]:assister.rating } : {}) },
+    });
+    return;
+  }
+  const butterFingers = Boolean(onTarget && goalkeeper && roleGroup(goalkeeper.assignedRole) === "GK"
+    && chance(match, butterFingersProbability(goalkeeper)));
+  if (butterFingers) {
+    attacking.score += 1;
+    match.lastGoalMinute = match.minute;
+    match.lastGoalTeamIndex = attacking.index;
+    shooter.matchStats.goals += 1;
+    const assister = creator.id === shooter.id ? null : creator;
+    if (assister) assister.matchStats.assists += 1;
+    updateRating(shooter, 0.78);
+    if (assister) updateRating(assister, 0.38);
+    updateRating(goalkeeper, -0.9);
+    event(match, "butterFingers", attacking.index, `黄油手！体能下降的${goalkeeper.name}接球时出现致命脱手，皮球从身下漏进球门！${shooter.name}收获进球。`, {
+      chainId, technique,
+      actorId:goalkeeper.id, opponentId:shooter.id, assistId:assister?.id ?? null,
+      creatorId:creator.id, scorerId:shooter.id, shooterRole:shooter.assignedRole, attackLane,
+      score:[match.teams[0].score, match.teams[1].score], xg:Number(xg.toFixed(2)), attackType, importance:"major",
+      detail:`专属随机事件：${goalkeeper.name}当前体能 ${Math.round(Number(goalkeeper.state?.fitness ?? 100))}，低体能提高了接球失误风险。比分来到 ${match.teams[0].score}:${match.teams[1].score}。`,
+      ratings:{ [goalkeeper.id]:goalkeeper.rating, [shooter.id]:shooter.rating, ...(assister ? { [assister.id]:assister.rating } : {}) },
+    });
+    return;
   }
   if (onTarget && chance(match, goalProbability)) {
     attacking.score += 1;
@@ -915,7 +1095,7 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
     updateRating(shooter, xg > 0.25 ? -0.12 : -0.03);
     const saveStyle = saveDescription(match, goalkeeper, xg);
     const looseBallFactor = goalkeeper && legendId(goalkeeper) === "high-wall" ? 0.8 : 1;
-    const looseBall = Boolean(goalkeeper && chance(match, clamp((0.12 + xg * 0.35 - keeperValue / 900) * looseBallFactor, 0.06, 0.28)));
+    const looseBall = Boolean(goalkeeper && chance(match, clamp((0.1 + xg * 0.3 - keeperValue / 900) * looseBallFactor, 0.05, 0.22)));
     event(match, "save", defending.index, `${shooter.name}以${technique}完成攻门，${goalkeeper?.name ?? "防守球员"}${saveStyle}${looseBall ? "，但皮球脱手留在禁区内" : "并控制住皮球"}。`, {
       chainId, technique, saveStyle, looseBall,
       actorId: goalkeeper?.id, opponentId: shooter.id, creatorId: creator.id, shooterRole: shooter.assignedRole,
@@ -931,8 +1111,8 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
         playerMetric(match, defending, player, { positioning: 0.35, decisions: 0.25, strength: 0.2, aggression: 0.2 }));
       const reboundAttack = rebounder ? playerMetric(match, attacking, rebounder, { finishing: 0.4, offBall: 0.3, composure: 0.3 }) : 0;
       const clearance = clearer ? playerMetric(match, defending, clearer, { positioning: 0.4, decisions: 0.3, strength: 0.3 }) : 30;
-      if (rebounder && chance(match, clamp(0.5 + (reboundAttack - clearance) / 130, 0.22, 0.78))) {
-        const reboundXg = clamp(xg * 0.62 + 0.08, 0.08, 0.38);
+      if (rebounder && chance(match, clamp(0.48 + (reboundAttack - clearance) / 155, 0.22, 0.7))) {
+        const reboundXg = clamp(xg * 0.56 + 0.07, 0.07, 0.32);
         attacking.stats.shots += 1;
         attacking.stats.xg += reboundXg;
         rebounder.matchStats.shots += 1;
@@ -941,7 +1121,7 @@ function takeShot(match, attacking, defending, attackSnapshot, defenseSnapshot, 
           attacking.stats.shotsOnTarget += 1;
           rebounder.matchStats.shotsOnTarget += 1;
         }
-        const reboundGoal = reboundOnTarget && chance(match, clamp(reboundXg * (1.05 + reboundAttack / 135) * (1.4 - keeperValue / 210), 0.04, 0.62));
+        const reboundGoal = reboundOnTarget && chance(match, clamp(reboundXg * (0.96 + reboundAttack / 155) * (1.36 - keeperValue / 195), 0.04, 0.45));
         if (reboundGoal) {
           attacking.score += 1;
           match.lastGoalMinute = match.minute;
@@ -1065,17 +1245,38 @@ function triggerBlackWhistle(match) {
   takePenalty(match, favored, punished);
 }
 
+function triggerOwnGoal(match) {
+  if (match.ownGoalTriggered) return;
+  const candidates = match.teams.flatMap((team) => activePlayers(team).map((player) => ({ team, player })));
+  const target = choose(match, candidates, ({ player }) => ownGoalCandidateWeight(player));
+  if (!target) return;
+  const scoringIndex = target.team.index === 0 ? 1 : 0;
+  const scoringTeam = match.teams[scoringIndex];
+  scoringTeam.score += 1;
+  match.lastGoalMinute = match.minute;
+  match.lastGoalTeamIndex = scoringIndex;
+  match.ownGoalTriggered = true;
+  target.player.matchStats.ownGoals = Number(target.player.matchStats.ownGoals ?? 0) + 1;
+  updateRating(target.player, -0.85);
+  event(match, "ownGoal", scoringIndex, `乌龙球！${target.player.name}在回防处理时判断失误，将球碰进了自家球门，${scoringTeam.name}意外得分！`, {
+    actorId:target.player.id, ownGoalTeamIndex:target.team.index, importance:"major",
+    score:[match.teams[0].score, match.teams[1].score],
+    detail:`专属随机事件：全位置球员均可能出现乌龙；${target.player.name}当前体能 ${Math.round(Number(target.player.state?.fitness ?? 100))}、冷静 ${Math.round(Number(target.player.attributes?.composure ?? 50))}，疲劳与低冷静会提高失误权重。比分来到 ${match.teams[0].score}:${match.teams[1].score}。`,
+    rating:target.player.rating,
+  });
+}
+
 function processMinute(match, minute) {
   match.minute = minute;
-  match.teams.forEach((team) => applySituationalPlan(match, team));
+  const planChanged = match.teams.map((team) => applySituationalPlan(match, team)).some(Boolean);
+  if (planChanged) recordAnalysisSnapshot(match, "plan-change");
   if (minute === 1) event(match, "kickoff", null, `比赛开始。${match.teams[0].name}与${match.teams[1].name}进入对抗，本场裁判尺度为${match.referee.name}。`, { detail: match.referee.description });
   if (!match.blackWhistleTriggered && match.blackWhistleMinute && minute >= match.blackWhistleMinute) triggerBlackWhistle(match);
+  if (!match.ownGoalTriggered && match.ownGoalMinute && minute >= match.ownGoalMinute) triggerOwnGoal(match);
   if (match.weather.key === "storm" && !match.lightningTriggered && minute >= match.lightningMinute) triggerLightning(match);
-  // Slightly denser normal build-up without changing shot accuracy or finishing.
-  // This lifts the baseline number of settled attacking sequences while keeping
-  // tactical multipliers as the differentiator between those sequences.
   if (chance(match, 0.55)) simulatePossession(match);
   if (minute % 11 === 0) maybeRegularInjury(match);
+  if (minute % 15 === 0) recordAnalysisSnapshot(match, "interval");
 }
 
 function processUntil(match, targetMinute) {
@@ -1156,6 +1357,7 @@ function finishMatch(match, reason = "normal") {
   const winnerIndex = match.penalties ? (match.penalties.score[0] > match.penalties.score[1] ? 0 : 1) : decidingScore[0] === decidingScore[1] ? null : decidingScore[0] > decidingScore[1] ? 0 : 1;
   match.winnerIndex = winnerIndex;
   event(match, "fulltime", winnerIndex, winnerIndex === null ? `比赛结束，双方 ${match.teams[0].score}:${match.teams[1].score} 战平。` : `比赛结束，${match.teams[winnerIndex].name}获胜。`, { importance: "stage" });
+  recordAnalysisSnapshot(match, "fulltime");
   match.report = buildReport(match);
 }
 
@@ -1198,8 +1400,9 @@ function buildReport(match) {
         stats: player.matchStats,
       })).sort((left, right) => right.rating - left.rating),
     })),
-    importantEvents: match.events.filter((entry) => ["goal", "red", "injury", "lightning", "blackWhistle", "penaltyAwarded", "penalty", "shootout", "halftime", "fulltime", "tactical"].includes(entry.type)),
+    importantEvents: match.events.filter((entry) => ["goal", "butterFingers", "ownGoal", "superWorldie", "red", "injury", "lightning", "blackWhistle", "penaltyAwarded", "penalty", "shootout", "halftime", "fulltime", "tactical"].includes(entry.type)),
     events: match.events,
+    analysisTimeline:structuredClone(match.analysisTimeline ?? []),
   };
 }
 
@@ -1233,6 +1436,8 @@ export function createVersusMatch(seats, options = {}) {
     lightningTriggered: false,
     blackWhistleMinute: null,
     blackWhistleTriggered: false,
+    ownGoalMinute: null,
+    ownGoalTriggered: false,
     lastGoalMinute: null,
     lastGoalTeamIndex: null,
     penalties: null,
@@ -1243,7 +1448,12 @@ export function createVersusMatch(seats, options = {}) {
   match.referee = options.referee && VERSUS_REFEREES[options.referee] ? { key: options.referee, ...VERSUS_REFEREES[options.referee] } : pickReferee(match);
   if (match.weather.key === "storm") match.lightningMinute = 18 + Math.floor(random(match) * 58);
   const argentinaCounts = match.teams.map(argentinaCount);
-  if (argentinaCounts[0] !== argentinaCounts[1] && chance(match, 0.08)) match.blackWhistleMinute = 20 + Math.floor(random(match) * 56);
+  const blackWhistleChance = ["league", "cup", "friendly"].includes(competitionMode) ? 0.02 : 0.08;
+  if (argentinaCounts[0] !== argentinaCounts[1] && chance(match, blackWhistleChance)) match.blackWhistleMinute = 20 + Math.floor(random(match) * 56);
+  const ownGoalPressure = average(match.teams.flatMap((team) => team.players.map(ownGoalCandidateWeight)), 0.15);
+  const ownGoalMatchChance = clamp(0.006 + Math.max(0, ownGoalPressure - 0.15) * 0.008, 0.006, 0.022);
+  if (chance(match, ownGoalMatchChance)) match.ownGoalMinute = 8 + Math.floor(random(match) * 80);
+  recordAnalysisSnapshot(match, "kickoff");
   return match;
 }
 
@@ -1361,6 +1571,7 @@ export function updatePausedTactics(match, ownerIndex, payload = {}) {
     markingTargetFactor: markingTarget ? 0.86 : null, markingTransitionCost: markingTarget ? 1.035 : null,
     detail: markingTarget ? `专人盯防将限制${markingTarget.name}的接球、处理球和终结空间，但会轻微拉扯己方防守站位。目标离场后效果自动失效。` : null,
   });
+  recordAnalysisSnapshot(match, "manual-adjustment");
   return match;
 }
 

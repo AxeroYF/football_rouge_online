@@ -16,6 +16,13 @@ test("联赛旧数据冲突时后台提供开启全新赛季的恢复入口", ()
   assert.match(source, /开启全新黄狗联赛赛季/);
   assert.match(source, /\/api\/admin\/league\/fresh-season/);
   assert.match(source, /else renderLeagueRecovery\(error\)/);
+  assert.match(source, /league-x-growth-grant-form/);
+  assert.match(source, /\/api\/admin\/league\/x-growth\/grant/);
+  assert.match(source, /discipline-coins/);
+  assert.match(source, /\/coins\/remove/);
+  assert.match(source, /\/login-cooldown/);
+  assert.match(source, /\/rewards\/suspension/);
+  assert.match(source, /发送全服邮件通告/);
 });
 
 test("管理员后台拒绝错误密码和未授权数据访问", async () => {
@@ -39,13 +46,14 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal(league.value.league.teams.length, 10);
   assert.ok(league.value.league.pools.ATT.total > 0);
   assert.equal(league.value.league.s4Assets.schemaVersion, 1);
-  assert.equal(league.value.league.s4PlayerCatalog.length, 550);
+  assert.equal(league.value.league.s4PlayerCatalog.length, 602);
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅西"));
+  assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅老鼠"));
   assert.ok(Array.isArray(league.value.league.s4CardGrants));
   assert.ok(Array.isArray(league.value.league.coinGrants));
   const content = await request("/api/admin/content", { token:login.value.token });
   assert.equal(content.statusCode, 200);
-  assert.equal(content.value.content.players.length, 550);
+  assert.equal(content.value.content.players.length, 602);
   assert.ok(content.value.content.traits.length > 0);
   assert.deepEqual(content.value.content.roleGroups, ["ANY", "GK", "DEF", "MID", "ATT"]);
   assert.deepEqual(content.value.content.playerRoles, ["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
@@ -61,4 +69,15 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   const logout = await request("/api/admin/logout", { method:"POST", token:login.value.token });
   assert.equal(logout.statusCode, 200);
   assert.equal((await request("/api/admin/dashboard", { token:login.value.token })).statusCode, 401);
+});
+
+test("后台球员数值保存以26项为权威并自动适配总评", () => {
+  const storeSource = readFileSync(new URL("../versus/ydl-content-store.js", import.meta.url), "utf8");
+  assert.match(storeSource, /player\.overall = playerOverallFromAttributes\(player\.attributes, player\.role\)/);
+  assert.match(storeSource, /S4_PLAYER_DEFAULT_ATTRIBUTE_CAP/);
+  assert.match(storeSource, /player\.referenceAttributes = clone\(player\.attributes\)/);
+  assert.match(storeSource, /cleanPatch\.overall = player\.overall/);
+  assert.match(storeSource, /cleanPatch\.attributes = clone\(player\.attributes\)/);
+  assert.match(storeSource, /applyPlayerPatch\(player, patch, \{ preserveOverall:true \}\)/);
+  assert.match(storeSource, /migrated = applyOverrides\(\) \|\| migrated/);
 });

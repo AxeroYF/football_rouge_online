@@ -9,14 +9,14 @@ import {
 import { REAL_PLAYERS } from "../versus/player-pool.js";
 import { S4_BOND_CATALOG } from "../versus/league-service.js";
 
-test("正式S4球员池生成10个国家队和20家俱乐部羁绊", () => {
+test("正式S4球员池生成满足门槛的国家队和俱乐部羁绊", () => {
   assert.deepEqual(
     S4_BOND_CATALOG.filter((bond) => bond.type === "nationality").map((bond) => bond.name),
-    ["西班牙", "法国", "英格兰", "德国", "巴西", "意大利", "葡萄牙", "阿根廷", "荷兰", "比利时"],
+    ["西班牙", "巴西", "法国", "英格兰", "德国", "意大利", "葡萄牙", "阿根廷", "荷兰", "比利时", "克罗地亚"],
   );
   assert.deepEqual(
     S4_BOND_CATALOG.filter((bond) => bond.type === "club").map((bond) => bond.name),
-    ["皇家马德里", "巴塞罗那", "阿森纳", "AC米兰", "拜仁慕尼黑", "曼城", "利物浦", "马德里竞技", "曼联", "巴黎圣日耳曼", "国际米兰", "尤文图斯", "那不勒斯", "纽卡斯尔联", "托特纳姆热刺", "切尔西", "阿斯顿维拉", "多特蒙德", "加拉塔萨雷", "利雅得新月"],
+    ["皇家马德里", "巴塞罗那", "拜仁慕尼黑", "阿森纳", "AC米兰", "国际米兰", "马德里竞技", "曼城", "曼联", "利物浦", "尤文图斯", "巴黎圣日耳曼", "切尔西", "纽卡斯尔联", "那不勒斯", "托特纳姆热刺", "多特蒙德", "阿斯顿维拉", "加拉塔萨雷", "利雅得新月"],
   );
   assert.ok(S4_BOND_CATALOG.every((bond) => bond.poolCount >= 10));
   assert.deepEqual(S4_BOND_CATALOG, createS4BondCatalog(REAL_PLAYERS));

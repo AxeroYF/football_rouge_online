@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "profileType": "a",
+  "grade": "A",
+  "coordinateSystem": "card-percent",
+  "card": {
+    "width": 286,
+    "height": 358
+  },
+  "note": "x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
+  "profiles": {
+    "Casemiro": {
+      "fileName": "Casemiro.png",
+      "xPercent": 55.3,
+      "yPercent": 50.9,
+      "widthPercent": 196
+    },
+    "Diego Milito": {
+      "fileName": "Diego Milito.png",
+      "xPercent": 6,
+      "yPercent": 59.7,
+      "widthPercent": 192
+    },
+    "Eden Hazard": {
+      "fileName": "Eden Hazard.png",
+      "xPercent": 42.2,
+      "yPercent": 60.5,
+      "widthPercent": 200
+    },
+    "Francesco Totti": {
+      "fileName": "Francesco Totti.png",
+      "xPercent": 49.6,
+      "yPercent": 56.8,
+      "widthPercent": 160
+    },
+    "Gareth Bale": {
+      "fileName": "Gareth Bale.png",
+      "xPercent": 49.3,
+      "yPercent": 57.1,
+      "widthPercent": 192
+    },
+    "Jérôme Boateng": {
+      "fileName": "Jérôme Boateng.png",
+      "xPercent": 42.6,
+      "yPercent": 65.6,
+      "widthPercent": 224
+    },
+    "Lúcio": {
+      "fileName": "Lúcio.png",
+      "xPercent": 59.2,
+      "yPercent": 69.6,
+      "widthPercent": 124
+    },
+    "Maicon": {
+      "fileName": "Maicon.png",
+      "xPercent": 22.6,
+      "yPercent": 52.8,
+      "widthPercent": 164
+    },
+    "Mario Kempes": {
+      "fileName": "Mario Kempes.png",
+      "xPercent": 45.4,
+      "yPercent": 54,
+      "widthPercent": 200
+    },
+    "Miroslav Klose": {
+      "fileName": "Miroslav Klose.png",
+      "xPercent": 40.4,
+      "yPercent": 105.2,
+      "widthPercent": 184
+    },
+    "Paul Pogba": {
+      "fileName": "Paul Pogba.png",
+      "xPercent": 42.2,
+      "yPercent": 93.2,
+      "widthPercent": 140
+    },
+    "Radamel Falcao": {
+      "fileName": "Radamel Falcao.png",
+      "xPercent": 55.3,
+      "yPercent": 59.6,
+      "widthPercent": 216
+    },
+    "Raphaël Varane": {
+      "fileName": "Raphaël Varane.png",
+      "xPercent": 73,
+      "yPercent": 61.3,
+      "widthPercent": 200
+    },
+    "Raúl González": {
+      "fileName": "Raúl González.png",
+      "xPercent": 51.1,
+      "yPercent": 56.5,
+      "widthPercent": 100
+    },
+    "Robin van Persie": {
+      "fileName": "Robin van Persie.png",
+      "xPercent": 59.9,
+      "yPercent": 55.7,
+      "widthPercent": 204
+    },
+    "Robinho": {
+      "fileName": "Robinho.png",
+      "xPercent": 47.9,
+      "yPercent": 53.5,
+      "widthPercent": 208
+    },
+    "Sávio Bortolini": {
+      "fileName": "Sávio Bortolini.png",
+      "xPercent": 46.1,
+      "yPercent": 54.8,
+      "widthPercent": 108
+    },
+    "Sergio Ramos": {
+      "fileName": "Sergio Ramos.png",
+      "xPercent": 44.7,
+      "yPercent": 54,
+      "widthPercent": 188
+    },
+    "Thiago Silva": {
+      "fileName": "Thiago Silva.png",
+      "xPercent": 47.2,
+      "yPercent": 56,
+      "widthPercent": 108
+    },
+    "Thomas Müller": {
+      "fileName": "Thomas Müller.png",
+      "xPercent": 53.2,
+      "yPercent": 55.4,
+      "widthPercent": 188
+    },
+    "Xabi Alonso": {
+      "fileName": "Xabi Alonso.png",
+      "xPercent": 28.4,
+      "yPercent": 63.3,
+      "widthPercent": 236
+    },
+    "Zé Roberto": {
+      "fileName": "Zé Roberto.png",
+      "xPercent": 54.6,
+      "yPercent": 73.2,
+      "widthPercent": 120
+    },
+    "Bellingham": {
+      "playerKey": "Bellingham",
+      "fileName": "Bellingham.png",
+      "xPercent": 45.2,
+      "yPercent": 84.5,
+      "widthPercent": 172
+    }
+  }
+}

@@ -18,27 +18,29 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     const account = versusRooms.account(body.playerId, body.accountToken);
     const developer = process.env.VERSUS_PUBLIC_ONLY !== "1";
     if (pathname === "/api/versus/league") result = { league:yellowDogsLeague.view(account, { developer }) };
-    else if (pathname === "/api/versus/league/draft/start") result = { league:yellowDogsLeague.beginDraft(account, body.teamName) };
-    else if (pathname === "/api/versus/league/draft/draw") result = { league:yellowDogsLeague.drawDraft(account, body.pool) };
-    else if (pathname === "/api/versus/league/draft/choose") result = { league:yellowDogsLeague.chooseDraft(account, body.leaguePlayerId) };
-    else if (pathname === "/api/versus/league/draft/x-player") result = { league:yellowDogsLeague.chooseXPlayer(account, body.leaguePlayerId) };
-    else if (pathname === "/api/versus/league/draft/x-configure") result = { league:yellowDogsLeague.configureXPlayer(account, body) };
-    else if (pathname === "/api/versus/league/draft/x-trait") result = { league:yellowDogsLeague.chooseXPlayerTrait(account, body.traitId) };
+    else if (pathname === "/api/versus/league/draft/start") result = yellowDogsLeague.beginDraft(account, body.teamName);
+    else if (pathname === "/api/versus/league/draft/draw") result = yellowDogsLeague.drawDraft(account, body.pool);
+    else if (pathname === "/api/versus/league/draft/choose") result = yellowDogsLeague.chooseDraft(account, body.leaguePlayerId);
+    else if (pathname === "/api/versus/league/draft/x-player") result = yellowDogsLeague.chooseXPlayer(account, body.leaguePlayerId);
+    else if (pathname === "/api/versus/league/draft/x-configure") result = yellowDogsLeague.configureXPlayer(account, body);
+    else if (pathname === "/api/versus/league/draft/x-trait") result = yellowDogsLeague.chooseXPlayerTrait(account, body.traitId);
     else if (pathname === "/api/versus/league/draft/reset") result = { league:yellowDogsLeague.resetDraft(account) };
-    else if (pathname === "/api/versus/league/draft/auto" && developer) result = { league:yellowDogsLeague.autoDraft(account) };
+    else if (pathname === "/api/versus/league/draft/auto" && developer) result = yellowDogsLeague.autoDraft(account);
     else if (pathname === "/api/versus/league/draft/finish") result = { league:yellowDogsLeague.finishDraft(account) };
     else if (pathname === "/api/versus/league/team") result = { league:yellowDogsLeague.saveTeam(account, body) };
     else if (pathname === "/api/versus/league/team/rename") result = { league:yellowDogsLeague.renameTeam(account, body.teamName) };
     else if (pathname === "/api/versus/league/team/detail") result = { team:yellowDogsLeague.teamDetail(account, body.teamId) };
     else if (pathname === "/api/versus/league/match/detail") result = { match:yellowDogsLeague.matchDetail(account, body.matchId) };
+    else if (pathname === "/api/versus/league/predictions/bet") result = { league:yellowDogsLeague.placeMatchPrediction(account, body.marketId, body.category, body.selection, body.amount) };
     else if (pathname === "/api/versus/league/inbox/read") result = { league:yellowDogsLeague.readInbox(account, body.messageId) };
     else if (pathname === "/api/versus/league/inbox/delete") result = { league:yellowDogsLeague.deleteInbox(account, body.messageId) };
     else if (pathname === "/api/versus/league/inbox/delete-batch") result = { league:yellowDogsLeague.deleteInboxBatch(account, body.mode) };
-    else if (pathname === "/api/versus/league/friendlies/invite") result = { league:yellowDogsLeague.createFriendlyInvitation(account, body.targetTeamId) };
+    else if (pathname === "/api/versus/league/friendlies/invite") result = { invitation:yellowDogsLeague.createFriendlyInvitation(account, body.targetTeamId, { compact:true }) };
     else if (pathname === "/api/versus/league/friendlies/respond") result = { league:yellowDogsLeague.resolveFriendlyInvitation(account, body.invitationId, body.action) };
     else if (pathname === "/api/versus/league/shop/buy-s4") result = { league:yellowDogsLeague.buyS4Packs(account, body.packType, body.quantity) };
-    else if (pathname === "/api/versus/league/x-growth/buy") result = { league:yellowDogsLeague.buyXGrowthPoints(account, body.quantity) };
-    else if (pathname === "/api/versus/league/x-growth/spend") result = { league:yellowDogsLeague.spendXGrowthPoints(account, body.field, body.amount) };
+    else if (pathname === "/api/versus/league/x-growth/buy") result = { growth:yellowDogsLeague.buyXGrowthPoints(account, body.quantity, { compact:true, requestId:body.requestId }) };
+    else if (pathname === "/api/versus/league/x-growth/spend") result = { growth:yellowDogsLeague.spendXGrowthPoints(account, body.field, body.amount, { compact:true, requestId:body.requestId }) };
+    else if (pathname === "/api/versus/league/x-growth/reset") result = { growth:yellowDogsLeague.resetXGrowth(account, body.role, body.secondaryRole, { compact:true, requestId:body.requestId, traitId:body.traitId }) };
     else if (pathname === "/api/versus/league/packs/open") result = { league:yellowDogsLeague.openS4Pack(account, body.packId) };
     else if (pathname === "/api/versus/league/packs/open-batch") result = { league:yellowDogsLeague.openS4PacksBatch(account, body.packIds) };
     else if (pathname === "/api/versus/league/packs/choose") result = { league:yellowDogsLeague.chooseS4Pack(account, body.offerId, body.leaguePlayerId) };
@@ -54,11 +56,16 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/card-trades/create") result = { league:yellowDogsLeague.createCardTradeOffer(account, body.targetOwnerId, body.offeredCardIds, body.requestedCardIds, body.coinAmount) };
     else if (pathname === "/api/versus/league/card-trades/respond") result = { league:yellowDogsLeague.resolveCardTradeOffer(account, body.tradeOfferId, body.action) };
     else if (pathname === "/api/versus/league/card-trades/withdraw") result = { league:yellowDogsLeague.withdrawCardTradeOffer(account, body.tradeOfferId) };
-    else if (pathname === "/api/versus/league/card/enhance") result = { league:yellowDogsLeague.enhanceS4Card(account, body.mainCardId, body.materialCardId, body.useProtection === true) };
+    else if (pathname === "/api/versus/league/card/enhance") result = { enhancement:yellowDogsLeague.enhanceS4Card(account, body.mainCardId, body.materialCardId, body.useProtection === true, { compact:true }) };
     else if (pathname === "/api/versus/league/card/enhancement-trait") result = { league:yellowDogsLeague.chooseS4EnhancementTrait(account, body.offerId, body.traitId) };
     else if (pathname === "/api/versus/league/ownership/return") result = { league:yellowDogsLeague.returnOwnership(account, body.leaguePlayerId) };
+    else if (pathname === "/api/versus/league/ownership/return-batch") result = { league:yellowDogsLeague.returnOwnerships(account, body.leaguePlayerIds) };
     else if (pathname === "/api/versus/league/simulate" && developer) { yellowDogsLeague.simulateNextRound(); result = { league:yellowDogsLeague.view(account, { developer }) }; }
     else return sendJson(response, 404, { ok:false, error:"league API not found" });
+  }
+  else if (request.method === "POST" && pathname === "/api/versus/live") {
+    const account = versusRooms.account(body.playerId, body.accountToken);
+    result = { live:yellowDogsLeague.liveView(account) };
   }
   else if (request.method === "GET" && pathname === "/api/versus/broadcasts") result = { broadcasts:[...versusRooms.broadcasts(), ...yellowDogsLeague.broadcasts()] };
   else if (request.method === "POST" && pathname === "/api/versus/register") result = versusRooms.register(body.nickname, body.password, body.legacyAccountToken);

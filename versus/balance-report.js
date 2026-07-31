@@ -815,7 +815,7 @@ function runGoalEventAnalysis(matches, rawMatchSampleLimit = 0, draftChoiceCount
       ));
     const seed = `goal-event-analysis:${index}`;
     const result = play(seats[0], seats[1], seed, null, null, { recordEvents: true });
-    const goals = result.events.filter((entry) => entry.type === "goal" || (entry.type === "penalty" && entry.scored));
+    const goals = result.events.filter((entry) => ["goal", "butterFingers", "ownGoal", "superWorldie"].includes(entry.type) || (entry.type === "penalty" && entry.scored));
     const orderedGoals = [...goals].sort((left, right) => left.minute - right.minute);
     goalsPerMatch.push(goals.length);
     totalGoals += goals.length;

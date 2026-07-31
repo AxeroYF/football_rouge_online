@@ -4,20 +4,27 @@ import { INDIVIDUALIZED_PLAYERS, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAY
 import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
 import { VersusRoomService } from "../versus/room-service.js";
 import { createLineupSeed, parseLineupSeed } from "../versus/lineup-seed.js";
-import { hydrateHistoricalMatchDetail } from "../versus/history-detail.js";
+import { buildMatchReview, hydrateHistoricalMatchDetail } from "../versus/history-detail.js";
 import {
   EXTRA_DURATION_MS,
   HALFTIME_ADJUSTMENT_MS,
   PENALTY_KICK_INTERVAL_MS,
   REGULAR_DURATION_MS,
   advanceVersusMatch,
+  butterFingersProbability,
   createVersusMatch,
   drawVersusReferee,
+  ownGoalCandidateWeight,
   publicMatch,
   requestTacticalPause,
   resumeVersusMatch,
+  tacticalCombinationModifiers,
+  superWorldieProbability,
   updatePausedTactics,
+  versusFinishingMultiplier,
   versusPositionFit,
+  versusStackedEdgeRetention,
+  versusTrailingTransitionRelief,
   versusWingbackSupport,
 } from "../versus/match-engine.js";
 import {
@@ -32,6 +39,75 @@ import {
 
 const BALANCED_DRAFT_POOLS = ["GK", "DEF", "DEF", "DEF", "DEF", "MID", "MID", "MID", "ATT", "ATT", "ATT"];
 
+test("S4终结校准保留能力差异并抑制领先方滚雪球", () => {
+  const ordinary = versusFinishingMultiplier(85, 85, 1, 0);
+  const elite = versusFinishingMultiplier(95, 85, 1.05, 0);
+  assert.ok(ordinary > 1);
+  assert.ok(elite > ordinary);
+  assert.ok(versusFinishingMultiplier(85, 85, 1, 1) < ordinary);
+  assert.ok(versusFinishingMultiplier(85, 85, 1, 4) < versusFinishingMultiplier(85, 85, 1, 1));
+  assert.equal(versusFinishingMultiplier(85, 85, 1, -2), ordinary);
+});
+
+test("S4追分转换风险缓冲只作用于积极与全力进攻", () => {
+  assert.equal(versusTrailingTransitionRelief(-1, "positive"), 0.975);
+  assert.equal(versusTrailingTransitionRelief(-4, "allOutAttack"), 0.9);
+  assert.equal(versusTrailingTransitionRelief(-2, "balanced"), 1);
+  assert.equal(versusTrailingTransitionRelief(1, "positive"), 1);
+});
+
+test("管理员登录冷却会立即作废旧凭证并在到期后恢复密码登录", () => {
+  let now = Date.parse("2026-07-30T12:00:00+08:00");
+  const service = new VersusRoomService({ accountsPath:null, now:() => now });
+  const registered = service.register("违规测试玩家", "password-123");
+  const playerId = registered.profile.id;
+  const oldToken = registered.accountToken;
+
+  const moderation = service.applyLoginCooldown(playerId, 60, "恶意利用漏洞");
+  assert.equal(moderation.loginCooldownActive, true);
+  assert.throws(() => service.login("违规测试玩家", "password-123"), /暂停登录/);
+  assert.throws(() => service.account(playerId, oldToken), /凭证无效/);
+
+  now += 60 * 60_000 + 1;
+  const loggedIn = service.login("违规测试玩家", "password-123");
+  assert.equal(loggedIn.profile.id, playerId);
+  assert.notEqual(loggedIn.accountToken, oldToken);
+});
+
+test("S4多系统叠加只对额外能力优势应用递减收益", () => {
+  assert.equal(versusStackedEdgeRetention({ upgradeLevel:8 }), 1);
+  assert.equal(versusStackedEdgeRetention({ upgradeLevel:8, traits:["trait-a"] }), .88);
+  assert.equal(versusStackedEdgeRetention({ upgradeLevel:8, traits:["trait-a"], leagueChemistryBonus:.015, ydlBondBonus:.06 }), .7);
+});
+
+test("5-3-2不再获得额外进攻组织补偿且防守倍率保持不变", () => {
+  const slots = [
+    ["GK",50,90],["LWB",10,59],["CB",30,70],["CB",50,72],["CB",70,70],["RWB",90,59],
+    ["LM",24,44],["DM",50,48],["RM",76,44],["ST",38,18],["ST",62,18],
+  ];
+  const players = slots.map(([role], index) => ({ id:`shape-${index}`, role:role === "LWB" ? "LB" : role === "RWB" ? "RB" : role }));
+  const positions = Object.fromEntries(slots.map(([, x, y], index) => [`shape-${index}`, { x, y }]));
+  const profile = formationStructureProfile(players, positions);
+
+  assert.equal(profile.name, "5-3-2");
+  assert.equal(profile.multipliers.attack, 1);
+  assert.equal(profile.multipliers.midfield, 1);
+  assert.equal(profile.multipliers.defense, 1);
+});
+
+test("合理的比赛思路与战术打法获得联动且不修改普通组合", () => {
+  const pressing = tacticalCombinationModifiers("positive", "highPress");
+  const counter = tacticalCombinationModifiers("defensive", "counterAttack");
+  const ordinary = tacticalCombinationModifiers("balanced", "possession");
+
+  assert.ok(pressing.attack > 1);
+  assert.ok(pressing.midfield > 1);
+  assert.ok(pressing.transitionRisk < 1);
+  assert.ok(counter.attack > 1);
+  assert.ok(counter.counter > 1);
+  assert.deepEqual(ordinary, { attack:1, midfield:1, defense:1, transitionRisk:1, fatigue:1, counter:1 });
+});
+
 test("旧版比赛详情会补回球员能力并生成分散的阵型坐标", () => {
   const players = BALANCED_DRAFT_POOLS.map((pool, index) => REAL_PLAYER_POOLS[pool][index]);
   const detail = hydrateHistoricalMatchDetail({
@@ -45,6 +121,83 @@ test("旧版比赛详情会补回球员能力并生成分散的阵型坐标", ()
   assert.ok(new Set(team.players.map((player) => `${player.position.x},${player.position.y}`)).size >= 8);
   assert.equal(team.players.filter((player) => player.position.y >= 82).length, 1);
   assert.equal(hydrateHistoricalMatchDetail({ id:"summary-only", teams:null }).teams, null);
+});
+
+test("赛后复盘按查看者视角提炼真实比赛数据", () => {
+  const reviewPlayers = (prefix, overall, fitness, bestName) => BALANCED_DRAFT_POOLS.map((role, index) => ({
+    id:`${prefix}-${index}`,
+    name:index === 0 ? bestName : `${prefix}球员${index}`,
+    role,
+    assignedRole:role,
+    overall,
+    fitness,
+    rating:index === 0 ? (prefix === "客队" ? 7.4 : 8.1) : 6.5,
+    stats:{ goals:index === 0 ? 1 : 0, assists:index === 0 && prefix === "主队" ? 1 : 0 },
+  }));
+  const homePlayers = reviewPlayers("主队", 83, 78, "主队核心");
+  const awayPlayers = reviewPlayers("客队", 79, 69, "客队最佳");
+  const detail = {
+    viewerIndex:1,
+    winnerIndex:0,
+    score:[2, 1],
+    teams:[
+      {
+        style:"possession",
+        stats:{ possession:54, shots:12, xg:1.84 },
+        players:homePlayers,
+        positions:defaultElevenPositions(homePlayers),
+      },
+      {
+        style:"possession",
+        stats:{ possession:46, shots:7, xg:.72 },
+        players:awayPlayers,
+        positions:defaultElevenPositions(awayPlayers),
+      },
+    ],
+    importantEvents:[
+      { minute:18, type:"goal", teamIndex:1, text:"客队率先破门" },
+      { minute:74, type:"goal", teamIndex:0, text:"主队打入制胜球" },
+    ],
+    analysisTimeline:[
+      {
+        minute:0,
+        score:[0, 0],
+        teams:[
+          { formation:"4-3-3", structureIndex:1, positionFit:1, tacticalFit:1.02, averageFitness:82, averageOverall:83 },
+          { formation:"6-3-1", structureIndex:.62, positionFit:.75, tacticalFit:.82, averageFitness:76, averageOverall:79 },
+        ],
+      },
+      {
+        minute:75,
+        score:[2, 1],
+        teams:[
+          { formation:"4-3-3", structureIndex:1, positionFit:1, tacticalFit:1, averageFitness:70, averageOverall:83 },
+          { formation:"4-3-3", structureIndex:1, positionFit:1, tacticalFit:1, averageFitness:66, averageOverall:79 },
+        ],
+      },
+      {
+        minute:90,
+        score:[2, 1],
+        teams:[
+          { formation:"4-3-3", structureIndex:1, positionFit:1, tacticalFit:1, averageFitness:62, averageOverall:83 },
+          { formation:"4-3-3", structureIndex:1, positionFit:1, tacticalFit:1, averageFitness:59, averageOverall:79 },
+        ],
+      },
+    ],
+  };
+  const review = buildMatchReview(detail);
+  assert.equal(review.outcome, "loss");
+  assert.deepEqual(review.metrics.map((metric) => metric.label), ["控球率", "射门", "预期进球"]);
+  assert.equal(review.metrics[2].ownText, "0.72");
+  assert.match(review.conclusions[1].text, /74′ 主队打入制胜球/);
+  assert.match(review.conclusions[2].text, /客队最佳.*7\.4/);
+  assert.equal(review.conclusions.length, 3);
+  assert.equal(review.lossAttribution.items.reduce((sum, item) => sum + item.percent, 0), 100);
+  assert.deepEqual(review.lossAttribution.items.map((item) => item.key), ["formation", "fitness", "ability", "randomness"]);
+  assert.equal(review.lossAttribution.primary.key, "formation");
+  assert.ok(review.lossAttribution.items.find((item) => item.key === "formation").percent > review.lossAttribution.items.find((item) => item.key === "randomness").percent);
+  assert.match(review.lossAttribution.items[0].detail, /开局 6-3-1 0\.62 : 4-3-3 1\.00/);
+  assert.match(review.lossAttribution.note, /90 分钟阶段快照/);
 });
 
 test("玩家ID绑定、自定义分享码与历史战绩会持久累计", () => {
@@ -153,24 +306,24 @@ test("重复昵称的旧账号可以改用唯一昵称升级", () => {
   assert.equal(service.accounts.get(first.profile.id.toLowerCase()).passwordHash, null);
 });
 
-test("S4十一人对战拥有550人的分位置真实球员池和稳定评级梯次", () => {
+test("S4十一人对战拥有含DLC的分位置真实球员池和稳定评级梯次", () => {
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([key, players]) => [key, players.length])), {
-    GK: 55,
-    DEF: 165,
-    MID: 165,
-    ATT: 165,
+    GK: 57,
+    DEF: 178,
+    MID: 184,
+    ATT: 183,
   });
   const standardPlayers = Object.values(REAL_PLAYER_POOLS).flat();
-  assert.equal(standardPlayers.length, 550);
+  assert.equal(standardPlayers.length, 602);
   assert.equal(X_PLAYERS.length, 10);
-  assert.equal(REAL_PLAYERS.length, 560);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 560);
-  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, standardPlayers.filter((player) => player.grade === grade).length])), { S:14, A:117, B:233, C:186 });
+  assert.equal(REAL_PLAYERS.length, 612);
+  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 612);
+  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, standardPlayers.filter((player) => player.grade === grade).length])), { S:24, A:146, B:245, C:187 });
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => [pool, Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, players.filter((player) => player.grade === grade).length]))])), {
-    GK:{ S:1, A:12, B:23, C:19 },
-    DEF:{ S:1, A:35, B:70, C:59 },
-    MID:{ S:5, A:35, B:70, C:55 },
-    ATT:{ S:7, A:35, B:70, C:53 },
+    GK:{ S:2, A:12, B:24, C:19 },
+    DEF:{ S:2, A:44, B:73, C:59 },
+    MID:{ S:9, A:41, B:78, C:56 },
+    ATT:{ S:11, A:49, B:70, C:53 },
   });
   assert.ok(standardPlayers.filter((player) => player.grade === "A").every((player) => player.overall >= 86 && player.overall <= 89));
   assert.ok(standardPlayers.filter((player) => player.grade === "B").every((player) => player.overall >= 80 && player.overall <= 99));
@@ -180,11 +333,23 @@ test("S4十一人对战拥有550人的分位置真实球员池和稳定评级梯
   assert.ok(standardPlayers.every((player) => Number.isFinite(player.referenceOverall) && player.referenceAttributes));
   assert.ok(standardPlayers.every((player) => Number.isFinite(player.heightCm) && player.heightCm >= 165 && player.heightCm <= 202));
   assert.ok(new Set(standardPlayers.map((player) => player.heightCm)).size > 20);
-  assert.deepEqual(standardPlayers.filter((player) => player.grade === "S").map((player) => player.name).sort(),
-    ["C罗", "克罗斯", "哈兰德", "姆巴佩", "库尔图瓦", "梅西", "莫德里奇", "贝利", "齐达内", "贝肯鲍尔", "大罗", "罗纳尔迪尼奥", "马拉多纳", "贝克汉姆"].sort());
+  assert.ok(["内马尔", "儒利奥·塞萨尔", "马尔科·马特拉齐", "盖德·穆勒", "里杰卡尔德", "古利特", "里瓦尔多", "古德温", "迪迪"]
+    .every((name) => standardPlayers.some((player) => player.name === name && player.grade === "S")));
   assert.ok(standardPlayers.filter((player) => player.grade === "S").every((player) => player.legendary && player.legendAbility?.id && player.legendAbility?.summary));
   assert.ok(standardPlayers.filter((player) => player.grade !== "S").every((player) => !player.legendary && !player.legendAbility));
   assert.ok(standardPlayers.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
+  assert.equal(standardPlayers.filter((player) => player.isDlc && player.dlcBatch === "2026-07-31").length, 54);
+  assert.deepEqual(
+    ["s4-fc26-201153", "s4-fc26-260247", "s4-fc26-207410"].map((id) => {
+      const player = standardPlayers.find((candidate) => candidate.id === id);
+      return [id, player?.overall, player?.isDlc];
+    }),
+    [
+      ["s4-fc26-201153", 84, true],
+      ["s4-fc26-260247", 85, true],
+      ["s4-fc26-207410", 83, true],
+    ],
+  );
   assert.deepEqual(
     Object.fromEntries(["布冯", "切赫", "拉姆", "马塞洛"].map((name) => {
       const player = standardPlayers.find((candidate) => candidate.name === name);
@@ -195,7 +360,7 @@ test("S4十一人对战拥有550人的分位置真实球员池和稳定评级梯
   assert.ok(standardPlayers.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
   assert.ok(REAL_PLAYER_POOLS.GK.every((player) => player.secondaryRole === null));
   const standardIndividualizedPlayers = INDIVIDUALIZED_PLAYERS.filter((player) => player.grade !== "X");
-  assert.equal(standardIndividualizedPlayers.length, 14);
+  assert.equal(standardIndividualizedPlayers.length, 24);
   assert.equal(INDIVIDUALIZED_PLAYERS.filter((player) => player.grade === "X").length, 10);
   assert.ok(standardIndividualizedPlayers.every((player) => player.signature && player.archetype && player.nationality && player.club));
   assert.ok(standardIndividualizedPlayers.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));
@@ -717,6 +882,25 @@ test("裁判尺度会公开展示，黑哨事件保证红牌与点球", () => {
   assert.ok(match.teams[1].stats.redCards >= 1);
 });
 
+test("黄油手、乌龙球与超级世界波遵循低概率和能力体能权重", () => {
+  assert.equal(butterFingersProbability({ state:{ fitness:80 } }), 0);
+  assert.ok(butterFingersProbability({ state:{ fitness:45 } }) > butterFingersProbability({ state:{ fitness:65 } }));
+  assert.equal(superWorldieProbability({ attributes:{ longShots:99 } }, "cross"), 0);
+  assert.ok(superWorldieProbability({ attributes:{ longShots:99 } }, "longShot") > superWorldieProbability({ attributes:{ longShots:72 } }, "longShot"));
+  const stable = { state:{ fitness:95 }, attributes:{ composure:90 } };
+  const exhausted = { state:{ fitness:40 }, attributes:{ composure:35 } };
+  assert.ok(ownGoalCandidateWeight(exhausted) > ownGoalCandidateWeight(stable) * 5);
+
+  const match = createVersusMatch([matchSeat("甲", 0), matchSeat("乙", 12)], { now:0, seed:"forced-own-goal", weather:"sunny" });
+  match.ownGoalMinute = 1;
+  advanceVersusMatch(match, 2_000);
+  const ownGoal = match.events.find((entry) => entry.type === "ownGoal");
+  assert.ok(ownGoal);
+  assert.match(ownGoal.text, /乌龙球/);
+  assert.equal(match.teams[0].score + match.teams[1].score >= 1, true);
+  assert.ok(match.teams.flatMap((team) => team.players).some((player) => Number(player.matchStats.ownGoals ?? 0) === 1));
+});
+
 test("雷暴对战必定至少造成一名球员伤退且不会自动递补", () => {
   const match = createVersusMatch([matchSeat("甲", 0), matchSeat("乙", 12)], { now: 0, seed: "storm-guarantee", weather: "storm" });
   advanceVersusMatch(match, REGULAR_DURATION_MS);
@@ -766,6 +950,17 @@ test("比赛结束后生成双方完整统计、重要事件与球员评分", ()
   assert.equal(match.report.teams.length, 2);
   assert.ok(match.report.teams.every((team) => team.players.length === 11));
   assert.ok(match.report.events.length > 20);
+  assert.equal(match.report.analysisTimeline[0].minute, 0);
+  assert.equal(match.report.analysisTimeline.at(-1).reason.includes("fulltime"), true);
+  assert.ok(match.report.analysisTimeline.length >= 7);
+  assert.ok(match.report.analysisTimeline.every((snapshot) => snapshot.teams.every((team) =>
+    Number.isFinite(team.structureIndex)
+    && Number.isFinite(team.positionFit)
+    && Number.isFinite(team.tacticalFit)
+    && Number.isFinite(team.averageFitness)
+    && Number.isFinite(team.averageOverall)
+    && Object.keys(team.positions).length === 11
+    && team.players.length === 11)));
   assert.ok(match.report.teams.flatMap((team) => team.players).every((player) => player.rating >= 1 && player.rating <= 10));
   const hostView = publicMatch(match, REGULAR_DURATION_MS + 30_000, 0);
   assert.equal(hostView.report.teams[0].tactic, match.report.teams[0].tactic);

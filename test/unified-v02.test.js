@@ -150,5 +150,5 @@ test("开发者后台默认数据与玩家侧共用七人制位置和能力字�
   assert.ok(state.players.every((player) => POSITION_ORDER.includes(player.role)));
   assert.ok(state.players.every((player) => ATTRIBUTE_NAMES.every((attribute) => Number.isFinite(player.attributes[attribute]))));
   assert.ok(state.players.every((player) => player.hidden?.personality && player.development?.potential && player.state?.injury));
-  assert.deepEqual(state.globalConfig.weatherWeights, { sunny: 60, rain: 15, storm: 15, snow: 10 });
+  assert.deepEqual(state.globalConfig.weatherWeights, { sunny: 65, rain: 15, storm: 10, snow: 10 });
 });

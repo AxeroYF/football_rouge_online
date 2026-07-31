@@ -1,31 +1,22 @@
-# Football Simulator / YellowDogs League S4 交接包
+# YellowDogs League S4 交接入口
 
-更新时间：2026-07-27 22:20（Asia/Shanghai）
-开发工作区：`D:\Project\game_test\.worktrees\s4`
-分支：`codex/s4-card-upgrade`
-HEAD：`1d4c6b0`
+更新时间：2026-07-31 22:34（Asia/Shanghai）
 
-## 阅读顺序
+- 唯一开发目录：`D:\Project\game_test\.worktrees\s4`
+- 当前分支：`codex/s4-card-upgrade`
+- 当前基线：`f14d278`（tag：`S4-0728`）
+- 当前工作区包含 S4 Day1 赛后热修，尚未提交、推送或部署。
+- 最新交接包：`D:\Project\game_test\handoff\football-ydl-s4-handoff-20260731-2234.zip`
+- 最新服务器热更新包：`D:\Project\game_test\handoff\football-ydl-s4-combined-hotfix-20260731-2121.tar.gz`
+- 最新验证：`test/s4-assets.test.js` 74/74 通过，`npm run build` 成功。
 
-1. `NEW_CHAT_PROMPT.md`：粘贴到新窗口的接手提示。
-2. `CURRENT_STATE.md`：当前完整产品与代码状态。
-3. `CHANGED_FILES.txt`：工作区全部未提交文件清单。
-4. `MANIFEST.md`：压缩包内容及安全边界。
+接手顺序：
 
-## 关键提醒
+1. 阅读 `CURRENT_STATE.md`。
+2. 阅读 `NEW_CHAT_PROMPT.md`。
+3. 在工作区只读执行 `git status --short` 与 `git log -1 --oneline --decorate`。
+4. 使用 `CHANGED_FILES.txt` 与 `MANIFEST.md` 核对交接内容。
 
-- 当前工作区有 31 个未提交或未跟踪文件，包含本轮全部 S4 功能，严禁 `git reset --hard`、`git clean`、覆盖或回滚无关改动。
-- 开发只关注 YDL 模式，不需要兼容旧好友对战，也不需要兼容旧赛季存档。
-- 用户将开启全新赛季；不要用旧测试服存档判断新赛季能否启动。
-- X 级球员第一阶段已经完成；成长任务、技能点与属性加点尚未设计，不要自行扩展。
-- 交接包不包含账号、钱包、玩家背包或真实联赛存档。
+本次交接覆盖截至 7 月 31 日的全部本地热修，包括 DLC 球员库、比赛平衡、X 球员洗点与特性重选、强化动画与记录、球员搜索及强化排行卡片模式，以及对应测试和构建产物。
 
-## 最近验证
-
-使用全新临时赛季状态运行：
-
-```powershell
-node --test test/admin.test.js test/league.test.js test/s4-assets.test.js test/ydl-content-store.test.js test/ydl-traits.test.js test/ydl-bonds.test.js
-```
-
-结果：117/117 通过。相关 JavaScript 语法检查和 `git diff --check` 通过。
+不要用交接包覆盖现有工作区。继续开发必须直接使用上述 worktree。

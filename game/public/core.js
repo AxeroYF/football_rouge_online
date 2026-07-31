@@ -64,9 +64,9 @@ export const TACTICS = Object.freeze(Object.fromEntries(Object.entries(TACTIC_PR
 }])));
 
 export const WEATHER = Object.freeze({
-  sunny: { name: "晴朗", icon: "SUN", weight: 60, attack: 0, defense: 0, fatigue: 1 },
+  sunny: { name: "晴朗", icon: "SUN", weight: 65, attack: 0, defense: 0, fatigue: 1 },
   rain: { name: "雨天", icon: "RAIN", weight: 15, attack: 1, defense: -5, fatigue: 1.2 },
-  storm: { name: "雷暴", icon: "STORM", weight: 15, attack: 0, defense: -7, fatigue: 1.3 },
+  storm: { name: "雷暴", icon: "STORM", weight: 10, attack: 0, defense: -7, fatigue: 1.3 },
   snow: { name: "雪天", icon: "SNOW", weight: 10, attack: -10, defense: 1, fatigue: 1.35 },
 });
 

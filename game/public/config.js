@@ -1,5 +1,5 @@
 export const DEFAULT_GAME_CONFIG = Object.freeze({
-  weatherWeights: Object.freeze({ sunny: 60, rain: 15, storm: 15, snow: 10 }),
+  weatherWeights: Object.freeze({ sunny: 65, rain: 15, storm: 10, snow: 10 }),
   lightning: Object.freeze({
     chance: 0.006,
     fitnessLossMin: 8,

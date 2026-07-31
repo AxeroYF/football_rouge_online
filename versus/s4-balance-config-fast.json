@@ -1,34 +1,41 @@
 {
-  "outputVersion": "s4-season-fast-v1",
-  "seed": "yellowdogs-s4-season-balance-v1",
-  "matches": 1200,
-  "rawMatchSampleLimit": 20,
+  "outputVersion": "s4-season-fast-v6-nationality-bonds",
+  "seed": "yellowdogs-s4-season-balance-v6-nationality-bonds-fast",
+  "matches": 350,
+  "rawMatchSampleLimit": 100,
+  "separateRawMatchSamples": true,
   "experiments": {
-    "xTaskMatchesPerRole": 30,
-    "formationMatchesPerCell": 2,
-    "tacticMatchesPerCell": 2,
-    "styleMatchesPerCell": 2,
-    "upgradeMatchesPerCell": 2,
-    "traitMatchesPerCell": 2,
-    "legendMatchesPerCell": 2,
-    "dynamicPlanMatches": 20,
-    "weatherStyleMatchesPerCell": 2,
-    "refereeStyleMatchesPerCell": 2
+    "xTaskMatchesPerRole": 10,
+    "formationMatchesPerCell": 1,
+    "tacticMatchesPerCell": 1,
+    "styleMatchesPerCell": 1,
+    "tacticalCombinationMatchesPerCell": 2,
+    "upgradeMatchesPerCell": 1,
+    "traitMatchesPerCell": 1,
+    "legendMatchesPerCell": 1,
+    "dynamicPlanMatches": 10,
+    "weatherStyleMatchesPerCell": 1,
+    "refereeStyleMatchesPerCell": 1
   },
   "taskThresholds": {
     "appearances": [1, 3, 5, 10, 18],
-    "goals": [1, 3, 6, 10],
-    "penaltiesWon": [1, 3, 5],
-    "assists": [1, 3, 6, 10],
-    "tackles": [5, 15, 30, 50],
-    "yellowCards": [1, 3, 5],
-    "saves": [5, 15, 30, 50]
+    "goals": [1, 2, 3],
+    "assists": [1, 2],
+    "tackles": [2, 5, 8, 11],
+    "saves": [5, 10, 20, 30]
+  },
+  "taskThresholdsByRole": {
+    "GK": { "appearances": [1, 3, 5, 10, 18], "saves": [5, 10, 20, 30] },
+    "DEF": { "appearances": [1, 3, 5, 10, 18], "tackles": [2, 5, 8, 11] },
+    "MID": { "appearances": [1, 3, 5, 10, 18], "assists": [1, 2] },
+    "ATT": { "appearances": [1, 3, 5, 10, 18], "goals": [1, 2, 3] }
   },
   "ecosystemWeights": {
-    "standard": 35,
-    "enhanced": 30,
+    "standard": 30,
+    "enhanced": 25,
     "traitHeavy": 15,
     "legendHeavy": 10,
-    "xLed": 10
+    "xLed": 10,
+    "nationalityHeavy": 10
   }
 }

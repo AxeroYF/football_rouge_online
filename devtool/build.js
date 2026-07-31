@@ -1,6 +1,10 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { syncAPlayerProfiles } from "./sync-a-player-profiles.js";
+import { syncLegendaryProfiles } from "./sync-legendary-profiles.js";
+import { syncXPlayerProfiles } from "./sync-x-player-profiles.js";
+import { optimizePlayerProfiles } from "./optimize-player-profiles.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const source = path.join(here, "public");
@@ -9,6 +13,9 @@ const gameSource = path.resolve(here, "../game/public");
 const gameTarget = path.resolve(here, "../game/dist");
 const versusSource = path.resolve(here, "../versus/public");
 const versusTarget = path.resolve(here, "../versus/dist");
+const aPlayerProfileTarget = path.join(versusTarget, "A_profile");
+const legendaryProfileTarget = path.join(versusTarget, "legendary_profile");
+const xPlayerProfileTarget = path.join(versusTarget, "x_profile");
 
 const index = await readFile(path.join(source, "index.html"), "utf8");
 for (const required of ["styles.css", "app.js", "场边实验室"]) {
@@ -39,12 +46,19 @@ await writeFile(
 );
 
 const versusIndex = await readFile(path.join(versusSource, "index.html"), "utf8");
-for (const required of ["好友对战", "styles.css", "app.js"]) {
+for (const required of ["黄狗模拟经理", "styles.css", "app.js"]) {
   if (!versusIndex.includes(required)) throw new Error("versus index.html is missing: " + required);
 }
 await rm(versusTarget, { recursive: true, force: true });
 await mkdir(versusTarget, { recursive: true });
+await optimizePlayerProfiles();
+await syncAPlayerProfiles();
+await syncLegendaryProfiles();
+await syncXPlayerProfiles();
 await cp(versusSource, versusTarget, { recursive: true });
+await syncAPlayerProfiles({ assetTargetDirectory:aPlayerProfileTarget });
+await syncLegendaryProfiles({ assetTargetDirectory:legendaryProfileTarget });
+await syncXPlayerProfiles({ assetTargetDirectory:xPlayerProfileTarget });
 await writeFile(
   path.join(versusTarget, "build-meta.json"),
   JSON.stringify({ builtAt: new Date().toISOString(), prototype: true }, null, 2) + "\n",

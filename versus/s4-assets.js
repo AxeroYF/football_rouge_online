@@ -72,13 +72,13 @@ export function ownsPlayerRights(state, ownerId, playerId) {
 }
 
 export function isRosterExemptCard(state, card) {
-  if (isXPlayer(card?.playerId)) return true;
+  if (isXPlayer(card?.playerId) || isLegend(card?.playerId)) return true;
   if (!activeCard(card) || Number(card.upgradeLevel ?? 0) < S4_EXTERNAL_CARD_EXEMPT_LEVEL) return false;
   return ownershipOwner(state, card.playerId) !== card.ownerId;
 }
 
 export function rosterFamilyUsesSlot(state, ownerId, playerId) {
-  if (isXPlayer(playerId)) return false;
+  if (isXPlayer(playerId) || isLegend(playerId)) return false;
   const cards = cardsForOwner(state, ownerId, playerId);
   if (!cards.length) return false;
   if (ownershipOwner(state, playerId) === ownerId) return true;

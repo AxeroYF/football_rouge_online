@@ -7,6 +7,7 @@ import { isXPlayer, REAL_PLAYERS } from "./player-pool.js";
 import { defaultElevenPositions, inferElevenBoardRoles } from "./rules.js";
 import { applyS4Enhancement } from "./s4-balance.js";
 import { YDL_TRAIT_CARDS } from "./trait-pool.js";
+import { createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const argument = (name) => process.argv.find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3) ?? null;
@@ -52,7 +53,7 @@ const TACTICS = ["allOutAttack", "positive", "balanced", "defensive", "parkBus"]
 const STYLES = ["possession", "longBall", "wingPlay", "counterAttack", "highPress", "lowBlock", "roughPlay"];
 const FOCUSES = ["balanced", "left", "center", "right"];
 const ROLE_FALLBACKS = Object.freeze({ LWB:"LB", RWB:"RB" });
-const TASK_GROUPS = Object.freeze({ appearances:["GK","DEF","MID","ATT"], goals:["ATT"], penaltiesWon:["ATT"], assists:["MID"], tackles:["DEF"], yellowCards:["DEF"], saves:["GK"] });
+const TASK_GROUPS = Object.freeze({ appearances:["GK","DEF","MID","ATT"], goals:["ATT"], assists:["MID"], tackles:["DEF"], saves:["GK"] });
 
 function eligiblePlayers(role, used, legendMode = "any") {
   const target = ROLE_FALLBACKS[role] ?? role;
@@ -64,6 +65,60 @@ function eligiblePlayers(role, used, legendMode = "any") {
     available,
   ];
   return tiers.find((values) => values.length) ?? [];
+}
+
+function nationalityCandidates(nationality, role, used, legendMode = "any") {
+  const target = ROLE_FALLBACKS[role] ?? role;
+  const available = REAL_PLAYERS.filter((player) => !isXPlayer(player) && player.nationality === nationality && !used.has(player.id) && (legendMode === "only" ? player.grade === "S" : legendMode === "exclude" ? player.grade !== "S" : true));
+  const tiers = [
+    available.filter((player) => player.role === target),
+    available.filter((player) => player.secondaryRole === target),
+    available.filter((player) => roleGroup(player.role) === roleGroup(target)),
+    available,
+  ];
+  return tiers.find((values) => values.length) ?? [];
+}
+
+function legendSlotFit(player, role) {
+  const target = ROLE_FALLBACKS[role] ?? role;
+  if (player.role === target) return 4;
+  if (player.secondaryRole === target) return 3;
+  if ((role === "LWB" && [player.role, player.secondaryRole].includes("LB"))
+    || (role === "RWB" && [player.role, player.secondaryRole].includes("RB"))) return 3;
+  if (roleGroup(player.role) === roleGroup(target)) return 1;
+  return 0;
+}
+
+function assignLegendsToFormation(formationName, count, rng) {
+  const slots = FORMATIONS[formationName].map(([role], index) => ({ role, index }));
+  const legends = REAL_PLAYERS.filter((player) => player.grade === "S");
+  const candidates = legends.flatMap((player) => slots.map((slot) => ({
+    player,
+    slot,
+    fit:legendSlotFit(player, slot.role),
+    tie:rng(),
+  }))).filter((entry) => entry.fit > 0)
+    .sort((left, right) => right.fit - left.fit || left.tie - right.tie);
+  const assignments = new Map();
+  const usedPlayers = new Set();
+  for (const candidate of candidates) {
+    if (assignments.size >= count) break;
+    if (assignments.has(candidate.slot.index) || usedPlayers.has(candidate.player.id)) continue;
+    assignments.set(candidate.slot.index, candidate.player);
+    usedPlayers.add(candidate.player.id);
+  }
+  return assignments;
+}
+
+function startingPositionFit(player, assignedRole) {
+  if (!player) return "outOfGroup";
+  const target = ROLE_FALLBACKS[assignedRole] ?? assignedRole;
+  if (player.role === target) return "primary";
+  if (player.secondaryRole === target
+    || (assignedRole === "LWB" && [player.role, player.secondaryRole].includes("LB"))
+    || (assignedRole === "RWB" && [player.role, player.secondaryRole].includes("RB"))) return "secondary";
+  if (roleGroup(player.role) === roleGroup(target)) return "sameGroup";
+  return "outOfGroup";
 }
 
 function traitIdsFor(player, count, rng) {
@@ -95,26 +150,37 @@ function buildSeat(seed, side, archetype, options = {}) {
   const used = new Set();
   const players = [];
   const positions = {};
-  let legendsRemaining = options.legendCount ?? (archetype === "legendHeavy" ? 5 : archetype === "standard" ? Number(rng() < .25) : Math.floor(rng() * 3));
-  const exactLegendCount = options.legendCount != null;
+  const legendCount = options.legendCount ?? (archetype === "legendHeavy" ? 5 : archetype === "standard" ? Number(rng() < .25) : Math.floor(rng() * 3));
+  const exactLegendCount = options.legendCount != null || archetype === "legendHeavy";
+  const legendAssignments = exactLegendCount ? assignLegendsToFormation(formationName, legendCount, rng) : new Map();
+  const nationalityPool = REAL_PLAYERS.filter((player) => !isXPlayer(player)).reduce((counts, player) => counts.set(player.nationality, (counts.get(player.nationality) ?? 0) + 1), new Map());
+  const nationality = options.nationality ?? (archetype === "nationalityHeavy"
+    ? pick(rng, [...nationalityPool.entries()].filter(([, count]) => count >= 10).map(([name]) => name))
+    : null);
   let xRemaining = archetype === "xLed" ? 1 : 0;
   const xRoleGroup = options.xRoleGroup ?? pick(rng, ["GK", "DEF", "MID", "ATT"]);
   const xIndex = xRemaining ? FORMATIONS[formationName].findIndex(([role]) => roleGroup(ROLE_FALLBACKS[role] ?? role) === xRoleGroup) : -1;
   FORMATIONS[formationName].forEach(([role, x, y], index) => {
     const upgradeLevel = options.upgradeLevel ?? upgradeFor(archetype, rng);
-    const traitCount = options.traitCount ?? (archetype === "traitHeavy" ? (upgradeLevel >= 8 ? 2 : 1) : upgradeLevel >= 8 ? 2 : upgradeLevel >= 5 ? 1 : 0);
+    const traitCount = options.traitCount ?? (archetype === "traitHeavy" ? (upgradeLevel >= 8 ? 2 : 1) : upgradeLevel >= 7 ? 2 : upgradeLevel >= 4 ? 1 : 0);
     let player;
     if (xRemaining && index === xIndex) {
       const ids = traitIdsFor({ role:ROLE_FALLBACKS[role] ?? role }, Math.max(1, Math.min(3, traitCount + 1)), seededRandom(`${seed}:${side}:x-traits:${index}`));
       player = xPlayer(role, `${side}-x-${seed}`, upgradeLevel, ids);
       xRemaining -= 1;
     } else {
-      const preferLegend = legendsRemaining > 0 && role !== "GK";
-      let candidates = eligiblePlayers(role, used, preferLegend ? "only" : exactLegendCount ? "exclude" : "any");
-      if (!candidates.length) candidates = eligiblePlayers(role, used, exactLegendCount && !preferLegend ? "exclude" : "any");
+      const assignedLegend = legendAssignments.get(index);
+      let candidates;
+      if (assignedLegend) {
+        candidates = [assignedLegend];
+      } else if (nationality) {
+        const nationalCandidates = nationalityCandidates(nationality, role, used, exactLegendCount ? "exclude" : "any");
+        candidates = nationalCandidates.length ? nationalCandidates : eligiblePlayers(role, used, exactLegendCount ? "exclude" : "any");
+      } else {
+        candidates = eligiblePlayers(role, used, exactLegendCount ? "exclude" : "any");
+      }
       const source = candidates[Math.floor(rng() * candidates.length)];
       used.add(source.id);
-      if (source.grade === "S") legendsRemaining -= 1;
       const ids = traitIdsFor(source, traitCount, seededRandom(`${seed}:${side}:traits:${index}`));
       player = { ...applyS4Enhancement({ ...source, attributes:{ ...source.attributes } }, upgradeLevel), traits:ids };
     }
@@ -122,7 +188,7 @@ function buildSeat(seed, side, archetype, options = {}) {
     positions[player.id] = { x, y };
   });
   const shift = (source, yDelta, xScale = 1) => Object.fromEntries(Object.entries(source).map(([id, point]) => [id, { x:50 + (point.x - 50) * xScale, y:Math.max(8, Math.min(92, point.y + yDelta)) }]));
-  const positionPresets = { position1:positions, position2:shift(positions, 7, .9), position3:shift(positions, -8, 1.08) };
+  const positionPresets = { position1:positions, position2:shift(positions, 4, .96), position3:shift(positions, -4, 1.04) };
   const tactic = options.tactic ?? pick(rng, TACTICS);
   const style = options.style ?? pick(rng, STYLES);
   return {
@@ -132,10 +198,14 @@ function buildSeat(seed, side, archetype, options = {}) {
     positionPresets,
     tactic,
     style,
-    tacticalPlans:options.staticPlans ? null : { opening:{ tactic, style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"highPress", positionPreset:"position3" } },
+    tacticalPlans:options.staticPlans ? null : { opening:{ tactic, style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"possession", positionPreset:"position3" } },
     attackFocus:pick(rng, FOCUSES),
     defenseFocus:pick(rng, FOCUSES),
     preserveFitness:true,
+    bondCatalog:createS4BondCatalog(REAL_PLAYERS),
+    // The normal match engine refreshes the top two identity/structure bonds.
+    // Keep this explicit in simulation seats so nationality-heavy scenarios exercise the same path.
+    nationalityBond:nationality,
   };
 }
 
@@ -159,7 +229,11 @@ function rounded(value, digits = 3) {
 }
 
 function emptyAggregate() {
-  return { matches:0, goals:0, shots:0, shotsOnTarget:0, xg:0, fouls:0, yellowCards:0, redCards:0, corners:0, injuries:0, draws:0, dynamicPositionMatches:0, playerSamples:{ GK:[], DEF:[], MID:[], ATT:[] }, archetypes:{}, upgradeLevels:{}, traitCounts:{}, legendCounts:{}, xMatches:0 };
+  return { matches:0, goals:0, shots:0, shotsOnTarget:0, xg:0, fouls:0, yellowCards:0, redCards:0, corners:0, injuries:0, draws:0, dynamicPositionMatches:0, playerSamples:{ GK:[], DEF:[], MID:[], ATT:[] }, archetypes:{}, upgradeLevels:{}, traitCounts:{}, legendCounts:{}, bondCounts:{ nationality:0, club:0, structure:0 }, positionFitStarts:{ primary:0, secondary:0, sameGroup:0, outOfGroup:0 }, xMatches:0 };
+}
+
+export function createS4BalanceAggregate() {
+  return emptyAggregate();
 }
 
 function addMatch(aggregate, report, seats, archetypes) {
@@ -178,11 +252,15 @@ function addMatch(aggregate, report, seats, archetypes) {
     outcome.goalsFor += report.score[teamIndex];
     outcome.goalsAgainst += report.score[1 - teamIndex];
     const legendCount = seat.players.filter((player) => player.grade === "S").length;
+    const openingRolesById = inferElevenBoardRoles(seat.players.map((entry) => ({ id:entry.id, position:seat.positions[entry.id] })));
+    const openingRoles = Object.fromEntries(seat.players.map((player) => [player.id, openingRolesById[player.id] ?? player.role]));
+    evaluateS4LineupBonds(seat.players, seat.bondCatalog, { roles:openingRoles }).forEach((bond) => { aggregate.bondCounts[bond.type] = Number(aggregate.bondCounts[bond.type] ?? 0) + 1; });
     aggregate.legendCounts[legendCount] = Number(aggregate.legendCounts[legendCount] ?? 0) + 1;
     if (seat.players.some((player) => player.grade === "X")) aggregate.xMatches += 1;
     team.players.forEach((player) => {
       const source = seat.players.find((entry) => entry.id === player.id);
       const group = roleGroup(player.assignedRole);
+      aggregate.positionFitStarts[startingPositionFit(source, player.assignedRole)] += 1;
       const penaltiesWon = report.importantEvents.filter((event) => event.type === "penaltyAwarded" && event.opponentId === player.id).length;
       aggregate.playerSamples[group].push({ appearances:1, goals:player.stats.goals, penaltiesWon, assists:player.stats.assists, tackles:player.stats.tackles, yellowCards:player.stats.yellowCards, saves:player.stats.saves, grade:source?.grade, upgradeLevel:Number(source?.upgradeLevel ?? 0), traitCount:Number(source?.traits?.length ?? 0), xPlayer:source?.grade === "X" });
       aggregate.upgradeLevels[source?.upgradeLevel ?? 0] = Number(aggregate.upgradeLevels[source?.upgradeLevel ?? 0] ?? 0) + 1;
@@ -204,7 +282,7 @@ function maximumValue(values) {
 
 export function taskDifficulty(samplesByGroup, thresholds) {
   return Object.fromEntries(Object.entries(TASK_GROUPS).map(([stat, groups]) => {
-    const samples = groups.flatMap((group) => samplesByGroup[group]);
+    const samples = groups.flatMap((group) => samplesByGroup[group] ?? []);
     const values = samples.map((sample) => sample[stat]);
     return [stat, {
       eligibleRoleGroups:groups,
@@ -217,6 +295,23 @@ export function taskDifficulty(samplesByGroup, thresholds) {
   }));
 }
 
+export function taskDifficultyByRole(samplesByGroup, thresholdsByRole = {}) {
+  return Object.fromEntries(["GK", "DEF", "MID", "ATT"].map((group) => {
+    const samples = samplesByGroup[group] ?? [];
+    const thresholds = thresholdsByRole[group] ?? {};
+    return [group, Object.fromEntries(Object.entries(thresholds).map(([stat, milestones]) => {
+      const values = samples.map((sample) => Number(sample[stat] ?? 0));
+      return [stat, {
+        playerMatchSamples:samples.length,
+        eventsPerAppearance:rounded(mean(values), 4),
+        zeroEventAppearanceRatePercent:rounded(values.filter((value) => value === 0).length / Math.max(1, values.length) * 100, 2),
+        perAppearanceDistribution:{ p50:percentile(values,.5), p75:percentile(values,.75), p90:percentile(values,.9), p95:percentile(values,.95), maximum:maximumValue(values) },
+        milestoneEstimatedAppearances:Object.fromEntries(milestones.map((target) => [target, estimatedAppearances(samples, stat, target)])),
+      }];
+    }))];
+  }));
+}
+
 function summarizeDistribution(values) {
   const total = Object.values(values).reduce((sum, value) => sum + value, 0) || 1;
   return Object.fromEntries(Object.entries(values).sort(([left],[right]) => Number(left) - Number(right)).map(([key, value]) => [key, { count:value, percent:rounded(value / total * 100, 2) }]));
@@ -224,12 +319,21 @@ function summarizeDistribution(values) {
 
 function summarizeAggregate(aggregate, config) {
   const teamMatches = aggregate.matches * 2;
+  const positionStarts = Object.values(aggregate.positionFitStarts).reduce((sum, value) => sum + value, 0) || 1;
+  const xSamples = Object.fromEntries(Object.entries(aggregate.playerSamples).map(([group, samples]) => [group, samples.filter((sample) => sample.xPlayer)]));
   return {
     matches:aggregate.matches,
     overallRhythm:{ goalsPerMatch:rounded(aggregate.goals / aggregate.matches), shotsPerMatch:rounded(aggregate.shots / aggregate.matches), shotsOnTargetPerMatch:rounded(aggregate.shotsOnTarget / aggregate.matches), xgPerMatch:rounded(aggregate.xg / aggregate.matches), foulsPerMatch:rounded(aggregate.fouls / aggregate.matches), yellowCardsPerMatch:rounded(aggregate.yellowCards / aggregate.matches), redCardsPerMatch:rounded(aggregate.redCards / aggregate.matches), cornersPerMatch:rounded(aggregate.corners / aggregate.matches), injuriesPerMatch:rounded(aggregate.injuries / aggregate.matches), drawRatePercent:rounded(aggregate.draws / aggregate.matches * 100, 2), dynamicPositionAdjustmentMatchRatePercent:rounded(aggregate.dynamicPositionMatches / aggregate.matches * 100, 2) },
-    ecosystemComposition:{ teamArchetypes:Object.fromEntries(Object.entries(aggregate.archetypes).map(([key,value]) => [key,{ teamSamples:value.teamSamples, winRatePercent:rounded(value.wins / value.teamSamples * 100,2), drawRatePercent:rounded(value.draws / value.teamSamples * 100,2), goalsForPerMatch:rounded(value.goalsFor / value.teamSamples), goalsAgainstPerMatch:rounded(value.goalsAgainst / value.teamSamples) }])), upgradeLevels:summarizeDistribution(aggregate.upgradeLevels), activeTraitCounts:summarizeDistribution(aggregate.traitCounts), startingLegendCounts:summarizeDistribution(aggregate.legendCounts), xPlayerTeamSampleRatePercent:rounded(aggregate.xMatches / teamMatches * 100,2) },
-    xTaskDifficulty:taskDifficulty(Object.fromEntries(Object.entries(aggregate.playerSamples).map(([group, samples]) => [group, samples.filter((sample) => sample.xPlayer)])), config.taskThresholds),
+    ecosystemComposition:{ teamArchetypes:Object.fromEntries(Object.entries(aggregate.archetypes).map(([key,value]) => [key,{ teamSamples:value.teamSamples, winRatePercent:rounded(value.wins / value.teamSamples * 100,2), drawRatePercent:rounded(value.draws / value.teamSamples * 100,2), goalsForPerMatch:rounded(value.goalsFor / value.teamSamples), goalsAgainstPerMatch:rounded(value.goalsAgainst / value.teamSamples) }])), upgradeLevels:summarizeDistribution(aggregate.upgradeLevels), activeTraitCounts:summarizeDistribution(aggregate.traitCounts), startingLegendCounts:summarizeDistribution(aggregate.legendCounts), activeBondCounts:aggregate.bondCounts, xPlayerTeamSampleRatePercent:rounded(aggregate.xMatches / teamMatches * 100,2) },
+    lineupPositionIntegrity:{
+      startingPlayerSamples:positionStarts,
+      fitDistribution:Object.fromEntries(Object.entries(aggregate.positionFitStarts).map(([key, value]) => [key, { count:value, percent:rounded(value / positionStarts * 100, 2) }])),
+      outOfRoleGroupRatePercent:rounded(aggregate.positionFitStarts.outOfGroup / positionStarts * 100, 2),
+    },
+    xTaskDifficulty:taskDifficulty(xSamples, config.taskThresholds),
+    xTaskDifficultyByRole:taskDifficultyByRole(xSamples, config.taskThresholdsByRole),
     allPlayerPositionBaseline:taskDifficulty(aggregate.playerSamples, config.taskThresholds),
+    allPlayerTaskBaselineByRole:taskDifficultyByRole(aggregate.playerSamples, config.taskThresholdsByRole),
   };
 }
 
@@ -276,6 +380,23 @@ function runMatrix(seed, rowValues, columnValues, matchesPerCell, optionsForCell
   }))]));
 }
 
+function runTacticalCombinationStudy(seed, formationNames, matchesPerCell, progress = () => {}) {
+  const sampleSize = Number(matchesPerCell ?? 0);
+  return Object.fromEntries(formationNames.map((formation) => [formation, Object.fromEntries(TACTICS.map((tactic) => [tactic, Object.fromEntries(STYLES.map((style) => {
+    const outcome = emptyOutcome();
+    for (let index = 0; index < sampleSize; index += 1) {
+      const matchSeed = `${seed}:${formation}:${tactic}:${style}:${index}`;
+      const { report, subjectIndex } = playConfigured(matchSeed,
+        { formation, tactic, style, staticPlans:true },
+        { formation, tactic:"balanced", style:"possession", staticPlans:true },
+        index);
+      addOutcome(outcome, report, subjectIndex);
+      progress("tactical combinations");
+    }
+    return [style, { ...outcomeSummary(outcome), baseline:"same formation + balanced + possession" }];
+  }))]))]));
+}
+
 function runXTaskStudy(config, progress = () => {}) {
   const matchesPerRole = Number(config.experiments.xTaskMatchesPerRole);
   const aggregate = emptyAggregate();
@@ -290,7 +411,13 @@ function runXTaskStudy(config, progress = () => {}) {
     progress(`X任务研究/${group}`);
   }
   const xSamples = Object.fromEntries(Object.entries(aggregate.playerSamples).map(([group,samples]) => [group,samples.filter((sample) => sample.xPlayer)]));
-  return { matches:aggregate.matches, matchesPerRole, taskDifficulty:taskDifficulty(xSamples, config.taskThresholds), sampleCountsByRole:Object.fromEntries(Object.entries(xSamples).map(([group,samples]) => [group,samples.length])) };
+  return {
+    matches:aggregate.matches,
+    matchesPerRole,
+    taskDifficulty:taskDifficulty(xSamples, config.taskThresholds),
+    taskDifficultyByRole:taskDifficultyByRole(xSamples, config.taskThresholdsByRole),
+    sampleCountsByRole:Object.fromEntries(Object.entries(xSamples).map(([group,samples]) => [group,samples.length])),
+  };
 }
 
 function experimentMatchCount(config) {
@@ -300,6 +427,7 @@ function experimentMatchCount(config) {
     + Object.keys(FORMATIONS).length ** 2 * e.formationMatchesPerCell
     + TACTICS.length ** 2 * e.tacticMatchesPerCell
     + STYLES.length ** 2 * e.styleMatchesPerCell
+    + Object.keys(FORMATIONS).length * TACTICS.length * STYLES.length * Number(e.tacticalCombinationMatchesPerCell ?? 0)
     + 9 ** 2 * e.upgradeMatchesPerCell
     + 4 ** 2 * e.traitMatchesPerCell
     + 6 ** 2 * e.legendMatchesPerCell
@@ -312,14 +440,21 @@ export async function runS4BalanceReport(config, options = {}) {
   const progress = options.progress ?? (() => {});
   const aggregate = emptyAggregate();
   const rawMatchSamples = [];
-  for (let index = 0; index < config.matches; index += 1) {
+  const matchStart = Number(config.matchStart ?? 0);
+  const matchEnd = matchStart + Number(config.matches ?? 0);
+  const rawSampleStart = Number(config.rawSampleStart ?? 0);
+  const rawSampleEnd = rawSampleStart + Number(config.rawMatchSampleLimit ?? 0);
+  for (let index = matchStart; index < matchEnd; index += 1) {
     const seed = `${config.seed}:ecosystem:${index}`;
     const rng = seededRandom(seed);
     const archetypes = [weightedPick(rng, config.ecosystemWeights), weightedPick(rng, config.ecosystemWeights)];
     const seats = archetypes.map((archetype, side) => buildSeat(seed, side === 0 ? "home" : "away", archetype));
     const report = settle(createVersusMatch(seats, { now:0, seed, competitionMode:"league", regulationOnly:true, recordEvents:true }));
     addMatch(aggregate, report, seats, archetypes);
-    if (rawMatchSamples.length < Number(config.rawMatchSampleLimit ?? 0)) rawMatchSamples.push({ seed, archetypes, score:report.score, weather:report.weather.key, referee:report.referee.key, teams:report.teams.map((team, teamIndex) => ({ name:team.name, formation:team.formation, openingFormation:inferElevenBoardRoles(seats[teamIndex].players.map((player) => ({ id:player.id, position:seats[teamIndex].positions[player.id] }))), activePlan:team.activePlan, inMatchPositionAdjustment:team.inMatchPositionAdjustment, stats:team.stats, players:team.players.map((player) => ({ id:player.id, name:player.name, grade:player.grade, assignedRole:player.assignedRole, overall:player.overall, upgradeLevel:player.upgradeLevel, traits:player.traits, stats:player.stats })) })), importantEvents:report.importantEvents });
+    if (index >= rawSampleStart && index < rawSampleEnd) rawMatchSamples.push({ seed, archetypes, score:report.score, weather:report.weather.key, referee:report.referee.key, teams:report.teams.map((team, teamIndex) => ({ name:team.name, formation:team.formation, openingFormation:inferElevenBoardRoles(seats[teamIndex].players.map((player) => ({ id:player.id, position:seats[teamIndex].positions[player.id] }))), startingBonds:evaluateS4LineupBonds(seats[teamIndex].players, seats[teamIndex].bondCatalog, { roles:inferElevenBoardRoles(seats[teamIndex].players.map((player) => ({ id:player.id, position:seats[teamIndex].positions[player.id] })))}).map((bond) => ({ type:bond.type, name:bond.name, count:bond.count, bonus:bond.bonus })), nationalityBond:seats[teamIndex].nationalityBond ?? null, activePlan:team.activePlan, inMatchPositionAdjustment:team.inMatchPositionAdjustment, stats:team.stats, players:team.players.map((player) => {
+      const source = seats[teamIndex].players.find((entry) => entry.id === player.id);
+      return { id:player.id, name:player.name, grade:player.grade, naturalRole:source?.role, secondaryRole:source?.secondaryRole ?? null, assignedRole:player.assignedRole, startingPositionFit:startingPositionFit(source, player.assignedRole), overall:player.overall, upgradeLevel:player.upgradeLevel, traits:player.traits, stats:player.stats };
+    }) })), importantEvents:report.importantEvents });
     progress("生态样本");
   }
   const experiments = config.experiments ?? { xTaskMatchesPerRole:1, formationMatchesPerCell:1, tacticMatchesPerCell:1, styleMatchesPerCell:1, upgradeMatchesPerCell:1, traitMatchesPerCell:1, legendMatchesPerCell:1, dynamicPlanMatches:1, weatherStyleMatchesPerCell:1, refereeStyleMatchesPerCell:1 };
@@ -338,9 +473,10 @@ export async function runS4BalanceReport(config, options = {}) {
   }
   const experimentalResults = {
     xTaskStudy:runXTaskStudy({ ...config, experiments }, progress),
-    formationMatrix:runMatrix(`${config.seed}:formation`, formationNames, formationNames, experiments.formationMatchesPerCell, (subject, control) => ({ subject:{ formation:subject }, control:{ formation:control } }), {}, progress, "阵型矩阵"),
+    formationMatrix:runMatrix(`${config.seed}:formation`, formationNames, formationNames, experiments.formationMatchesPerCell, (subject, control) => ({ subject:{ formation:subject, tactic:"balanced", style:"possession", staticPlans:true }, control:{ formation:control, tactic:"balanced", style:"possession", staticPlans:true } }), {}, progress, "阵型克制矩阵"),
     tacticMatrix:runMatrix(`${config.seed}:tactic`, TACTICS, TACTICS, experiments.tacticMatchesPerCell, (subject, control) => ({ subject:{ tactic:subject }, control:{ tactic:control } }), {}, progress, "战术矩阵"),
     styleMatrix:runMatrix(`${config.seed}:style`, STYLES, STYLES, experiments.styleMatchesPerCell, (subject, control) => ({ subject:{ style:subject }, control:{ style:control } }), {}, progress, "风格矩阵"),
+    tacticalCombinationStudy:runTacticalCombinationStudy(`${config.seed}:tactical-combinations`, formationNames, experiments.tacticalCombinationMatchesPerCell, progress),
     upgradeMatrix:runMatrix(`${config.seed}:upgrade`, upgradeLevels, upgradeLevels, experiments.upgradeMatchesPerCell, (subject, control) => ({ subject:{ upgradeLevel:subject, traitCount:0 }, control:{ upgradeLevel:control, traitCount:0 } }), {}, progress, "强化矩阵"),
     traitCountMatrix:runMatrix(`${config.seed}:traits`, traitCounts, traitCounts, experiments.traitMatchesPerCell, (subject, control) => ({ subject:{ upgradeLevel:8, traitCount:subject }, control:{ upgradeLevel:8, traitCount:control } }), {}, progress, "特性矩阵"),
     legendDensityMatrix:runMatrix(`${config.seed}:legends`, legendCounts, legendCounts, experiments.legendMatchesPerCell, (subject, control) => ({ subject:{ legendCount:subject, upgradeLevel:0, traitCount:0 }, control:{ legendCount:control, upgradeLevel:0, traitCount:0 } }), {}, progress, "传奇矩阵"),
@@ -349,19 +485,77 @@ export async function runS4BalanceReport(config, options = {}) {
     refereeStyleMatrix:runMatrix(`${config.seed}:referee-style`, refereeKeys, STYLES, experiments.refereeStyleMatchesPerCell, (referee, style) => ({ subject:{ style }, control:{ style:"possession" }, referee }), {}, progress, "裁判矩阵"),
   };
   const totalMatches = experimentMatchCount({ ...config, experiments });
-  return {
-    schemaVersion:"yellowdogs-s4-balance-v1",
+  const result = {
+    schemaVersion:"yellowdogs-s4-balance-v5",
     outputVersion:config.outputVersion,
     seed:config.seed,
     reproducibility:{ deterministic:true, seedStrategy:"root seed + scenario + match index", command:"npm run balance:ydl:s4", generatedAtExcludedFromDeterministicPayload:true },
-    simulationScope:{ competitionMode:"league", matchEngine:"current 11v11 versus engine", matches:totalMatches, includes:["S4 enhancement levels 0-8 full matrix","0-3 active YDL traits full matrix","0-5 legends per starting XI full matrix","X player task study split by four role groups","formation/tactic/style head-to-head matrices","three tactical position presets","score-driven tactic/style/position switching","weather and referee cross matrices","fine board-position role recognition"], legendNote:"正式联赛模式按当前规则关闭旧传奇专属能力；传奇仍保留S级基础数值、强化和特性影响。", interceptionMetricNote:"当前引擎没有独立interceptions字段；任务难度中的tackles是抢断与拦截的合并代理口径。" },
-    config:{ matches:config.matches, totalMatches, ecosystemWeights:config.ecosystemWeights, taskThresholds:config.taskThresholds, experiments },
+    simulationScope:{ competitionMode:"league", matchEngine:"current 11v11 versus engine", matches:totalMatches, includes:["S4 enhancement levels 0-8 full matrix","0-3 active YDL traits full matrix","0-5 position-suitable legends per starting XI full matrix","X player task study split by four role groups and role-specific milestones","controlled formation counter matrix with mirrored home/away fixtures","tactic/style head-to-head matrices","formation x tactic x style combinations against same-formation balanced-possession baselines","three tactical position presets","score-driven tactic/style/position switching","weather and referee cross matrices","fine board-position role recognition","starting lineup position-integrity audit"], legendNote:"正式联赛模式按当前规则关闭旧传奇专属能力；传奇按主位置、次位置与同位置组优先匹配阵型槽位，并保留S级基础数值、强化和特性影响。", interceptionMetricNote:"当前引擎没有独立interceptions字段；任务难度中的tackles是抢断与拦截的合并代理口径。" },
+    config:{ matches:config.matches, totalMatches, ecosystemWeights:config.ecosystemWeights, taskThresholds:config.taskThresholds, taskThresholdsByRole:config.taskThresholdsByRole, experiments },
+    results:summarizeAggregate(aggregate, config),
+    experiments:experimentalResults,
+    rawMatchSamples,
+  };
+  if (options.includeInternalAggregate) result.internalAggregate = aggregate;
+  return result;
+}
+
+export function mergeS4BalanceAggregates(target, source) {
+  for (const key of ["matches", "goals", "shots", "shotsOnTarget", "xg", "fouls", "yellowCards", "redCards", "corners", "injuries", "draws", "dynamicPositionMatches", "xMatches"]) target[key] = Number(target[key] ?? 0) + Number(source[key] ?? 0);
+  for (const group of Object.keys(target.playerSamples)) target.playerSamples[group].push(...(source.playerSamples?.[group] ?? []));
+  for (const [name, value] of Object.entries(source.archetypes ?? {})) {
+    const current = target.archetypes[name] ??= { teamSamples:0, wins:0, draws:0, goalsFor:0, goalsAgainst:0 };
+    for (const key of Object.keys(current)) current[key] = Number(current[key] ?? 0) + Number(value[key] ?? 0);
+  }
+  for (const key of ["upgradeLevels", "traitCounts", "legendCounts", "bondCounts", "positionFitStarts"]) {
+    for (const [name, value] of Object.entries(source[key] ?? {})) target[key][name] = Number(target[key][name] ?? 0) + Number(value ?? 0);
+  }
+  return target;
+}
+
+export function summarizeS4BalanceAggregate(aggregate, config) {
+  return summarizeAggregate(aggregate, config);
+}
+
+export function buildS4BalanceReportFromAggregate(config, aggregate, experimentalResults, rawMatchSamples = []) {
+  const experiments = config.experiments ?? {};
+  const totalMatches = experimentMatchCount({ ...config, experiments });
+  return {
+    schemaVersion:"yellowdogs-s4-balance-v5",
+    outputVersion:config.outputVersion,
+    seed:config.seed,
+    reproducibility:{ deterministic:true, seedStrategy:"root seed + scenario + match index", command:"npm run balance:ydl:s4", generatedAtExcludedFromDeterministicPayload:true },
+    simulationScope:{ competitionMode:"league", matchEngine:"current 11v11 versus engine", matches:totalMatches, includes:["parallel-safe independent seeded match shards","S4 enhancement levels 0-8 full matrix","0-3 active YDL traits full matrix","0-5 position-suitable legends per starting XI full matrix","X player task study split by four role groups and role-specific milestones","controlled formation counter matrix with mirrored home/away fixtures","tactic/style head-to-head matrices","formation x tactic x style combinations against same-formation balanced-possession baselines","three tactical position presets","score-driven tactic/style/position switching","weather and referee cross matrices","fine board-position role recognition","starting lineup position-integrity audit"], legendNote:"正式联赛模式按当前规则关闭旧传奇专属能力；传奇按主位置、次位置与同位置组优先匹配阵型槽位，并保留S级基础数值、强化和特性影响。", interceptionMetricNote:"当前引擎没有独立interceptions字段；任务难度中的tackles是抢断与拦截的合并代理口径。" },
+    config:{ matches:config.matches, totalMatches, ecosystemWeights:config.ecosystemWeights, taskThresholds:config.taskThresholds, taskThresholdsByRole:config.taskThresholdsByRole, experiments },
     results:summarizeAggregate(aggregate, config),
     experiments:experimentalResults,
     rawMatchSamples,
   };
 }
 
+export function splitS4BalanceReportOutput(data, rawSamplesFileName) {
+  const rawMatchSamples = Array.isArray(data.rawMatchSamples) ? data.rawMatchSamples : [];
+  const mainReport = {
+    ...data,
+    rawMatchSamples:[],
+    outputProtection:{
+      statisticalMatchesPreserved:Number(data.simulationScope?.matches ?? data.config?.totalMatches ?? data.results?.matches ?? 0),
+      aggregateAndMatrixResultsPreserved:true,
+      rawMatchSamplesSeparated:true,
+      rawMatchSampleCount:rawMatchSamples.length,
+      rawMatchSamplesFile:rawSamplesFileName,
+    },
+  };
+  const rawReport = {
+    schemaVersion:data.schemaVersion,
+    outputVersion:data.outputVersion,
+    seed:data.seed,
+    statisticalMatches:Number(data.simulationScope?.matches ?? data.config?.totalMatches ?? data.results?.matches ?? 0),
+    note:"Diagnostic raw samples only; aggregate and matrix accuracy is stored in the main report.",
+    rawMatchSamples,
+  };
+  return { mainReport, rawReport };
+}
 function formatDuration(milliseconds) {
   if (!Number.isFinite(milliseconds) || milliseconds < 0) return "计算中";
   const totalSeconds = Math.max(0, Math.round(milliseconds / 1000));
@@ -413,9 +607,19 @@ async function main() {
   const data = await runS4BalanceReport(config, { progress:(phase) => progress.tick(phase) });
   const outputPath = outputPathArgument ? path.resolve(outputPathArgument) : path.resolve(here, `../outputs/S4赛季比赛模拟-${config.outputVersion}.json`);
   await mkdir(path.dirname(outputPath), { recursive:true });
-  await writeFile(outputPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  const rawSamplesPath = outputPath.replace(/\.json$/i, "-raw-samples.json");
+  const separated = splitS4BalanceReportOutput(data, path.basename(rawSamplesPath));
+  const mainSerialized = `${JSON.stringify(separated.mainReport, null, 2)}\n`;
+  await writeFile(outputPath, mainSerialized, "utf8");
   progress.finish();
-  console.log(`S4 balance JSON generated: ${outputPath}`);
+  console.log(`S4 balance core JSON generated: ${outputPath} (${(Buffer.byteLength(mainSerialized) / 1024 / 1024).toFixed(2)} MB)`);
+  try {
+    const rawSerialized = `${JSON.stringify(separated.rawReport, null, 2)}\n`;
+    await writeFile(rawSamplesPath, rawSerialized, "utf8");
+    console.log(`S4 diagnostic samples generated: ${rawSamplesPath} (${(Buffer.byteLength(rawSerialized) / 1024 / 1024).toFixed(2)} MB)`);
+  } catch (error) {
+    console.warn(`Core balance result is safe, but diagnostic sample output failed: ${error.message}`);
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

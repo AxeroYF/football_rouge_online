@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>S4 新版球员卡边框视觉 Demo</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#03100d;
+      --panel:#081b16;
+      --line:rgba(137,207,180,.2);
+      --ink:#f3f5e9;
+      --muted:#7eaa99;
+      --yellow:#f3ce4e;
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%}
+    body{
+      margin:0;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 50% -15%,rgba(63,179,143,.16),transparent 34%),
+        radial-gradient(circle at 8% 75%,rgba(243,206,78,.06),transparent 28%),
+        linear-gradient(180deg,#061813,#020b09 68%);
+      font-family:Inter,"Microsoft YaHei",system-ui,sans-serif;
+    }
+    button{font:inherit}
+    .demo-shell{width:min(1500px,calc(100% - 36px));margin:28px auto 56px}
+    .demo-head{
+      padding:24px 28px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:24px;
+      align-items:end;
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:linear-gradient(135deg,rgba(18,48,39,.96),rgba(5,19,15,.92));
+      box-shadow:0 24px 70px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .eyebrow{margin:0;color:var(--yellow);font-size:10px;font-weight:950;letter-spacing:.19em}
+    h1{margin:7px 0 8px;font-size:clamp(28px,4vw,48px);letter-spacing:-.045em}
+    .demo-head p:last-child{max-width:720px;margin:0;color:var(--muted);font-size:13px;line-height:1.7}
+    .effect-switch{padding:5px;display:flex;gap:4px;border:1px solid var(--line);border-radius:14px;background:#04100d}
+    .effect-switch button{
+      min-height:38px;padding:0 14px;border:0;border-radius:10px;color:var(--muted);
+      background:transparent;font-size:11px;font-weight:900;cursor:pointer;
+    }
+    .effect-switch button.active{color:#07110e;background:var(--yellow);box-shadow:0 5px 16px rgba(243,206,78,.18)}
+    .frame-grid{margin-top:22px;display:grid;grid-template-columns:repeat(5,minmax(210px,1fr));gap:18px;align-items:start}
+    .frame-study{min-width:0}
+    .grade-caption{margin:13px 4px 0;display:grid;gap:4px}
+    .grade-caption b{font-size:13px}
+    .grade-caption span{color:var(--muted);font-size:10px;line-height:1.5}
+
+    .new-card{
+      --accent:#8de0c2;
+      --accent2:#e8fff6;
+      --edge-dark:#17382d;
+      --ambient:rgba(80,210,166,.22);
+      --surface-a:#142a23;
+      --surface-b:#06110e;
+      position:relative;
+      isolation:isolate;
+      min-height:345px;
+      padding:18px;
+      overflow:hidden;
+      border:2px solid transparent;
+      border-radius:29px;
+      color:var(--ink);
+      background:
+        linear-gradient(150deg,var(--surface-a),var(--surface-b) 70%) padding-box,
+        conic-gradient(from 215deg,
+          var(--edge-dark) 0 8%,
+          var(--accent) 15%,
+          var(--accent2) 25%,
+          var(--edge-dark) 38%,
+          var(--accent) 52%,
+          var(--edge-dark) 65%,
+          var(--accent2) 78%,
+          var(--accent) 88%,
+          var(--edge-dark) 100%) border-box;
+      box-shadow:
+        0 25px 45px rgba(0,0,0,.4),
+        0 8px 20px var(--ambient),
+        inset 0 1px 0 rgba(255,255,255,.22),
+        inset 0 -1px 0 rgba(0,0,0,.9);
+      transform:translateZ(0);
+      transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,filter .25s ease;
+    }
+    .new-card:hover{
+      transform:translateY(-9px) scale(1.018);
+      box-shadow:
+        0 34px 58px rgba(0,0,0,.5),
+        0 12px 32px var(--ambient),
+        0 0 32px color-mix(in srgb,var(--accent) 18%,transparent),
+        inset 0 1px 0 rgba(255,255,255,.3);
+    }
+    .new-card:before{
+      content:"";
+      position:absolute;
+      inset:5px;
+      z-index:6;
+      border:1px solid color-mix(in srgb,var(--accent2) 27%,transparent);
+      border-radius:23px;
+      box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.72),
+        inset 0 12px 24px rgba(255,255,255,.025),
+        inset 0 -20px 32px rgba(0,0,0,.22);
+      pointer-events:none;
+    }
+    .new-card:after{
+      content:"";
+      position:absolute;
+      inset:-55% -80%;
+      z-index:5;
+      opacity:.38;
+      background:linear-gradient(105deg,transparent 43%,rgba(255,255,255,.42) 49%,transparent 55%);
+      transform:translateX(-42%) rotate(8deg);
+      animation:frame-sheen 5.8s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .edge-glow{
+      position:absolute;inset:auto 16% -9px;z-index:-1;height:30px;border-radius:50%;
+      background:var(--accent);filter:blur(22px);opacity:.22;pointer-events:none;
+    }
+    .corner-mark{
+      position:absolute;right:13px;top:13px;z-index:8;min-width:44px;height:44px;padding:0 8px;
+      display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--accent2) 70%,transparent);
+      border-radius:15px 15px 7px 15px;color:#07110e;background:linear-gradient(145deg,var(--accent2),var(--accent));
+      box-shadow:0 7px 16px var(--ambient),inset 0 1px 0 #fff;font-size:14px;font-weight:950;
+    }
+    .card-top{position:relative;z-index:4;display:flex;align-items:flex-start;gap:9px}
+    .card-top strong{font-size:39px;line-height:.92;letter-spacing:-.07em;text-shadow:0 2px 0 #000,0 0 14px var(--ambient)}
+    .card-top span{padding:4px 7px;border-radius:8px;color:#07110e;background:var(--accent);font-size:13px;font-weight:950;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+    .card-hero{position:relative;z-index:1;min-height:194px;display:grid;place-items:center}
+    .card-hero>strong{
+      opacity:.12;color:var(--accent2);font-size:110px;line-height:1;letter-spacing:-.1em;
+      text-shadow:0 0 24px var(--ambient);transform:translateX(-5px);
+    }
+    .profile{position:absolute;z-index:3;left:50%;bottom:-36px;width:150%;max-width:none;transform:translateX(-50%);filter:drop-shadow(0 12px 10px rgba(0,0,0,.55));pointer-events:none}
+    .profile.messi-rat{bottom:-7px;width:82%}
+    .profile.x-player{bottom:-9px;width:128%}
+    .card-copy{position:relative;z-index:7}
+    .card-copy h2{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:25px;line-height:1.05}
+    .card-copy p{margin:8px 0 0;padding-top:9px;border-top:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:10px}
+    .card-copy p b{float:right;color:var(--accent);font-weight:950}
+
+    .grade-x{
+      --accent:#c9fbff;--accent2:#fff;--edge-dark:#46565d;--ambient:rgba(129,238,244,.28);
+      --surface-a:#344246;--surface-b:#0b1113;
+      background:
+        radial-gradient(circle at 78% 20%,rgba(183,255,255,.18),transparent 28%) padding-box,
+        linear-gradient(150deg,var(--surface-a),var(--surface-b) 72%) padding-box,
+        conic-gradient(from 218deg,#273438,#e9ffff,#718b91,#fff,#36474b,#aeeff1,#fff,#34464a) border-box;
+    }
+    .grade-s{
+      --accent:#e9c550;--accent2:#fff1a7;--edge-dark:#60440b;--ambient:rgba(226,182,45,.3);
+      --surface-a:#262617;--surface-b:#090e0b;
+      background:
+        radial-gradient(circle at 78% 18%,rgba(255,210,64,.16),transparent 30%) padding-box,
+        linear-gradient(150deg,var(--surface-a),var(--surface-b) 72%) padding-box,
+        conic-gradient(from 220deg,#4c3407,#f3d35b,#fff0a2,#6b4a0e,#1e1809,#d7a92f,#fff2a8,#5a3d09) border-box;
+    }
+    .grade-a{
+      --accent:#56d9ce;--accent2:#b8fff8;--edge-dark:#12625e;--ambient:rgba(61,211,199,.25);
+      --surface-a:#113b36;--surface-b:#061310;
+    }
+    .grade-b{
+      --accent:#cf9eb8;--accent2:#ffe5f2;--edge-dark:#593748;--ambient:rgba(190,116,153,.22);
+      --surface-a:#34242d;--surface-b:#100b0e;
+    }
+    .grade-c{
+      --accent:#91ce71;--accent2:#e1ffc6;--edge-dark:#36562a;--ambient:rgba(117,193,76,.2);
+      --surface-a:#21351d;--surface-b:#091009;
+    }
+    .effects-off .new-card,.effects-off .new-card:hover{transform:none;filter:none;box-shadow:0 17px 34px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.18)}
+    .effects-off .new-card:after{display:none}
+    .effects-off .edge-glow{display:none}
+    .design-notes{
+      margin-top:24px;padding:19px 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+      border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--line);
+    }
+    .design-notes div{min-height:82px;padding:14px;background:#081813}
+    .design-notes small,.design-notes b{display:block}
+    .design-notes small{color:var(--yellow);font-size:9px;font-weight:950;letter-spacing:.12em}
+    .design-notes b{margin-top:7px;font-size:13px;line-height:1.5}
+    @keyframes frame-sheen{0%,64%{transform:translateX(-46%) rotate(8deg)}82%,100%{transform:translateX(46%) rotate(8deg)}}
+    @media(prefers-reduced-motion:reduce){.new-card:after{animation:none;display:none}.new-card{transition:none}}
+    @media(max-width:1180px){.frame-grid{grid-template-columns:repeat(3,minmax(220px,1fr))}}
+    @media(max-width:760px){
+      .demo-shell{width:min(100% - 20px,620px);margin-top:10px}.demo-head{padding:20px;grid-template-columns:1fr}
+      .effect-switch{width:max-content}.frame-grid{grid-template-columns:1fr 1fr}.design-notes{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:500px){.frame-grid{grid-template-columns:1fr}.new-card{min-height:370px}.design-notes{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="demo-shell">
+    <header class="demo-head">
+      <div>
+        <p class="eyebrow">S4 · PLAYER CARD FRAME STUDY</p>
+        <h1>新版球员卡边框视觉方案</h1>
+        <p>统一使用 29px 圆角、双层内沿和分级材质。边框不再像矩形面板，而更像有厚度的收藏卡；五个等级共享轮廓语言，但保留各自颜色与稀有度气质。</p>
+      </div>
+      <nav class="effect-switch" aria-label="特效预览">
+        <button type="button" class="active" data-effect="on">动态光效</button>
+        <button type="button" data-effect="off">静态边框</button>
+      </nav>
+    </header>
+
+    <section class="frame-grid">
+      <article class="frame-study">
+        <div class="new-card grade-x">
+          <i class="edge-glow"></i><span class="corner-mark">+5</span>
+          <div class="card-top"><strong>67</strong><span>ST</span></div>
+          <div class="card-hero"><strong>X</strong><img class="profile x-player" src="/versus/x_profile/%E6%9D%8E%E4%BF%8A%E8%89%AF.png" alt=""></div>
+          <div class="card-copy"><h2>李俊良</h2><p>黄狗青训 · 中国<b>X级唯一</b></p></div>
+        </div>
+        <div class="grade-caption"><b>X级 · 极光银</b><span>冷白金属、青色极光与高亮内沿，强调全服唯一。</span></div>
+      </article>
+
+      <article class="frame-study">
+        <div class="new-card grade-s">
+          <i class="edge-glow"></i><span class="corner-mark">+8</span>
+          <div class="card-top"><strong>104</strong><span>RW</span></div>
+          <div class="card-hero"><strong>S</strong><img class="profile messi-rat" src="/versus/legendary_profile/MessiRat.png" alt=""></div>
+          <div class="card-copy"><h2>梅老鼠</h2><p>巴塞罗那 · 阿根廷<b>传奇能力</b></p></div>
+        </div>
+        <div class="grade-caption"><b>S级 · 黑金藏品</b><span>深色底材配流动金边，光晕更集中，强化传奇感。</span></div>
+      </article>
+
+      <article class="frame-study">
+        <div class="new-card grade-a">
+          <i class="edge-glow"></i><span class="corner-mark">+4</span>
+          <div class="card-top"><strong>91</strong><span>AM</span></div>
+          <div class="card-hero"><strong>A</strong></div>
+          <div class="card-copy"><h2>顶级核心</h2><p>精英球员 · 中场<b>双特性</b></p></div>
+        </div>
+        <div class="grade-caption"><b>A级 · 深海青</b><span>高饱和青绿边缘，保留高级感但不抢传奇层级。</span></div>
+      </article>
+
+      <article class="frame-study">
+        <div class="new-card grade-b">
+          <i class="edge-glow"></i><span class="corner-mark">+3</span>
+          <div class="card-top"><strong>85</strong><span>CB</span></div>
+          <div class="card-hero"><strong>B</strong></div>
+          <div class="card-copy"><h2>实力中坚</h2><p>主力球员 · 后场<b>已强化</b></p></div>
+        </div>
+        <div class="grade-caption"><b>B级 · 玫瑰枪灰</b><span>降低亮度、增加金属粉质感，与A级形成明确区分。</span></div>
+      </article>
+
+      <article class="frame-study">
+        <div class="new-card grade-c">
+          <i class="edge-glow"></i><span class="corner-mark">+1</span>
+          <div class="card-top"><strong>78</strong><span>RB</span></div>
+          <div class="card-hero"><strong>C</strong></div>
+          <div class="card-copy"><h2>潜力新星</h2><p>轮换球员 · 后场<b>基础卡</b></p></div>
+        </div>
+        <div class="grade-caption"><b>C级 · 青铜绿</b><span>自然绿色配暗铜边，基础但不廉价，保持收藏质感。</span></div>
+      </article>
+    </section>
+
+    <section class="design-notes">
+      <div><small>SHAPE</small><b>29px 外圆角<br>23px 内沿圆角</b></div>
+      <div><small>DEPTH</small><b>外投影 + 等级色环境光<br>内侧上下明暗压边</b></div>
+      <div><small>MATERIAL</small><b>圆锥渐变金属边<br>不同等级独立材质</b></div>
+      <div><small>MOTION</small><b>低频扫光 + 悬浮抬升<br>支持关闭与系统减弱动效</b></div>
+    </section>
+  </main>
+  <script>
+    const buttons = [...document.querySelectorAll("[data-effect]")];
+    buttons.forEach((button) => button.addEventListener("click", () => {
+      document.body.classList.toggle("effects-off", button.dataset.effect === "off");
+      buttons.forEach((entry) => entry.classList.toggle("active", entry === button));
+    }));
+  </script>
+</body>
+</html>

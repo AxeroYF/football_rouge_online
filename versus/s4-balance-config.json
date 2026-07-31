@@ -1,13 +1,15 @@
 {
-  "outputVersion": "s4-season-v1",
-  "seed": "yellowdogs-s4-season-balance-v1",
+  "outputVersion": "s4-season-v6-nationality-bonds",
+  "seed": "yellowdogs-s4-season-balance-v6-nationality-bonds",
   "matches": 30000,
   "rawMatchSampleLimit": 1000,
+  "separateRawMatchSamples": true,
   "experiments": {
     "xTaskMatchesPerRole": 10000,
     "formationMatchesPerCell": 1000,
     "tacticMatchesPerCell": 600,
     "styleMatchesPerCell": 400,
+    "tacticalCombinationMatchesPerCell": 250,
     "upgradeMatchesPerCell": 250,
     "traitMatchesPerCell": 500,
     "legendMatchesPerCell": 300,
@@ -17,18 +19,23 @@
   },
   "taskThresholds": {
     "appearances": [1, 3, 5, 10, 18],
-    "goals": [1, 3, 6, 10],
-    "penaltiesWon": [1, 3, 5],
-    "assists": [1, 3, 6, 10],
-    "tackles": [5, 15, 30, 50],
-    "yellowCards": [1, 3, 5],
-    "saves": [5, 15, 30, 50]
+    "goals": [1, 2, 3],
+    "assists": [1, 2],
+    "tackles": [2, 5, 8, 11],
+    "saves": [5, 10, 20, 30]
+  },
+  "taskThresholdsByRole": {
+    "GK": { "appearances": [1, 3, 5, 10, 18], "saves": [5, 10, 20, 30] },
+    "DEF": { "appearances": [1, 3, 5, 10, 18], "tackles": [2, 5, 8, 11] },
+    "MID": { "appearances": [1, 3, 5, 10, 18], "assists": [1, 2] },
+    "ATT": { "appearances": [1, 3, 5, 10, 18], "goals": [1, 2, 3] }
   },
   "ecosystemWeights": {
-    "standard": 35,
-    "enhanced": 30,
+    "standard": 30,
+    "enhanced": 25,
     "traitHeavy": 15,
     "legendHeavy": 10,
-    "xLed": 10
+    "xLed": 10,
+    "nationalityHeavy": 10
   }
 }

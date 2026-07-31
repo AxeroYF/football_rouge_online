@@ -144,6 +144,8 @@ function buildDashboard() {
       lastSeenAt: account.lastSeenAt,
       summary: account.summary,
       historyCount: account.matches?.length ?? 0,
+      moderation:versusRooms.adminAccountModeration(account.id),
+      league:yellowDogsLeague.adminPlayerStatus(account.id),
     })).sort((left, right) => Number(right.lastSeenAt) - Number(left.lastSeenAt)),
     matches: matches.slice(0, 200).map(summaryMatch),
     formations: finishCompetitiveRows(formations),
@@ -161,6 +163,8 @@ function playerDetail(playerId) {
     createdAt: account.createdAt,
     lastSeenAt: account.lastSeenAt,
     summary: account.summary,
+    moderation:versusRooms.adminAccountModeration(account.id),
+    league:yellowDogsLeague.adminPlayerStatus(account.id),
     matches: (account.matches ?? []).map(({ detail, viewerIndex, ...record }) => ({
       ...record,
       matchId: detail?.id ?? record.id ?? null,
@@ -232,6 +236,14 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "POST" && pathname === "/api/admin/league/cup/start") {
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startCup() });
     }
+    if (request.method === "POST" && pathname === "/api/admin/league/daily-settlement/reward") {
+      return sendJson(response, 200, { ok:true, settlement:yellowDogsLeague.settleDailySeason({ manual:true }), league:yellowDogsLeague.adminView() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/daily-reset") {
+      const body = await readJson(request);
+      if (body.confirm !== "DAILY_RESET_YDL") throw new Error("需要确认立即重置每日联赛");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.resetDailyCompetitions({ manual:true }) });
+    }
     if (request.method === "POST" && pathname === "/api/admin/league/s4-packs/grant") {
       const body = await readJson(request);
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantS4PacksFromAdmin(body) });
@@ -239,6 +251,10 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "POST" && pathname === "/api/admin/league/coins/grant") {
       const body = await readJson(request);
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantCoinsFromAdmin(body) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/x-growth/grant") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantXGrowthPointsFromAdmin(body) });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/s4-cards/grant") {
       const body = await readJson(request);
@@ -268,6 +284,60 @@ export async function handleAdminApi(request, response, pathname, readJson, send
       const body = await readJson(request);
       if (body.confirm !== "FULL_RESET_YDL") throw new Error("需要确认完全重置联赛");
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.fullReset() });
+    }
+    const coinPenaltyMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)\/coins\/remove$/);
+    if (request.method === "POST" && coinPenaltyMatch) {
+      const accountId = decodeURIComponent(coinPenaltyMatch[1]);
+      const body = await readJson(request);
+      const league = yellowDogsLeague.removeCoinsFromAdmin({ ...body, accountId });
+      return sendJson(response, 200, { ok:true, league, player:playerDetail(accountId) });
+    }
+    const loginCooldownMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)\/login-cooldown$/);
+    if (request.method === "POST" && loginCooldownMatch) {
+      const accountId = decodeURIComponent(loginCooldownMatch[1]);
+      const body = await readJson(request);
+      const account = [...versusRooms.accounts.values()].find((candidate) => candidate.id === accountId);
+      if (!account) throw new Error("玩家不存在");
+      const moderation = versusRooms.applyLoginCooldown(accountId, body.durationMinutes, body.reason);
+      yellowDogsLeague.recordLoginDisciplineFromAdmin({
+        accountId,
+        playerName:account.nickname,
+        durationMinutes:Number(body.durationMinutes),
+        cooldownUntil:moderation.loginCooldownUntil,
+        reason:body.reason,
+        announce:body.announce === true,
+      });
+      return sendJson(response, 200, { ok:true, player:playerDetail(accountId) });
+    }
+    const clearLoginCooldownMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)\/login-cooldown\/clear$/);
+    if (request.method === "POST" && clearLoginCooldownMatch) {
+      const accountId = decodeURIComponent(clearLoginCooldownMatch[1]);
+      const body = await readJson(request);
+      const account = [...versusRooms.accounts.values()].find((candidate) => candidate.id === accountId);
+      if (!account) throw new Error("玩家不存在");
+      versusRooms.clearLoginCooldown(accountId);
+      yellowDogsLeague.recordLoginDisciplineFromAdmin({
+        accountId,
+        playerName:account.nickname,
+        suspended:false,
+        reason:body.reason,
+        announce:body.announce === true,
+      });
+      return sendJson(response, 200, { ok:true, player:playerDetail(accountId) });
+    }
+    const rewardSuspensionMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)\/rewards\/suspension$/);
+    if (request.method === "POST" && rewardSuspensionMatch) {
+      const accountId = decodeURIComponent(rewardSuspensionMatch[1]);
+      const body = await readJson(request);
+      const league = yellowDogsLeague.setRewardSuspensionFromAdmin({ ...body, accountId });
+      return sendJson(response, 200, { ok:true, league, player:playerDetail(accountId) });
+    }
+    const teamDissolutionMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)\/team\/dissolve$/);
+    if (request.method === "POST" && teamDissolutionMatch) {
+      const accountId = decodeURIComponent(teamDissolutionMatch[1]);
+      const body = await readJson(request);
+      const result = yellowDogsLeague.dissolveTeamFromAdmin({ ...body, accountId });
+      return sendJson(response, 200, { ok:true, ...result, player:playerDetail(accountId) });
     }
     const playerMatch = pathname.match(/^\/api\/admin\/players\/([^/]+)$/);
     if (request.method === "GET" && playerMatch) return sendJson(response, 200, { ok: true, player: playerDetail(decodeURIComponent(playerMatch[1])) });

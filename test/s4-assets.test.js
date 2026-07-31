@@ -1,16 +1,28 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
-import { PLAYER_OVERALL_ATTRIBUTE_KEYS } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes } from "../game/public/schema.js";
 import { assertS4AssetInvariants, ownershipOwner } from "../versus/s4-assets.js";
-import { isXPlayer, REAL_PLAYER_BY_ID } from "../versus/player-pool.js";
+import { isXPlayer, normalizedGameAttributes, REAL_PLAYER_BY_ID, REAL_PLAYERS, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP } from "../versus/player-pool.js";
 import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
+import { A_PLAYER_PROFILE_BY_PLAYER_ID } from "../versus/public/a-player-profiles.js";
+import { LEGENDARY_PROFILE_BY_PLAYER_ID } from "../versus/public/legendary-profiles.js";
+import { X_PLAYER_PROFILE_BY_PLAYER_ID } from "../versus/public/x-player-profiles.js";
 
 const NOW = Date.parse("2026-07-26T12:00:00+08:00");
 const account = (id) => ({ id, nickname:id });
+
+function assertOptimizedProfileAsset(entry, directoryName) {
+  assert.match(entry.optimizedFileName, /\.webp$/);
+  assert.match(entry.imageUrl, /\/webp\/.+\.webp\?v=[a-f0-9]{12}$/);
+  assert.ok(
+    existsSync(new URL(`../${directoryName}/webp/${entry.optimizedFileName}`, import.meta.url)),
+    entry.optimizedFileName,
+  );
+}
 
 test("X级球员在仓库默认排序中优先于S级且磁贴使用淡红背景", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
@@ -22,6 +34,188 @@ test("X级球员在仓库默认排序中优先于S级且磁贴使用淡红背景
   assert.match(styles, /\.league-squad-magnet\.grade-x,\.league-bench-magnet\.grade-x/);
   assert.match(styles, /\.s4-player-card\.grade-x\.band-high\{[^}]*#fff/);
   assert.match(styles, /\.s4-player-card\.grade-x\.band-max\{[^}]*#ff8fc4/);
+});
+
+test("所有真人卡面统一移除中央评级圆圈且保留新版边框", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /const legendary = Boolean\(player\.legendary \?\? player\.legend \?\? player\.grade === "S"\)/);
+  assert.match(appSource, /\$\{playerProfile \? "has-player-profile" : ""\}/);
+  assert.match(styles, /\.s4-player-card::before\{[^}]*inset:5px[^}]*border-radius:23px/);
+  assert.doesNotMatch(styles, /\.s4-player-card::before\{[^}]*width:190px/);
+  assert.match(styles, /\.s4-player-card\.has-player-profile \.s4-player-card-grade\{visibility:hidden\}/);
+  assert.doesNotMatch(styles, /\.s4-player-card\.(?:legendary-card|x-profile-card) \.s4-player-card-grade/);
+});
+
+test("李俊良X级卡绑定自定义头像并移除中央评级圆圈", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const profile = X_PLAYER_PROFILE_BY_PLAYER_ID["ydl-x-player-2"];
+  assert.equal(profile.profileKey, "李俊良");
+  assert.equal(profile.fileName, "李俊良.png");
+  assert.equal(profile.xPercent, 51.1);
+  assert.equal(profile.yPercent, 55.4);
+  assert.equal(profile.widthPercent, 128);
+  assertOptimizedProfileAsset(profile, "x_profile");
+  assert.match(appSource, /\$\{playerProfile \? "has-player-profile" : ""\}/);
+  assert.match(styles, /\.s4-player-card\.has-player-profile \.s4-player-card-grade\{visibility:hidden\}/);
+});
+
+test("全部高能力A级球员均绑定真人卡面且人物位于文字下层", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const entries = Object.values(A_PLAYER_PROFILE_BY_PLAYER_ID);
+  const contentOverrides = JSON.parse(readFileSync(new URL("../data/ydl-content-overrides.json", import.meta.url), "utf8")).players;
+  const expectedPlayerIds = Object.values(REAL_PLAYER_BY_ID)
+    .filter((player) => {
+      const patch = contentOverrides[player.id] ?? {};
+      return (patch.grade ?? player.grade) === "A" && Number(patch.overall ?? player.overall) >= 87;
+    })
+    .map((player) => player.id)
+    .sort();
+  assert.equal(entries.length, expectedPlayerIds.length);
+  assert.equal(new Set(entries.map((entry) => entry.fileName)).size, expectedPlayerIds.length);
+  assert.deepEqual(Object.keys(A_PLAYER_PROFILE_BY_PLAYER_ID).sort(), expectedPlayerIds);
+  for (const entry of entries) {
+    assertOptimizedProfileAsset(entry, "A_profile");
+    assert.ok(Number.isFinite(entry.xPercent));
+    assert.ok(Number.isFinite(entry.yPercent));
+    assert.ok(Number.isFinite(entry.widthPercent));
+  }
+  assert.match(appSource, /const aPlayerProfile = player\.grade === "A" \? aPlayerProfileForPlayer\(player\) : null/);
+  assert.match(appSource, /legendaryProfile \?\? aPlayerProfile \?\? xPlayerProfile/);
+  assert.match(styles, /\.s4-player-card\.grade-a \.s4-player-card-profile\{z-index:1\}/);
+  assert.match(styles, /\.s4-player-card\.has-player-profile \.s4-player-card-grade\{visibility:hidden\}/);
+});
+
+test("新版球员卡使用圆润双层边框并保留+5与+8强化变色", () => {
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(styles, /\.s4-player-card\{[^}]*border-radius:29px/);
+  assert.match(styles, /\.s4-player-card::before\{[^}]*border-radius:23px/);
+  assert.match(styles, /\.s4-player-card\.band-high:not\(\.grade-x\)\{[^}]*#f5cc55/);
+  assert.match(styles, /\.s4-player-card\.band-max\{[^}]*#e12438/);
+  assert.match(styles, /\.s4-player-card\.grade-x\.band-high\{[^}]*#a6e6e1/);
+  assert.match(styles, /\.s4-player-card\.grade-x\.band-max\{[^}]*#ff8fc4/);
+  assert.match(styles, /\.s4-player-card::after\{[^}]*opacity:0[^}]*animation:none/);
+  assert.match(styles, /\.s4-player-card:hover::after\{[^}]*animation:s4-card-frame-sheen 4\.2s ease-in-out infinite/);
+  assert.match(styles, /\.s4-player-card-upgrade\{[^}]*right:6px[^}]*top:6px[^}]*min-width:38px[^}]*height:30px/);
+  assert.match(styles, /\.s4-player-card-upgrade\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:[^}]*0 2px 3px/);
+  assert.match(styles, /\.s4-player-card-upgrade\{[^}]*rgba\(248,251,255,\.88\)[^}]*rgba\(185,197,209,\.88\)[^}]*rgba\(120,135,148,\.88\)/);
+  assert.match(styles, /\.s4-player-card-upgrade\.band-mid\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:/);
+  assert.match(styles, /\.s4-player-card-upgrade\.band-high\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:/);
+  assert.match(styles, /\.s4-player-card-upgrade\.band-max\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:/);
+  assert.match(styles, /\.s4-player-card-upgrade\.band-(?:mid|high|max)\{[^}]*rgba\([^)]+,\.88\)/);
+  assert.match(styles, /\.s4-player-card-upgrade::after\{[^}]*opacity:0[^}]*animation:none/);
+  assert.match(styles, /\.s4-player-card:hover \.s4-player-card-upgrade::after\{opacity:1;animation:s4-card-frame-sheen 4\.2s ease-in-out infinite/);
+  assert.doesNotMatch(styles, /@keyframes s4-upgrade-badge-sheen/);
+  assert.doesNotMatch(styles, /@media\(prefers-reduced-motion:reduce\)\{\.s4-player-card::after/);
+  assert.match(styles, /\.s4-player-card\{[^}]*linear-gradient\(132deg,transparent 0 12%,color-mix\(in srgb,var\(--stripe-accent\)/);
+  assert.match(styles, /\.s4-player-card\{[^}]*repeating-linear-gradient\(132deg/);
+  for (const grade of ["x", "s", "a", "b", "c"]) {
+    assert.match(styles, new RegExp(`\\.s4-player-card\\.grade-${grade}\\{[^}]*--stripe-accent:`));
+  }
+});
+
+test("背包三选一卡包使用独立悬浮选择层且卡牌网格保留间距", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /function openS4PackChoiceDialog\(offer\)/);
+  assert.match(appSource, /syncS4PackChoiceDialog\(\)/);
+  assert.match(appSource, /overlay\.querySelectorAll\("\[data-s4-pack-choice\]"\)\.forEach\(\(button\) => \{\s*button\.onclick = \(\) => chooseS4PackCard\(button\)/);
+  assert.match(appSource, /async function chooseS4PackCard\(button\)/);
+  assert.match(appSource, /"s4-pack-choice-dialog",\s*\{ dismissOnBackdrop:false \}/);
+  assert.doesNotMatch(appSource, /class="league-panel league-shop backpack-choice"/);
+  assert.doesNotMatch(appSource, /data-league-reset/);
+  assert.match(styles, /\.s4-pack-choice-overlay\{[^}]*place-items:center/);
+  assert.match(styles, /\.s4-pack-choice-stage \.s4-player-card-choice-grid\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)[^}]*gap:22px/);
+  assert.match(styles, /\.backpack-card-grid\{[^}]*gap:16px 14px/);
+  assert.match(styles, /\.enhancement-card-grid\{[^}]*gap:14px 12px/);
+  assert.match(styles, /\.s4-market-card-grid\{gap:14px 13px\}/);
+});
+
+test("球员卡详情弹窗固定在视口中央", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /openLeagueDialog\([^;]+,\s*"s4-card-detail-dialog"\)/s);
+  assert.match(appSource, /overlay\.classList\.add\("s4-card-detail-overlay"\)/);
+  assert.match(styles, /\.s4-card-detail-overlay\{display:grid;place-items:center\}/);
+  assert.match(styles, /\.s4-card-detail-dialog\{margin:0\}/);
+  assert.match(styles, /html\[data-league-theme="light"\] \.s4-card-detail>section\{[^}]*background:linear-gradient\(145deg,#fff,#f6f8fa\)/);
+  assert.match(styles, /html\[data-league-theme="light"\] \.s4-card-detail dl>div\{border-color:#e1e6ec\}/);
+  assert.match(styles, /html\[data-league-theme="light"\] \.s4-card-detail dd\{color:#263343\}/);
+});
+
+test("赛后双方阵型支持按实际出现的开局领先落后阶段切换", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /function historyStageViews\(detail, teamIndex\)/);
+  assert.match(appSource, /opening:"开局\/平局站位", leading:"领先站位", trailing:"落后站位"/);
+  assert.match(appSource, /disabled title="本场未出现"/);
+  assert.match(appSource, /function switchHistoryStage\(button\)/);
+  assert.match(appSource, /class="league-position-tabs history-stage-switch"/);
+  assert.match(styles, /\.history-stage-switch\.league-position-tabs button:disabled\{[^}]*opacity:\.28/);
+  assert.match(styles, /\.history-stage-panel\.active\{display:block\}/);
+});
+
+test("全部传奇球员均绑定存在的头像素材和定位参数", () => {
+  const entries = Object.values(LEGENDARY_PROFILE_BY_PLAYER_ID);
+  const contentOverrides = JSON.parse(readFileSync(new URL("../data/ydl-content-overrides.json", import.meta.url), "utf8")).players;
+  const effectiveLegendIds = Object.values(REAL_PLAYER_BY_ID)
+    .filter((player) => (contentOverrides[player.id]?.grade ?? player.grade) === "S")
+    .map((player) => player.id)
+    .sort();
+  assert.equal(entries.length, effectiveLegendIds.length);
+  assert.equal(new Set(entries.map((entry) => entry.fileName)).size, effectiveLegendIds.length);
+  assert.deepEqual(Object.keys(LEGENDARY_PROFILE_BY_PLAYER_ID).sort(), effectiveLegendIds);
+  for (const entry of entries) {
+    assertOptimizedProfileAsset(entry, "legendary_profile");
+    assert.ok(Number.isFinite(entry.xPercent));
+    assert.ok(Number.isFinite(entry.yPercent));
+    assert.ok(Number.isFinite(entry.widthPercent));
+  }
+});
+
+test("版本化WebP真人卡面使用一年不可变缓存", () => {
+  const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
+  assert.match(serverSource, /"\.webp": "image\/webp"/);
+  assert.match(serverSource, /public, max-age=31536000, immutable/);
+});
+
+test("梅老鼠除独立身份外完整复制梅西的球员信息", () => {
+  const messi = REAL_PLAYER_BY_ID["legend-messi"];
+  const messiRat = REAL_PLAYER_BY_ID["legend-messi-rat"];
+  assert.equal(messiRat.name, "梅老鼠");
+  assert.equal(messiRat.grade, "S");
+  assert.equal(messiRat.legendary, true);
+  const identityKeys = new Set(["id", "name", "sourceName", "sourceId", "cardFamilyId"]);
+  const comparable = (player) => Object.fromEntries(Object.entries(player).filter(([key]) => !identityKeys.has(key)));
+  assert.deepEqual(comparable(messiRat), comparable(messi));
+  assert.equal(LEGENDARY_PROFILE_BY_PLAYER_ID[messiRat.id].profileKey, "MessiRat");
+  assert.equal(LEGENDARY_PROFILE_BY_PLAYER_ID[messiRat.id].fileName, "MessiRat.png");
+});
+
+test("S4全部非X球员26项能力回归游戏卡面OVR", () => {
+  const standardPlayers = REAL_PLAYERS.filter((player) => !isXPlayer(player));
+  assert.ok(standardPlayers.length > 0);
+  for (const player of standardPlayers) {
+    assert.ok(player.overall <= S4_PLAYER_DEFAULT_ATTRIBUTE_CAP, `${player.name} OVR超过默认上限`);
+    assert.equal(ATTRIBUTE_NAMES.length, 26);
+    for (const key of ATTRIBUTE_NAMES) {
+      assert.ok(Number(player.attributes[key]) <= S4_PLAYER_DEFAULT_ATTRIBUTE_CAP, `${player.name} ${key}超过默认上限`);
+      assert.equal(player.referenceAttributes[key], player.attributes[key], `${player.name} ${key}参考值未同步`);
+    }
+    assert.equal(playerOverallFromAttributes(player.attributes, player.role), player.overall, `${player.name}未按26项算法回归OVR`);
+  }
+});
+
+test("游戏OVR与EA参考OVR差值先作用于全部26项再收敛位置核心能力", () => {
+  const source = Object.fromEntries(ATTRIBUTE_NAMES.map((key) => [key, 50]));
+  const attributes = normalizedGameAttributes(source, "ST", 80, 70);
+  const coreKeys = new Set(PLAYER_OVERALL_ATTRIBUTE_KEYS.ATT);
+  for (const key of ATTRIBUTE_NAMES.filter((candidate) => !coreKeys.has(candidate))) {
+    assert.equal(attributes[key], 60, key);
+  }
+  assert.equal(playerOverallFromAttributes(attributes, "ST"), 80);
 });
 
 function join(service, user) {
@@ -99,17 +293,17 @@ test("持有所有权的最后一张卡不能静默解约，确认后卡片与�
   assert.ok(!service.accountTeam(user.id).rosterIds.includes(playerId));
 });
 
-test("+3单卡可以系统回收，+4及以上单卡不能回收", () => {
+test("+4单卡可以系统回收，+5及以上单卡不能回收", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("protected-card-owner");
   const team = join(service, user);
   const playerId = nonLegendBench(service, user);
-  const recyclable = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:3, acquisitionSource:"repeat-pack" });
-  const protectedCard = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"repeat-pack" });
+  const recyclable = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"repeat-pack" });
+  const protectedCard = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:5, acquisitionSource:"repeat-pack" });
 
   service.releaseCard(user, recyclable.id, false);
   assert.equal(service.state.s4Assets.cards[recyclable.id].status, "recycled");
-  assert.throws(() => service.releaseCard(user, protectedCard.id, false), /\+4及以上/);
+  assert.throws(() => service.releaseCard(user, protectedCard.id, false), /\+5及以上/);
   assert.equal(service.state.s4Assets.cards[protectedCard.id].status, "active");
 });
 
@@ -126,7 +320,7 @@ test("球员卡管理公开单卡回收资格和所有权回收明细", () => {
 
   assert.equal(base.systemRecyclable, true);
   assert.ok(base.systemRecoveryValue > 0);
-  assert.equal(enhanced.systemRecyclable, false);
+  assert.equal(enhanced.systemRecyclable, true);
   assert.deepEqual(player.ownershipReturnPreview.retainedCardIds, [extra.id]);
   assert.equal(player.ownershipReturnPreview.recoveredCardCount, 1);
   assert.equal(player.ownershipReturnPreview.totalAmount, player.ownershipReturnPreview.recoveryAmount + player.ownershipReturnPreview.ownershipAmount);
@@ -157,10 +351,10 @@ test("批量单卡回收包含高强化卡时整批拒绝且不改变资产", ()
   const team = join(service, user);
   const playerId = nonLegendBench(service, user);
   const valid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:1, acquisitionSource:"repeat-pack" });
-  const invalid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"repeat-pack" });
+  const invalid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:5, acquisitionSource:"repeat-pack" });
   const balanceBefore = service.wallet(user.id).balance;
 
-  assert.throws(() => service.releaseCards(user, [valid.id, invalid.id]), /\+4及以上/);
+  assert.throws(() => service.releaseCards(user, [valid.id, invalid.id]), /\+5及以上/);
   assert.equal(service.state.s4Assets.cards[valid.id].status, "active");
   assert.equal(service.state.s4Assets.cards[invalid.id].status, "active");
   assert.equal(service.wallet(user.id).balance, balanceBefore);
@@ -543,6 +737,30 @@ test("市场获得的+5以上单卡在买家没有所有权时不占33人大名�
   assert.equal(service.rosterSlotsUsed(buyer.id), slotsBefore);
 });
 
+test("通过市场购买的任意等级传奇卡不占33人大名单额度", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const seller = account("legend-card-seller");
+  const buyer = account("legend-card-buyer");
+  const sellerTeam = join(service, seller);
+  join(service, buyer);
+  const legendId = "legend-pele";
+  const legendCard = service.grantS4Card(sellerTeam, legendId, {
+    grantOwnership:false,
+    upgradeLevel:0,
+    acquisitionSource:"legend-market-test",
+  });
+  const slotsBefore = service.rosterSlotsUsed(buyer.id);
+  const publicCard = service.view(seller).ownTeam.roster.find((player) => player.id === legendId).cards.find((card) => card.id === legendCard.id);
+  service.wallet(buyer.id).balance = Math.max(100000, publicCard.minimumListingPrice);
+  const listing = service.listCard(seller, legendCard.id, publicCard.minimumListingPrice).listings.find((entry) => entry.cardId === legendCard.id);
+
+  service.buyListing(buyer, listing.id);
+
+  const received = service.view(buyer).ownTeam.roster.find((player) => player.id === legendId).cards.find((card) => card.id === legendCard.id);
+  assert.equal(received.rosterExempt, true);
+  assert.equal(service.rosterSlotsUsed(buyer.id), slotsBefore);
+});
+
 test("无所有权的外部+3单卡占一个名单名额，同名多卡不重复占位", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const owner = account("external-plus-three-owner");
@@ -698,6 +916,62 @@ test("失去所有权的+5卡降为+4后动态恢复名单占位", () => {
   assert.equal(service.view(seller).ownTeam.roster.find((player) => player.id === playerId).rosterSlotUsed, true);
 });
 
+test("强化记录保存主副卡、道具价格、概率与结果且仅本人可见", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("enhancement-history-owner");
+  const other = account("enhancement-history-other");
+  const team = join(service, user);
+  join(service, other);
+  const playerId = nonLegendBench(service, user);
+  const main = service.representativeCard(user.id, playerId);
+  main.upgradeLevel = 5;
+  const material = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:5, acquisitionSource:"history-test" });
+
+  const result = service.enhanceS4Card(user, main.id, material.id, true, { compact:true });
+  const record = result.enhancementHistory[0];
+
+  assert.equal(record.mainPlayer.id, playerId);
+  assert.equal(record.mainCard.upgradeLevel, 5);
+  assert.equal(record.materialPlayer.id, playerId);
+  assert.equal(record.materialCard.upgradeLevel, 5);
+  assert.equal(record.resultPlayer.id, playerId);
+  assert.equal(record.resultCard.upgradeLevel, result.enhancementResult.afterLevel);
+  assert.equal(record.protectionUsed, true);
+  assert.ok(record.protectionCost > 0);
+  assert.equal(record.chance, result.enhancementResult.chance);
+  assert.equal(record.success, result.enhancementResult.success);
+  assert.equal(record.afterLevel, result.enhancementResult.afterLevel);
+  assert.equal(service.view(user).enhancement.history.length, 1);
+  assert.equal(service.view(other).enhancement.history.length, 0);
+});
+
+test("强化页左下角使用个人记录并支持放大双卡滚轮视图", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const miniHistory = appSource.match(/function leagueEnhancementHistoryMarkup\(\)[\s\S]*?\n\}/)?.[0] ?? "";
+  const expandedHistory = appSource.match(/function openLeagueEnhancementHistory\(\)[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(miniHistory, /league\.enhancement\?\.history/);
+  assert.match(miniHistory, /强化记录/);
+  assert.match(miniHistory, /entry\.materialCard\?\.upgradeLevel/);
+  assert.match(miniHistory, /entry\.protectionUsed \? `<span class="enhancement-history-protection">/);
+  assert.match(miniHistory, /class="enhancement-history-chance"/);
+  assert.doesNotMatch(miniHistory, /entry\.materialLevel/);
+  assert.doesNotMatch(miniHistory, /完成合卡后会在这里保存最近记录/);
+  assert.doesNotMatch(miniHistory, /enhancementRanking|全服强化排行榜/);
+  assert.match(expandedHistory, /s4PlayerCardMarkup\(entry\.mainPlayer/);
+  assert.match(expandedHistory, /s4PlayerCardMarkup\(entry\.materialPlayer/);
+  assert.match(expandedHistory, /结果卡 · \+\$\{entry\.afterLevel\}/);
+  assert.match(expandedHistory, /s4PlayerCardMarkup\(entry\.resultPlayer/);
+  assert.match(expandedHistory, /强化道具/);
+  assert.match(expandedHistory, /entry\.protectionUsed \? `<span>/);
+  assert.doesNotMatch(expandedHistory, /: "未使用"/);
+  assert.match(expandedHistory, /预期成功率/);
+  assert.match(appSource, /data-enhancement-history-open/);
+  assert.match(styles, /\.enhancement-history-overlay\{display:grid;place-items:center/);
+  assert.match(styles, /\.enhancement-history-scroll\{[^}]*overflow-y:auto[^}]*overscroll-behavior:contain/);
+  assert.match(styles, /\.enhancement-history-card-pair/);
+});
+
 test("已挂牌强化卡和所有权挂牌球员不能进入强化流程", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("listed-enhancement-owner");
@@ -761,6 +1035,26 @@ test("主动返还所有权保留全部并列最高强化卡，只有基础卡�
   assert.equal(ownershipOwner(service.state, basePlayerId), null);
 });
 
+test("批量所有权回收会原子校验并一次结算多名球员", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("batch-rights-returner");
+  const team = join(service, user);
+  const playerIds = team.rosterIds.filter((id) => !isXPlayer(REAL_PLAYER_BY_ID[id]) && REAL_PLAYER_BY_ID[id].grade !== "S").slice(-2);
+  const xPlayerId = team.rosterIds.find((id) => isXPlayer(REAL_PLAYER_BY_ID[id]));
+  const balanceBefore = service.wallet(user.id).balance;
+
+  assert.throws(() => service.returnOwnerships(user, [playerIds[0], xPlayerId]), /X级球员不可回收/);
+  assert.equal(ownershipOwner(service.state, playerIds[0]), user.id);
+
+  const result = service.returnOwnerships(user, playerIds);
+  assert.equal(result.ownershipRecoveryResult.playerCount, 2);
+  assert.equal(result.ownershipRecoveryResult.recoveredCardCount, 2);
+  assert.equal(service.wallet(user.id).balance, balanceBefore + result.ownershipRecoveryResult.amount);
+  playerIds.forEach((playerId) => {
+    assert.equal(ownershipOwner(service.state, playerId), null);
+    assert.equal(service.playerCards(user.id, playerId).length, 0);
+  });
+});
 test("X级球员完成位置身高特性配置且全服唯一并免占名单", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const first = account("x-config-first");
@@ -825,12 +1119,13 @@ test("X球员成长任务、商店加成点与27项加点会实时生效", () =>
   assert.equal(view.xGrowth.player.id, xPlayerId);
   assert.equal(view.xGrowth.attributes.length, 26);
   assert.equal(view.xGrowth.height.key, "heightCm");
+  assert.equal(view.xGrowth.height.maxValue, 230);
   assert.equal(view.xGrowth.points, 1);
   assert.equal(service.view(user).xGrowth.points, 1);
 
   const walletBefore = service.wallet(user.id).balance;
   view = service.buyXGrowthPoints(user, 6);
-  assert.equal(view.wallet.balance, walletBefore - 30000);
+  assert.equal(view.wallet.balance, walletBefore - 18000);
   assert.equal(view.xGrowth.points, 7);
   const keysByGroup = { GK:["goalkeeping", "reflexes", "positioning", "composure"], DEF:["tackling", "marking", "positioning", "strength", "pace"], MID:["passing", "vision", "decisions", "firstTouch", "stamina"], ATT:["finishing", "offBall", "pace", "dribbling", "composure"] };
   const overallBefore = view.xGrowth.player.overall;
@@ -848,6 +1143,157 @@ test("X球员成长任务、商店加成点与27项加点会实时生效", () =>
   assert.equal(view.xGrowth.height.countsTowardOverall, false);
   assert.equal(view.xGrowth.player.overall, overallAfterAbility);
   assert.equal(view.xGrowth.points, 7 - keysByGroup[xPlayer.pool].length - 1);
+
+  service.xPlayerConfig(xPlayerId).heightCm = 229;
+  xPlayer.heightCm = 229;
+  service.xGrowthState(xPlayerId).points = 2;
+  view = service.spendXGrowthPoints(user, "heightCm", 1);
+  assert.equal(view.xGrowth.height.value, 230);
+  assert.throws(() => service.spendXGrowthPoints(user, "heightCm", 1), /身高最高为230cm/);
+});
+
+test("X球员洗点返还已用点数并切换位置", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-growth-reset-owner");
+  const team = join(service, user);
+  const xPlayerId = team.rosterIds.find(isXPlayer);
+  service.buyXGrowthPoints(user, 2);
+  service.spendXGrowthPoints(user, "passing", 1);
+  service.spendXGrowthPoints(user, "heightCm", 1);
+  const xCard = service.representativeCard(user.id, xPlayerId);
+  const previousTraitId = xCard.traitIds[0];
+  const traitId = service.eligibleXTraits("ST").find((trait) => trait.id !== previousTraitId).id;
+  const before = service.wallet(user.id).balance;
+  const view = service.resetXGrowth(user, "ST", "LW", { traitId });
+  assert.equal(view.wallet.balance, before - 8000);
+  assert.equal(view.xGrowth.player.role, "ST");
+  assert.equal(view.xGrowth.player.secondaryRole, "LW");
+  assert.equal(view.xGrowth.points, 2);
+  assert.equal(view.xGrowth.spentPoints, 0);
+  assert.equal(view.xGrowth.attributes.find((attribute) => attribute.key === "passing").bonusPoints, 0);
+  assert.equal(view.xGrowth.height.bonusPoints, 0);
+  assert.equal(xCard.traitIds[0], traitId);
+  assert.equal(view.xGrowth.initialTraitId, traitId);
+  assert.ok(view.xGrowth.traitCatalog.length > 3);
+  assert.equal(service.state.ledger.filter((entry) => entry.type === "x-growth-reset").length, 1);
+});
+
+test("X球员洗点可从全部位置适配特性中自由选择并保留强化特性", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-trait-reset");
+  const team = join(service, user);
+  const xPlayerId = team.rosterIds.find(isXPlayer);
+  const xCard = service.representativeCard(user.id, xPlayerId);
+  const initialTraitId = xCard.traitIds[0];
+  const eligible = service.eligibleXTraits("ST");
+  const nextTraitId = eligible.find((trait) => trait.id !== initialTraitId).id;
+  const bonusTraitId = eligible.find((trait) => ![initialTraitId, nextTraitId].includes(trait.id)).id;
+  xCard.traitIds.push(bonusTraitId);
+
+  service.resetXGrowth(user, "ST", "LW", { traitId:nextTraitId });
+
+  assert.deepEqual(xCard.traitIds, [nextTraitId, bonusTraitId]);
+  const balanceBeforeInvalid = service.wallet(user.id).balance;
+  const invalidTrait = VERSUS_TRAIT_CARDS.find((trait) => !service.eligibleXTraits("GK").some((candidate) => candidate.id === trait.id));
+  assert.throws(() => service.resetXGrowth(user, "GK", null, { traitId:invalidTrait.id }), /适用于新主位置/);
+  assert.equal(service.wallet(user.id).balance, balanceBeforeInvalid);
+});
+
+test("X球员成长操作可返回轻量响应并保留旧完整响应", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-growth-compact-owner");
+  join(service, user);
+
+  const compact = service.buyXGrowthPoints(user, 1, { compact:true });
+  assert.ok(compact.wallet);
+  assert.ok(compact.xGrowth);
+  assert.equal(compact.serverTime, NOW);
+  assert.equal("teams" in compact, false);
+  assert.equal("playerDirectory" in compact, false);
+  assert.equal("recentMatches" in compact, false);
+
+  const full = service.spendXGrowthPoints(user, "passing", 1);
+  assert.ok(full.teams);
+  assert.ok(full.playerDirectory);
+  assert.ok(full.xGrowth);
+});
+
+test("X球员洗点请求重试时不会重复扣费或重复写账", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-growth-idempotent-owner");
+  join(service, user);
+  service.buyXGrowthPoints(user, 1);
+  service.spendXGrowthPoints(user, "passing", 1);
+  const balanceBefore = service.wallet(user.id).balance;
+  const options = { compact:true, requestId:"reset-request-1", traitId:service.eligibleXTraits("ST")[0].id };
+
+  const first = service.resetXGrowth(user, "ST", "LW", options);
+  const retried = service.resetXGrowth(user, "ST", "LW", options);
+
+  assert.equal(first.wallet.balance, balanceBefore - 8000);
+  assert.equal(retried.wallet.balance, first.wallet.balance);
+  assert.equal(retried.xGrowth.growthEpoch, first.xGrowth.growthEpoch);
+  assert.equal(service.state.ledger.filter((entry) => entry.type === "x-growth-reset" && entry.requestId === options.requestId).length, 1);
+});
+
+test("X球员成长前端会锁定慢请求、网络失败重试并合并轻量响应", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /if \(leagueXGrowthMutationPending\) return null/);
+  assert.match(appSource, /crypto\?\.randomUUID\?\.\(\)/);
+  assert.match(appSource, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
+  assert.match(appSource, /body:leagueIdentity\(\{ \.\.\.body, requestId \}\)/);
+  assert.match(appSource, /league = \{ \.\.\.league, updatedAt:growth\.updatedAt, serverTime:growth\.serverTime, wallet:growth\.wallet, xGrowth:growth\.xGrowth \}/);
+  assert.match(appSource, /leagueXGrowthRequest\("\/buy"/);
+  assert.match(appSource, /leagueXGrowthRequest\("\/spend"/);
+  assert.match(appSource, /leagueXGrowthRequest\("\/reset"/);
+  assert.doesNotMatch(appSource, /leagueRequest\("\/x-growth\//);
+  assert.match(apiSource, /requestId:body\.requestId/);
+  assert.match(apiSource, /traitId:body\.traitId/);
+  assert.match(appSource, /function leagueXGrowthTraitChoicesMarkup/);
+  assert.match(appSource, /growth\.traitCatalog/);
+  assert.match(appSource, /name="x-growth-reset-trait"/);
+  assert.match(appSource, /let leagueXGrowthResetTraitOpen = false/);
+  assert.match(appSource, /data-x-growth-position-confirm/);
+  assert.match(appSource, /leagueXGrowthResetTraitOpen \? `<section class="x-growth-reset-traits"/);
+  assert.match(appSource, /选择特性并支付\$\{growth\.resetCost \?\? 8000\}金币/);
+  assert.match(appSource, /data-x-growth-position-edit/);
+  assert.match(appSource, /await leagueXGrowthRequest\("\/reset", \{ role, secondaryRole, traitId \}\)/);
+  assert.match(styles, /\.x-growth-reset-traits>footer\{[^}]*justify-content:flex-end/);
+  assert.match(styles, /\.x-growth-field\.is-pending/);
+  assert.match(styles, /\.x-growth-reset\.is-pending/);
+});
+
+test("友谊赛邀请使用轻量响应并避免完整联赛重绘", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+  assert.match(appSource, /function leagueFriendlyInviteRequest/);
+  assert.match(appSource, /leagueFriendlyInviteRequest\(team\.id\)/);
+  assert.match(appSource, /friendlyInvitations:invitation\.friendlyInvitations/);
+  assert.match(apiSource, /createFriendlyInvitation\(account, body\.targetTeamId, \{ compact:true \}\)/);
+  assert.match(serviceSource, /friendlyInvitationMutationView\(account\)/);
+  assert.match(serviceSource, /this\.save\(\{ skipDailyBackup:true \}\)/);
+});
+
+test("旧X球员完成首日任务后会继续获得多日成长里程碑", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-growth-long-chain");
+  const team = join(service, user);
+  const xPlayerId = team.rosterIds.find(isXPlayer);
+  const statKey = `${team.id}:${xPlayerId}`;
+  const growth = service.xGrowthState(xPlayerId);
+  growth.taskClaims.appearances = 5;
+  service.state.playerStats[statKey] = { key:statKey, playerId:xPlayerId, teamId:team.id, appearances:25, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0, ratingTotal:175 };
+
+  const awarded = service.settleXGrowthTasks(xPlayerId);
+  const appearanceTask = service.view(user).xGrowth.tasks.find((task) => task.id === "appearances");
+  assert.equal(awarded, 2);
+  assert.equal(appearanceTask.completed, 6);
+  assert.equal(appearanceTask.complete, false);
+  assert.equal(appearanceTask.nextTarget, 35);
+  assert.equal(appearanceTask.milestones.at(-1), 90);
 });
 
 test("旧X球员存档重载后以62为基础总评并正确叠加强化", () => {
@@ -867,14 +1313,14 @@ test("旧X球员存档重载后以62为基础总评并正确叠加强化", () =>
     const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
     const view = reloaded.view(user);
     const xPlayer = view.ownTeam.roster.find((player) => player.id === xPlayerId);
-    assert.equal(view.xGrowth.player.overall, 67);
+    assert.equal(view.xGrowth.player.overall, 69);
     assert.equal(xPlayer.baseOverall, 62);
-    assert.equal(xPlayer.effectiveOverall, 67);
-    assert.equal(xPlayer.cards[0].effectiveOverall, 67);
+    assert.equal(xPlayer.effectiveOverall, 69);
+    assert.equal(xPlayer.cards[0].effectiveOverall, 69);
     assert.equal(view.xGrowth.baseOverall, 62);
-    assert.equal(view.xGrowth.effectiveOverall, 67);
+    assert.equal(view.xGrowth.effectiveOverall, 69);
     assert.equal(view.xGrowth.upgradeLevel, 5);
-    assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === Math.min(99, attribute.value + 5)));
+    assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === Math.min(99, attribute.value + 7)));
     assert.equal(view.xGrowth.height.effectiveValue, view.xGrowth.height.value);
   } finally {
     rmSync(directory, { recursive:true, force:true });
@@ -890,24 +1336,26 @@ test("X级球员只能作为主卡并使用同位置普通卡强化至三特性"
   const xCard = service.representativeCard(user.id, xPlayerId);
   const sameRolePlayerId = team.rosterIds.find((playerId) => !isXPlayer(playerId) && REAL_PLAYER_BY_ID[playerId].role === xPlayer.role);
   const wrongRolePlayerId = team.rosterIds.find((playerId) => !isXPlayer(playerId) && REAL_PLAYER_BY_ID[playerId].role !== xPlayer.role);
-  const sameRoleMaterial = service.grantS4Card(team, sameRolePlayerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"test-material" });
-  const wrongRoleMaterial = service.grantS4Card(team, wrongRolePlayerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"test-material" });
+  const sameRoleMaterial = service.grantS4Card(team, sameRolePlayerId, { grantOwnership:false, upgradeLevel:3, acquisitionSource:"test-material" });
+  const wrongRoleMaterial = service.grantS4Card(team, wrongRolePlayerId, { grantOwnership:false, upgradeLevel:3, acquisitionSource:"test-material" });
 
   assert.throws(() => service.enhanceS4Card(user, sameRoleMaterial.id, xCard.id), /只能作为强化主卡/);
   assert.throws(() => service.enhanceS4Card(user, xCard.id, wrongRoleMaterial.id), /相同位置/);
 
-  xCard.upgradeLevel = 4;
+  xCard.upgradeLevel = 3;
   let result = service.enhanceS4Card(user, xCard.id, sameRoleMaterial.id);
-  assert.equal(result.enhancementResult.afterLevel, 5);
-  assert.equal(result.enhancementResult.chance, 70);
+  assert.equal(result.enhancementResult.afterLevel, 4);
+  assert.equal(result.enhancementResult.chance, 85);
+  assert.equal(result.enhancementResult.traitOffer.unlockLevel, 4);
   service.chooseS4EnhancementTrait(user, result.enhancementResult.traitOffer.id, result.enhancementResult.traitOffer.traits[0].id);
   assert.equal(xCard.traitIds.length, 2);
 
-  xCard.upgradeLevel = 7;
-  const maxMaterial = service.grantS4Card(team, sameRolePlayerId, { grantOwnership:false, upgradeLevel:7, acquisitionSource:"test-material" });
+  xCard.upgradeLevel = 6;
+  const maxMaterial = service.grantS4Card(team, sameRolePlayerId, { grantOwnership:false, upgradeLevel:6, acquisitionSource:"test-material" });
   result = service.enhanceS4Card(user, xCard.id, maxMaterial.id);
   service.chooseS4EnhancementTrait(user, result.enhancementResult.traitOffer.id, result.enhancementResult.traitOffer.traits[0].id);
-  assert.equal(xCard.upgradeLevel, 8);
+  assert.equal(xCard.upgradeLevel, 7);
+  assert.equal(result.enhancementResult.traitOffer.unlockLevel, 7);
   assert.equal(xCard.traitIds.length, 3);
 });
 
@@ -932,6 +1380,32 @@ test("X级强化不能消耗其他球员的最后一张所有权锚点卡", () =
     assert.equal(xCard.upgradeLevel, xLevelBefore);
     assert.equal(ownershipOwner(service.state, materialPlayerId), user.id);
     assert.ok(team.rosterIds.includes(materialPlayerId));
+    assert.doesNotThrow(() => assertS4AssetInvariants(service.state));
+  });
+});
+
+test("任意最后一张传奇卡作为X级副卡时都会同步移出名单并保持存档一致", () => {
+  ["legend-messi-rat", "legend-pele"].forEach((legendId, index) => {
+    const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+    const user = account(`x-legend-material-${index}`);
+    const team = join(service, user);
+    const xPlayerId = team.rosterIds.find(isXPlayer);
+    const xPlayer = REAL_PLAYER_BY_ID[xPlayerId];
+    const legendPlayer = REAL_PLAYER_BY_ID[legendId];
+    const xCard = service.representativeCard(user.id, xPlayerId);
+    const materialCard = service.playerCards(user.id, legendPlayer.id)[0]
+      ?? service.grantS4Card(team, legendPlayer.id, { grantOwnership:false, acquisitionSource:"regression-test" });
+    xPlayer.role = legendPlayer.role;
+    service.xPlayerConfig(xPlayerId).role = legendPlayer.role;
+
+    assert.equal(service.playerCards(user.id, legendPlayer.id).length, 1);
+    assert.ok(team.rosterIds.includes(legendPlayer.id));
+    service.enhanceS4Card(user, xCard.id, materialCard.id);
+
+    assert.equal(materialCard.status, "recycled");
+    assert.equal(service.playerCards(user.id, legendPlayer.id).length, 0);
+    assert.equal(team.rosterIds.includes(legendPlayer.id), false);
+    assert.equal(legendPlayer.id in team.playerState, false);
     assert.doesNotThrow(() => assertS4AssetInvariants(service.state));
   });
 });
@@ -978,4 +1452,192 @@ test("开启全新赛季直接清空S4资产，不迁移旧名单", () => {
   assert.equal(Object.keys(service.state.s4Assets.ownerships).length, 0);
   assert.equal(service.state.s4Assets.transactions.length, 0);
   assert.ok(service.state.teams.every((team) => !team.ownerId && team.rosterIds.length === 0));
+});
+
+test("桌面联赛浅色主题只在宽屏生效并记忆用户选择", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const lightThemeBlock = styles.slice(styles.indexOf("/* Desktop light appearance */"));
+  const componentCompletionBlock = styles.slice(styles.indexOf("/* Desktop light appearance: component completion */"));
+
+  assert.match(appSource, /LEAGUE_DESKTOP_THEME_KEY = "yellowdogs_league_desktop_theme_v1"/);
+  assert.match(appSource, /localStorage\.getItem\(LEAGUE_DESKTOP_THEME_KEY\) === "dark" \? "dark" : "light"/);
+  assert.match(appSource, /catch \{ return "light"; \}/);
+  assert.match(appSource, /window\.matchMedia\("\(min-width: 1051px\)"\)/);
+  assert.match(appSource, /data-league-theme-toggle aria-pressed=/);
+  assert.match(appSource, /localStorage\.setItem\(LEAGUE_DESKTOP_THEME_KEY, leagueDesktopTheme\)/);
+  assert.match(appSource, /class="league-board-controls"/);
+  assert.match(appSource, /String\(bond\.name\)\.replace\(\/羁绊\$\/u, ""\)/);
+  assert.doesNotMatch(appSource, /escapeHtml\(bond\.name\)\}羁绊/);
+  assert.match(styles, /\.league-theme-toggle\{display:none\}/);
+  assert.match(styles, /bottom:86px/);
+  assert.match(lightThemeBlock, /^\/\* Desktop light appearance \*\/[\s\S]*@media\(min-width:1051px\)\{/);
+  assert.match(lightThemeBlock, /html\[data-league-theme="light"\]/);
+  for (const selector of [
+    ".league-club-resources", ".report-rank", ".cup-tabs button", ".league-board-panel",
+    ".backpack-page-tabs button", ".enhancement-composer", ".league-pack-product", ".player-directory-row",
+    ".room-console", ".account-history", ".broadcast-hub", ".league-schedule-head",
+    ".s4-player-card", ".prediction-dialog .prediction-investment input",
+    ".broadcast-overlay", ".broadcast-toolbar", ".scoreboard>span", ".broadcast-team-panel",
+    ".latest-event", ".match-event", ".live-stats", ".match-audience",
+    ".pitch-lines", ".league-public-pitch", ".history-pitch", ".broadcast-pitch",
+    ".league-team-detail-grid>section", ".league-public-roster", ".history-review",
+    ".history-team", ".history-player-list", ".timeline-event",
+    ".ydtv-hero", ".ydtv-tabs", ".ydtv-panel", ".ydtv-broadcast",
+    ".league-magnet-tooltip", ".league-bond-ready span", ".league-board-controls",
+    ".league-squad-magnet:not(.grade-x)", ".league-squad-magnet.grade-s",
+  ]) assert.ok(componentCompletionBlock.includes(selector), `missing desktop light selector: ${selector}`);
+  assert.doesNotMatch(lightThemeBlock, /@media\(max-width:/);
+});
+test("战术板拖动球员时按主位置与副位置高亮可替换磁贴", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /data-primary-role=/);
+  assert.match(appSource, /data-secondary-role=/);
+  assert.match(appSource, /showRoleSwapHighlights\(magnet\)/);
+  assert.match(appSource, /candidateRole === primaryRole/);
+  assert.match(appSource, /candidateRole === secondaryRole/);
+  assert.match(appSource, /clearRoleSwapHighlights\(\)/);
+  assert.match(styles, /\.league-squad-magnet\.role-swap-primary/);
+  assert.match(styles, /\.league-bench-magnet\.role-swap-secondary/);
+});
+test("桌面联赛使用顶部球队资源栏并保持侧边导航常驻", () => {
+  const indexSource = readFileSync(new URL("../versus/public/index.html", import.meta.url), "utf8");
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+
+  assert.match(indexSource, /黄狗模拟经理/);
+  assert.match(indexSource, /YD MANAGER/);
+  assert.match(indexSource, /id="league-topbar-club"/);
+  assert.doesNotMatch(appSource, /<header class="league-top">/);
+  assert.match(appSource, /leagueTopbarClub\.innerHTML/);
+  assert.doesNotMatch(appSource, /LEAGUE_DESKTOP_SIDEBAR_KEY/);
+  assert.doesNotMatch(appSource, /data-league-sidebar-collapse/);
+  assert.doesNotMatch(appSource, /sidebar-collapsed/);
+  assert.doesNotMatch(styles, /league-sidebar-collapse/);
+  assert.doesNotMatch(styles, /sidebar-collapsed/);
+});
+test("三栏数据榜单与强化排行榜限制在桌面可用高度内滚动", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+
+  assert.match(appSource, /class="league-stats-grid"/);
+  assert.match(appSource, /name:"联赛"/);
+  assert.match(appSource, /name:"杯赛"/);
+  assert.match(appSource, /name:"本队"/);
+  assert.doesNotMatch(appSource, /data-league-stats-scope/);
+  assert.doesNotMatch(appSource, /leagueStatsScope/);
+  assert.match(appSource, /class="player-info-shell enhancement-ranking-page"/);
+  assert.match(styles, /\.league-stats-page\{height:calc\(100dvh - 108px\);min-height:680px/);
+  assert.match(styles, /\.league-stats-grid\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\);min-height:0\}/);
+  assert.match(styles, /\.league-stats-scroll\{min-height:0;overflow:auto/);
+  assert.match(styles, /\.enhancement-ranking-page\{box-sizing:border-box;height:calc\(100dvh - 108px\);min-height:680px/);
+  assert.match(styles, /\.enhancement-ranking-page \.enhancement-ranking-table\{min-height:0;overflow:auto/);
+  assert.match(styles, /\.league-board-heading>div:first-child\{min-width:190px;flex:0 0 190px\}/);
+  assert.match(styles, /\.league-inbox\{height:calc\(100dvh - 108px\);min-height:680px\}/);
+});
+test("球员搜索与强化排行榜支持独立切换列表和球员卡展示", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+
+  assert.match(appSource, /let leaguePlayerSearchView = "list"/);
+  assert.match(appSource, /let leagueEnhancementRankingView = "list"/);
+  assert.match(appSource, /data-player-search-view/);
+  assert.match(appSource, /data-enhancement-ranking-view/);
+  assert.match(appSource, /leaguePlayerSearchView === "cards"[\s\S]*player-directory-card-grid/);
+  assert.match(appSource, /leagueEnhancementRankingView === "cards"[\s\S]*enhancement-ranking-card-grid/);
+  assert.match(appSource, /s4PlayerCardMarkup\(player, \{ card:playerDirectoryCard\(player, player\.highestUpgradeLevel\)/);
+  assert.match(appSource, /s4PlayerCardMarkup\(entry\.player, \{ card:playerDirectoryCard\(entry\.player, entry\.upgradeLevel, entry\.traits\)/);
+  assert.match(styles, /\.player-directory-card-grid,\.enhancement-ranking-card-grid\{min-height:0;[^}]*overflow:auto/);
+  assert.match(styles, /\.enhancement-ranking-page \.enhancement-ranking-card-grid\{min-height:0;overflow:auto\}/);
+  assert.match(styles, /\.player-search-page>\.player-directory-card-grid\{overflow:visible;overscroll-behavior:auto;scrollbar-gutter:auto\}/);
+  assert.doesNotMatch(styles, /\.player-search-page,\.enhancement-ranking-page\{box-sizing:border-box;height:calc\(100dvh - 108px\)/);
+});
+test("背包所有权回收支持多选且传奇基础卡进入单卡市场", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  assert.match(appSource, /leagueBackpackSelectedOwnershipIds = new Set\(\)/);
+  assert.match(appSource, /leaguePlayerIds:players\.map/);
+  assert.match(appSource, /\/ownership\/return-batch/);
+  assert.match(appSource, /player\.legendary \|\| player\.grade === "S"/);
+  assert.match(apiSource, /ownership\/return-batch/);
+});
+test("友谊赛预约与满名单开包不会锁死主要操作页面", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /const weather = next\.weather[\s\S]*友谊赛天气将在比赛开始时确定/);
+  assert.match(appSource, /const referee = next\.referee[\s\S]*友谊赛裁判将在比赛开始时确定/);
+  assert.match(appSource, /data-s4-pack-manage-roster/);
+  assert.match(appSource, /leagueBackpackPage = "cards";[\s\S]*closeLeagueDialog\(\);[\s\S]*renderLeague\(\)/);
+  assert.match(appSource, /leagueTab === "backpack" && leagueBackpackPage === "packs" \? league\.s4Packs\?\.offer : null/);
+  assert.match(styles, /\.s4-pack-choice-footer\{[^}]*display:flex[^}]*justify-content:space-between/);
+});
+test("战术板场上磁贴松手后只做局部同步而不整页重绘", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  assert.match(appSource, /function refreshLeagueSquadPositionUi\(\)/);
+  assert.match(appSource, /currentMagnet\.innerHTML = nextMagnet\.innerHTML/);
+  assert.match(appSource, /currentLines\.replaceWith\(nextLines\.cloneNode\(true\)\)/);
+  const dropRefresh = appSource.match(/if \(moved\) \{\s*leagueEditorDirty = true;[\s\S]*?scheduleLeagueTeamAutoSave\(180\);\s*\}/)?.[0] ?? "";
+  assert.match(dropRefresh, /refreshLeagueSquadPositionUi\(\)/);
+  assert.doesNotMatch(dropRefresh, /renderLeague\(\)/);
+});
+
+test("强化页局部刷新会同步复用卡片的等级与卡面内容", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const syncCard = appSource.match(/function syncEnhancementCardAttributes\(card, source\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(syncCard, /card\.innerHTML !== source\.innerHTML/);
+  assert.match(syncCard, /card\.innerHTML = source\.innerHTML/);
+  assert.match(appSource, /leagueEnhancementPhase = leagueEnhancementResult\?\.success \? "success" : "failure";[\s\S]*?requestAnimationFrame[\s\S]*?renderLeagueEnhancementInPlace\(\)/);
+  assert.match(appSource, /function leagueEnhancementRevealDelay\(afterLevel\)[\s\S]*?level < 4\) return 420;[\s\S]*?1440[\s\S]*?360/);
+  assert.match(appSource, /const enhancement = value\.enhancement/);
+  assert.match(appSource, /const revealDelay = leagueEnhancementRevealDelay\(leagueEnhancementResult\?\.afterLevel\)/);
+  assert.match(appSource, /function showLeagueEnhancementCelebration\(result\)[\s\S]*?level < 4[\s\S]*?level >= 8 \? "is-max" : "is-high"/);
+  assert.match(appSource, /const cardMarkup = s4PlayerCardMarkup\(result\.player, \{ card:result\.card \}\)/);
+  assert.match(appSource, /enhancement-celebration-card-glint[\s\S]*?\$\{cardMarkup\}/);
+  assert.doesNotMatch(appSource, /enhancement-celebration-copy[\s\S]*?<strong>\+\$\{level\}<\/strong>/);
+  assert.match(styles, /\.enhancement-celebration\.is-max/);
+  assert.match(appSource, /enhancement-celebration-meteors/);
+  assert.match(appSource, /Array\.from\(\{ length:128 \}/);
+  assert.match(appSource, /--meteor-y:\$\{startY\}vh/);
+  assert.doesNotMatch(appSource, /点击画面继续/);
+  assert.match(appSource, /celebration\.addEventListener\("click", \(event\) =>[\s\S]*?celebration\.classList\.contains\("traits-open"\)/);
+  assert.doesNotMatch(appSource, /const duration = level >= 8/);
+  assert.match(styles, /@keyframes enhancement-celebration-meteor/);
+  assert.match(styles, /\.enhancement-celebration-meteors i/);
+  assert.match(styles, /\.enhancement-celebration\{[^}]*pointer-events:auto[^}]*cursor:pointer/);
+  assert.doesNotMatch(styles, /enhancement-celebration-sweep/);
+  assert.match(styles, /\.enhancement-celebration\{[^}]*background:#000/);
+  assert.match(styles, /\.enhancement-celebration\.is-max\{background:#000\}/);
+  assert.match(styles, /@keyframes enhancement-celebration-card-in/);
+  assert.match(styles, /\.enhancement-celebration-card-glint:before/);
+  assert.match(appSource, /function returnLeagueEnhancementResultToWarehouse\(cardId\)[\s\S]*?请先为这张强化卡绑定特性[\s\S]*?leagueEnhancementResult = null/);
+  assert.match(appSource, /app\.addEventListener\("dblclick"[\s\S]*?data-enhancement-result-card[\s\S]*?returnLeagueEnhancementResultToWarehouse/);
+  assert.match(appSource, /data-enhancement-result-pending title="请先绑定强化特性"/);
+  assert.match(appSource, /title="双击或拖回球员卡仓库"/);
+  assert.match(styles, /\[data-enhancement-result-pending\]\{cursor:not-allowed/);
+  assert.match(appSource, /enhancement-celebration-bind/);
+  assert.match(appSource, /enhancement-celebration-traits/);
+  assert.match(appSource, /celebration\.classList\.add\("traits-open"\)/);
+  assert.match(appSource, /celebration\.querySelector\("\[data-celebration-bind\]"\)\?\.remove\(\);[\s\S]*?celebration\.classList\.remove\("traits-open", "trait-resolving"\)/);
+  assert.match(styles, /\.traits-open \.enhancement-celebration-stage\{opacity:0/);
+  assert.match(styles, /@keyframes enhancement-celebration-trait-in/);
+  assert.match(styles, /@keyframes enhancement-celebration-trait-collect/);
+  assert.match(styles, /@keyframes enhancement-celebration-main-return/);
+  assert.match(appSource, /const materialLevelTooHigh = compatibleCards && materialLevel > mainLevel/);
+  assert.match(appSource, /const canEnhance = compatibleCards && !materialLevelTooHigh/);
+  assert.match(appSource, /const enhancementHint = materialLevelTooHigh \? ""/);
+  assert.match(appSource, /<strong>\$\{materialLevelTooHigh \? ""/);
+  assert.match(appSource, /Number\(main\.card\.upgradeLevel \?\? 0\) < Number\(material\.card\.upgradeLevel \?\? 0\)/);
+  assert.doesNotMatch(styles, /\.enhancement-action>small\.warning/);
+  assert.match(appSource, /const secondaryRole = player\.secondaryRole && player\.secondaryRole !== player\.role/);
+  assert.match(appSource, /const roleDisplay = secondaryRole \? `\$\{primaryRole\} \/ \$\{secondaryRole\}` : primaryRole/);
+  assert.match(appSource, /<dt>主位置 \/ 副位置<\/dt>/);
+});
+
+test("观赛加载完成后会移除居中加载布局并恢复全宽直播画面", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const renderBroadcastSource = appSource.match(/function renderBroadcast\(broadcast\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(renderBroadcastSource, /overlay\.classList\.remove\("broadcast-loading"\)/);
+  assert.match(appSource, /class="broadcast-overlay broadcast-loading"/);
 });

@@ -101,16 +101,16 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
     { hook: "position", minimumFit: 0.65 },
     { hook: "attribute", add: { tackling: -2 }, when: { activeRoleNot: "GK" } },
   ], { name: "紧急手套", tags: ["goalkeeping", "position", "tradeoff"] }),
-  versusTrait("front-runner-essential", "球队领先时整体能力提高30%；落后时整体能力降低50%。", [
-    { hook: "allAttributes", multiply: 1.3, when: { scoreState: "leading" } },
-    { hook: "allAttributes", multiply: 0.5, when: { scoreState: "trailing" } },
+  versusTrait("front-runner-essential", "球队领先时整体能力提高8%；落后时整体能力降低8%。", [
+    { hook: "allAttributes", multiply: 1.08, when: { scoreState: "leading" } },
+    { hook: "allAttributes", multiply: 0.92, when: { scoreState: "trailing" } },
   ]),
   versusTrait("chameleon-role", "出任任何位置时，位置适配最低为70%。", [
     { hook: "position", minimumFit: 0.7 },
   ]),
-  versusTrait("five-minutes-before-clockout", "60分钟前整体能力降低10%；60分钟后提高35%。", [
-    { hook: "allAttributes", multiply: 0.9, when: { minuteLte: 59 } },
-    { hook: "allAttributes", multiply: 1.35, when: { minuteGte: 60 } },
+  versusTrait("five-minutes-before-clockout", "60分钟前整体能力降低4%；60分钟后提高12%。", [
+    { hook: "allAttributes", multiply: 0.96, when: { minuteLte: 59 } },
+    { hook: "allAttributes", multiply: 1.12, when: { minuteGte: 60 } },
   ]),
 ]);
 
