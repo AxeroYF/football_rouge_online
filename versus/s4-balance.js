@@ -37,7 +37,7 @@ export function s4OwnershipReferenceValue(player) {
 
 export const S4_PACK_PRICES = Object.freeze({
   "legend-random":12000,
-  "private-mixed":1600,
+  "private-mixed":1000,
   "private-att":1300,
   "private-mid":1300,
   "private-def":1300,

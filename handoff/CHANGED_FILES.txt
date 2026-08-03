@@ -1,4 +1,21 @@
-更新时间：2026-08-02 23:19（Asia/Shanghai）
+更新时间：2026-08-03 13:20（Asia/Shanghai）
+
+2026-08-03 13:20 最新增量：
+
+M versus/league-service.js - leagueHead 轻量同步头；view() 复用 ownTeamView 去重
+M versus/api.js - POST /api/versus/league/head 路由
+M versus/public/app.js - 静默刷新改为 head 优先，仅数据变化时拉全量
+M devtool/server.js - 静态文本资源 gzip
+M versus/s4-assets.js - 加载时清理“升级为传奇但登记唯一所有权”的失效登记（1141 热修内容）
+M devtool/server.js - 提前同步加载 ydl-content-store，运营覆盖先于联赛单例构造生效（1141 热修内容）
+?? devtool/loadtest-http.mjs - 服务器 HTTP 压测（head/broadcasts/league/static）
+?? devtool/analyze-cpuprofile.mjs - .cpuprofile 火焰分析
+?? devtool/profile-attach.mjs - SIGUSR1 附加式采样（无需停服）
+?? devtool/profile-live.mjs - 附加采样 + 直接打印 Top 函数
+?? handoff/football-ydl-s4-frontend-perf-light-sync-tools-hotfix-20260803-1320.tar.gz
+?? handoff/football-ydl-s4-roster-overflow-ops-override-hotfix-20260803-1141.tar.gz
+
+线上状态：已部署 1141（运营覆盖+传奇所有权，team1 27/33）与 1320（轻量同步+静态 gzip+诊断工具）；分片增量保存 46ms 非瓶颈；持续 75% 单核占用待火焰定位。
 
 2026-08-03 10:47 最新增量：
 

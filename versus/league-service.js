@@ -14,6 +14,7 @@ import { applyS4Enhancement, S4_ECONOMY, S4_ENHANCEMENT, S4_PACK_PRICES, S4_PRIC
 import { applyS4BondBonuses, createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
 import { analyzeElevenBoardFormation, deriveFormationLines, sanitizeFormationLines } from "./public/formation-rules.js";
 import { DEFAULT_IN_POSSESSION_DETAILS, DEFAULT_OUT_OF_POSSESSION_DETAILS, IN_POSSESSION_DETAIL_OPTIONS, OUT_OF_POSSESSION_DETAIL_OPTIONS } from "./public/v2-tactical-profiles.js";
+import { measureRuntimeSync } from "../src/runtime-metrics.js";
 import {
   assertS4AssetInvariants,
   cardsForOwner,
@@ -850,6 +851,10 @@ export class YellowDogsLeagueService {
   }
 
   maintainBackups() {
+    return measureRuntimeSync("league.backupMaintenance", () => this.maintainBackupsUnmeasured());
+  }
+
+  maintainBackupsUnmeasured() {
     if (!this.backupDir) return [];
     const date = localDateKey(new Date(this.now()));
     const dailyName = this.shardStore ? `${date}.manifest.json` : `${date}.json`;
@@ -870,6 +875,10 @@ export class YellowDogsLeagueService {
   }
 
   save(options = {}) {
+    return measureRuntimeSync("league.save", () => this.saveUnmeasured(options));
+  }
+
+  saveUnmeasured(options = {}) {
     if (this.inboxReadPersistTimer) {
       clearTimeout(this.inboxReadPersistTimer);
       this.inboxReadPersistTimer = null;
@@ -1028,14 +1037,13 @@ export class YellowDogsLeagueService {
   publicXGrowth(accountId) {
     const player = this.accountXPlayer(accountId);
     if (!player) return null;
-    this.settleXGrowthTasks(player.id);
     const config = this.xPlayerConfig(player.id);
     const growth = this.xGrowthState(player.id);
     const stats = this.xFormalStats(player.id);
     const group = roleGroup(config.role);
     const overallAttributes = new Set(PLAYER_OVERALL_ATTRIBUTE_KEYS[group] ?? []);
-    const card = this.representativeCard(accountId, player.id);
-    const upgradeLevel = Number(card?.upgradeLevel ?? 0);
+    const xCard = this.representativeCard(accountId, player.id);
+    const upgradeLevel = Number(xCard?.upgradeLevel ?? 0);
     const effectivePlayer = applyS4Enhancement({ ...playerSummary(player, config), overall:player.overall, attributes:clone(config.attributes) }, upgradeLevel);
     const spentByField = this.state.ledger
       .filter((entry) => entry.type === "x-growth-spend" && entry.playerId === player.id && Number(entry.growthEpoch ?? 0) === Number(growth.growthEpoch ?? 0))
@@ -1048,7 +1056,6 @@ export class YellowDogsLeagueService {
       const nextIndex = Math.min(claimed, task.milestones.length - 1);
       return { id:task.id, label:task.label, value:stats[task.stat], milestones:[...task.milestones], rewards:[...task.rewards], completed:claimed, complete:claimed >= task.milestones.length, nextTarget:task.milestones[nextIndex] };
     });
-    const xCard = this.representativeCard(accountId, player.id);
     const traitCatalog = YDL_TRAIT_CARDS.map((trait) => ({ id:trait.id, name:trait.name, summary:trait.summary, eligibleRoleGroups:[...(trait.eligibleRoleGroups ?? [])] }));
     return { resetCost:X_GROWTH_RESET_COST, growthEpoch:Number(growth.growthEpoch ?? 0), roles:[...X_PLAYER_ROLES], player:effectivePlayer, baseOverall:player.overall, effectiveOverall:effectivePlayer.overall, upgradeLevel, points:growth.points, earnedPoints:growth.earnedPoints, purchasedPoints:growth.purchasedPoints, grantedPoints:Number(growth.grantedPoints ?? 0), spentPoints:growth.spentPoints, initialTraitId:xCard?.traitIds?.[0] ?? null, traitCatalog, attributes:ATTRIBUTE_NAMES.map((key) => ({ key, label:ATTRIBUTE_LABELS[key], value:config.attributes[key], effectiveValue:effectivePlayer.attributes[key], bonusPoints:Number(spentByField[key] ?? 0), countsTowardOverall:overallAttributes.has(key), maxValue:99 })), height:{ key:"heightCm", label:"身高", value:config.heightCm, effectiveValue:config.heightCm, bonusPoints:Number(spentByField.heightCm ?? 0), countsTowardOverall:false, maxValue:X_PLAYER_GROWTH_HEIGHT_MAX }, tasks, shop:{ ...X_GROWTH_PACK } };
   }
@@ -1077,6 +1084,7 @@ export class YellowDogsLeagueService {
     if (!Number.isInteger(count) || count < 1 || count > 20) throw new Error("单次最多购买20份加成点数");
     const total = X_GROWTH_PACK.price * count;
     if (this.wallet(account.id).balance < total) throw new Error("金币不足");
+    this.settleXGrowthTasks(player.id);
     const growth = this.xGrowthState(player.id);
     this.wallet(account.id).balance -= total;
     growth.points += X_GROWTH_PACK.points * count;
@@ -1096,15 +1104,19 @@ export class YellowDogsLeagueService {
     const count = Math.floor(Number(amount));
     if (!Number.isInteger(count) || count < 1) throw new Error("加点数量必须是正整数");
     const config = this.xPlayerConfig(player.id);
-    const growth = this.xGrowthState(player.id);
-    if (growth.points < count) throw new Error("加成点数不足");
     if (field === "heightCm") {
       if (config.heightCm + count > X_PLAYER_GROWTH_HEIGHT_MAX) throw new Error(`身高最高为${X_PLAYER_GROWTH_HEIGHT_MAX}cm`);
-      config.heightCm += count;
-      player.heightCm = config.heightCm;
     } else {
       if (!ATTRIBUTE_NAMES.includes(field)) throw new Error("未知能力项");
       if (Number(config.attributes[field]) + count > 99) throw new Error("单项能力最高为99");
+    }
+    this.settleXGrowthTasks(player.id);
+    const growth = this.xGrowthState(player.id);
+    if (growth.points < count) throw new Error("加成点数不足");
+    if (field === "heightCm") {
+      config.heightCm += count;
+      player.heightCm = config.heightCm;
+    } else {
       config.attributes[field] += count;
       player.attributes[field] = config.attributes[field];
       player.referenceAttributes[field] = config.attributes[field];
@@ -1137,6 +1149,7 @@ export class YellowDogsLeagueService {
     const config = this.xPlayerConfig(player.id);
     const xCard = this.representativeCard(account.id, player.id);
     if (!xCard) throw new Error("找不到X球员卡");
+    this.settleXGrowthTasks(player.id);
     const currentEpoch = Number(growth.growthEpoch ?? 0);
     if (!config.baseAttributes) {
       config.baseAttributes = clone(config.attributes);
@@ -1397,7 +1410,7 @@ export class YellowDogsLeagueService {
 
     this.createS4ChoiceOffer(account, item, pack);
     this.save();
-    if (options.compact) return this.compactMutationView(account, { ownTeam:true, s4Packs:true });
+    if (options.compact) return this.compactMutationView(account, { s4Packs:true });
     return this.view(account);
   }
 
@@ -1500,7 +1513,7 @@ export class YellowDogsLeagueService {
     this.state.s4Packs.batchOpenings[account.id] = batch;
     this.createS4ChoiceOffer(account, items[0], pack, batch);
     this.save();
-    if (options.compact) return this.compactMutationView(account, { ownTeam:true, s4Packs:true });
+    if (options.compact) return this.compactMutationView(account, { s4Packs:true });
     return this.view(account);
   }
 
@@ -2644,68 +2657,25 @@ export class YellowDogsLeagueService {
     return clone(result);
   }
 
+  // 轻量同步头：供前端静默刷新使用，几十字节，避免每 12 秒构建/传输完整联赛视图。
+  // 只有 updatedAt / 赛季状态变化时才需要重新拉取完整 view()。
+  leagueHead(account) {
+    const team = this.accountTeam(account.id);
+    return {
+      updatedAt:this.state.updatedAt,
+      serverTime:this.now(),
+      seasonStatus:this.state.season?.status ?? null,
+      seasonCurrentRound:Number(this.state.season?.currentRound ?? 0),
+      walletBalance:this.wallet(account.id).balance,
+      inboxUnreadCount:team ? (this.state.inbox[team.id] ?? []).filter((message) => !message.readAt).length : 0,
+    };
+  }
+
   view(account, options = {}) {
     this.pruneInvalidS4EnhancementTraitOffers();
     const team = this.accountTeam(account.id);
     const pendingTraitOffer = Object.values(this.state.s4Assets.traitOffers ?? {}).find((offer) => offer.ownerId === account.id && offer.status === "pending") ?? null;
-    const listingByPlayer = new Map(this.state.listings.filter((item) => item.status === "active").map((item) => [item.playerId, item]));
-    const ownTeam = team ? publicTeam(team, true) : null;
-    if (ownTeam) ownTeam.roster.forEach((player) => {
-      const source = REAL_PLAYER_BY_ID[player.id];
-      const cards = this.playerCards(account.id, player.id);
-      const activeCard = cards[0] ?? null;
-      player.listed = listingByPlayer.has(player.id);
-      player.referencePrice = s4OwnershipReferenceValue(source);
-      player.minimumPrice = ownershipMinimumListingPrice(source);
-      player.cards = cards.map((card) => publicLeagueS4Card(this.state, card));
-      player.cards.forEach((card) => {
-        card.baseOverall = source.overall;
-        card.effectiveOverall = s4EffectiveOverall(source, card.upgradeLevel);
-        card.upgradeBonus = card.effectiveOverall - source.overall;
-        card.referenceValue = s4CardReferenceValue(source, card.upgradeLevel);
-        card.minimumListingPrice = Math.ceil(card.referenceValue * S4_PRICING.cardListingFloorRate / 100) * 100;
-        card.systemRecoveryValue = s4SingleCardReleaseValue(source, card.upgradeLevel);
-        card.systemRecyclable = Number(card.upgradeLevel ?? 0) <= 4;
-      });
-      player.activeCardId = activeCard?.id ?? null;
-      player.upgradeLevel = Number(activeCard?.upgradeLevel ?? 0);
-      player.baseOverall = source.overall;
-      player.effectiveOverall = s4EffectiveOverall(source, player.upgradeLevel);
-      player.effectiveAttributes = applyS4Enhancement(source, player.upgradeLevel).attributes;
-      Object.assign(player, traitBoardPresentation(player, activeCard?.traitIds));
-      player.ownsRights = ownershipOwner(this.state, player.id) === account.id;
-      if (player.ownsRights && !isS4Legend(source)) {
-        const highestLevel = Math.max(...cards.map((card) => Number(card.upgradeLevel ?? 0)));
-        const retained = highestLevel > 0 ? cards.filter((card) => Number(card.upgradeLevel ?? 0) === highestLevel) : [];
-        const retainedIds = new Set(retained.map((card) => card.id));
-        const recovered = cards.filter((card) => !retainedIds.has(card.id));
-        const ownershipAmount = Math.floor(s4OwnershipReferenceValue(source) * S4_OWNERSHIP_RETURN_RATE);
-        const recoveryAmount = recovered.reduce((sum, card) => sum + s4ForcedCardRecoveryValue(source, card.upgradeLevel), 0);
-        player.ownershipReturnPreview = {
-          retainedCardIds:retained.map((card) => card.id),
-          retainedCardCount:retained.length,
-          retainedUpgradeLevel:retained.length ? highestLevel : null,
-          recoveredCardCount:recovered.length,
-          recoveryAmount,
-          ownershipAmount,
-          totalAmount:recoveryAmount + ownershipAmount,
-        };
-      }
-      player.rosterSlotUsed = rosterFamilyUsesSlot(this.state, account.id, player.id);
-      player.releaseValue = Number(activeCard?.upgradeLevel ?? 0) <= 1
-        ? s4SingleCardReleaseValue(source, activeCard?.upgradeLevel)
-          + (player.ownsRights && cards.length === 1 ? Math.floor(s4OwnershipReferenceValue(source) * S4_OWNERSHIP_RETURN_RATE) : 0)
-        : null;
-    });
-    if (ownTeam) ownTeam.s4Assets = publicS4AssetsForOwner(this.state, account.id);
-    if (ownTeam) {
-      const starters = ownTeam.roster.filter((player) => team.preferredStarterIds.includes(player.id)).map((player) => {
-        const activeCard = player.cards.find((card) => card.id === player.activeCardId) ?? player.cards[0];
-        return { ...player, traits:(activeCard?.traits ?? []).map((trait) => trait.id) };
-      });
-      const roles = inferElevenBoardRoles(starters.map((player) => ({ id:player.id, position:team.positions[player.id] })));
-      ownTeam.bonds = evaluateS4LineupBonds(starters, S4_BOND_CATALOG, { roles });
-    }
+    const ownTeam = team ? this.ownTeamView(account) : null;
     return clone({
       updatedAt:this.state.updatedAt,
       season:this.state.season,
@@ -4145,12 +4115,12 @@ export class YellowDogsLeagueService {
   }
 
   enhancementHistory(accountId, limit = 50) {
-    return this.state.ledger
-      .filter((entry) => entry.accountId === accountId && entry.type === "s4-card-enhancement")
-      .slice()
-      .sort((left, right) => Number(right.createdAt ?? 0) - Number(left.createdAt ?? 0))
-      .slice(0, limit)
-      .map((entry) => {
+    const entries = [];
+    for (let index = this.state.ledger.length - 1; index >= 0 && entries.length < limit; index -= 1) {
+      const entry = this.state.ledger[index];
+      if (entry.accountId === accountId && entry.type === "s4-card-enhancement") entries.push(entry);
+    }
+    return entries.map((entry) => {
         const mainPlayer = entry.mainPlayer ?? playerSummary(REAL_PLAYER_BY_ID[entry.playerId]);
         const materialPlayerId = entry.materialPlayerId ?? this.state.s4Assets.cards[entry.materialCardId]?.playerId ?? entry.playerId;
         const materialPlayer = entry.materialPlayer ?? playerSummary(REAL_PLAYER_BY_ID[materialPlayerId]);
@@ -4189,7 +4159,8 @@ export class YellowDogsLeagueService {
     if (isXPlayer(mainPlayer)) {
       if (mainPlayer.role !== materialPlayer?.role) throw new Error("X级球员强化只能使用相同位置的普通球员卡");
     } else if (mainCard.playerId !== materialCard.playerId) throw new Error("强化只允许使用同名球员卡");
-    if (ownershipOwner(this.state, materialCard.playerId) === account.id && cardsForOwner(this.state, account.id, materialCard.playerId).length === 1) {
+    const materialFamilyCards = cardsForOwner(this.state, account.id, materialCard.playerId);
+    if (ownershipOwner(this.state, materialCard.playerId) === account.id && materialFamilyCards.length === 1) {
       throw new Error(`${materialPlayer.name}是该球员所有权的最后一张锚点卡，不能作为强化副卡`);
     }
     if (Object.values(this.state.s4Assets.traitOffers ?? {}).some((offer) => offer.status === "pending" && offer.cardId === mainCard.id)) throw new Error("请先为主卡选择强化特性");
@@ -4206,7 +4177,7 @@ export class YellowDogsLeagueService {
     const protectionUsed = Boolean(useProtection) && chance < 100;
     const protectionCost = protectionUsed ? s4EnhancementProtectionCost(chance) : 0;
     const consumesMaterialFamily = mainCard.playerId !== materialCard.playerId
-      && cardsForOwner(this.state, account.id, materialCard.playerId).length === 1;
+      && materialFamilyCards.length === 1;
     if (consumesMaterialFamily && team.rosterIds.length <= 11) {
       throw new Error("不能消耗最后一个可用的球员卡族，球队必须至少保留11名球员");
     }
@@ -5455,11 +5426,11 @@ export class YellowDogsLeagueService {
       const tie = event.stage === "swiss" ? null : cup.knockout[event.stage].find((entry) => entry.legs.includes(fixture));
       const firstLeg = tie?.legs[0];
       const aggregateBaseScore = event.leg === 2 && firstLeg ? [firstLeg.score[1], firstLeg.score[0]] : null;
-      const created = this.createFixtureMatch(fixture, event.round, this.now(), { seed:`${this.state.season.id}:${event.id}:${fixture.id}`, competitionMode:"cup", legNumber:event.leg, regulationOnly:event.stage === "swiss" || event.stage === "final" ? false : event.leg === 1, aggregateBaseScore });
+      const created = measureRuntimeSync("league.cup.createFixtureMatch", () => this.createFixtureMatch(fixture, event.round, this.now(), { seed:`${this.state.season.id}:${event.id}:${fixture.id}`, competitionMode:"cup", legNumber:event.leg, regulationOnly:event.stage === "swiss" || event.stage === "final" ? false : event.leg === 1, aggregateBaseScore }));
       if (created.home.ownerId || created.away.ownerId) liveMatches.push({ code:`YDL-CUP-${this.state.season.name}-${event.stage}-${event.leg}-M${index + 1}`, round:event.round, fixtureId:fixture.id, match:created.match, spectators:{} });
       else {
-        settleAutomatedMatch(created.match, created.startedAt);
-        this.finalizeCupFixture(fixture, event, created.match);
+        measureRuntimeSync("league.cup.settleAutomatedMatch", () => settleAutomatedMatch(created.match, created.startedAt));
+        measureRuntimeSync("league.cup.finalizeFixture", () => this.finalizeCupFixture(fixture, event, created.match));
       }
     });
     if (!liveMatches.length) { this.completeCupEvent(event); this.save(); return true; }
@@ -6161,6 +6132,10 @@ export class YellowDogsLeagueService {
   }
 
   resetDailyCompetitions(options = {}) {
+    return measureRuntimeSync("league.dailyReset", () => this.resetDailyCompetitionsUnmeasured(options));
+  }
+
+  resetDailyCompetitionsUnmeasured(options = {}) {
     const now = this.now();
     const date = localDateKey(new Date(now));
     const automation = this.state.dailyAutomation;
@@ -6207,6 +6182,10 @@ export class YellowDogsLeagueService {
   }
 
   runDailyAutomation() {
+    return measureRuntimeSync("league.dailyAutomation", () => this.runDailyAutomationUnmeasured());
+  }
+
+  runDailyAutomationUnmeasured() {
     const now = this.now();
     const date = localDateKey(new Date(now));
     const automation = this.state.dailyAutomation;
@@ -6233,17 +6212,19 @@ export class YellowDogsLeagueService {
   tick() {
     const now = this.now();
     if (this.statePath && localDateKey(new Date(now)) !== this.lastBackupMaintenanceDate) this.maintainBackups();
-    const compensationChanged = this.dispatchS4TraitThresholdCompensation();
+    const compensationChanged = measureRuntimeSync("league.compensation", () => this.dispatchS4TraitThresholdCompensation());
     const automationChanged = this.runDailyAutomation();
-    this.ensurePredictionMarkets();
-    const friendlyInvitationChanged = this.expireFriendlyInvitations(now);
+    measureRuntimeSync("league.predictionMarkets", () => this.ensurePredictionMarkets());
+    const friendlyInvitationChanged = measureRuntimeSync("league.expireInvitations", () => this.expireFriendlyInvitations(now));
     if (friendlyInvitationChanged) this.save({ skipDailyBackup:true });
-    const friendlyChanged = this.advanceLiveFriendlies(now, { maximumMatches:0 }) || friendlyInvitationChanged;
+    const friendlyChanged = measureRuntimeSync("league.advanceFriendlies", () => this.advanceLiveFriendlies(now, { maximumMatches:0 })) || friendlyInvitationChanged;
     if (this.state.liveRound || this.state.liveCupRound) return friendlyChanged || automationChanged || compensationChanged;
-    if (this.state.cup.status === "active" && activeTime(now) && now >= Number(this.state.cup.nextRoundAt ?? Infinity)) return this.startScheduledCupEvent();
+    if (this.state.cup.status === "active" && activeTime(now) && now >= Number(this.state.cup.nextRoundAt ?? Infinity)) {
+      return measureRuntimeSync("league.startScheduledCupEvent", () => this.startScheduledCupEvent());
+    }
     const dailyLeagueWindow = this.state.dailyAutomation.lastResetDate === localDateKey(new Date(now)) && now >= Number(this.state.season.firstRoundAt ?? Infinity);
     if (this.state.season.status !== "active" || (!activeTime(now) && !dailyLeagueWindow) || now < this.state.season.nextRoundAt) return friendlyChanged || automationChanged || compensationChanged;
-    return this.startScheduledRound();
+    return measureRuntimeSync("league.startScheduledRound", () => this.startScheduledRound());
   }
 
   buildDailyReport(team, date = localDateKey(new Date(this.now()))) {
@@ -6362,6 +6343,10 @@ export class YellowDogsLeagueService {
   }
 
   archiveSeason(reason) {
+    return measureRuntimeSync("league.archiveSeason", () => this.archiveSeasonUnmeasured(reason));
+  }
+
+  archiveSeasonUnmeasured(reason) {
     this.state.archives ??= [];
     this.state.archives.push({
       reason,
@@ -6556,6 +6541,10 @@ export class YellowDogsLeagueService {
   }
 
   adminView() {
+    return measureRuntimeSync("league.adminView", () => this.adminViewUnmeasured());
+  }
+
+  adminViewUnmeasured() {
     this.ensureDisciplineState();
     ensureS4Assets(this.state);
     const owned = new Map();

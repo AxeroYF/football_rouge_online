@@ -1,5 +1,13 @@
 # 新任务接手提示
 
+## 2026-08-03 13:20 最新接手指令
+
+- 正式服已恢复在线（阿里云香港 2核2G，systemd `football-s4`）。已部署 1141（运营覆盖+传奇所有权清理，team1 27/33）与 1320（轻量同步+静态 gzip+诊断工具）。
+- 当前第一任务：在服务器运行 `node devtool/profile-live.mjs $(pgrep -f "devtool/public-server.js" | head -1) 60` 抓 60 秒 CPU 火焰（无需停服），确认持续 ~75% 单核占用来源（疑直播快照 `publicMatch`/比赛推进 `runV2Chain`/`advanceVersusMatch`）。
+- 随后按优先级：view() 按页签瘦身（playerDirectory 441KB/inbox 135KB/强化历史 123KB 改按需）、每日重置与归档异步化、直播快照降频/增量。
+- 环境提醒：`/etc/football-s4.env` 第 2 行 bash source 报错，读配置用 `sudo grep '^KEY=' /etc/football-s4.env`；不要用 `nohup node --cpu-prof`（残留进程占 4318 端口造成 EADDRINUSE 崩溃循环，教训见 CURRENT_STATE）。
+- 压测工具：`devtool/loadtest-http.mjs`（head/broadcasts/league/static；league 端点压测会真实吃 CPU，并发 2-3、30s 内）。
+
 ## 2026-08-03 10:47 最新接手指令
 
 正式服在部署 10:15 商店/市场/开包性能包后无法启动，错误为 `球队超过33人大名单额度：ydl-team-1`，systemd 曾重启 163 次。先确认服务保持停止，不要启动、重新迁移或覆盖分片。用户提供的 day6 最新单 JSON 已由当前代码验证通过：84,800,585 字节、10 队、6424 张总卡、579 张活动卡；team1 为 39 张活动卡、31 个家族、正确名单占用 19/33，因此不是坏档。

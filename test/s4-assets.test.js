@@ -944,6 +944,13 @@ test("强化记录保存主副卡、道具价格、概率与结果且仅本人�
   assert.equal(record.afterLevel, result.enhancementResult.afterLevel);
   assert.equal(service.view(user).enhancement.history.length, 1);
   assert.equal(service.view(other).enhancement.history.length, 0);
+
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+  const historySource = serviceSource.match(/  enhancementHistory\(accountId, limit = 50\) \{[\s\S]*?\n  \}/)?.[0] ?? "";
+  const enhancementSource = serviceSource.match(/  enhanceS4Card\(account,[\s\S]*?\n  \}/)?.[0] ?? "";
+  assert.doesNotMatch(historySource, /\.sort\(/);
+  assert.match(historySource, /entries\.length < limit/);
+  assert.equal((enhancementSource.match(/cardsForOwner\(this\.state, account\.id, materialCard\.playerId\)/g) ?? []).length, 1);
 });
 
 test("pending trait offer is cancelled when its card is consumed as enhancement material", () => {
@@ -1150,6 +1157,7 @@ test("X球员成长任务、商店加成点与27项加点会实时生效", () =>
   const xPlayer = REAL_PLAYER_BY_ID[xPlayerId];
   const statKey = `${team.id}:${xPlayerId}`;
   service.state.playerStats[statKey] = { key:statKey, playerId:xPlayerId, teamId:team.id, appearances:1, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0, ratingTotal:7 };
+  service.settleXGrowthTasks(xPlayerId);
 
   let view = service.view(user);
   assert.equal(view.xGrowth.player.id, xPlayerId);
@@ -1186,6 +1194,53 @@ test("X球员成长任务、商店加成点与27项加点会实时生效", () =>
   view = service.spendXGrowthPoints(user, "heightCm", 1);
   assert.equal(view.xGrowth.height.value, 230);
   assert.throws(() => service.spendXGrowthPoints(user, "heightCm", 1), /身高最高为230cm/);
+});
+
+test("X球员成长支持批量和最大加点并在保存前结算任务", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-growth-batch-owner");
+  const team = join(service, user);
+  const xPlayerId = team.rosterIds.find(isXPlayer);
+  const statKey = `${team.id}:${xPlayerId}`;
+  service.state.playerStats[statKey] = { key:statKey, playerId:xPlayerId, teamId:team.id, appearances:1, goals:0, assists:0, saves:0, tackles:0, penaltiesWon:0, yellowCards:0, ratingTotal:7 };
+
+  const growth = service.xGrowthState(xPlayerId);
+  const passingBefore = service.xPlayerConfig(xPlayerId).attributes.passing;
+  let pointsAtSave = null;
+  let claimedAtSave = null;
+  service.save = () => {
+    pointsAtSave = growth.points;
+    claimedAtSave = growth.taskClaims.appearances;
+  };
+
+  let view = service.spendXGrowthPoints(user, "passing", 1, { compact:true });
+  assert.equal(pointsAtSave, 0);
+  assert.equal(claimedAtSave, 1);
+  assert.equal(view.xGrowth.points, 0);
+  assert.equal(view.xGrowth.attributes.find((field) => field.key === "passing").value, passingBefore + 1);
+
+  growth.points = 9;
+  view = service.spendXGrowthPoints(user, "passing", 5, { compact:true });
+  assert.equal(view.xGrowth.points, 4);
+  assert.equal(view.xGrowth.attributes.find((field) => field.key === "passing").value, passingBefore + 6);
+  view = service.spendXGrowthPoints(user, "passing", 4, { compact:true });
+  assert.equal(view.xGrowth.points, 0);
+  assert.equal(view.xGrowth.attributes.find((field) => field.key === "passing").value, passingBefore + 10);
+});
+
+test("X球员成长响应只查询一次代表卡", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-growth-card-query");
+  join(service, user);
+  const representativeCard = service.representativeCard.bind(service);
+  let calls = 0;
+  service.representativeCard = (...args) => {
+    calls += 1;
+    return representativeCard(...args);
+  };
+
+  service.publicXGrowth(user.id);
+  assert.equal(calls, 1);
 });
 
 test("X球员洗点返还已用点数并切换位置", () => {
@@ -1285,6 +1340,16 @@ test("X球员成长前端会锁定慢请求、网络失败重试并合并轻量�
   assert.match(appSource, /leagueXGrowthRequest\("\/spend"/);
   assert.match(appSource, /leagueXGrowthRequest\("\/reset"/);
   assert.doesNotMatch(appSource, /leagueRequest\("\/x-growth\//);
+  assert.match(appSource, /data-x-growth-mode="one"[^>]*>\+1<\/button>/);
+  assert.match(appSource, /data-x-growth-mode="five"[^>]*>\+5<\/button>/);
+  assert.match(appSource, /data-x-growth-mode="max"[^>]*>最大<\/button>/);
+  assert.match(appSource, /amount:leagueXGrowthPendingAmount/);
+  const growthRequest = appSource.match(/async function leagueXGrowthRequest\(path, body = \{\}\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.doesNotMatch(growthRequest, /renderLeague\(\)/);
+  assert.match(growthRequest, /syncLeagueXGrowthPendingUi\(\)/);
+  assert.match(growthRequest, /syncLeagueXGrowthMutationUi\(path, body\.field\)/);
+  assert.match(appSource, /if \(field\.key === fieldKey\)/);
+  assert.match(styles, /\.x-growth-field-actions\{[^}]*grid-template-columns:repeat\(3/);
   assert.match(apiSource, /requestId:body\.requestId/);
   assert.match(apiSource, /traitId:body\.traitId/);
   assert.match(appSource, /function leagueXGrowthTraitChoicesMarkup/);
@@ -1668,6 +1733,28 @@ test("背包所有权回收支持多选且传奇基础卡进入单卡市场", ()
   assert.match(appSource, /player\.legendary \|\| player\.grade === "S"/);
   assert.match(apiSource, /ownership\/return-batch/);
 });
+test("背包子页面按需计算且开包流程只做局部更新", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  assert.match(appSource, /function leagueBackpackCardSectionMarkup\(allCards = leagueBackpackCardEntries\(\)\)/);
+  assert.match(appSource, /function leagueBackpackPackSectionMarkup\(inventory = league\.s4Packs\?\.inventory \?\? \[\]\)/);
+  assert.match(appSource, /const allCards = leagueBackpackPage === "cards" \? leagueBackpackCardEntries\(\) : null/);
+  assert.match(appSource, /leagueBackpackPage === "cards"[\s\S]*leagueBackpackCardSectionMarkup\(allCards\)[\s\S]*leagueBackpackPackSectionMarkup\(inventory\)/);
+  assert.match(appSource, /function syncLeagueBackpackPackMutationInPlace\(\)[\s\S]*currentSection\.outerHTML = leagueBackpackPackSectionMarkup\(inventory\)/);
+  assert.match(appSource, /leagueRequest\("\/packs\/open", \{ packId:s4PackOpen\.dataset\.s4PackOpen \}, \{ render:false \}\)[\s\S]*syncLeagueBackpackPackMutationInPlace\(\)/);
+  assert.match(appSource, /leagueRequest\("\/packs\/open-batch", \{ packIds \}, \{ render:false \}\)[\s\S]*syncLeagueBackpackPackMutationInPlace\(\)/);
+  const choosePack = appSource.match(/async function chooseS4PackCard\(button\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(choosePack, /\{ render:false \}/);
+  assert.match(choosePack, /syncLeagueBackpackPackMutationInPlace\(\)/);
+  assert.doesNotMatch(choosePack, /renderLeague\(\)/);
+});
+test("开包紧凑响应会清除上一次批量结果避免旧弹窗重复出现", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const requestSource = appSource.match(/async function leagueRequest\(path, body = \{\}, options = \{\}\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(requestSource, /packOpening:previousPackOpening/);
+  assert.match(requestSource, /packBatchOpening:previousPackBatchOpening/);
+  assert.match(requestSource, /league = \{ \.\.\.stableLeague, \.\.\.nextLeague \}/);
+  assert.ok(requestSource.indexOf("packBatchOpening:previousPackBatchOpening") < requestSource.indexOf("...nextLeague"));
+});
 test("友谊赛预约与满名单开包不会锁死主要操作页面", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
@@ -1697,6 +1784,11 @@ test("强化页局部刷新会同步复用卡片的等级与卡面内容", () =>
   assert.match(appSource, /leagueEnhancementPhase = leagueEnhancementResult\?\.success \? "success" : "failure";[\s\S]*?requestAnimationFrame[\s\S]*?renderLeagueEnhancementInPlace\(\)/);
   assert.match(appSource, /function leagueEnhancementRevealDelay\(afterLevel\)[\s\S]*?level < 4\) return 420;[\s\S]*?1440[\s\S]*?360/);
   assert.match(appSource, /const enhancement = value\.enhancement/);
+  assert.match(appSource, /syncLeagueEnhancementPhaseInPlace\(\{ clearResult:true \}\)/);
+  assert.match(appSource, /syncLeagueEnhancementPhaseInPlace\(\{ restoreSubmit:true \}\)/);
+  assert.match(appSource, /leagueEnhancementPhase = "idle";\s*syncLeagueEnhancementPhaseInPlace\(\)/);
+  const performEnhancement = appSource.match(/async function performLeagueEnhancement\(\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.equal((performEnhancement.match(/renderLeagueEnhancementInPlace\(\)/g) ?? []).length, 1);
   assert.match(appSource, /const revealDelay = leagueEnhancementRevealDelay\(leagueEnhancementResult\?\.afterLevel\)/);
   assert.match(appSource, /function showLeagueEnhancementCelebration\(result\)[\s\S]*?level < 4[\s\S]*?level >= 8 \? "is-max" : "is-high"/);
   assert.match(appSource, /const cardMarkup = s4PlayerCardMarkup\(result\.player, \{ card:result\.card \}\)/);

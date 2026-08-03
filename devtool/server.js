@@ -3,6 +3,8 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
+import { performance } from "node:perf_hooks";
+import { measureRuntimeSync, recordRuntimeMetric, snapshotRuntimeMetrics } from "../src/runtime-metrics.js";
 // 必须先于 api.js/league-service.js 加载：运营评级覆盖（ydl-content-overrides.json）
 // 会把一批退役名宿从 A/B 升级为 S（传奇）。联赛服务单例在 league-service.js
 // 模块求值期间即构造并执行 33 人大名单校验，若覆盖未先行应用，这些球员会按
@@ -32,6 +34,7 @@ const environment = process.env.APP_ENV ?? "production";
 const environmentLabel = process.env.APP_LABEL ?? "正式服";
 const matchEngine = process.env.APP_ENV === "test" && process.env.YDL_MATCH_ENGINE === "v2" ? "v2" : "v1";
 const maximumBodyBytes = 8 * 1024 * 1024;
+const metricsToken = process.env.YDL_METRICS_TOKEN ?? "";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -74,6 +77,11 @@ async function readJson(request) {
 }
 
 async function handleApi(request, response, pathname) {
+  if (request.method === "GET" && pathname === "/api/diagnostics/metrics") {
+    if (!metricsToken) return sendJson(response, 404, { ok:false, error:"API not found" });
+    if (request.headers.authorization !== `Bearer ${metricsToken}`) return sendJson(response, 401, { ok:false, error:"unauthorized" });
+    return sendJson(response, 200, { ok:true, metrics:snapshotRuntimeMetrics() });
+  }
   if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson);
   if (request.method === "GET" && pathname === "/api/versus/config") {
     return sendJson(response, 200, { ok: true, publicOnly, environment, environmentLabel, matchEngine });
@@ -199,14 +207,26 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
       || servesXPlayerProfile
     ) && path.extname(filePath).toLowerCase() === ".webp"
       && /^[a-f0-9]{12}$/.test(searchParams.get("v") ?? "");
-    response.writeHead(200, {
-      "content-type": mimeTypes[path.extname(filePath)] ?? "application/octet-stream",
-      "content-length":content.length,
+    const contentType = mimeTypes[path.extname(filePath)] ?? "application/octet-stream";
+    const compressible = /^(text\/|application\/json|application\/javascript)/.test(contentType);
+    let body = content;
+    const headers = {
+      "content-type": contentType,
       "cache-control":isVersionedPlayerProfile ? "public, max-age=31536000, immutable" : "no-store",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
-    });
-    response.end(content);
+    };
+    // 文本类静态资源（js/css/html/json）gzip 传输，香港链路下显著减少页面加载时间
+    if (compressible && content.length >= 1024) {
+      const gzipped = gzipSync(content);
+      if (gzipped.length < content.length) {
+        body = gzipped;
+        headers["content-encoding"] = "gzip";
+      }
+    }
+    headers["content-length"] = body.length;
+    response.writeHead(200, headers);
+    response.end(body);
   } catch {
     sendJson(response, 404, { ok: false, error: "file not found" });
   }
@@ -217,6 +237,13 @@ const server = http.createServer(async (request, response) => {
     return sendJson(response, 403, { ok: false, error: "local access only" });
   }
   const url = new URL(request.url, "http://localhost");
+  const requestStartedAt = performance.now();
+  response.once("finish", () => {
+    const route = url.pathname.startsWith("/api/versus/stream/")
+      ? "/api/versus/stream/:code"
+      : url.pathname.startsWith("/api/") ? url.pathname : `static:${path.extname(url.pathname) || "html"}`;
+    recordRuntimeMetric(`http.${request.method}.${route}`, performance.now() - requestStartedAt, { error:response.statusCode >= 400 });
+  });
   try {
     if (handleVersusStream(request, response, url)) {
       return;
@@ -245,14 +272,14 @@ server.listen(port, host, () => {
 });
 
 const leagueTimer = setInterval(() => {
-  try { yellowDogsLeague.tick(); }
+  try { measureRuntimeSync("league.tick", () => yellowDogsLeague.tick()); }
   catch (error) { console.error("YellowDogs League 定时任务失败：", error); }
 }, 15_000);
 leagueTimer.unref();
 
 const liveSliceIntervalMs = Math.max(100, Math.min(2_000, Number(process.env.YDL_LIVE_SLICE_INTERVAL_MS ?? 250)));
 const liveSliceTimer = setInterval(() => {
-  try { yellowDogsLeague.advanceLiveSlice(); }
+  try { measureRuntimeSync("league.liveSlice", () => yellowDogsLeague.advanceLiveSlice()); }
   catch (error) { console.error("YellowDogs League 直播切片失败：", error); }
 }, liveSliceIntervalMs);
 liveSliceTimer.unref();

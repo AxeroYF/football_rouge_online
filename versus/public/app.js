@@ -187,6 +187,8 @@ let leagueEnhancementResult = null;
 let leagueEnhancementTraitSelectionOpen = false;
 let leagueXGrowthMutationPending = false;
 let leagueXGrowthPendingField = null;
+let leagueXGrowthPendingAmount = null;
+let leagueXGrowthPendingMode = null;
 let leagueXGrowthResetTraitOpen = false;
 let leagueXGrowthResetRole = null;
 let leagueXGrowthResetSecondaryRole = null;
@@ -768,10 +770,15 @@ async function leagueRequest(path, body = {}, options = {}) {
   try {
     const value = await api(`/api/versus/league${path}`, { method:"POST", body:leagueIdentity(body) });
     const nextLeague = value.league ?? {};
-    league = nextLeague.compact ? { ...league, ...nextLeague } : nextLeague;
+    if (nextLeague.compact) {
+      const { packOpening:previousPackOpening, packBatchOpening:previousPackBatchOpening, ...stableLeague } = league;
+      void previousPackOpening;
+      void previousPackBatchOpening;
+      league = { ...stableLeague, ...nextLeague };
+    } else league = nextLeague;
     leagueEditorDirty = false;
     options.beforeRender?.(league);
-    renderLeague();
+    if (options.render !== false) renderLeague();
     return league;
   } finally {
     leagueMutationPending = false;
@@ -835,7 +842,7 @@ async function leagueXGrowthRequest(path, body = {}) {
   if (leagueXGrowthMutationPending) return null;
   leagueXGrowthMutationPending = true;
   leagueMutationPending = true;
-  if (leagueTab === "x-growth" || leagueTab === "shop") renderLeague();
+  syncLeagueXGrowthPendingUi();
   try {
     const requestId = globalThis.crypto?.randomUUID?.() ?? `x-growth-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let value;
@@ -852,9 +859,11 @@ async function leagueXGrowthRequest(path, body = {}) {
     return growth;
   } finally {
     leagueXGrowthMutationPending = false;
+    syncLeagueXGrowthMutationUi(path, body.field);
     leagueXGrowthPendingField = null;
+    leagueXGrowthPendingAmount = null;
+    leagueXGrowthPendingMode = null;
     leagueMutationPending = false;
-    if (leagueMode && (leagueTab === "x-growth" || leagueTab === "shop")) renderLeague();
   }
 }
 
@@ -1096,6 +1105,15 @@ async function refreshLeagueSilently() {
   if (!leagueMode || !league || !account?.profile?.id || document.hidden || leagueSyncPending || leagueInteractionActive()) return;
   leagueSyncPending = true;
   try {
+    // 轻量同步：先查 head（几十字节），数据真正变化后才拉完整视图。
+    const headValue = await api("/api/versus/league/head", { method:"POST", body:leagueIdentity() });
+    const head = headValue.head;
+    league.serverTime = head.serverTime;
+    const changed = league.updatedAt === undefined
+      || Number(head.updatedAt) !== Number(league.updatedAt)
+      || head.seasonStatus !== (league.season?.status ?? null)
+      || Number(head.seasonCurrentRound ?? 0) !== Number(league.season?.currentRound ?? 0);
+    if (!changed) return;
     if (leagueTab === "predictions") {
       await refreshPredictionsSilently();
       return;
@@ -1603,9 +1621,15 @@ function leagueNextMatchMarkup() {
   return `<section class="league-next-match"><div><small>NEXT MATCH · ${escapeHtml(next.competitionName)} · ${escapeHtml(next.label)}</small><b>${startsAt}</b></div><div><small>对手</small><strong>${escapeHtml(next.name)}</strong></div><div><small>天气</small>${weather}</div><div><small>裁判尺度</small>${referee}</div></section>`;
 }
 
-function leagueBackpackMarkup() {
-  const inventory = league.s4Packs?.inventory ?? [];
-  const allCards = (league.ownTeam?.roster ?? []).flatMap((player) => (player.cards ?? []).map((card) => ({ player, card })));
+function leagueBackpackCardEntries() {
+  return (league.ownTeam?.roster ?? []).flatMap((player) => (player.cards ?? []).map((card) => ({ player, card })));
+}
+
+function leagueBackpackCardCount() {
+  return (league.ownTeam?.roster ?? []).reduce((count, player) => count + (player.cards?.length ?? 0), 0);
+}
+
+function leagueBackpackCardSectionMarkup(allCards = leagueBackpackCardEntries()) {
   const search = leagueBackpackSearch.trim().toLocaleLowerCase("zh-CN");
   const filteredCards = allCards.filter(({ player, card }) => {
     const matchesSearch = !search || [player.name, player.club, player.nationality].some((value) => String(value ?? "").toLocaleLowerCase("zh-CN").includes(search));
@@ -1667,16 +1691,28 @@ function leagueBackpackMarkup() {
     }).join("")
     : `<p class="league-empty backpack-card-empty">${leagueBackpackRecoveryMode === "ownership" ? "当前没有可回收的非传奇球员所有权。" : "没有符合当前筛选条件的球员卡。"}</p>`;
 
+  const selectedSingleCards = allCards.filter(({ card }) => leagueBackpackSelectedCardIds.has(card.id));
+  const selectedSingleAmount = selectedSingleCards.reduce((sum, { card }) => sum + Number(card.systemRecoveryValue ?? 0), 0);
+  const selectedOwnershipPlayers = (league.ownTeam?.roster ?? []).filter((player) => leagueBackpackSelectedOwnershipIds.has(player.id));
+  const selectedOwnershipAmount = selectedOwnershipPlayers.reduce((sum, player) => sum + Number(player.ownershipReturnPreview?.totalAmount ?? 0), 0);
+  const recoveryActions = `<div class="backpack-recovery-actions"><label class="backpack-stack-toggle"><input type="checkbox" data-backpack-stack ${leagueBackpackStacked ? "checked" : ""} ${leagueBackpackRecoveryMode ? "disabled" : ""}><span>叠放同名同强化</span></label><button type="button" class="${leagueBackpackRecoveryMode === "single" ? "active" : ""}" data-backpack-recovery-mode="single"><b>单卡回收</b><span>${leagueBackpackRecoveryMode === "single" ? `已选${selectedSingleCards.length}张 · ${selectedSingleAmount}金币` : "批量选择可回收卡片"}</span></button><button type="button" class="${leagueBackpackRecoveryMode === "ownership" ? "active" : ""}" data-backpack-recovery-mode="ownership"><b>所有权回收</b><span>${leagueBackpackRecoveryMode === "ownership" ? selectedOwnershipPlayers.length ? `已选${selectedOwnershipPlayers.length}人 · ${selectedOwnershipAmount}金币` : "选择需要返还的球员" : "返还所有权并清理同名卡"}</span></button>${leagueBackpackRecoveryMode ? `<button type="button" class="backpack-recovery-cancel" data-backpack-recovery-cancel>取消</button>` : ""}</div>`;
+  return `<section class="backpack-card-section"><header><div><small>PLAYER CARD MANAGEMENT</small><h2>球员卡管理</h2></div>${recoveryActions}</header><div class="backpack-card-tools"><input type="search" value="${escapeHtml(leagueBackpackSearch)}" placeholder="输入后按回车搜索球员、俱乐部或国家队" data-backpack-search/><select data-backpack-position><option value="ALL" ${leagueBackpackPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueBackpackPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPosition === "GK" ? "selected" : ""}>门将</option></select><select data-backpack-upgrade ${leagueBackpackRecoveryMode === "ownership" ? "disabled" : ""}><option value="ALL" ${leagueBackpackUpgrade === "ALL" ? "selected" : ""}>全部强化</option><option value="BASE" ${leagueBackpackUpgrade === "BASE" ? "selected" : ""}>未强化</option><option value="MID" ${leagueBackpackUpgrade === "MID" ? "selected" : ""}>+1 ～ +4</option><option value="HIGH" ${leagueBackpackUpgrade === "HIGH" ? "selected" : ""}>+5 ～ +7</option><option value="MAX" ${leagueBackpackUpgrade === "MAX" ? "selected" : ""}>+8</option></select><select data-backpack-sort><option value="upgrade" ${leagueBackpackSort === "upgrade" ? "selected" : ""}>强化等级优先</option><option value="overall" ${leagueBackpackSort === "overall" ? "selected" : ""}>能力值优先</option><option value="name" ${leagueBackpackSort === "name" ? "selected" : ""}>姓名排序</option></select><div class="backpack-density"><button type="button" class="${leagueBackpackCompact ? "" : "active"}" data-backpack-density="normal" title="标准卡片">标准</button><button type="button" class="${leagueBackpackCompact ? "active" : ""}" data-backpack-density="compact" title="紧凑卡片">紧凑</button></div></div><div class="backpack-card-grid ${leagueBackpackCompact ? "compact" : ""}">${cardGrid}</div></section>`;
+}
+
+function leagueBackpackPackSectionMarkup(inventory = league.s4Packs?.inventory ?? []) {
   const packSearch = leagueBackpackPackSearch.trim().toLocaleLowerCase("zh-CN");
-  const filteredInventory = inventory.filter((item) => {
+  const groupedInventory = new Map();
+  inventory.forEach((item) => {
     const matchesSearch = !packSearch || [item.name, item.packType].some((value) => String(value ?? "").toLocaleLowerCase("zh-CN").includes(packSearch));
     const matchesKind = leagueBackpackPackKind === "ALL" || item.kind === leagueBackpackPackKind;
     const matchesPool = leagueBackpackPackPool === "ALL" || item.pool === leagueBackpackPackPool;
     const matchesSource = leagueBackpackPackSource === "ALL" || item.source === leagueBackpackPackSource;
-    return matchesSearch && matchesKind && matchesPool && matchesSource;
+    if (!matchesSearch || !matchesKind || !matchesPool || !matchesSource) return;
+    const items = groupedInventory.get(item.packType) ?? [];
+    items.push(item);
+    groupedInventory.set(item.packType, items);
   });
-  const groups = [...new Set(filteredInventory.map((item) => item.packType))].map((packType) => {
-    const items = filteredInventory.filter((item) => item.packType === packType);
+  const groups = [...groupedInventory.entries()].map(([packType, items]) => {
     const openableItems = items.filter((item) => item.status === "unopened");
     const pack = items[0];
     return `<section class="backpack-tier"><header><div><small>S4 PACK</small><h2>${escapeHtml(pack.name)}</h2></div><div class="backpack-tier-actions"><b>${items.length}份</b><input type="number" min="1" max="${Math.max(1, Math.min(100, openableItems.length))}" value="${Math.max(1, Math.min(100, openableItems.length))}" id="backpack-batch-count-${escapeHtml(packType)}" aria-label="批量打开数量" ${openableItems.length ? "" : "disabled"}><button type="button" data-s4-pack-open-batch="${escapeHtml(packType)}" ${openableItems.length && !league.s4Packs?.batchOpening ? "" : "disabled"}>批量打开</button></div></header><div class="backpack-pool-grid"><section class="backpack-pool"><div>${items.map((item) => s4PackVisualMarkup(
@@ -1696,16 +1732,39 @@ function leagueBackpackMarkup() {
     <select data-backpack-pack-pool><option value="ALL" ${leagueBackpackPackPool === "ALL" ? "selected" : ""}>全部定位</option><option value="MIXED" ${leagueBackpackPackPool === "MIXED" ? "selected" : ""}>全位置</option><option value="ATT" ${leagueBackpackPackPool === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPackPool === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPackPool === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPackPool === "GK" ? "selected" : ""}>门将</option><option value="LEGEND" ${leagueBackpackPackPool === "LEGEND" ? "selected" : ""}>传奇</option></select>
     <select data-backpack-pack-source><option value="ALL" ${leagueBackpackPackSource === "ALL" ? "selected" : ""}>全部来源</option><option value="shop" ${leagueBackpackPackSource === "shop" ? "selected" : ""}>商店购买</option><option value="admin" ${leagueBackpackPackSource === "admin" ? "selected" : ""}>后台发放</option></select>
   </div>`;
-  const packSection = inventory.length
-    ? `<section class="backpack-pack-section"><header><div><small>PACK INVENTORY</small><h2>卡包管理</h2></div><b>${filteredInventory.length}/${inventory.length}份</b></header>${packTools}${filteredInventory.length ? groups : `<div class="backpack-pack-filter-empty">没有符合当前筛选条件的卡包。</div>`}</section>`
+  const filteredCount = [...groupedInventory.values()].reduce((count, items) => count + items.length, 0);
+  return inventory.length
+    ? `<section class="backpack-pack-section"><header><div><small>PACK INVENTORY</small><h2>卡包管理</h2></div><b>${filteredCount}/${inventory.length}份</b></header>${packTools}${filteredCount ? groups : `<div class="backpack-pack-filter-empty">没有符合当前筛选条件的卡包。</div>`}</section>`
     : `<section class="backpack-pack-section"><header><div><small>PACK INVENTORY</small><h2>卡包管理</h2></div><b>0份</b></header>${packTools}<div class="backpack-pack-empty"><small>PACK INVENTORY</small><b>暂无未开启礼包</b><span>商店购买和管理员发放的礼包会出现在这里。</span></div></section>`;
-  const selectedSingleCards = allCards.filter(({ card }) => leagueBackpackSelectedCardIds.has(card.id));
-  const selectedSingleAmount = selectedSingleCards.reduce((sum, { card }) => sum + Number(card.systemRecoveryValue ?? 0), 0);
-  const selectedOwnershipPlayers = (league.ownTeam?.roster ?? []).filter((player) => leagueBackpackSelectedOwnershipIds.has(player.id));
-  const selectedOwnershipAmount = selectedOwnershipPlayers.reduce((sum, player) => sum + Number(player.ownershipReturnPreview?.totalAmount ?? 0), 0);
-  const recoveryActions = `<div class="backpack-recovery-actions"><label class="backpack-stack-toggle"><input type="checkbox" data-backpack-stack ${leagueBackpackStacked ? "checked" : ""} ${leagueBackpackRecoveryMode ? "disabled" : ""}><span>叠放同名同强化</span></label><button type="button" class="${leagueBackpackRecoveryMode === "single" ? "active" : ""}" data-backpack-recovery-mode="single"><b>单卡回收</b><span>${leagueBackpackRecoveryMode === "single" ? `已选${selectedSingleCards.length}张 · ${selectedSingleAmount}金币` : "批量选择可回收卡片"}</span></button><button type="button" class="${leagueBackpackRecoveryMode === "ownership" ? "active" : ""}" data-backpack-recovery-mode="ownership"><b>所有权回收</b><span>${leagueBackpackRecoveryMode === "ownership" ? selectedOwnershipPlayers.length ? `已选${selectedOwnershipPlayers.length}人 · ${selectedOwnershipAmount}金币` : "选择需要返还的球员" : "返还所有权并清理同名卡"}</span></button>${leagueBackpackRecoveryMode ? `<button type="button" class="backpack-recovery-cancel" data-backpack-recovery-cancel>取消</button>` : ""}</div>`;
-  const cardSection = `<section class="backpack-card-section"><header><div><small>PLAYER CARD MANAGEMENT</small><h2>球员卡管理</h2></div>${recoveryActions}</header><div class="backpack-card-tools"><input type="search" value="${escapeHtml(leagueBackpackSearch)}" placeholder="输入后按回车搜索球员、俱乐部或国家队" data-backpack-search/><select data-backpack-position><option value="ALL" ${leagueBackpackPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueBackpackPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPosition === "GK" ? "selected" : ""}>门将</option></select><select data-backpack-upgrade ${leagueBackpackRecoveryMode === "ownership" ? "disabled" : ""}><option value="ALL" ${leagueBackpackUpgrade === "ALL" ? "selected" : ""}>全部强化</option><option value="BASE" ${leagueBackpackUpgrade === "BASE" ? "selected" : ""}>未强化</option><option value="MID" ${leagueBackpackUpgrade === "MID" ? "selected" : ""}>+1 ～ +4</option><option value="HIGH" ${leagueBackpackUpgrade === "HIGH" ? "selected" : ""}>+5 ～ +7</option><option value="MAX" ${leagueBackpackUpgrade === "MAX" ? "selected" : ""}>+8</option></select><select data-backpack-sort><option value="upgrade" ${leagueBackpackSort === "upgrade" ? "selected" : ""}>强化等级优先</option><option value="overall" ${leagueBackpackSort === "overall" ? "selected" : ""}>能力值优先</option><option value="name" ${leagueBackpackSort === "name" ? "selected" : ""}>姓名排序</option></select><div class="backpack-density"><button type="button" class="${leagueBackpackCompact ? "" : "active"}" data-backpack-density="normal" title="标准卡片">标准</button><button type="button" class="${leagueBackpackCompact ? "active" : ""}" data-backpack-density="compact" title="紧凑卡片">紧凑</button></div></div><div class="backpack-card-grid ${leagueBackpackCompact ? "compact" : ""}">${cardGrid}</div></section>`;
-  return `<section class="league-backpack"><header><div><small>S4 CLUB INVENTORY</small><h2>球队背包</h2></div><div class="backpack-summary"><span><b>${allCards.length}</b>张球员卡</span><span><b>${inventory.length}</b>份礼包</span></div></header><nav class="backpack-page-tabs"><button type="button" class="${leagueBackpackPage === "packs" ? "active" : ""}" data-backpack-page="packs">卡包管理<span>${inventory.length}</span></button><button type="button" class="${leagueBackpackPage === "cards" ? "active" : ""}" data-backpack-page="cards">球员卡管理<span>${allCards.length}</span></button></nav>${leagueBackpackPage === "cards" ? cardSection : packSection}</section>`;
+}
+
+function leagueBackpackMarkup() {
+  const inventory = league.s4Packs?.inventory ?? [];
+  const allCards = leagueBackpackPage === "cards" ? leagueBackpackCardEntries() : null;
+  const cardCount = allCards?.length ?? leagueBackpackCardCount();
+  const content = leagueBackpackPage === "cards"
+    ? leagueBackpackCardSectionMarkup(allCards)
+    : leagueBackpackPackSectionMarkup(inventory);
+  return `<section class="league-backpack"><header><div><small>S4 CLUB INVENTORY</small><h2>球队背包</h2></div><div class="backpack-summary"><span><b data-backpack-card-count>${cardCount}</b>张球员卡</span><span><b data-backpack-pack-count>${inventory.length}</b>份礼包</span></div></header><nav class="backpack-page-tabs"><button type="button" class="${leagueBackpackPage === "packs" ? "active" : ""}" data-backpack-page="packs">卡包管理<span data-backpack-pack-count>${inventory.length}</span></button><button type="button" class="${leagueBackpackPage === "cards" ? "active" : ""}" data-backpack-page="cards">球员卡管理<span data-backpack-card-count>${cardCount}</span></button></nav>${content}</section>`;
+}
+
+function syncLeagueBackpackPackMutationInPlace() {
+  const root = leagueTab === "backpack" && leagueBackpackPage === "packs"
+    ? app.querySelector(".league-backpack")
+    : null;
+  const currentSection = root?.querySelector(".backpack-pack-section");
+  if (!root || !currentSection) {
+    renderLeague();
+    return false;
+  }
+  const inventory = league.s4Packs?.inventory ?? [];
+  currentSection.outerHTML = leagueBackpackPackSectionMarkup(inventory);
+  root.querySelectorAll("[data-backpack-pack-count]").forEach((element) => { element.textContent = String(inventory.length); });
+  const cardCount = leagueBackpackCardCount();
+  root.querySelectorAll("[data-backpack-card-count]").forEach((element) => { element.textContent = String(cardCount); });
+  syncLeagueShellChrome();
+  syncS4PackChoiceDialog();
+  return true;
 }
 
 function leagueEnhancementCardEntries() {
@@ -2661,29 +2720,37 @@ function leagueShopMarkup() {
   return `<section class="league-panel league-shop"><header><div><small>S4 PLAYER PACKS</small><h2>S4礼包商店</h2></div><b>${league.wallet.balance} 金币</b></header><div class="league-shop-intro"><div><strong>新赛季卡包与成长道具</strong><span>礼包进入背包；X球员加成点数会直接到账。</span></div><span>名单额度 ${rosterSlotsUsed}/33</span></div><div class="league-pack-product-grid">${growthProduct}${packs}</div></section>`;
 }
 
-function leagueXGrowthMarkup() {
-  const growth = league.xGrowth;
-  if (!growth) return `<section class="league-panel x-growth-empty"><header><div><small>SUPERSTAR PATH</small><h2>巨星之路</h2></div></header><p class="league-empty">当前球队没有X球员。获得X球员后，成长面板会自动识别球员及位置。</p></section>`;
-  const player = growth.player;
-  const xGrowthRoles = ["GK", "CB", "LB", "RB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"];
-  const roleOptions = xGrowthRoles.map((role) => `<option value="${role}" ${role === player.role ? "selected" : ""}>${escapeHtml(ROLE_LABELS[role] ?? role)}</option>`).join("");
-  const secondaryOptions = xGrowthRoles.filter((role) => role !== "GK").map((role) => `<option value="${role}" ${role === player.secondaryRole ? "selected" : ""}>${escapeHtml(ROLE_LABELS[role] ?? role)}</option>`).join("");
-  const fields = [...growth.attributes, growth.height].map((field) => {
-    const isHeight = field.key === "heightCm";
-    const bonusPoints = Number(field.bonusPoints ?? 0);
-    const initialValue = Number(field.value) - bonusPoints;
-    const bonusMarkup = bonusPoints ? `<em>+${bonusPoints}</em>` : "";
-    const maxed = Number(field.value) >= Number(field.maxValue ?? (isHeight ? 230 : 99));
-    const pending = leagueXGrowthMutationPending && leagueXGrowthPendingField === field.key;
-    return `<article class="x-growth-field ${isHeight ? "height" : ""} ${field.countsTowardOverall ? "overall-contributor" : ""} ${pending ? "is-pending" : ""}"><span>${escapeHtml(X_ATTRIBUTE_LABELS[field.key] ?? field.label)}</span><b>${initialValue}${bonusMarkup}${isHeight ? "<small>cm</small>" : ""}</b><button type="button" data-x-growth-spend="${field.key}" ${maxed || growth.points < 1 || leagueXGrowthMutationPending ? "disabled" : ""}>${pending ? "处理中…" : "加点 +1"}</button></article>`;
-  }).join("");
-  const tasks = growth.tasks.map((task) => {
+function leagueXGrowthFieldValueMarkup(field) {
+  const isHeight = field.key === "heightCm";
+  const bonusPoints = Number(field.bonusPoints ?? 0);
+  const initialValue = Number(field.value) - bonusPoints;
+  return `${initialValue}${bonusPoints ? `<em>+${bonusPoints}</em>` : ""}${isHeight ? "<small>cm</small>" : ""}`;
+}
+
+function leagueXGrowthFieldMarkup(field, growth) {
+  const isHeight = field.key === "heightCm";
+  const maximum = Math.max(0, Math.min(Number(growth.points ?? 0), Number(field.maxValue ?? (isHeight ? 230 : 99)) - Number(field.value ?? 0)));
+  const pending = leagueXGrowthMutationPending && leagueXGrowthPendingField === field.key;
+  const disabled = (amount) => maximum < amount || leagueXGrowthMutationPending ? "disabled" : "";
+  return `<article class="x-growth-field ${isHeight ? "height" : ""} ${field.countsTowardOverall ? "overall-contributor" : ""} ${pending ? "is-pending" : ""}" data-x-growth-field="${field.key}"><span>${escapeHtml(X_ATTRIBUTE_LABELS[field.key] ?? field.label)}</span><b data-x-growth-value>${leagueXGrowthFieldValueMarkup(field)}</b><div class="x-growth-field-actions"><button type="button" data-x-growth-spend="${field.key}" data-x-growth-mode="one" data-x-growth-amount="1" ${disabled(1)}>+1</button><button type="button" data-x-growth-spend="${field.key}" data-x-growth-mode="five" data-x-growth-amount="5" ${disabled(5)}>+5</button><button type="button" data-x-growth-spend="${field.key}" data-x-growth-mode="max" data-x-growth-amount="${maximum}" ${disabled(1)}>最大</button></div></article>`;
+}
+
+function leagueXGrowthTasksMarkup(growth) {
+  return growth.tasks.map((task) => {
     const target = task.complete ? task.milestones.at(-1) : task.nextTarget;
     const progress = Math.min(100, target ? task.value / target * 100 : 100);
     const reward = task.complete ? 0 : task.rewards[task.completed];
     return `<article class="x-growth-task ${task.complete ? "complete" : ""}"><header><b>${escapeHtml(task.label)}</b><span>${task.complete ? "全部完成" : `下一阶段 +${reward}点`}</span></header><div><i style="width:${progress}%"></i></div><p>${task.value} / ${target}<small>已完成 ${task.completed}/${task.milestones.length} 阶段</small></p></article>`;
   }).join("");
-  return `<section class="x-growth-page"><header class="x-growth-hero"><div><small>SUPERSTAR PATH · ${escapeHtml(ROLE_LABELS[player.role] ?? player.role)}</small><h2>★ ${escapeHtml(player.name)}</h2><p>X级 · ${escapeHtml(ROLE_LABELS[player.role] ?? player.role)} · 当前总评 <b>${growth.effectiveOverall ?? player.overall}</b></p></div><aside><small>可用加成点数</small><strong>${growth.points}</strong><span>任务 ${growth.earnedPoints} · 购买 ${growth.purchasedPoints} · 已用 ${growth.spentPoints}</span></aside></header><section class="league-panel x-growth-abilities"><header><div><small>27 ADJUSTABLE VALUES</small><h2>能力与身体</h2></div><span>加点会提升能力基础值，身高不影响总评</span></header><div class="x-growth-field-grid">${fields}</div></section><section class="league-panel x-growth-tasks"><header><div><small>LEAGUE & CUP ONLY</small><h2>成长任务</h2></div><span>仅联赛与杯赛计入，友谊赛无进度</span></header><div class="x-growth-task-grid">${tasks}</div></section></section>`;
+}
+
+function leagueXGrowthMarkup() {
+  const growth = league.xGrowth;
+  if (!growth) return `<section class="league-panel x-growth-empty"><header><div><small>SUPERSTAR PATH</small><h2>巨星之路</h2></div></header><p class="league-empty">当前球队没有X球员。获得X球员后，成长面板会自动识别球员及位置。</p></section>`;
+  const player = growth.player;
+  const fields = [...growth.attributes, growth.height].map((field) => leagueXGrowthFieldMarkup(field, growth)).join("");
+  const tasks = leagueXGrowthTasksMarkup(growth);
+  return `<section class="x-growth-page"><header class="x-growth-hero"><div><small>SUPERSTAR PATH · ${escapeHtml(ROLE_LABELS[player.role] ?? player.role)}</small><h2>★ ${escapeHtml(player.name)}</h2><p>X级 · ${escapeHtml(ROLE_LABELS[player.role] ?? player.role)} · 当前总评 <b data-x-growth-overall>${growth.effectiveOverall ?? player.overall}</b></p></div><aside><small>可用加成点数</small><strong data-x-growth-points>${growth.points}</strong><span data-x-growth-summary>任务 ${growth.earnedPoints} · 购买 ${growth.purchasedPoints} · 已用 ${growth.spentPoints}</span></aside></header><section class="league-panel x-growth-abilities"><header><div><small>27 ADJUSTABLE VALUES</small><h2>能力与身体</h2></div><span>加点会提升能力基础值，身高不影响总评</span></header><div class="x-growth-field-grid">${fields}</div></section><section class="league-panel x-growth-tasks"><header><div><small>LEAGUE & CUP ONLY</small><h2>成长任务</h2></div><span>仅联赛与杯赛计入，友谊赛无进度</span></header><div class="x-growth-task-grid">${tasks}</div></section></section>`;
 }
 
 function leagueXGrowthResetMarkup(growth) {
@@ -2702,6 +2769,82 @@ function leagueXGrowthResetMarkup(growth) {
 function leagueXGrowthTraitChoicesMarkup(growth, role, selectedTraitId = null) {
   const group = role === "GK" ? "GK" : ["ST", "LW", "RW"].includes(role) ? "ATT" : ["CB", "LB", "RB"].includes(role) ? "DEF" : "MID";
   return (growth.traitCatalog ?? []).filter((trait) => trait.eligibleRoleGroups?.includes("ANY") || trait.eligibleRoleGroups?.includes(group)).map((trait) => `<label class="x-growth-reset-trait"><input type="radio" name="x-growth-reset-trait" value="${escapeHtml(trait.id)}" ${trait.id === selectedTraitId ? "checked" : ""} ${leagueXGrowthMutationPending ? "disabled" : ""}><span><b>${escapeHtml(trait.name)}</b><small>${escapeHtml(trait.summary)}</small></span></label>`).join("");
+}
+
+function renderLeagueXGrowthSection() {
+  const pageContent = app.querySelector(":scope > .league-shell > .league-main-layout > .league-page-content");
+  if (!pageContent) return;
+  if (leagueTab === "x-growth") {
+    pageContent.innerHTML = leagueXGrowthMarkup();
+    if (league.xGrowth) pageContent.querySelector(".x-growth-hero")?.insertAdjacentHTML("afterend", leagueXGrowthResetMarkup(league.xGrowth));
+  } else if (leagueTab === "shop") pageContent.innerHTML = leagueShopMarkup();
+  syncLeagueShellChrome();
+}
+
+function syncLeagueXGrowthPendingUi() {
+  if (!leagueMode || !leagueXGrowthMutationPending) return;
+  app.querySelectorAll("[data-x-growth-spend], [data-x-growth-buy], [data-x-growth-reset], [data-x-growth-position-confirm], [data-x-growth-position-edit]").forEach((button) => { button.disabled = true; });
+  app.querySelectorAll("#x-growth-quantity, [data-x-growth-role], [data-x-growth-secondary], input[name=x-growth-reset-trait]").forEach((control) => { control.disabled = true; });
+  if (leagueXGrowthPendingField === "buy") {
+    const button = app.querySelector("[data-x-growth-buy]");
+    if (button) button.textContent = "购买中…";
+    app.querySelector(".tone-x-growth")?.classList.add("is-pending");
+    return;
+  }
+  if (leagueXGrowthPendingField === "reset") {
+    const button = app.querySelector("[data-x-growth-reset]");
+    if (button) button.textContent = "正在洗点…";
+    app.querySelector(".x-growth-reset")?.classList.add("is-pending");
+    return;
+  }
+  const field = app.querySelector(`[data-x-growth-field="${CSS.escape(String(leagueXGrowthPendingField ?? ""))}"]`);
+  field?.classList.add("is-pending");
+  const pendingButton = [...(field?.querySelectorAll("[data-x-growth-spend]") ?? [])].find((button) => button.dataset.xGrowthMode === leagueXGrowthPendingMode);
+  if (pendingButton) pendingButton.textContent = "处理中…";
+}
+
+function syncLeagueXGrowthMutationUi(path, fieldKey) {
+  if (!leagueMode || !league?.xGrowth || !["x-growth", "shop"].includes(leagueTab)) return;
+  if (leagueTab !== "x-growth" || path !== "/spend") {
+    renderLeagueXGrowthSection();
+    return;
+  }
+
+  const growth = league.xGrowth;
+  const points = app.querySelector("[data-x-growth-points]");
+  const summary = app.querySelector("[data-x-growth-summary]");
+  const overall = app.querySelector("[data-x-growth-overall]");
+  if (points) points.textContent = growth.points;
+  if (summary) summary.textContent = `任务 ${growth.earnedPoints} · 购买 ${growth.purchasedPoints} · 已用 ${growth.spentPoints}`;
+  if (overall) overall.textContent = growth.effectiveOverall ?? growth.player.overall;
+
+  const fields = [...growth.attributes, growth.height];
+  fields.forEach((field) => {
+    const article = app.querySelector(`[data-x-growth-field="${CSS.escape(field.key)}"]`);
+    if (!article) return;
+    article.classList.remove("is-pending");
+    if (field.key === fieldKey) {
+      const value = article.querySelector("[data-x-growth-value]");
+      if (value) value.innerHTML = leagueXGrowthFieldValueMarkup(field);
+    }
+    const maximum = Math.max(0, Math.min(Number(growth.points ?? 0), Number(field.maxValue ?? (field.key === "heightCm" ? 230 : 99)) - Number(field.value ?? 0)));
+    article.querySelectorAll("[data-x-growth-spend]").forEach((button) => {
+      const mode = button.dataset.xGrowthMode;
+      const amount = mode === "one" ? 1 : mode === "five" ? 5 : maximum;
+      button.dataset.xGrowthAmount = String(amount);
+      button.disabled = maximum < (mode === "five" ? 5 : 1);
+      button.textContent = mode === "one" ? "+1" : mode === "five" ? "+5" : "最大";
+    });
+  });
+  const taskGrid = app.querySelector(".x-growth-task-grid");
+  if (taskGrid) taskGrid.innerHTML = leagueXGrowthTasksMarkup(growth);
+  app.querySelectorAll("[data-x-growth-role], [data-x-growth-secondary], input[name=x-growth-reset-trait], [data-x-growth-reset], [data-x-growth-position-confirm], [data-x-growth-position-edit]").forEach((control) => {
+    if (control.matches("[data-x-growth-role]")) control.disabled = leagueXGrowthResetTraitOpen;
+    else if (control.matches("[data-x-growth-secondary]")) control.disabled = leagueXGrowthResetTraitOpen || (leagueXGrowthResetRole ?? growth.player.role) === "GK";
+    else control.disabled = false;
+  });
+  app.querySelector(".x-growth-reset")?.classList.remove("is-pending");
+  syncLeagueShellChrome();
 }
 
 const REVIEW_HEAT_MODES = Object.freeze({ actions:"持球动作", starts:"进攻起点", turnovers:"丢失球权", recoveries:"夺回球权", xg:"xG" });
@@ -2924,7 +3067,8 @@ async function chooseS4PackCard(button) {
     const value = await leagueRequest("/packs/choose", {
       offerId:button.dataset.s4OfferId,
       leaguePlayerId:button.dataset.s4PackChoice,
-    });
+    }, { render:false });
+    syncLeagueBackpackPackMutationInPlace();
     if (value.packBatchOpening?.complete) openS4PackBatchResults(value.packBatchOpening);
     else if (value.packBatchOpening || value.s4Packs?.batchOpening) showToast(`已完成第${value.s4Packs?.batchOpening?.completed ?? value.packBatchOpening?.completed ?? 0}份选择`);
     else if (value.packOpening?.player) openS4PackResult(value.packOpening);
@@ -4097,6 +4241,23 @@ function renderLeagueEnhancementInPlace() {
   if (warehouse) warehouse.scrollTop = scrollTop;
 }
 
+function syncLeagueEnhancementPhaseInPlace({ clearResult = false, restoreSubmit = false } = {}) {
+  const current = app.querySelector(".league-enhancement");
+  if (leagueTab !== "enhancement" || !current) return;
+  [...current.classList].filter((name) => name.startsWith("phase-")).forEach((name) => current.classList.remove(name));
+  current.classList.add(`phase-${leagueEnhancementPhase}`);
+  const trigger = current.querySelector("[data-enhancement-submit]");
+  if (trigger) {
+    trigger.textContent = leagueEnhancementPhase === "scanning" ? "合成中" : "强化";
+    if (leagueEnhancementPhase === "scanning") trigger.disabled = true;
+    else if (restoreSubmit) trigger.disabled = false;
+  }
+  if (clearResult) {
+    const result = current.querySelector(".enhancement-result-frame");
+    if (result) result.innerHTML = `<div class="enhancement-result-empty"><span>+</span><b>结果</b></div>`;
+  }
+}
+
 function returnLeagueEnhancementResultToWarehouse(cardId) {
   if (!leagueEnhancementResult?.card || leagueEnhancementResult.card.id !== cardId) return false;
   const pendingTraitOffer = leagueEnhancementResult.traitOffer ?? league.enhancement?.traitOffer ?? null;
@@ -4216,7 +4377,7 @@ async function performLeagueEnhancement() {
   leagueEnhancementPhase = "scanning";
   leagueEnhancementResult = null;
   leagueMutationPending = true;
-  renderLeagueEnhancementInPlace();
+  syncLeagueEnhancementPhaseInPlace({ clearResult:true });
   const startedAt = performance.now();
   try {
     const value = await api("/api/versus/league/card/enhance", {
@@ -4262,12 +4423,12 @@ async function performLeagueEnhancement() {
     setTimeout(() => {
       if (leagueTab === "enhancement" && leagueEnhancementResult?.id === resultId && leagueEnhancementPhase !== "scanning") {
         leagueEnhancementPhase = "idle";
-        renderLeagueEnhancementInPlace();
+        syncLeagueEnhancementPhaseInPlace();
       }
     }, 1300);
   } catch (error) {
     leagueEnhancementPhase = "idle";
-    renderLeagueEnhancementInPlace();
+    syncLeagueEnhancementPhaseInPlace({ restoreSubmit:true });
     showToast(error.message);
   } finally {
     leagueMutationPending = false;
@@ -4528,9 +4689,17 @@ app.addEventListener("click", (event) => {
     return;
   }
   const s4PackOpen = event.target.closest("[data-s4-pack-open]");
-  if (s4PackOpen) leagueRequest("/packs/open", { packId:s4PackOpen.dataset.s4PackOpen }).then((value) => {
-    if (value.packOpening?.player) openS4PackResult(value.packOpening);
-  }).catch((error) => showToast(error.message));
+  if (s4PackOpen) {
+    s4PackOpen.disabled = true;
+    leagueRequest("/packs/open", { packId:s4PackOpen.dataset.s4PackOpen }, { render:false }).then((value) => {
+      syncLeagueBackpackPackMutationInPlace();
+      if (value.packOpening?.player) openS4PackResult(value.packOpening);
+    }).catch((error) => {
+      s4PackOpen.disabled = false;
+      showToast(error.message);
+    });
+    return;
+  }
   const s4PackBatchOpen = event.target.closest("[data-s4-pack-open-batch]");
   if (s4PackBatchOpen) {
     const packType = s4PackBatchOpen.dataset.s4PackOpenBatch;
@@ -4541,10 +4710,18 @@ app.addEventListener("click", (event) => {
     const input = document.querySelector(`#backpack-batch-count-${CSS.escape(packType)}`);
     const quantity = Math.max(1, Math.min(100, openable.length, Math.floor(Number(input?.value ?? openable.length))));
     const packIds = openable.slice(0, quantity).map((item) => item.id);
-    if (packIds.length) leagueRequest("/packs/open-batch", { packIds }).then((value) => {
-      if (value.packBatchOpening?.complete) openS4PackBatchResults(value.packBatchOpening);
-      else if (value.s4Packs?.batchOpening) showToast(`批量开包已开始，共${value.s4Packs.batchOpening.total}份`);
-    }).catch((error) => showToast(error.message));
+    if (packIds.length) {
+      s4PackBatchOpen.disabled = true;
+      leagueRequest("/packs/open-batch", { packIds }, { render:false }).then((value) => {
+        syncLeagueBackpackPackMutationInPlace();
+        if (value.packBatchOpening?.complete) openS4PackBatchResults(value.packBatchOpening);
+        else if (value.s4Packs?.batchOpening) showToast(`批量开包已开始，共${value.s4Packs.batchOpening.total}份`);
+      }).catch((error) => {
+        s4PackBatchOpen.disabled = false;
+        showToast(error.message);
+      });
+    }
+    return;
   }
   const s4PackChoice = event.target.closest("[data-s4-pack-choice]");
   if (s4PackChoice) chooseS4PackCard(s4PackChoice);
@@ -4638,7 +4815,9 @@ app.addEventListener("click", (event) => {
   if (xGrowthSpend) {
     if (leagueXGrowthMutationPending) return;
     leagueXGrowthPendingField = xGrowthSpend.dataset.xGrowthSpend;
-    leagueXGrowthRequest("/spend", { field:leagueXGrowthPendingField, amount:1 }).catch((error) => showToast(error.message));
+    leagueXGrowthPendingAmount = Math.max(1, Number(xGrowthSpend.dataset.xGrowthAmount ?? 1));
+    leagueXGrowthPendingMode = xGrowthSpend.dataset.xGrowthMode ?? "one";
+    leagueXGrowthRequest("/spend", { field:leagueXGrowthPendingField, amount:leagueXGrowthPendingAmount }).catch((error) => showToast(error.message));
     return;
   }
   const xGrowthPositionConfirm = event.target.closest("[data-x-growth-position-confirm]");
@@ -4672,6 +4851,7 @@ app.addEventListener("click", (event) => {
       leagueXGrowthResetTraitOpen = false;
       leagueXGrowthResetRole = null;
       leagueXGrowthResetSecondaryRole = null;
+      renderLeagueXGrowthSection();
       showToast("X球员已完成洗点并更换特性");
     } });
     return;

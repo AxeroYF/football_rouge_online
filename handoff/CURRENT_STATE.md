@@ -1,5 +1,25 @@
 # YellowDogs League S4 当前状态
 
+## 2026-08-03 13:20 权威状态
+
+### 线上故障（已解决）
+
+- 8/3 启动崩溃（`球队超过33人大名单额度：ydl-team-1`，systemd 重启 163+ 次）根因：运营评级覆盖（63 条，40 条 A/B→S）只被 admin/devtool 路径加载，游戏进程在覆盖生效前完成联赛单例构造并执行名单断言；且 `ydl-content-store.js` 顶层 `await` 导致兄弟模块先求值。已部署 `football-ydl-s4-roster-overflow-ops-override-hotfix-20260803-1141.tar.gz`（server.js 提前同步加载覆盖 + s4-assets.js 清理传奇失效所有权），线上 team1 占用 27/33，服务正常。
+- 每日自动重置会在新一天开新赛季并清空比赛/积分（设计行为）；`resetDailyCompetitions` 会归档整季完整报告（当前 archives 约 44.6MB / 总状态 70.6MB）。
+
+### 性能排查（进行中）
+
+- `view()` 单次构建约 700ms / 1.2MB；前端每 12s 全量轮询在 2核2G 上把单核打满（实测 6 客户端 avg 3.7s/max 25s，前端 10s 超时导致结算后页面不刷新）。
+- 已产出轻量同步 + gzip 热修 `football-ydl-s4-frontend-perf-light-sync-tools-hotfix-20260803-1320.tar.gz`（head 149B；静态 gzip 压缩 75%）。
+- 分片增量保存实测 46ms（非瓶颈）；每日重置/归档的单文件大写入会阻塞事件循环数秒，需异步化。
+- 待办：在服务器 `node devtool/profile-live.mjs <PID> 60` 抓 CPU 火焰，确认持续 75% 单核占用来源（疑直播快照序列化/比赛推进）；随后做 view() 按页签瘦身与每日重置异步化。
+
+### 运维注意
+
+- `/etc/football-s4.env` 第 2 行无法被 bash 直接 `source`（格式问题），诊断时用 `sudo grep` 读路径。
+- 禁止用 `nohup node --cpu-prof ... &` 方式抓火焰（会残留进程占 4318 端口导致 systemd EADDRINUSE 崩溃循环）；使用附加式 `profile-live.mjs`（SIGUSR1，无需停服）。
+- 当前部署版本确认：`grep -c 'league/head' versus/public/app.js` 应为 1；`grep -c 'ownTeamView' versus/league-service.js` 应 >0。
+
 ## 2026-08-03 10:47 权威状态
 
 ### 正式服启动事故

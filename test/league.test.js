@@ -445,8 +445,9 @@ test("team can be renamed and private-pool packs support bulk purchase and direc
   const positionsBefore = structuredClone(team.positions);
   const cardsBefore = service.playerCards(user.id).length;
   const balanceBefore = renamed.wallet.balance;
+  assert.equal(S4_PACK_PRICES["private-mixed"], 1000);
   const bought = service.buyS4Packs(user, "private-mixed", 3);
-  assert.equal(bought.wallet.balance, balanceBefore - 4800);
+  assert.equal(bought.wallet.balance, balanceBefore - 3000);
   assert.equal(bought.s4Packs.inventory.length, 3);
   const opened = service.openS4Pack(user, bought.s4Packs.inventory[0].id);
   assert.equal(opened.packOpening.mode, "direct");
@@ -474,6 +475,30 @@ test("shop mutations return compact payloads without rebuilding the full league 
   assert.equal("recentMatches" in bought, false);
   assert.equal(bought.shop.catalog.find((pack) => pack.id === "private-mixed").purchasedQuantity, 1);
   assert.equal(bought.s4Packs.inventory.length, 1);
+});
+
+test("三选一卡包初始轻量响应不构建未变化的完整球队视图", () => {
+  for (const batch of [false, true]) {
+    const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+    const user = account(`choice-compact-${batch}`, `Choice Compact ${batch}`);
+    join(service, user, `Choice Compact ${batch} FC`);
+    service.wallet(user.id).balance = 100000;
+    const bought = service.buyS4Packs(user, "legend-random", batch ? 2 : 1);
+    const packIds = bought.s4Packs.inventory.map((item) => item.id);
+
+    const ownTeamView = service.ownTeamView;
+    service.ownTeamView = () => { throw new Error("choice pack start must not rebuild ownTeam"); };
+    const opened = batch
+      ? service.openS4PacksBatch(user, packIds, { compact:true })
+      : service.openS4Pack(user, packIds[0], { compact:true });
+    service.ownTeamView = ownTeamView;
+
+    assert.equal(opened.compact, true);
+    assert.equal("ownTeam" in opened, false);
+    assert.equal(opened.s4Packs.offer.status, "pending");
+    assert.equal(opened.s4Packs.inventory[0].status, "choosing");
+    assert.equal(Boolean(opened.s4Packs.batchOpening), batch);
+  }
 });
 
 test("轻量比赛中心只公开本人赛程、历史与电视台数据", () => {

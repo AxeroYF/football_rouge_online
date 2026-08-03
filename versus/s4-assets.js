@@ -1,5 +1,5 @@
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID } from "./player-pool.js";
-import { unwrapTracked } from "./league-shard-store.js";
+import { trackedMutationVersion, trackedRawReference, unwrapTracked } from "./league-shard-store.js";
 
 export const S4_ASSET_SCHEMA_VERSION = 1;
 export const S4_ROSTER_LIMIT = 33;
@@ -11,6 +11,39 @@ const activeCard = (card) => card && card.status !== "recycled";
 const cardStrength = (card) => Number(card.upgradeLevel ?? 0) * 1000
   + Number(card.traitIds?.length ?? 0) * 10
   - Number(card.acquiredAt ?? 0) / 1e15;
+const CARD_INDEX_BY_RAW = new WeakMap();
+const sortCards = (cards) => cards.sort((left, right) => cardStrength(right) - cardStrength(left) || String(left.id).localeCompare(String(right.id)));
+
+function trackedCardIndex(state) {
+  const cards = state.s4Assets?.cards;
+  if (!cards) return null;
+  const version = trackedMutationVersion(cards);
+  if (version == null) return null;
+  const rawCards = trackedRawReference(cards);
+  const cached = CARD_INDEX_BY_RAW.get(rawCards);
+  if (cached?.version === version) return cached;
+
+  const byOwner = new Map();
+  const byOwnerAndPlayer = new Map();
+  const byPlayer = new Map();
+  for (const card of Object.values(cards)) {
+    if (!activeCard(card)) continue;
+    if (!byOwner.has(card.ownerId)) byOwner.set(card.ownerId, []);
+    byOwner.get(card.ownerId).push(card);
+    if (!byOwnerAndPlayer.has(card.ownerId)) byOwnerAndPlayer.set(card.ownerId, new Map());
+    const ownerPlayers = byOwnerAndPlayer.get(card.ownerId);
+    if (!ownerPlayers.has(card.playerId)) ownerPlayers.set(card.playerId, []);
+    ownerPlayers.get(card.playerId).push(card);
+    if (!byPlayer.has(card.playerId)) byPlayer.set(card.playerId, []);
+    byPlayer.get(card.playerId).push(card);
+  }
+  byOwner.forEach(sortCards);
+  byOwnerAndPlayer.forEach((ownerPlayers) => ownerPlayers.forEach(sortCards));
+  byPlayer.forEach(sortCards);
+  const index = { version, byOwner, byOwnerAndPlayer, byPlayer };
+  CARD_INDEX_BY_RAW.set(rawCards, index);
+  return index;
+}
 
 function cardId(playerId, ownerId, now, sequence) {
   return `s4-card-${String(playerId).replace(/[^a-zA-Z0-9_-]/g, "")}-${String(ownerId).replace(/[^a-zA-Z0-9_-]/g, "")}-${Number(now).toString(36)}-${sequence.toString(36)}`;
@@ -58,12 +91,21 @@ export function ensureS4Assets(state) {
 }
 
 export function cardsForOwner(state, ownerId, playerId = null) {
+  const index = trackedCardIndex(state);
+  if (index) {
+    const cards = playerId
+      ? index.byOwnerAndPlayer.get(ownerId)?.get(playerId)
+      : index.byOwner.get(ownerId);
+    return cards ? [...cards] : [];
+  }
   return Object.values(state.s4Assets?.cards ?? {})
     .filter((card) => activeCard(card) && card.ownerId === ownerId && (!playerId || card.playerId === playerId))
     .sort((left, right) => cardStrength(right) - cardStrength(left) || String(left.id).localeCompare(String(right.id)));
 }
 
 export function cardsForPlayer(state, playerId) {
+  const index = trackedCardIndex(state);
+  if (index) return [...(index.byPlayer.get(playerId) ?? [])];
   return Object.values(state.s4Assets?.cards ?? {})
     .filter((card) => activeCard(card) && card.playerId === playerId)
     .sort((left, right) => cardStrength(right) - cardStrength(left) || String(left.id).localeCompare(String(right.id)));

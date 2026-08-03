@@ -1,5 +1,12 @@
 # YellowDogs League S4 交接入口
 
+## 2026-08-03 13:20 最新状态（最高优先级）
+
+- 正式服已恢复：启动崩溃根因是运营评级覆盖未在游戏进程生效（已部署 1141 热修，线上 team1 占用 27/33）；当前卡顿根因是 `view()` 全量构建 + 前端 12s 全量轮询在 2核2G 上打满 CPU，已产出 1320 热修（轻量同步 head + 静态 gzip + 诊断工具）。
+- 最新可部署包：`handoff/football-ydl-s4-frontend-perf-light-sync-tools-hotfix-20260803-1320.tar.gz`，SHA256 `C07CBC5AFA3645E58C20997496A516C0EF1D4745025396D768D7DECE02C23153`。
+- 待办：CPU 火焰定位持续 75% 占用源（`node devtool/profile-live.mjs <PID> 60`）、view() 按页签瘦身、每日重置/归档异步化。
+- 详细诊断与运维注意事项见 `CURRENT_STATE.md` / `NEW_CHAT_PROMPT.md` 顶部。
+
 ## 2026-08-03 10:47 最新状态（最高优先级）
 
 - 正式服部署商店/市场/开包性能热修后启动失败，日志为 `球队超过33人大名单额度：ydl-team-1`，systemd 曾连续自动重启 163 次；应保持 `football-s4` 停止，先完成只读诊断。

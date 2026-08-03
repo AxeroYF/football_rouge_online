@@ -33,6 +33,7 @@ const ALL_SCOPES = Object.freeze([
 ]);
 const RAW_BY_PROXY = new WeakMap();
 const PROXY_BY_RAW = new WeakMap();
+const MUTATION_VERSION_BY_RAW = new WeakMap();
 
 function scopeForKey(key) {
   if (["matches"].includes(key)) return "matches";
@@ -63,12 +64,34 @@ export function unwrapTracked(value, seen = new WeakMap()) {
   return result;
 }
 
+// Read-only identity/version access for derived indexes. Mutations must still go
+// through the tracked proxy so dirty scopes and cache invalidation remain correct.
+export function trackedRawReference(value) {
+  return RAW_BY_PROXY.get(value) ?? value;
+}
+
+export function trackedMutationVersion(value) {
+  const raw = RAW_BY_PROXY.get(value) ?? value;
+  return MUTATION_VERSION_BY_RAW.get(raw)?.version ?? null;
+}
+
 export function createTrackedState(state, onDirty) {
+  const versionByScope = new Map();
+  const versionBox = (scope) => {
+    if (!versionByScope.has(scope)) versionByScope.set(scope, { version: 0 });
+    return versionByScope.get(scope);
+  };
+  const markMutation = (scope, property) => {
+    const mutationScope = scope === "root" ? scopeForKey(property) : scope;
+    versionBox(mutationScope).version += 1;
+    onDirty(mutationScope);
+  };
   const wrap = (value, scope) => {
     if (!isObject(value)) return value;
     const raw = RAW_BY_PROXY.get(value) ?? value;
     const existing = PROXY_BY_RAW.get(raw);
     if (existing) return existing;
+    MUTATION_VERSION_BY_RAW.set(raw, versionBox(scope));
     const proxy = new Proxy(raw, {
       get(target, property, receiver) {
         const child = Reflect.get(target, property, receiver);
@@ -78,13 +101,13 @@ export function createTrackedState(state, onDirty) {
       set(target, property, nextValue, receiver) {
         const changed = Reflect.get(target, property, receiver) !== nextValue;
         const result = Reflect.set(target, property, unwrapTracked(nextValue), receiver);
-        if (result && changed) onDirty(scope === "root" ? scopeForKey(property) : scope);
+        if (result && changed) markMutation(scope, property);
         return result;
       },
       deleteProperty(target, property) {
         const existed = Object.hasOwn(target, property);
         const result = Reflect.deleteProperty(target, property);
-        if (result && existed) onDirty(scope === "root" ? scopeForKey(property) : scope);
+        if (result && existed) markMutation(scope, property);
         return result;
       },
     });

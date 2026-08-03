@@ -1,5 +1,6 @@
 import { versusRooms } from "./room-service.js";
 import { yellowDogsLeague } from "./league-service.js";
+import { measureRuntimeSync } from "../src/runtime-metrics.js";
 
 function bearerToken(request) {
   const value = request.headers.authorization ?? "";
@@ -17,7 +18,8 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     if (request.method !== "POST") return sendJson(response, 405, { ok:false, error:"league API requires POST" });
     const account = versusRooms.account(body.playerId, body.accountToken);
     const developer = process.env.VERSUS_PUBLIC_ONLY !== "1";
-    if (pathname === "/api/versus/league") result = { league:yellowDogsLeague.view(account, { developer }) };
+    if (pathname === "/api/versus/league") result = { league:measureRuntimeSync("league.view", () => yellowDogsLeague.view(account, { developer })) };
+    else if (pathname === "/api/versus/league/head") result = { head:measureRuntimeSync("league.head", () => yellowDogsLeague.leagueHead(account)) };
     else if (pathname === "/api/versus/league/draft/start") result = yellowDogsLeague.beginDraft(account, body.teamName);
     else if (pathname === "/api/versus/league/draft/draw") result = yellowDogsLeague.drawDraft(account, body.pool);
     else if (pathname === "/api/versus/league/draft/choose") result = yellowDogsLeague.chooseDraft(account, body.leaguePlayerId);

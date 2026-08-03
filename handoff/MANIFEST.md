@@ -1,5 +1,29 @@
 # V2 增量交接包清单
 
+## 2026-08-03 13:20 前端性能热修 + 诊断工具（取代 1229）
+
+- 发布物：`handoff/football-ydl-s4-frontend-perf-light-sync-tools-hotfix-20260803-1320.tar.gz`
+- SHA256：`C07CBC5AFA3645E58C20997496A516C0EF1D4745025396D768D7DECE02C23153`
+- 内容：`league/head` 轻量同步（api.js + app.js + league-service.js）、`server.js` 静态 gzip、`view()` 复用 `ownTeamView` 去重；新增诊断工具 `devtool/loadtest-http.mjs`、`analyze-cpuprofile.mjs`、`profile-attach.mjs`、`profile-live.mjs`。
+- 背景：2核2G 服务器 CPU 打满（实测 view 全量轮询 6 客户端 avg 3.7s/max 25s），分片增量保存实测 46ms 非瓶颈；持续 CPU 源待火焰数据定位（疑直播快照/比赛推进）。
+- 取代 `football-ydl-s4-frontend-perf-light-sync-hotfix-20260803-1229.tar.gz`。
+
+## 2026-08-03 12:29 前端性能热修（轻量同步 + 静态 gzip，取代 1205）
+
+- 发布物：`handoff/football-ydl-s4-frontend-perf-light-sync-hotfix-20260803-1229.tar.gz`
+- SHA256：`A04609E767BD5271933B743D17A88C56FD11BF8827F1001AF576818DDA411225`
+- 改动：`versus/api.js` + `/api/versus/league/head`；`versus/public/app.js` 静默刷新改为 head 优先；`versus/league-service.js` 新增 `leagueHead` + `ownTeamView` 去重；`devtool/server.js` 静态文本资源 gzip。
+- 实测（6 客户端、day6 数据）：全量视图请求 45s 从 24 次降到仅页面打开 6 次，head 平均 29ms；修复前平均 3.7s/最大 25s。
+- 取代 `football-ydl-s4-frontend-perf-light-sync-hotfix-20260803-1205.tar.gz`，部署本包即可。
+
+## 2026-08-03 12:05 前端性能热修（轻量同步）
+
+- 发布物：`handoff/football-ydl-s4-frontend-perf-light-sync-hotfix-20260803-1205.tar.gz`
+- SHA256：`371F8BA366D118D399D540945B9CFEB4D85EB0258AF28701FFF297876848A413`
+- 根因：联赛页每 12 秒静默拉取完整视图（约 1.2 MB），`view()` 同步构建在 2 核服务器上把 CPU 打到接近单核满载（11 分钟跑 10m34s CPU）。
+- 改动：新增 `POST /api/versus/league/head`（约 150 字节）；`refreshLeagueSilently` 先查 head，仅 `updatedAt`/赛季状态变化时再拉全量并重绘。涉及 `versus/league-service.js`、`versus/api.js`、`versus/public/app.js`。
+- 验证：48/48 前端测试通过，head 149 字节；部署后客户端需刷新一次页面。
+
 ## 2026-08-03 11:41 roster overflow 运营覆盖热修
 
 - 发布物：`handoff/football-ydl-s4-roster-overflow-ops-override-hotfix-20260803-1141.tar.gz`
