@@ -1,0 +1,221 @@
+{
+  "items": [
+    {
+      "id": 231340,
+      "rank": 1520,
+      "overallRating": 76,
+      "firstName": "Gonzalo",
+      "lastName": "Montiel",
+      "commonName": null,
+      "birthdate": "01/01/1997 00:00",
+      "height": 175,
+      "skillMoves": 3,
+      "weakFootAbility": 3,
+      "preferredFoot": 1,
+      "leagueName": "LALIGA EA SPORTS",
+      "weight": 70,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p231340.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/231340.png?width=265",
+      "alternatePositions": null,
+      "playerAbilities": [
+        {
+          "id": "trait1_67108864",
+          "label": "Long Throw",
+          "description": "Powerful throw-ins for greater distance",
+          "imageUrl": "https://drop-assets.ea.com/images/51OlohNQvoEwW0aLhknAHh/58fa7d903d10f6d8cfa2622f62ba6b6f/Long_Throw.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 0,
+        "label": "Men's Football"
+      },
+      "nationality": {
+        "id": 52,
+        "label": "Argentina",
+        "imageUrl": "https://drop-assets.ea.com/images/4xMXjEt7CFJ6JENYeG45Sk/836d733dc1642c5e4ab3338d91481436/f_52.png"
+      },
+      "team": {
+        "id": 481,
+        "label": "Sevilla FC",
+        "imageUrl": "https://drop-assets.ea.com/images/1xocxSBJ3RrgP3Jponcw9H/b5b340790217ad2685083e1765b24273/l481.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "3",
+        "shortLabel": "RB",
+        "label": "Right Back",
+        "positionType": {
+          "id": "defense",
+          "name": "Defense"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 79,
+          "diff": -4
+        },
+        "agility": {
+          "value": 81,
+          "diff": -1
+        },
+        "jumping": {
+          "value": 77,
+          "diff": -7
+        },
+        "stamina": {
+          "value": 77,
+          "diff": -16
+        },
+        "strength": {
+          "value": 68,
+          "diff": -4
+        },
+        "aggression": {
+          "value": 83,
+          "diff": -4
+        },
+        "balance": {
+          "value": 75,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 72,
+          "diff": -1
+        },
+        "composure": {
+          "value": 75,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 73,
+          "diff": 0
+        },
+        "curve": {
+          "value": 64,
+          "diff": 0
+        },
+        "def": {
+          "value": 72,
+          "diff": -4
+        },
+        "defensiveAwareness": {
+          "value": 71,
+          "diff": -5
+        },
+        "dri": {
+          "value": 74,
+          "diff": -1
+        },
+        "dribbling": {
+          "value": 73,
+          "diff": -1
+        },
+        "finishing": {
+          "value": 58,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 39,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 6,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 10,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 11,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 5,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 6,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 67,
+          "diff": -4
+        },
+        "interceptions": {
+          "value": 74,
+          "diff": -4
+        },
+        "longPassing": {
+          "value": 66,
+          "diff": 0
+        },
+        "longShots": {
+          "value": 61,
+          "diff": 0
+        },
+        "pac": {
+          "value": 80,
+          "diff": -2
+        },
+        "pas": {
+          "value": 69,
+          "diff": 0
+        },
+        "penalties": {
+          "value": 82,
+          "diff": 0
+        },
+        "phy": {
+          "value": 74,
+          "diff": -7
+        },
+        "positioning": {
+          "value": 73,
+          "diff": -4
+        },
+        "reactions": {
+          "value": 74,
+          "diff": -2
+        },
+        "sho": {
+          "value": 62,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 72,
+          "diff": 0
+        },
+        "shotPower": {
+          "value": 68,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 73,
+          "diff": -2
+        },
+        "sprintSpeed": {
+          "value": 80,
+          "diff": -2
+        },
+        "standingTackle": {
+          "value": 72,
+          "diff": -4
+        },
+        "vision": {
+          "value": 69,
+          "diff": -1
+        },
+        "volleys": {
+          "value": 43,
+          "diff": 0
+        }
+      }
+    }
+  ],
+  "totalItems": 1
+}

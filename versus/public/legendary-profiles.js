@@ -639,6 +639,36 @@ export const LEGENDARY_PROFILE_BY_PLAYER_ID = Object.freeze({
     "yPercent": 52.9,
     "widthPercent": 204,
     "optimizedFileName": "Didi.webp"
+  },
+  "s4-dlc2-20260803-001": {
+    "playerId": "s4-dlc2-20260803-001",
+    "profileKey": "Alfredo Di Stéfano",
+    "fileName": "Di Stéfano.png",
+    "imageUrl": "/versus/legendary_profile/webp/Di%20St%C3%A9fano.webp?v=e626ae25af2f",
+    "xPercent": 52.5,
+    "yPercent": 54.3,
+    "widthPercent": 220,
+    "optimizedFileName": "Di Stéfano.webp"
+  },
+  "s4-dlc2-20260803-059": {
+    "playerId": "s4-dlc2-20260803-059",
+    "profileKey": "Vítor Baía",
+    "fileName": "Vítor Baía.png",
+    "imageUrl": "/versus/legendary_profile/webp/V%C3%ADtor%20Ba%C3%ADa.webp?v=83c37ea5002e",
+    "xPercent": 49.4,
+    "yPercent": 73.2,
+    "widthPercent": 216,
+    "optimizedFileName": "Vítor Baía.webp"
+  },
+  "s4-dlc2-20260803-063": {
+    "playerId": "s4-dlc2-20260803-063",
+    "profileKey": "Giuseppe Meazza",
+    "fileName": "Meazza.png",
+    "imageUrl": "/versus/legendary_profile/webp/Meazza.webp?v=407871651d2d",
+    "xPercent": 50,
+    "yPercent": 52.8,
+    "widthPercent": 104,
+    "optimizedFileName": "Meazza.webp"
   }
 });
 

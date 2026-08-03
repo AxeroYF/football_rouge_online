@@ -5,7 +5,21 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const BASE_INPUT = path.join(ROOT, "data", "s4-player-pool-s4.json");
-const DLC_INPUT = path.join(ROOT, "data", "player-dlc-s4-final.json");
+const DLC_INPUTS = Object.freeze([
+  Object.freeze({
+    input: path.join(ROOT, "data", "player-dlc-s4-final.json"),
+    batch: "2026-07-31",
+    idPrefix: "s4-dlc-20260731-",
+    sourceUpdatedAt: "2026-07-31",
+    preserveEmptySourceId: true,
+  }),
+  Object.freeze({
+    input: path.join(ROOT, "data", "player-dlc2-s4-final.json"),
+    batch: "2026-08-03",
+    idPrefix: "s4-dlc2-20260803-",
+    sourceUpdatedAt: "2026-08-03",
+  }),
+]);
 const OUTPUT_JSON = path.join(ROOT, "data", "s4-player-pool-with-dlc.json");
 const OUTPUT_MODULE = path.join(ROOT, "versus", "player-pool-s4-dlc-generated.js");
 
@@ -23,7 +37,10 @@ const normalizeName = (value) => String(value ?? "")
   .toLowerCase();
 
 const basePayload = JSON.parse(await fs.readFile(BASE_INPUT, "utf8"));
-const dlcPayload = JSON.parse(await fs.readFile(DLC_INPUT, "utf8"));
+const dlcBatches = await Promise.all(DLC_INPUTS.map(async (config) => ({
+  ...config,
+  payload: JSON.parse(await fs.readFile(config.input, "utf8")),
+})));
 const basePlayers = basePayload.players;
 const usedIds = new Set(basePlayers.map((player) => player.id));
 const replacedIds = new Set();
@@ -39,16 +56,26 @@ function matchingBasePlayer(player) {
   }) ?? null;
 }
 
-function stableId(player, index, existing) {
+function stableId(player, index, existing, config) {
   if (existing) return existing.id;
+  const suppliedId = String(player.id ?? "").trim();
+  if (suppliedId) {
+    if (usedIds.has(suppliedId)) throw new Error(`duplicate supplied DLC id: ${suppliedId}`);
+    return suppliedId;
+  }
   const suffix = String(index + 1).padStart(3, "0");
-  const preferred = `s4-dlc-20260731-${suffix}`;
+  const preferred = `${config.idPrefix}${suffix}`;
   if (!usedIds.has(preferred)) return preferred;
   throw new Error(`duplicate generated DLC id: ${preferred}`);
 }
 
-function sourceId(player, index, existing) {
-  return String(existing?.sourceId ?? player.source?.id ?? `dlc-20260731-${String(index + 1).padStart(3, "0")}`);
+function sourceId(player, index, existing, config) {
+  const suppliedSourceId = existing?.sourceId ?? player.source?.id;
+  if (suppliedSourceId !== null && suppliedSourceId !== undefined) {
+    const normalizedSourceId = String(suppliedSourceId).trim();
+    if (normalizedSourceId || config.preserveEmptySourceId) return normalizedSourceId;
+  }
+  return String(player.id ?? `dlc-${config.batch}-${String(index + 1).padStart(3, "0")}`);
 }
 
 function fallbackHeight(role) {
@@ -57,15 +84,15 @@ function fallbackHeight(role) {
   return 178;
 }
 
-function convertPlayer(player, index) {
+function convertPlayer(player, index, config, sourceRankIndex) {
   const existing = matchingBasePlayer(player);
   if (existing) {
     if (replacedIds.has(existing.id)) throw new Error(`multiple DLC players matched ${existing.id}`);
     replacedIds.add(existing.id);
   }
-  const id = stableId(player, index, existing);
+  const id = stableId(player, index, existing, config);
   usedIds.add(id);
-  const resolvedSourceId = sourceId(player, index, existing);
+  const resolvedSourceId = sourceId(player, index, existing, config);
   const heightCm = Number(player.heightCm) >= 150 ? Number(player.heightCm) : fallbackHeight(player.role);
   const age = Number(player.age) > 0 ? Number(player.age) : 27;
   const preferredFoot = ["left", "right", "both"].includes(player.preferredFoot) ? player.preferredFoot : "right";
@@ -78,7 +105,7 @@ function convertPlayer(player, index) {
     ...(existing ?? {}),
     id,
     sourceId: resolvedSourceId,
-    sourceRank: existing?.sourceRank ?? 10000 + index,
+    sourceRank: existing?.sourceRank ?? 10000 + sourceRankIndex,
     sourceName: player.sourceName,
     displayName: player.displayNameZh,
     displayNameZh: player.displayNameZh,
@@ -106,7 +133,7 @@ function convertPlayer(player, index) {
     referenceAttributes: { ...player.attributes },
     sourceUrl: player.source?.url ?? "",
     sourceDataset,
-    sourceUpdatedAt: "2026-07-31",
+    sourceUpdatedAt: config.sourceUpdatedAt,
     sourceLicense: existing?.sourceLicense ?? "",
     reviewStatus: "用户 DLC 最终确认",
     userWorkbookEdited: true,
@@ -117,11 +144,18 @@ function convertPlayer(player, index) {
     localizationConfidence: "high",
     localizationNote: player.source?.note ?? "",
     isDlc: true,
-    dlcBatch: "2026-07-31",
+    dlcBatch: config.batch,
   };
 }
 
-const dlcPlayers = dlcPayload.players.map(convertPlayer);
+const dlcPlayers = [];
+const batchSummaries = [];
+let globalIndex = 0;
+for (const config of dlcBatches) {
+  const players = config.payload.players.map((player, index) => convertPlayer(player, index, config, globalIndex++));
+  dlcPlayers.push(...players);
+  batchSummaries.push({ batch:config.batch, entries:players.length });
+}
 const mergedPlayers = [
   ...basePlayers.filter((player) => !replacedIds.has(player.id)),
   ...dlcPlayers,
@@ -146,11 +180,12 @@ const output = {
   generatedAt: new Date().toISOString(),
   source: {
     base: path.relative(ROOT, BASE_INPUT).replaceAll("\\", "/"),
-    dlc: path.relative(ROOT, DLC_INPUT).replaceAll("\\", "/"),
+    dlc: DLC_INPUTS.map((config) => path.relative(ROOT, config.input).replaceAll("\\", "/")),
   },
   summary: {
     basePlayers: basePlayers.length,
     dlcEntries: dlcPlayers.length,
+    dlcBatches: batchSummaries,
     updatedPlayers: replacedIds.size,
     addedPlayers: dlcPlayers.length - replacedIds.size,
     mergedPlayers: mergedPlayers.length,

@@ -256,9 +256,13 @@ export async function handleAdminApi(request, response, pathname, readJson, send
       const body = await readJson(request);
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantXGrowthPointsFromAdmin(body) });
     }
+    if (request.method === "POST" && pathname === "/api/admin/league/mail/broadcast") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.broadcastAdminMail(body) });
+    }
     if (request.method === "POST" && pathname === "/api/admin/league/s4-cards/grant") {
       const body = await readJson(request);
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.grantS4PlayerCardsFromAdmin(body) });
+      return sendJson(response, 200, { ok:true, cardGrant:yellowDogsLeague.grantS4PlayerCardsFromAdmin(body, { compact:true }) });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/reward-pack") throw new Error("旧赛季礼包发放逻辑已经下架");
     if (request.method === "POST" && pathname === "/api/admin/league/champion-badge") {

@@ -75,3 +75,12 @@ Cloud_league_data/
 .tmp-browser-*.json
 .tmp-browser-*.json.bak
 .worktrees/
+
+# ==============================
+# Scratch / verification / handoff artifacts
+# ==============================
+.tmp-*/
+.tmp-*
+handoff/*.tar.gz
+data/sources/kaggle-history-dlc2/
+*.xlsx

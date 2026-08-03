@@ -193,6 +193,8 @@ function buildSeat(seed, side, archetype, options = {}) {
   const style = options.style ?? pick(rng, STYLES);
   return {
     name:`${archetype}-${side}`,
+    simulationFormation:formationName,
+    simulationArchetype:archetype,
     players,
     positions:structuredClone(positionPresets.position1),
     positionPresets,
@@ -208,6 +210,8 @@ function buildSeat(seed, side, archetype, options = {}) {
     nationalityBond:nationality,
   };
 }
+
+export { buildSeat as buildS4BalanceSeat, seededRandom as createS4BalanceRng, weightedPick as pickS4BalanceArchetype };
 
 function settle(match) {
   advanceVersusMatch(match, REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS);

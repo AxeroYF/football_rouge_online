@@ -11,6 +11,7 @@ import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
 import { A_PLAYER_PROFILE_BY_PLAYER_ID } from "../versus/public/a-player-profiles.js";
 import { LEGENDARY_PROFILE_BY_PLAYER_ID } from "../versus/public/legendary-profiles.js";
 import { X_PLAYER_PROFILE_BY_PLAYER_ID } from "../versus/public/x-player-profiles.js";
+import { advanceYdlLeagueV2Match } from "../versus/v2/ydl-league-engine-adapter.js";
 
 const NOW = Date.parse("2026-07-26T12:00:00+08:00");
 const account = (id) => ({ id, nickname:id });
@@ -945,6 +946,41 @@ test("强化记录保存主副卡、道具价格、概率与结果且仅本人�
   assert.equal(service.view(other).enhancement.history.length, 0);
 });
 
+test("pending trait offer is cancelled when its card is consumed as enhancement material", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const user = account("stale-offer-owner");
+  const team = join(service, user);
+  const playerId = nonLegendBench(service, user);
+  const pendingCard = service.representativeCard(user.id, playerId);
+  pendingCard.upgradeLevel = 3;
+  const firstMaterial = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:3, acquisitionSource:"trait-offer-test" });
+
+  const firstResult = service.enhanceS4Card(user, pendingCard.id, firstMaterial.id, false, { compact:true });
+  const pendingOffer = firstResult.enhancementResult.traitOffer;
+  assert.equal(firstResult.enhancementResult.afterLevel, 4);
+  assert.ok(pendingOffer);
+
+  const nextMain = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"trait-offer-test" });
+  nextMain.traitIds = [pendingOffer.traits[0]?.id ?? pendingOffer.traitIds?.[0]].filter(Boolean);
+  const secondResult = service.enhanceS4Card(user, nextMain.id, pendingCard.id, false, { compact:true });
+
+  assert.equal(service.state.s4Assets.cards[pendingCard.id].status, "recycled");
+  assert.equal(service.state.s4Assets.traitOffers[pendingOffer.id].status, "cancelled");
+  assert.equal(service.state.s4Assets.traitOffers[pendingOffer.id].cancelReason, "used-as-enhancement-material");
+  assert.equal(secondResult.enhancementResult.traitOffer, null);
+  assert.equal(service.view(user).enhancement.traitOffer, null);
+
+  const lowMain = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:0, acquisitionSource:"trait-offer-test" });
+  const lowMaterial = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:0, acquisitionSource:"trait-offer-test" });
+  const lowResult = service.enhanceS4Card(user, lowMain.id, lowMaterial.id, false, { compact:true });
+  assert.equal(lowResult.enhancementResult.afterLevel, 1);
+  assert.equal(lowResult.enhancementResult.traitOffer, null);
+
+  service.state.s4Assets.traitOffers[pendingOffer.id].status = "pending";
+  assert.equal(service.view(user).enhancement.traitOffer, null);
+  assert.equal(service.state.s4Assets.traitOffers[pendingOffer.id].cancelReason, "invalid-card-state");
+});
+
 test("强化页左下角使用个人记录并支持放大双卡滚轮视图", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
@@ -1272,9 +1308,53 @@ test("友谊赛邀请使用轻量响应并避免完整联赛重绘", () => {
   assert.match(appSource, /function leagueFriendlyInviteRequest/);
   assert.match(appSource, /leagueFriendlyInviteRequest\(team\.id\)/);
   assert.match(appSource, /friendlyInvitations:invitation\.friendlyInvitations/);
+  assert.match(appSource, /friendlyInvitationExpired/);
+  assert.match(appSource, /expired:"已超时，无法接受"/);
+  assert.match(appSource, /两小时内有效 · 有效至/);
   assert.match(apiSource, /createFriendlyInvitation\(account, body\.targetTeamId, \{ compact:true \}\)/);
   assert.match(serviceSource, /friendlyInvitationMutationView\(account\)/);
+  assert.match(serviceSource, /const FRIENDLY_INVITATION_TTL_MS = 2 \* 60 \* 60 \* 1000/);
+  assert.match(serviceSource, /expireFriendlyInvitations\(now/);
   assert.match(serviceSource, /this\.save\(\{ skipDailyBackup:true \}\)/);
+});
+
+test("细节战术保留八项连续滑杆并按比赛阶段保存持球与无球方案", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+  const engineSource = readFileSync(new URL("../versus/v2/match-engine-v2.js", import.meta.url), "utf8");
+  const profileSource = readFileSync(new URL("../versus/public/v2-tactical-profiles.js", import.meta.url), "utf8");
+  assert.match(appSource, /<header><b>持球进攻<\/b><\/header>/);
+  assert.match(appSource, /<header><b>无球防守<\/b><\/header>/);
+  assert.match(appSource, /name="\$\{state\}InDetail_\$\{key\}"/);
+  assert.match(appSource, /name="\$\{state\}OutDetail_\$\{key\}"/);
+  assert.match(appSource, /Object\.entries\(V2_TACTICAL_DIMENSIONS\)/);
+  assert.match(appSource, /name="\$\{state\}Dimension_\$\{key\}" min="0" max="100" step="1"/);
+  assert.match(appSource, /data-tactical-dimension-output/);
+  assert.match(appSource, /scroll\.append\(summary, plans\)/);
+  assert.doesNotMatch(appSource, /directionSection\.innerHTML = "<header><b>攻防方向<\/b><\/header>"/);
+  assert.match(serviceSource, /IN_POSSESSION_PLANS\.has\(plans\[state\]\?\.inPossession\)/);
+  assert.match(serviceSource, /OUT_OF_POSSESSION_PLANS\.has\(plans\[state\]\?\.outOfPossession\)/);
+  assert.match(engineSource, /function tacticalDimensionsForPlan\(plan = \{\}\)/);
+  assert.match(engineSource, /v2TacticalProfileAdjustments\(plan\.inPossession, plan\.outOfPossession\)/);
+  assert.match(engineSource, /v2TacticalDetailAdjustments\(plan\.inPossessionDetails, plan\.outOfPossessionDetails\)/);
+  assert.match(profileSource, /highPress:\{ pressing:22, defensiveLine:14, compactness:4 \}/);
+  assert.match(profileSource, /chanceCreation:\{ patient:"耐心寻找", balanced:"均衡", shootOnSight:"尽快起脚" \}/);
+  assert.match(profileSource, /lineStrategy:\{ drop:"回收", hold:"保持", offside:"造越位" \}/);
+});
+test("切换比赛心态或基础打法会同步刷新八项战术滑杆", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const presetSync = appSource.match(/function syncLeagueTacticalPresetControls\(control\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(presetSync, /\^\(opening\|leading\|trailing\)\(Tactic\|Style\)\$/);
+  assert.match(presetSync, /defaultV2TacticalDimensions\(tactic, style\)/);
+  assert.match(presetSync, /draft\.tacticalPlans\[state\] = \{ \.\.\.draft\.tacticalPlans\[state\], tactic, style, tacticalDimensions \}/);
+  assert.match(presetSync, /form\.elements\.namedItem\(name\)/);
+  assert.match(presetSync, /data-tactical-dimension-output/);
+  assert.match(appSource, /if \(syncLeagueTacticalPresetControls\(event\.target\)\) \{\s*scheduleLeagueTeamAutoSave\(260\);\s*return;/);
+});
+test("赛后复盘监听比赛历史更新并自动刷新友谊赛记录", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const fingerprint = appSource.match(/function leagueVisibleFingerprint\(view = league, tab = leagueTab\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(fingerprint, /review: \{ history:view\.reviewHistory, demo:view\.reviewDemo \}/);
 });
 
 test("旧X球员完成首日任务后会继续获得多日成长里程碑", () => {
@@ -1322,6 +1402,32 @@ test("旧X球员存档重载后以62为基础总评并正确叠加强化", () =>
     assert.equal(view.xGrowth.upgradeLevel, 5);
     assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === Math.min(99, attribute.value + 7)));
     assert.equal(view.xGrowth.height.effectiveValue, view.xGrowth.height.value);
+  } finally {
+    rmSync(directory, { recursive:true, force:true });
+  }
+});
+
+test("旧X门将存档优先使用实际初始能力计算成长基准", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "ydl-x-gk-overall-"));
+  const statePath = path.join(directory, "league.json");
+  try {
+    const user = account("x-old-gk-save-owner");
+    const first = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
+    const team = join(first, user);
+    const xPlayerId = team.rosterIds.find(isXPlayer);
+    const config = first.state.xPlayers.configs[xPlayerId];
+    const baseAttributes = Object.fromEntries(ATTRIBUTE_NAMES.map((key) => [key, 1]));
+    Object.assign(baseAttributes, { goalkeeping:62, reflexes:66, positioning:62, composure:15 });
+    const attributes = { ...baseAttributes, goalkeeping:96, reflexes:85, positioning:70 };
+    Object.assign(config, { role:"GK", secondaryRole:null, baseAttributes, attributes, baseAbilityOverall:62, overall:67 });
+    first.representativeCard(user.id, xPlayerId).upgradeLevel = 6;
+    first.save({ skipDailyBackup:true });
+
+    const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
+    const view = reloaded.view(user);
+    assert.equal(reloaded.state.xPlayers.configs[xPlayerId].baseAbilityOverall, 51);
+    assert.equal(view.xGrowth.baseOverall, 78);
+    assert.equal(view.xGrowth.effectiveOverall, 87);
   } finally {
     rmSync(directory, { recursive:true, force:true });
   }
@@ -1487,7 +1593,7 @@ test("桌面联赛浅色主题只在宽屏生效并记忆用户选择", () => {
     ".league-magnet-tooltip", ".league-bond-ready span", ".league-board-controls",
     ".league-squad-magnet:not(.grade-x)", ".league-squad-magnet.grade-s",
   ]) assert.ok(componentCompletionBlock.includes(selector), `missing desktop light selector: ${selector}`);
-  assert.doesNotMatch(lightThemeBlock, /@media\(max-width:/);
+  assert.match(lightThemeBlock, /@media\(min-width:1051px\)\{[\s\S]*html\[data-league-theme="light"\]/);
 });
 test("战术板拖动球员时按主位置与副位置高亮可替换磁贴", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
@@ -1598,7 +1704,7 @@ test("强化页局部刷新会同步复用卡片的等级与卡面内容", () =>
   assert.doesNotMatch(appSource, /enhancement-celebration-copy[\s\S]*?<strong>\+\$\{level\}<\/strong>/);
   assert.match(styles, /\.enhancement-celebration\.is-max/);
   assert.match(appSource, /enhancement-celebration-meteors/);
-  assert.match(appSource, /Array\.from\(\{ length:128 \}/);
+  assert.match(appSource, /Array\.from\(\{ length:48 \}/);
   assert.match(appSource, /--meteor-y:\$\{startY\}vh/);
   assert.doesNotMatch(appSource, /点击画面继续/);
   assert.match(appSource, /celebration\.addEventListener\("click", \(event\) =>[\s\S]*?celebration\.classList\.contains\("traits-open"\)/);
@@ -1640,4 +1746,179 @@ test("观赛加载完成后会移除居中加载布局并恢复全宽直播画�
   const renderBroadcastSource = appSource.match(/function renderBroadcast\(broadcast\) \{[\s\S]*?\n\}/)?.[0] ?? "";
   assert.match(renderBroadcastSource, /overlay\.classList\.remove\("broadcast-loading"\)/);
   assert.match(appSource, /class="broadcast-overlay broadcast-loading"/);
+});
+
+test("tactical board formation reference lines are draggable and persisted per match plan", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /formationReferenceLinesMarkup\(formationLines\)/);
+  assert.match(appSource, /data-formation-line=/);
+  assert.match(appSource, /moveFormationLine\(leagueFormationLinePresets\[leagueActivePositionPreset\], key, y\)/);
+  assert.match(appSource, /formationLinePresets:structuredClone\(leagueFormationLinePresets\)/);
+  assert.match(appSource, /requestAnimationFrame/);
+  assert.doesNotMatch(appSource, /<span>\$\{labels\[key\]\}<\/span>/);
+  assert.match(styles, /\.formation-reference-line/);
+  assert.match(styles, /cursor:pointer/);
+});
+
+test("opening unread inbox mail uses an immediate optimistic render and a compact receipt", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  assert.match(appSource, /async function leagueInboxReadRequest\(messageId\)/);
+  assert.match(appSource, /message\.readAt = optimisticReadAt;[\s\S]*?renderLeague\(\);[\s\S]*?inboxRead/);
+  assert.doesNotMatch(appSource, /leagueRequest\("\/inbox\/read"/);
+  assert.match(apiSource, /readInbox\(account, body\.messageId, \{ compact:true \}\)/);
+});
+
+test("tactical board tooltip uses the assigned position core attributes", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const tooltipBlock = appSource.slice(appSource.indexOf("function leaguePlayerTooltip"), appSource.indexOf("function leagueBoardMagnet"));
+  assert.match(appSource, /MID:Object\.freeze\(\["passing", "vision", "decisions", "firstTouch", "stamina"\]\)/);
+  assert.match(appSource, /DEF:Object\.freeze\(\["tackling", "marking", "positioning", "strength", "pace"\]\)/);
+  assert.match(tooltipBlock, /assignedRole === "GK"/);
+  assert.match(tooltipBlock, /LEAGUE_ROLE_CORE_ATTRIBUTES\[assignedGroup\]/);
+  assert.doesNotMatch(tooltipBlock, /player\.pool/);
+});
+
+test("tactical board bond bonus display is optional and disabled by default", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  assert.match(appSource, /let leagueShowBondBonuses = false/);
+  assert.match(appSource, /data-league-bond-bonus-toggle/);
+  assert.match(appSource, /applyS4BondBonuses\(starters\.map/);
+  assert.match(appSource, /leagueOverallFromAttributes\(player\.attributes, player\.role\)/);
+  assert.doesNotMatch(appSource, /\.\.\/\.\.\/game\/public\/schema\.js/);
+});
+
+test("tactical board exposes trait-adjusted height and familiar positions", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("trait-board");
+  const team = join(service, user);
+  const playerId = team.rosterIds.find((id) => !isXPlayer(id));
+  const baseHeightCm = REAL_PLAYER_BY_ID[playerId].heightCm;
+  const card = service.representativeCard(user.id, playerId);
+
+  card.traitIds = ["custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20"];
+  let player = service.view(user).ownTeam.roster.find((entry) => entry.id === playerId);
+  assert.equal(player.baseHeightCm, baseHeightCm);
+  assert.equal(player.effectiveHeightCm, baseHeightCm - 10);
+
+  card.traitIds = ["aerial-beacon"];
+  player = service.view(user).ownTeam.roster.find((entry) => entry.id === playerId);
+  assert.equal(player.effectiveHeightCm, baseHeightCm + 20);
+  assert.deepEqual(player.traitPositionFit.familiarRoles, ["ST"]);
+
+  card.traitIds = ["utility-player"];
+  player = service.view(user).ownTeam.roster.find((entry) => entry.id === playerId);
+  assert.equal(player.traitPositionFit.ignoreOutOfPositionPenalty, true);
+  assert.deepEqual(player.traitPositionFit.eligibleRoleGroups, ["DEF", "MID", "ATT"]);
+
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  assert.match(appSource, /player\.effectiveHeightCm \?\? player\.heightCm/);
+  assert.match(appSource, /traitFit\.familiarRoles\?\.includes\(assignedRole\)/);
+  assert.match(appSource, /traitFit\.ignoreOutOfPositionPenalty/);
+});
+
+test("996 uses fixed fitness for the tactical board and pre-match red-line rotation", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("fixed-fitness");
+  const team = join(service, user);
+  const starterId = team.preferredStarterIds.find((id) => !isXPlayer(id) && team.rosterIds.some((candidateId) => (
+    !team.preferredStarterIds.includes(candidateId)
+    && REAL_PLAYER_BY_ID[candidateId].role === REAL_PLAYER_BY_ID[id].role
+  )));
+  assert.ok(starterId);
+  const card = service.representativeCard(user.id, starterId);
+  card.traitIds = ["stoppage-time-expert"];
+  team.playerState[starterId].fitness = 79;
+  team.fitnessThreshold = 85;
+
+  const player = service.view(user).ownTeam.roster.find((entry) => entry.id === starterId);
+  assert.equal(player.state.fitness, 79);
+  assert.equal(player.fixedFitness, 90);
+  assert.equal(player.effectiveFitness, 90);
+
+  const selection = service.selectActualLineup(team, 1, "league");
+  assert.equal(selection.rotations.some((entry) => entry.outId === starterId), false);
+  assert.equal(selection.lineup.find((entry) => entry.id === starterId)?.state.fitness, 90);
+
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  assert.match(appSource, /player\.effectiveFitness \?\? player\.state\?\.fitness/);
+  assert.match(appSource, /player\.effectiveFitness \?\? player\.state\.fitness/);
+});
+
+test("mobile tactical controls avoid full-form work during pointer frames", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const inputHandler = appSource.slice(appSource.indexOf('app.addEventListener("input"'), appSource.indexOf('app.addEventListener("keydown"'));
+  const squadBinding = appSource.slice(appSource.indexOf("function bindLeagueSquad()"), appSource.indexOf("function leagueLeaderboardRows"));
+
+  assert.match(appSource, /scheduleLeagueTeamAutoSave\(420, \{ lightweight:true \}\)/);
+  assert.match(inputHandler, /syncLeagueTacticalDimensionControl\(event\.target\)/);
+  assert.doesNotMatch(inputHandler, /captureLeagueTacticalControls\(\)/);
+  assert.match(squadBinding, /function frameThrottlePointerMove|frameThrottlePointerMove\(applyMove\)/);
+  assert.match(squadBinding, /benchTargetSnapshot\(\)/);
+  assert.doesNotMatch(squadBinding, /elementFromPoint/);
+  assert.match(appSource, /matchMedia\("\(hover: none\), \(pointer: coarse\)"\)/);
+  assert.match(styles, /\.league-mobile-plan-tabs\{display:none\}/);
+  assert.match(styles, /max-height:min\(48dvh,360px\)/);
+  assert.match(styles, /data-active-mobile-plan="opening"/);
+  assert.match(styles, /@media\(hover:none\) and \(pointer:coarse\)/);
+});
+
+test("prediction page refresh uses the compact endpoint and updates only prediction containers", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const refreshSource = appSource.slice(appSource.indexOf("async function refreshPredictionsSilently()"), appSource.indexOf("async function placePrediction"));
+  const renderSource = appSource.slice(appSource.indexOf("function renderPredictionsInPlace()"), appSource.indexOf("async function refreshPredictionsSilently()"));
+
+  assert.match(refreshSource, /\/api\/versus\/league\/predictions/);
+  assert.doesNotMatch(refreshSource, /api\("\/api\/versus\/league"/);
+  assert.match(refreshSource, /renderPredictionsInPlace\(\)/);
+  assert.doesNotMatch(refreshSource, /renderLeague\(\)/);
+  assert.match(renderSource, /data-prediction-grid/);
+  assert.match(renderSource, /data-prediction-ranking/);
+  assert.match(renderSource, /data-prediction-wallet/);
+  assert.match(renderSource, /existingCards = new Map/);
+  assert.match(renderSource, /current\.outerHTML !== markup/);
+});
+
+test("enhancement result never falls back to a stale account trait offer", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  assert.match(appSource, /const traitOffer = result \? result\.traitOffer \?\? null : league\.enhancement\?\.traitOffer \?\? null/);
+  assert.match(appSource, /const traitOffer = result\.traitOffer \?\? null/);
+  assert.doesNotMatch(appSource, /result\.traitOffer \?\? league\.enhancement\?\.traitOffer/);
+});
+
+test("V2 formal match stats update X player save tasks", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("x-v2-save-task-owner");
+  service.beginDraft(user, "X V2 Save Task FC");
+  service.autoDraft(user);
+  service.configureXPlayer(user, { role:"GK", heightCm:186 });
+  service.chooseXPlayerTrait(user, service.eligibleXTraits("GK")[0].id);
+  service.finishDraft(user);
+
+  const team = service.accountTeam(user.id);
+  const xPlayerId = team.rosterIds.find(isXPlayer);
+  const replacedGoalkeeperId = team.preferredStarterIds.find((playerId) => REAL_PLAYER_BY_ID[playerId]?.role === "GK");
+  team.preferredStarterIds = team.preferredStarterIds.map((playerId) => playerId === replacedGoalkeeperId ? xPlayerId : playerId);
+  Object.values(team.positionPresets).forEach((preset) => {
+    preset[xPlayerId] = preset[replacedGoalkeeperId];
+    delete preset[replacedGoalkeeperId];
+  });
+  team.positions = structuredClone(team.positionPresets.position1);
+
+  const fixture = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
+  const created = service.createFixtureMatch(fixture, 1, NOW, { matchEngine:"v2" });
+  advanceYdlLeagueV2Match(created.match, NOW + 300_000, { maximumChains:Infinity });
+  const teamIndex = fixture.homeId === team.id ? 0 : 1;
+  const reportPlayer = created.match.report.teams[teamIndex].players.find((player) => player.id === xPlayerId);
+  assert.ok(reportPlayer.stats.saves > 0);
+
+  const statKey = `${team.id}:${xPlayerId}`;
+  const savesBefore = Math.max(0, 5 - reportPlayer.stats.saves);
+  service.state.playerStats[statKey] = { key:statKey, playerId:xPlayerId, teamId:team.id, appearances:0, goals:0, assists:0, saves:savesBefore, tackles:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
+  service.finalizeFixture(fixture, 1, created.match);
+
+  assert.equal(service.xFormalStats(xPlayerId).saves, savesBefore + reportPlayer.stats.saves);
+  assert.equal(service.view(user).xGrowth.tasks.find((task) => task.id === "saves").completed, 1);
 });

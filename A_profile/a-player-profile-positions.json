@@ -644,8 +644,248 @@
       "xPercent": 51.1,
       "yPercent": 56.5,
       "widthPercent": 100
+    },
+    "Daniel Passarella": {
+      "fileName": "Passarella.png",
+      "xPercent": 52.8,
+      "yPercent": 103.7,
+      "widthPercent": 180
+    },
+    "Fernando Redondo": {
+      "fileName": "Redondo.png",
+      "xPercent": 55.3,
+      "yPercent": 54.3,
+      "widthPercent": 184
+    },
+    "Omar Sívori": {
+      "fileName": "Omar Sívori.png",
+      "xPercent": 50,
+      "yPercent": 52,
+      "widthPercent": 156
+    },
+    "Oscar Ruggeri": {
+      "fileName": "Oscar Ruggeri.png",
+      "xPercent": 53.2,
+      "yPercent": 90.4,
+      "widthPercent": 164
+    },
+    "Hernán Crespo": {
+      "fileName": "Crespo.png",
+      "xPercent": 9.5,
+      "yPercent": 56,
+      "widthPercent": 196
+    },
+    "Juan Sebastián Verón": {
+      "fileName": "Verón.png",
+      "xPercent": 55.3,
+      "yPercent": 56.8,
+      "widthPercent": 192
+    },
+    "Osvaldo Ardiles": {
+      "fileName": "Osvaldo Ardiles.png",
+      "xPercent": 50.7,
+      "yPercent": 93.2,
+      "widthPercent": 184
+    },
+    "Claudio Caniggia": {
+      "fileName": "Caniggia.png",
+      "xPercent": 46.5,
+      "yPercent": 57.4,
+      "widthPercent": 188
+    },
+    "Jorge Burruchaga": {
+      "fileName": "Burruchaga.png",
+      "xPercent": 38.7,
+      "yPercent": 70.4,
+      "widthPercent": 140
+    },
+    "Diego Simeone": {
+      "fileName": "Diego Simeone.png",
+      "xPercent": 49.6,
+      "yPercent": 57.9,
+      "widthPercent": 200
+    },
+    "Gonzalo Higuaín": {
+      "fileName": "Higuaín.png",
+      "xPercent": 50,
+      "yPercent": 52.3,
+      "widthPercent": 184
+    },
+    "Gabriel Heinze": {
+      "fileName": "Heinze.png",
+      "xPercent": 52.8,
+      "yPercent": 58.5,
+      "widthPercent": 180
+    },
+    "Arjen Robben": {
+      "fileName": "Robben.png",
+      "xPercent": 63.1,
+      "yPercent": 62.5,
+      "widthPercent": 196
+    },
+    "Ronald Koeman": {
+      "fileName": "Koeman.png",
+      "xPercent": 51.1,
+      "yPercent": 57.4,
+      "widthPercent": 192
+    },
+    "Johan Neeskens": {
+      "fileName": "Neeskens.png",
+      "xPercent": 50,
+      "yPercent": 55.1,
+      "widthPercent": 156
+    },
+    "Wesley Sneijder": {
+      "fileName": "Sneijder.png",
+      "xPercent": 24.4,
+      "yPercent": 49.2,
+      "widthPercent": 188
+    },
+    "Ruud van Nistelrooy": {
+      "fileName": "Nistelrooy.png",
+      "xPercent": 50,
+      "yPercent": 57.1,
+      "widthPercent": 200
+    },
+    "Edgar Davids": {
+      "fileName": "Davids.png",
+      "xPercent": 36.9,
+      "yPercent": 54,
+      "widthPercent": 180
+    },
+    "Jaap Stam": {
+      "fileName": "Stam.png",
+      "xPercent": 51.4,
+      "yPercent": 65.9,
+      "widthPercent": 100
+    },
+    "Patrick Kluivert": {
+      "fileName": "Kluivert.png",
+      "xPercent": 76.6,
+      "yPercent": 53.7,
+      "widthPercent": 180
+    },
+    "Mark van Bommel": {
+      "fileName": "van Bommel.png",
+      "xPercent": 57.1,
+      "yPercent": 53.4,
+      "widthPercent": 196
+    },
+    "Pepe": {
+      "fileName": "Pepe.png",
+      "xPercent": 37.6,
+      "yPercent": 54.8,
+      "widthPercent": 180
+    },
+    "Deco": {
+      "fileName": "Deco.png",
+      "xPercent": 63.8,
+      "yPercent": 54.5,
+      "widthPercent": 200
+    },
+    "Fernando Gomes": {
+      "fileName": "Gomes.png",
+      "xPercent": 19.8,
+      "yPercent": 56.8,
+      "widthPercent": 168
+    },
+    "Rui Patrício": {
+      "fileName": "Patrício.png",
+      "xPercent": 44,
+      "yPercent": 56.5,
+      "widthPercent": 192
+    },
+    "João Moutinho": {
+      "fileName": "Moutinho.png",
+      "xPercent": 47.5,
+      "yPercent": 59.6,
+      "widthPercent": 212
+    },
+    "Humberto Coelho": {
+      "fileName": "Coelho.png",
+      "xPercent": 52.1,
+      "yPercent": 57.4,
+      "widthPercent": 140
+    },
+    "Chalana": {
+      "fileName": "Chalana.png",
+      "xPercent": 46.4,
+      "yPercent": 97.4,
+      "widthPercent": 188
+    },
+    "Pauleta": {
+      "fileName": "Pauleta.png",
+      "xPercent": 55.4,
+      "yPercent": 61.1,
+      "widthPercent": 212
+    },
+    "Manuel Bento": {
+      "fileName": "Bento.png",
+      "xPercent": 58.9,
+      "yPercent": 58.5,
+      "widthPercent": 164
+    },
+    "Paulo Sousa": {
+      "fileName": "Sousa.png",
+      "xPercent": 42.3,
+      "yPercent": 87.5,
+      "widthPercent": 160
+    },
+    "Roberto Baggio": {
+      "fileName": "Baggio.png",
+      "xPercent": 46.4,
+      "yPercent": 55,
+      "widthPercent": 176
+    },
+    "Gaetano Scirea": {
+      "fileName": "Gaetano Scirea.png",
+      "xPercent": 52.4,
+      "yPercent": 81.1,
+      "widthPercent": 140
+    },
+    "Dino Zoff": {
+      "fileName": "Zoff.png",
+      "xPercent": 51,
+      "yPercent": 60.2,
+      "widthPercent": 108
+    },
+    "Gianni Rivera": {
+      "fileName": "Rivera.png",
+      "xPercent": 33,
+      "yPercent": 63,
+      "widthPercent": 156
+    },
+    "Giacinto Facchetti": {
+      "fileName": "Giacinto Facchetti.png",
+      "xPercent": 55.3,
+      "yPercent": 93.2,
+      "widthPercent": 168
+    },
+    "Alessandro Del Piero": {
+      "fileName": "Del pierro.png",
+      "xPercent": 40.8,
+      "yPercent": 74.7,
+      "widthPercent": 144
+    },
+    "Keylor Navas": {
+      "fileName": "Navas.png",
+      "xPercent": 57,
+      "yPercent": 55.9,
+      "widthPercent": 232
+    },
+    "James Rodríguez": {
+      "fileName": "Rodríguez.png",
+      "xPercent": 62.8,
+      "yPercent": 52.6,
+      "widthPercent": 160
+    },
+    "Guti": {
+      "fileName": "Guti.png",
+      "xPercent": 58.5,
+      "yPercent": 54,
+      "widthPercent": 188
     }
   },
-  "generatedAt": "2026-07-31",
+  "generatedAt": "2026-08-03",
   "source": "merged existing A profiles with S4 DLC card art"
 }

@@ -114,8 +114,62 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
   ]),
 ]);
 
+const YDL_CUSTOM_TRAIT_CARDS = Object.freeze([
+  Object.freeze({
+    id:"custom-d98bfc9a-2168-4e80-982d-c1cebef18e80",
+    name:"顺风战士",
+    rarity:"rare",
+    category:"custom",
+    eligibleRoleGroups:Object.freeze(["ANY"]),
+    tags:Object.freeze(["scoreState", "tradeoff"]),
+    polarity:"mixed",
+    summary:"球队领先的时候综合能力提升10%，落后的时候综合能力-15%",
+    rules:Object.freeze([
+      Object.freeze({ hook:"allAttributes", multiply:1.1, when:Object.freeze({ scoreState:"leading" }) }),
+      Object.freeze({ hook:"allAttributes", multiply:0.85, when:Object.freeze({ scoreState:"trailing" }) }),
+    ]),
+    dropWeight:1,
+    maxLevel:1,
+    mode:"versus11",
+    source:"ydl-custom",
+    developerLabel:"YDL自定义正式卡",
+  }),
+  Object.freeze({
+    id:"custom-dc038995-c237-4fa4-b29a-b0e5abf0921a",
+    name:"赖着不死",
+    rarity:"epic",
+    category:"custom",
+    eligibleRoleGroups:Object.freeze(["ANY"]),
+    tags:Object.freeze(["injury", "immunity"]),
+    polarity:"positive",
+    summary:"该球员不会受伤",
+    rules:Object.freeze([Object.freeze({ hook:"injury", immune:true })]),
+    dropWeight:1,
+    maxLevel:1,
+    mode:"versus11",
+    source:"ydl-custom",
+    developerLabel:"YDL自定义正式卡",
+  }),
+  Object.freeze({
+    id:"custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62",
+    name:"大巴司机",
+    rarity:"rare",
+    category:"custom",
+    eligibleRoleGroups:Object.freeze(["GK", "DEF"]),
+    tags:Object.freeze(["tactics", "defending"]),
+    polarity:"positive",
+    summary:"该球员在执行全力防守战术时综合能力提升15%",
+    rules:Object.freeze([Object.freeze({ hook:"allAttributes", multiply:1.15, when:Object.freeze({ teamTactic:"parkBus" }) })]),
+    dropWeight:1,
+    maxLevel:1,
+    mode:"versus11",
+    source:"ydl-custom",
+    developerLabel:"YDL自定义正式卡",
+  }),
+]);
+
 export const VERSUS_TRAIT_CARDS = Object.freeze(
-  [...VERSUS_ADAPTED_TRAIT_CARDS, ...VERSUS_NEW_TRAIT_BATCH].map((trait) => structuredClone(trait)),
+  [...VERSUS_ADAPTED_TRAIT_CARDS, ...VERSUS_NEW_TRAIT_BATCH, ...YDL_CUSTOM_TRAIT_CARDS].map((trait) => structuredClone(trait)),
 );
 export { VERSUS_ADAPTED_TRAIT_CARDS, VERSUS_NEW_TRAIT_BATCH };
 
@@ -138,6 +192,9 @@ export const YDL_TRAIT_IDS = Object.freeze([
   "utility-player",
   "muddy-knees",
   "pace-budget",
+  "custom-d98bfc9a-2168-4e80-982d-c1cebef18e80",
+  "custom-dc038995-c237-4fa4-b29a-b0e5abf0921a",
+  "custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62",
 ]);
 export const YDL_TRAIT_CARDS = Object.freeze(YDL_TRAIT_IDS.map((id) => VERSUS_TRAIT_BY_ID[id]));
 export const YDL_TRAIT_BY_ID = Object.freeze(Object.fromEntries(YDL_TRAIT_CARDS.map((trait) => [trait.id, trait])));

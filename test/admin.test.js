@@ -23,6 +23,8 @@ test("联赛旧数据冲突时后台提供开启全新赛季的恢复入口", ()
   assert.match(source, /\/login-cooldown/);
   assert.match(source, /\/rewards\/suspension/);
   assert.match(source, /发送全服邮件通告/);
+  assert.match(source, /league-admin-mail-form/);
+  assert.match(source, /\/api\/admin\/league\/mail\/broadcast/);
 });
 
 test("管理员后台拒绝错误密码和未授权数据访问", async () => {
@@ -51,6 +53,7 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅老鼠"));
   assert.ok(Array.isArray(league.value.league.s4CardGrants));
   assert.ok(Array.isArray(league.value.league.coinGrants));
+  assert.ok(Array.isArray(league.value.league.mailBroadcasts));
   const content = await request("/api/admin/content", { token:login.value.token });
   assert.equal(content.statusCode, 200);
   assert.equal(content.value.content.players.length, 602);

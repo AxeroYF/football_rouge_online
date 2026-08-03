@@ -1,0 +1,447 @@
+{
+  "items": [
+    {
+      "id": 162347,
+      "rank": 1214,
+      "overallRating": 77,
+      "firstName": "João Filipe",
+      "lastName": "Moutinho",
+      "commonName": "João Moutinho",
+      "birthdate": "09/08/1986 00:00",
+      "height": 170,
+      "skillMoves": 3,
+      "weakFootAbility": 4,
+      "preferredFoot": 1,
+      "leagueName": "Liga Portugal",
+      "weight": 61,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p162347.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/162347.png?width=265",
+      "alternatePositions": [
+        {
+          "id": "18",
+          "label": "Center Attacking Midfielder",
+          "shortLabel": "CAM"
+        },
+        {
+          "id": "10",
+          "label": "Center Defensive Midfielder",
+          "shortLabel": "CDM"
+        }
+      ],
+      "playerAbilities": [
+        {
+          "id": "trait1_128",
+          "label": "Long Ball Pass",
+          "description": "Accurate, faster Lob and Lofted Through Passes",
+          "imageUrl": "https://drop-assets.ea.com/images/7jwRDD4zkOsqRpc821t73d/16d46d57a5dfc7dd5dd5f8de0fd26a99/Long_Ball_Pass.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_16777216",
+          "label": "Trivela",
+          "description": "Contextually triggers \"outside of the foot\" kicks, reduces errors",
+          "imageUrl": "https://drop-assets.ea.com/images/4V77ZiJ0w8qDuORPMPz8nB/d7b0c4a2c3da6102e67a3db3c749aca8/Trivela.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 0,
+        "label": "Men's Football"
+      },
+      "nationality": {
+        "id": 38,
+        "label": "Portugal",
+        "imageUrl": "https://drop-assets.ea.com/images/3CxRD7XqY2NSlZ3628fY4S/abf38470644ee334e6a425b9272f7767/f_38.png"
+      },
+      "team": {
+        "id": 1896,
+        "label": "SC Braga",
+        "imageUrl": "https://drop-assets.ea.com/images/4qjtfL57Y3CxvssFaOwnJT/08cfda01d445741b93fd0f8163a4b267/l1896.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "14",
+        "shortLabel": "CM",
+        "label": "Center Midfielder",
+        "positionType": {
+          "id": "midfielder",
+          "name": "Midfielder"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 47,
+          "diff": 0
+        },
+        "agility": {
+          "value": 60,
+          "diff": 0
+        },
+        "jumping": {
+          "value": 59,
+          "diff": 0
+        },
+        "stamina": {
+          "value": 75,
+          "diff": 0
+        },
+        "strength": {
+          "value": 55,
+          "diff": 0
+        },
+        "aggression": {
+          "value": 70,
+          "diff": 0
+        },
+        "balance": {
+          "value": 77,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 79,
+          "diff": 0
+        },
+        "composure": {
+          "value": 83,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 75,
+          "diff": 0
+        },
+        "curve": {
+          "value": 80,
+          "diff": 0
+        },
+        "def": {
+          "value": 68,
+          "diff": 0
+        },
+        "defensiveAwareness": {
+          "value": 70,
+          "diff": 0
+        },
+        "dri": {
+          "value": 75,
+          "diff": 0
+        },
+        "dribbling": {
+          "value": 74,
+          "diff": 0
+        },
+        "finishing": {
+          "value": 62,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 80,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 13,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 15,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 15,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 13,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 13,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 62,
+          "diff": 0
+        },
+        "interceptions": {
+          "value": 70,
+          "diff": 0
+        },
+        "longPassing": {
+          "value": 83,
+          "diff": 0
+        },
+        "longShots": {
+          "value": 68,
+          "diff": 0
+        },
+        "pac": {
+          "value": 39,
+          "diff": 0
+        },
+        "pas": {
+          "value": 80,
+          "diff": 0
+        },
+        "penalties": {
+          "value": 70,
+          "diff": 0
+        },
+        "phy": {
+          "value": 63,
+          "diff": 0
+        },
+        "positioning": {
+          "value": 73,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 77,
+          "diff": 0
+        },
+        "sho": {
+          "value": 67,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 85,
+          "diff": 0
+        },
+        "shotPower": {
+          "value": 75,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 65,
+          "diff": 0
+        },
+        "sprintSpeed": {
+          "value": 33,
+          "diff": 0
+        },
+        "standingTackle": {
+          "value": 66,
+          "diff": 0
+        },
+        "vision": {
+          "value": 74,
+          "diff": 0
+        },
+        "volleys": {
+          "value": 74,
+          "diff": 0
+        }
+      }
+    },
+    {
+      "id": 242629,
+      "rank": 8960,
+      "overallRating": 66,
+      "firstName": "João Gervásio",
+      "lastName": "Bragança Moutinho",
+      "commonName": "João Moutinho",
+      "birthdate": "01/12/1998 00:00",
+      "height": 183,
+      "skillMoves": 2,
+      "weakFootAbility": 2,
+      "preferredFoot": 2,
+      "leagueName": "PKO BP Ekstraklasa",
+      "weight": 71,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p242629.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/242629.png?width=250",
+      "alternatePositions": null,
+      "playerAbilities": [],
+      "gender": {
+        "id": 0,
+        "label": "Men's Football"
+      },
+      "nationality": {
+        "id": 38,
+        "label": "Portugal",
+        "imageUrl": "https://drop-assets.ea.com/images/3CxRD7XqY2NSlZ3628fY4S/abf38470644ee334e6a425b9272f7767/f_38.png"
+      },
+      "team": {
+        "id": 110745,
+        "label": "Jagiellonia",
+        "imageUrl": "https://drop-assets.ea.com/images/1kEF1rQq7xxrkXVkXtB8jp/f0b4a69d28388a793c211ae6b7dc12f1/l110745.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "7",
+        "shortLabel": "LB",
+        "label": "Left Back",
+        "positionType": {
+          "id": "defense",
+          "name": "Defense"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 65,
+          "diff": -1
+        },
+        "agility": {
+          "value": 70,
+          "diff": 3
+        },
+        "jumping": {
+          "value": 70,
+          "diff": -1
+        },
+        "stamina": {
+          "value": 71,
+          "diff": 0
+        },
+        "strength": {
+          "value": 69,
+          "diff": -1
+        },
+        "aggression": {
+          "value": 58,
+          "diff": 0
+        },
+        "balance": {
+          "value": 64,
+          "diff": 2
+        },
+        "ballControl": {
+          "value": 65,
+          "diff": -1
+        },
+        "composure": {
+          "value": 56,
+          "diff": -2
+        },
+        "crossing": {
+          "value": 66,
+          "diff": -3
+        },
+        "curve": {
+          "value": 65,
+          "diff": -1
+        },
+        "def": {
+          "value": 63,
+          "diff": -4
+        },
+        "defensiveAwareness": {
+          "value": 62,
+          "diff": -3
+        },
+        "dri": {
+          "value": 65,
+          "diff": -1
+        },
+        "dribbling": {
+          "value": 66,
+          "diff": -1
+        },
+        "finishing": {
+          "value": 20,
+          "diff": 1
+        },
+        "freeKickAccuracy": {
+          "value": 61,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 13,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 12,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 7,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 8,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 15,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 62,
+          "diff": -2
+        },
+        "interceptions": {
+          "value": 64,
+          "diff": -2
+        },
+        "longPassing": {
+          "value": 59,
+          "diff": -2
+        },
+        "longShots": {
+          "value": 55,
+          "diff": 0
+        },
+        "pac": {
+          "value": 64,
+          "diff": -2
+        },
+        "pas": {
+          "value": 61,
+          "diff": -2
+        },
+        "penalties": {
+          "value": 34,
+          "diff": 0
+        },
+        "phy": {
+          "value": 67,
+          "diff": -1
+        },
+        "positioning": {
+          "value": 41,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 60,
+          "diff": -6
+        },
+        "sho": {
+          "value": 37,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 64,
+          "diff": -2
+        },
+        "shotPower": {
+          "value": 60,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 61,
+          "diff": -5
+        },
+        "sprintSpeed": {
+          "value": 63,
+          "diff": -3
+        },
+        "standingTackle": {
+          "value": 64,
+          "diff": -6
+        },
+        "vision": {
+          "value": 52,
+          "diff": 0
+        },
+        "volleys": {
+          "value": 28,
+          "diff": 0
+        }
+      }
+    }
+  ],
+  "totalItems": 2
+}

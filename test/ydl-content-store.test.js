@@ -57,7 +57,7 @@ test("YDL后台允许主副位置选择任意位置并同步迁移球员池", as
     assert.equal(wingBack.role, "LWB");
     assert.equal(wingBack.secondaryRole, "RWB");
     assert.equal(wingBack.pool, "DEF");
-    assert.equal(ydlContentView().traits.length, 15);
+    assert.equal(ydlContentView().traits.length, 18);
     const migratedTrait = ydlContentView().traits.find((trait) => trait.id === "aerial-beacon");
     assert.equal(migratedTrait.summary, "旧说明保留");
     assert.deepEqual(migratedTrait.eligibleRoleGroups, ["ATT"]);
@@ -81,7 +81,8 @@ test("YDL后台允许主副位置选择任意位置并同步迁移球员池", as
     assert.equal(draft.status, "draft");
     assert.equal(draft.custom, true);
     assert.deepEqual(draft.rules, []);
-    assert.equal(ydlContentView().traits.length, 16);
+    assert.equal(ydlContentView().traits.length, 19);
+    assert.equal(ydlContentView().traits.some((trait) => trait.name === "极限一换一"), false);
     await assert.rejects(() => updateYdlTrait("clean-tackle", { name:"不应进入YDL" }), /不存在/);
   } finally {
     await updateYdlPlayer(player.id, original);

@@ -1,0 +1,463 @@
+{
+  "items": [
+    {
+      "id": 275932,
+      "rank": 2309,
+      "overallRating": 74,
+      "firstName": "Paula",
+      "lastName": "Domínguez Encinas",
+      "commonName": "Pauleta",
+      "birthdate": "08/11/1997 00:00",
+      "height": 171,
+      "skillMoves": 3,
+      "weakFootAbility": 3,
+      "preferredFoot": 1,
+      "leagueName": "Liga Portugal Feminino",
+      "weight": 61,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p275932.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/275932.png?width=265",
+      "alternatePositions": [
+        {
+          "id": "14",
+          "label": "Center Midfielder",
+          "shortLabel": "CM"
+        }
+      ],
+      "playerAbilities": [
+        {
+          "id": "trait1_4",
+          "label": "Power Shot",
+          "description": "Faster power shots with increased speed",
+          "imageUrl": "https://drop-assets.ea.com/images/3ohVoKWSsvT44qgjabWqfV/e536ef26ad854c3c4cbf63ed7954b9cd/Power_Shot.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 1,
+        "label": "Women's Football"
+      },
+      "nationality": {
+        "id": 45,
+        "label": "Spain",
+        "imageUrl": "https://drop-assets.ea.com/images/Kv8okAYMsDbB3ZKbxrAXw/9d30c88d16a4c85002f35c6af412c6f7/f_45.png"
+      },
+      "team": {
+        "id": 131358,
+        "label": "SL Benfica",
+        "imageUrl": "https://drop-assets.ea.com/images/t3baFtnuHRyGGoamYs3Yx/a8fde04cf398c3592bafbee3ed9ad76f/l131358.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "10",
+        "shortLabel": "CDM",
+        "label": "Center Defensive Midfielder",
+        "positionType": {
+          "id": "midfielder",
+          "name": "Midfielder"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 64,
+          "diff": 0
+        },
+        "agility": {
+          "value": 62,
+          "diff": 0
+        },
+        "jumping": {
+          "value": 70,
+          "diff": 0
+        },
+        "stamina": {
+          "value": 77,
+          "diff": -6
+        },
+        "strength": {
+          "value": 63,
+          "diff": -2
+        },
+        "aggression": {
+          "value": 65,
+          "diff": 0
+        },
+        "balance": {
+          "value": 59,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 76,
+          "diff": -4
+        },
+        "composure": {
+          "value": 72,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 68,
+          "diff": 0
+        },
+        "curve": {
+          "value": 71,
+          "diff": 0
+        },
+        "def": {
+          "value": 71,
+          "diff": -2
+        },
+        "defensiveAwareness": {
+          "value": 69,
+          "diff": 0
+        },
+        "dri": {
+          "value": 73,
+          "diff": -2
+        },
+        "dribbling": {
+          "value": 76,
+          "diff": 0
+        },
+        "finishing": {
+          "value": 67,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 57,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 12,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 10,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 6,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 14,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 9,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 68,
+          "diff": 0
+        },
+        "interceptions": {
+          "value": 75,
+          "diff": -2
+        },
+        "longPassing": {
+          "value": 75,
+          "diff": 0
+        },
+        "longShots": {
+          "value": 78,
+          "diff": 0
+        },
+        "pac": {
+          "value": 67,
+          "diff": 0
+        },
+        "pas": {
+          "value": 74,
+          "diff": -1
+        },
+        "penalties": {
+          "value": 65,
+          "diff": 0
+        },
+        "phy": {
+          "value": 67,
+          "diff": -3
+        },
+        "positioning": {
+          "value": 73,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 71,
+          "diff": 0
+        },
+        "sho": {
+          "value": 72,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 79,
+          "diff": -1
+        },
+        "shotPower": {
+          "value": 82,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 69,
+          "diff": 0
+        },
+        "sprintSpeed": {
+          "value": 70,
+          "diff": 0
+        },
+        "standingTackle": {
+          "value": 72,
+          "diff": -4
+        },
+        "vision": {
+          "value": 77,
+          "diff": -3
+        },
+        "volleys": {
+          "value": 58,
+          "diff": 0
+        }
+      }
+    },
+    {
+      "id": 272087,
+      "rank": 2309,
+      "overallRating": 74,
+      "firstName": "Paula",
+      "lastName": "Sancho González",
+      "commonName": "Pauleta Sancho",
+      "birthdate": "06/12/1998 00:00",
+      "height": 161,
+      "skillMoves": 3,
+      "weakFootAbility": 3,
+      "preferredFoot": 2,
+      "leagueName": "Liga F",
+      "weight": 54,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p272087.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/272087.png?width=265",
+      "alternatePositions": null,
+      "playerAbilities": [
+        {
+          "id": "trait1_512",
+          "label": "Whipped Pass",
+          "description": "Accurate, faster crosses with more curve",
+          "imageUrl": "https://drop-assets.ea.com/images/FfTP29PWrRWZjEaiCCVoa/a1b345e4ae7023ed78b1efd68d28f392/Whipped_Pass.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_131072",
+          "label": "Rapid",
+          "description": "Higher sprint speed while dribbling, reduced error on knock-ons",
+          "imageUrl": "https://drop-assets.ea.com/images/1aGsvwKyIFlRG1eoJSS0Ot/a4d3d661ff962795a632fe86439d2146/Rapid.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_8388608",
+          "label": "Relentless",
+          "description": "Increased half time fatigue recovery, longer teammate contain and press",
+          "imageUrl": "https://drop-assets.ea.com/images/2vVuRxgvPNaAuFGqZZ9nDY/3e2505addd5a6b353becdeaf7173d187/Relentless.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 1,
+        "label": "Women's Football"
+      },
+      "nationality": {
+        "id": 45,
+        "label": "Spain",
+        "imageUrl": "https://drop-assets.ea.com/images/Kv8okAYMsDbB3ZKbxrAXw/9d30c88d16a4c85002f35c6af412c6f7/f_45.png"
+      },
+      "team": {
+        "id": 116339,
+        "label": "Valencia CF",
+        "imageUrl": "https://drop-assets.ea.com/images/680UcV8b39MMPPr4Takh3Q/14f70fc75facd0dfffbe87e555228357/Valencia_CF.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "7",
+        "shortLabel": "LB",
+        "label": "Left Back",
+        "positionType": {
+          "id": "defense",
+          "name": "Defense"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 77,
+          "diff": 0
+        },
+        "agility": {
+          "value": 70,
+          "diff": 0
+        },
+        "jumping": {
+          "value": 74,
+          "diff": 0
+        },
+        "stamina": {
+          "value": 75,
+          "diff": 0
+        },
+        "strength": {
+          "value": 64,
+          "diff": 0
+        },
+        "aggression": {
+          "value": 70,
+          "diff": 0
+        },
+        "balance": {
+          "value": 67,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 75,
+          "diff": 0
+        },
+        "composure": {
+          "value": 66,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 70,
+          "diff": 0
+        },
+        "curve": {
+          "value": 60,
+          "diff": 0
+        },
+        "def": {
+          "value": 72,
+          "diff": 1
+        },
+        "defensiveAwareness": {
+          "value": 79,
+          "diff": 0
+        },
+        "dri": {
+          "value": 71,
+          "diff": 1
+        },
+        "dribbling": {
+          "value": 69,
+          "diff": 0
+        },
+        "finishing": {
+          "value": 67,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 41,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 14,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 15,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 7,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 5,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 6,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 60,
+          "diff": 0
+        },
+        "interceptions": {
+          "value": 75,
+          "diff": 8
+        },
+        "longPassing": {
+          "value": 65,
+          "diff": 0
+        },
+        "longShots": {
+          "value": 65,
+          "diff": 0
+        },
+        "pac": {
+          "value": 77,
+          "diff": 0
+        },
+        "pas": {
+          "value": 68,
+          "diff": 2
+        },
+        "penalties": {
+          "value": 55,
+          "diff": 0
+        },
+        "phy": {
+          "value": 68,
+          "diff": 0
+        },
+        "positioning": {
+          "value": 69,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 70,
+          "diff": 5
+        },
+        "sho": {
+          "value": 65,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 76,
+          "diff": 6
+        },
+        "shotPower": {
+          "value": 65,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 65,
+          "diff": 0
+        },
+        "sprintSpeed": {
+          "value": 77,
+          "diff": 0
+        },
+        "standingTackle": {
+          "value": 70,
+          "diff": 0
+        },
+        "vision": {
+          "value": 65,
+          "diff": 0
+        },
+        "volleys": {
+          "value": 59,
+          "diff": 0
+        }
+      }
+    }
+  ],
+  "totalItems": 2
+}

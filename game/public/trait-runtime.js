@@ -80,6 +80,7 @@ export function traitConditionMatches(when, player, context = {}) {
     scoreState: () => (Array.isArray(when.scoreState) ? when.scoreState : [when.scoreState]).includes(scoreState),
     weather: () => (Array.isArray(when.weather) ? when.weather : [when.weather]).includes(context.weather?.type),
     teamStyle: () => (Array.isArray(when.teamStyle) ? when.teamStyle : [when.teamStyle]).includes(context.teamStyle),
+    teamTactic: () => (Array.isArray(when.teamTactic) ? when.teamTactic : [when.teamTactic]).includes(context.teamTactic),
     venue: () => (Array.isArray(when.venue) ? when.venue : [when.venue]).includes(context.venue ?? "home"),
     activeRole: () => role === when.activeRole || (when.activeRole === "ATT" && ["ST", "LW", "RW"].includes(role)),
     activeRoleNot: () => role !== when.activeRoleNot,

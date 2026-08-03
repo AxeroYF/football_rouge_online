@@ -308,22 +308,22 @@ test("重复昵称的旧账号可以改用唯一昵称升级", () => {
 
 test("S4十一人对战拥有含DLC的分位置真实球员池和稳定评级梯次", () => {
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([key, players]) => [key, players.length])), {
-    GK: 57,
-    DEF: 178,
-    MID: 184,
-    ATT: 183,
+    GK: 64,
+    DEF: 192,
+    MID: 210,
+    ATT: 210,
   });
   const standardPlayers = Object.values(REAL_PLAYER_POOLS).flat();
-  assert.equal(standardPlayers.length, 602);
+  assert.equal(standardPlayers.length, 676);
   assert.equal(X_PLAYERS.length, 10);
-  assert.equal(REAL_PLAYERS.length, 612);
-  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 612);
-  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, standardPlayers.filter((player) => player.grade === grade).length])), { S:24, A:146, B:245, C:187 });
+  assert.equal(REAL_PLAYERS.length, 686);
+  assert.equal(new Set(REAL_PLAYERS.map((player) => player.id)).size, 686);
+  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, standardPlayers.filter((player) => player.grade === grade).length])), { S:27, A:203, B:259, C:187 });
   assert.deepEqual(Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => [pool, Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, players.filter((player) => player.grade === grade).length]))])), {
-    GK:{ S:2, A:12, B:24, C:19 },
-    DEF:{ S:2, A:44, B:73, C:59 },
-    MID:{ S:9, A:41, B:78, C:56 },
-    ATT:{ S:11, A:49, B:70, C:53 },
+    GK:{ S:3, A:16, B:26, C:19 },
+    DEF:{ S:2, A:56, B:75, C:59 },
+    MID:{ S:9, A:61, B:84, C:56 },
+    ATT:{ S:13, A:70, B:74, C:53 },
   });
   assert.ok(standardPlayers.filter((player) => player.grade === "A").every((player) => player.overall >= 86 && player.overall <= 89));
   assert.ok(standardPlayers.filter((player) => player.grade === "B").every((player) => player.overall >= 80 && player.overall <= 99));
@@ -339,6 +339,17 @@ test("S4十一人对战拥有含DLC的分位置真实球员池和稳定评级梯
   assert.ok(standardPlayers.filter((player) => player.grade !== "S").every((player) => !player.legendary && !player.legendAbility));
   assert.ok(standardPlayers.every((player) => ["S", "A", "B", "C"].includes(player.grade)));
   assert.equal(standardPlayers.filter((player) => player.isDlc && player.dlcBatch === "2026-07-31").length, 54);
+  assert.equal(standardPlayers.filter((player) => player.isDlc && player.dlcBatch === "2026-08-03").length, 74);
+  assert.deepEqual(
+    ["s4-dlc2-20260803-001", "s4-dlc2-20260803-074"].map((id) => {
+      const player = standardPlayers.find((candidate) => candidate.id === id);
+      return [id, player?.name, player?.overall, player?.grade, player?.isDlc];
+    }),
+    [
+      ["s4-dlc2-20260803-001", "阿尔弗雷多·迪斯蒂法诺", 93, "S", true],
+      ["s4-dlc2-20260803-074", "古蒂", 88, "A", true],
+    ],
+  );
   assert.deepEqual(
     ["s4-fc26-201153", "s4-fc26-260247", "s4-fc26-207410"].map((id) => {
       const player = standardPlayers.find((candidate) => candidate.id === id);
@@ -360,7 +371,7 @@ test("S4十一人对战拥有含DLC的分位置真实球员池和稳定评级梯
   assert.ok(standardPlayers.filter((player) => player.role !== "GK").every((player) => player.secondaryRole));
   assert.ok(REAL_PLAYER_POOLS.GK.every((player) => player.secondaryRole === null));
   const standardIndividualizedPlayers = INDIVIDUALIZED_PLAYERS.filter((player) => player.grade !== "X");
-  assert.equal(standardIndividualizedPlayers.length, 24);
+  assert.equal(standardIndividualizedPlayers.length, 27);
   assert.equal(INDIVIDUALIZED_PLAYERS.filter((player) => player.grade === "X").length, 10);
   assert.ok(standardIndividualizedPlayers.every((player) => player.signature && player.archetype && player.nationality && player.club));
   assert.ok(standardIndividualizedPlayers.every((player) => !player.nationality.startsWith("未登记") && !player.club.startsWith("未登记")));

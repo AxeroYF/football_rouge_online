@@ -26,11 +26,10 @@ function eligiblePlayers() {
 
 function playerForProfileKey(profileKey, players) {
   const normalizedKey = normalizedName(profileKey);
-  const matches = players.filter((player) => {
+  const exactMatches = players.filter((player) => normalizedName(player.sourceName) === normalizedKey);
+  const matches = exactMatches.length ? exactMatches : players.filter((player) => {
     const normalizedSourceName = normalizedName(player.sourceName);
-    return normalizedSourceName === normalizedKey
-      || normalizedSourceName.includes(normalizedKey)
-      || normalizedKey.includes(normalizedSourceName);
+    return normalizedSourceName.includes(normalizedKey) || normalizedKey.includes(normalizedSourceName);
   });
   if (matches.length !== 1) {
     throw new Error(`${profileKey} 必须唯一匹配一名总评87以上的A级球员，当前匹配：${matches.map((player) => `${player.id}(${player.sourceName})`).join(", ") || "无"}`);

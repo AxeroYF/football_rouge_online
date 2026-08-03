@@ -3,6 +3,11 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
+// 必须先于 api.js/league-service.js 加载：运营评级覆盖（ydl-content-overrides.json）
+// 会把一批退役名宿从 A/B 升级为 S（传奇）。联赛服务单例在 league-service.js
+// 模块求值期间即构造并执行 33 人大名单校验，若覆盖未先行应用，这些球员会按
+// 静态评级占用名单名额，导致线上超限启动崩溃。
+import "../versus/ydl-content-store.js";
 import { loadDatabase, resetDatabase, saveDatabase } from "./store.js";
 import { runSimulation } from "./simulation.js";
 import { handleVersusApi } from "../versus/api.js";
@@ -25,6 +30,7 @@ const host = process.env.VERSUS_HOST ?? "127.0.0.1";
 const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
 const environment = process.env.APP_ENV ?? "production";
 const environmentLabel = process.env.APP_LABEL ?? "正式服";
+const matchEngine = process.env.APP_ENV === "test" && process.env.YDL_MATCH_ENGINE === "v2" ? "v2" : "v1";
 const maximumBodyBytes = 8 * 1024 * 1024;
 
 const mimeTypes = {
@@ -70,7 +76,7 @@ async function readJson(request) {
 async function handleApi(request, response, pathname) {
   if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson);
   if (request.method === "GET" && pathname === "/api/versus/config") {
-    return sendJson(response, 200, { ok: true, publicOnly, environment, environmentLabel });
+    return sendJson(response, 200, { ok: true, publicOnly, environment, environmentLabel, matchEngine });
   }
   if (publicOnly) {
     if (request.method === "GET" && pathname === "/api/health") {
@@ -243,3 +249,10 @@ const leagueTimer = setInterval(() => {
   catch (error) { console.error("YellowDogs League 定时任务失败：", error); }
 }, 15_000);
 leagueTimer.unref();
+
+const liveSliceIntervalMs = Math.max(100, Math.min(2_000, Number(process.env.YDL_LIVE_SLICE_INTERVAL_MS ?? 250)));
+const liveSliceTimer = setInterval(() => {
+  try { yellowDogsLeague.advanceLiveSlice(); }
+  catch (error) { console.error("YellowDogs League 直播切片失败：", error); }
+}, liveSliceIntervalMs);
+liveSliceTimer.unref();

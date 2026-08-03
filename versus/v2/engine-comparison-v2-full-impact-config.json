@@ -1,0 +1,49 @@
+{
+  "outputVersion": "S4-V2-alpha15-full-impact-30000-seeded",
+  "seed": "yellowdogs-s4-v2-alpha15-full-impact-20260802",
+  "v2Only": true,
+  "matches": 30000,
+  "v2PossessionChainsPerMatch": 180,
+  "maximumWorkers": 10,
+  "shardMatches": 100,
+  "progressIntervalMatches": 5,
+  "progress": {
+    "enabled": true,
+    "barWidth": 36,
+    "renderIntervalMs": 250,
+    "showCompletedMatches": true,
+    "showElapsed": true,
+    "showEta": true
+  },
+  "rawMatchSampleLimit": 48,
+  "rawV2ChainsPerSample": 1,
+  "recordV2RandomRolls": false,
+  "v2ShotXgBucketUpperBounds": [0.01, 0.03, 0.05, 0.08, 0.15, 0.3, 0.6],
+  "analysisDimensions": [
+    "formation",
+    "tactic",
+    "style",
+    "archetype",
+    "averageUpgrade",
+    "traitAssignments",
+    "activeBondCount",
+    "activeBondType",
+    "legendCount",
+    "xPlayer",
+    "averageOverall",
+    "weather",
+    "referee"
+  ],
+  "ecosystemWeights": {
+    "standard": 25,
+    "enhanced": 20,
+    "traitHeavy": 15,
+    "legendHeavy": 15,
+    "xLed": 10,
+    "nationalityHeavy": 15
+  },
+  "outputLimits": {
+    "coreBytes": 2000000,
+    "rawSamplesBytes": 8000000
+  }
+}

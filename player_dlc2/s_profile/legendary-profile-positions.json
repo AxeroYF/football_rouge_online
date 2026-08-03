@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "profileType": "legendary",
+  "grade": "S",
+  "coordinateSystem": "card-percent",
+  "card": {
+    "width": 286,
+    "height": 358
+  },
+  "note": "x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
+  "profiles": {
+    "Di Stéfano": {
+      "fileName": "Di Stéfano.png",
+      "xPercent": 52.5,
+      "yPercent": 54.3,
+      "widthPercent": 220
+    },
+    "Meazza": {
+      "fileName": "Meazza.png",
+      "xPercent": 50,
+      "yPercent": 52.8,
+      "widthPercent": 104
+    },
+    "Vítor Baía": {
+      "fileName": "Vítor Baía.png",
+      "xPercent": 49.4,
+      "yPercent": 73.2,
+      "widthPercent": 216
+    }
+  }
+}

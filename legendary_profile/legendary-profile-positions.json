@@ -384,8 +384,26 @@
       "xPercent": 73.3,
       "yPercent": 52.9,
       "widthPercent": 204
+    },
+    "Alfredo Di Stéfano": {
+      "fileName": "Di Stéfano.png",
+      "xPercent": 52.5,
+      "yPercent": 54.3,
+      "widthPercent": 220
+    },
+    "Vítor Baía": {
+      "fileName": "Vítor Baía.png",
+      "xPercent": 49.4,
+      "yPercent": 73.2,
+      "widthPercent": 216
+    },
+    "Giuseppe Meazza": {
+      "fileName": "Meazza.png",
+      "xPercent": 50,
+      "yPercent": 52.8,
+      "widthPercent": 104
     }
   },
-  "generatedAt": "2026-07-31",
+  "generatedAt": "2026-08-03",
   "source": "merged existing S profiles with S4 DLC card art"
 }

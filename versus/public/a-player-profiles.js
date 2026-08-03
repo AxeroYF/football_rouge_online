@@ -1059,6 +1059,406 @@ export const A_PLAYER_PROFILE_BY_PLAYER_ID = Object.freeze({
     "yPercent": 56.5,
     "widthPercent": 100,
     "optimizedFileName": "Raúl González.webp"
+  },
+  "s4-dlc2-20260803-002": {
+    "playerId": "s4-dlc2-20260803-002",
+    "profileKey": "Daniel Passarella",
+    "fileName": "Passarella.png",
+    "imageUrl": "/versus/A_profile/webp/Passarella.webp?v=98ac2ddbd5a6",
+    "xPercent": 52.8,
+    "yPercent": 103.7,
+    "widthPercent": 180,
+    "optimizedFileName": "Passarella.webp"
+  },
+  "s4-dlc2-20260803-003": {
+    "playerId": "s4-dlc2-20260803-003",
+    "profileKey": "Fernando Redondo",
+    "fileName": "Redondo.png",
+    "imageUrl": "/versus/A_profile/webp/Redondo.webp?v=60133b5ac2b9",
+    "xPercent": 55.3,
+    "yPercent": 54.3,
+    "widthPercent": 184,
+    "optimizedFileName": "Redondo.webp"
+  },
+  "s4-dlc2-20260803-004": {
+    "playerId": "s4-dlc2-20260803-004",
+    "profileKey": "Omar Sívori",
+    "fileName": "Omar Sívori.png",
+    "imageUrl": "/versus/A_profile/webp/Omar%20S%C3%ADvori.webp?v=3c5749697ef5",
+    "xPercent": 50,
+    "yPercent": 52,
+    "widthPercent": 156,
+    "optimizedFileName": "Omar Sívori.webp"
+  },
+  "s4-dlc2-20260803-008": {
+    "playerId": "s4-dlc2-20260803-008",
+    "profileKey": "Oscar Ruggeri",
+    "fileName": "Oscar Ruggeri.png",
+    "imageUrl": "/versus/A_profile/webp/Oscar%20Ruggeri.webp?v=a5a3e9885e47",
+    "xPercent": 53.2,
+    "yPercent": 90.4,
+    "widthPercent": 164,
+    "optimizedFileName": "Oscar Ruggeri.webp"
+  },
+  "s4-dlc2-20260803-010": {
+    "playerId": "s4-dlc2-20260803-010",
+    "profileKey": "Hernán Crespo",
+    "fileName": "Crespo.png",
+    "imageUrl": "/versus/A_profile/webp/Crespo.webp?v=d1536fb01634",
+    "xPercent": 9.5,
+    "yPercent": 56,
+    "widthPercent": 196,
+    "optimizedFileName": "Crespo.webp"
+  },
+  "s4-dlc2-20260803-011": {
+    "playerId": "s4-dlc2-20260803-011",
+    "profileKey": "Juan Sebastián Verón",
+    "fileName": "Verón.png",
+    "imageUrl": "/versus/A_profile/webp/Ver%C3%B3n.webp?v=4b1219ceab50",
+    "xPercent": 55.3,
+    "yPercent": 56.8,
+    "widthPercent": 192,
+    "optimizedFileName": "Verón.webp"
+  },
+  "s4-dlc2-20260803-012": {
+    "playerId": "s4-dlc2-20260803-012",
+    "profileKey": "Osvaldo Ardiles",
+    "fileName": "Osvaldo Ardiles.png",
+    "imageUrl": "/versus/A_profile/webp/Osvaldo%20Ardiles.webp?v=80e540aebbab",
+    "xPercent": 50.7,
+    "yPercent": 93.2,
+    "widthPercent": 184,
+    "optimizedFileName": "Osvaldo Ardiles.webp"
+  },
+  "s4-dlc2-20260803-013": {
+    "playerId": "s4-dlc2-20260803-013",
+    "profileKey": "Claudio Caniggia",
+    "fileName": "Caniggia.png",
+    "imageUrl": "/versus/A_profile/webp/Caniggia.webp?v=70e6740fe7f6",
+    "xPercent": 46.5,
+    "yPercent": 57.4,
+    "widthPercent": 188,
+    "optimizedFileName": "Caniggia.webp"
+  },
+  "s4-dlc2-20260803-014": {
+    "playerId": "s4-dlc2-20260803-014",
+    "profileKey": "Jorge Burruchaga",
+    "fileName": "Burruchaga.png",
+    "imageUrl": "/versus/A_profile/webp/Burruchaga.webp?v=8d7df3278ec0",
+    "xPercent": 38.7,
+    "yPercent": 70.4,
+    "widthPercent": 140,
+    "optimizedFileName": "Burruchaga.webp"
+  },
+  "s4-dlc2-20260803-015": {
+    "playerId": "s4-dlc2-20260803-015",
+    "profileKey": "Diego Simeone",
+    "fileName": "Diego Simeone.png",
+    "imageUrl": "/versus/A_profile/webp/Diego%20Simeone.webp?v=fede9d33508d",
+    "xPercent": 49.6,
+    "yPercent": 57.9,
+    "widthPercent": 200,
+    "optimizedFileName": "Diego Simeone.webp"
+  },
+  "s4-dlc2-20260803-016": {
+    "playerId": "s4-dlc2-20260803-016",
+    "profileKey": "Gonzalo Higuaín",
+    "fileName": "Higuaín.png",
+    "imageUrl": "/versus/A_profile/webp/Higua%C3%ADn.webp?v=956fbe69e82f",
+    "xPercent": 50,
+    "yPercent": 52.3,
+    "widthPercent": 184,
+    "optimizedFileName": "Higuaín.webp"
+  },
+  "s4-dlc2-20260803-021": {
+    "playerId": "s4-dlc2-20260803-021",
+    "profileKey": "Gabriel Heinze",
+    "fileName": "Heinze.png",
+    "imageUrl": "/versus/A_profile/webp/Heinze.webp?v=b1000cf349e9",
+    "xPercent": 52.8,
+    "yPercent": 58.5,
+    "widthPercent": 180,
+    "optimizedFileName": "Heinze.webp"
+  },
+  "s4-dlc2-20260803-022": {
+    "playerId": "s4-dlc2-20260803-022",
+    "profileKey": "Arjen Robben",
+    "fileName": "Robben.png",
+    "imageUrl": "/versus/A_profile/webp/Robben.webp?v=f82642b11000",
+    "xPercent": 63.1,
+    "yPercent": 62.5,
+    "widthPercent": 196,
+    "optimizedFileName": "Robben.webp"
+  },
+  "s4-dlc2-20260803-023": {
+    "playerId": "s4-dlc2-20260803-023",
+    "profileKey": "Ronald Koeman",
+    "fileName": "Koeman.png",
+    "imageUrl": "/versus/A_profile/webp/Koeman.webp?v=c026466d1f2b",
+    "xPercent": 51.1,
+    "yPercent": 57.4,
+    "widthPercent": 192,
+    "optimizedFileName": "Koeman.webp"
+  },
+  "s4-dlc2-20260803-024": {
+    "playerId": "s4-dlc2-20260803-024",
+    "profileKey": "Johan Neeskens",
+    "fileName": "Neeskens.png",
+    "imageUrl": "/versus/A_profile/webp/Neeskens.webp?v=dc1a012a0dbe",
+    "xPercent": 50,
+    "yPercent": 55.1,
+    "widthPercent": 156,
+    "optimizedFileName": "Neeskens.webp"
+  },
+  "s4-dlc2-20260803-026": {
+    "playerId": "s4-dlc2-20260803-026",
+    "profileKey": "Wesley Sneijder",
+    "fileName": "Sneijder.png",
+    "imageUrl": "/versus/A_profile/webp/Sneijder.webp?v=2cc865bebaab",
+    "xPercent": 24.4,
+    "yPercent": 49.2,
+    "widthPercent": 188,
+    "optimizedFileName": "Sneijder.webp"
+  },
+  "s4-dlc2-20260803-027": {
+    "playerId": "s4-dlc2-20260803-027",
+    "profileKey": "Ruud van Nistelrooy",
+    "fileName": "Nistelrooy.png",
+    "imageUrl": "/versus/A_profile/webp/Nistelrooy.webp?v=1ed14bc10442",
+    "xPercent": 50,
+    "yPercent": 57.1,
+    "widthPercent": 200,
+    "optimizedFileName": "Nistelrooy.webp"
+  },
+  "s4-dlc2-20260803-029": {
+    "playerId": "s4-dlc2-20260803-029",
+    "profileKey": "Edgar Davids",
+    "fileName": "Davids.png",
+    "imageUrl": "/versus/A_profile/webp/Davids.webp?v=8f502a56ce23",
+    "xPercent": 36.9,
+    "yPercent": 54,
+    "widthPercent": 180,
+    "optimizedFileName": "Davids.webp"
+  },
+  "s4-dlc2-20260803-030": {
+    "playerId": "s4-dlc2-20260803-030",
+    "profileKey": "Jaap Stam",
+    "fileName": "Stam.png",
+    "imageUrl": "/versus/A_profile/webp/Stam.webp?v=1b5c8544b5c9",
+    "xPercent": 51.4,
+    "yPercent": 65.9,
+    "widthPercent": 100,
+    "optimizedFileName": "Stam.webp"
+  },
+  "s4-dlc2-20260803-031": {
+    "playerId": "s4-dlc2-20260803-031",
+    "profileKey": "Patrick Kluivert",
+    "fileName": "Kluivert.png",
+    "imageUrl": "/versus/A_profile/webp/Kluivert.webp?v=659bc2664ded",
+    "xPercent": 76.6,
+    "yPercent": 53.7,
+    "widthPercent": 180,
+    "optimizedFileName": "Kluivert.webp"
+  },
+  "s4-dlc2-20260803-041": {
+    "playerId": "s4-dlc2-20260803-041",
+    "profileKey": "Mark van Bommel",
+    "fileName": "van Bommel.png",
+    "imageUrl": "/versus/A_profile/webp/van%20Bommel.webp?v=448a9c64c27e",
+    "xPercent": 57.1,
+    "yPercent": 53.4,
+    "widthPercent": 196,
+    "optimizedFileName": "van Bommel.webp"
+  },
+  "s4-dlc2-20260803-044": {
+    "playerId": "s4-dlc2-20260803-044",
+    "profileKey": "Pepe",
+    "fileName": "Pepe.png",
+    "imageUrl": "/versus/A_profile/webp/Pepe.webp?v=b1701c0e2029",
+    "xPercent": 37.6,
+    "yPercent": 54.8,
+    "widthPercent": 180,
+    "optimizedFileName": "Pepe.webp"
+  },
+  "s4-dlc2-20260803-045": {
+    "playerId": "s4-dlc2-20260803-045",
+    "profileKey": "Deco",
+    "fileName": "Deco.png",
+    "imageUrl": "/versus/A_profile/webp/Deco.webp?v=6bd879c2b9ad",
+    "xPercent": 63.8,
+    "yPercent": 54.5,
+    "widthPercent": 200,
+    "optimizedFileName": "Deco.webp"
+  },
+  "s4-dlc2-20260803-050": {
+    "playerId": "s4-dlc2-20260803-050",
+    "profileKey": "Fernando Gomes",
+    "fileName": "Gomes.png",
+    "imageUrl": "/versus/A_profile/webp/Gomes.webp?v=19b8fcab8931",
+    "xPercent": 19.8,
+    "yPercent": 56.8,
+    "widthPercent": 168,
+    "optimizedFileName": "Gomes.webp"
+  },
+  "s4-dlc2-20260803-051": {
+    "playerId": "s4-dlc2-20260803-051",
+    "profileKey": "Rui Patrício",
+    "fileName": "Patrício.png",
+    "imageUrl": "/versus/A_profile/webp/Patr%C3%ADcio.webp?v=9e55ece21cec",
+    "xPercent": 44,
+    "yPercent": 56.5,
+    "widthPercent": 192,
+    "optimizedFileName": "Patrício.webp"
+  },
+  "s4-dlc2-20260803-052": {
+    "playerId": "s4-dlc2-20260803-052",
+    "profileKey": "João Moutinho",
+    "fileName": "Moutinho.png",
+    "imageUrl": "/versus/A_profile/webp/Moutinho.webp?v=dcbfd0ad5ea2",
+    "xPercent": 47.5,
+    "yPercent": 59.6,
+    "widthPercent": 212,
+    "optimizedFileName": "Moutinho.webp"
+  },
+  "s4-dlc2-20260803-053": {
+    "playerId": "s4-dlc2-20260803-053",
+    "profileKey": "Humberto Coelho",
+    "fileName": "Coelho.png",
+    "imageUrl": "/versus/A_profile/webp/Coelho.webp?v=363692b8ef23",
+    "xPercent": 52.1,
+    "yPercent": 57.4,
+    "widthPercent": 140,
+    "optimizedFileName": "Coelho.webp"
+  },
+  "s4-dlc2-20260803-054": {
+    "playerId": "s4-dlc2-20260803-054",
+    "profileKey": "Chalana",
+    "fileName": "Chalana.png",
+    "imageUrl": "/versus/A_profile/webp/Chalana.webp?v=fd8a72f890a8",
+    "xPercent": 46.4,
+    "yPercent": 97.4,
+    "widthPercent": 188,
+    "optimizedFileName": "Chalana.webp"
+  },
+  "s4-dlc2-20260803-055": {
+    "playerId": "s4-dlc2-20260803-055",
+    "profileKey": "Pauleta",
+    "fileName": "Pauleta.png",
+    "imageUrl": "/versus/A_profile/webp/Pauleta.webp?v=097dfb1e6576",
+    "xPercent": 55.4,
+    "yPercent": 61.1,
+    "widthPercent": 212,
+    "optimizedFileName": "Pauleta.webp"
+  },
+  "s4-dlc2-20260803-056": {
+    "playerId": "s4-dlc2-20260803-056",
+    "profileKey": "Manuel Bento",
+    "fileName": "Bento.png",
+    "imageUrl": "/versus/A_profile/webp/Bento.webp?v=caa610652ade",
+    "xPercent": 58.9,
+    "yPercent": 58.5,
+    "widthPercent": 164,
+    "optimizedFileName": "Bento.webp"
+  },
+  "s4-dlc2-20260803-061": {
+    "playerId": "s4-dlc2-20260803-061",
+    "profileKey": "Paulo Sousa",
+    "fileName": "Sousa.png",
+    "imageUrl": "/versus/A_profile/webp/Sousa.webp?v=ebac52915ab7",
+    "xPercent": 42.3,
+    "yPercent": 87.5,
+    "widthPercent": 160,
+    "optimizedFileName": "Sousa.webp"
+  },
+  "s4-dlc2-20260803-064": {
+    "playerId": "s4-dlc2-20260803-064",
+    "profileKey": "Roberto Baggio",
+    "fileName": "Baggio.png",
+    "imageUrl": "/versus/A_profile/webp/Baggio.webp?v=870b24e19b75",
+    "xPercent": 46.4,
+    "yPercent": 55,
+    "widthPercent": 176,
+    "optimizedFileName": "Baggio.webp"
+  },
+  "s4-dlc2-20260803-065": {
+    "playerId": "s4-dlc2-20260803-065",
+    "profileKey": "Gaetano Scirea",
+    "fileName": "Gaetano Scirea.png",
+    "imageUrl": "/versus/A_profile/webp/Gaetano%20Scirea.webp?v=4987483890dd",
+    "xPercent": 52.4,
+    "yPercent": 81.1,
+    "widthPercent": 140,
+    "optimizedFileName": "Gaetano Scirea.webp"
+  },
+  "s4-dlc2-20260803-066": {
+    "playerId": "s4-dlc2-20260803-066",
+    "profileKey": "Dino Zoff",
+    "fileName": "Zoff.png",
+    "imageUrl": "/versus/A_profile/webp/Zoff.webp?v=d73410ab6b96",
+    "xPercent": 51,
+    "yPercent": 60.2,
+    "widthPercent": 108,
+    "optimizedFileName": "Zoff.webp"
+  },
+  "s4-dlc2-20260803-067": {
+    "playerId": "s4-dlc2-20260803-067",
+    "profileKey": "Gianni Rivera",
+    "fileName": "Rivera.png",
+    "imageUrl": "/versus/A_profile/webp/Rivera.webp?v=0a403ad4c0de",
+    "xPercent": 33,
+    "yPercent": 63,
+    "widthPercent": 156,
+    "optimizedFileName": "Rivera.webp"
+  },
+  "s4-dlc2-20260803-069": {
+    "playerId": "s4-dlc2-20260803-069",
+    "profileKey": "Giacinto Facchetti",
+    "fileName": "Giacinto Facchetti.png",
+    "imageUrl": "/versus/A_profile/webp/Giacinto%20Facchetti.webp?v=1630dc5dacca",
+    "xPercent": 55.3,
+    "yPercent": 93.2,
+    "widthPercent": 168,
+    "optimizedFileName": "Giacinto Facchetti.webp"
+  },
+  "s4-dlc2-20260803-071": {
+    "playerId": "s4-dlc2-20260803-071",
+    "profileKey": "Alessandro Del Piero",
+    "fileName": "Del pierro.png",
+    "imageUrl": "/versus/A_profile/webp/Del%20pierro.webp?v=3b969fb8d075",
+    "xPercent": 40.8,
+    "yPercent": 74.7,
+    "widthPercent": 144,
+    "optimizedFileName": "Del pierro.webp"
+  },
+  "s4-dlc2-20260803-072": {
+    "playerId": "s4-dlc2-20260803-072",
+    "profileKey": "Keylor Navas",
+    "fileName": "Navas.png",
+    "imageUrl": "/versus/A_profile/webp/Navas.webp?v=3ae48bca8ca2",
+    "xPercent": 57,
+    "yPercent": 55.9,
+    "widthPercent": 232,
+    "optimizedFileName": "Navas.webp"
+  },
+  "s4-dlc2-20260803-073": {
+    "playerId": "s4-dlc2-20260803-073",
+    "profileKey": "James Rodríguez",
+    "fileName": "Rodríguez.png",
+    "imageUrl": "/versus/A_profile/webp/Rodr%C3%ADguez.webp?v=90a11be8fb89",
+    "xPercent": 62.8,
+    "yPercent": 52.6,
+    "widthPercent": 160,
+    "optimizedFileName": "Rodríguez.webp"
+  },
+  "s4-dlc2-20260803-074": {
+    "playerId": "s4-dlc2-20260803-074",
+    "profileKey": "Guti",
+    "fileName": "Guti.png",
+    "imageUrl": "/versus/A_profile/webp/Guti.webp?v=1b2d6cd22384",
+    "xPercent": 58.5,
+    "yPercent": 54,
+    "widthPercent": 188,
+    "optimizedFileName": "Guti.webp"
   }
 });
 

@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { REAL_PLAYER_POOLS } from "../versus/player-pool.js";
+import {
+  analyzeElevenBoardFormation,
+  deriveFormationLines,
+  FORMATION_LINE_MINIMUM_GAP,
+  GOALKEEPER_LINE_MINIMUM_Y,
+  inferElevenBoardRoles as inferTacticalBoardRoles,
+  moveFormationLine,
+  sanitizeFormationLines,
+} from "../versus/public/formation-rules.js";
 import { analyzeElevenFormation, defaultElevenPositions, formationStructureProfile, inferElevenBoardRoles } from "../versus/rules.js";
 
 test("position recognition uses balanced pitch zones and wide channels", () => {
@@ -21,6 +30,56 @@ test("position recognition uses balanced pitch zones and wide channels", () => {
     gk:"GK", lb:"LB", cb:"CB", rb:"RB", lwb:"LWB",
     dm:"DM", lm:"LM", am:"AM", lw:"LW", st:"ST", rw:"RW",
   });
+});
+
+test("tactical board boundary positions are interpreted identically by the match engine", () => {
+  const players = ["gk", "cb-left", "cb-right", "lwb", "rwb", "dm", "lm", "rm", "am", "st-left", "st-right"]
+    .map((id) => ({ id }));
+  const positions = {
+    gk:{ x:50, y:85 },
+    "cb-left":{ x:40, y:60 }, "cb-right":{ x:60, y:60 },
+    lwb:{ x:20, y:54 }, rwb:{ x:80, y:54 },
+    dm:{ x:50, y:48 }, lm:{ x:30, y:40 }, rm:{ x:70, y:40 }, am:{ x:50, y:34 },
+    "st-left":{ x:40, y:22 }, "st-right":{ x:60, y:22 },
+  };
+
+  const formation = analyzeElevenBoardFormation(players, positions);
+  assert.equal(formation.name, "4-4-2");
+  const roles = inferTacticalBoardRoles(players.map((player) => ({ id:player.id, position:positions[player.id] })));
+  assert.equal(roles["cb-left"], "CB");
+  assert.equal(roles.lwb, "LWB");
+  assert.equal(roles.rwb, "RWB");
+});
+
+test("formation reference lines stay ordered and reject invalid drag coordinates", () => {
+  const sanitized = sanitizeFormationLines({ attack:82, midfield:-20, defense:33, goalkeeper:34 });
+  const values = [sanitized.attack, sanitized.midfield, sanitized.defense, sanitized.goalkeeper];
+  assert.ok(values.every((value, index) => index === 0 || value - values[index - 1] >= FORMATION_LINE_MINIMUM_GAP));
+
+  const raisedDefense = moveFormationLine({ attack:20, midfield:44, defense:68, goalkeeper:90 }, "defense", 30);
+  assert.equal(raisedDefense.defense, 52);
+  assert.equal(moveFormationLine(raisedDefense, "defense", Number.NaN).defense, 52);
+  assert.equal(moveFormationLine(raisedDefense, "unknown", 10).defense, 52);
+  assert.equal(moveFormationLine(raisedDefense, "goalkeeper", 60).goalkeeper, GOALKEEPER_LINE_MINIMUM_Y);
+});
+
+test("moving the reference lines changes the nearby player's recognized unit", () => {
+  const entries = [{ id:"reference-player", position:{ x:50, y:52 } }];
+  const highDefense = { attack:12, midfield:30, defense:52, goalkeeper:90 };
+  const highMidfield = { attack:12, midfield:52, defense:72, goalkeeper:90 };
+
+  assert.equal(inferTacticalBoardRoles(entries, highDefense)["reference-player"], "CB");
+  assert.equal(inferTacticalBoardRoles(entries, highMidfield)["reference-player"], "DM");
+});
+
+test("old tactical boards derive safe reference-line defaults from their player layers", () => {
+  const entries = [
+    { id:"st", position:{ x:50, y:18 } },
+    { id:"mid", position:{ x:50, y:43 } },
+    { id:"cb", position:{ x:50, y:69 } },
+    { id:"gk", position:{ x:50, y:91 } },
+  ];
+  assert.deepEqual(deriveFormationLines(entries), { attack:18, midfield:43, defense:69, goalkeeper:91 });
 });
 
 test("formation recognition distinguishes 4-5-1 from 4-2-3-1", () => {

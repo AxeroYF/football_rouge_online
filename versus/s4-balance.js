@@ -52,6 +52,7 @@ export const S4_ENHANCEMENT = Object.freeze({
   traitUnlockLevels:Object.freeze([4, 7]),
   equalLevelChances:Object.freeze([100, 100, 95, 85, 70, 55, 40, 25]),
   protectionCostFactor:.7,
+  protectionCostDiscount:.75,
   protectionCostUnit:100,
   lowerMaterialMultiplier:.6,
   higherMaterialMultiplier:1.2,
@@ -105,5 +106,6 @@ export function s4EnhancementProtectionCost(chanceValue) {
   const failureChance = Math.max(0, 100 - Number(chanceValue ?? 100));
   if (!failureChance) return 0;
   const rawCost = failureChance * failureChance * S4_ENHANCEMENT.protectionCostFactor;
-  return Math.ceil(rawCost / S4_ENHANCEMENT.protectionCostUnit) * S4_ENHANCEMENT.protectionCostUnit;
+  const baseCost = Math.ceil(rawCost / S4_ENHANCEMENT.protectionCostUnit) * S4_ENHANCEMENT.protectionCostUnit;
+  return Math.ceil(baseCost * S4_ENHANCEMENT.protectionCostDiscount);
 }

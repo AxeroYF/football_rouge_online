@@ -1,98 +1,209 @@
+更新时间：2026-08-02 23:19（Asia/Shanghai）
+
+2026-08-03 10:47 最新增量：
+
+M versus/api.js - 商店/市场/开包 compact 响应，避免无关完整联赛视图
+M versus/league-service.js - 商店、挂牌、购买与开包写入路径减负
+M versus/public/app.js - 局部合并商店/市场/开包操作结果
+M versus/s4-assets.js - tracked state 安全解包及名单超限详细诊断
+M data/s4-player-pool-with-dlc.json - DLC2 正式球员池
+M A_profile/a-player-profile-positions.json - DLC2 A 级卡画定位
+M legendary_profile/legendary-profile-positions.json - DLC2 S 级卡画定位
+M versus/player-pool-s4-dlc-generated.js - DLC2 运行时球员数据
+M versus/public/a-player-profiles.js - DLC2 A 级卡画映射
+M versus/public/legendary-profiles.js - DLC2 S 级卡画映射
+?? A_profile/webp/*.webp - DLC2 A 级 WebP 卡画（仅新增文件）
+?? legendary_profile/webp/*.webp - DLC2 S 级 WebP 卡画（仅新增文件）
+?? handoff/football-ydl-s4-dlc2-players-webp-hotfix-20260803-0422.tar.gz
+?? handoff/football-ydl-s4-shop-market-packs-performance-hotfix-20260803-1015.tar.gz
+
+day6 存档仅用于只读校验，禁止打包 `Cloud_league_data/`、任何 `yellowdogs-league*.json`、线上分片目录和模拟输出。
+
+2026-08-02 23:21 合并发布物：
+
+?? HOTFIX_CARD_ADMIN_V2_REVIEW_COMBINED_20260802.md
+?? handoff/football-ydl-s4-card-admin-v2-review-combined-hotfix-20260802-2321.tar.gz
+
+2026-08-02 23:19 最新增量：
+
+M versus/v2/match-engine-v2.js - V2 阶段快照保存结构、位置和战术适配
+M versus/public/v2-tactical-fit.js - 导出 V2 结构适配计算
+M versus/history-detail.js - 已完成旧 V2 报告读取时兼容回填
+M test/ydl-league-engine-v2.test.js - 新旧 V2 复盘指标回归
+?? HOTFIX_V2_REVIEW_METRICS_20260802.md
+?? handoff/football-ydl-s4-v2-review-metrics-hotfix-20260802-2319.tar.gz
+
+2026-08-02 23:01 最新增量：
+
+M versus/league-service.js - 特性绑定与后台发卡 compact mutation
+M versus/api.js - 特性绑定轻量响应
+M versus/admin-api.js - 后台发卡轻量响应
+M versus/public/app.js - 局部合并特性结果、移除等待、降低庆祝动画负担
+M admin/public/app.js - 局部合并后台发卡记录
+M test/league-shards.test.js - 分片发卡、+4、绑定、重载端到端回归
+M test/s4-assets.test.js - 庆祝动画节点回归更新
+?? HOTFIX_CARD_TRAIT_ADMIN_GRANT_20260802.md
+?? handoff/football-ydl-s4-card-trait-admin-grant-hotfix-20260802-2301.tar.gz
+
+2026-08-02 10:38 之后的关键增量：
+
+M versus/league-service.js - 分片存储接入、逐场直播检查点、预测轻量读取、强化悬空 offer 清理、V2/X 任务结算
+?? versus/league-shard-store.js - 联赛目录分片、revision/manifest、范围写入与备份
+M versus/s4-assets.js - 分片 tracked state 兼容
+M versus/api.js - 预测等轻量接口
+M versus/public/app.js - 预测局部刷新、强化悬空 UI、电视台 V2 适配度、羁绊增益开关、移除公网不可访问跨目录 import
+M versus/v2/match-engine-v2.js - alpha.15、球员抢断统计
+M versus/v2/ydl-league-engine-adapter.js - 真实战术适配度与完整报告
+?? devtool/migrate-league-to-shards.js - 单 JSON 到分片目录迁移工具
+M deploy/cloud/football-s4.env.example - 分片路径示例
+M package.json - 分片迁移命令
+?? docs/league-sharded-persistence.md - 分片结构、迁移与回滚说明
+M test/s4-assets.test.js - 强化、羁绊、X 球员 V2 任务及前端 import 回归
+?? test/league-shards.test.js
+?? test/league-shard-safety.test.js
+?? HOTFIX_COMBINED_20260802_2145.md
+?? handoff/football-ydl-s4-frontend-startup-hotfix-20260802-2156.tar.gz
+?? handoff/football-ydl-s4-combined-hotfix-20260802-2145-fixed-v2.tar.gz
+
+禁止打包：任何 `yellowdogs-league.json`、分片运行目录、`Cloud_league_data/`、`.tmp-*`、账号、备份、密钥、证书和旧的损坏合并包。
+
 工作区：D:\Project\game_test\.worktrees\s4
 分支：codex/s4-card-upgrade
-HEAD：f14d278（tag：S4-0728）
-更新时间：2026-07-31 22:34（Asia/Shanghai）
+基线：dcc8049（tag：S4-August1st）
+更新时间：2026-08-02 10:38（Asia/Shanghai）
 
-需要交接的已修改文件：
+2026-08-02 alpha.12 最新增量：
 
+M devtool/server.js - 250ms 直播切片调度器
+M versus/league-service.js - 五场轮转、查询只读、断点续算、紧凑完赛保存且跳过赛中备份复制
+M versus/public/app.js - 观战瞬时失败最多五次指数退避重连
+M versus/v2/match-engine-v2.js - alpha.12，包含真实加时和 IFAB 点球
+M versus/v2/match-parameters-v2.json - 版本升级为 2.0.0-alpha.12
+M test/league.test.js - 五场公平轮转和重启续算回归
+M test/match-engine-v2-parameters.test.js - alpha.12 参数断言
+M test/ydl-league-engine-v2.test.js - alpha.12、加时和点球回归
+?? HOTFIX_V2_ALPHA12_POSTMATCH_RECONNECT_20260802.md
+?? handoff/football-ydl-s4-v2-alpha12-postmatch-reconnect-hotfix-20260802-1037.tar.gz
+
+最新验证：联赛针对性 4/4、V2 参数与适配 13/13、相关 JavaScript 语法和 diff 检查通过。
+
+本次 V2 / YDL 增量文件：
+
+M data/ydl-content-overrides.json - 保留后台草稿；“极限一换一”不进入正式池
+M devtool/server.js - 测试服启动与连接处理
+M devtool/test-environment.js - 本地测试环境显式启用 YDL V2
+M game/public/trait-runtime.js - 支持 teamTactic 条件
+M package.json - 新增 V1/V2 对照与 V2 单场命令
+M versus/league-service.js - 测试服 YDL V1/V2 路由、整轮5场V2直播、预测保持V1
+M versus/public/app.js - 请求超时/断线提示及V2事件中文标签
+M versus/s4-balance-report.js - 导出确定性 S4 阵容生成器供 V2 复用
+M versus/trait-pool.js - YDL 正式池新增 3 张卡，正式池共 18 张
+M versus/ydl-content-store.js - 正式化草稿迁移并保留非正式草稿
+M test/ydl-content-store.test.js - 更新 18 张卡和草稿断言
+M test/ydl-traits.test.js - 更新 18 张卡及排除“极限一换一”断言
+M handoff/README.md
+M handoff/CURRENT_STATE.md
+M handoff/NEW_CHAT_PROMPT.md
+M handoff/CHANGED_FILES.txt
+M handoff/MANIFEST.md
+?? docs/match-engine-v2-parameters.md
+?? versus/v2/engine-comparison-v2-config.json
+?? versus/v2/engine-comparison-v2.js
+?? versus/v2/engine-comparison-v2-worker.js
+?? versus/v2/match-engine-v2-cli.js
+?? versus/v2/match-engine-v2.js
+?? versus/v2/match-parameters-v2.js
+?? versus/v2/match-parameters-v2.json
+?? versus/v2/possession-chain-v2.js
+?? versus/v2/spatial-model-v2.js
+?? versus/v2/team-snapshot-v2.js
+?? versus/v2/ydl-league-engine-adapter.js
+?? test/engine-comparison-v2.test.js
+?? test/match-engine-v2-parameters.test.js
+?? test/match-engine-v2.test.js
+?? test/possession-chain-v2.test.js
+?? test/spatial-model-v2.test.js
+?? test/team-snapshot-v2.test.js
+?? test/ydl-league-engine-v2.test.js
+
+V2 已实现：
+
+- 90 分钟、180 条控球链、增量推进与完整公开播报
+- 开局/平局、领先、落后动态战术和位置预设切换
+- 红牌、二黄变红、少打一人、赛后停赛
+- 伤病离场、伤停后果、伤病免疫与雷暴保护
+- 任意球、角球、点球、主罚、传中、争顶、解围和定位球射门
+- 射门、射正、门将扑救、脱手、补射、进球和公开比赛结果
+- 整数分钟、完整裁判/天气对象、中文多人配合与对抗播报
+- 进球射手、助攻/无助攻、进攻方式、xG、门将与比分详情
+- `xG < 0.08` 低质量机会压缩，常规机会与点球保持
+- YDL 正式特性、羁绊、S/X 属性来源；传奇特殊能力保持关闭
+- YDL 比赛中不可换人；“极限一换一”只保留为 draft
+- 测试服整轮5场V2电视台；正式环境默认V1；预测模拟强制V1
+- 30,000场对照配置最多10 worker，逐场显示进度、耗时和ETA
+
+V2 开发未修改：
+
+- versus/match-engine.js
+- versus/rules.js
+
+明确排除：
+
+- outputs/（全量模拟与诊断 JSON）
+- Cloud_league_data/、正式联赛存档、账号和备份
+- node_modules/、.git/、构建产物
+- 卡面 PNG/WebP 等基线大型资源
+- 服务器密码、后台密码、Cloudflare、Origin CA 凭据和私钥
+
+本地测试服 YDL 已使用 V2，正式环境仍默认 V1。2核4GB正式服务器建议使用后台密封预演算和电视台定时揭示，该架构尚未实现。禁止重置、清理、覆盖、擅自提交、推送、打 tag 或部署。
+2026-08-02 00:39 最新增量（基线 dcc8049 / S4-August1st）
+
+手机端战术优化：
+M versus/public/app.js - 滑杆轻量同步、拖动逐帧合并、目标矩形缓存、触屏悬浮关闭、手机阶段切换
+M versus/public/styles.css - 手机横竖屏、替补席三列滚动、阶段分页、触屏低绘制成本样式
+M test/s4-assets.test.js - 手机战术高频路径与响应式回归；当前 86/86 通过
+?? HOTFIX_MOBILE_TACTICS_20260802.md
+?? handoff/football-ydl-s4-mobile-tactics-hotfix-20260802.tar.gz
+
+本次完整 handoff 同时收录当前工作树中的既有未提交成果：
 M admin/public/app.js
-M admin/public/styles.css
+M admin/public/league.css
 M data/ydl-content-overrides.json
-M devtool/build.js
+M deploy/cloud/football-s4.env.example
 M devtool/server.js
-M game/public/config.js
-M game/public/core.js
+M devtool/test-environment.js
+M game/public/trait-runtime.js
 M package.json
-M src/new-trait-batch.js
 M test/admin.test.js
-M test/game.test.js
 M test/league.test.js
-M test/new-traits.test.js
-M test/s4-assets.test.js
-M test/s4-balance-report.test.js
-M test/unified-v02.test.js
-M test/versus.test.js
+M test/versus-formation.test.js
+M test/ydl-content-store.test.js
+M test/ydl-traits.test.js
 M versus/admin-api.js
 M versus/api.js
-M versus/history-detail.js
 M versus/league-service.js
-M versus/match-engine.js
-M versus/player-pool.js
-M versus/public/app.js
-M versus/public/index.html
-M versus/public/styles.css
-M versus/room-service.js
+M versus/public/s4-enhancement-demo.html
 M versus/rules.js
-M versus/s4-assets.js
-M versus/s4-balance-config-fast.json
-M versus/s4-balance-config.json
 M versus/s4-balance-report.js
 M versus/s4-balance.js
 M versus/trait-pool.js
 M versus/ydl-content-store.js
+?? HOTFIX_V2_ALL_EVENTS_20260801.md
+?? data/v2-review-demo-alpha7.json
+?? docs/match-engine-v2-parameters.md
+?? test/engine-comparison-v2.test.js
+?? test/match-engine-v2-parameters.test.js
+?? test/match-engine-v2.test.js
+?? test/possession-chain-v2.test.js
+?? test/spatial-model-v2.test.js
+?? test/team-snapshot-v2.test.js
+?? test/v2-tactical-fit.test.js
+?? test/ydl-league-engine-v2.test.js
+?? versus/public/formation-rules.js
+?? versus/public/v2-tactical-fit.js
+?? versus/public/v2-tactical-profiles.js
+?? versus/v2/（alpha8 引擎、参数、比较器、压力测试和联赛适配器）
 
-需要交接的未跟踪内容：
+明确排除：.tmp-browser-formation-lines/、data/s4-test/、outputs/、Cloud_league_data/、旧热更新包、账号与服务器凭据。
 
-?? A_profile/（213 个文件）
-?? legendary_profile/（132 个文件）
-?? x_profile/（3 个文件）
-?? player_dlc/（33 个文件）
-?? player_dlc.txt
-?? data/player-dlc-ea-reference.csv
-?? data/player-dlc-ea-reference.json
-?? data/player-dlc-s4-final.csv
-?? data/player-dlc-s4-final.json
-?? data/s4-player-pool-with-dlc.json
-?? deploy/cloud/football-s4.service
-?? deploy/cloud/nginx-football-s4.conf
-?? deploy/cloud/football-s4.env.example
-?? devtool/optimize-player-profiles.js
-?? devtool/repair-ydl-x-enhancement-save.js
-?? devtool/player-profile-assets.js
-?? devtool/sync-a-player-profiles.js
-?? devtool/sync-legendary-profiles.js
-?? devtool/sync-x-player-profiles.js
-?? devtool/build-player-dlc-data.js
-?? devtool/build-player-dlc-workbook.mjs
-?? devtool/finalize-player-dlc-workbook.mjs
-?? devtool/import-player-dlc-profiles.js
-?? devtool/import-player-dlc-to-s4.js
-?? devtool/inspect-player-dlc-workbook.mjs
-?? versus/player-pool-s4-dlc-generated.js
-?? versus/public/a-player-profiles.js
-?? versus/public/legendary-profiles.js
-?? versus/public/s4-card-border-demo.html
-?? versus/public/x-player-profiles.js
-?? versus/s4-balance-config-medium.json
-?? versus/s4-balance-report-parallel.js
-?? versus/s4-balance-report-worker.js
-
-另有本目录 5 个 handoff 文档随本次更新进入压缩包。
-
-明确排除：
-
-- .local-s4-server.pid
-- Cloud_league_data/（包含 Day1 正式赛季数据）
-- outputs/（包含大型模拟结果与部署包）
-- data/s4-test/
-- data/versus-accounts.json
-- data/yellowdogs-league.json
-- data/yellowdogs-league-backups/
-- 服务器密码、后台密码、Cloudflare 凭据和 Origin CA 私钥
-- node_modules/、.git/、旧 handoff/SOURCE_SNAPSHOT/
-
-禁止重置、清理、覆盖或丢弃上述交接变更。
-versus/player-pool.js - 全等级26项能力按游戏OVR回归，EA仅作参考，全库默认上限96
-versus/ydl-content-store.js - 后台编辑与历史覆盖统一使用游戏能力回归规则
-test/s4-assets.test.js - 覆盖602名非X球员的OVR、26项能力和上限不变量
-test/admin.test.js - 覆盖后台26项权威及自动回算OVR逻辑
+以下为 2026-08-01 13:05 的历史清单：

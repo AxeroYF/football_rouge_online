@@ -1,0 +1,21 @@
+{
+  "outputVersion": "S4比赛引擎V1-V2-alpha8-5000-validation",
+  "seed": "yellowdogs-s4-v1-v2-alpha8-release-validation",
+  "matches": 5000,
+  "v2PossessionChainsPerMatch": 180,
+  "rawMatchSampleLimit": 500,
+  "rawV2ChainsPerSample": 3,
+  "recordV2RandomRolls": true,
+  "v2ShotXgBucketUpperBounds": [0.01, 0.03, 0.05, 0.08, 0.15, 0.3, 0.6],
+  "maximumWorkers": 10,
+  "shardMatches": 100,
+  "progressIntervalMatches": 1,
+  "ecosystemWeights": {
+    "standard": 30,
+    "enhanced": 25,
+    "traitHeavy": 15,
+    "legendHeavy": 10,
+    "xLed": 10,
+    "nationalityHeavy": 10
+  }
+}

@@ -139,6 +139,7 @@ button { cursor:pointer; }
 .league-chemistry-lines{position:absolute;inset:0;z-index:1;width:100%;height:100%;overflow:visible;pointer-events:none}.league-chemistry-lines line{stroke:#54e38a;stroke-width:1.25;stroke-linecap:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 4px rgba(84,227,138,.75));opacity:.88}
 .chemistry-toggle{min-height:58px;margin:12px 0 2px;padding:10px 12px;display:flex;align-items:center;gap:10px;border:1px solid rgba(84,227,138,.35);background:rgba(84,227,138,.06);cursor:pointer}.chemistry-toggle input{width:34px;height:19px;accent-color:#54e38a}.chemistry-toggle span,.chemistry-toggle b,.chemistry-toggle small{display:block}.chemistry-toggle b{font-size:12px}.chemistry-toggle small{margin-top:3px;color:var(--muted);font-size:10px}
 .league-inbox{min-height:680px;display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);border:1px solid var(--line);background:#081510}.league-mail-list{min-width:0;border-right:1px solid var(--line);background:#091712}.league-mail-list>header{min-height:76px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.league-mail-list>header small{color:var(--league-yellow);font-size:10px}.league-mail-list h2{margin:4px 0 0;font-size:21px}.league-mail-list>header>b{width:32px;height:32px;display:grid;place-items:center;color:#071411;background:var(--league-yellow);font-size:12px}.league-mail-list>div{max-height:760px;overflow:auto}.league-mail-item{width:100%;min-height:104px;padding:13px 15px;display:grid;gap:7px;border:0;border-bottom:1px solid rgba(255,255,255,.07);color:var(--ink);background:#091712;text-align:left}.league-mail-item:hover{background:#10251e}.league-mail-item.active{background:#15271f;box-shadow:inset 4px 0 0 var(--league-yellow)}.league-mail-item>span{display:flex;justify-content:space-between;gap:12px;color:var(--league-yellow);font-size:10px}.league-mail-item time{color:var(--muted)}.league-mail-item>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.league-mail-item>small{display:-webkit-box;overflow:hidden;color:var(--muted);font-size:11px;line-height:1.45;-webkit-line-clamp:2;-webkit-box-orient:vertical}.league-mail-reader{min-width:0;background:var(--panel)}.league-mail-reader>header{min-height:112px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--line);background:#0c1b16}.league-mail-reader>header small{color:var(--muted);font-size:11px}.league-mail-reader>header h2{margin:5px 0 7px;font-size:25px}.league-mail-reader>header p{margin:0;color:var(--muted);font-size:12px}.league-mail-reader>.league-daily-report{border:0}.league-mail-body{padding:24px}.league-mail-body>p{margin:0 0 20px;color:#c8d2cd;font-size:14px;line-height:1.7}.mail-kpis{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line)}.mail-kpis>span{min-height:78px;padding:12px;display:grid;place-items:center;border-right:1px solid var(--line)}.mail-kpis>span:last-child{border-right:0}.mail-kpis small{color:var(--muted);font-size:11px}.mail-kpis b{font-size:23px}.mail-next-match,.mail-alert{margin-top:16px;padding:15px 17px;border:1px solid var(--line);background:#091712}.mail-next-match small,.mail-next-match b,.mail-next-match span{display:block}.mail-next-match small{color:var(--league-yellow);font-size:10px}.mail-next-match b{margin:5px 0;font-size:17px}.mail-next-match span{color:var(--muted);font-size:12px}.mail-alert{border-color:rgba(255,128,93,.45)}.mail-alert p{margin:6px 0 0;color:var(--orange);font-size:12px}.mail-round-results{margin-top:22px;border:1px solid var(--line)}.mail-round-results h3{margin:0;padding:13px 15px;border-bottom:1px solid var(--line);font-size:15px}.league-inbox-empty{padding:50px;text-align:center}.league-inbox-empty p{color:var(--muted)}
+.league-mail-body>p{white-space:pre-line}
 @media(max-width:850px){.league-inbox{grid-template-columns:1fr}.league-mail-list{border-right:0;border-bottom:1px solid var(--line)}.league-mail-list>div{max-height:280px}.league-mail-reader>header{align-items:flex-start}.league-nav{grid-template-columns:repeat(4,1fr)}.league-nav button:last-child{grid-column:auto}}
 @media(max-width:560px){.league-nav{grid-template-columns:1fr 1fr}.league-mail-reader>header{padding:16px;display:grid}.league-mail-body{padding:14px}.mail-kpis{grid-template-columns:1fr}.mail-kpis>span{min-height:58px;border-right:0;border-bottom:1px solid var(--line)}.mail-kpis>span:last-child{border-bottom:0}.league-mail-reader>header h2{font-size:20px}.league-mail-reader>.league-daily-report .daily-kpis{grid-template-columns:1fr 1fr}}
 
@@ -159,6 +160,7 @@ button { cursor:pointer; }
 .report-rank{padding:22px;display:flex;align-items:center;justify-content:space-between;background:#17190d}.report-rank span{color:var(--muted);font-size:10px}.report-rank b{color:var(--league-yellow);font-size:38px}.report-rank em{color:var(--muted);font-size:14px;font-style:normal}.league-report dl{margin:0}.league-report dl>div{padding:11px 14px;display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line)}.league-report dt{color:var(--muted);font-size:10px}.league-report dd{margin:0;font-size:11px;font-weight:850;text-align:right}.league-result{padding:10px 14px;display:grid;grid-template-columns:60px 1fr 70px 1fr 130px;gap:10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px}.league-result>span,.league-result>small{color:var(--muted);font-size:9px}.league-result>b:nth-of-type(2){text-align:right}.league-result strong{color:var(--league-yellow);font-size:17px;text-align:center}.league-result small{text-align:right}
 .league-squad{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}.league-roster-table{display:grid}.league-roster-row{min-height:58px;padding:8px 12px;display:grid;grid-template-columns:22px 28px minmax(140px,1fr) 45px minmax(100px,.7fr) 80px;gap:10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.055)}.league-roster-row input{width:17px;height:17px;accent-color:var(--league-yellow)}.league-roster-row>b small{display:block;margin-top:2px;color:var(--muted);font-size:8px}.league-roster-row>strong{font-size:17px}.league-roster-row>em{color:var(--muted);font-size:9px;font-style:normal;text-align:right}.league-roster-row.unavailable{background:rgba(255,89,100,.06)}.fitness{position:relative;height:20px;padding-top:13px}.fitness:before,.fitness i{position:absolute;left:0;top:5px;height:4px}.fitness:before{content:"";width:100%;background:#20352d}.fitness i{background:var(--league-green)}.fitness small{color:var(--muted);font-size:8px}.league-tactics{position:sticky;top:86px;padding-bottom:14px}.league-tactics .field{padding:0 14px}.league-tactics .button{width:calc(100% - 28px);margin:4px 14px}.league-tactics>p{margin:12px 14px 0;color:var(--muted);font-size:9px;line-height:1.55}
 .league-tactics-layout{gap:16px}.league-next-match{grid-column:1/-1;min-height:92px;display:grid;grid-template-columns:1fr 1fr 1.1fr 1.4fr;border:1px solid rgba(245,211,74,.42);background:#17190d}.league-next-match>div{padding:14px 16px;display:grid;align-content:center;border-right:1px solid var(--line)}.league-next-match>div:last-child{border-right:0}.league-next-match small,.league-next-match span{color:var(--muted);font-size:9px}.league-next-match b{color:var(--league-yellow);font-size:18px}.league-next-match strong{font-size:14px}.league-next-match.complete{padding:18px;display:flex;align-items:center;justify-content:space-between}.league-board-panel{padding:16px}.league-board-panel>.pitch{min-height:720px}.league-plan-controls{position:sticky;top:86px}.league-plan-controls .field{margin-top:12px}.league-auto-note{margin:12px 0 0;color:var(--muted);font-size:9px;line-height:1.55}.league-squad-magnet.unavailable,.league-bench-magnet.unavailable{opacity:.55;color:var(--ink);border-color:var(--red);background:#3a2020;box-shadow:none}.league-bench .bench-magnet-list{max-height:360px;overflow:auto}
+.formation-reference-line{position:absolute;left:1.5%;right:1.5%;z-index:1;height:18px;padding:0;border:0;background:transparent;transform:translateY(-50%);cursor:pointer;pointer-events:auto;touch-action:none;user-select:none}.formation-reference-line>i{position:absolute;left:0;right:0;top:50%;border-top:3px dashed currentColor;transform:translateY(-1.5px);opacity:.9;pointer-events:none}.formation-reference-line:hover>i,.formation-reference-line.dragging>i{border-top-style:solid;opacity:1}.formation-reference-line.line-attack{color:#e34c3d}.formation-reference-line.line-midfield{color:#d39b00}.formation-reference-line.line-defense{color:#159a92}.formation-reference-line.line-goalkeeper{color:#7655c9}
 .leaderboard-panel{max-width:820px;margin:auto}.league-board-tabs{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line)}.league-board-tabs button{min-height:44px;border:0;border-right:1px solid var(--line);color:var(--muted);background:#091712;font-size:10px;font-weight:850}.league-board-tabs button.active{color:#17190d;background:var(--league-yellow)}.leaderboard-panel .league-table td:nth-child(2) b,.leaderboard-panel .league-table td:nth-child(2) small{display:block}.leaderboard-panel .league-table td:nth-child(2) small{margin:3px 0 0}.league-market{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}.market-row{min-height:68px;padding:10px 12px;display:grid;grid-template-columns:28px minmax(0,1fr) 90px 70px;gap:10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}.market-row b small,.market-row strong small,.market-own-row b small{display:block;margin-top:3px;color:var(--muted);font-size:8px}.market-row strong{color:var(--league-yellow);text-align:right}.market-row .button,.market-own-row .button{padding:0 9px;font-size:9px}.market-own-list{max-height:720px;overflow:auto}.market-own-row{min-height:63px;padding:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) 100px 58px 54px;gap:7px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}.market-own-row input{width:100%;min-height:38px;padding:0 7px}.button.danger{color:var(--red);border-color:rgba(255,89,100,.45)}.league-empty{padding:30px;margin:0;color:var(--muted);font-size:11px;text-align:center}
 @media(max-width:900px){.league-player-grid{grid-template-columns:repeat(3,1fr)}.league-dashboard-grid,.league-squad,.league-market{grid-template-columns:1fr}.league-report{grid-column:1;grid-row:auto}.standings-panel,.recent-panel{grid-column:1}.league-tactics{position:static}.league-claim-grid{grid-template-columns:1fr}}
 @media(max-width:1050px){.league-tactics-layout{grid-template-columns:1fr}.league-next-match{grid-template-columns:1fr 1fr}.league-next-match>div:nth-child(2){border-right:0}.league-next-match>div:nth-child(-n+2){border-bottom:1px solid var(--line)}.league-plan-controls{position:static}.league-board-panel>.pitch{min-height:760px}}
@@ -592,7 +594,7 @@ body:has(#league-squad-form) #app{width:min(1720px,calc(100% - 32px))}
 .league-bench .bench-magnet-list{max-height:none}
 .league-bench-summary{padding:11px 13px;gap:9px}.league-bench-summary-title{display:flex;align-items:center;justify-content:space-between}.league-bench-summary-title small{color:var(--cyan);font-size:8px}.league-bench-summary-title b{font-size:13px}.league-bench-shape{padding:8px 10px}.league-bench-shape strong{font-size:24px}.league-fit-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.league-fit-heading{align-items:center}.league-fit-heading>span{font-size:9px}.league-fit-heading>b{font-size:16px}.league-fit-heading b small{display:none}.league-fit-block{gap:5px}.league-fit-bar{height:5px}.league-fit-counts span{padding:5px 3px}.league-fit-counts b{font-size:13px}
 .league-bench-match-plans{min-height:0;padding:11px 13px 13px;border-top:1px solid var(--line);background:rgba(5,22,17,.88)}.league-bench-match-plans>header{padding:0 0 8px;display:flex;align-items:center}.league-bench-match-plans>header b{font-size:14px}.league-bench-match-plans .league-match-plan-grid{display:grid;grid-template-columns:1fr;gap:6px}.league-bench-match-plans .league-match-plan{padding:8px;border-radius:8px}.league-bench-match-plans .league-match-plan>header{margin:0 0 7px;align-items:center}.league-bench-match-plans .league-match-plan>header b{font-size:13px}.league-match-plan-fields{grid-column:1/-1;width:100%;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.league-bench-match-plans .field{min-width:0;margin:0}.league-bench-match-plans .field span{margin-bottom:3px;color:#eaf5ef;font-size:10px;font-weight:950}.league-bench-match-plans .field select{box-sizing:border-box;width:100%;min-width:0;min-height:33px;padding:0 17px 0 7px;font-size:10px;font-weight:900;text-overflow:ellipsis}
-.league-board-footer{min-height:54px;padding:10px 4px 0;display:flex;align-items:end;justify-content:space-between;gap:16px}.league-board-directions{display:grid;grid-template-columns:150px 150px;gap:8px}.league-board-directions .field{margin:0;gap:4px}.league-board-directions .field span{color:var(--ink);font-size:10px;font-weight:950}.league-board-directions .field select{min-height:34px;padding:6px 9px;font-size:11px;font-weight:900}.league-autosave-status{padding:6px 9px;border-radius:6px;color:var(--muted);background:#081914;font-size:9px;font-weight:900}.league-autosave-status[data-state="saving"],.league-autosave-status[data-state="pending"]{color:var(--league-yellow)}.league-autosave-status[data-state="saved"]{color:var(--lime)}.league-autosave-status[data-state="error"]{color:var(--red)}.league-position-save-warning{margin:0;padding:10px 14px;border:1px solid rgba(255,89,100,.4);border-radius:10px;color:var(--red);background:rgba(255,89,100,.06);font-size:11px;text-align:center}
+.league-board-footer{min-height:54px;padding:10px 4px 0;display:flex;align-items:end;justify-content:flex-end;gap:16px}.league-autosave-status{padding:6px 9px;border-radius:6px;color:var(--muted);background:#081914;font-size:9px;font-weight:900}.league-autosave-status[data-state="saving"],.league-autosave-status[data-state="pending"]{color:var(--league-yellow)}.league-autosave-status[data-state="saved"]{color:var(--lime)}.league-autosave-status[data-state="error"]{color:var(--red)}.league-position-save-warning{margin:0;padding:10px 14px;border:1px solid rgba(255,89,100,.4);border-radius:10px;color:var(--red);background:rgba(255,89,100,.06);font-size:11px;text-align:center}
 .league-plan-grid-basics-only{grid-template-columns:1fr}.league-plan-grid-basics-only .league-plan-basics{grid-template-columns:minmax(250px,.8fr) minmax(300px,1fr) minmax(320px,1fr);gap:16px;align-items:start}.league-plan-grid-basics-only .league-plan-basics>.direction-fields{margin-top:0}
 .league-squad-magnet[data-traits]:hover::after,.league-squad-magnet[data-traits]:focus::after,.league-bench-magnet[data-traits]:hover::after,.league-bench-magnet[data-traits]:focus::after{content:none}
 .league-magnet-tooltip{position:fixed;z-index:3000;width:230px;max-width:calc(100vw - 20px);padding:10px 12px;border:1px solid var(--cyan);border-radius:7px;color:var(--ink);background:#071713;box-shadow:0 14px 38px rgba(0,0,0,.62),0 0 18px rgba(103,215,207,.14);font-size:12px;font-weight:650;line-height:1.5;text-align:left;white-space:pre-line;pointer-events:none}
@@ -608,7 +610,7 @@ body:has(#league-squad-form) #app{width:min(1720px,calc(100% - 32px))}
 }
 @media(max-width:620px){
   .league-board-heading,.league-plan-heading{display:grid;align-items:start}.league-board-heading>span,.league-plan-heading>span{text-align:left}
-  .league-board-toolbar{width:100%;display:grid;grid-template-columns:1fr}.league-position-tabs{width:100%}.league-board-fitness{grid-template-columns:auto 1fr 28px}.league-board-fitness input{width:100%}.league-board-directions{grid-template-columns:1fr 1fr;width:100%}.league-board-footer{display:grid}
+  .league-board-toolbar{width:100%;display:grid;grid-template-columns:1fr}.league-position-tabs{width:100%}.league-board-fitness{grid-template-columns:auto 1fr 28px}.league-board-fitness input{width:100%}.league-board-footer{display:grid}
   .league-board-panel{padding:8px}.league-board-panel>.pitch{aspect-ratio:.68;border-width:4px}
   .league-squad-magnet{width:92px;min-height:54px;padding:6px 27px 6px 7px;border-width:2px}.league-squad-magnet b{font-size:9px}.league-squad-magnet small{font-size:7px}.league-squad-magnet i{right:6px;top:7px;font-size:13px}
   .league-bench .bench-magnet-list{grid-template-columns:repeat(2,92px)}.league-bench-magnet{width:92px}.league-plan-footer{display:grid}.league-plan-footer .button{min-width:0;width:100%}
@@ -618,6 +620,48 @@ body:has(#league-squad-form) #app{width:min(1720px,calc(100% - 32px))}
 .league-match-plan-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .league-bench-match-plans .field select{min-height:36px;padding:0 20px 0 9px;font-size:11px}
 @media(max-width:620px){.league-position-tabs{width:100%;min-width:0;grid-template-columns:1fr}.league-position-tabs button{white-space:normal}}
+
+/* S4 three-column tactical workspace */
+.league-lineup-workspace{width:100%;grid-template-columns:minmax(500px,820px) 380px minmax(320px,1fr);justify-content:stretch;gap:12px}
+.league-board-panel,.league-bench,.league-tactics-detail{box-sizing:border-box;min-width:0;min-height:0;border:1px solid rgba(93,130,112,.45);border-radius:20px;background:linear-gradient(145deg,rgba(17,42,34,.98),rgba(9,27,22,.98));box-shadow:0 18px 48px rgba(0,0,0,.25)}
+.league-tactics-detail{display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
+.league-tactics-detail>header{min-height:82px;padding:15px 17px;display:grid;align-content:center;gap:5px;border-bottom:1px solid var(--line)}
+.league-tactics-detail>header div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.league-tactics-detail>header small{color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.08em}
+.league-tactics-detail>header b{font-size:20px}.league-tactics-detail>header span{color:var(--muted);font-size:11px}
+.league-tactics-detail-scroll{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
+.league-tactics-detail-scroll>.league-bench-summary{border-top:0}
+.league-tactics-detail-footer{min-height:45px;padding:8px 13px;display:flex;align-items:center;justify-content:flex-end;border-top:1px solid var(--line);background:rgba(5,22,17,.94)}
+.league-tactical-dimensions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07)}
+.league-tactical-dimension{min-width:0;display:grid;gap:3px}.league-tactical-dimension>span{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaf5ef;font-size:11px;font-weight:900}.league-tactical-dimension output{color:var(--cyan);font-size:11px;font-weight:950}.league-tactical-dimension input{width:100%;height:14px;margin:0;accent-color:#1685ee;cursor:pointer}
+.league-phase-instructions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-top:10px;margin-top:2px;border-top:1px solid rgba(255,255,255,.07)}
+.league-phase-instructions>section{min-width:0;padding:9px;border:1px solid rgba(120,155,140,.2);border-radius:8px;background:rgba(5,22,17,.44)}.league-phase-instructions>section>header{padding-bottom:8px}.league-phase-instructions>section>header b{font-size:13px}.league-phase-instructions>section>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.league-phase-instructions .field{margin:0}.league-phase-instructions .field span{margin-bottom:4px;color:#eaf5ef;font-size:11px;font-weight:950}.league-phase-instructions .field select{min-height:35px!important;font-size:12px!important;font-weight:850}
+.league-tactics-detail .league-bench-match-plans{border-top:1px solid var(--line)}
+.league-tactics-detail .league-bench-summary-title small{font-size:10px}.league-tactics-detail .league-bench-summary-title b{font-size:15px}.league-tactics-detail .league-fit-heading>span{font-size:11px}.league-tactics-detail .league-fit-counts span{font-size:10px}.league-tactics-detail .league-bench-match-plans>header b{font-size:16px}
+.league-tactics-detail .league-match-plan{display:block;padding:10px}.league-tactics-detail .league-match-plan>header b{font-size:14px}.league-tactics-detail .league-match-plan-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.league-tactics-detail .field{min-width:0}.league-tactics-detail .field span{font-size:11px}.league-tactics-detail .field select{box-sizing:border-box;width:100%;min-width:0;padding-left:8px;padding-right:18px;font-size:12px;text-overflow:ellipsis}
+
+@media(min-width:1051px){
+  body:has(.league-main-layout):has(#league-squad-form) #app{width:auto;max-width:none;margin-left:316px;margin-right:24px}
+  .league-lineup-workspace{height:clamp(680px,calc(100dvh - 244px),1020px);align-items:stretch}
+  .league-board-panel,.league-bench,.league-tactics-detail{height:100%}
+  .league-board-panel{display:grid;grid-template-rows:auto auto;align-content:start;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable}
+  .league-board-panel>.pitch{width:100%;height:auto;min-height:0}
+  .league-bench{grid-template-rows:auto minmax(0,1fr)}
+  .league-bench .bench-magnet-list{max-height:none;padding:10px 6px;grid-template-columns:repeat(3,110px);gap:12px 6px;overflow-y:auto;overscroll-behavior:contain}
+}
+@media(max-width:1700px) and (min-width:1051px){
+  .league-board-heading{display:grid;align-items:start}.league-board-toolbar{justify-content:start}
+}
+@media(max-width:1050px){
+  .league-lineup-workspace{height:auto;grid-template-columns:1fr}
+  .league-board-panel,.league-bench,.league-tactics-detail{height:auto}
+  .league-tactics-detail-scroll{max-height:720px}
+}
+@media(max-width:620px){
+  .league-tactics-detail .league-match-plan-fields,.league-tactical-dimensions,.league-phase-instructions,.league-phase-instructions>section>div{grid-template-columns:1fr}
+}
 
 /* S4 transfer market */
 .s4-market-entry{min-height:620px;padding:42px;display:grid;place-content:center;gap:30px;text-align:center}.s4-market-entry>header small,.s4-market-shell>header small,.s4-market-columns header small{color:var(--league-yellow);font-size:10px;letter-spacing:.16em}.s4-market-entry h2{margin:7px 0 5px;font-size:34px}.s4-market-entry p{margin:0;color:var(--muted)}.s4-market-entry>div{width:min(820px,86vw);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.s4-market-entry>div>button{min-height:230px;padding:26px;display:grid;place-items:center;align-content:center;gap:10px;border:1px solid rgba(245,211,74,.28);border-radius:20px;color:var(--ink);background:linear-gradient(145deg,#10281f,#081511);box-shadow:0 18px 42px rgba(0,0,0,.28);transition:.2s}.s4-market-entry>div>button:hover{transform:translateY(-5px);border-color:var(--league-yellow);box-shadow:0 24px 50px rgba(0,0,0,.38)}.s4-market-entry i{width:74px;height:74px;display:grid;place-items:center;border:2px solid var(--league-yellow);border-radius:50%;color:var(--league-yellow);font-size:20px;font-style:normal;font-weight:950}.s4-market-entry b{font-size:20px}.s4-market-entry span{color:var(--muted);font-size:12px}
@@ -676,10 +720,59 @@ button.s4-pack-visual:hover .s4-pack-glint{transform:translateX(110%)}
   .league-pool-grid{grid-template-columns:repeat(2,1fr)}
   .league-pack-product-grid{grid-template-columns:1fr 1fr}.league-pack-product{grid-template-columns:126px minmax(0,1fr)}.league-shop-pack-visual{width:126px;min-width:126px}
 }
-@media(max-width:650px){
+@media(max-width:650px), (orientation:landscape) and (max-height:600px) and (max-width:1000px){
   .league-pack-product-grid{grid-template-columns:1fr;padding:12px}.league-pack-product{grid-template-columns:118px minmax(0,1fr);padding:13px}.league-shop-pack-visual{width:118px;min-width:118px;height:166px}
   .backpack-pool>div{grid-template-columns:repeat(2,minmax(118px,1fr))}.backpack-pack{width:118px;min-width:118px;height:166px;min-height:166px}
 }
+
+/* V2 post-match review */
+.league-review-page{height:clamp(720px,calc(100vh - 174px),930px);min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px}
+.league-review-page>aside,.league-review-page>main{min-width:0;min-height:0;border:1px solid rgba(93,130,112,.48);border-radius:20px;background:linear-gradient(145deg,rgba(17,42,34,.98),rgba(7,24,19,.98));box-shadow:0 18px 48px rgba(0,0,0,.24);overflow:hidden}
+.league-review-page>aside{display:grid;grid-template-rows:auto minmax(0,1fr)}
+.league-review-page>aside>header{padding:18px;border-bottom:1px solid rgba(93,130,112,.38)}
+.league-review-page>aside>header small,.league-review-detail>header small{color:var(--cyan);font-size:9px;font-weight:900;letter-spacing:.1em}
+.league-review-page>aside>header h2{margin:3px 0 2px;font-size:24px}
+.league-review-page>aside>header p{margin:0;color:var(--muted);font-size:11px}
+.league-review-match-list{padding:9px;display:flex;flex-direction:column;gap:7px;overflow-y:auto}
+.league-review-match{width:100%;min-height:76px;padding:10px 11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;border:1px solid rgba(93,130,112,.34);border-radius:12px;color:var(--ink);background:rgba(5,20,16,.72);text-align:left;cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
+.league-review-match:hover{border-color:rgba(113,217,208,.62);background:rgba(17,47,38,.92);transform:translateX(2px)}
+.league-review-match.active{border-color:var(--league-yellow);background:linear-gradient(135deg,rgba(245,211,74,.14),rgba(17,47,38,.94));box-shadow:inset 3px 0 0 var(--league-yellow)}
+.league-review-match span{min-width:0;display:flex;flex-direction:column;gap:3px}
+.league-review-match small{color:var(--cyan);font-size:8px;font-weight:900;letter-spacing:.06em}
+.league-review-match b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.league-review-match em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:9px;font-style:normal}
+.league-review-match>strong{min-width:48px;color:var(--ink);font-size:20px;text-align:right}
+.league-review-match.result-win>strong{color:#72e0ad}.league-review-match.result-loss>strong{color:#ff7c84}.league-review-match.result-demo>strong{color:var(--league-yellow);font-size:12px}
+.league-review-page>main{overflow-y:auto}
+.league-review-state{height:100%;min-height:420px;padding:30px;display:grid;place-content:center;text-align:center}
+.league-review-state>span{width:34px;height:34px;margin:0 auto 12px;border:3px solid rgba(113,217,208,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}
+.league-review-state h2{margin:0}.league-review-state p{max-width:430px;color:var(--muted)}
+.league-review-detail{padding:16px 18px 22px}
+.league-review-detail>header{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.league-review-detail>header h2{margin:3px 0 0;font-size:20px}.league-review-detail>header h2 strong{margin:0 7px;color:var(--league-yellow);font-size:25px}
+.league-review-team-tabs,.league-review-board-toolbar>div{display:flex;gap:6px}
+.league-review-team-tabs{margin:10px 0 8px;padding:5px;border-radius:11px;background:rgba(4,16,13,.75)}
+.league-review-team-tabs button,.league-review-board-toolbar button{min-height:34px;padding:6px 12px;border:1px solid rgba(93,130,112,.38);border-radius:8px;color:var(--muted);background:rgba(10,29,23,.9);font-weight:900;cursor:pointer}
+.league-review-team-tabs button{flex:1}.league-review-team-tabs button.active,.league-review-board-toolbar button.active{border-color:var(--league-yellow);color:#17190d;background:var(--league-yellow)}
+.league-review-board-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.league-review-board-toolbar>span{color:var(--muted);font-size:10px}
+.league-review-board{max-width:690px;margin:10px auto 15px}
+.league-review-pitch{width:100%;aspect-ratio:.79;overflow:hidden}
+.league-review-pitch>.zone-label{display:none}
+.league-review-pitch>.pitch-lines{z-index:2}
+.review-heat-layer{position:absolute;inset:0;z-index:1;pointer-events:none}
+.review-heat-cell{position:absolute;width:20%;height:25%;display:grid;place-items:center;border:1px solid rgba(255,255,255,.035);background:rgba(255,91,66,calc(.03 + var(--heat) * .68));box-shadow:inset 0 0 28px rgba(255,56,34,calc(var(--heat) * .28))}
+.review-heat-cell b{padding:2px 5px;border-radius:6px;color:#fff;background:rgba(40,5,2,calc(.2 + var(--heat) * .54));font-size:10px;text-shadow:0 1px 3px #000}
+.league-review-pitch .history-report-magnet{z-index:6}
+.league-review-legacy{max-width:690px;margin:0 auto 14px;padding:13px 15px;border:1px solid rgba(245,211,74,.34);border-radius:11px;background:rgba(245,211,74,.08)}
+.league-review-legacy b{color:var(--league-yellow)}.league-review-legacy p{margin:4px 0 0;color:var(--muted);font-size:11px}
+.league-review-stage-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.league-review-stage-stats article{padding:10px;border:1px solid rgba(93,130,112,.34);border-radius:10px;background:rgba(5,20,16,.66)}
+.league-review-stage-stats small,.league-review-stage-stats span{display:block;color:var(--muted);font-size:9px}.league-review-stage-stats b{display:block;margin:3px 0;color:var(--cyan);font-size:19px}
+.league-review-routes{margin-top:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.league-review-routes span{padding:9px;border-radius:9px;background:rgba(5,20,16,.66);color:var(--muted);font-size:10px}.league-review-routes b{float:right;color:var(--ink);font-size:13px}
+@media(max-width:1180px){.league-review-page{grid-template-columns:250px minmax(0,1fr)}.league-review-board{max-width:610px}}
+@media(max-width:850px){.league-review-page{height:auto;display:block}.league-review-page>aside{height:290px;margin-bottom:12px}.league-review-page>main{min-height:560px}.league-review-match-list{display:grid;grid-template-columns:1fr 1fr}.league-review-stage-stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.league-review-page>aside{height:260px}.league-review-match-list{display:flex}.league-review-detail{padding:11px}.league-review-detail>header{align-items:flex-start}.league-review-detail>header .button{display:none}.league-review-detail>header h2{font-size:14px}.league-review-detail>header h2 strong{font-size:19px}.league-review-board-toolbar{align-items:flex-start;flex-direction:column}.league-review-board-toolbar>div{width:100%;display:grid;grid-template-columns:1fr 1fr}.league-review-stage-stats{grid-template-columns:1fr 1fr}.league-review-routes{grid-template-columns:1fr}}
 @media(max-width:390px){
   .league-pool-grid{padding:0 12px;gap:10px}.s4-pack-visual{width:120px;min-width:120px;height:170px}.league-pool-draw{min-height:170px}
   .backpack-pool>div{grid-template-columns:1fr}
@@ -1409,18 +1502,21 @@ html[data-league-theme="light"] .enhancement-history-entry>footer{border-color:#
   /* Squad tactics: keep the pitch and player magnets dark */
   html[data-league-theme="light"] .league-board-panel,
   html[data-league-theme="light"] .league-bench,
+  html[data-league-theme="light"] .league-tactics-detail,
   html[data-league-theme="light"] .league-plan-controls{border-color:#d8dee7;background:#fff;box-shadow:0 14px 34px rgba(29,41,57,.09)}
   html[data-league-theme="light"] .league-bench-summary,
-  html[data-league-theme="light"] .league-bench-match-plans{border-color:#dfe5ec;background:#f5f8fb}
+  html[data-league-theme="light"] .league-bench-match-plans,
+  html[data-league-theme="light"] .league-tactics-detail-footer{border-color:#dfe5ec;background:#f5f8fb}
   html[data-league-theme="light"] .league-bench-shape,
   html[data-league-theme="light"] .league-fit-counts span,
   html[data-league-theme="light"] .league-shape-summary,
   html[data-league-theme="light"] .league-plan-basics,
   html[data-league-theme="light"] .league-match-plans,
   html[data-league-theme="light"] .league-match-plan{border-color:#d8dee7;background:#fff}
+  html[data-league-theme="light"] .league-phase-instructions>section{border-color:#dfe5ec;background:#f7f9fb}
+  html[data-league-theme="light"] .league-tactical-dimension>span{color:#263343}
   html[data-league-theme="light"] .league-fit-bar{background:#dfe5ec;box-shadow:inset 0 1px 2px rgba(29,41,57,.12)}
-  html[data-league-theme="light"] .league-bench-match-plans .field span,
-  html[data-league-theme="light"] .league-board-directions .field span{color:#263343}
+  html[data-league-theme="light"] .league-bench-match-plans .field span{color:#263343}
   html[data-league-theme="light"] .league-position-tabs button{border-color:#cfd8e3;color:#526071;background:#f3f6f9}
   html[data-league-theme="light"] .league-position-tabs button.active{border-color:#0b78f2;color:#fff;background:#0b78f2;box-shadow:0 5px 14px rgba(11,120,242,.18)}
   html[data-league-theme="light"] .league-board-chemistry{border-color:#a8dcc1;color:#1f6045;background:#eefaf4}
@@ -1922,3 +2018,115 @@ html[data-league-theme="light"] .x-growth-field.is-pending{border-color:#66a9ec;
 html[data-league-theme="light"] .x-growth-field.is-pending button,
 html[data-league-theme="light"] .x-growth-reset.is-pending [data-x-growth-reset],
 html[data-league-theme="light"] .tone-x-growth.is-pending [data-x-growth-buy]{color:#4479aa;border-color:#b9cde0;background:#e8f0f7}
+
+/* Post-match review: landscape pitch and complete light-theme surface */
+.s4-readonly-pitch.league-review-pitch{width:auto;height:100%;max-width:100%;min-height:0;aspect-ratio:1.72;overflow:visible}
+.league-review-detail{height:100%;min-height:0;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto auto}
+.league-review-page>main{overflow:hidden}
+.league-review-board{width:100%;max-width:none;min-height:0;margin:8px auto 10px;display:flex;align-items:center;justify-content:center;overflow:visible}
+.league-review-pitch .pitch-halfway{left:50%;right:auto;top:0;bottom:0;border-top:0;border-left:2px solid rgba(255,255,255,.58)}
+.league-review-pitch .pitch-center-circle{width:auto;height:30%;aspect-ratio:1}
+.league-review-pitch .pitch-penalty-box{top:22%;width:16%;height:56%}
+.league-review-pitch .pitch-goal-box{top:36%;width:7%;height:28%}
+.league-review-pitch .pitch-penalty-box-top,.league-review-pitch .pitch-goal-box-top{left:-2px;right:auto;border:2px solid rgba(255,255,255,.58);border-left:0}
+.league-review-pitch .pitch-penalty-box-bottom,.league-review-pitch .pitch-goal-box-bottom{left:auto;right:-2px;border:2px solid rgba(255,255,255,.58);border-right:0}
+.league-review-pitch .pitch-penalty-arc{top:38%;width:6%;height:24%;aspect-ratio:auto;transform:none;clip-path:none;border-radius:0}
+.league-review-pitch .pitch-penalty-arc-top{left:16%;border-left:0;border-radius:0 100% 100% 0}
+.league-review-pitch .pitch-penalty-arc-bottom{left:auto;right:16%;border-right:0;border-radius:100% 0 0 100%}
+.league-review-pitch .pitch-penalty-mark{top:50%}
+.league-review-pitch .pitch-penalty-mark-top{left:11%}
+.league-review-pitch .pitch-penalty-mark-bottom{left:89%}
+.league-review-pitch .review-heat-cell{width:25%;height:20%}
+
+html[data-league-theme="light"] .league-review-page>aside,
+html[data-league-theme="light"] .league-review-page>main{border-color:#d8dee7;color:#18212b;background:#fff;box-shadow:0 12px 30px rgba(29,41,57,.09)}
+html[data-league-theme="light"] .league-review-page>aside>header{border-color:#e1e6ec;background:#f8fafc}
+html[data-league-theme="light"] .league-review-page>aside>header small,
+html[data-league-theme="light"] .league-review-detail>header small,
+html[data-league-theme="light"] .league-review-match small{color:#0875e6}
+html[data-league-theme="light"] .league-review-page>aside>header p,
+html[data-league-theme="light"] .league-review-match em,
+html[data-league-theme="light"] .league-review-board-toolbar>span,
+html[data-league-theme="light"] .league-review-stage-stats small,
+html[data-league-theme="light"] .league-review-stage-stats span,
+html[data-league-theme="light"] .league-review-routes span{color:#697789}
+html[data-league-theme="light"] .league-review-match{border-color:#dce3eb;color:#253244;background:#f7f9fb}
+html[data-league-theme="light"] .league-review-match:hover{border-color:#9bc8fa;color:#172436;background:#edf6ff}
+html[data-league-theme="light"] .league-review-match.active{border-color:#0b78f2;color:#172436;background:linear-gradient(135deg,#edf6ff,#f8fbff);box-shadow:inset 3px 0 0 #0b78f2,0 7px 18px rgba(11,120,242,.10)}
+html[data-league-theme="light"] .league-review-match>strong{color:#253244}
+html[data-league-theme="light"] .league-review-match.result-win>strong{color:#15855e}
+html[data-league-theme="light"] .league-review-match.result-loss>strong{color:#d94350}
+html[data-league-theme="light"] .league-review-match.result-demo>strong{color:#0b78f2}
+html[data-league-theme="light"] .league-review-team-tabs{background:#eef2f6}
+html[data-league-theme="light"] .league-review-team-tabs button,
+html[data-league-theme="light"] .league-review-board-toolbar button{border-color:#d3dbe5;color:#536173;background:#fff}
+html[data-league-theme="light"] .league-review-team-tabs button:hover,
+html[data-league-theme="light"] .league-review-board-toolbar button:hover{border-color:#9bc8fa;color:#086dcc;background:#edf6ff}
+html[data-league-theme="light"] .league-review-team-tabs button.active,
+html[data-league-theme="light"] .league-review-board-toolbar button.active{border-color:#0b78f2;color:#fff;background:#0b78f2}
+html[data-league-theme="light"] .league-review-stage-stats article,
+html[data-league-theme="light"] .league-review-routes span{border-color:#dce3eb;background:#f7f9fb}
+html[data-league-theme="light"] .league-review-stage-stats b{color:#0875e6}
+html[data-league-theme="light"] .league-review-routes b{color:#253244}
+html[data-league-theme="light"] .league-review-legacy{border-color:#b8d5f5;background:#edf6ff}
+html[data-league-theme="light"] .league-review-legacy b{color:#086dcc}
+html[data-league-theme="light"] .league-review-pitch .pitch-halfway{border-left-color:rgba(8,12,16,.80)}
+html[data-league-theme="light"] .league-review-pitch .pitch-penalty-box-top,
+html[data-league-theme="light"] .league-review-pitch .pitch-goal-box-top,
+html[data-league-theme="light"] .league-review-pitch .pitch-penalty-box-bottom,
+html[data-league-theme="light"] .league-review-pitch .pitch-goal-box-bottom{border-color:rgba(8,12,16,.80)}
+
+/* Mobile tactics: keep the board responsive and bound the two long control columns. */
+.league-mobile-plan-tabs{display:none}
+@media(max-width:650px){
+  body:has(#league-squad-form) #app{width:calc(100% - 8px);padding-top:8px;padding-bottom:24px}
+  #league-squad-form .league-lineup-workspace{gap:8px}
+  #league-squad-form .league-board-panel,
+  #league-squad-form .league-bench,
+  #league-squad-form .league-tactics-detail{border-radius:12px;box-shadow:none}
+  #league-squad-form .league-board-panel{padding:6px}
+  #league-squad-form .league-board-panel>.pitch{border-width:3px;box-shadow:inset 0 0 24px rgba(0,0,0,.18)}
+  #league-squad-form .league-bench{grid-template-rows:auto minmax(0,1fr)}
+  #league-squad-form .league-bench .bench-magnet-list{max-height:min(48dvh,360px);padding:9px 7px;gap:9px 6px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:auto}
+  #league-squad-form .league-tactics-detail{grid-template-rows:auto auto minmax(0,1fr) auto}
+  #league-squad-form .league-tactics-detail>header{min-height:64px;padding:10px 12px}
+  #league-squad-form .league-tactics-detail>header b{font-size:18px}
+  .league-mobile-plan-tabs{padding:7px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;border-bottom:1px solid var(--line);background:rgba(5,22,17,.94)}
+  .league-mobile-plan-tabs button{min-width:0;min-height:38px;padding:5px;border:1px solid var(--line);border-radius:8px;color:var(--muted);background:rgba(255,255,255,.025);font-size:11px;font-weight:900;touch-action:manipulation}
+  .league-mobile-plan-tabs button.active{border-color:#1685ee;color:#fff;background:#1685ee;box-shadow:0 4px 12px rgba(22,133,238,.22)}
+  #league-squad-form .league-tactics-detail-scroll{max-height:min(72dvh,640px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:auto}
+  #league-squad-form[data-active-mobile-plan="opening"] .league-tactics-detail [data-plan-state]:not([data-plan-state="opening"]),
+  #league-squad-form[data-active-mobile-plan="leading"] .league-tactics-detail [data-plan-state]:not([data-plan-state="leading"]),
+  #league-squad-form[data-active-mobile-plan="trailing"] .league-tactics-detail [data-plan-state]:not([data-plan-state="trailing"]){display:none}
+  #league-squad-form .league-tactics-detail .league-bench-summary{padding:10px 11px;gap:8px}
+  #league-squad-form .league-tactics-detail .league-bench-match-plans{padding:9px}
+  #league-squad-form .league-tactics-detail .league-match-plan{padding:9px}
+  #league-squad-form .league-tactics-detail .league-match-plan-fields,
+  #league-squad-form .league-tactical-dimensions,
+  #league-squad-form .league-phase-instructions,
+  #league-squad-form .league-phase-instructions>section>div{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  #league-squad-form .league-phase-instructions>section{padding:8px}
+  #league-squad-form .league-tactics-detail-footer{min-height:42px;padding:6px 10px}
+  html[data-league-theme="light"] .league-mobile-plan-tabs{border-color:#d8dee7;background:#f4f7fa}
+  html[data-league-theme="light"] .league-mobile-plan-tabs button{border-color:#d3dbe5;color:#647386;background:#fff}
+  html[data-league-theme="light"] .league-mobile-plan-tabs button.active{border-color:#0b78f2;color:#fff;background:#0b78f2}
+}
+
+@media(hover:none) and (pointer:coarse){
+  #league-squad-form .league-squad-magnet,
+  #league-squad-form .league-bench-magnet{filter:none;box-shadow:0 3px 0 rgba(3,12,9,.72),0 5px 10px rgba(0,0,0,.22)}
+  #league-squad-form .league-squad-magnet::before,
+  #league-squad-form .league-bench-magnet::before{display:none}
+  #league-squad-form .league-squad-magnet:hover,
+  #league-squad-form .league-bench-magnet:hover{filter:none;transform:none;box-shadow:0 3px 0 rgba(3,12,9,.72),0 5px 10px rgba(0,0,0,.22)}
+  #league-squad-form .league-squad-magnet.dragging,
+  #league-squad-form .league-bench-magnet.dragging,
+  #league-squad-form .bench-drag-ghost{will-change:left,top}
+}
+
+@media(max-width:850px){
+  .league-review-detail{height:auto;display:block}
+  .league-review-page>main{overflow:visible}
+  .league-review-board{height:auto}
+  .s4-readonly-pitch.league-review-pitch{width:100%;height:auto;aspect-ratio:1.72}
+}

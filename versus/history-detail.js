@@ -1,3 +1,4 @@
+import { positionFitScore } from "../game/public/schema.js";
 import { REAL_PLAYER_BY_ID } from "./player-pool.js";
 import { analyzeElevenFormation, defaultElevenPositions } from "./rules.js";
 
@@ -33,6 +34,40 @@ function comparisonMetric(label, ownValue, rivalValue, suffix = "") {
     rivalText:`${rival}${suffix}`,
     edge:own === rival ? "even" : own > rival ? "own" : "rival",
   };
+}
+
+function normalizeFit(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) return 0;
+  return number > 2 ? number / 100 : number;
+}
+
+function hydrateV2AnalysisTimeline(detail) {
+  if (!Array.isArray(detail.analysisTimeline) || !String(detail.modelVersion ?? detail.engineVersion ?? "").includes("v2")) return;
+  detail.analysisTimeline = detail.analysisTimeline.map((snapshot) => ({
+    ...snapshot,
+    teams:(snapshot.teams ?? []).map((team, teamIndex) => {
+      const reportTeam = detail.teams?.[teamIndex] ?? {};
+      const reportPlayers = new Map((reportTeam.players ?? []).map((player) => [player.id, player]));
+      const activePlayers = (team.players ?? []).filter((player) => player.active !== false);
+      const calculatedPositionFit = activePlayers.length ? activePlayers.reduce((sum, player) => {
+        const source = reportPlayers.get(player.id) ?? REAL_PLAYER_BY_ID[player.id] ?? player;
+        return sum + positionFitScore(source, player.assignedRole ?? source.assignedRole ?? source.role);
+      }, 0) / activePlayers.length : 0;
+      const positionFit = normalizeFit(team.positionFit) || calculatedPositionFit;
+      const tacticalFit = normalizeFit(team.tacticalFit)
+        || normalizeFit(reportTeam.tacticalFit)
+        || normalizeFit(reportTeam.styleFit);
+      const structureIndex = normalizeFit(team.structureIndex)
+        || Math.max(.45, Math.min(1, positionFit * .35 + tacticalFit * .65));
+      return {
+        ...team,
+        structureIndex:Number(structureIndex.toFixed(4)),
+        positionFit:Number(positionFit.toFixed(4)),
+        tacticalFit:Number(tacticalFit.toFixed(4)),
+      };
+    }),
+  }));
 }
 
 function buildLossAttribution(detail, viewerIndex, opponentIndex, outcome) {
@@ -263,6 +298,7 @@ export function hydrateHistoricalMatchDetail(detail) {
       })),
     };
   });
+  hydrateV2AnalysisTimeline(hydrated);
   hydrated.review = buildMatchReview(hydrated);
   return hydrated;
 }

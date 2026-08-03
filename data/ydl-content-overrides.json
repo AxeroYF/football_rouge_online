@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-07-31T15:05:18.743Z",
+  "updatedAt": "2026-08-01T02:11:05.068Z",
   "players": {
     "s4-fc26-231443": {
       "name": "登贝莱",
@@ -2509,7 +2509,56 @@
       "eligibleRoleGroups": [
         "ANY"
       ]
+    },
+    "custom-d98bfc9a-2168-4e80-982d-c1cebef18e80": {
+      "id": "custom-d98bfc9a-2168-4e80-982d-c1cebef18e80",
+      "name": "顺风战士",
+      "summary": "球队领先的时候综合能力提升10%，落后的时候综合能力-15%",
+      "category": "custom",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "createdAt": "2026-07-31T17:26:35.805Z",
+      "updatedAt": "2026-07-31T17:26:35.805Z"
+    },
+    "custom-dc038995-c237-4fa4-b29a-b0e5abf0921a": {
+      "id": "custom-dc038995-c237-4fa4-b29a-b0e5abf0921a",
+      "name": "赖着不死",
+      "summary": "该球员不会受伤",
+      "category": "custom",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "createdAt": "2026-07-31T17:26:59.683Z",
+      "updatedAt": "2026-07-31T17:26:59.683Z"
+    },
+    "custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62": {
+      "id": "custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62",
+      "name": "大巴司机",
+      "summary": "该球员在执行全力防守战术时综合能力提升15%",
+      "category": "custom",
+      "eligibleRoleGroups": [
+        "GK",
+        "DEF"
+      ],
+      "createdAt": "2026-07-31T17:29:03.857Z",
+      "updatedAt": "2026-07-31T17:29:03.857Z"
     }
   },
-  "traitDrafts": {}
+  "traitDrafts": {
+    "custom-912de687-9ab0-4da6-88f4-4d608a78681f": {
+      "id": "custom-912de687-9ab0-4da6-88f4-4d608a78681f",
+      "name": "极限一换一",
+      "summary": "该球员在比赛中有较高概率踢伤对面随机一名球员，但是自己也会受伤下场并伤停2场",
+      "category": "custom",
+      "eligibleRoleGroups": [
+        "ANY"
+      ],
+      "rules": [],
+      "status": "draft",
+      "custom": true,
+      "createdAt": "2026-07-31T17:19:36.187Z",
+      "updatedAt": "2026-07-31T17:19:36.187Z"
+    }
+  }
 }

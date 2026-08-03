@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ATTRIBUTE_NAMES, playerOverallFromAttributes, POSITION_GROUPS, roleGroup } from "../game/public/schema.js";
@@ -180,35 +181,44 @@ function applyOverrides() {
   return migrated;
 }
 
-async function loadOverrides() {
+function loadOverridesSync() {
   let migrated = false;
   try {
-    const parsed = JSON.parse(await readFile(CONTENT_PATH, "utf8"));
+    const parsed = JSON.parse(readFileSync(CONTENT_PATH, "utf8"));
     if (parsed && typeof parsed === "object") {
       const schemaVersion = Number(parsed.schemaVersion ?? 1);
       const traitPatches = parsed.traits && typeof parsed.traits === "object" ? parsed.traits : {};
+      const draftTraits = parsed.traitDrafts && typeof parsed.traitDrafts === "object" ? parsed.traitDrafts : {};
+      const migratedTraitPatches = { ...traitPatches };
+      for (const [id, draft] of Object.entries(draftTraits)) {
+        if (YDL_TRAIT_BY_ID[id] && !migratedTraitPatches[id]) {
+          const migratedDraft = clone(draft);
+          if (!Array.isArray(migratedDraft.rules) || migratedDraft.rules.length === 0) delete migratedDraft.rules;
+          delete migratedDraft.status;
+          delete migratedDraft.custom;
+          migratedTraitPatches[id] = migratedDraft;
+        }
+      }
       overrides = {
         schemaVersion:CONTENT_SCHEMA_VERSION,
         updatedAt:parsed.updatedAt ?? null,
         players:parsed.players && typeof parsed.players === "object" ? parsed.players : {},
-        traits:Object.fromEntries(Object.entries(traitPatches)
+        traits:Object.fromEntries(Object.entries(migratedTraitPatches)
           .filter(([id]) => YDL_TRAIT_BY_ID[id])
           .map(([id, patch]) => [id, schemaVersion < CONTENT_SCHEMA_VERSION
             ? Object.fromEntries(Object.entries(patch ?? {}).filter(([key]) => key !== "rules"))
             : patch])),
-        traitDrafts:parsed.traitDrafts && typeof parsed.traitDrafts === "object"
-          ? Object.fromEntries(Object.entries(parsed.traitDrafts).filter(([id]) => !YDL_TRAIT_BY_ID[id]))
-          : {},
+        traitDrafts:Object.fromEntries(Object.entries(draftTraits).filter(([id]) => !YDL_TRAIT_BY_ID[id])),
       };
       migrated = schemaVersion < CONTENT_SCHEMA_VERSION
         || Object.keys(traitPatches).some((id) => !YDL_TRAIT_BY_ID[id])
-        || Object.keys(parsed.traitDrafts ?? {}).some((id) => YDL_TRAIT_BY_ID[id]);
+        || Object.keys(draftTraits).some((id) => YDL_TRAIT_BY_ID[id]);
     }
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
   }
   migrated = applyOverrides() || migrated;
-  if (migrated) await persist();
+  if (migrated) void persist().catch((error) => console.error("YDL内容覆盖迁移持久化失败", error));
 }
 
 async function persist() {
@@ -222,7 +232,7 @@ async function persist() {
   await writeFile(CONTENT_PATH, `${JSON.stringify(overrides, null, 2)}\n`, "utf8");
 }
 
-await loadOverrides();
+loadOverridesSync();
 
 export function ydlContentView() {
   return {

@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "engineVersion": "2.0.0-alpha.15",
+  "status": "parameter-specification",
+  "ability": {
+    "minimum": 1,
+    "maximum": 99,
+    "competitiveAnchor": 73,
+    "positiveEdgeRetention": 0.4,
+    "fitnessMinimum": 18,
+    "fitnessMaximum": 100
+  },
+  "metrics": {
+    "buildUp": { "passing": 0.28, "vision": 0.22, "decisions": 0.2, "firstTouch": 0.18, "composure": 0.12 },
+    "progression": { "passing": 0.22, "vision": 0.18, "dribbling": 0.2, "decisions": 0.16, "pace": 0.12, "acceleration": 0.12 },
+    "pressResistance": { "firstTouch": 0.24, "dribbling": 0.2, "composure": 0.2, "decisions": 0.18, "strength": 0.1, "agility": 0.08 },
+    "defensiveDuel": { "tackling": 0.28, "positioning": 0.22, "marking": 0.18, "pace": 0.12, "strength": 0.12, "decisions": 0.08 },
+    "chanceCreation": { "passing": 0.25, "vision": 0.25, "decisions": 0.2, "crossing": 0.12, "dribbling": 0.1, "composure": 0.08 },
+    "movement": { "offBall": 0.3, "acceleration": 0.2, "pace": 0.16, "decisions": 0.14, "agility": 0.1, "composure": 0.1 },
+    "finishing": { "finishing": 0.42, "composure": 0.22, "offBall": 0.16, "firstTouch": 0.12, "decisions": 0.08 },
+    "aerialFinishing": { "heading": 0.38, "jumping": 0.2, "strength": 0.16, "offBall": 0.14, "composure": 0.12 },
+    "longShot": { "longShots": 0.46, "composure": 0.2, "finishing": 0.16, "firstTouch": 0.1, "decisions": 0.08 },
+    "shotPrevention": { "positioning": 0.28, "marking": 0.22, "decisions": 0.18, "pace": 0.12, "strength": 0.1, "jumping": 0.1 },
+    "goalkeeping": { "goalkeeping": 0.5, "reflexes": 0.3, "positioning": 0.12, "composure": 0.08 },
+    "pressing": { "stamina": 0.24, "workRate": 0.22, "pace": 0.14, "tackling": 0.14, "aggression": 0.12, "decisions": 0.08, "strength": 0.06 },
+    "discipline": { "discipline": 0.38, "decisions": 0.22, "tackling": 0.18, "composure": 0.12, "aggression": 0.1 }
+  },
+  "tactics": {
+    "dimensions": {
+      "mentality": { "minimum": 0, "maximum": 100, "default": 50 },
+      "tempo": { "minimum": 0, "maximum": 100, "default": 50 },
+      "directness": { "minimum": 0, "maximum": 100, "default": 50 },
+      "attackingWidth": { "minimum": 0, "maximum": 100, "default": 50 },
+      "defensiveLine": { "minimum": 0, "maximum": 100, "default": 50 },
+      "pressing": { "minimum": 0, "maximum": 100, "default": 50 },
+      "compactness": { "minimum": 0, "maximum": 100, "default": 50 },
+      "counterAttack": { "minimum": 0, "maximum": 100, "default": 50 },
+      "timeWasting": { "minimum": 0, "maximum": 100, "default": 20 }
+    },
+    "mentalityPresets": {
+      "allOutAttack": { "mentality": 92, "tempo": 72, "directness": 58, "attackingWidth": 60, "defensiveLine": 76, "pressing": 72, "compactness": 42, "counterAttack": 36, "timeWasting": 0 },
+      "positive": { "mentality": 66, "tempo": 60, "directness": 53, "attackingWidth": 55, "defensiveLine": 58, "pressing": 58, "compactness": 54, "counterAttack": 44, "timeWasting": 5 },
+      "balanced": { "mentality": 50, "tempo": 50, "directness": 50, "attackingWidth": 50, "defensiveLine": 50, "pressing": 50, "compactness": 55, "counterAttack": 50, "timeWasting": 15 },
+      "defensive": { "mentality": 34, "tempo": 44, "directness": 56, "attackingWidth": 46, "defensiveLine": 42, "pressing": 42, "compactness": 64, "counterAttack": 62, "timeWasting": 32 },
+      "parkBus": { "mentality": 20, "tempo": 36, "directness": 60, "attackingWidth": 42, "defensiveLine": 28, "pressing": 30, "compactness": 72, "counterAttack": 64, "timeWasting": 55 }
+    },
+    "styleAdjustments": {
+      "possession": { "tempo": -8, "directness": -22, "attackingWidth": -4, "pressing": 2, "compactness": 8, "counterAttack": -18 },
+      "longBall": { "tempo": 7, "directness": 30, "attackingWidth": 6, "counterAttack": 8 },
+      "wingPlay": { "tempo": 5, "directness": 5, "attackingWidth": 30, "compactness": -8 },
+      "counterAttack": { "tempo": 8, "directness": 14, "defensiveLine": -10, "pressing": -6, "compactness": 8, "counterAttack": 20 },
+      "highPress": { "tempo": 10, "directness": -4, "defensiveLine": 22, "pressing": 32, "compactness": 12, "counterAttack": 4 },
+      "lowBlock": { "tempo": -10, "directness": 8, "defensiveLine": -20, "pressing": -16, "compactness": 18, "counterAttack": 8 },
+      "roughPlay": { "tempo": 4, "directness": 8, "pressing": 16, "compactness": 6 }
+    },
+    "stageProbabilityDimensionWeights": {
+      "buildUp": { "mentality": -0.004, "tempo": -0.006, "directness": -0.012, "pressing": 0.004, "timeWasting": 0.004 },
+      "progression": { "mentality": 0.01, "tempo": 0.008, "directness": 0.006, "pressing": 0.008, "timeWasting": -0.012 },
+      "finalThird": { "mentality": 0.02, "tempo": 0.01, "directness": 0.004, "pressing": 0.01, "timeWasting": -0.018 },
+      "chance": { "mentality": 0.028, "tempo": 0.012, "directness": 0, "pressing": 0.012, "timeWasting": -0.024 },
+      "shot": { "mentality": 0.01, "tempo": 0.004, "directness": 0, "pressing": 0.004, "timeWasting": -0.008 }
+    },
+    "stageProbabilityStyleAdjustments": {
+      "highPress": { "progression": 0.006, "finalThird": 0.01, "chance": 0.012, "shot": 0.004 }
+    },
+    "focuses": ["balanced", "left", "center", "right"]
+  },
+  "spatial": {
+    "pitch": { "width": 100, "length": 100 },
+    "grid": { "columns": 5, "rows": 4 },
+    "lanes": ["farLeft", "leftHalfSpace", "center", "rightHalfSpace", "farRight"],
+    "bands": ["defensiveThird", "buildUp", "finalThird", "box"],
+    "connectionDistance": 26,
+    "supportDistance": 20,
+    "pressureDistance": 14,
+    "influenceRadius": 24,
+    "influenceFalloff": 0.006,
+    "minimumInfluence": 0.035,
+    "tacticalDisplacementMaximum": 8,
+    "dynamicMovementMaximum": 14,
+    "defensiveTrackingRatio": 0.58,
+    "stageAdvance": {
+      "buildUp": { "GK": 0, "CB": 0, "LB": 1, "RB": 1, "DM": 1, "AM": 2, "LM": 1, "RM": 1, "ST": 0, "LW": 0, "RW": 0 },
+      "progression": { "GK": 0, "CB": 0, "LB": 2, "RB": 2, "DM": 2, "AM": 5, "LM": 4, "RM": 4, "ST": 2, "LW": 3, "RW": 3 },
+      "finalThird": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 3, "AM": 9, "LM": 7, "RM": 7, "ST": 3, "LW": 5, "RW": 5 },
+      "chance": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 4, "AM": 12, "LM": 9, "RM": 9, "ST": 4, "LW": 7, "RW": 7 },
+      "shot": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 4, "AM": 13, "LM": 10, "RM": 10, "ST": 4, "LW": 8, "RW": 8 }
+    },
+    "controlTemperature": 18,
+    "overloadPlayerAdvantage": 0.35,
+    "maximumLocalAdvantage": 3
+  },
+  "state": {
+    "regulationMinutes": 90,
+    "extraTimeMinutes": 30,
+    "chainAttemptProbabilityPerMinute": 0.55,
+    "scoreDifferenceCap": 4,
+    "restartRecoveryMinutes": 4,
+    "substitutionsEnabled": false,
+    "minimumActivePlayers": 1,
+    "fatiguePerChain": 0.085,
+    "pressingFatigueMaximum": 0.22,
+    "trailingUrgencyMaximum": 0.08,
+    "leadingControlMaximum": 0.06,
+    "leadingShotXgPenaltyPerGoal": 0.085,
+    "leadingShotXgMinimumMultiplier": 0.66
+  },
+  "environment": {
+    "weatherWeights": { "sunny": 65, "rain": 15, "storm": 10, "snow": 10 },
+    "weatherExecution": { "sunny": 1, "rain": 0.97, "storm": 0.93, "snow": 0.92 },
+    "refereeWeights": { "lenient": 28, "standard": 50, "strict": 22 },
+    "refereeDiscipline": { "lenient": 0.86, "standard": 1, "strict": 1.14 },
+    "cardProbability": { "lenient": 0.1, "standard": 0.16, "strict": 0.24 },
+    "directRedProbability": { "lenient": 0.003, "standard": 0.005, "strict": 0.008 },
+    "weatherEventPerChain": { "sunny": 0.00003, "rain": 0.00015, "storm": 0.009, "snow": 0.00024 }
+  },
+  "chain": {
+    "stages": ["possession", "buildUp", "progression", "finalThird", "chance", "shot"],
+    "openPlayXgScale": 0.68,
+    "longShot": {
+      "baseDecisionChance": 0.11,
+      "skillDecisionWeight": 0.004,
+      "longBallBonus": 0.07,
+      "lowBlockBonus": 0.05,
+      "attackingMentalityBonus": 0.02,
+      "minimumDecisionChance": 0.04,
+      "maximumDecisionChance": 0.34,
+      "baseXg": 0.075,
+      "skillXgWeight": 0.001,
+      "spaceXgWeight": 0.02,
+      "minimumXg": 0.025,
+      "maximumXg": 0.12
+    },
+    "baseProbabilities": {
+      "buildUp": 0.68,
+      "progression": 0.58,
+      "finalThird": 0.5,
+      "chance": 0.315,
+      "shot": 0.09
+    },
+    "factorWeights": {
+      "buildUp": { "execution": 0.34, "control": 0.2, "connection": 0.12, "pressureSafety": 0.2, "space": 0.04, "progression": 0.05, "overload": 0.05 },
+      "progression": { "execution": 0.26, "control": 0.16, "connection": 0.2, "pressureSafety": 0.14, "space": 0.08, "progression": 0.11, "overload": 0.05 },
+      "finalThird": { "execution": 0.24, "control": 0.14, "connection": 0.16, "pressureSafety": 0.1, "space": 0.12, "progression": 0.16, "overload": 0.08 },
+      "chance": { "execution": 0.28, "control": 0.1, "connection": 0.08, "pressureSafety": 0.08, "space": 0.18, "progression": 0.18, "overload": 0.1 },
+      "shot": { "execution": 0.42, "control": 0.04, "connection": 0.04, "pressureSafety": 0.06, "space": 0.18, "progression": 0.16, "overload": 0.1 }
+    },
+    "probabilityBounds": {
+      "possession": { "minimum": 0.15, "maximum": 0.85 },
+      "buildUp": { "minimum": 0.12, "maximum": 0.9 },
+      "progression": { "minimum": 0.1, "maximum": 0.86 },
+      "finalThird": { "minimum": 0.08, "maximum": 0.82 },
+      "chance": { "minimum": 0.04, "maximum": 0.72 },
+      "shot": { "minimum": 0.01, "maximum": 0.7 }
+    },
+    "shotTypes": ["throughBall", "cross", "cutback", "counter", "longShot", "setPiece", "rebound", "penalty"]
+    ,"route": {
+      "directThreshold": 60,
+      "directMaximumChance": 0.68,
+      "directConnectionPenalty": 0.21,
+      "directSpaceReward": 0.14,
+      "counterMinimumChance": 0.06,
+      "counterMaximumChance": 0.5,
+      "counterConnectionBonus": 0.08,
+      "counterSpaceReward": 0.14
+    }
+  },
+  "stacking": {
+    "sourceOrder": ["base", "enhancement", "trait", "chemistry", "bond", "position", "tactic", "spatial", "state", "environment"],
+    "attributeSources": ["base", "enhancement", "trait", "chemistry", "bond"],
+    "executionSources": ["position", "state", "environment"],
+    "teamSources": ["tactic", "spatial"],
+    "positiveEdgeRetention": [1, 0.82, 0.68, 0.56],
+    "domainBounds": {
+      "attribute": { "minimum": 1, "maximum": 99 },
+      "execution": { "minimum": 0.55, "maximum": 1.12 },
+      "team": { "minimum": 0.72, "maximum": 1.18 },
+      "probability": { "minimum": 0.001, "maximum": 0.95 }
+    },
+    "effectOwnership": {
+      "possessionSelection": "possession",
+      "buildUpSuccess": "buildUp",
+      "progressionSuccess": "progression",
+      "finalThirdEntry": "finalThird",
+      "chanceQuality": "chance",
+      "goalProbability": "shot",
+      "foulProbability": "discipline",
+      "injuryProbability": "event"
+    }
+  },
+  "events": {
+    "independentEvents": ["weatherInjury", "lightning", "blackWhistle", "ownGoal"],
+    "maximumIndependentGoalEventsPerMatch": 1,
+    "injuryPerChain": 0.00018,
+    "blackWhistlePerMatch": 0.02,
+    "recordParameterTrace": true,
+    "recordRandomRolls": false
+  }
+}

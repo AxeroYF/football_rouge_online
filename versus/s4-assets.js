@@ -1,10 +1,11 @@
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID } from "./player-pool.js";
+import { unwrapTracked } from "./league-shard-store.js";
 
 export const S4_ASSET_SCHEMA_VERSION = 1;
 export const S4_ROSTER_LIMIT = 33;
 export const S4_EXTERNAL_CARD_EXEMPT_LEVEL = 5;
 
-const clone = (value) => structuredClone(value);
+const clone = (value) => structuredClone(unwrapTracked(value));
 const isLegend = (playerId) => isS4Legend(REAL_PLAYER_BY_ID[playerId]);
 const activeCard = (card) => card && card.status !== "recycled";
 const cardStrength = (card) => Number(card.upgradeLevel ?? 0) * 1000
@@ -43,7 +44,16 @@ export function ensureS4Assets(state) {
   assets.traitOffers ??= {};
   assets.transactions ??= [];
   Object.values(assets.cards).forEach(normalizeCard);
-  assertS4AssetInvariants(state);
+  // 运营覆盖可将非传奇球员升级为 S（传奇），而传奇不登记唯一所有权。
+  // 加载既有状态时清除这类失效登记，避免启动断言抛“传奇球员不能登记唯一所有权”；
+  // 只影响 ownerships 索引，不删除任何卡片、名单、钱包或比赛数据。
+  for (const [playerId, ownerId] of Object.entries(assets.ownerships)) {
+    if (isLegend(playerId)) {
+      console.warn(`YDL运营覆盖将球员 ${playerId} 升级为传奇，已清除其唯一所有权登记（原持有人 ${ownerId}）；卡片、名单与钱包不受影响`);
+      delete assets.ownerships[playerId];
+    }
+  }
+  assertS4AssetInvariants(state, { allowRosterOverflow:true });
   return assets;
 }
 
@@ -168,7 +178,7 @@ export function recordS4AssetTransaction(state, transaction) {
   return entry;
 }
 
-export function assertS4AssetInvariants(state) {
+export function assertS4AssetInvariants(state, options = {}) {
   const assets = state.s4Assets;
   if (!assets) throw new Error("S4资产结构不存在");
   for (const [playerId, ownerId] of Object.entries(assets.ownerships)) {
@@ -195,7 +205,12 @@ export function assertS4AssetInvariants(state) {
       if (cardFamilies.size !== rosterFamilies.size || [...cardFamilies].some((playerId) => !rosterFamilies.has(playerId))) {
         throw new Error(`球队名单与S4球员卡资产不一致：${team.id}`);
       }
-      if (rosterSlotUsage(state, ownerId) > S4_ROSTER_LIMIT) throw new Error(`球队超过${S4_ROSTER_LIMIT}人大名单额度：${team.id}`);
+      const activeCardCount = cardsForOwner(state, ownerId).length;
+      const rosterSlots = rosterSlotUsage(state, ownerId);
+      if (rosterSlots > S4_ROSTER_LIMIT) {
+        if (options.allowRosterOverflow) continue;
+        throw new Error(`球队超过${S4_ROSTER_LIMIT}人大名单额度：${team.id}（持有人${ownerId}，球员家族${cardFamilies.size}，活动卡${activeCardCount}，实际占用${rosterSlots}）`);
+      }
     }
   }
   return true;

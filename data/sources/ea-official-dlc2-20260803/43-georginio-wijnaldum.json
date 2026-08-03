@@ -1,0 +1,237 @@
+{
+  "items": [
+    {
+      "id": 181291,
+      "rank": 967,
+      "overallRating": 78,
+      "firstName": "Georginio",
+      "lastName": "Wijnaldum",
+      "commonName": null,
+      "birthdate": "11/11/1990 00:00",
+      "height": 175,
+      "skillMoves": 3,
+      "weakFootAbility": 4,
+      "preferredFoot": 1,
+      "leagueName": "ROSHN Saudi League",
+      "weight": 74,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p181291.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/181291.png?width=265",
+      "alternatePositions": [
+        {
+          "id": "10",
+          "label": "Center Defensive Midfielder",
+          "shortLabel": "CDM"
+        }
+      ],
+      "playerAbilities": [
+        {
+          "id": "trait1_262144",
+          "label": "Flair",
+          "description": "More accurate fancy passes/shots, contextual Flair animations",
+          "imageUrl": "https://drop-assets.ea.com/images/4q0QkDX0CLgDyBXWBO8lEn/7d727e85de9ee27d3aece799571aa982/Flair.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_134217728",
+          "label": "Aerial",
+          "description": "Higher jumps and  better aerial presence",
+          "imageUrl": "https://drop-assets.ea.com/images/2wwu8lBtpugcdPGgFKHGJA/fcc08fc79bb795c370aa24f42715095d/Aerial.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 0,
+        "label": "Men's Football"
+      },
+      "nationality": {
+        "id": 34,
+        "label": "Holland",
+        "imageUrl": "https://drop-assets.ea.com/images/7LmdSUm2Ge4fzqcz0NElvq/d272142c80713dcf0e5ec0a47232aeee/f_34.png"
+      },
+      "team": {
+        "id": 112096,
+        "label": "Al Ettifaq",
+        "imageUrl": "https://drop-assets.ea.com/images/4iiu5yKgXLP6VztXNaebb1/19909c746281492a1191662354871832/l112096.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "14",
+        "shortLabel": "CM",
+        "label": "Center Midfielder",
+        "positionType": {
+          "id": "midfielder",
+          "name": "Midfielder"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 69,
+          "diff": 0
+        },
+        "agility": {
+          "value": 82,
+          "diff": 0
+        },
+        "jumping": {
+          "value": 82,
+          "diff": 0
+        },
+        "stamina": {
+          "value": 76,
+          "diff": 1
+        },
+        "strength": {
+          "value": 73,
+          "diff": 0
+        },
+        "aggression": {
+          "value": 75,
+          "diff": 0
+        },
+        "balance": {
+          "value": 88,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 81,
+          "diff": 0
+        },
+        "composure": {
+          "value": 80,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 71,
+          "diff": 0
+        },
+        "curve": {
+          "value": 77,
+          "diff": -1
+        },
+        "def": {
+          "value": 76,
+          "diff": -1
+        },
+        "defensiveAwareness": {
+          "value": 76,
+          "diff": 0
+        },
+        "dri": {
+          "value": 80,
+          "diff": 0
+        },
+        "dribbling": {
+          "value": 78,
+          "diff": 0
+        },
+        "finishing": {
+          "value": 70,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 68,
+          "diff": -5
+        },
+        "gkDiving": {
+          "value": 16,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 6,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 14,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 12,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 6,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 78,
+          "diff": 0
+        },
+        "interceptions": {
+          "value": 78,
+          "diff": -2
+        },
+        "longPassing": {
+          "value": 75,
+          "diff": -4
+        },
+        "longShots": {
+          "value": 73,
+          "diff": 0
+        },
+        "pac": {
+          "value": 68,
+          "diff": 0
+        },
+        "pas": {
+          "value": 76,
+          "diff": -1
+        },
+        "penalties": {
+          "value": 74,
+          "diff": 0
+        },
+        "phy": {
+          "value": 75,
+          "diff": 1
+        },
+        "positioning": {
+          "value": 79,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 77,
+          "diff": -1
+        },
+        "sho": {
+          "value": 72,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 80,
+          "diff": 0
+        },
+        "shotPower": {
+          "value": 73,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 68,
+          "diff": -2
+        },
+        "sprintSpeed": {
+          "value": 68,
+          "diff": 0
+        },
+        "standingTackle": {
+          "value": 78,
+          "diff": 0
+        },
+        "vision": {
+          "value": 76,
+          "diff": -3
+        },
+        "volleys": {
+          "value": 67,
+          "diff": 0
+        }
+      }
+    }
+  ],
+  "totalItems": 1
+}

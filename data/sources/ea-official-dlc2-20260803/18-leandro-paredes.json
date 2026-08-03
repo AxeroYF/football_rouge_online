@@ -1,0 +1,247 @@
+{
+  "items": [
+    {
+      "id": 207439,
+      "rank": 967,
+      "overallRating": 78,
+      "firstName": "Leandro",
+      "lastName": "Paredes",
+      "commonName": null,
+      "birthdate": "6/29/1994 12:00:00 AM",
+      "height": 180,
+      "skillMoves": 4,
+      "weakFootAbility": 4,
+      "preferredFoot": 1,
+      "leagueName": "Serie A Enilive",
+      "weight": 75,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p207439.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/207439.png?width=265",
+      "alternatePositions": [
+        {
+          "id": "10",
+          "label": "Center Defensive Midfielder",
+          "shortLabel": "CDM"
+        }
+      ],
+      "playerAbilities": [
+        {
+          "id": "trait1_256",
+          "label": "Tiki Taka",
+          "description": "Accurate first-time Ground Passes",
+          "imageUrl": "https://drop-assets.ea.com/images/2tvHC5JQ2sXrN8wUTJWLEA/94b0f6a78d1a9e1348a33c9772f23afd/Tiki_Taka.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_16384",
+          "label": "Slide Tackle",
+          "description": "Stops ball at feet during slide tackles",
+          "imageUrl": "https://drop-assets.ea.com/images/7mI1lrxE0pv9iJfQFki9OA/8c1ecac325f923e049be72231c8c968a/Slide_Tackle.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_16777216",
+          "label": "Trivela",
+          "description": "Contextually triggers \"outside of the foot\" kicks, reduces errors",
+          "imageUrl": "https://drop-assets.ea.com/images/4V77ZiJ0w8qDuORPMPz8nB/d7b0c4a2c3da6102e67a3db3c749aca8/Trivela.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 0,
+        "label": "Men's Football"
+      },
+      "nationality": {
+        "id": 52,
+        "label": "Argentina",
+        "imageUrl": "https://drop-assets.ea.com/images/4xMXjEt7CFJ6JENYeG45Sk/836d733dc1642c5e4ab3338d91481436/f_52.png"
+      },
+      "team": {
+        "id": 52,
+        "label": "AS Roma",
+        "imageUrl": "https://drop-assets.ea.com/images/2ruQP0TDYcCmtVFKr9qMBI/5f53795056598b1faac31300900b8671/l52.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "14",
+        "shortLabel": "CM",
+        "label": "Center Midfielder",
+        "positionType": {
+          "id": "midfielder",
+          "name": "Midfielder"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 62,
+          "diff": -3
+        },
+        "agility": {
+          "value": 68,
+          "diff": 0
+        },
+        "jumping": {
+          "value": 70,
+          "diff": 1
+        },
+        "stamina": {
+          "value": 74,
+          "diff": 1
+        },
+        "strength": {
+          "value": 75,
+          "diff": 3
+        },
+        "aggression": {
+          "value": 88,
+          "diff": 1
+        },
+        "balance": {
+          "value": 75,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 84,
+          "diff": 0
+        },
+        "composure": {
+          "value": 82,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 77,
+          "diff": 0
+        },
+        "curve": {
+          "value": 83,
+          "diff": 0
+        },
+        "def": {
+          "value": 71,
+          "diff": 0
+        },
+        "defensiveAwareness": {
+          "value": 70,
+          "diff": 0
+        },
+        "dri": {
+          "value": 78,
+          "diff": -1
+        },
+        "dribbling": {
+          "value": 78,
+          "diff": -1
+        },
+        "finishing": {
+          "value": 50,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 78,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 9,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 14,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 6,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 9,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 10,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 56,
+          "diff": 0
+        },
+        "interceptions": {
+          "value": 72,
+          "diff": 0
+        },
+        "longPassing": {
+          "value": 85,
+          "diff": 2
+        },
+        "longShots": {
+          "value": 72,
+          "diff": 0
+        },
+        "pac": {
+          "value": 62,
+          "diff": 0
+        },
+        "pas": {
+          "value": 83,
+          "diff": 2
+        },
+        "penalties": {
+          "value": 64,
+          "diff": 0
+        },
+        "phy": {
+          "value": 77,
+          "diff": 2
+        },
+        "positioning": {
+          "value": 62,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 68,
+          "diff": 0
+        },
+        "sho": {
+          "value": 64,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 86,
+          "diff": 3
+        },
+        "shotPower": {
+          "value": 86,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 76,
+          "diff": -1
+        },
+        "sprintSpeed": {
+          "value": 62,
+          "diff": 2
+        },
+        "standingTackle": {
+          "value": 76,
+          "diff": 1
+        },
+        "vision": {
+          "value": 82,
+          "diff": 2
+        },
+        "volleys": {
+          "value": 71,
+          "diff": 0
+        }
+      }
+    }
+  ],
+  "totalItems": 1
+}

@@ -75,6 +75,9 @@ const PROFILE_KEY_BY_PLAYER_ID = Object.freeze({
   "s4-dlc-20260731-040":"Rivaldo",
   "s4-dlc-20260731-043":"Craig Goodwin",
   "s4-dlc-20260731-048":"Didi",
+  "s4-dlc2-20260803-001":"Alfredo Di Stéfano",
+  "s4-dlc2-20260803-059":"Vítor Baía",
+  "s4-dlc2-20260803-063":"Giuseppe Meazza",
 });
 
 function normalizedProfile(profile, playerId, profileKey) {

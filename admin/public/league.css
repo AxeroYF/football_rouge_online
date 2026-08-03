@@ -117,6 +117,7 @@
 .league-backup-panel,
 .league-reward-mail-panel,
 .league-coin-grant-panel,
+.league-admin-mail-panel,
 .league-card-grant-panel,
 .league-badge-panel { grid-column: 1 / -1; }
 .league-economy-panel { grid-column: 1 / -1; }
@@ -148,9 +149,14 @@
 .league-reward-mail-form label { min-width: 0; display: grid; gap: 6px; }
 .league-reward-mail-form label span { color: var(--muted); font-size: 10px; font-weight: 800; }
 .league-reward-mail-form input,
-.league-reward-mail-form select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); color: var(--ink); background: #071411; }
+.league-reward-mail-form select,
+.league-reward-mail-form textarea { box-sizing: border-box; width: 100%; min-width: 0; min-height: 42px; padding: 10px; border: 1px solid var(--line); color: var(--ink); background: #071411; }
 .league-reward-mail-form select option { color: #edf6ee; background: #071411; }
 .league-reward-mail-form button { min-height: 42px; white-space: nowrap; }
+.league-admin-mail-form { grid-template-columns: 1fr 1fr; align-items: start; }
+.league-admin-mail-form .league-admin-mail-body { grid-column: 1 / -1; }
+.league-admin-mail-form textarea { min-height: 150px; resize: vertical; line-height: 1.6; }
+.league-admin-mail-form button { justify-self: start; }
 .league-card-grant-form {
   padding: 14px;
   display: grid;
@@ -230,6 +236,7 @@
   .league-backup-panel,
   .league-reward-mail-panel,
   .league-coin-grant-panel,
+  .league-admin-mail-panel,
   .league-card-grant-panel,
   .league-badge-panel { grid-column: 1; }
   .league-economy-panel { grid-column: 1; }
@@ -237,6 +244,8 @@
   .economy-tables { grid-template-columns: 1fr; }
   .economy-tables .economy-ledger { grid-column: auto; }
   .league-reward-mail-form { grid-template-columns: 1fr 1fr; }
+  .league-admin-mail-form { grid-template-columns: 1fr; }
+  .league-admin-mail-form .league-admin-mail-body { grid-column: auto; }
   .league-card-grant-form { grid-template-columns: 1fr 1fr; }
   .league-badge-form { grid-template-columns: 1fr 1fr; }
 }

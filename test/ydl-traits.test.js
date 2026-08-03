@@ -32,6 +32,9 @@ const EXPECTED_NAMES = [
   "全能战士",
   "一夫当关",
   "普拉蒂尼是我爹",
+  "顺风战士",
+  "赖着不死",
+  "大巴司机",
 ];
 
 function carrier(traitIds, overrides = {}) {
@@ -57,11 +60,12 @@ function matchSeat(name, offset, playerTraits = {}) {
   return { name, players, positions:defaultElevenPositions(players), tactic:"balanced", style:"possession" };
 }
 
-test("YDL后台和强化池包含15张已实现特性卡", () => {
-  assert.equal(YDL_TRAIT_CARDS.length, 15);
+test("YDL后台和强化池包含18张已实现特性卡，极限一换一不进入正式池", () => {
+  assert.equal(YDL_TRAIT_CARDS.length, 18);
   assert.deepEqual(YDL_TRAIT_CARDS.map((trait) => trait.name), EXPECTED_NAMES);
-  assert.equal(new Set(YDL_TRAIT_IDS).size, 15);
+  assert.equal(new Set(YDL_TRAIT_IDS).size, 18);
   assert.ok(YDL_TRAIT_CARDS.every((trait) => trait.rules.length > 0));
+  assert.equal(YDL_TRAIT_CARDS.some((trait) => trait.name === "极限一换一"), false);
 });
 
 test("YDL数值、身高、位置、羁绊和固定体力规则按说明执行", () => {

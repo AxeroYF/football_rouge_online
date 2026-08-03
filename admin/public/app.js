@@ -166,6 +166,7 @@ function renderLeagueAdmin() {
   const s4CardGrantRows = (leagueData.s4CardGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${escapeHtml(grant.playerName)}</b><small>${escapeHtml(grant.playerId)}</small></td><td>${grant.upgradeLevel ? `+${grant.upgradeLevel}` : "无强化"}</td><td>${grant.quantity}张</td><td><b>${escapeHtml(grant.ownerName)}</b><small>${escapeHtml(grant.teamName)}</small></td><td>${grant.ownershipGranted ? "同时获得所有权" : "所有权不变"}</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="6">尚未发放指定球员卡</td></tr>`;
   const coinGrantRows = (leagueData.coinGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${coinText(grant.amount)}</b><small>${escapeHtml(grant.id)}</small></td><td>${grant.recipientMode === "all" ? "全体玩家" : "指定玩家"}</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放金币</td></tr>`;
   const xGrowthGrantRows = (leagueData.xGrowthGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${grant.points}点</b><small>${escapeHtml(grant.id)}</small></td><td>全体X球员玩家</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放X球员加成点数</td></tr>`;
+  const mailBroadcastRows = (leagueData.mailBroadcasts ?? []).slice(0, 30).map((mail) => `<tr><td><b>${escapeHtml(mail.title)}</b><small>${escapeHtml(mail.id)}</small></td><td>${escapeHtml(mail.summary)}</td><td>${mail.recipientCount}人</td><td>${dateText(mail.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发送全服邮件</td></tr>`;
   const badgePlayerOptions = leagueData.teams.filter((team) => !team.isAi).map((team) => `<option value="${escapeHtml(team.ownerId)}">${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)} · ${escapeHtml(team.ownerId)}</option>`).join("");
   const badgeRows = leagueData.teams.flatMap((team) => (team.championBadges ?? []).map((badge) => ({ ...badge, ownerId:team.ownerId, ownerName:team.ownerName, teamName:team.name }))).sort((left,right) => Number(right.awardedAt) - Number(left.awardedAt)).map((badge) => { const isCup = badge.competition === "cup" || badge.type === "cup-champion"; return `<tr><td><span class="admin-champion-badge ${isCup ? "cup-champion-badge" : ""}"><i>${isCup ? "🏆" : "♛"}</i>${escapeHtml(badge.season)}${isCup ? " 杯赛" : " 联赛"}</span></td><td><b>${escapeHtml(badge.ownerName)}</b><small>${escapeHtml(badge.ownerId)}</small></td><td>${escapeHtml(badge.teamName)}</td><td>${dateText(badge.awardedAt)}</td></tr>`; }).join("") || `<tr><td colspan="4">尚未发放冠军徽章</td></tr>`;
   logoutButton.hidden = false;
@@ -186,6 +187,7 @@ function renderLeagueAdmin() {
   document.querySelector(".league-allocation-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-backup-panel"><header class="panel-head"><div><h2>联赛数据备份</h2><small>每天一份，自动保留最近 ${leagueData.backups.retentionDays} 天；完全重置前额外保存快照</small></div></header><div class="table-wrap"><table><thead><tr><th>文件</th><th>类型</th></tr></thead><tbody>${backupRows}</tbody></table></div></section>`);
   document.querySelector(".league-backup-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-economy-panel"><header class="panel-head"><div><h2>玩家经济明细</h2><small>当前赛季商店开包、卡包签约、解约、转会与完整金币流水</small></div><select id="league-economy-team" ${economyOptions ? "" : "disabled"}>${economyOptions || `<option>${economyVersionReady ? "暂无玩家球队" : "等待服务重启"}</option>`}</select></header><div id="league-economy-detail">${leagueEconomyDetail(leagueData.economy?.[0]?.accountId)}</div></section>`);
   document.querySelector(".league-team-panel").insertAdjacentHTML("afterend", `<section class="panel league-reward-mail-panel"><header class="panel-head"><div><h2>S4礼包发放</h2><small>旧赛季礼包已经下架；可向所有已建队玩家或指定玩家立即发放新礼包。</small></div></header><form id="league-s4-pack-grant-form" class="league-reward-mail-form"><label><span>礼包类型</span><select name="packType">${s4PackTypeOptions}</select></label><label><span>每人数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-s4-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4PackTypeOptions ? "" : "disabled"}>立即发放礼包</button></form><div class="table-wrap"><table><thead><tr><th>礼包</th><th>数量</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${s4GrantRows}</tbody></table></div></section>`);
+  document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-admin-mail-panel"><header class="panel-head"><div><h2>全服更新邮件</h2><small>向所有已建队玩家发送管理员公告，邮件会立即出现在玩家收件箱。</small></div></header><form id="league-admin-mail-form" class="league-reward-mail-form league-admin-mail-form"><label><span>邮件标题</span><input name="title" maxlength="80" placeholder="例如：V2引擎与阵型线更新" required></label><label><span>邮件摘要（可选）</span><input name="summary" maxlength="200" placeholder="留空时自动截取正文"></label><label class="league-admin-mail-body"><span>邮件正文</span><textarea name="body" maxlength="5000" rows="7" placeholder="填写完整更新内容" required></textarea></label><button type="submit" ${humanTeams ? "" : "disabled"}>发送给全体玩家</button></form><div class="table-wrap"><table><thead><tr><th>标题</th><th>摘要</th><th>接收人数</th><th>发送时间</th></tr></thead><tbody>${mailBroadcastRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-coin-grant-panel"><header class="panel-head"><div><h2>金币即时发放</h2><small>向所有已建队玩家或指定玩家发放金币，提交后余额立即到账并发送邮件通知。</small></div></header><form id="league-coin-grant-form" class="league-reward-mail-form"><label><span>每人金币数量</span><input name="amount" type="number" min="1" max="1000000000" step="1" value="1000" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-coin-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4RecipientOptions ? "" : "disabled"}>立即发放金币</button></form><div class="table-wrap"><table><thead><tr><th>每人金额</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${coinGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-coin-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-x-growth-grant-panel"><header class="panel-head"><div><h2>X球员加成点数发放</h2><small>向所有已经拥有X球员的玩家统一发放加成点数，提交后立即到账并发送邮件通知。</small></div></header><form id="league-x-growth-grant-form" class="league-reward-mail-form"><label><span>每名X球员获得点数</span><input name="points" type="number" min="1" max="1000" step="1" value="1" required></label><button type="submit" ${humanTeams ? "" : "disabled"}>向全部X球员发放</button></form><div class="table-wrap"><table><thead><tr><th>每人点数</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${xGrowthGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-card-grant-panel"><header class="panel-head"><div><h2>指定球员卡发放</h2><small>向任意已建队玩家发放指定球员、指定强化等级的测试卡；强化等级支持0至8级。</small></div></header><form id="league-s4-card-grant-form" class="league-card-grant-form"><label><span>接收玩家</span><select name="accountId" ${s4RecipientOptions ? "" : "disabled"}>${s4RecipientOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>搜索球员</span><input id="league-s4-player-search" placeholder="输入中文名、俱乐部、位置或ID"></label><label><span>指定球员</span><select id="league-s4-player-select" name="playerId" ${s4PlayerOptions ? "" : "disabled"}>${s4PlayerOptions || `<option>暂无球员数据</option>`}</select></label><label><span>强化等级</span><select name="upgradeLevel">${Array.from({ length:9 }, (_, level) => `<option value="${level}">${level ? `+${level}` : "无强化"}</option>`).join("")}</select></label><label><span>发放数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><button type="submit" ${s4RecipientOptions && s4PlayerOptions ? "" : "disabled"}>发放指定球员卡</button></form><div class="table-wrap"><table><thead><tr><th>球员</th><th>强化</th><th>数量</th><th>接收玩家</th><th>所有权</th><th>时间</th></tr></thead><tbody>${s4CardGrantRows}</tbody></table></div></section>`);
@@ -218,6 +220,16 @@ function renderLeagueAdmin() {
     const scope = recipientMode === "all" ? "所有已建队玩家" : `${accountIds.length}名指定玩家`;
     if (recipientMode === "specified" && !accountIds.length) return window.alert("请至少选择一名玩家");
     if (window.confirm(`确认向${scope}每人发放${amount.toLocaleString()}金币？金币会立即到账。`)) runLeagueAdminAction("/api/admin/league/coins/grant", { amount, recipientMode, accountIds }, "金币已经发放并立即到账");
+  };
+  document.querySelector("#league-admin-mail-form").onsubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.target);
+    const title = String(form.get("title") ?? "").trim();
+    const summary = String(form.get("summary") ?? "").trim();
+    const body = String(form.get("body") ?? "").trim();
+    if (window.confirm(`确认向全部 ${humanTeams} 名已建队玩家发送“${title}”？`)) {
+      runLeagueAdminAction("/api/admin/league/mail/broadcast", { title, summary, body }, "全服更新邮件已经发送");
+    }
   };
   const xGrowthGrantForm = document.querySelector("#league-x-growth-grant-form");
   xGrowthGrantForm.onsubmit = (event) => {
@@ -308,7 +320,12 @@ function renderLeagueAdmin() {
     if (!player) return window.alert("请选择有效的球员");
     const levelText = upgradeLevel ? `+${upgradeLevel}` : "无强化";
     if (window.confirm(`确认向 ${team?.ownerName ?? accountId} 发放 ${quantity}张 ${player.name}（${levelText}）球员卡？`)) {
-      runLeagueAdminAction("/api/admin/league/s4-cards/grant", { accountId, playerId, upgradeLevel, quantity }, "指定球员卡已经发放并进入玩家背包");
+      runLeagueAdminAction("/api/admin/league/s4-cards/grant", { accountId, playerId, upgradeLevel, quantity }, "指定球员卡已经发放并进入玩家背包", {
+        apply:(value) => {
+          const grant = value.cardGrant?.grant;
+          if (grant) leagueData.s4CardGrants = [grant, ...(leagueData.s4CardGrants ?? []).filter((entry) => entry.id !== grant.id)];
+        },
+      });
     }
   };
   document.querySelector("#league-badge-form").onsubmit = (event) => {
@@ -351,9 +368,11 @@ function renderLeagueAdmin() {
   };
 }
 
-async function runLeagueAdminAction(path, body, message) {
+async function runLeagueAdminAction(path, body, message, options = {}) {
   try {
-    leagueData = (await api(path, { method:"POST", body })).league;
+    const value = await api(path, { method:"POST", body });
+    if (value.league) leagueData = value.league;
+    options.apply?.(value);
     renderLeagueAdmin();
     window.alert(message);
   } catch (error) { window.alert(error.message); }
