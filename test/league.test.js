@@ -790,11 +790,11 @@ test("admin economy view summarizes S4 bulk purchases and duplicate-card release
 
   const economy = service.adminView().economy.find((entry) => entry.accountId === user.id);
   assert.ok(economy);
-  assert.equal(economy.balance, 20000 - 3200 + economy.releases[0].amount);
+  assert.equal(economy.balance, 20000 - 2000 + economy.releases[0].amount);
   assert.equal(economy.shopPackCounts.find((entry) => entry.tierId === "private-mixed").count, 2);
   assert.equal(economy.releases[0].player.id, opened.packOpening.player.id);
   assert.ok(economy.income > 0);
-  assert.equal(economy.expense, 3200);
+  assert.equal(economy.expense, 2000);
   assert.ok(economy.ledger.some((entry) => entry.type === "s4-pack-buy" && entry.packType === "private-mixed" && entry.quantity === 2));
 });
 

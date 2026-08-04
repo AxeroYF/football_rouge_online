@@ -779,6 +779,22 @@ button.s4-pack-visual:hover .s4-pack-glint{transform:translateX(110%)}
 }
 
 /* S4 shared readonly tactics board and rounded league surfaces */
+.league-squad-page{display:grid;gap:12px}
+.league-squad-worldcup-mode{--wc-accent:#f5d34a;--wc-accent-ink:#17190d}
+.league-tactics-mode-switch{display:flex;gap:6px;padding:5px;width:max-content;max-width:100%;border:1px solid var(--line);border-radius:10px;background:rgba(8,23,18,.9)}
+.league-tactics-mode-switch button{min-height:36px;padding:7px 14px;border:1px solid transparent;border-radius:7px;color:var(--muted);background:transparent;font-weight:900;cursor:pointer}
+.league-tactics-mode-switch button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.league-tactics-mode-switch button.active{border-color:var(--cyan);color:#071411;background:var(--cyan)}
+.league-tactics-mode-switch button:disabled{cursor:not-allowed;opacity:.55}
+.world-cup-tactics-closed{padding:28px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#10241c,#081510);box-shadow:0 12px 28px rgba(0,0,0,.16)}
+.world-cup-tactics-closed small{color:var(--wc-accent);font-weight:900;letter-spacing:.12em}
+.world-cup-tactics-closed h2{margin:8px 0 5px;font-size:22px}
+.world-cup-tactics-closed p{margin:0;color:var(--muted);font-size:12px}
+html[data-league-theme="light"] .league-tactics-mode-switch{border-color:#d8dee7;background:#fff}
+html[data-league-theme="light"] .league-tactics-mode-switch button:hover{background:#edf4fb}
+html[data-league-theme="light"] .league-tactics-mode-switch button.active{color:#fff;background:#0b78f2;border-color:#0b78f2}
+html[data-league-theme="light"] .world-cup-tactics-closed{border-color:#d8dee7;background:#fff;box-shadow:0 12px 26px rgba(29,41,57,.07)}
+@media(max-width:700px){.league-tactics-mode-switch{width:100%}.league-tactics-mode-switch button{min-width:0;flex:1;padding-inline:8px}}
 .s4-readonly-pitch{width:100%;min-height:0;aspect-ratio:.82;overflow:visible;border:6px solid #765b36;border-radius:14px;background:repeating-linear-gradient(90deg,#16543a 0 12.5%,#1b6041 12.5% 25%);box-shadow:inset 0 0 90px rgba(0,0,0,.34),0 12px 30px rgba(0,0,0,.25)}
 .s4-readonly-pitch .pitch-lines{inset:2.4%;border-color:rgba(255,255,255,.64);border-radius:2px}
 .s4-readonly-pitch .pitch-lines:before,.s4-readonly-pitch .pitch-lines:after{display:none}
@@ -1324,6 +1340,232 @@ html[data-league-theme="light"] .enhancement-history-entry>footer{border-color:#
   .s4-market-card-grid{gap:10px 9px}
   .s4-player-card-upgrade{right:5px;top:5px;min-width:35px;height:28px;padding:0 6px;font-size:12px}
   .s4-player-card-upgrade.band-max{min-width:39px;height:31px}
+}
+
+/* YellowDogs World Cup demo */
+.world-cup-page{--wc-accent:#f5d34a;--wc-accent-ink:#17190d;display:grid;gap:16px;color:var(--ink)}
+.world-cup-page button,.world-cup-page select,.world-cup-page input{font:inherit}
+.world-cup-flag{width:30px;height:20px;display:inline-block;flex:0 0 auto;object-fit:cover;border:1px solid rgba(255,255,255,.2);border-radius:2px;box-shadow:0 2px 5px rgba(0,0,0,.18);vertical-align:middle}
+.world-cup-hero{min-height:178px;padding:25px 28px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;overflow:hidden;border:1px solid rgba(245,211,74,.45);border-radius:17px;background:linear-gradient(118deg,#142a20 0%,#0b1914 63%,#352d0e 100%);box-shadow:inset 5px 0 0 var(--wc-accent),0 15px 35px rgba(0,0,0,.2)}
+.world-cup-hero>div>small,.world-cup-squad>header small,.world-cup-tactics>header small,.world-cup-groups-page>header small,.world-cup-bracket>header small{color:var(--wc-accent);font-size:10px;font-weight:900;letter-spacing:.13em}
+.world-cup-hero h2{margin:7px 0 8px;font-size:36px;letter-spacing:0}
+.world-cup-hero p{margin:0;display:flex;align-items:center;gap:8px;color:var(--muted)}
+.world-cup-hero p b{color:var(--ink)}
+.world-cup-hero aside{min-width:235px;padding:15px 17px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(3,10,7,.48);text-align:right}
+.world-cup-hero aside small,.world-cup-hero aside b,.world-cup-hero aside span{display:block}
+.world-cup-hero aside small{color:var(--muted);font-size:10px}
+.world-cup-hero aside b{margin:3px 0;color:var(--wc-accent);font-size:31px;font-variant-numeric:tabular-nums}
+.world-cup-hero aside span{color:var(--muted);font-size:11px}
+.world-cup-tabs{display:flex;gap:6px;padding:6px;border:1px solid var(--line);border-radius:13px;background:rgba(8,23,18,.9)}
+.world-cup-tabs button{min-height:42px;flex:1;padding:8px 12px;border:1px solid transparent;border-radius:8px;color:var(--muted);background:transparent;font-weight:900;cursor:pointer}
+.world-cup-tabs button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.world-cup-tabs button.active{border-color:var(--wc-accent);color:var(--wc-accent-ink);background:var(--wc-accent)}
+.world-cup-dashboard{display:grid;gap:16px}
+.world-cup-overview-lower{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(430px,.75fr);gap:16px;align-items:start}
+.world-cup-overview-lower .world-cup-schedule{height:504px;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.world-cup-rankings{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.world-cup-rankings>article{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:13px;background:linear-gradient(145deg,#10241c,#081510);box-shadow:0 12px 28px rgba(0,0,0,.16)}
+.world-cup-rankings>article>header{padding:14px 15px;border-bottom:1px solid var(--line)}
+.world-cup-rankings header small{color:var(--wc-accent);font-size:9px;font-weight:900;letter-spacing:.12em}
+.world-cup-rankings h3{margin:4px 0 0;font-size:17px}
+.world-cup-rankings ol{max-height:430px;margin:0;padding:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;list-style:none}
+.world-cup-rankings ol::-webkit-scrollbar{width:7px}
+.world-cup-rankings ol::-webkit-scrollbar-thumb{border-radius:7px;background:rgba(113,217,208,.35)}
+.world-cup-rankings li{min-height:58px;padding:8px 10px;display:grid;grid-template-columns:20px 30px minmax(0,1fr) auto;gap:8px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}
+.world-cup-rankings li:last-child{border-bottom:0}
+.world-cup-rankings li>strong{color:var(--muted);font-size:11px;text-align:center}
+.world-cup-rankings li>span b,.world-cup-rankings li>span small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.world-cup-rankings li>span b{font-size:11px}.world-cup-rankings li>span small{margin-top:2px;color:var(--muted);font-size:8px}
+.world-cup-rankings li>em{color:var(--wc-accent);font-size:19px;font-style:normal;font-weight:900;text-align:right}.world-cup-rankings li>em small{margin-left:2px;font-size:8px}
+.world-cup-status{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:16px}
+.world-cup-status>article,.world-cup-schedule,.world-cup-squad,.world-cup-tactics,.world-cup-groups-page,.world-cup-bracket{border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#10241c,#081510);box-shadow:0 12px 28px rgba(0,0,0,.16)}
+.world-cup-status>article{min-width:0;padding:19px}
+.world-cup-status article>header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.world-cup-status article>header span{color:var(--wc-accent);font-size:10px;font-weight:900;letter-spacing:.12em}
+.world-cup-status article>header b{padding:4px 7px;border-radius:6px;color:#bff4cd;background:rgba(78,193,114,.13);font-size:10px}
+.world-cup-status h3{margin:16px 0 6px;font-size:21px}
+.world-cup-status p{margin:0;color:var(--muted);font-size:12px;line-height:1.65}
+.world-cup-status article>div{margin:17px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.world-cup-status article>div span{padding:10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;color:var(--muted);background:rgba(255,255,255,.025);font-size:10px}
+.world-cup-status article>div span b{margin-top:3px;display:block;color:var(--ink);font-size:13px}
+.world-cup-status .button{width:100%}
+.world-cup-status .world-cup-auto{border-color:rgba(245,211,74,.4);background:linear-gradient(145deg,#29230d,#10170f)}
+.world-cup-auto>strong{margin-top:16px;display:block;color:var(--wc-accent);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.world-cup-status .world-cup-auto>div{grid-template-columns:repeat(3,1fr);margin-bottom:0}
+.world-cup-auto>div b{padding:8px;border:1px solid rgba(245,211,74,.25);border-radius:7px;color:var(--wc-accent);background:rgba(245,211,74,.08);text-align:center}
+.world-cup-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:13px;overflow:hidden;background:#0a1813}
+.world-cup-rules>div{padding:14px 17px;border-right:1px solid var(--line)}
+.world-cup-rules>div:last-child{border-right:0}
+.world-cup-rules small,.world-cup-rules b,.world-cup-rules span{display:block}
+.world-cup-rules small,.world-cup-rules span{color:var(--muted);font-size:10px}
+.world-cup-rules b{margin:4px 0;color:var(--wc-accent);font-size:20px}
+.world-cup-schedule{padding:18px}
+.world-cup-schedule>header,.world-cup-squad>header,.world-cup-tactics>header,.world-cup-groups-page>header,.world-cup-bracket>header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+.world-cup-schedule>header small{color:var(--wc-accent);font-size:10px;font-weight:900;letter-spacing:.12em}
+.world-cup-schedule h3,.world-cup-squad h3,.world-cup-tactics h3,.world-cup-groups-page h3,.world-cup-bracket h3{margin:4px 0 0;font-size:20px}
+.world-cup-schedule>header button{border:0;color:var(--wc-accent);background:transparent;cursor:pointer}
+.world-cup-schedule ol{margin:16px 0 0;padding:0;list-style:none}
+.world-cup-schedule li{min-height:52px;padding:8px 10px;display:grid;grid-template-columns:64px 30px minmax(70px,1fr) 34px 30px minmax(70px,1fr) minmax(125px,auto);gap:9px;align-items:center;border-bottom:1px solid rgba(255,255,255,.07)}
+.world-cup-schedule li.next{border-left:3px solid var(--wc-accent);background:rgba(245,211,74,.045)}
+.world-cup-schedule time{color:var(--wc-accent);font-weight:900;font-variant-numeric:tabular-nums}
+.world-cup-schedule li>span{color:var(--muted);text-align:center}
+.world-cup-schedule li>em{color:var(--muted);font-size:10px;font-style:normal;text-align:right}
+.world-cup-schedule li:nth-child(n+4){grid-template-columns:64px 1fr minmax(125px,auto)}
+.world-cup-schedule-rounds{min-height:0;margin-top:16px;display:grid;align-content:start;gap:12px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.world-cup-schedule-round{overflow:hidden;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.015)}
+.world-cup-schedule-round.next{border-left:3px solid var(--wc-accent);background:rgba(245,211,74,.045)}
+.world-cup-schedule-round>header{min-height:42px;padding:8px 12px;display:grid;grid-template-columns:minmax(120px,1fr) 64px 64px;gap:12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.07)}
+.world-cup-schedule-round>header b{font-size:13px;white-space:nowrap}
+.world-cup-schedule-round>header time{color:var(--wc-accent);font-size:12px;font-weight:900;text-align:center;font-variant-numeric:tabular-nums}
+.world-cup-schedule-round>header em{color:var(--muted);font-size:10px;font-style:normal;text-align:right;white-space:nowrap}
+.world-cup-fixture-row{width:100%;min-height:48px;padding:7px 12px;display:grid;grid-template-columns:minmax(135px,1fr) minmax(62px,auto) minmax(135px,1fr) 36px;gap:10px;align-items:center;border:0;border-bottom:1px solid rgba(255,255,255,.06);border-radius:0;color:var(--ink);background:transparent;font:inherit;text-align:left}
+.world-cup-fixture-row:last-child{border-bottom:0}
+.world-cup-fixture-row.has-detail{cursor:pointer}
+.world-cup-fixture-row.has-detail:hover{background:rgba(113,217,208,.07)}
+.world-cup-fixture-row.has-detail:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.world-cup-fixture-row>span{min-width:0;display:flex;align-items:center;gap:8px}
+.world-cup-fixture-row>span:nth-of-type(2){justify-content:flex-end;text-align:right}
+.world-cup-fixture-row>span b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.world-cup-fixture-row>span i{padding:1px 4px;border:1px solid var(--line);border-radius:3px;color:var(--muted);font-size:8px;font-style:normal}
+.world-cup-fixture-row>strong{text-align:center;font-size:12px;white-space:nowrap}
+.world-cup-fixture-row>em{color:var(--muted);font-size:9px;font-style:normal;text-align:right;white-space:nowrap}
+.world-cup-fixture-row .world-cup-flag{width:28px;height:19px;flex:0 0 auto}
+.world-cup-ranking-empty{display:block!important;min-height:58px!important;padding:18px 14px!important;color:var(--muted);text-align:center;white-space:nowrap}
+.world-cup-full-schedule{padding:20px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,#10241c,#081510);box-shadow:0 12px 28px rgba(0,0,0,.16)}
+.world-cup-full-schedule>header{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+.world-cup-full-schedule>header small{color:var(--wc-accent);font-size:10px;font-weight:900;letter-spacing:.12em}
+.world-cup-full-schedule>header h3{margin:4px 0 0;font-size:20px}
+.world-cup-full-schedule>header p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.world-cup-full-schedule>header>b{color:var(--wc-accent);font-size:12px;white-space:nowrap}
+.world-cup-full-schedule-scroll{max-height:calc(100vh - 330px);min-height:280px;margin-top:18px;display:grid;align-content:start;gap:12px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.world-cup-schedule-empty{margin:0;padding:36px;color:var(--muted);text-align:center}
+.world-cup-squad,.world-cup-tactics,.world-cup-groups-page,.world-cup-bracket{padding:20px}
+.world-cup-squad>header p,.world-cup-tactics>header p,.world-cup-groups-page>header p,.world-cup-bracket>header p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.world-cup-squad>header h3{display:flex;align-items:center;gap:8px}
+.world-cup-squad>header>strong{color:var(--wc-accent);font-size:29px}
+.world-cup-player-grid{margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line)}
+.world-cup-player-grid article{min-width:0;min-height:57px;padding:9px 10px;display:grid;grid-template-columns:35px minmax(0,1fr) auto;gap:9px;align-items:center;background:#0a1813}
+.world-cup-player-grid article>i{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:var(--wc-accent-ink);background:var(--wc-accent);font-size:10px;font-style:normal;font-weight:900}
+.world-cup-player-grid article b,.world-cup-player-grid article small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.world-cup-player-grid article small{margin-top:3px;color:var(--muted);font-size:9px}
+.world-cup-player-grid article>em{color:var(--muted);font-size:9px;font-style:normal}
+.world-cup-tactics>header nav{display:flex;gap:4px}
+.world-cup-tactics>header nav button{min-height:34px;padding:6px 12px;border:1px solid var(--line);color:var(--muted);background:#0a1813;cursor:pointer}
+.world-cup-tactics>header nav button.active{border-color:var(--wc-accent);color:var(--wc-accent);background:rgba(245,211,74,.08)}
+.world-cup-tactics-layout{margin-top:18px;display:grid;grid-template-columns:minmax(380px,1.3fr) minmax(280px,.7fr);gap:16px}
+.world-cup-pitch{position:relative;min-height:600px;overflow:hidden;border:3px solid rgba(255,255,255,.62);border-radius:8px;background-color:#2c7247;background-image:linear-gradient(rgba(255,255,255,.045) 50%,rgba(0,0,0,.035) 50%);background-size:100% 100px}
+.world-cup-pitch::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid rgba(255,255,255,.55)}
+.world-cup-pitch::after{content:"";position:absolute;left:50%;top:50%;width:105px;height:105px;border:2px solid rgba(255,255,255,.55);border-radius:50%;transform:translate(-50%,-50%)}
+.world-cup-pitch>span{position:absolute;width:76px;display:grid;justify-items:center;transform:translate(-50%,-50%);z-index:1;color:#fff;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.world-cup-pitch>span i{width:34px;height:34px;display:grid;place-items:center;border:2px solid #fff;border-radius:50%;color:#fff;background:#ba2634;font-size:10px;font-style:normal;font-weight:900;text-shadow:none}
+.world-cup-pitch>span b{max-width:76px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.world-cup-tactics-layout>aside{padding:16px;display:grid;align-content:start;gap:14px;border:1px solid var(--line);border-radius:11px;background:#0a1813}
+.world-cup-tactics-layout label{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;color:var(--muted);font-size:11px}
+.world-cup-tactics-layout select{min-width:125px;padding:8px;border:1px solid var(--line);border-radius:7px;color:var(--ink);background:#10241c}
+.world-cup-tactics-layout output{color:var(--wc-accent);font-weight:900}
+.world-cup-tactics-layout input{grid-column:1/-1;width:100%;accent-color:var(--wc-accent)}
+.world-cup-tactics-layout aside>div{padding:12px;border:1px solid rgba(245,211,74,.22);border-radius:8px;background:rgba(245,211,74,.06)}
+.world-cup-tactics-layout aside>div b{color:var(--wc-accent)}
+.world-cup-tactics-layout aside>div p{margin:6px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
+.world-cup-groups-page>div{margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.world-cup-group{min-width:0;border:1px solid var(--line);border-top:3px solid var(--wc-accent);border-radius:10px;overflow:hidden;background:#0a1813}
+.world-cup-group>header{padding:11px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.world-cup-group>header span{color:var(--wc-accent);font-size:9px;font-weight:900;letter-spacing:.12em}
+.world-cup-team-row{min-height:62px;padding:8px 10px;display:grid;grid-template-columns:20px 30px minmax(80px,1fr) 66px 78px 30px 35px;gap:8px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)}
+.world-cup-team-row:last-child{border-bottom:0}
+.world-cup-team-row.is-own{background:rgba(245,211,74,.07)}
+.world-cup-team-row>strong,.world-cup-team-row>em{color:var(--muted);font-size:10px;font-style:normal;text-align:center}
+.world-cup-team-row span b,.world-cup-team-row span small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.world-cup-team-row span b i{margin-left:5px;padding:2px 4px;border-radius:4px;color:#17190d;background:var(--wc-accent);font-size:8px;font-style:normal;vertical-align:middle}
+.world-cup-team-row span small{margin-top:2px;color:var(--muted);font-size:9px}
+.world-cup-team-record,.world-cup-team-goals{text-align:center}
+.world-cup-team-record small,.world-cup-team-goals small{font-size:8px!important}
+.world-cup-team-record b,.world-cup-team-goals b{margin-top:3px;font-size:10px;font-variant-numeric:tabular-nums}
+.world-cup-team-row>b{font-size:10px;text-align:right}
+.world-cup-groups-page>footer{margin-top:16px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(245,211,74,.25);border-radius:9px;color:var(--muted);background:rgba(245,211,74,.05);font-size:11px}
+.world-cup-groups-page>footer b{color:var(--wc-accent)}
+.world-cup-bracket>div{margin-top:20px;min-height:350px;padding:22px;display:grid;grid-template-columns:1fr 1fr .55fr;gap:28px;align-items:center;border-radius:11px;background:#0a1813}
+.world-cup-bracket>div>section{display:grid;gap:10px}
+.world-cup-bracket>div>section>span{color:var(--wc-accent);font-size:10px;font-weight:900}
+.world-cup-bracket article{padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-left:3px solid var(--wc-accent);background:#10241c}
+.world-cup-bracket article em{color:var(--muted);font-size:10px;font-style:normal}
+.world-cup-bracket aside{display:grid;justify-items:center;gap:5px;text-align:center}
+.world-cup-bracket aside i{font-size:48px;font-style:normal}
+.world-cup-bracket aside small{color:var(--muted)}
+.world-cup-integration{padding:18px;border:1px dashed rgba(113,217,208,.38);border-radius:13px;background:rgba(113,217,208,.04)}
+.world-cup-integration>header{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.world-cup-integration header small{color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.12em}.world-cup-integration h3{margin:4px 0 0;font-size:18px}.world-cup-integration header>b{color:var(--orange);font-size:10px}
+.world-cup-integration>div{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.world-cup-integration article{padding:12px;display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;background:rgba(8,23,18,.65)}.world-cup-integration article>i{width:30px;height:30px;display:grid;place-items:center;border-radius:7px;color:var(--wc-accent-ink);background:var(--wc-accent);font-style:normal;font-weight:900}.world-cup-integration article b,.world-cup-integration article small{display:block}.world-cup-integration article small{margin-top:3px;color:var(--muted);font-size:10px;line-height:1.4}.world-cup-integration article em{color:var(--orange);font-size:10px;font-style:normal}
+.world-cup-player-pools{margin-top:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.world-cup-player-pool{min-width:0;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#0a1813}.world-cup-player-pool>header{padding:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.025)}.world-cup-player-pool>header b,.world-cup-player-pool>header small{display:block}.world-cup-player-pool>header b{font-size:16px}.world-cup-player-pool>header small{margin-top:3px;color:var(--muted);font-size:9px}.world-cup-player-pool>header>span{color:var(--wc-accent);font-size:11px;font-weight:900}.world-cup-player-pool>div{max-height:580px;overflow-y:auto;padding:7px}.world-cup-player-choice{width:100%;min-height:56px;padding:8px;display:grid;grid-template-columns:minmax(0,1fr) 30px 18px;gap:6px;align-items:center;border:1px solid transparent;border-bottom-color:rgba(255,255,255,.06);color:var(--ink);background:transparent;text-align:left;cursor:pointer}.world-cup-player-choice:hover{border-color:rgba(113,217,208,.5);background:rgba(113,217,208,.06)}.world-cup-player-choice.selected{border-color:var(--wc-accent);background:rgba(245,211,74,.09)}.world-cup-player-choice:disabled{cursor:not-allowed;opacity:.7}.world-cup-player-choice span b,.world-cup-player-choice span small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.world-cup-player-choice span b{font-size:11px}.world-cup-player-choice span small{margin-top:3px;color:var(--muted);font-size:9px}.world-cup-player-choice span i{margin-right:5px;color:var(--muted);font-size:9px;font-style:normal}.world-cup-player-choice>strong{text-align:right;font-size:13px}.world-cup-player-choice>em{color:var(--muted);font-size:15px;font-style:normal;text-align:center}.world-cup-player-choice.selected>em{color:var(--wc-accent)}.world-cup-x-player{margin-top:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(217,104,115,.45);border-radius:9px;background:rgba(217,104,115,.08)}.world-cup-x-player>span{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:9px}.world-cup-x-player>span i{grid-row:1/3;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;color:#fff;background:#b63845;font-style:normal;font-weight:900}.world-cup-x-player>span small{grid-column:2;color:var(--muted);font-size:9px}.world-cup-x-player>strong{color:#ff9ca7;font-size:19px}.world-cup-squad>footer{margin-top:16px;padding-top:15px;display:flex;align-items:center;justify-content:space-between;gap:15px;border-top:1px solid var(--line)}.world-cup-squad>footer>div{display:grid;gap:3px}.world-cup-squad>footer b{color:var(--wc-accent);font-size:20px}.world-cup-squad>footer span{color:var(--muted);font-size:10px}.world-cup-squad>footer .button{min-width:230px}.world-cup-system-magnet{cursor:default!important}.world-cup-no-bonds{display:grid;gap:3px;text-align:right}.world-cup-no-bonds b{color:var(--wc-accent);font-size:11px}.world-cup-no-bonds span{color:var(--muted);font-size:9px}.world-cup-lineup-workspace{grid-template-columns:minmax(560px,1.45fr) minmax(260px,.65fr) minmax(300px,.8fr)!important}.world-cup-tactics-detail{min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}.world-cup-tactics-detail>header{padding:14px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line)}.world-cup-tactics-detail>header b{display:block;margin-top:3px;font-size:14px}.world-cup-tactics-detail>header span{color:var(--muted);font-size:9px}.world-cup-tactics-detail-scroll{min-height:0;padding:13px;overflow:auto}.world-cup-tactical-selects{display:grid;gap:9px}.world-cup-tactical-selects label{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;color:var(--muted);font-size:10px}.world-cup-tactical-selects select{min-width:0;padding:7px;border:1px solid var(--line);border-radius:7px;color:var(--ink);background:#10241c;font-size:10px}.world-cup-tactical-dimensions{margin-top:14px;padding-top:13px;display:grid;gap:11px;border-top:1px solid var(--line)}.world-cup-tactical-dimension{display:grid;grid-template-columns:1fr 28px;gap:6px;align-items:center;color:var(--muted);font-size:10px}.world-cup-tactical-dimension output{color:var(--wc-accent);font-weight:900;text-align:right}.world-cup-tactical-dimension input{grid-column:1/-1;width:100%;accent-color:var(--wc-accent)}.world-cup-tactical-note{margin-top:15px;padding:11px;border:1px solid rgba(113,217,208,.25);border-radius:8px;background:rgba(113,217,208,.05)}.world-cup-tactical-note b{color:var(--cyan);font-size:10px}.world-cup-tactical-note p{margin:5px 0 0;color:var(--muted);font-size:9px;line-height:1.5}.world-cup-tactics-detail-footer{padding:10px 13px;border-top:1px solid var(--line)}
+
+@media(max-width:950px){
+  .world-cup-overview-lower{grid-template-columns:1fr}
+  .world-cup-status,.world-cup-tactics-layout{grid-template-columns:1fr}
+  .world-cup-player-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .world-cup-groups-page>div{grid-template-columns:1fr}
+  .world-cup-bracket>div{grid-template-columns:1fr;min-height:0}
+  .world-cup-player-pools,.world-cup-lineup-workspace{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:650px){
+  .world-cup-rankings{grid-template-columns:1fr}
+  .world-cup-page{gap:10px}
+  .world-cup-hero{min-height:0;padding:18px;display:grid}
+  .world-cup-hero h2{font-size:27px}
+  .world-cup-hero aside{min-width:0;text-align:left}
+  .world-cup-tabs{overflow-x:auto;justify-content:flex-start}
+  .world-cup-tabs button{min-width:112px;flex:0 0 auto;white-space:nowrap}
+  .world-cup-status article>div,.world-cup-rules{grid-template-columns:1fr}
+  .world-cup-team-row{grid-template-columns:18px 24px minmax(64px,1fr) 56px 68px 35px;gap:5px;padding:8px 6px}
+  .world-cup-team-row>em{display:none}
+  .world-cup-team-row .world-cup-flag{width:24px;height:16px}
+  .world-cup-rules>div{border-right:0;border-bottom:1px solid var(--line)}
+  .world-cup-rules>div:last-child{border-bottom:0}
+  .world-cup-schedule li{grid-template-columns:52px 24px minmax(55px,1fr) 24px 24px minmax(55px,1fr);gap:5px}
+  .world-cup-schedule li>em{grid-column:2/-1;text-align:left}
+  .world-cup-schedule li:nth-child(n+4){grid-template-columns:52px 1fr}
+  .world-cup-schedule li:nth-child(n+4)>em{grid-column:2}
+  .world-cup-schedule .world-cup-flag{width:24px;height:16px}
+  .world-cup-schedule-round>header{grid-template-columns:1fr auto auto;gap:8px}
+  .world-cup-fixture-row{grid-template-columns:minmax(88px,1fr) 52px minmax(88px,1fr);gap:5px;padding:7px 6px}
+  .world-cup-fixture-row>em{display:none}
+  .world-cup-fixture-row>span{gap:4px}
+  .world-cup-fixture-row>span b{font-size:10px}
+  .world-cup-fixture-row>span i{display:none}
+  .world-cup-fixture-row .world-cup-flag{width:24px;height:16px}
+  .world-cup-player-grid{grid-template-columns:1fr}
+  .world-cup-player-pools,.world-cup-lineup-workspace{grid-template-columns:1fr!important}
+  .world-cup-integration>header,.world-cup-squad>footer{align-items:flex-start;flex-direction:column}
+  .world-cup-integration>div{grid-template-columns:1fr}
+  .world-cup-squad>footer .button{width:100%;min-width:0}
+  .world-cup-squad>header,.world-cup-tactics>header,.world-cup-groups-page>header,.world-cup-bracket>header,.world-cup-full-schedule>header{align-items:flex-start;flex-direction:column}
+  .world-cup-pitch{min-height:520px}
+  .world-cup-bracket>div{padding:12px}
+}
+
+@media(min-width:1051px){
+html[data-league-theme="light"] .world-cup-page{--wc-accent:#0b78f2;--wc-accent-ink:#fff}
+html[data-league-theme="light"] .world-cup-flag{border-color:#c7d0db;box-shadow:0 2px 5px rgba(29,41,57,.12)}
+html[data-league-theme="light"] .world-cup-hero{border-color:#b9d6f7;background:linear-gradient(118deg,#eaf4ff 0%,#ffffff 65%,#fff4c9 100%);box-shadow:inset 5px 0 0 #0b78f2,0 14px 32px rgba(29,41,57,.09)}
+html[data-league-theme="light"] .world-cup-hero aside{border-color:#d4dce6;background:rgba(255,255,255,.78)}
+html[data-league-theme="light"] .world-cup-tabs{border-color:#d8dee7;background:#fff}
+html[data-league-theme="light"] .world-cup-tabs button:hover{background:#edf4fb}
+html[data-league-theme="light"] .world-cup-tabs button.active{border-color:#0b78f2;color:#fff;background:#0b78f2}
+html[data-league-theme="light"] .world-cup-status>article,html[data-league-theme="light"] .world-cup-schedule,html[data-league-theme="light"] .world-cup-squad,html[data-league-theme="light"] .world-cup-tactics,html[data-league-theme="light"] .world-cup-groups-page,html[data-league-theme="light"] .world-cup-bracket{border-color:#d8dee7;background:#fff;box-shadow:0 12px 26px rgba(29,41,57,.07)}
+html[data-league-theme="light"] .world-cup-rankings>article{border-color:#d8dee7;background:#fff;box-shadow:0 12px 26px rgba(29,41,57,.07)}
+html[data-league-theme="light"] .world-cup-rankings>article>header,html[data-league-theme="light"] .world-cup-rankings li{border-color:#e3e8ee}
+html[data-league-theme="light"] .world-cup-status .world-cup-auto{border-color:#e4c75a;background:linear-gradient(145deg,#fff9dc,#fff)}
+html[data-league-theme="light"] .world-cup-status article>div span,html[data-league-theme="light"] .world-cup-rules,html[data-league-theme="light"] .world-cup-player-grid article,html[data-league-theme="light"] .world-cup-tactics>header nav button,html[data-league-theme="light"] .world-cup-tactics-layout>aside,html[data-league-theme="light"] .world-cup-group,html[data-league-theme="light"] .world-cup-bracket>div{border-color:#dfe5ec;background:#f6f8fb}
+html[data-league-theme="light"] .world-cup-schedule li,html[data-league-theme="light"] .world-cup-team-row{border-bottom-color:#e3e8ee}
+html[data-league-theme="light"] .world-cup-schedule-round{border-color:#dfe5eb;background:#fff}
+html[data-league-theme="light"] .world-cup-schedule-round>header,html[data-league-theme="light"] .world-cup-fixture-row{border-color:#e3e8ee}
+html[data-league-theme="light"] .world-cup-full-schedule{border-color:#d8dee7;background:#fff;box-shadow:0 12px 26px rgba(29,41,57,.07)}
+html[data-league-theme="light"] .world-cup-tactics-layout select,html[data-league-theme="light"] .world-cup-bracket article{color:#18212b;background:#fff}
+html[data-league-theme="light"] .world-cup-status .world-cup-auto>div b,html[data-league-theme="light"] .world-cup-tactics-layout aside>div{border-color:#c9dcf3;color:#0b78f2;background:#eaf4ff}
+html[data-league-theme="light"] .world-cup-rules b,html[data-league-theme="light"] .world-cup-hero aside b,html[data-league-theme="light"] .world-cup-auto>strong{color:#0b78f2}
+html[data-league-theme="light"] .world-cup-integration article,html[data-league-theme="light"] .world-cup-player-pool,html[data-league-theme="light"] .world-cup-player-choice,html[data-league-theme="light"] .world-cup-x-player{background:#f6f8fb;border-color:#dfe5ec}
+html[data-league-theme="light"] .world-cup-player-choice:hover{background:#edf4fb;border-color:#bdd9fb}
+html[data-league-theme="light"] .world-cup-player-choice.selected{background:#eaf4ff;border-color:#0b78f2}
+html[data-league-theme="light"] .world-cup-tactical-selects select{background:#fff;color:#18212b;border-color:#cfd7e1}
 }
 
 /* Desktop light appearance */

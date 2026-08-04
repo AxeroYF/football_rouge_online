@@ -114,6 +114,12 @@ const ADMIN_PACK_TYPES = Object.freeze([
 const BACKUP_RETENTION_DAYS = 7;
 const ROUND_INTERVAL_MS = 20 * 60 * 1000;
 const CUP_INTERVAL_MS = 20 * 60 * 1000;
+const WORLD_CUP_INTERVAL_MS = 20 * 60 * 1000;
+const WORLD_CUP_COUNTRIES = Object.freeze([
+  ["西班牙", "es"], ["巴西", "br"], ["法国", "fr"], ["阿根廷", "ar"],
+  ["英格兰", "gb-eng"], ["意大利", "it"], ["葡萄牙", "pt"], ["荷兰", "nl"],
+  ["德国", "de"], ["比利时", "be"], ["克罗地亚", "hr"], ["哥伦比亚", "co"],
+]);
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 const DAILY_RESET_HOUR = 9;
 const DAILY_RESET_MINUTE = 51;
@@ -435,8 +441,10 @@ function createState(now, seasonName = "S1") {
     s4Packs:{ schemaVersion:1, nextSequence:1, inventory:{}, offers:{}, batchOpenings:{}, grants:[], cardGrants:[], legacyRetiredAt:now },
     liveRound:null,
     liveCupRound:null,
+    liveWorldCupRound:null,
     liveFriendlies:[],
     cup:{ status:"waiting", stage:"waiting", participants:[], table:{}, swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null },
+    worldCup:null,
     completedBroadcasts:[],
     archives:[],
     dailyAutomation:{
@@ -655,6 +663,21 @@ function removeRosterPlayerPreservingShape(team, playerId) {
   team.positions = clone(presets.position1);
 }
 
+function seededShuffle(values, seed) {
+  let state = 2166136261;
+  for (const character of String(seed)) {
+    state ^= character.charCodeAt(0);
+    state = Math.imul(state, 16777619) >>> 0;
+  }
+  const result = [...values];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const swapIndex = state % (index + 1);
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
 function aiLineup(teamIndex, roundNumber, humanOwned) {
   const choose = (pool, count, offset) => {
     const candidates = REAL_PLAYER_POOLS[pool].filter((player) => !humanOwned.has(player.id));
@@ -692,7 +715,7 @@ export class YellowDogsLeagueService {
     this.pendingLiveCheckpointCleanup = new Set();
     this.liveSettlementPersistTimer = null;
     this.cachedV2ReviewDemo = null;
-    this.liveAdvanceCursors = { league:0, cup:0, friendly:0 };
+    this.liveAdvanceCursors = { league:0, cup:0, worldcup:0, friendly:0 };
     this.liveAdvanceRunning = false;
     this.dirtyScopes = new Set(["core"]);
     if (this.shardStore) {
@@ -772,15 +795,17 @@ export class YellowDogsLeagueService {
     });
     this.state.liveRound ??= null;
     this.state.liveCupRound ??= null;
+    this.state.liveWorldCupRound ??= null;
     this.state.liveFriendlies ??= [];
     this.restoreLiveCheckpoints();
-    const resumedLiveEntries = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies];
+    const resumedLiveEntries = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveWorldCupRound?.matches ?? []), ...this.state.liveFriendlies];
     resumedLiveEntries.forEach((live) => {
       const match = live?.match;
       if (match?.version !== 2 || match.finished) return;
       match.rng = createV2MatchRng(`${match.simulationSeed ?? "ydl-v2"}:resume:${match.nextChainIndex ?? 0}:${match.events?.length ?? 0}`);
     });
     this.state.cup ??= { status:"waiting", stage:"waiting", participants:[], table:{}, swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null };
+    this.state.worldCup ??= null;
     Object.values(this.state.cup.table ?? {}).forEach((entry) => { entry.status ??= "active"; entry.drawn = 0; });
     this.state.completedBroadcasts ??= [];
     this.state.reports ??= {};
@@ -898,7 +923,7 @@ export class YellowDogsLeagueService {
       atomicWrite(this.statePath, this.state, { copyBackup:options.skipLiveBackupCopy !== true, compact:options.compact !== false });
       if (!options.skipDailyBackup) this.maintainBackups();
     }
-    if (this.state.liveRound || this.state.liveCupRound || this.state.liveFriendlies?.length) {
+    if (this.state.liveRound || this.state.liveCupRound || this.state.liveWorldCupRound || this.state.liveFriendlies?.length) {
       this.lastLiveStatePersistedAt = Math.max(this.lastLiveStatePersistedAt, this.now());
     }
   }
@@ -918,7 +943,7 @@ export class YellowDogsLeagueService {
   restoreLiveCheckpoints() {
     const directory = this.liveCheckpointDirectory();
     if (!directory || !existsSync(directory)) return 0;
-    const liveByCode = new Map([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].map((live) => [String(live.code).toUpperCase(), live]));
+    const liveByCode = new Map([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveWorldCupRound?.matches ?? []), ...this.state.liveFriendlies].map((live) => [String(live.code).toUpperCase(), live]));
     let restored = 0;
     for (const name of readdirSync(directory)) {
       if (!name.endsWith(".json")) continue;
@@ -2680,6 +2705,7 @@ export class YellowDogsLeagueService {
       updatedAt:this.state.updatedAt,
       season:this.state.season,
       cup:this.cupView(),
+      worldCup:this.worldCupView(account.id),
       serverTime:this.now(),
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20, serverPause:true, fixtures:team ? this.teamSchedule(team.id) : [] },
       teams:this.standings().map((entry) => ({ ...publicTeam(this.state.teams.find((teamEntry) => teamEntry.id === entry.id)), rank:entry.rank })),
@@ -2799,6 +2825,8 @@ export class YellowDogsLeagueService {
       ? match.cupStage === "swiss"
         ? `瑞士轮第${match.cupRound ?? match.round}轮`
         : `${CUP_STAGE_NAMES[match.cupStage] ?? "杯赛"}${match.legNumber ? ` · 第${match.legNumber}回合` : ""}`
+      : competition === "worldcup"
+        ? ({ group:`${match.worldCupGroupId ?? ""}组第${match.round}轮`, quarterfinal:"世界杯四分之一决赛", semifinal:"世界杯半决赛", final:"世界杯决赛" }[match.worldCupStage] ?? "黄狗世界杯")
       : competition === "friendly"
         ? "友谊赛"
         : Number.isFinite(Number(match.round)) ? `第${match.round}轮` : "联赛";
@@ -2911,7 +2939,19 @@ export class YellowDogsLeagueService {
       const opponent = this.state.teams.find((team) => team.id === opponentId);
       return { id:`friendly:${fixture.id}`, competition:"friendly", competitionName:"YDL友谊赛", round:0, label:"友谊赛", startsAt:fixture.startsAt, status:fixture.status, opponentId, opponentName:opponent?.name ?? "未知球队", venue:ownIsHome ? "home" : "away", matchId:fixture.matchId ?? null, broadcastCode:fixture.broadcastCode ?? null, score:fixture.score ? (ownIsHome ? [...fixture.score] : [fixture.score[1], fixture.score[0]]) : null, weather:null, referee:null };
     });
-    return [...leagueFixtures, ...cupFixtures, ...friendlyFixtures].sort((left, right) => left.startsAt - right.startsAt || left.competition.localeCompare(right.competition));
+    const club = this.state.teams.find((team) => team.id === teamId);
+    const worldCupTeam = this.state.worldCup?.teams?.find((team) => team.ownerId && team.ownerId === club?.ownerId);
+    const worldCupStartsAt = Number(this.state.worldCup?.startsAt);
+    const worldCupFixtures = worldCupTeam && Number.isFinite(worldCupStartsAt) && worldCupStartsAt > 0 ? this.state.worldCup.events.flatMap((event, eventIndex) => this.worldCupEventFixtures(event).map((fixture) => {
+      if (fixture.homeId !== worldCupTeam.id && fixture.awayId !== worldCupTeam.id) return null;
+      const ownIsHome = fixture.homeId === worldCupTeam.id;
+      const opponent = this.worldCupTeam(ownIsHome ? fixture.awayId : fixture.homeId);
+      const match = fixture.matchId ? this.state.matches.find((entry) => entry.id === fixture.matchId) : null;
+      const live = this.state.liveWorldCupRound?.matches.find((entry) => entry.fixtureId === fixture.id && !entry.completed);
+      const labels = { group:`${fixture.groupId}组第${event.round}轮`, quarterfinal:"四分之一决赛", semifinal:"半决赛", final:"决赛" };
+      return { id:`worldcup:${fixture.id}`, competition:"worldcup", competitionName:"黄狗世界杯", round:event.round, stage:event.stage, label:labels[event.stage] ?? event.stage, startsAt:match?.playedAt ?? (live ? this.state.liveWorldCupRound.startedAt : worldCupStartsAt + eventIndex * WORLD_CUP_INTERVAL_MS), status:match ? "complete" : live ? "live" : "scheduled", opponentId:opponent?.id ?? null, opponentName:opponent?.country ?? "待定", venue:ownIsHome ? "home" : "away", matchId:match?.id ?? null, broadcastCode:live?.code ?? null, score:match ? (ownIsHome ? [...match.score] : [match.score[1], match.score[0]]) : null, weather:null, referee:null };
+    }).filter(Boolean)) : [];
+    return [...leagueFixtures, ...cupFixtures, ...worldCupFixtures, ...friendlyFixtures].sort((left, right) => left.startsAt - right.startsAt || left.competition.localeCompare(right.competition));
   }
 
   teamHistory(teamId) {
@@ -3574,7 +3614,9 @@ export class YellowDogsLeagueService {
     const match = this.state.matches.find((entry) => entry.id === String(matchIdValue ?? ""));
     if (!match?.report) throw new Error("找不到这场比赛的详细记录");
     const ownTeam = this.accountTeam(account.id);
-    const viewerIndex = ownTeam?.id === match.awayId ? 1 : 0;
+    const ownWorldCupTeam = this.state.worldCup?.teams?.find((team) => team.ownerId === account.id);
+    const viewerTeamId = match.competition === "worldcup" ? ownWorldCupTeam?.id : ownTeam?.id;
+    const viewerIndex = viewerTeamId === match.awayId ? 1 : 0;
     const summary = this.matchSummary(match);
     const detail = hydrateHistoricalMatchDetail({
       ...unwrapTracked(match.report),
@@ -5406,8 +5448,10 @@ export class YellowDogsLeagueService {
     }
     event.status = "complete";
     event.transitionedAt = this.now();
-    if (cup.status === "completed") cup.nextRoundAt = null;
-    else {
+    if (cup.status === "completed") {
+      cup.nextRoundAt = null;
+      this.schedulePreparedWorldCupAfterCupFinal();
+    } else {
       if (this.state.season.status === "active" && Number(this.state.season.nextRoundAt) <= this.now()) this.state.season.nextRoundAt = nextSlot(this.now());
       const leagueAnchor = Number(this.state.season.nextRoundAt);
       const cupAfterLeague = Number.isFinite(leagueAnchor) ? leagueAnchor + 10 * 60 * 1000 : 0;
@@ -5437,6 +5481,375 @@ export class YellowDogsLeagueService {
     this.state.liveCupRound = { eventId:event.id, startedAt:this.now(), matches:liveMatches };
     this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
     return true;
+  }
+
+  worldCupTeam(teamId) {
+    return this.state.worldCup?.teams?.find((team) => team.id === teamId) ?? null;
+  }
+
+  worldCupPlayer(playerId) {
+    for (const team of this.state.worldCup?.teams ?? []) {
+      const player = team.roster?.find((entry) => entry.id === playerId);
+      if (player) return player;
+    }
+    return REAL_PLAYER_BY_ID[playerId] ?? null;
+  }
+
+  createWorldCupRoster(country, code) {
+    const source = REAL_PLAYERS
+      .filter((player) => !isXPlayer(player) && player.nationality === country)
+      .sort((left, right) => Number(right.overall ?? 0) - Number(left.overall ?? 0));
+    const roster = [];
+    const fillerRoles = ["GK", "CB", "RB", "LB", "DM", "AM", "RM", "LM", "ST", "RW", "LW"];
+    const required = { GK:2, DEF:6, MID:5, ATT:4 };
+    Object.entries(required).forEach(([pool, count]) => source
+      .filter((player) => (player.pool === "LEGEND" ? roleGroup(player.role) : player.pool) === pool)
+      .slice(0, count)
+      .forEach((player) => { if (!roster.some((entry) => entry.id === player.id)) roster.push(clone(player)); }));
+    source.forEach((player) => { if (roster.length < 23 && !roster.some((entry) => entry.id === player.id)) roster.push(clone(player)); });
+    const counts = () => roster.reduce((result, player) => {
+      const pool = player.pool === "LEGEND" ? roleGroup(player.role) : player.pool;
+      result[pool] = (result[pool] ?? 0) + 1;
+      return result;
+    }, { GK:0, DEF:0, MID:0, ATT:0 });
+    while (roster.length < 23 || Object.entries(required).some(([pool, count]) => (counts()[pool] ?? 0) < count)) {
+      const current = counts();
+      const neededPool = Object.entries(required).find(([pool, count]) => (current[pool] ?? 0) < count)?.[0];
+      const role = neededPool === "GK" ? "GK" : neededPool === "DEF" ? "CB" : neededPool === "MID" ? "DM" : neededPool === "ATT" ? "ST" : fillerRoles[roster.length % fillerRoles.length];
+      const pool = roleGroup(role);
+      const template = source.find((player) => roleGroup(player.role) === pool) ?? source[0] ?? REAL_PLAYERS.find((player) => roleGroup(player.role) === pool);
+      const id = `world-cup-${code}-filler-${roster.length + 1}`;
+      roster.push({ ...clone(template), id, name:`${country}征召球员${roster.length + 1}`, nationality:country, club:"国家队征召", role, secondaryRole:null, pool, legendary:false, legend:false, overall:Math.min(75, Number(template?.overall ?? 68)) });
+    }
+    return roster;
+  }
+
+  worldCupStartingIds(team) {
+    const selectedSet = new Set(team.selectedIds ?? []);
+    const roster = (team.roster ?? []).filter((player) => !selectedSet.size || selectedSet.has(player.id));
+    const selected = [];
+    const take = (pool, count) => roster
+      .filter((player) => (player.pool === "LEGEND" ? roleGroup(player.role) : player.pool) === pool && !selected.includes(player.id))
+      .sort((left, right) => Number(right.overall ?? 0) - Number(left.overall ?? 0))
+      .slice(0, count)
+      .forEach((player) => selected.push(player.id));
+    take("GK", 1); take("DEF", 4); take("MID", 3); take("ATT", 3);
+    roster.filter((player) => !selected.includes(player.id)).sort((a, b) => Number(b.overall ?? 0) - Number(a.overall ?? 0)).forEach((player) => {
+      if (selected.length < 11) selected.push(player.id);
+    });
+    return selected;
+  }
+
+  boostedWorldCupPlayer(player) {
+    if (!player || isS4Legend(player)) return clone(player);
+    const attributes = Object.fromEntries(Object.entries(player.attributes ?? {}).map(([key, value]) => [key, Math.min(99, Number(value ?? 0) + 3)]));
+    return { ...clone(player), overall:Math.min(99, Number(player.overall ?? 0) + 3), attributes, referenceAttributes:clone(attributes), worldCupUpgradeLevel:3 };
+  }
+
+  createWorldCupMatch(fixture, event, startedAt = this.now()) {
+    const teams = [this.worldCupTeam(fixture.homeId), this.worldCupTeam(fixture.awayId)];
+    if (teams.some((team) => !team)) throw new Error("世界杯赛程包含不存在的国家队");
+    const seats = teams.map((team) => {
+      const ids = team.startingIds?.length === 11 ? team.startingIds : this.worldCupStartingIds(team);
+      const players = ids.map((id) => team.roster.find((player) => player.id === id)).filter(Boolean).map((player) => this.boostedWorldCupPlayer(player));
+      if (players.length !== 11) throw new Error(`${team.country}无法组成11人首发`);
+      const submittedPositions = team.tactics?.positionPresets?.[team.tactics?.tacticalPlans?.opening?.positionPreset ?? "position1"] ?? team.tactics?.positions;
+      const positions = Object.keys(submittedPositions ?? {}).length ? sanitizePositions(players, submittedPositions) : leagueBoardPositions(players);
+      const club = team.ownerId ? this.state.teams.find((entry) => entry.ownerId === team.ownerId) : null;
+      const tactics = team.tactics ?? {};
+      return {
+        name:team.country,
+        players,
+        positions,
+        positionPresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.tactics?.positionPresets?.[key] ?? positions)])),
+        formationLinePresets:clone(team.tactics?.formationLinePresets ?? {}),
+        tactic:tactics.tacticalPlans?.opening?.tactic ?? club?.tacticalPlans?.opening?.tactic ?? club?.tactic ?? "balanced",
+        style:tactics.tacticalPlans?.opening?.style ?? club?.tacticalPlans?.opening?.style ?? club?.style ?? "possession",
+        tacticalPlans:tactics.tacticalPlans ?? (club ? unwrapTracked(club.tacticalPlans) : undefined),
+        attackFocus:tactics.attackFocus ?? club?.attackFocus ?? "balanced",
+        defenseFocus:tactics.defenseFocus ?? club?.defenseFocus ?? "balanced",
+        bondCatalog:[],
+        preserveFitness:true,
+      };
+    });
+    const match = createLeagueMatch(unwrapTracked(seats), {
+      now:startedAt,
+      seed:`${this.state.worldCup.date}:${event.id}:${fixture.id}`,
+      regulationOnly:event.stage === "group",
+      competitionMode:"worldcup",
+      recordEvents:this.recordMatchEvents !== false,
+      matchEngine:MATCH_ENGINE_BY_COMPETITION.worldcup ?? DEFAULT_MATCH_ENGINE,
+    });
+    return { teams, match, startedAt };
+  }
+
+  worldCupEventFixtures(event) {
+    return (this.state.worldCup?.fixtures ?? []).filter((fixture) => event.fixtureIds.includes(fixture.id));
+  }
+
+  worldCupStandings(groupId = null) {
+    const cup = this.state.worldCup;
+    const ids = groupId ? cup?.groups?.find((group) => group.id === groupId)?.teamIds ?? [] : cup?.teams?.map((team) => team.id) ?? [];
+    return ids.map((id) => ({ ...clone(cup.table[id]), ...clone(this.worldCupTeam(id)), roster:undefined }))
+      .sort((left, right) => right.points - left.points || (right.goalsFor - right.goalsAgainst) - (left.goalsFor - left.goalsAgainst) || right.goalsFor - left.goalsFor || left.country.localeCompare(right.country, "zh-CN"))
+      .map((entry, index) => ({ ...entry, rank:index + 1 }));
+  }
+
+  finalizeWorldCupFixture(fixture, event, match) {
+    if (fixture.status === "complete") return this.state.matches.find((entry) => entry.id === fixture.matchId) ?? null;
+    const report = match.report;
+    const home = this.worldCupTeam(fixture.homeId);
+    const away = this.worldCupTeam(fixture.awayId);
+    const id = `${this.state.season.id}-WORLD-CUP-${event.id}-${fixture.id}`;
+    const record = { id, competition:"worldcup", worldCupStage:event.stage, round:event.round, playedAt:this.now(), homeId:home.id, awayId:away.id, homeName:home.country, awayName:away.country, score:[...report.score], penalties:report.penalties ?? null, formations:report.teams.map((team) => team.formation), report };
+    this.state.matches.push(record);
+    Object.assign(fixture, { status:"complete", matchId:id, score:[...report.score], penalties:report.penalties ?? null });
+    fixture.winnerId = Number.isInteger(match.winnerIndex) ? [fixture.homeId, fixture.awayId][match.winnerIndex] : report.score[0] > report.score[1] ? fixture.homeId : report.score[1] > report.score[0] ? fixture.awayId : null;
+    if (event.stage === "group") {
+      [home, away].forEach((team, index) => {
+        const table = this.state.worldCup.table[team.id];
+        const own = report.score[index]; const against = report.score[index === 0 ? 1 : 0];
+        table.played += 1; table.goalsFor += own; table.goalsAgainst += against;
+        if (own > against) { table.won += 1; table.points += 3; }
+        else if (own === against) { table.drawn += 1; table.points += 1; }
+        else table.lost += 1;
+      });
+    }
+    [home, away].forEach((team, index) => report.teams[index].players.forEach((player) => {
+      const key = `${team.id}:${player.id}`;
+      const stat = this.state.worldCup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.country, appearances:0, goals:0, assists:0, saves:0, tackles:0, yellowCards:0, redCards:0, ratingTotal:0 };
+      stat.appearances += 1; stat.goals += Number(player.stats.goals ?? 0); stat.assists += Number(player.stats.assists ?? 0); stat.saves += Number(player.stats.saves ?? 0); stat.tackles += Number(player.stats.tackles ?? 0); stat.yellowCards += Number(player.stats.yellowCards ?? 0); stat.redCards += Number(player.stats.redCards ?? 0); stat.ratingTotal += Number(player.rating ?? 0);
+      this.state.worldCup.playerStats[key] = stat;
+    }));
+    return record;
+  }
+
+  createWorldCupKnockoutEvent(stage, teamIds) {
+    const round = stage === "quarterfinal" ? 4 : stage === "semifinal" ? 5 : 6;
+    const event = { id:`world-cup-${stage}`, stage, round, status:"pending", fixtureIds:[] };
+    for (let index = 0; index < teamIds.length; index += 2) {
+      const fixture = { id:`world-cup-${stage}-${index / 2 + 1}`, stage, round, homeId:teamIds[index], awayId:teamIds[index + 1], status:"pending", matchId:null, score:null, winnerId:null };
+      this.state.worldCup.fixtures.push(fixture); event.fixtureIds.push(fixture.id);
+    }
+    this.state.worldCup.events.push(event);
+    this.state.worldCup.stage = stage;
+    return event;
+  }
+
+  completeWorldCupEvent(event) {
+    if (event.transitionedAt) return;
+    event.status = "complete"; event.transitionedAt = this.now();
+    const cup = this.state.worldCup;
+    if (event.stage === "group" && event.round === 3) {
+      const groupStandings = cup.groups.map((group) => this.worldCupStandings(group.id));
+      const bestThird = groupStandings.map((table) => table[2]).sort((a, b) => b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) || b.goalsFor - a.goalsFor).slice(0, 2);
+      const qualified = [...groupStandings.flatMap((table) => table.slice(0, 2)), ...bestThird];
+      cup.qualifiedTeamIds = qualified.map((team) => team.id);
+      this.createWorldCupKnockoutEvent("quarterfinal", [qualified[0].id, bestThird[1].id, qualified[3].id, qualified[4].id, qualified[5].id, bestThird[0].id, qualified[1].id, qualified[2].id]);
+    } else if (event.stage === "quarterfinal" || event.stage === "semifinal") {
+      const winners = this.worldCupEventFixtures(event).map((fixture) => fixture.winnerId);
+      this.createWorldCupKnockoutEvent(event.stage === "quarterfinal" ? "semifinal" : "final", winners);
+    } else if (event.stage === "final") {
+      cup.status = "completed"; cup.stage = "completed"; cup.championId = this.worldCupEventFixtures(event)[0]?.winnerId ?? null; cup.completedAt = this.now(); cup.endsAt = this.now(); cup.tacticsWindowOpen = true; cup.nextEventAt = null;
+      this.cleanupWorldCupFillers();
+      return;
+    }
+    cup.nextEventAt = this.now() + WORLD_CUP_INTERVAL_MS;
+  }
+
+  startScheduledWorldCupEvent(options = {}) {
+    const cup = this.state.worldCup;
+    if (!cup || !["preparation", "active"].includes(cup.status) || this.state.liveWorldCupRound) return false;
+    const event = cup.events.find((entry) => entry.status === "pending");
+    if (!event) return false;
+    cup.status = "active"; cup.stage = event.stage; event.status = "running";
+    const liveMatches = [];
+    this.worldCupEventFixtures(event).forEach((fixture, index) => {
+      const created = this.createWorldCupMatch(fixture, event, this.now());
+      if (created.teams.some((team) => team.ownerId)) liveMatches.push({ code:`YDL-WC-${cup.date}-${event.round}-M${index + 1}`, round:event.round, fixtureId:fixture.id, match:created.match, spectators:{} });
+      else { settleAutomatedMatch(created.match, created.startedAt); this.finalizeWorldCupFixture(fixture, event, created.match); }
+    });
+    if (!liveMatches.length || options.simulateAll) {
+      liveMatches.forEach((live) => { settleAutomatedMatch(live.match, this.now()); this.finalizeWorldCupFixture(this.worldCupEventFixtures(event).find((fixture) => fixture.id === live.fixtureId), event, live.match); });
+      this.completeWorldCupEvent(event); this.save(); return true;
+    }
+    this.state.liveWorldCupRound = { eventId:event.id, startedAt:this.now(), matches:liveMatches };
+    this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+    return true;
+  }
+
+  advanceLiveWorldCupRound(now = this.now(), options = {}) {
+    const liveRound = this.state.liveWorldCupRound;
+    if (!liveRound) return false;
+    const event = this.state.worldCup.events.find((entry) => entry.id === liveRound.eventId);
+    let changed = false;
+    for (const live of this.liveAdvanceBatch(liveRound.matches, "worldcup", options.maximumMatches)) {
+      advanceLeagueMatch(live.match, now, { maximumChains:options.maximumChainsPerMatch }); changed = true;
+      if (live.match.report) { this.finalizeWorldCupFixture(this.worldCupEventFixtures(event).find((fixture) => fixture.id === live.fixtureId), event, live.match); live.completed = true; }
+      else if (options.persist !== false) this.persistLiveMatch(live, now);
+    }
+    if (liveRound.matches.every((entry) => entry.completed)) {
+      liveRound.matches.forEach((live) => this.state.completedBroadcasts.push({ code:live.code, round:event.round, matchId:this.worldCupEventFixtures(event).find((fixture) => fixture.id === live.fixtureId)?.matchId ?? null, completedAt:this.now(), spectators:clone(live.spectators ?? {}), match:publicLeagueMatch(live.match, this.now(), null, true), competition:"YellowDogs World Cup" }));
+      this.completeWorldCupEvent(event); this.state.liveWorldCupRound = null; this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+    }
+    return changed;
+  }
+
+  createWorldCupPreparation(startsAtValue = null) {
+    const date = localDateKey(new Date(this.now()));
+    const parsedStartsAt = startsAtValue === null ? null : Number(new Date(startsAtValue).getTime());
+    const startsAt = Number.isFinite(parsedStartsAt) && parsedStartsAt > 0 ? parsedStartsAt : null;
+    const humans = seededShuffle(this.state.teams.filter((team) => team.ownerId).slice(0, 9), `${date}:managers`);
+    const humanCountries = seededShuffle(WORLD_CUP_COUNTRIES.slice(0, 9), `${date}:human-countries`);
+    const aiCountries = seededShuffle(WORLD_CUP_COUNTRIES.slice(9), `${date}:ai-countries`);
+    const assignments = ["A", "B", "C"].flatMap((groupId, groupIndex) => [
+      ...humanCountries.slice(groupIndex * 3, groupIndex * 3 + 3).map((country, index) => ({ country, club:humans[groupIndex * 3 + index] ?? null, groupId })),
+      { country:aiCountries[groupIndex], club:null, groupId },
+    ]);
+    const teams = assignments.map(({ country:[country, code], club, groupId }) => {
+      const roster = this.createWorldCupRoster(country, code);
+      const xPlayerId = club ? Object.entries(this.state.xPlayers.assignments ?? {}).find(([, ownerId]) => ownerId === club.ownerId)?.[0] : null;
+      const xPlayer = xPlayerId ? REAL_PLAYER_BY_ID[xPlayerId] : null;
+      if (xPlayer) roster[roster.length - 1] = clone(xPlayer);
+      const team = { id:`world-cup-${code}`, country, code, groupId, ownerId:club?.ownerId ?? null, managerName:club?.ownerName ?? "AI教练", isAi:!club, roster, selectedIds:roster.map((player) => player.id), startingIds:[] };
+      team.startingIds = this.worldCupStartingIds(team); return team;
+    });
+    const groups = ["A", "B", "C"].map((id) => ({ id, teamIds:teams.filter((team) => team.groupId === id).map((team) => team.id) }));
+    const fixtures = []; const events = [];
+    const pairings = [[[0,3],[1,2]], [[0,2],[3,1]], [[0,1],[2,3]]];
+    for (let round = 1; round <= 3; round += 1) {
+      const event = { id:`world-cup-group-${round}`, stage:"group", round, status:"pending", fixtureIds:[] };
+      groups.forEach((group) => pairings[round - 1].forEach(([homeIndex, awayIndex], matchIndex) => {
+        const fixture = { id:`world-cup-${group.id}-r${round}-m${matchIndex + 1}`, stage:"group", groupId:group.id, round, homeId:group.teamIds[homeIndex], awayId:group.teamIds[awayIndex], status:"pending", matchId:null, score:null, winnerId:null };
+        fixtures.push(fixture); event.fixtureIds.push(fixture.id);
+      }));
+      events.push(event);
+    }
+    this.state.worldCup = { status:"preparation", stage:"group", date, startsAt, nextEventAt:startsAt, startedAt:this.now(), completedAt:null, endsAt:null, championId:null, tacticsWindowOpen:true, teams, groups, fixtures, events, table:Object.fromEntries(teams.map((team) => [team.id, freshTable()])), playerStats:{}, lastError:null };
+    this.state.liveWorldCupRound = null;
+    return this.state.worldCup;
+  }
+
+  prepareWorldCupForDailyReset() {
+    const date = localDateKey(new Date(this.now()));
+    if (this.state.worldCup?.date === date && !["closed", "cancelled"].includes(this.state.worldCup.status)) return false;
+    this.createWorldCupPreparation(null);
+    return true;
+  }
+
+  schedulePreparedWorldCupAfterCupFinal() {
+    const cup = this.state.worldCup;
+    if (!cup || cup.date !== localDateKey(new Date(this.now())) || Number(cup.startsAt) > 0 || ["closed", "cancelled", "completed"].includes(cup.status)) return false;
+    const startsAt = this.now() + WORLD_CUP_INTERVAL_MS;
+    cup.startsAt = startsAt;
+    cup.nextEventAt = startsAt;
+    cup.scheduledAfterCupFinalAt = this.now();
+    return true;
+  }
+
+  bootstrapWorldCup(startsAtValue, options = {}) {
+    const date = localDateKey(new Date(this.now()));
+    const startsAt = Number(new Date(startsAtValue).getTime());
+    if (!Number.isFinite(startsAt) || startsAt < this.now() - 60_000) throw new Error("世界杯首轮开球时间必须是当前或未来时间");
+    if (this.state.worldCup?.date === date && !["closed", "cancelled"].includes(this.state.worldCup.status)) {
+      if (!Number(this.state.worldCup.startsAt)) {
+        this.state.worldCup.startsAt = startsAt;
+        this.state.worldCup.nextEventAt = startsAt;
+      }
+      if (options.repair !== false) return this.repairWorldCup();
+      this.save(); return this.adminView();
+    }
+    this.createWorldCupPreparation(startsAt);
+    this.save(); return this.adminView();
+  }
+
+  reanchorWorldCup(startsAtValue) {
+    const cup = this.state.worldCup; const startsAt = Number(new Date(startsAtValue).getTime());
+    if (!cup || !Number.isFinite(startsAt) || startsAt < this.now() - 60_000) throw new Error("请选择当前或未来的世界杯开球时间");
+    if (this.state.liveWorldCupRound) throw new Error("世界杯正在直播，不能重排时间");
+    cup.startsAt = startsAt; cup.nextEventAt = startsAt; cup.status = cup.events.some((event) => event.status === "complete") ? "active" : "preparation"; this.save(); return this.adminView();
+  }
+
+  repairWorldCup() {
+    const cup = this.state.worldCup;
+    if (!cup) throw new Error("今日世界杯尚未创建");
+    cup.teams.forEach((team) => { team.roster ??= this.createWorldCupRoster(team.country, team.code); team.startingIds = this.worldCupStartingIds(team); cup.table[team.id] ??= freshTable(); });
+    cup.lastError = null; this.save(); return this.adminView();
+  }
+
+  worldCupRosterDeadline() {
+    const startsAt = Number(this.state.worldCup?.startsAt);
+    return Number.isFinite(startsAt) && startsAt > 0 ? startsAt - 10 * 60 * 1000 : Infinity;
+  }
+
+  saveWorldCupRoster(account, selectedIdsValue) {
+    const cup = this.state.worldCup;
+    const team = cup?.teams?.find((entry) => entry.ownerId === account.id);
+    if (!cup || !team) throw new Error("今日没有分配到世界杯国家队");
+    if (this.now() >= this.worldCupRosterDeadline()) throw new Error("世界杯首轮开赛前10分钟已到，大名单已经锁定");
+    const selectedIds = [...new Set((selectedIdsValue ?? []).map(String))];
+    const allowed = new Map(REAL_PLAYERS.filter((player) => !isXPlayer(player) && player.nationality === team.country).map((player) => [player.id, player]));
+    if (selectedIds.length !== 22 || selectedIds.some((id) => !allowed.has(id))) throw new Error("只能从今日国家队选择22名球员");
+    const counts = selectedIds.reduce((result, id) => { const player = allowed.get(id); const pool = player.pool === "LEGEND" ? roleGroup(player.role) : player.pool; result[pool] = (result[pool] ?? 0) + 1; return result; }, { GK:0, DEF:0, MID:0, ATT:0 });
+    if (counts.GK < 2 || counts.DEF < 6 || counts.MID < 5 || counts.ATT < 4) throw new Error("大名单至少需要2门将、6后场、5中场和4前场");
+    const xPlayer = (team.roster ?? []).find((player) => isXPlayer(player));
+    team.roster = [...selectedIds.map((id) => clone(allowed.get(id))), ...(xPlayer ? [clone(xPlayer)] : [])];
+    team.selectedIds = [...selectedIds, ...(xPlayer ? [xPlayer.id] : [])];
+    team.startingIds = this.worldCupStartingIds(team);
+    team.rosterSubmittedAt = this.now();
+    this.save();
+    return { updatedAt:this.state.updatedAt, serverTime:this.now(), worldCup:this.worldCupView(account.id) };
+  }
+
+  saveWorldCupTactics(account, payload = {}) {
+    const cup = this.state.worldCup;
+    const team = cup?.teams?.find((entry) => entry.ownerId === account.id);
+    if (!cup || !team || !this.worldCupView(account.id)?.tacticsWindowOpen) throw new Error("今日国家队战术板已经关闭");
+    const starterIds = [...new Set((payload.starterIds ?? []).map(String))];
+    const rosterIds = new Set((team.roster ?? []).map((player) => player.id));
+    if (starterIds.length !== 11 || starterIds.some((id) => !rosterIds.has(id))) throw new Error("国家队首发必须由名单中的11名球员组成");
+    team.startingIds = starterIds;
+    team.tactics = {
+      positions:clone(payload.positions ?? {}),
+      positionPresets:clone(payload.positionPresets ?? {}),
+      formationLinePresets:clone(payload.formationLinePresets ?? {}),
+      tacticalPlans:clone(payload.tacticalPlans ?? {}),
+      attackFocus:String(payload.attackFocus ?? "balanced"),
+      defenseFocus:String(payload.defenseFocus ?? "balanced"),
+      fitnessThreshold:Number(payload.fitnessThreshold ?? 65),
+      savedAt:this.now(),
+    };
+    this.save();
+    return { updatedAt:this.state.updatedAt, serverTime:this.now(), worldCup:this.worldCupView(account.id) };
+  }
+
+  cleanupWorldCupFillers() {
+    const cup = this.state.worldCup;
+    if (!cup || cup.fillersCleanedAt) return false;
+    cup.teams.forEach((team) => {
+      const fillerIds = new Set((team.roster ?? []).filter((player) => String(player.id).startsWith("world-cup-") && String(player.id).includes("-filler-")).map((player) => player.id));
+      if (!fillerIds.size) return;
+      team.roster = team.roster.filter((player) => !fillerIds.has(player.id));
+      team.selectedIds = (team.selectedIds ?? []).filter((id) => !fillerIds.has(id));
+      team.startingIds = (team.startingIds ?? []).filter((id) => !fillerIds.has(id));
+    });
+    cup.fillersCleanedAt = this.now();
+    return true;
+  }
+
+  closeWorldCup() {
+    if (!this.state.worldCup) throw new Error("今日世界杯尚未创建");
+    if (this.state.liveWorldCupRound) throw new Error("世界杯正在直播，不能直接关闭");
+    Object.assign(this.state.worldCup, { status:"closed", tacticsWindowOpen:false, nextEventAt:null, endsAt:this.now() }); this.cleanupWorldCupFillers(); this.save(); return this.adminView();
+  }
+
+  worldCupView(accountId = null) {
+    const cup = this.state.worldCup;
+    if (!cup) return null;
+    const ownTeam = cup.teams.find((team) => team.ownerId === accountId);
+    const entries = Object.values(cup.playerStats ?? {}).map((entry) => ({ ...entry, averageRating:entry.appearances ? Number((entry.ratingTotal / entry.appearances).toFixed(2)) : 0 }));
+    const leaders = (field) => entries.filter((entry) => entry[field] > 0).sort((a, b) => b[field] - a[field] || b.averageRating - a.averageRating).slice(0, 20);
+    return clone({ ...cup, teams:cup.teams.map((team) => ({ ...team, roster:team.id === ownTeam?.id ? team.roster.map(playerSummary) : undefined })), groups:cup.groups.map((group) => ({ ...group, standings:this.worldCupStandings(group.id) })), playerStats:undefined, leaderboards:{ scorers:leaders("goals"), assists:leaders("assists"), ratings:entries.sort((a,b) => b.averageRating - a.averageRating).slice(0,20) }, ownTeamId:ownTeam?.id ?? null, liveEventId:this.state.liveWorldCupRound?.eventId ?? null, tacticsWindowOpen:Boolean(cup.tacticsWindowOpen && (!cup.endsAt || this.now() < Number(cup.endsAt) + 30 * 60 * 1000)) });
   }
 
   simulatePendingCupEvent() {
@@ -5937,6 +6350,7 @@ export class YellowDogsLeagueService {
       const mainMaximumMatches = hasFriendlies ? 1 : 2;
       if (this.state.liveRound) changed = this.advanceLiveRound(now, { maximumMatches:mainMaximumMatches, maximumChainsPerMatch:1 }) || changed;
       else if (this.state.liveCupRound) changed = this.advanceLiveCupRound(now, { maximumMatches:mainMaximumMatches, maximumChainsPerMatch:1 }) || changed;
+      else if (this.state.liveWorldCupRound) changed = this.advanceLiveWorldCupRound(now, { maximumMatches:mainMaximumMatches, maximumChainsPerMatch:1 }) || changed;
       return changed;
     } finally {
       this.liveAdvanceRunning = false;
@@ -5945,7 +6359,7 @@ export class YellowDogsLeagueService {
 
   liveMatch(codeValue) {
     const code = String(codeValue ?? "").toUpperCase();
-    const live = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === code && !entry.completed);
+    const live = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveWorldCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === code && !entry.completed);
     if (!live) throw new Error("这场联赛直播已经结束");
     return live;
   }
@@ -5988,7 +6402,7 @@ export class YellowDogsLeagueService {
 
   broadcasts() {
     this.purgeCompletedBroadcasts();
-    return clone([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].filter((live) => !live.completed).map((live) => {
+    return clone([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveWorldCupRound?.matches ?? []), ...this.state.liveFriendlies].filter((live) => !live.completed).map((live) => {
       this.cleanupLiveSpectators(live);
       const snapshot = publicLeagueMatch(live.match, this.now(), null, true);
       return {
@@ -6000,7 +6414,7 @@ export class YellowDogsLeagueService {
         segment:snapshot.segment,
         weather:snapshot.weather,
         spectatorCount:Object.keys(live.spectators ?? {}).length,
-        competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League",
+        competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League",
       };
     }));
   }
@@ -6013,7 +6427,7 @@ export class YellowDogsLeagueService {
       live:!live.completed && !live.match.report,
       spectators:Object.values(live.spectators ?? {}).map(({ name }) => ({ name })),
       match:publicLeagueMatch(live.match, this.now(), null, true),
-      competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League",
+      competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League",
     });
   }
 
@@ -6027,7 +6441,7 @@ export class YellowDogsLeagueService {
 
   watchView(code, spectatorToken) {
     const codeKey = String(code ?? "").toUpperCase();
-    const live = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
+    const live = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveWorldCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
     if (live) {
       if (!live.spectators?.[spectatorToken]) throw new Error("观赛会话已过期，请重新进入直播");
       live.spectators[spectatorToken].lastSeenAt = this.now();
@@ -6048,7 +6462,7 @@ export class YellowDogsLeagueService {
 
   leaveWatch(code, spectatorToken) {
     const codeKey = String(code ?? "").toUpperCase();
-    const live = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
+    const live = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveWorldCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
     if (live) delete live.spectators?.[spectatorToken];
     const completed = this.completedBroadcast(code);
     if (completed) delete completed.spectators?.[spectatorToken];
@@ -6174,7 +6588,11 @@ export class YellowDogsLeagueService {
     this.state.playerStats = {};
     this.state.liveRound = null;
     this.state.liveCupRound = null;
+    this.state.liveWorldCupRound = null;
+    this.cleanupWorldCupFillers();
+    this.state.worldCup = null;
     this.state.cup = { status:"waiting", stage:"waiting", participants:[], table:{}, swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null };
+    this.prepareWorldCupForDailyReset();
     automation.lastResetDate = date;
     automation.lastCupStartDate = null;
     if (!options.skipSave) this.save();
@@ -6218,7 +6636,10 @@ export class YellowDogsLeagueService {
     const friendlyInvitationChanged = measureRuntimeSync("league.expireInvitations", () => this.expireFriendlyInvitations(now));
     if (friendlyInvitationChanged) this.save({ skipDailyBackup:true });
     const friendlyChanged = measureRuntimeSync("league.advanceFriendlies", () => this.advanceLiveFriendlies(now, { maximumMatches:0 })) || friendlyInvitationChanged;
-    if (this.state.liveRound || this.state.liveCupRound) return friendlyChanged || automationChanged || compensationChanged;
+    if (this.state.liveRound || this.state.liveCupRound || this.state.liveWorldCupRound) return friendlyChanged || automationChanged || compensationChanged;
+    if (["preparation", "active"].includes(this.state.worldCup?.status) && now >= Number(this.state.worldCup?.nextEventAt ?? Infinity)) {
+      return measureRuntimeSync("league.startScheduledWorldCupEvent", () => this.startScheduledWorldCupEvent());
+    }
     if (this.state.cup.status === "active" && activeTime(now) && now >= Number(this.state.cup.nextRoundAt ?? Infinity)) {
       return measureRuntimeSync("league.startScheduledCupEvent", () => this.startScheduledCupEvent());
     }
@@ -6325,7 +6746,7 @@ export class YellowDogsLeagueService {
   }
 
   nextOpponent(teamId) {
-    const fixture = this.teamSchedule(teamId).find((entry) => entry.status !== "complete");
+    const fixture = this.teamSchedule(teamId).find((entry) => entry.status !== "complete" && entry.competition !== "worldcup");
     if (!fixture) return null;
     return {
       round:fixture.round,
@@ -6384,10 +6805,13 @@ export class YellowDogsLeagueService {
     this.state.reports = {};
     this.state.liveRound = null;
     this.state.liveCupRound = null;
+    this.state.liveWorldCupRound = null;
     this.state.liveFriendlies = [];
     this.state.friendlyInvitations = [];
     this.state.friendlyFixtures = [];
     this.state.cup = { status:"waiting", stage:"waiting", participants:[], table:{}, swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null };
+    this.cleanupWorldCupFillers();
+    this.state.worldCup = null;
     this.save();
     return this.adminView();
   }
@@ -6496,12 +6920,48 @@ export class YellowDogsLeagueService {
       "admin-coin-penalty":"后台纪律扣款",
       "discipline-reward-withheld":"纪律处罚扣留奖励",
     };
+    const ledgerByAccount = new Map();
+    for (const entry of this.state.ledger) {
+      const accountId = entry.accountId;
+      if (accountId == null) continue;
+      if (!ledgerByAccount.has(accountId)) ledgerByAccount.set(accountId, []);
+      ledgerByAccount.get(accountId).push(entry);
+    }
+    const listingPositions = new Map();
+    const listingsByClosedAt = new Map();
+    this.state.listings.forEach((item, index) => {
+      listingPositions.set(item.id, index);
+      if (item.closedAt != null) {
+        if (!listingsByClosedAt.has(item.closedAt)) listingsByClosedAt.set(item.closedAt, []);
+        listingsByClosedAt.get(item.closedAt).push({ item, index });
+      }
+    });
+    const resolveListing = (entry, ownerId) => {
+      let best = null;
+      let bestIndex = Number.MAX_SAFE_INTEGER;
+      if (entry.listingId != null && listingPositions.has(entry.listingId)) {
+        const index = listingPositions.get(entry.listingId);
+        best = this.state.listings[index];
+        bestIndex = index;
+      }
+      if (entry.createdAt != null) {
+        const candidates = listingsByClosedAt.get(entry.createdAt);
+        if (candidates) {
+          for (const candidate of candidates) {
+            if ((candidate.item.sellerId === ownerId || candidate.item.buyerId === ownerId) && candidate.index < bestIndex) {
+              best = candidate.item;
+              bestIndex = candidate.index;
+            }
+          }
+        }
+      }
+      return best;
+    };
     return this.state.teams.filter((team) => team.ownerId).map((team) => {
-      const entries = this.state.ledger.filter((entry) => entry.accountId === team.ownerId).map((entry) => {
+      const entries = (ledgerByAccount.get(team.ownerId) ?? []).map((entry) => {
         let playerId = entry.playerId ?? null;
         if (!playerId && ["transfer-buy", "transfer-sale"].includes(entry.type)) {
-          const listing = this.state.listings.find((item) => item.id === entry.listingId || item.closedAt === entry.createdAt && (item.sellerId === team.ownerId || item.buyerId === team.ownerId));
-          playerId = listing?.playerId ?? null;
+          playerId = resolveListing(entry, team.ownerId)?.playerId ?? null;
         }
         return {
           ...entry,
@@ -6559,24 +7019,50 @@ export class YellowDogsLeagueService {
       const drafting = players.filter((player) => reserved.has(player.id)).length;
       return [pool, { total:players.length, selected, drafting, available:players.length - selected - drafting }];
     }));
-    const allocations = REAL_PLAYERS.filter((player) => owned.has(player.id) || reserved.has(player.id) || Object.values(this.state.s4Assets.cards).some((card) => card.status === "active" && card.playerId === player.id)).map((player) => {
+    const allocationIndex = measureRuntimeSync("league.adminView.allocations", () => {
+      const activeByPlayer = new Map();
+      let activeCardCount = 0;
+      let recycledCardCount = 0;
+      for (const card of Object.values(this.state.s4Assets.cards)) {
+        if (card.status === "active") {
+          activeCardCount += 1;
+          if (!activeByPlayer.has(card.playerId)) activeByPlayer.set(card.playerId, { cards:[], holderOwners:new Set(), highestUpgrade:0 });
+          const bucket = activeByPlayer.get(card.playerId);
+          bucket.cards.push(card);
+          bucket.holderOwners.add(card.ownerId);
+          bucket.highestUpgrade = Math.max(bucket.highestUpgrade, Number(card.upgradeLevel ?? 0));
+        } else if (card.status === "recycled") {
+          recycledCardCount += 1;
+        }
+      }
+      return { activeByPlayer, activeCardCount, recycledCardCount };
+    });
+    const allocations = REAL_PLAYERS.filter((player) => owned.has(player.id) || reserved.has(player.id) || allocationIndex.activeByPlayer.has(player.id)).map((player) => {
       const team = owned.get(player.id);
       const draft = reserved.get(player.id);
-      const circulating = Object.values(this.state.s4Assets.cards).filter((card) => card.status === "active" && card.playerId === player.id);
+      const bucket = allocationIndex.activeByPlayer.get(player.id);
       return {
         ...playerSummary(player),
         status:team ? "owned" : draft ? "drafting" : "cards-circulating",
         teamId:team?.id ?? null,
         teamName:team?.name ?? draft?.teamName ?? null,
         ownerName:team?.ownerName ?? null,
-        cardCount:circulating.length,
-        cardHolderCount:new Set(circulating.map((card) => card.ownerId)).size,
-        highestUpgrade:Math.max(0, ...circulating.map((card) => Number(card.upgradeLevel ?? 0))),
+        cardCount:bucket?.cards.length ?? 0,
+        cardHolderCount:bucket?.holderOwners.size ?? 0,
+        highestUpgrade:bucket?.highestUpgrade ?? 0,
       };
     });
-    return clone({
+    return unwrapTracked({
       season:this.state.season,
       cup:this.cupView(),
+      worldCup:this.worldCupView(),
+      worldCupOperations:{
+        cupFinalCompleted:this.state.cup.status === "completed",
+        live:Boolean(this.state.liveWorldCupRound),
+        pendingFixtures:(this.state.worldCup?.fixtures ?? []).filter((fixture) => fixture.status === "pending").length,
+        completedFixtures:(this.state.worldCup?.fixtures ?? []).filter((fixture) => fixture.status === "complete").length,
+        temporaryFillerCount:(this.state.worldCup?.teams ?? []).flatMap((team) => team.roster ?? []).filter((player) => String(player.id).includes("-filler-")).length,
+      },
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20 },
       dailyAutomation:clone(this.state.dailyAutomation),
       teams:this.standings().map((entry) => {
@@ -6601,12 +7087,12 @@ export class YellowDogsLeagueService {
         actions:this.state.discipline.actions.slice().sort((left, right) => right.createdAt - left.createdAt),
         withheldRewards:this.state.discipline.withheldRewards.slice().sort((left, right) => right.createdAt - left.createdAt),
       },
-      economy:this.adminEconomyView(),
+      economy:measureRuntimeSync("league.adminView.economy", () => this.adminEconomyView()),
       s4Assets:{
         schemaVersion:this.state.s4Assets.schemaVersion,
         ownershipCount:Object.keys(this.state.s4Assets.ownerships).length,
-        activeCardCount:Object.values(this.state.s4Assets.cards).filter((card) => card.status === "active").length,
-        recycledCardCount:Object.values(this.state.s4Assets.cards).filter((card) => card.status === "recycled").length,
+        activeCardCount:allocationIndex.activeCardCount,
+        recycledCardCount:allocationIndex.recycledCardCount,
         recentTransactions:this.state.s4Assets.transactions.slice(-100).reverse(),
       },
       rewardGrants:[],

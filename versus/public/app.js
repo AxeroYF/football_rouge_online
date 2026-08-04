@@ -126,6 +126,14 @@ let leagueReviewTeamIndex = 0;
 let leagueReviewHeatMode = "actions";
 let leagueBoard = "scorers";
 let leagueCupPage = "swiss";
+let leagueWorldCupPage = "overview";
+let leagueTacticsMode = "club";
+let leagueWorldCupSelectionInitialized = false;
+let leagueWorldCupRosterLocked = false;
+let leagueWorldCupRosterSubmitted = false;
+const leagueWorldCupSelectedPlayerIds = new Set();
+let leagueWorldCupTacticsTeam = null;
+const leagueTacticsContexts = { club:null, worldcup:null };
 let leagueCupRoundPage = null;
 let leagueRoundPage = null;
 let leagueHistoryTeamId = null;
@@ -195,7 +203,7 @@ let leagueXGrowthResetSecondaryRole = null;
 let leagueMobileNavOpen = false;
 let leagueDesktopTheme = readLeagueDesktopTheme();
 const PLAYER_GRADE_ORDER = Object.freeze({ X:0, S:1, A:2, B:3, C:4 });
-const LEAGUE_TAB_LABELS = Object.freeze({ overview:"联赛总览", cup:"杯赛总览", predictions:"比赛预测", schedule:"日程表", review:"赛后复盘", squad:"阵容战术", inbox:"收件箱", backpack:"背包", enhancement:"球员强化", "x-growth":"巨星之路", players:"球员信息", television:"电视台", stats:"数据榜单", shop:"球员商店", market:"交易市场" });
+const LEAGUE_TAB_LABELS = Object.freeze({ overview:"联赛总览", cup:"杯赛总览", worldcup:"黄狗世界杯", predictions:"比赛预测", schedule:"日程表", review:"赛后复盘", squad:"阵容战术", inbox:"收件箱", backpack:"背包", enhancement:"球员强化", "x-growth":"巨星之路", players:"球员信息", television:"电视台", stats:"数据榜单", shop:"球员商店", market:"交易市场" });
 
 function comparePlayerGrade(left, right) {
   return (PLAYER_GRADE_ORDER[left.player?.grade] ?? 99) - (PLAYER_GRADE_ORDER[right.player?.grade] ?? 99);
@@ -867,15 +875,55 @@ async function leagueXGrowthRequest(path, body = {}) {
   }
 }
 
+function activeTacticsTeam() {
+  return leagueTacticsMode === "worldcup" ? worldCupTacticsTeamData() : league.ownTeam;
+}
+
+function storeLeagueTacticsContext(mode = leagueTacticsMode) {
+  if (!leagueStartingIds) return;
+  captureLeagueTacticalControls();
+  if (leaguePositionPresets && leaguePositions) leaguePositionPresets[leagueActivePositionPreset] = leaguePositions;
+  leagueTacticsContexts[mode] = {
+    startingIds:[...leagueStartingIds],
+    positions:leaguePositions,
+    positionPresets:leaguePositionPresets,
+    formationLinePresets:leagueFormationLinePresets,
+    activePositionPreset:leagueActivePositionPreset,
+    tacticalDraft:leagueTacticalDraft,
+    mobilePlanState:leagueMobileTacticalPlanState,
+  };
+}
+
+function restoreLeagueTacticsContext(mode) {
+  const context = leagueTacticsContexts[mode];
+  leagueStartingIds = context?.startingIds ? [...context.startingIds] : null;
+  leaguePositions = context?.positions ?? null;
+  leaguePositionPresets = context?.positionPresets ?? null;
+  leagueFormationLinePresets = context?.formationLinePresets ?? null;
+  leagueActivePositionPreset = context?.activePositionPreset ?? "position1";
+  leagueTacticalDraft = context?.tacticalDraft ?? null;
+  leagueMobileTacticalPlanState = context?.mobilePlanState ?? "opening";
+}
+
+function switchLeagueTacticsMode(mode) {
+  const nextMode = mode === "worldcup" ? "worldcup" : "club";
+  if (nextMode === leagueTacticsMode) return;
+  storeLeagueTacticsContext();
+  leagueTacticsMode = nextMode;
+  restoreLeagueTacticsContext(nextMode);
+  leagueEditorDirty = false;
+}
+
 function ensureLeagueTacticalDraft() {
   if (leagueTacticalDraft) return leagueTacticalDraft;
-  const plans = league.ownTeam.tacticalPlans ?? {};
+  const team = activeTacticsTeam();
+  const plans = team.tacticalPlans ?? {};
   leagueTacticalDraft = {
-    fitnessThreshold:Number(league.ownTeam.fitnessThreshold ?? 65),
-    attackFocus:league.ownTeam.attackFocus ?? "balanced",
-    defenseFocus:league.ownTeam.defenseFocus ?? "balanced",
+    fitnessThreshold:Number(team.fitnessThreshold ?? 65),
+    attackFocus:team.attackFocus ?? "balanced",
+    defenseFocus:team.defenseFocus ?? "balanced",
     tacticalPlans:{
-      opening:leagueTacticalPlanDraft(plans.opening, { tactic:league.ownTeam.tactic, style:league.ownTeam.style, positionPreset:"position1" }),
+      opening:leagueTacticalPlanDraft(plans.opening, { tactic:team.tactic, style:team.style, positionPreset:"position1" }),
       leading:leagueTacticalPlanDraft(plans.leading, { tactic:"defensive", style:"counterAttack", positionPreset:"position2" }),
       trailing:leagueTacticalPlanDraft(plans.trailing, { tactic:"positive", style:"possession", positionPreset:"position3" }),
     },
@@ -988,7 +1036,7 @@ function leagueTeamSavePayload() {
 }
 
 function leaguePositionPresetsAreValid() {
-  const roster = league?.ownTeam?.roster ?? [];
+  const roster = activeTacticsTeam()?.roster ?? [];
   const startingSet = new Set(leagueStartingIds ?? []);
   const starters = roster.filter((player) => startingSet.has(player.id));
   return starters.length === 11 && Object.entries(leaguePositionPresets ?? {}).every(([key, positions]) => {
@@ -1010,6 +1058,26 @@ async function saveLeagueTeamNow() {
   }
   const revision = leagueAutoSaveRevision;
   const payload = leagueTeamSavePayload();
+  if (leagueTacticsMode === "worldcup") {
+    leagueAutoSavePending = true;
+    leagueMutationPending = true;
+    setLeagueAutoSaveStatus("saving", "正在自动保存…");
+    try {
+      const value = await api("/api/versus/league/world-cup/tactics", { method:"POST", body:leagueIdentity(payload) });
+      league.worldCup = value.worldCupSave.worldCup;
+      leagueWorldCupTacticsTeam = null;
+      leagueTacticsContexts.worldcup = null;
+      leagueEditorDirty = false;
+      setLeagueAutoSaveStatus("saved", "国家队战术已保存");
+    } catch (error) {
+      setLeagueAutoSaveStatus("error", "保存失败");
+      showToast(error.message);
+    } finally {
+      leagueAutoSavePending = false;
+      leagueMutationPending = false;
+    }
+    return;
+  }
   leagueAutoSavePending = true;
   leagueMutationPending = true;
   setLeagueAutoSaveStatus("saving", "正在自动保存…");
@@ -1608,6 +1676,23 @@ function leagueTacticalFit(players, roles, positions, formationLines, plan) {
 }
 
 function leagueNextMatchMarkup() {
+  if (leagueTacticsMode === "worldcup") {
+    const worldCup = league.worldCup;
+    const ownTeam = worldCup?.teams?.find((team) => team.id === worldCup.ownTeamId);
+    const next = (league.schedule?.fixtures ?? []).find((fixture) => fixture.competition === "worldcup" && fixture.status !== "complete");
+    if (!ownTeam) return `<section class="league-next-match complete"><span>今日未分配国家队</span><b>国家队战术板将在下次世界杯分配后开放</b></section>`;
+    if (!Number(worldCup.startsAt)) {
+      const firstEvent = worldCup.events?.find((event) => event.status === "pending");
+      const firstFixture = worldCup.fixtures?.find((fixture) => firstEvent?.fixtureIds?.includes(fixture.id) && (fixture.homeId === ownTeam.id || fixture.awayId === ownTeam.id));
+      const opponentId = firstFixture?.homeId === ownTeam.id ? firstFixture?.awayId : firstFixture?.homeId;
+      const opponent = worldCup.teams?.find((team) => team.id === opponentId);
+      return `<section class="league-next-match"><div><small>NEXT MATCH · 黄狗世界杯 · ${firstFixture?.groupId ? `${escapeHtml(firstFixture.groupId)}组第1轮` : "第一轮"}</small><b>等待杯赛决赛</b></div><div><small>对手</small><strong>${escapeHtml(opponent?.country ?? "待定")}${opponent?.isAi ? " AI" : ""}</strong></div><div><small>阵容来源</small><strong>${escapeHtml(ownTeam.country)}国家队</strong><span>系统球员 · 普通球员临时 +3</span></div><div><small>大名单截止</small><strong>首轮开球前 10 分钟</strong><span>杯赛决赛后自动确定具体时间</span></div></section>`;
+    }
+    if (!next) return `<section class="league-next-match complete"><span>${escapeHtml(ownTeam.country)}今日赛程已完成</span><b>战术板将在世界杯结束 30 分钟后关闭</b></section>`;
+    const opponent = worldCup.teams?.find((team) => team.id === next.opponentId);
+    const startsAt = next.status === "live" ? "正在直播" : new Date(next.startsAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
+    return `<section class="league-next-match"><div><small>NEXT MATCH · ${escapeHtml(next.competitionName)} · ${escapeHtml(next.label)}</small><b>${startsAt}</b></div><div><small>对手</small><strong>${escapeHtml(next.opponentName)}${opponent?.isAi ? " AI" : ""}</strong></div><div><small>阵容来源</small><strong>${escapeHtml(ownTeam.country)}国家队</strong><span>系统球员 · 普通球员临时 +3</span></div><div><small>战术有效期</small><strong>今日世界杯</strong><span>赛事结束后 30 分钟关闭</span></div></section>`;
+  }
   const next = league.report?.nextOpponent;
   if (league.season?.status === "registration") return `<section class="league-next-match complete"><span>新赛季报名选人中</span><b>等待管理员开启联赛推进，首轮时间将在开启后确定</b></section>`;
   if (!next) return `<section class="league-next-match complete"><span>赛季赛程已完成</span><b>等待管理员开启新赛季</b></section>`;
@@ -1952,7 +2037,8 @@ function leagueRewardPanelMarkup() {
 }
 
 function leagueBaseMatchPlanMarkup(state, label) {
-  const fallback = state === "opening" ? { tactic:league.ownTeam.tactic, style:league.ownTeam.style, positionPreset:"position1" } : state === "leading" ? { tactic:"defensive", style:"counterAttack", positionPreset:"position2" } : { tactic:"positive", style:"possession", positionPreset:"position3" };
+  const team = activeTacticsTeam();
+  const fallback = state === "opening" ? { tactic:team.tactic, style:team.style, positionPreset:"position1" } : state === "leading" ? { tactic:"defensive", style:"counterAttack", positionPreset:"position2" } : { tactic:"positive", style:"possession", positionPreset:"position3" };
   const plan = ensureLeagueTacticalDraft().tacticalPlans[state] ?? fallback;
   return `<section class="league-match-plan"><header><b>${label}</b></header><div class="league-match-plan-fields"><label class="field"><span>比赛心态</span><select name="${state}Tactic">${Object.entries(TACTICS).map(([key,value]) => `<option value="${key}" ${plan.tactic === key ? "selected" : ""}>${value}</option>`).join("")}</select></label><label class="field"><span>基础打法</span><select name="${state}Style">${Object.entries(STYLES).map(([key,value]) => `<option value="${key}" ${plan.style === key ? "selected" : ""}>${value}</option>`).join("")}</select></label></div></section>`;
 }
@@ -1976,14 +2062,15 @@ function leagueMatchPlanMarkup(state, label) {
 }
 
 function legacyLeagueSquadMarkup() {
-  const roster = league.ownTeam.roster;
+  const team = activeTacticsTeam();
+  const roster = team.roster;
   if (!leagueStartingIds || leagueStartingIds.length !== 11 || leagueStartingIds.some((id) => !roster.some((player) => player.id === id))) {
     leagueStartingIds = roster.filter((player) => player.starter).map((player) => player.id).slice(0, 11);
     leaguePositionPresets = null;
   }
   if (!leaguePositionPresets) {
-    const source = league.ownTeam.positionPresets ?? {};
-    const base = structuredClone(league.ownTeam.positions);
+    const source = team.positionPresets ?? {};
+    const base = structuredClone(team.positions);
     leaguePositionPresets = {
       position1:structuredClone(source.position1 ?? base),
       position2:structuredClone(source.position2 ?? base),
@@ -1991,7 +2078,7 @@ function legacyLeagueSquadMarkup() {
     };
   }
   if (!leagueFormationLinePresets) {
-    const source = league.ownTeam.formationLinePresets ?? {};
+    const source = team.formationLinePresets ?? {};
     leagueFormationLinePresets = Object.fromEntries(["position1", "position2", "position3"]
       .map((key) => [key, sanitizeFormationLines(source[key] ?? DEFAULT_FORMATION_LINES)]));
   }
@@ -2015,7 +2102,7 @@ function legacyLeagueSquadMarkup() {
   const activePlan = Object.values(tacticalDraft.tacticalPlans).find((plan) => plan.positionPreset === leagueActivePositionPreset) ?? openingPlan;
   const tacticalFit = leagueTacticalFit(starters, shape.roles, leaguePositions, formationLines, activePlan);
   const tacticalLabel = tacticalFit >= 88 ? "高度适配" : tacticalFit >= 78 ? "适配良好" : tacticalFit >= 68 ? "基本适配" : "需要调整";
-  const bonds = evaluateS4LineupBonds(starters, league.bondCatalog ?? [], { roles:shape.roles });
+  const bonds = leagueTacticsMode === "worldcup" ? [] : evaluateS4LineupBonds(starters, league.bondCatalog ?? [], { roles:shape.roles });
   const displayStarters = leagueBondDisplayLineup(starters, bonds);
   const magnets = displayStarters.map((player) => leagueBoardMagnet(player, leaguePositions[player.id] ?? { x:50, y:50 }, shape.roles[player.id])).join("");
   const bondReady = bonds.length
@@ -2025,14 +2112,28 @@ function legacyLeagueSquadMarkup() {
   const allPresetsValid = Object.values(presetValidity).every(Boolean);
   const positionLabels = { position1:"开局/平局站位", position2:"领先站位", position3:"落后站位" };
   const positionTabs = `<nav class="league-position-tabs" aria-label="保存站位">${["position1", "position2", "position3"].map((key) => `<button type="button" data-league-position-preset="${key}" class="${leagueActivePositionPreset === key ? "active" : ""} ${presetValidity[key] ? "valid" : "invalid"}" aria-pressed="${leagueActivePositionPreset === key}">${positionLabels[key]}</button>`).join("")}</nav>`;
-  const boardToolbar = `<div class="league-board-controls">${bondReady}<div class="league-board-toolbar"><label class="league-board-chemistry"><input type="checkbox" data-league-chemistry-toggle ${leagueShowChemistry ? "checked" : ""}><span>默契连线</span></label><label class="league-board-chemistry"><input type="checkbox" data-league-bond-bonus-toggle ${leagueShowBondBonuses ? "checked" : ""}><span>羁绊增益</span></label>${positionTabs}<label class="league-board-fitness"><span>体力红线</span><input type="range" name="fitnessThreshold" min="45" max="100" step="1" value="${tacticalDraft.fitnessThreshold}"><output data-fitness-threshold-output>${tacticalDraft.fitnessThreshold}</output></label></div></div>`;
+  const relationshipControls = leagueTacticsMode === "worldcup" ? "" : `<label class="league-board-chemistry"><input type="checkbox" data-league-chemistry-toggle ${leagueShowChemistry ? "checked" : ""}><span>默契连线</span></label><label class="league-board-chemistry"><input type="checkbox" data-league-bond-bonus-toggle ${leagueShowBondBonuses ? "checked" : ""}><span>羁绊增益</span></label>`;
+  const boardToolbar = `<div class="league-board-controls">${bondReady}<div class="league-board-toolbar">${relationshipControls}${positionTabs}<label class="league-board-fitness"><span>体力红线</span><input type="range" name="fitnessThreshold" min="45" max="100" step="1" value="${tacticalDraft.fitnessThreshold}"><output data-fitness-threshold-output>${tacticalDraft.fitnessThreshold}</output></label></div></div>`;
   const boardFooter = `<footer class="league-board-footer"><span class="league-autosave-status" data-league-autosave-status data-state="${leagueEditorDirty ? "pending" : "saved"}">${leagueEditorDirty ? "等待自动保存" : "已实时保存"}</span></footer>`;
   const benchSummary = `<section class="league-bench-summary"><div class="league-bench-summary-title"><small>AUTO FORMATION</small><b>自动识别阵型</b></div><div class="league-bench-shape"><strong>${shape.name}</strong><span class="${shape.valid ? "valid" : "invalid"}">${shape.valid ? "阵型有效" : "需要调整"}</span></div><div class="league-fit-row"><div class="league-fit-block"><div class="league-fit-heading"><span>阵容适配度</span><b>${fitScore}<small>/100 · ${fitLabel}</small></b></div><div class="league-fit-bar"><span style="width:${fitScore}%"></span></div></div><div class="league-fit-block tactical"><div class="league-fit-heading"><span>战术适配度</span><b>${tacticalFit}<small>/100 · ${tacticalLabel}</small></b></div><div class="league-fit-bar"><span style="width:${tacticalFit}%"></span></div></div></div><div class="league-fit-counts"><span>主位置<b>${fitCounts.primary}</b></span><span>副位置<b>${fitCounts.secondary}</b></span><span>不适配<b>${fitCounts.unfamiliar}</b></span></div>${shape.valid ? "" : `<p>${shape.message}</p>`}</section>`;
   const matchPlans = `<section class="league-match-plans league-bench-match-plans"><header><b>赛中战术</b></header><div class="league-match-plan-grid">${leagueMatchPlanMarkup("opening", "开局 / 平局")}${leagueMatchPlanMarkup("leading", "领先")}${leagueMatchPlanMarkup("trailing", "落后")}</div></section>`;
-  return `<form class="league-tactics-layout" id="league-squad-form">${leagueNextMatchMarkup()}<section class="league-lineup-workspace"><section class="board-panel league-board-panel"><header class="league-board-heading"><div><small>STARTING XI · POSITION AUTO DETECTION</small><h2>首发战术板</h2></div>${boardToolbar}</header>${pitchMarkup(`${formationReferenceLinesMarkup(formationLines)}${chemistryLines}${magnets}`, "league-tactics-pitch")}${boardFooter}</section><aside class="tournament-bench league-bench"><header><div><small>FULL SQUAD</small><b>替补席 · ${bench.length}人</b></div><span>主力与替补磁贴可双向拖动交换</span></header><div class="bench-magnet-list">${bench.map(leagueBenchMagnet).join("")}</div>${benchSummary}${matchPlans}</aside></section>${allPresetsValid ? "" : `<p class="league-position-save-warning">开局/平局站位需要保持完整阵型；领先与落后站位只要求场上保留一名门将。</p>`}</form>`;
+  const boardTitle = leagueTacticsMode === "worldcup" ? `${escapeHtml(team.name)}战术板` : "首发战术板";
+  const squadLabel = leagueTacticsMode === "worldcup" ? "WORLD CUP SQUAD" : "FULL SQUAD";
+  return `<form class="league-tactics-layout" id="league-squad-form" data-tactics-mode="${leagueTacticsMode}">${leagueNextMatchMarkup()}<section class="league-lineup-workspace"><section class="board-panel league-board-panel"><header class="league-board-heading"><div><small>STARTING XI · POSITION AUTO DETECTION</small><h2>${boardTitle}</h2></div>${boardToolbar}</header>${pitchMarkup(`${formationReferenceLinesMarkup(formationLines)}${chemistryLines}${magnets}`, "league-tactics-pitch")}${boardFooter}</section><aside class="tournament-bench league-bench"><header><div><small>${squadLabel}</small><b>替补席 · ${bench.length}人</b></div><span>主力与替补磁贴可双向拖动交换</span></header><div class="bench-magnet-list">${bench.map(leagueBenchMagnet).join("")}</div>${benchSummary}${matchPlans}</aside></section>${allPresetsValid ? "" : `<p class="league-position-save-warning">开局/平局站位需要保持完整阵型；领先与落后站位只要求场上保留一名门将。</p>`}</form>`;
+}
+
+function worldCupTacticsWindowOpen() {
+  const worldCup = league?.worldCup;
+  if (!worldCup?.ownTeamId || !worldCup.teams?.some((team) => team.id === worldCup.ownTeamId)) return false;
+  if (typeof worldCup?.tacticsWindowOpen === "boolean") return worldCup.tacticsWindowOpen;
+  const endsAt = Date.parse(worldCup?.endsAt ?? worldCup?.finalEndsAt ?? "");
+  return !Number.isFinite(endsAt) || Date.now() <= endsAt + 30 * 60 * 1000;
 }
 
 function leagueSquadMarkup() {
+  const worldCupOpen = worldCupTacticsWindowOpen();
+  const modeSwitch = `<nav class="league-tactics-mode-switch" aria-label="战术板类型"><button type="button" data-league-tactics-mode="club" class="${leagueTacticsMode === "club" ? "active" : ""}" aria-pressed="${leagueTacticsMode === "club"}">俱乐部战术板</button><button type="button" data-league-tactics-mode="worldcup" class="${leagueTacticsMode === "worldcup" ? "active" : ""}" aria-pressed="${leagueTacticsMode === "worldcup"}" ${worldCupOpen ? "" : "disabled"}>国家队战术板${worldCupOpen ? "" : " · 已关闭"}</button></nav>`;
+  if (leagueTacticsMode === "worldcup" && !worldCupOpen) return `<section class="league-squad-page league-squad-worldcup-mode">${modeSwitch}<section class="world-cup-tactics-closed"><small>WORLD CUP TACTICS</small><h2>今日国家队战术板已关闭</h2><p>世界杯结束后半小时停止编辑，明日国家队轮换后重新开放。</p></section></section>`;
   const template = document.createElement("template");
   template.innerHTML = legacyLeagueSquadMarkup().trim();
   const workspace = template.content.querySelector(".league-lineup-workspace");
@@ -2055,7 +2156,7 @@ function leagueSquadMarkup() {
   detail.querySelector(".league-tactics-detail-footer").append(saveStatus);
   workspace.append(detail);
   template.content.querySelector("#league-squad-form")?.setAttribute("data-active-mobile-plan", leagueMobileTacticalPlanState);
-  return template.innerHTML;
+  return `<section class="league-squad-page ${leagueTacticsMode === "worldcup" ? "league-squad-worldcup-mode" : ""}">${modeSwitch}${template.innerHTML}</section>`;
 }
 
 function formationReferenceLinesMarkup(lines) {
@@ -2064,10 +2165,10 @@ function formationReferenceLinesMarkup(lines) {
 }
 
 function leagueChemistryLinesMarkup(starters, positions, roles) {
-  if (!leagueShowChemistry) return "";
+  if (leagueTacticsMode === "worldcup" || !leagueShowChemistry) return "";
   const starterIds = new Set(starters.map((player) => player.id));
   const group = (role) => role === "GK" ? "GK" : ["CB", "LB", "RB", "LWB", "RWB"].includes(role) ? "DEF" : ["ST", "LW", "RW"].includes(role) ? "ATT" : "MID";
-  const lines = (league.ownTeam.chemistryLinks ?? []).filter((link) => {
+  const lines = (activeTacticsTeam().chemistryLinks ?? []).filter((link) => {
     const [firstId, secondId] = link.playerIds;
     const first = positions[firstId];
     const second = positions[secondId];
@@ -2944,8 +3045,231 @@ async function loadLeagueReviewMatch(matchId = leagueReviewMatchId) {
   }
 }
 
+const WORLD_CUP_DEMO_TEAMS = Object.freeze([
+  { group:"A", country:"西班牙", code:"es", manager:"Akira" },
+  { group:"A", country:"巴西", code:"br", manager:"唱反调" },
+  { group:"A", country:"德国", code:"de", manager:"AuI" },
+  { group:"A", country:"比利时", code:"be", manager:"AI · Rank 10", ai:true },
+  { group:"B", country:"法国", code:"fr", manager:"Axero" },
+  { group:"B", country:"英格兰", code:"gb-eng", manager:"卢卡" },
+  { group:"B", country:"荷兰", code:"nl", manager:"皇马" },
+  { group:"B", country:"克罗地亚", code:"hr", manager:"AI · Rank 11", ai:true },
+  { group:"C", country:"葡萄牙", code:"pt", manager:"小黄" },
+  { group:"C", country:"意大利", code:"it", manager:"罗哥" },
+  { group:"C", country:"阿根廷", code:"ar", manager:"ZH" },
+  { group:"C", country:"哥伦比亚", code:"co", manager:"AI · Rank 12", ai:true },
+]);
+
+function worldCupFlagMarkup(code, country) {
+  return `<img class="world-cup-flag" src="/versus/world-cup-flags/${escapeHtml(code)}.svg" width="40" height="30" alt="${escapeHtml(country)}国旗" loading="lazy">`;
+}
+
+function worldCupTeamMarkup(team, index = 0) {
+  const goalDifference = Number(team.goalsFor ?? 0) - Number(team.goalsAgainst ?? 0);
+  return `<div class="world-cup-team-row ${team.id === league.worldCup?.ownTeamId ? "is-own" : ""}"><strong>${index + 1}</strong>${worldCupFlagMarkup(team.code, team.country)}<span class="world-cup-team-name"><b>${escapeHtml(team.country)}${team.isAi ? `<i>AI</i>` : ""}</b><small>${escapeHtml(team.managerName ?? "AI教练")}</small></span><span class="world-cup-team-record"><small>胜-平-负</small><b>${team.won ?? 0}-${team.drawn ?? 0}-${team.lost ?? 0}</b></span><span class="world-cup-team-goals"><small>进/失/净</small><b>${team.goalsFor ?? 0}/${team.goalsAgainst ?? 0}/${goalDifference > 0 ? "+" : ""}${goalDifference}</b></span><em>${team.played ?? 0}赛</em><b>${team.points ?? 0}分</b></div>`;
+}
+
+function worldCupGroupsMarkup() {
+  return (league.worldCup?.groups ?? []).map((group) => {
+    return `<section class="world-cup-group"><header><span>GROUP ${group.id}</span><b>${group.id}组</b></header><div>${(group.standings ?? []).map(worldCupTeamMarkup).join("")}</div></section>`;
+  }).join("");
+}
+
+function worldCupCountryPlayers() {
+  const ownTeam = league.worldCup?.teams?.find((team) => team.id === league.worldCup?.ownTeamId);
+  return (league.playerDirectory?.players ?? []).filter((player) => player.nationality === ownTeam?.country && !player.xPlayer && player.grade !== "X");
+}
+
+function ensureWorldCupDemoSelection() {
+  if (leagueWorldCupSelectionInitialized) return;
+  const players = worldCupCountryPlayers().sort((left, right) => Number(right.overall ?? 0) - Number(left.overall ?? 0));
+  const ownTeam = league.worldCup?.teams?.find((team) => team.id === league.worldCup?.ownTeamId);
+  const submitted = new Set(ownTeam?.selectedIds ?? []);
+  const initial = players.filter((player) => submitted.has(player.id));
+  (initial.length === 22 ? initial : players.slice(0, 22)).forEach((player) => leagueWorldCupSelectedPlayerIds.add(player.id));
+  leagueWorldCupSelectionInitialized = true;
+}
+
+function worldCupSelectedPlayers() {
+  ensureWorldCupDemoSelection();
+  return worldCupCountryPlayers().filter((player) => leagueWorldCupSelectedPlayerIds.has(player.id));
+}
+
+function worldCupSelectionCounts() {
+  return worldCupSelectedPlayers().reduce((counts, player) => { const pool = worldCupPlayerPool(player); return { ...counts, [pool]:(counts[pool] ?? 0) + 1 }; }, { ATT:0, MID:0, DEF:0, GK:0 });
+}
+
+function worldCupSelectionIsValid() {
+  const counts = worldCupSelectionCounts();
+  return leagueWorldCupSelectedPlayerIds.size === 22 && counts.GK >= 2 && counts.DEF >= 6 && counts.MID >= 5 && counts.ATT >= 4;
+}
+
+function worldCupXPlayer() {
+  return league.ownTeam?.roster?.find((player) => player.xPlayer || player.grade === "X") ?? { name:"玩家 X 球员", role:"AM", overall:62 };
+}
+
+function worldCupPlayerPool(player) {
+  if (player.pool && player.pool !== "LEGEND") return player.pool;
+  if (player.role === "GK") return "GK";
+  if (["CB", "LB", "RB", "LWB", "RWB"].includes(player.role)) return "DEF";
+  if (["ST", "LW", "RW"].includes(player.role)) return "ATT";
+  return "MID";
+}
+
+function worldCupTacticsTeamData() {
+  ensureWorldCupDemoSelection();
+  const xPlayer = worldCupXPlayer();
+  const source = [...worldCupSelectedPlayers(), { ...xPlayer, id:xPlayer.id ?? "world-cup-x-player", xPlayer:true, grade:"X" }];
+  const signature = source.map((player) => player.id).sort().join("|");
+  if (leagueWorldCupTacticsTeam?.rosterSignature === signature) return leagueWorldCupTacticsTeam;
+
+  const roster = source.map((player) => {
+    const legendary = Boolean(player.legendary || player.grade === "S" || player.xPlayer);
+    const bonus = legendary ? 0 : 3;
+    const baseOverall = Number(player.overall ?? 0);
+    const attributes = Object.fromEntries(Object.keys(STAT_LABELS).map((key) => [key, Math.min(99, Number(player.attributes?.[key] ?? baseOverall) + bonus)]));
+    const heightCm = Number(player.heightCm ?? (player.role === "GK" ? 190 : ["CB", "ST"].includes(player.role) ? 185 : 178));
+    return {
+      ...player,
+      pool:worldCupPlayerPool(player),
+      state:{ fitness:100, suspension:0, injuryRounds:0, ...(player.state ?? {}) },
+      fitness:100,
+      fixedFitness:100,
+      effectiveFitness:100,
+      effectiveOverall:Math.min(99, baseOverall + bonus),
+      effectiveAttributes:attributes,
+      attributes,
+      heightCm,
+      effectiveHeightCm:heightCm,
+      cards:player.cards ?? [],
+      upgradeLevel:bonus,
+      chemistryLinks:[],
+    };
+  });
+  const take = (pool, count) => roster.filter((player) => player.pool === pool).sort((left, right) => right.effectiveOverall - left.effectiveOverall).slice(0, count);
+  let starters = [...take("GK", 1), ...take("DEF", 4), ...take("MID", 3), ...take("ATT", 3)];
+  roster.filter((player) => !starters.some((starter) => starter.id === player.id)).sort((left, right) => right.effectiveOverall - left.effectiveOverall).slice(0, 11 - starters.length).forEach((player) => starters.push(player));
+  const slots = [[50,89],[18,70],[39,74],[61,74],[82,70],[28,49],[50,55],[72,49],[18,23],[50,17],[82,23]];
+  const previous = leagueWorldCupTacticsTeam;
+  const ownWorldCupTeam = league.worldCup?.teams?.find((team) => team.id === league.worldCup?.ownTeamId);
+  const persisted = ownWorldCupTeam?.tactics;
+  const persistedStarters = new Set(ownWorldCupTeam?.startingIds ?? []);
+  if (persistedStarters.size === 11) starters = roster.filter((player) => persistedStarters.has(player.id));
+  const defaultPositions = Object.fromEntries(starters.map((player, index) => [player.id, { x:slots[index][0], y:slots[index][1] }]));
+  const positions = structuredClone(persisted?.positions ?? defaultPositions);
+  leagueWorldCupTacticsTeam = {
+    id:ownWorldCupTeam?.id ?? "world-cup-unassigned",
+    name:`${ownWorldCupTeam?.country ?? "国家队"}国家队`,
+    rosterSignature:signature,
+    roster:roster.map((player) => ({ ...player, starter:starters.some((starter) => starter.id === player.id) })),
+    preferredStarterIds:starters.map((player) => player.id),
+    positions,
+    positionPresets:structuredClone(persisted?.positionPresets ?? { position1:positions, position2:positions, position3:positions }),
+    formationLinePresets:structuredClone(persisted?.formationLinePresets ?? { position1:DEFAULT_FORMATION_LINES, position2:DEFAULT_FORMATION_LINES, position3:DEFAULT_FORMATION_LINES }),
+    tacticalPlans:previous?.tacticalPlans ?? persisted?.tacticalPlans ?? {},
+    tactic:previous?.tactic ?? "balanced",
+    style:previous?.style ?? "possession",
+    fitnessThreshold:previous?.fitnessThreshold ?? persisted?.fitnessThreshold ?? 65,
+    attackFocus:previous?.attackFocus ?? persisted?.attackFocus ?? "balanced",
+    defenseFocus:previous?.defenseFocus ?? persisted?.defenseFocus ?? "balanced",
+    chemistryLinks:[],
+  };
+  leagueTacticsContexts.worldcup = null;
+  return leagueWorldCupTacticsTeam;
+}
+
+function worldCupSquadMarkup() {
+  ensureWorldCupDemoSelection();
+  const startsAt = Number(league.worldCup?.startsAt);
+  leagueWorldCupRosterLocked = Number.isFinite(startsAt) && startsAt > 0 && Number(league.serverTime ?? Date.now()) >= startsAt - 10 * 60 * 1000;
+  const players = worldCupCountryPlayers();
+  const selectedCount = leagueWorldCupSelectedPlayerIds.size;
+  const selectionValid = worldCupSelectionIsValid();
+  const xPlayer = worldCupXPlayer();
+  const ownTeam = league.worldCup?.teams?.find((team) => team.id === league.worldCup?.ownTeamId);
+  leagueWorldCupRosterSubmitted = Boolean(ownTeam?.rosterSubmittedAt);
+  const pools = [
+    ["ATT", "前场", "ST · LW · RW"],
+    ["MID", "中场", "DM · CM · AM"],
+    ["DEF", "后场", "CB · LB · RB · WB"],
+    ["GK", "门将", "GK"],
+  ];
+  const columns = pools.map(([pool, label, roles]) => {
+    const poolPlayers = players.filter((player) => worldCupPlayerPool(player) === pool).sort((left, right) => Number(right.overall ?? 0) - Number(left.overall ?? 0));
+    const selectedInPool = poolPlayers.filter((player) => leagueWorldCupSelectedPlayerIds.has(player.id)).length;
+    const cards = poolPlayers.map((player) => {
+      const selected = leagueWorldCupSelectedPlayerIds.has(player.id);
+      const legendary = Boolean(player.legendary || player.grade === "S");
+      const effectiveOverall = Number(player.overall ?? 0) + (legendary ? 0 : 3);
+      return `<button type="button" class="world-cup-player-choice ${selected ? "selected" : ""}" data-world-cup-player="${escapeHtml(player.id)}" data-world-cup-player-pool="${pool}" aria-pressed="${selected}" ${leagueWorldCupRosterLocked ? "disabled" : ""}><span><i>${escapeHtml(player.role)}</i><b>${escapeHtml(player.name)}</b><small>${legendary ? "传奇 · 不强化" : "普通 · 临时 +3"}</small></span><strong>${effectiveOverall}</strong><em>${selected ? "✓" : "+"}</em></button>`;
+    }).join("");
+    return `<section class="world-cup-player-pool" data-world-cup-pool="${pool}"><header><div><b>${label}</b><small>${roles}</small></div><span data-world-cup-pool-count>${selectedInPool} / ${poolPlayers.length}</span></header><div>${cards || `<p>该位置暂无可选球员</p>`}</div></section>`;
+  }).join("");
+  if (!ownTeam) return `<section class="world-cup-squad"><p>今日没有分配到玩家国家队。</p></section>`;
+  return `<section class="world-cup-squad"><header><div><small>${escapeHtml(ownTeam.country.toUpperCase())} · PLAYER SELECTION</small><h3>${worldCupFlagMarkup(ownTeam.code, ownTeam.country)} ${escapeHtml(ownTeam.country)}世界杯大名单</h3><p>第一轮开赛前 10 分钟均可更换。按四个位置栏多选 22 名国家队球员，系统自动加入你的 X 球员。</p></div><strong data-world-cup-roster-total>${selectedCount + 1} / 23</strong></header><section class="world-cup-x-player"><span><i>X</i><b>${escapeHtml(xPlayer.name)}</b><small>${escapeHtml(ROLE_LABELS[xPlayer.role] ?? xPlayer.role)} · 自动加入 · 不占 22 人选择名额</small></span><strong>${xPlayer.overall ?? 62}</strong></section><div class="world-cup-player-pools">${columns}</div><footer><div><b data-world-cup-selection-count>${selectedCount} / 22</b><span data-world-cup-selection-note>${leagueWorldCupRosterLocked ? "第一轮前 10 分钟已到，大名单锁定" : selectionValid ? leagueWorldCupRosterSubmitted ? "已提交；截止前仍可修改，改动后需再次提交" : "名单结构有效，截止第一轮前 10 分钟仍可修改" : "至少需要：门将 2、后场 6、中场 5、前场 4"}</span></div><button type="button" class="button primary" data-world-cup-lock ${selectionValid && !leagueWorldCupRosterLocked ? "" : "disabled"}>${leagueWorldCupRosterLocked ? "今日 23 人大名单已锁定" : leagueWorldCupRosterSubmitted ? "重新确认当前大名单" : "确定 23 人大名单"}</button></footer></section>`;
+}
+
+function worldCupOverviewMarkup() {
+  const teamById = new Map((league.worldCup?.teams ?? []).map((team) => [team.id, team]));
+  const leaderRows = (entries, field, valueLabel) => entries.map((entry, index) => { const team = teamById.get(entry.teamId) ?? {}; return `<li><strong>${index + 1}</strong>${worldCupFlagMarkup(team.code ?? "es", team.country ?? "国家队")}<span><b>${escapeHtml(entry.playerName)}</b><small>${escapeHtml(team.country ?? entry.teamName)} · ${escapeHtml(team.managerName ?? "AI教练")}</small></span><em>${entry[field]}<small>${valueLabel}</small></em></li>`; }).join("") || `<li class="world-cup-ranking-empty"><span>暂无数据</span></li>`;
+  const groups = `<section class="world-cup-groups-page world-cup-overview-groups"><header><div><small>GROUP STAGE · 3 ROUNDS</small><h3>小组赛积分榜</h3><p>每组前两名与成绩最好的两个小组第三晋级八强。</p></div><b>12 支国家队 · 3 支 AI</b></header><div>${worldCupGroupsMarkup()}</div><footer><span>晋级规则</span><b>每组第 1、第 2 + 最佳第 3 × 2</b></footer></section>`;
+  const scheduleRounds = worldCupScheduleRoundsMarkup({ ownTeamId:league.worldCup?.ownTeamId });
+  const schedule = `<section class="world-cup-schedule"><header><div><small>TODAY'S FIXTURES</small><h3>今日赛程</h3></div><b>小组赛3轮 · 淘汰赛单回合</b></header><div class="world-cup-schedule-rounds">${scheduleRounds}</div></section>`;
+  const rankings = `<section class="world-cup-rankings"><article><header><small>GOLDEN BOOT</small><h3>世界杯射手榜</h3></header><ol>${leaderRows(league.worldCup?.leaderboards?.scorers ?? [], "goals", "球")}</ol></article><article><header><small>PLAYMAKER</small><h3>世界杯助攻榜</h3></header><ol>${leaderRows(league.worldCup?.leaderboards?.assists ?? [], "assists", "次")}</ol></article></section>`;
+  return `<div class="world-cup-dashboard">${groups}<div class="world-cup-overview-lower">${schedule}${rankings}</div></div>`;
+}
+
+function worldCupFixtureRowMarkup(fixture, teamById, status) {
+  const home = teamById.get(fixture.homeId) ?? { country:"待定", code:"es" };
+  const away = teamById.get(fixture.awayId) ?? { country:"待定", code:"es" };
+  const result = fixture.score ? `${fixture.score[0]} : ${fixture.score[1]}${fixture.penalties ? `（点球 ${fixture.penalties[0]}:${fixture.penalties[1]}）` : ""}` : "VS";
+  const content = `<span>${worldCupFlagMarkup(home.code, home.country)}<b>${escapeHtml(home.country)}</b>${home.isAi ? `<i>AI</i>` : ""}</span><strong>${result}</strong><span>${worldCupFlagMarkup(away.code, away.country)}<b>${escapeHtml(away.country)}</b>${away.isAi ? `<i>AI</i>` : ""}</span><em>${fixture.groupId ? `${escapeHtml(fixture.groupId)}组` : status}</em>`;
+  return fixture.matchId
+    ? `<button type="button" class="world-cup-fixture-row has-detail" data-league-match-detail="${escapeHtml(fixture.matchId)}">${content}</button>`
+    : `<div class="world-cup-fixture-row">${content}</div>`;
+}
+
+function worldCupScheduleRoundsMarkup(options = {}) {
+  const teamById = new Map((league.worldCup?.teams ?? []).map((team) => [team.id, team]));
+  const firstPendingIndex = (league.worldCup?.events ?? []).findIndex((entry) => entry.status === "pending");
+  return (league.worldCup?.events ?? []).map((event, index) => {
+    const startsAt = Number(league.worldCup.startsAt);
+    const time = Number.isFinite(startsAt) && startsAt > 0 ? new Date(startsAt + index * 20 * 60 * 1000).toLocaleTimeString("zh-CN", { hour:"2-digit", minute:"2-digit", hour12:false }) : "待定";
+    let fixtures = (league.worldCup.fixtures ?? []).filter((fixture) => event.fixtureIds.includes(fixture.id));
+    if (Object.hasOwn(options, "ownTeamId")) fixtures = options.ownTeamId
+      ? fixtures.filter((fixture) => fixture.homeId === options.ownTeamId || fixture.awayId === options.ownTeamId)
+      : [];
+    if (options.determinedOnly) fixtures = fixtures.filter((fixture) => teamById.has(fixture.homeId) && teamById.has(fixture.awayId));
+    if (options.completedOnly) fixtures = fixtures.filter((fixture) => fixture.status === "complete" && fixture.matchId);
+    if (!fixtures.length) return "";
+    const label = event.stage === "group" ? `小组赛第${event.round}轮` : event.stage === "quarterfinal" ? "四分之一决赛" : event.stage === "semifinal" ? "半决赛" : "决赛";
+    const status = event.status === "complete" ? "已结束" : event.status === "running" ? "直播中" : "待开赛";
+    return `<section class="world-cup-schedule-round ${event.status === "pending" && index === firstPendingIndex ? "next" : ""}"><header><b>${label}</b><time>${time}</time><em>${status}</em></header><div>${fixtures.map((fixture) => worldCupFixtureRowMarkup(fixture, teamById, status)).join("")}</div></section>`;
+  }).join("") || `<p class="world-cup-schedule-empty">暂无已确定的世界杯比赛</p>`;
+}
+
+function worldCupFullScheduleMarkup() {
+  const teamIds = new Set((league.worldCup?.teams ?? []).map((team) => team.id));
+  const determinedFixtures = (league.worldCup?.fixtures ?? []).filter((fixture) => teamIds.has(fixture.homeId) && teamIds.has(fixture.awayId));
+  const completedCount = determinedFixtures.filter((fixture) => fixture.status === "complete").length;
+  return `<section class="world-cup-full-schedule"><header><div><small>WORLD CUP SCHEDULE</small><h3>世界杯赛程</h3><p>展示已经确定对阵的比赛，已完赛对阵可点击查看完整比赛报告。</p></div><b>${completedCount} / ${determinedFixtures.length} 场已结束</b></header><div class="world-cup-full-schedule-scroll">${worldCupScheduleRoundsMarkup({ determinedOnly:true })}</div></section>`;
+}
+
+function worldCupBracketMarkup() {
+  return `<section class="world-cup-bracket"><header><div><small>KNOCKOUT STAGE · 8 TEAMS</small><h3>八强单回合淘汰赛</h3><p>三个小组前两名 + 成绩最好的两个小组第三晋级八强。</p></div><b>平局进入加时与点球</b></header><div><section><span>四分之一决赛 · 14:30</span><article><b>A1</b><em>vs</em><b>最佳第三 2</b></article><article><b>B2</b><em>vs</em><b>C1</b></article><article><b>C2</b><em>vs</em><b>最佳第三 1</b></article><article><b>A2</b><em>vs</em><b>B1</b></article></section><section><span>半决赛 · 14:50</span><article><b>八强胜者 1</b><em>vs</em><b>八强胜者 2</b></article><article><b>八强胜者 3</b><em>vs</em><b>八强胜者 4</b></article></section><aside><i>🏆</i><b>决赛 · 15:10</b><small>单场决出世界杯冠军</small></aside></div></section>`;
+}
+
+function leagueWorldCupMarkup() {
+  if (!league.worldCup) return `<section class="world-cup-page"><header class="world-cup-hero"><div><small>YELLOWDOGS WORLD CUP</small><h2>黄狗世界杯</h2><p>今日赛事尚未创建</p></div></header></section>`;
+  const pages = { overview:worldCupOverviewMarkup, schedule:worldCupFullScheduleMarkup, squad:worldCupSquadMarkup, bracket:worldCupBracketMarkup };
+  const content = (pages[leagueWorldCupPage] ?? pages.overview)();
+  const ownTeam = league.worldCup.teams?.find((team) => team.id === league.worldCup.ownTeamId);
+  const firstKickoff = Number(league.worldCup.startsAt) > 0 ? `${new Date(league.worldCup.startsAt).toLocaleTimeString("zh-CN", { hour:"2-digit", minute:"2-digit", hour12:false })} 开球` : "杯赛决赛后确定首轮时间";
+  return `<section class="world-cup-page"><header class="world-cup-hero"><div><small>YELLOWDOGS WORLD CUP</small><h2>黄狗世界杯</h2><p>${ownTeam ? `${worldCupFlagMarkup(ownTeam.code, ownTeam.country)} 今日国家：<b>${escapeHtml(ownTeam.country)}</b> · ${escapeHtml(ownTeam.groupId)}组` : "今日由系统国家队参赛"} · ${firstKickoff}</p></div><aside><small>赛事状态</small><b>${escapeHtml(league.worldCup.status)}</b><span>首轮开球前 10 分钟大名单截止</span></aside></header><nav class="world-cup-tabs"><button type="button" class="${leagueWorldCupPage === "overview" ? "active" : ""}" data-world-cup-page="overview">今日概览</button><button type="button" class="${leagueWorldCupPage === "schedule" ? "active" : ""}" data-world-cup-page="schedule">世界杯赛程</button><button type="button" class="${leagueWorldCupPage === "squad" ? "active" : ""}" data-world-cup-page="squad">23 人大名单</button><button type="button" class="${leagueWorldCupPage === "bracket" ? "active" : ""}" data-world-cup-page="bracket">淘汰赛</button></nav>${content}</section>`;
+}
+
 function leagueNavMarkup() {
-  return `<nav class="league-nav" id="league-primary-nav"><button class="${leagueTab === "overview" ? "active" : ""}" data-league-tab="overview">联赛总览</button><button class="${leagueTab === "cup" ? "active" : ""}" data-league-tab="cup">杯赛总览</button><button class="${leagueTab === "predictions" ? "active" : ""}" data-league-tab="predictions">比赛预测</button><button class="${leagueTab === "schedule" ? "active" : ""}" data-league-tab="schedule">日程表</button><button class="${leagueTab === "review" ? "active" : ""}" data-league-tab="review">赛后复盘</button><button class="${leagueTab === "squad" ? "active" : ""}" data-league-tab="squad">阵容战术</button><button class="${leagueTab === "inbox" ? "active" : ""}" data-league-tab="inbox">收件箱${league.inboxUnreadCount ? `<span>${league.inboxUnreadCount}</span>` : ""}</button><button class="${leagueTab === "backpack" ? "active" : ""}" data-league-tab="backpack">背包</button><button class="${leagueTab === "enhancement" ? "active" : ""}" data-league-tab="enhancement">球员强化</button><button class="${leagueTab === "x-growth" ? "active" : ""}" data-league-tab="x-growth">巨星之路</button><button class="${leagueTab === "players" ? "active" : ""}" data-league-tab="players">球员信息</button><button class="${leagueTab === "television" ? "active" : ""}" data-league-tab="television">电视台</button><button class="${leagueTab === "stats" ? "active" : ""}" data-league-tab="stats">数据榜单</button><button class="${leagueTab === "shop" ? "active" : ""}" data-league-tab="shop">球员商店</button><button class="${leagueTab === "market" ? "active" : ""}" data-league-tab="market">交易市场</button></nav>`;
+  return `<nav class="league-nav" id="league-primary-nav"><button class="${leagueTab === "overview" ? "active" : ""}" data-league-tab="overview">联赛总览</button><button class="${leagueTab === "cup" ? "active" : ""}" data-league-tab="cup">杯赛总览</button><button class="${leagueTab === "worldcup" ? "active" : ""}" data-league-tab="worldcup">黄狗世界杯</button><button class="${leagueTab === "predictions" ? "active" : ""}" data-league-tab="predictions">比赛预测</button><button class="${leagueTab === "schedule" ? "active" : ""}" data-league-tab="schedule">日程表</button><button class="${leagueTab === "review" ? "active" : ""}" data-league-tab="review">赛后复盘</button><button class="${leagueTab === "squad" ? "active" : ""}" data-league-tab="squad">阵容战术</button><button class="${leagueTab === "inbox" ? "active" : ""}" data-league-tab="inbox">收件箱${league.inboxUnreadCount ? `<span>${league.inboxUnreadCount}</span>` : ""}</button><button class="${leagueTab === "backpack" ? "active" : ""}" data-league-tab="backpack">背包</button><button class="${leagueTab === "enhancement" ? "active" : ""}" data-league-tab="enhancement">球员强化</button><button class="${leagueTab === "x-growth" ? "active" : ""}" data-league-tab="x-growth">巨星之路</button><button class="${leagueTab === "players" ? "active" : ""}" data-league-tab="players">球员信息</button><button class="${leagueTab === "television" ? "active" : ""}" data-league-tab="television">电视台</button><button class="${leagueTab === "stats" ? "active" : ""}" data-league-tab="stats">数据榜单</button><button class="${leagueTab === "shop" ? "active" : ""}" data-league-tab="shop">球员商店</button><button class="${leagueTab === "market" ? "active" : ""}" data-league-tab="market">交易市场</button></nav>`;
 }
 
 function leagueShellMarkup(content) {
@@ -2986,7 +3310,7 @@ function renderLeague() {
   if (league.draft) app.innerHTML = leagueDraftMarkup();
   else if (!league.ownTeam) app.innerHTML = leagueJoinMarkup();
   else {
-    const content = leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "predictions" ? leaguePredictionsMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "review" ? leagueReviewMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "x-growth" ? leagueXGrowthMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
+    const content = leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "worldcup" ? leagueWorldCupMarkup() : leagueTab === "predictions" ? leaguePredictionsMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "review" ? leagueReviewMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "x-growth" ? leagueXGrowthMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
     const pageContent = app.querySelector(":scope > .league-shell > .league-main-layout > .league-page-content");
     if (pageContent) pageContent.innerHTML = content;
     else app.innerHTML = leagueShellMarkup(content);
@@ -4476,14 +4800,12 @@ app.addEventListener("click", (event) => {
   const leagueTabButton = event.target.closest("[data-league-tab]");
   if (leagueTabButton) {
     const nextTab = leagueTabButton.dataset.leagueTab;
-    if (leagueTab === "squad" && nextTab !== "squad" && leagueEditorDirty) saveLeagueTeamNow();
+    if (leagueTab === "squad" && nextTab !== "squad") {
+      storeLeagueTacticsContext();
+      if (leagueEditorDirty) saveLeagueTeamNow();
+    }
     if (nextTab === "squad" && leagueTab !== "squad") {
-      leagueStartingIds = null;
-      leaguePositions = null;
-      leaguePositionPresets = null;
-      leagueFormationLinePresets = null;
-      leagueActivePositionPreset = "position1";
-      leagueTacticalDraft = null;
+      restoreLeagueTacticsContext(leagueTacticsMode);
     }
     if (nextTab === "backpack") leagueBackpackPage = "packs";
     if (leagueTabButton.matches("[data-open-player-ranking]")) leaguePlayerInfoSection = "ranking";
@@ -4535,6 +4857,74 @@ app.addEventListener("click", (event) => {
 
   const cupPage = event.target.closest("[data-cup-page]");
   if (cupPage) { leagueCupPage = cupPage.dataset.cupPage === "knockout" ? "knockout" : "swiss"; renderLeague(); }
+  const worldCupPage = event.target.closest("[data-world-cup-page]");
+  if (worldCupPage) {
+    leagueWorldCupPage = ["overview", "schedule", "squad", "bracket"].includes(worldCupPage.dataset.worldCupPage) ? worldCupPage.dataset.worldCupPage : "overview";
+    renderLeague();
+    return;
+  }
+  const tacticsMode = event.target.closest("[data-league-tactics-mode]");
+  if (tacticsMode) {
+    if (leagueEditorDirty) saveLeagueTeamNow();
+    switchLeagueTacticsMode(tacticsMode.dataset.leagueTacticsMode);
+    renderLeague();
+    return;
+  }
+  const worldCupLock = event.target.closest("[data-world-cup-lock]");
+  if (worldCupLock) {
+    if (!worldCupSelectionIsValid()) {
+      showToast("请先选择 22 人并满足各位置最低人数");
+      return;
+    }
+    worldCupLock.disabled = true;
+    api("/api/versus/league/world-cup/roster", { method:"POST", body:leagueIdentity({ selectedIds:[...leagueWorldCupSelectedPlayerIds] }) })
+      .then((value) => {
+        league.worldCup = value.worldCupSave.worldCup;
+        leagueWorldCupRosterSubmitted = true;
+        leagueWorldCupTacticsTeam = null;
+        leagueTacticsContexts.worldcup = null;
+        renderLeague();
+        showToast("世界杯大名单已保存，截止前仍可修改");
+      })
+      .catch((error) => { worldCupLock.disabled = false; showToast(error.message); });
+    return;
+  }
+  const worldCupPlayer = event.target.closest("[data-world-cup-player]");
+  if (worldCupPlayer && !leagueWorldCupRosterLocked) {
+    const playerId = worldCupPlayer.dataset.worldCupPlayer;
+    if (leagueWorldCupSelectedPlayerIds.has(playerId)) leagueWorldCupSelectedPlayerIds.delete(playerId);
+    else if (leagueWorldCupSelectedPlayerIds.size < 22) leagueWorldCupSelectedPlayerIds.add(playerId);
+    else showToast("国家队球员最多选择 22 名");
+    leagueWorldCupRosterSubmitted = false;
+    leagueWorldCupTacticsTeam = null;
+    leagueTacticsContexts.worldcup = null;
+    const selected = leagueWorldCupSelectedPlayerIds.has(playerId);
+    worldCupPlayer.classList.toggle("selected", selected);
+    worldCupPlayer.setAttribute("aria-pressed", String(selected));
+    const state = worldCupPlayer.querySelector(":scope > em");
+    if (state) state.textContent = selected ? "✓" : "+";
+    const counts = worldCupSelectionCounts();
+    app.querySelectorAll("[data-world-cup-pool]").forEach((pool) => {
+      const poolName = pool.dataset.worldCupPool;
+      const total = pool.querySelectorAll("[data-world-cup-player]").length;
+      const count = pool.querySelector("[data-world-cup-pool-count]");
+      if (count) count.textContent = `${counts[poolName] ?? 0} / ${total}`;
+    });
+    const selectedCount = leagueWorldCupSelectedPlayerIds.size;
+    const total = app.querySelector("[data-world-cup-roster-total]");
+    const count = app.querySelector("[data-world-cup-selection-count]");
+    const note = app.querySelector("[data-world-cup-selection-note]");
+    const lock = app.querySelector("[data-world-cup-lock]");
+    if (total) total.textContent = `${selectedCount + 1} / 23`;
+    if (count) count.textContent = `${selectedCount} / 22`;
+    const valid = worldCupSelectionIsValid();
+    if (note) note.textContent = valid ? "名单结构有效，截止第一轮前 10 分钟仍可修改" : "至少需要：门将 2、后场 6、中场 5、前场 4";
+    if (lock) {
+      lock.disabled = !valid;
+      lock.textContent = "确定 23 人大名单";
+    }
+    return;
+  }
   const cupRound = event.target.closest("[data-cup-round]");
   if (cupRound?.dataset.cupRound) { leagueCupRoundPage = Number(cupRound.dataset.cupRound); renderLeague(); }
   const leagueRound = event.target.closest("[data-league-round]");

@@ -111,6 +111,17 @@
 .league-admin-actions .warning { color: var(--orange); border-color: rgba(255, 155, 85, .55); }
 .league-admin-actions .danger { color: var(--red); border-color: rgba(255, 89, 100, .55); }
 .league-admin-actions .full-reset { color: #fff; background: #7f1d2d; }
+.league-world-cup-control { margin: 14px 0; }
+.league-world-cup-control .world-cup-status { color: var(--orange); text-transform: uppercase; }
+.world-cup-control-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.world-cup-control-kpis span { display: grid; gap: 4px; min-width: 0; padding: 10px; border: 1px solid var(--line); background: #071611; }
+.world-cup-control-kpis small { color: var(--muted); font-size: 10px; }
+.world-cup-control-kpis b { overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.world-cup-control-actions { display: grid; grid-template-columns: minmax(230px, 1.4fr) repeat(5, minmax(120px, 1fr)); gap: 8px; align-items: end; }
+.world-cup-control-actions label { display: grid; gap: 5px; }
+.world-cup-control-actions label span { color: var(--muted); font-size: 10px; }
+.world-cup-control-actions input { width: 100%; box-sizing: border-box; }
+.world-cup-control-actions button { min-height: 38px; }
 .league-admin-grid { grid-template-columns: 1.15fr .85fr; }
 .league-team-panel,
 .league-allocation-panel,
@@ -225,6 +236,9 @@
 .league-allocation-panel .table-wrap { max-height: 650px; }
 
 @media (max-width: 900px) {
+  .world-cup-control-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .world-cup-control-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .world-cup-control-actions label { grid-column: 1 / -1; }
   .content-workspace { grid-template-columns: 1fr; }
   .content-list { max-height: 420px; }
   .content-attribute-grid { grid-template-columns: repeat(3,1fr); }
@@ -251,6 +265,8 @@
 }
 
 @media (max-width: 560px) {
+  .world-cup-control-kpis, .world-cup-control-actions { grid-template-columns: 1fr; }
+  .world-cup-control-actions label { grid-column: auto; }
   .admin-section-nav { grid-template-columns: 1fr; }
   .admin-section-nav button { border-right: 0; border-bottom: 1px solid var(--line); }
   .content-tabs button { min-width: 0; flex: 1; }

@@ -16,6 +16,7 @@ const LARGE_STATE_KEYS = new Set([
   "archives",
   "liveRound",
   "liveCupRound",
+  "liveWorldCupRound",
   "liveFriendlies",
 ]);
 const ALL_SCOPES = Object.freeze([
@@ -45,7 +46,7 @@ function scopeForKey(key) {
   if (["matchPredictions"].includes(key)) return "predictions";
   if (["reports"].includes(key)) return "reports";
   if (["archives"].includes(key)) return "archives";
-  if (["liveRound", "liveCupRound", "liveFriendlies"].includes(key)) return "live";
+  if (["liveRound", "liveCupRound", "liveWorldCupRound", "liveFriendlies"].includes(key)) return "live";
   return "core";
 }
 
@@ -265,9 +266,10 @@ export class LeagueShardStore {
     state.matchPredictions = this.readObjectShard(manifest.shards.predictions, { schemaVersion:1, markets:{}, bets:[], distributions:[] });
     state.reports = this.readObjectShard(manifest.shards.reports, {});
     state.archives = this.readArchives(manifest.shards.archives);
-    const live = this.readObjectShard(manifest.shards.live, { liveRound:null, liveCupRound:null, liveFriendlies:[] });
+    const live = this.readObjectShard(manifest.shards.live, { liveRound:null, liveCupRound:null, liveWorldCupRound:null, liveFriendlies:[] });
     state.liveRound = live.liveRound ?? null;
     state.liveCupRound = live.liveCupRound ?? null;
+    state.liveWorldCupRound = live.liveWorldCupRound ?? null;
     state.liveFriendlies = live.liveFriendlies ?? [];
     return state;
   }
@@ -357,6 +359,7 @@ export class LeagueShardStore {
     if (scopes.has("live") || !shards.live) shards.live = this.writeRevisionJson(temporaryRevisionPath, "live.json", {
       liveRound:state.liveRound ?? null,
       liveCupRound:state.liveCupRound ?? null,
+      liveWorldCupRound:state.liveWorldCupRound ?? null,
       liveFriendlies:state.liveFriendlies ?? [],
     });
     renameSync(temporaryRevisionPath, revisionPath);

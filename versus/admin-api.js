@@ -236,6 +236,25 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "POST" && pathname === "/api/admin/league/cup/start") {
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startCup() });
     }
+    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/bootstrap") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.bootstrapWorldCup(body.startsAt) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/reanchor") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.reanchorWorldCup(body.startsAt) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/start-next") {
+      const started = yellowDogsLeague.startScheduledWorldCupEvent();
+      if (!started) throw new Error("当前没有可以立即启动的世界杯轮次");
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/repair") {
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.repairWorldCup() });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/close") {
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.closeWorldCup() });
+    }
     if (request.method === "POST" && pathname === "/api/admin/league/daily-settlement/reward") {
       return sendJson(response, 200, { ok:true, settlement:yellowDogsLeague.settleDailySeason({ manual:true }), league:yellowDogsLeague.adminView() });
     }

@@ -48,7 +48,7 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal(league.value.league.teams.length, 10);
   assert.ok(league.value.league.pools.ATT.total > 0);
   assert.equal(league.value.league.s4Assets.schemaVersion, 1);
-  assert.equal(league.value.league.s4PlayerCatalog.length, 602);
+  assert.equal(league.value.league.s4PlayerCatalog.length, 676);
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅西"));
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅老鼠"));
   assert.ok(Array.isArray(league.value.league.s4CardGrants));
@@ -56,7 +56,7 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.ok(Array.isArray(league.value.league.mailBroadcasts));
   const content = await request("/api/admin/content", { token:login.value.token });
   assert.equal(content.statusCode, 200);
-  assert.equal(content.value.content.players.length, 602);
+  assert.equal(content.value.content.players.length, 676);
   assert.ok(content.value.content.traits.length > 0);
   assert.deepEqual(content.value.content.roleGroups, ["ANY", "GK", "DEF", "MID", "ATT"]);
   assert.deepEqual(content.value.content.playerRoles, ["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);

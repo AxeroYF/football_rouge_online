@@ -84,3 +84,7 @@ Cloud_league_data/
 handoff/*.tar.gz
 data/sources/kaggle-history-dlc2/
 *.xlsx
+
+# S4 runtime data (never push)
+data/yellowdogs-league.json.live/
+day6-tactical-results.json

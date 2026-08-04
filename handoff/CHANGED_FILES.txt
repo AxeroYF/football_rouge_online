@@ -1,4 +1,24 @@
-更新时间：2026-08-03 13:20（Asia/Shanghai）
+更新时间：2026-08-04 13:27（Asia/Shanghai）
+
+2026-08-04 13:27 黄狗世界杯与后台补开：
+
+M admin/public/app.js - 世界杯后台状态与当天补开操作
+M admin/public/league.css - 世界杯后台控件样式
+M devtool/server.js - 世界杯国旗静态资源支持
+M versus/admin-api.js - 世界杯后台接口
+M versus/api.js - 世界杯名单与战术接口
+M versus/league-service.js - 12 队赛制、每日分配、赛程推进、电视台、名单、战术、清理及详情视角
+M versus/league-shard-store.js - 世界杯状态的分片持久化适配
+M versus/public/app.js - 世界杯页面、名单、积分榜、榜单、本人赛程、完整赛程与比赛详情入口
+M versus/public/styles.css - 世界杯深浅主题、响应式布局与固定高度滚动区
+M test/admin.test.js - 后台世界杯回归
+M test/league.test.js - 联赛视图回归适配
+M test/s4-assets.test.js - 世界杯共享战术板、页面结构和赛程详情静态回归（98/98）
+?? test/world-cup.test.js - 世界杯服务端定向测试（5/5）
+?? versus/public/world-cup-flags/*.svg - 12 支国家队真实国旗资源
+?? HOTFIX_ADMIN_PERFORMANCE_20260803.md - 后台性能热修部署说明
+
+明确排除：data/yellowdogs-league.json.live/、day6-tactical-results.json、Cloud_league_data/、线上分片及任何运行存档。
 
 2026-08-03 13:20 最新增量：
 

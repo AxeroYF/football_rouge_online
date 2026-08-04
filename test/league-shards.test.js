@@ -81,6 +81,31 @@ test("分片 revision 清理在连续保存时限频执行", () => {
   }
 });
 
+test("世界杯直播轮次在分片存储重载后继续保留", () => {
+  const directory = mkdtempSync(path.join(process.cwd(), ".tmp-ydl-sharded-world-cup-live-"));
+  const statePath = path.join(directory, "league-state");
+  try {
+    const service = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
+    service.state.teams.slice(0, 9).forEach((team, index) => {
+      team.ownerId = `world-cup-owner-${index + 1}`;
+      team.ownerName = `World Cup Player ${index + 1}`;
+    });
+    service.state.cup.status = "completed";
+    service.bootstrapWorldCup(NOW + 5 * 60_000);
+    service.startScheduledWorldCupEvent();
+
+    const eventId = service.state.liveWorldCupRound.eventId;
+    const liveMatchCount = service.state.liveWorldCupRound.matches.length;
+    const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
+
+    assert.equal(reloaded.state.liveWorldCupRound.eventId, eventId);
+    assert.equal(reloaded.state.liveWorldCupRound.matches.length, liveMatchCount);
+    assert.equal(reloaded.broadcasts().every((entry) => entry.competition === "YellowDogs World Cup"), true);
+  } finally {
+    rmSync(directory, { recursive:true, force:true });
+  }
+});
+
 test("分片模式后台发卡与+4特性绑定使用轻量响应并可重载", () => {
   const directory = mkdtempSync(path.join(process.cwd(), ".tmp-ydl-sharded-card-mutations-"));
   const statePath = path.join(directory, "league-state");

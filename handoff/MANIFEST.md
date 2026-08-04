@@ -1,5 +1,14 @@
 # V2 增量交接包清单
 
+## 2026-08-04 13:27 黄狗世界杯完整交接包
+
+- 压缩包：`football-ydl-s4-world-cup-handoff-20260804-1327.zip`
+- 基础：继承 `football-ydl-s4-v2-handoff-20260803-1047.zip` 的 V2 源码、测试与历史发布说明，并以当前工作树覆盖所有本轮修改文件。
+- 新增：`test/world-cup.test.js`、`versus/public/world-cup-flags/*.svg`、世界杯前后端与后台管理逻辑、更新后的五份 handoff 文档和后台性能热修说明/归档。
+- 包内不包含 `data/yellowdogs-league.json.live/`、`day6-tactical-results.json`、`Cloud_league_data/`、`outputs/`、账号、密钥、证书、运行存档或线上分片。
+- 交接 ZIP 仅用于审阅和恢复开发上下文，不是可直接覆盖生产服的部署包。
+- 校验：世界杯 5/5、前端资源 98/98、语法、构建、`git diff --check` 均通过。
+
 ## 2026-08-03 13:20 前端性能热修 + 诊断工具（取代 1229）
 
 - 发布物：`handoff/football-ydl-s4-frontend-perf-light-sync-tools-hotfix-20260803-1320.tar.gz`

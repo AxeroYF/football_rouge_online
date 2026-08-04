@@ -30,6 +30,8 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/draft/auto" && developer) result = yellowDogsLeague.autoDraft(account);
     else if (pathname === "/api/versus/league/draft/finish") result = { league:yellowDogsLeague.finishDraft(account) };
     else if (pathname === "/api/versus/league/team") result = { teamSave:yellowDogsLeague.saveTeam(account, body, { compact:true }) };
+    else if (pathname === "/api/versus/league/world-cup/roster") result = { worldCupSave:yellowDogsLeague.saveWorldCupRoster(account, body.selectedIds) };
+    else if (pathname === "/api/versus/league/world-cup/tactics") result = { worldCupSave:yellowDogsLeague.saveWorldCupTactics(account, body) };
     else if (pathname === "/api/versus/league/team/rename") result = { league:yellowDogsLeague.renameTeam(account, body.teamName) };
     else if (pathname === "/api/versus/league/team/detail") result = { team:yellowDogsLeague.teamDetail(account, body.teamId) };
     else if (pathname === "/api/versus/league/match/detail") result = { match:yellowDogsLeague.matchDetail(account, body.matchId) };

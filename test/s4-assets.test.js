@@ -2014,3 +2014,64 @@ test("V2 formal match stats update X player save tasks", () => {
   assert.equal(service.xFormalStats(xPlayerId).saves, savesBefore + reportPlayer.stats.saves);
   assert.equal(service.view(user).xGrowth.tasks.find((task) => task.id === "saves").completed, 1);
 });
+
+test("World Cup tactics live under the shared squad board and close after the daily window", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const worldCupPageSource = appSource.slice(appSource.indexOf("function leagueWorldCupMarkup()"), appSource.indexOf("function leagueNavMarkup()"));
+  const worldCupOverviewSource = appSource.slice(appSource.indexOf("function worldCupOverviewMarkup()"), appSource.indexOf("function worldCupBracketMarkup()"));
+
+  assert.doesNotMatch(worldCupPageSource, /data-world-cup-page="tactics"/);
+  assert.doesNotMatch(worldCupPageSource, /data-world-cup-page="groups"/);
+  assert.match(appSource, /data-league-tactics-mode="club"/);
+  assert.match(appSource, /data-league-tactics-mode="worldcup"/);
+  assert.match(appSource, /const team = activeTacticsTeam\(\);\s+const roster = team\.roster/);
+  assert.match(appSource, /data-tactics-mode="\$\{leagueTacticsMode\}"/);
+  assert.match(appSource, /国家队战术已保存/);
+  assert.match(appSource, /endsAt \+ 30 \* 60 \* 1000/);
+  assert.match(appSource, /worldCup\.tacticsWindowOpen/);
+  assert.match(worldCupOverviewSource, /小组赛积分榜/);
+  assert.match(worldCupOverviewSource, /世界杯射手榜/);
+  assert.match(worldCupOverviewSource, /世界杯助攻榜/);
+  assert.doesNotMatch(worldCupOverviewSource, /world-cup-status|world-cup-rules|world-cup-integration/);
+});
+
+test("World Cup schedules filter the overview and show determined fixtures", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const overviewSource = appSource.slice(appSource.indexOf("function worldCupOverviewMarkup()"), appSource.indexOf("function worldCupFixtureRowMarkup"));
+  const scheduleSource = appSource.slice(appSource.indexOf("function worldCupFixtureRowMarkup"), appSource.indexOf("function worldCupBracketMarkup()"));
+  const pageSource = appSource.slice(appSource.indexOf("function leagueWorldCupMarkup()"), appSource.indexOf("function leagueNavMarkup()"));
+
+  assert.match(overviewSource, /worldCupScheduleRoundsMarkup\(\{ ownTeamId:league\.worldCup\?\.ownTeamId \}\)/);
+  assert.match(scheduleSource, /teamById\.has\(fixture\.homeId\) && teamById\.has\(fixture\.awayId\)/);
+  assert.match(scheduleSource, /data-league-match-detail=/);
+  assert.match(scheduleSource, /worldCupScheduleRoundsMarkup\(\{ determinedOnly:true \}\)/);
+  assert.match(pageSource, /schedule:worldCupFullScheduleMarkup/);
+  assert.match(pageSource, /data-world-cup-page="schedule"/);
+});
+
+test("club and national-team tactics use separate real fixture contexts", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+  const nextMatchSource = appSource.slice(appSource.indexOf("function leagueNextMatchMarkup()"), appSource.indexOf("function leagueBackpackCardEntries()"));
+
+  assert.match(nextMatchSource, /fixture\.competition === "worldcup" && fixture\.status !== "complete"/);
+  assert.match(nextMatchSource, /worldCup\?\.teams\?\.find\(\(team\) => team\.id === worldCup\.ownTeamId\)/);
+  assert.match(nextMatchSource, /escapeHtml\(ownTeam\.country\)/);
+  assert.doesNotMatch(nextMatchSource, /西班牙国家队|比利时 AI|A组第1轮|今日 13:30/);
+  assert.match(serviceSource, /entry\.competition !== "worldcup"/);
+  assert.match(appSource, /`\$\{escapeHtml\(team\.name\)\}战术板`/);
+});
+
+test("World Cup preparation waits for the cup final before rendering kickoff and roster lock", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+
+  assert.match(serviceSource, /createWorldCupPreparation\(null\)/);
+  assert.match(serviceSource, /this\.now\(\) \+ WORLD_CUP_INTERVAL_MS/);
+  assert.match(serviceSource, /this\.schedulePreparedWorldCupAfterCupFinal\(\)/);
+  assert.match(serviceSource, /startsAt > 0 \? startsAt - 10 \* 60 \* 1000 : Infinity/);
+  assert.match(appSource, /等待杯赛决赛/);
+  assert.match(appSource, /杯赛决赛后确定首轮时间/);
+  assert.match(appSource, /Number\.isFinite\(startsAt\) && startsAt > 0 && Number\(league\.serverTime/);
+  assert.match(appSource, /: "待定"/);
+});

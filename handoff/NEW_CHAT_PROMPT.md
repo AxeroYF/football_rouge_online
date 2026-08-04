@@ -1,5 +1,13 @@
 # 新任务接手提示
 
+## 2026-08-04 13:27 接手提示（先读）
+
+继续在 `D:\Project\game_test\.worktrees\s4` 开发，不要重置或清理脏工作树。当前未提交成果是“黄狗世界杯”及同期后台性能修改。先阅读 `handoff/CURRENT_STATE.md` 顶部权威状态，再只读检查 `git status --short`。
+
+世界杯当前为 12 队、三组、每组 3 真人 + 1 AI、三轮小组赛和八强单淘汰；淘汰赛已有加时点球。今日概览的今日赛程只显示当前玩家比赛，完整“世界杯赛程”页显示所有已确定双方的对阵；未赛不可点，完赛可打开既有比赛详情。国家队战术入口在共享阵容战术页，世界杯结束后 30 分钟关闭。临时球员禁止参与普通轮询重建，并在当日赛事关闭后清理。
+
+不要打包、覆盖或迁移 `data/yellowdogs-league.json.live/`、`day6-tactical-results.json`、`Cloud_league_data/`、线上分片、账号、密钥或任何运行存档。用户自行管理 4312 本地测试服务器，不要擅自启动或停止。当前验证为 `test/world-cup.test.js` 5/5、`test/s4-assets.test.js` 98/98、构建与差异检查通过。最新完整交接包是 `D:\Project\game_test\handoff\football-ydl-s4-world-cup-handoff-20260804-1327.zip`。
+
 ## 2026-08-03 13:20 最新接手指令
 
 - 正式服已恢复在线（阿里云香港 2核2G，systemd `football-s4`）。已部署 1141（运营覆盖+传奇所有权清理，team1 27/33）与 1320（轻量同步+静态 gzip+诊断工具）。
