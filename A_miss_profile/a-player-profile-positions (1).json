@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "profileType": "a",
+  "grade": "A",
+  "coordinateSystem": "card-percent",
+  "card": {
+    "width": 286,
+    "height": 358
+  },
+  "note": "x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
+  "profiles": {
+    "Ccurelia": {
+      "fileName": "Ccurelia.png",
+      "xPercent": 50,
+      "yPercent": 59.1,
+      "widthPercent": 128
+    },
+    "Gravenberch": {
+      "fileName": "Gravenberch.png",
+      "xPercent": 32.9,
+      "yPercent": 54.3,
+      "widthPercent": 188
+    },
+    "Bellingham": {
+      "playerKey": "Bellingham",
+      "fileName": "Bellingham.png",
+      "xPercent": 45.2,
+      "yPercent": 84.5,
+      "widthPercent": 172
+    },
+    "Casemiro": {
+      "playerKey": "Casemiro",
+      "fileName": "Casemiro.png",
+      "xPercent": 55.3,
+      "yPercent": 50.9,
+      "widthPercent": 196
+    },
+    "Bento": {
+      "playerKey": "Bento",
+      "fileName": "Bento.png",
+      "xPercent": 58.9,
+      "yPercent": 58.5,
+      "widthPercent": 164
+    }
+  }
+}

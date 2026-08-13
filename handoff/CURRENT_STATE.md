@@ -1,5 +1,36 @@
 # YellowDogs League S4 当前状态
 
+> 2026-08-12 最新权威状态、V2.1 平衡热更新和 SQL 存储评估请先阅读 `handoff/LATEST_20260812.md` 与 `docs/sql-storage-assessment-20260812.md`。最新平衡热更新 SHA256 为 `bda8ebe17ed57ab19522e4f98e2e7dc4c90647e3e32f0a3187eaaf6dda180f0c`，尚未确认线上部署。
+
+> 2026-08-11 18:12 最新状态已集中到 `handoff/LATEST_20260811.md`，本文件以下内容保留为历史开发记录。
+
+## 2026-08-11 18:12 当前权威状态
+
+- 荣誉室、背包 YOOGLE 详情、邮件分类、预测让球、战术板体力红线、附带所有权提示、普通 A/B `+8` 专属框已合并进入 R3。
+- 最新生产包为 `football-ydl-s4-honor-mail-tactics-hotfix-20260811-161002-r3.tar.gz`，SHA256 `5d4bc2b3d9b90e1013f9d8f1b03384a78c2fe3c228142f080fc01f77c4667e44`；用户未推送 R2，当前未确认 R3 已上线。
+- 服务器已安全删除非活动旧快照，磁盘从约 98% 降至 70%、约 12GB 可用，服务健康。活动分片绝大多数 revision 仍被 manifest 引用，禁止手动删除；长期需专用离线压缩工具。
+- 已分析 0811 完赛存档的 116 场真人对真人比赛并生成图表；结论和产物位置见 `LATEST_20260811.md`。
+- 最新本地对话交接包：`handoff/football-ydl-s4-handoff-20260811-1812.zip`。
+
+## 2026-08-11 00:37 当前权威状态
+
+- 新增全位置正式特性卡“别打我大哥”：队友受伤时由在场持卡人承担伤病；实际伤退、自动换人、播报和赛后伤停均落到持卡人，原队友继续比赛。
+- 正式特性池从 18 张增至 19 张，后台和强化特性池通过统一 `YDL_TRAIT_CARDS` 自动获得新卡。
+- 最新热更新 `football-ydl-s4-pack-market-legend-trait-hotfix-20260811-003616.tar.gz` 同时包含上一轮开包/市场优化、全位置私有池 1.5% 随机传奇 S 和传奇包降至 10000 金币；SHA256 为 `b709afee062d2c1617f195ddb990cf739710fea53fe409fbc3b6f2b09b03ae8d`。
+- 定向测试 32/32 通过，按用户要求未运行完整测试集。
+- 最新本地对话交接包：`handoff/football-ydl-s4-handoff-20260811-0037.zip`。
+
+## 2026-08-05 22:00 当前权威状态
+
+- 唯一开发目录为 `D:\Project\game_test\.worktrees\s4`，分支 `codex/s4-card-upgrade`，当前基线 `3687514`；工作树保留多轮未提交成果，禁止重置或清理。
+- 世界杯页面、真实晋级对阵、国家队战术板、赛事时间链及每日 09:51 分配/首轮前 10 分钟截止逻辑均已继续完善；相关改动集中在 `versus/league-service.js`、`versus/api.js`、`versus/public/app.js`、`versus/public/styles.css` 与世界杯测试。
+- 休赛期友谊赛按 0/5/10/15/20/25/30/35/40/45/50/55 分钟槽排期，同一玩家多场间隔 10 分钟；休赛期 AI 对手支持玩家阵容镜像，只复制阵型和站位，不复制打法细节。
+- V2 alpha.17 已增加后场暴露、防线高度/纵向脱节、高位防线单刀 xG、全攻高压稳定性等平衡调整，并补充伤病、犯规、扑救、射偏、假摔、天气、乌龙及助攻判定播报；伤病自动换人和伤停轮次计时已修复。
+- 两张 A 级球员卡 `Ccurelia.webp`、`Gravenberch.webp` 已生成并写入定位数据。
+- 新增独立 `/versus/v2-circle-demo.html`：用固定种子的 60 条真实 V2 控球链生成 30 分钟圆圈比赛，Canvas 重建 22 人战术跑位，支持暂停、重播、拖动和 1/2/4 倍速，适配深浅色与手机端。
+- 圆圈 Demo 验证：数据生成成功（60 chains / 37 events / 1:1）、两个 JS 文件语法通过、`git diff --check` 通过、桌面和 390px 手机浏览器无报错/无横向溢出。未运行全量测试。
+- 最新完整交接包：`D:\Project\game_test\handoff\football-ydl-s4-v2-circle-demo-handoff-20260805-2200.zip`。该包不得直接整体覆盖生产服务器。
+
 ## 2026-08-04 13:27 黄狗世界杯（当前权威状态）
 
 - 唯一开发目录仍为 `D:\Project\game_test\.worktrees\s4`，分支 `codex/s4-card-upgrade`，当前基线 `b575a63`（tag `S4-0803`）；世界杯改动尚未提交。

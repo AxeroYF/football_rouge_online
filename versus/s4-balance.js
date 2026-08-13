@@ -36,7 +36,7 @@ export function s4OwnershipReferenceValue(player) {
 }
 
 export const S4_PACK_PRICES = Object.freeze({
-  "legend-random":12000,
+  "legend-random":10000,
   "private-mixed":1000,
   "private-att":1300,
   "private-mid":1300,
@@ -66,7 +66,7 @@ export function s4EnhancementAbilityBonus(levelValue) {
 
 export function s4EffectiveOverall(player, levelValue) {
   const overall = Number(player?.overall ?? 0) + s4EnhancementAbilityBonus(levelValue);
-  return player?.grade === "S" ? overall : Math.min(99, overall);
+  return overall;
 }
 
 export function applyS4Enhancement(player, levelValue) {

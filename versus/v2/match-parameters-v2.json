@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "engineVersion": "2.0.0-alpha.15",
+  "engineVersion": "2.1.0",
   "status": "parameter-specification",
   "ability": {
     "minimum": 1,
@@ -61,7 +61,7 @@
       "shot": { "mentality": 0.01, "tempo": 0.004, "directness": 0, "pressing": 0.004, "timeWasting": -0.008 }
     },
     "stageProbabilityStyleAdjustments": {
-      "highPress": { "progression": 0.006, "finalThird": 0.01, "chance": 0.012, "shot": 0.004 }
+      "highPress": { "progression": 0.003, "finalThird": 0.005, "chance": 0.006, "shot": 0.002 }
     },
     "focuses": ["balanced", "left", "center", "right"]
   },
@@ -81,14 +81,91 @@
     "defensiveTrackingRatio": 0.58,
     "stageAdvance": {
       "buildUp": { "GK": 0, "CB": 0, "LB": 1, "RB": 1, "DM": 1, "AM": 2, "LM": 1, "RM": 1, "ST": 0, "LW": 0, "RW": 0 },
-      "progression": { "GK": 0, "CB": 0, "LB": 2, "RB": 2, "DM": 2, "AM": 5, "LM": 4, "RM": 4, "ST": 2, "LW": 3, "RW": 3 },
-      "finalThird": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 3, "AM": 9, "LM": 7, "RM": 7, "ST": 3, "LW": 5, "RW": 5 },
-      "chance": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 4, "AM": 12, "LM": 9, "RM": 9, "ST": 4, "LW": 7, "RW": 7 },
-      "shot": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 4, "AM": 13, "LM": 10, "RM": 10, "ST": 4, "LW": 8, "RW": 8 }
+      "progression": { "GK": 0, "CB": 0, "LB": 2, "RB": 2, "DM": 2, "AM": 4, "LM": 4, "RM": 4, "ST": 2, "LW": 3, "RW": 3 },
+      "finalThird": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 3, "AM": 8, "LM": 7, "RM": 7, "ST": 3, "LW": 5, "RW": 5 },
+      "chance": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 4, "AM": 10, "LM": 9, "RM": 9, "ST": 4, "LW": 7, "RW": 7 },
+      "shot": { "GK": 0, "CB": 0, "LB": 3, "RB": 3, "DM": 4, "AM": 11, "LM": 10, "RM": 10, "ST": 4, "LW": 8, "RW": 8 }
     },
     "controlTemperature": 18,
     "overloadPlayerAdvantage": 0.35,
-    "maximumLocalAdvantage": 3
+    "maximumLocalAdvantage": 3,
+    "backlineExposure": {
+      "minimumDefenders": 3,
+      "minimumMidfielders": 2,
+      "maximumAttackers": 3,
+      "defenderDeficitWeight": 0.55,
+      "midfielderDeficitWeight": 0.5,
+      "attackerExcessWeight": 0.3,
+      "highLineSafeY": 66,
+      "highLineMaximumRiskY": 44,
+      "verticalGapSafe": 30,
+      "verticalGapMaximum": 48,
+      "goalkeeperGapSafe": 24,
+      "goalkeeperGapMaximum": 44,
+      "pressingCommitmentMinimum": 68,
+      "pressingCommitmentMaximum": 92,
+      "highLineWeight": 0.34,
+      "verticalGapWeight": 0.35,
+      "goalkeeperGapWeight": 0.18,
+      "pressingCommitmentWeight": 0.26,
+      "advancedMidfielderExcessWeight": 0.1,
+      "threeBackAdvancedMidfielderWeight": 0.12,
+      "resistancePenaltyMaximum": 0.48,
+      "spaceBonusMaximum": 0.35
+    },
+    "roleBalance": {
+      "advancedMidfielderPenaltyPerExtra": 0.08,
+      "advancedMidfielderMinimumMultiplier": 0.82,
+      "singleStrikerMaximumAdvancedMidfielders": 1,
+      "singleStrikerControlMultiplier": 1.05,
+      "singleStrikerAttackMultiplier": 1.04,
+      "singleStrikerSupportMultiplier": 1.1,
+      "wideMidfielderAttackMultiplier": 1.04,
+      "wideMidfielderSupportMultiplier": 1.06
+    }
+  },
+  "dynamicShape": {
+    "mode": "stable",
+    "modelVersion": "dynamic-shape-v2.1-stable.2",
+    "restrictionsEnabled": true,
+    "stableInfluence": 0.15,
+    "diagnostics": { "sampleEveryChains": 10 },
+    "pitchBounds": { "minimumX": 4, "maximumX": 96, "minimumY": 4, "maximumY": 96 },
+    "minimumPlayerDistance": 5.5,
+    "maximumPlayerDisplacement": 28,
+    "separation": {
+      "maximumIterations": 24,
+      "tolerance": 0.015,
+      "roleCorrectionWeight": { "GK": 0.18, "CB": 0.45, "FB": 0.72, "WB": 0.82, "DM": 0.6, "CM": 0.9, "AM": 1, "W": 1.05, "ST": 0.95 }
+    },
+    "restDefense": { "attackingMinimum": 3, "lateWideMinimum": 3, "protectionLineY": 48.25 },
+    "ballSidePull": { "attacking": 0.16, "defending": 0.2 },
+    "widthInfluence": { "attacking": 0.18, "defending": 0.12 },
+    "fullback": { "ballSideAdvance": 4, "farSideDepthRetention": 3, "farSideTuck": 0.18 },
+    "defensiveMidfielder": { "coverShift": 0.14 },
+    "transition": { "attackingDepthMultiplier": 1.35, "defendingRecoveryMultiplier": 1.28, "attackingWidthMultiplier": 1.08 },
+    "phaseTwo": {
+      "enabled": true,
+      "scoreState": {
+        "startMinute": 55,
+        "trailingAttackingAdvance": 4.2,
+        "trailingDefendingAdvance": 1.6,
+        "trailingWidthExpansion": 0.06,
+        "leadingAttackingRetreat": 1.4,
+        "leadingDefendingRetreat": 3.2,
+        "leadingWidthCompression": 0.055
+      },
+      "transitionRecovery": {
+        "defendingWidthMultiplier": 0.9,
+        "roleDepthMultiplier": { "GK": 1, "CB": 1.22, "FB": 1.18, "WB": 1.16, "DM": 1.14, "CM": 1.08, "AM": 0.96, "W": 0.92, "ST": 0.82 },
+        "attackingRunMultiplier": { "GK": 1, "CB": 1, "FB": 1.04, "WB": 1.1, "DM": 1.02, "CM": 1.08, "AM": 1.15, "W": 1.18, "ST": 1.2 }
+      },
+      "wideOccupancy": { "attackingRoleExpansion": 0.075, "lateStageExpansion": 0.045 },
+      "underload": { "referencePlayers": 11, "maximumMissingPlayers": 3, "widthCompressionPerMissing": 0.055, "defensiveRetreatPerMissing": 2.4, "attackingRestraintPerMissing": 1.1 }
+    },
+    "teamPlay": { "sameActorContinuationWeight": 0.46 },
+    "roleMobility": { "GK": 0.18, "CB": 0.55, "FB": 0.9, "WB": 1, "DM": 0.72, "CM": 0.86, "AM": 1, "W": 1.05, "ST": 0.92 },
+    "stageIntensity": { "buildUp": 0.12, "progression": 0.4, "finalThird": 0.68, "chance": 0.86, "shot": 1 }
   },
   "state": {
     "regulationMinutes": 90,
@@ -96,27 +173,64 @@
     "chainAttemptProbabilityPerMinute": 0.55,
     "scoreDifferenceCap": 4,
     "restartRecoveryMinutes": 4,
-    "substitutionsEnabled": false,
+    "substitutionsEnabled": true,
     "minimumActivePlayers": 1,
     "fatiguePerChain": 0.085,
-    "pressingFatigueMaximum": 0.22,
-    "trailingUrgencyMaximum": 0.08,
+    "pressingFatigueMaximum": 0.32,
+    "attackingPressFatigueMaximum": 0.14,
+    "trailingUrgencyMaximum": 0.045,
     "leadingControlMaximum": 0.06,
-    "leadingShotXgPenaltyPerGoal": 0.085,
-    "leadingShotXgMinimumMultiplier": 0.66
+    "levelDecisivenessStartMinute": 60,
+    "levelDecisivenessMaximum": 0.07,
+    "leadingShotXgPenaltyPerGoal": 0.04,
+    "leadingShotXgMinimumMultiplier": 0.82
   },
   "environment": {
     "weatherWeights": { "sunny": 65, "rain": 15, "storm": 10, "snow": 10 },
     "weatherExecution": { "sunny": 1, "rain": 0.97, "storm": 0.93, "snow": 0.92 },
+    "weatherStageImpact": { "buildUp":0.15, "progression":0.25, "finalThird":0.35, "chance":0.4, "shot":0.25 },
     "refereeWeights": { "lenient": 28, "standard": 50, "strict": 22 },
     "refereeDiscipline": { "lenient": 0.86, "standard": 1, "strict": 1.14 },
-    "cardProbability": { "lenient": 0.1, "standard": 0.16, "strict": 0.24 },
-    "directRedProbability": { "lenient": 0.003, "standard": 0.005, "strict": 0.008 },
-    "weatherEventPerChain": { "sunny": 0.00003, "rain": 0.00015, "storm": 0.009, "snow": 0.00024 }
+    "cardProbability": { "lenient": 0.11, "standard": 0.18, "strict": 0.22 },
+    "directRedProbability": { "lenient": 0.001, "standard": 0.0018, "strict": 0.003 },
+    "weatherEventPerChain": { "sunny": 0.00003, "rain": 0.00015, "storm": 0.0038, "snow": 0.00024 }
   },
   "chain": {
     "stages": ["possession", "buildUp", "progression", "finalThird", "chance", "shot"],
     "openPlayXgScale": 0.68,
+    "possessionDuration": {
+      "selectionExponent": 1.18,
+      "controlProbabilityWeight": 1.35,
+      "minimumControlMultiplier": 0.78,
+      "maximumControlMultiplier": 1.22
+    },
+    "setPiece": {
+      "cornerDeliveryBase": 0.5,
+      "freeKickDeliveryBase": 0.48,
+      "deliverySkillDivisor": 180,
+      "minimumDeliveryProbability": 0.26,
+      "maximumDeliveryProbability": 0.88,
+      "duelBase": 0.5,
+      "aerialDifferenceDivisor": 165,
+      "minimumDuelProbability": 0.22,
+      "maximumDuelProbability": 0.82,
+      "cornerShotCreationBase": 0.54,
+      "freeKickShotCreationBase": 0.48,
+      "cornerBaseXg": 0.075,
+      "freeKickHeaderBaseXg": 0.09,
+      "directFreeKickBaseChance": 0.075,
+      "directFreeKickSkillWeight": 0.0028,
+      "minimumDirectFreeKickChance": 0.04,
+      "maximumDirectFreeKickChance": 0.22,
+      "directFreeKickBaseXg": 0.065,
+      "minimumHeaderXg": 0.035,
+      "maximumHeaderXg": 0.19,
+      "minimumDirectFreeKickXg": 0.045,
+      "maximumDirectFreeKickXg": 0.16
+      ,"cornerFromSaveChance": 0.43
+      ,"cornerFromBlockChance": 0.56
+      ,"cornerFromClearanceChance": 0.5
+    },
     "longShot": {
       "baseDecisionChance": 0.11,
       "skillDecisionWeight": 0.004,
@@ -131,12 +245,27 @@
       "minimumXg": 0.025,
       "maximumXg": 0.12
     },
+    "breakaway": {
+      "minimumHighLineRisk": 0.08,
+      "maximumXgBonus": 0.22,
+      "maximumXg": 0.5,
+      "transitionMultiplier": 1,
+      "directRouteMultiplier": 0.9
+    },
+    "offside": {
+      "baseProbability": 0.022,
+      "trapBonus": 0.035,
+      "defensiveLineWeight": 0.0008,
+      "directnessWeight": 0.0005,
+      "minimumProbability": 0.006,
+      "maximumProbability": 0.14
+    },
     "baseProbabilities": {
       "buildUp": 0.68,
       "progression": 0.58,
       "finalThird": 0.5,
-      "chance": 0.315,
-      "shot": 0.09
+      "chance": 0.27,
+      "shot": 0.115
     },
     "factorWeights": {
       "buildUp": { "execution": 0.34, "control": 0.2, "connection": 0.12, "pressureSafety": 0.2, "space": 0.04, "progression": 0.05, "overload": 0.05 },
@@ -150,10 +279,10 @@
       "buildUp": { "minimum": 0.12, "maximum": 0.9 },
       "progression": { "minimum": 0.1, "maximum": 0.86 },
       "finalThird": { "minimum": 0.08, "maximum": 0.82 },
-      "chance": { "minimum": 0.04, "maximum": 0.72 },
+      "chance": { "minimum": 0.03, "maximum": 0.62 },
       "shot": { "minimum": 0.01, "maximum": 0.7 }
     },
-    "shotTypes": ["throughBall", "cross", "cutback", "counter", "longShot", "setPiece", "rebound", "penalty"]
+    "shotTypes": ["throughBall", "cross", "cutback", "counter", "longShot", "setPiece", "freeKick", "rebound", "penalty"]
     ,"route": {
       "directThreshold": 60,
       "directMaximumChance": 0.68,
@@ -191,7 +320,23 @@
   "events": {
     "independentEvents": ["weatherInjury", "lightning", "blackWhistle", "ownGoal"],
     "maximumIndependentGoalEventsPerMatch": 1,
-    "injuryPerChain": 0.00018,
+    "ownGoalPerMatch": 0.009,
+    "weatherImpactPerMatch": 0.32,
+    "injuryPerChain": 0.00015,
+    "roughPlay": {
+      "foulMultiplier": 1.45,
+      "cardMultiplier": 1,
+      "directRedMultiplier": 1,
+      "foulInjuryMultiplier": 1.35
+    },
+    "baseFoulProbability": 0.09,
+    "secondYellowCardMultiplier": 0.42,
+    "penaltyFoulBaseProbability": 0.016,
+    "penaltyFoulAttackWeight": 0.000004,
+    "minimumPenaltyFoulProbability": 0.02,
+    "maximumPenaltyFoulProbability": 0.14,
+    "defensiveActionCreditProbability": { "tackle":0.38, "interception":0.28, "clearance":0.9 },
+    "pressureWinCreditProbability": 0.55,
     "blackWhistlePerMatch": 0.02,
     "recordParameterTrace": true,
     "recordRandomRolls": false

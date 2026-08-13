@@ -172,8 +172,8 @@ for (const player of Object.values(grouped).flat()) {
 export const REAL_PLAYER_POOLS = Object.freeze(Object.fromEntries(
   expectedPools.map((pool) => [pool, grouped[pool]]),
 ));
-export const REAL_PLAYERS = Object.freeze([...Object.values(REAL_PLAYER_POOLS).flat(), ...X_PLAYERS]);
-export const REAL_PLAYER_BY_ID = Object.freeze({ ...Object.fromEntries(REAL_PLAYERS.map((player) => [player.id, player])), ...X_PLAYER_BY_ID });
+export const REAL_PLAYERS = [...Object.values(REAL_PLAYER_POOLS).flat(), ...X_PLAYERS];
+export const REAL_PLAYER_BY_ID = { ...Object.fromEntries(REAL_PLAYERS.map((player) => [player.id, player])), ...X_PLAYER_BY_ID };
 
 export function isS4Legend(player) {
   return player?.grade === "S";
@@ -193,7 +193,19 @@ export function moveRealPlayerToPool(player, pool) {
   return player;
 }
 
-export const INDIVIDUALIZED_PLAYERS = Object.freeze(
-  REAL_PLAYERS.filter((player) => player.individualized)
-    .sort((left, right) => right.overall - left.overall || left.id.localeCompare(right.id)),
-);
+export const INDIVIDUALIZED_PLAYERS = REAL_PLAYERS.filter((player) => player.individualized)
+  .sort((left, right) => right.overall - left.overall || left.id.localeCompare(right.id));
+
+export function registerCustomRealPlayer(player) {
+  if (!player?.id) throw new Error("自定义球员缺少ID");
+  if (REAL_PLAYER_BY_ID[player.id]) throw new Error(`球员ID已存在：${player.id}`);
+  if (!REAL_PLAYER_POOLS[player.pool]) throw new Error(`未知球员位置池：${player.pool}`);
+  REAL_PLAYER_POOLS[player.pool].push(player);
+  REAL_PLAYERS.push(player);
+  REAL_PLAYER_BY_ID[player.id] = player;
+  if (player.individualized) {
+    INDIVIDUALIZED_PLAYERS.push(player);
+    INDIVIDUALIZED_PLAYERS.sort((left, right) => right.overall - left.overall || left.id.localeCompare(right.id));
+  }
+  return player;
+}

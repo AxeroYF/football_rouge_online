@@ -1,5 +1,21 @@
 # YellowDogs League S4 交接入口
 
+> 2026-08-12 最新权威状态请先阅读 `handoff/LATEST_20260812.md`。最新 V2.1 平衡热更新为 `football-ydl-s4-v21-balance-hotfix-20260812-092423.tar.gz`，SHA256 `bda8ebe17ed57ab19522e4f98e2e7dc4c90647e3e32f0a3187eaaf6dda180f0c`；当前尚未确认线上部署。SQL 存储迁移评估见 `docs/sql-storage-assessment-20260812.md`。
+
+> 2026-08-11 18:12 最新状态请先阅读 `handoff/LATEST_20260811.md`。最新完整交接 ZIP 仅用于新对话恢复上下文，不是服务器部署包。
+
+最新完整对话交接 ZIP：`D:\Project\game_test\.worktrees\s4\handoff\football-ydl-s4-handoff-20260811-1812.zip`。
+
+最新生产热更新：`football-ydl-s4-honor-mail-tactics-hotfix-20260811-161002-r3.tar.gz`，SHA256 `5d4bc2b3d9b90e1013f9d8f1b03384a78c2fe3c228142f080fc01f77c4667e44`。它合并荣誉室、背包详情、邮件分类、让球显示、战术板体力、市场所有权提示、普通 A/B `+8` 框及此前重叠运行改动；R2 尚未推送，R3 尚未收到线上部署确认。
+
+## 2026-08-05 22:00 最新状态（最高优先级）
+
+- 最新完整开发交接包：`D:\Project\game_test\handoff\football-ydl-s4-v2-circle-demo-handoff-20260805-2200.zip`。
+- 本包继承 8 月 4 日世界杯完整交接包，并覆盖此后全部在研成果：世界杯完善、休赛期友谊赛与玩家镜像、战术板 AI 对战、V2 alpha.17 平衡/播报/伤病换人、伤停计时热修、两张 A 卡和 V2 圆圈比赛 Demo。
+- 圆圈 Demo 地址为 `/versus/v2-circle-demo.html`；数据由 `node devtool/generate-v2-circle-demo.js` 使用真实 V2 控球链确定性生成，展示 30 分钟比赛。
+- 交接 ZIP 用于继续开发和审阅，不是生产服整体覆盖包；不包含运行存档、线上分片、`Cloud_league_data/`、`outputs/`、账号、密钥或临时素材。
+- 本轮只执行了圆圈 Demo 生成、JavaScript 语法、差异检查及桌面/手机浏览器验证，按用户要求未运行完整测试。
+
 ## 2026-08-04 13:27 最新状态（最高优先级）
 
 - 黄狗世界杯已完成可运行版本：12 支国家队、9 名真人每天随机轮换国家队、3 支 AI；每组固定 3 真人 + 1 AI，三轮小组赛后八强单场淘汰。

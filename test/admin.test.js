@@ -17,6 +17,10 @@ test("联赛旧数据冲突时后台提供开启全新赛季的恢复入口", ()
   assert.match(source, /\/api\/admin\/league\/fresh-season/);
   assert.match(source, /else renderLeagueRecovery\(error\)/);
   assert.match(source, /league-x-growth-grant-form/);
+  assert.match(source, /league-x-growth-recipient-field/);
+  assert.match(source, /name="recipientMode"/);
+  assert.match(source, /name="accountIds"/);
+  assert.match(source, /points, recipientMode, accountIds/);
   assert.match(source, /\/api\/admin\/league\/x-growth\/grant/);
   assert.match(source, /discipline-coins/);
   assert.match(source, /\/coins\/remove/);

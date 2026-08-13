@@ -6,6 +6,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const A_TARGET_JSON = path.join(ROOT, "A_profile", "a-player-profile-positions.json");
 const S_TARGET_JSON = path.join(ROOT, "legendary_profile", "legendary-profile-positions.json");
+const X_TARGET_JSON = path.join(ROOT, "x_profile", "x-player-profile-positions.json");
 
 const DLC_BATCHES = Object.freeze([
   Object.freeze({
@@ -31,6 +32,25 @@ const DLC_BATCHES = Object.freeze([
     aliases: Object.freeze({
       "Alessandro Del Piero": "Del pierro",
     }),
+  }),
+  Object.freeze({
+    key: "dlc3",
+    batch: "2026-08-08",
+    playerData: path.join(ROOT, "data", "player-dlc3-s4-final.json"),
+    aDirectory: path.join(ROOT, "player_dlc3", "A_Profile"),
+    aPositions: "a-player-profile-positions.json",
+    sDirectory: path.join(ROOT, "player_dlc3", "S_profile"),
+    sPositions: "legendary-profile-positions.json",
+    xDirectory: path.join(ROOT, "player_dlc3", "X_profile"),
+    xPositions: "x-player-profile-positions.json",
+    canonicalProfileKeys: true,
+    aliases: Object.freeze({}),
+    additionalAProfiles: Object.freeze([
+      Object.freeze({ sourceKey:"Di_Maria", targetKey:"Ángel Di María", playerId:"s4-fc26-183898" }),
+    ]),
+    xProfiles: Object.freeze([
+      Object.freeze({ sourceKey:"liuzuhao", targetKey:"刘祖豪", playerId:"ydl-x-player-9" }),
+    ]),
   }),
 ]);
 
@@ -122,11 +142,72 @@ async function mergeProfiles({ grade, targetJson, targetDirectory, directoryKey,
         status: existing ? "unchanged" : "imported",
       });
     }
+
+    if (grade === "A") {
+      for (const additional of config.additionalAProfiles ?? []) {
+        const runtimePlayer = Object.values(REAL_PLAYER_POOLS).flat().find((player) => player.id === additional.playerId);
+        if (!runtimePlayer) throw new Error(`${config.key} additional A player not found: ${additional.playerId}`);
+        const profile = sourceProfiles[additional.sourceKey];
+        if (!profile) throw new Error(`${config.key} additional A profile not found: ${additional.sourceKey}`);
+        const positioning = {
+          fileName: String(profile.fileName ?? ""),
+          xPercent: Number(profile.xPercent),
+          yPercent: Number(profile.yPercent),
+          widthPercent: Number(profile.widthPercent),
+        };
+        if (!positioning.fileName.toLowerCase().endsWith(".png") || ![positioning.xPercent, positioning.yPercent, positioning.widthPercent].every(Number.isFinite)) {
+          throw new Error(`${additional.sourceKey} has invalid positioning`);
+        }
+        const existing = target.profiles[additional.targetKey];
+        if (existing && JSON.stringify(existing) !== JSON.stringify(positioning)) {
+          throw new Error(`profile already exists with different positioning: ${additional.targetKey}`);
+        }
+        await copyFile(path.join(sourceDirectory, positioning.fileName), path.join(targetDirectory, positioning.fileName));
+        target.profiles[additional.targetKey] = positioning;
+        imported.push({
+          id: additional.playerId,
+          name: runtimePlayer.name,
+          sourceName: runtimePlayer.sourceName,
+          profileKey: additional.targetKey,
+          fileName: positioning.fileName,
+          batch: config.batch,
+          status: existing ? "unchanged" : "imported",
+        });
+      }
+    }
   }
 
-  target.generatedAt = "2026-08-03";
+  target.generatedAt = "2026-08-08";
   target.source = `merged existing ${grade} profiles with S4 DLC card art`;
   await writeFile(targetJson, `${JSON.stringify(target, null, 2)}\n`, "utf8");
+  return imported;
+}
+
+async function mergeXProfiles() {
+  const target = JSON.parse(await readFile(X_TARGET_JSON, "utf8"));
+  const imported = [];
+  for (const config of batches) {
+    if (!(config.xProfiles?.length)) continue;
+    const source = JSON.parse(await readFile(path.join(config.xDirectory, config.xPositions), "utf8"));
+    for (const entry of config.xProfiles) {
+      const profile = source.profiles?.[entry.sourceKey];
+      if (!profile) throw new Error(`${config.key} X profile not found: ${entry.sourceKey}`);
+      const positioning = {
+        fileName: String(profile.fileName ?? ""),
+        xPercent: Number(profile.xPercent),
+        yPercent: Number(profile.yPercent),
+        widthPercent: Number(profile.widthPercent),
+      };
+      const existing = target.profiles[entry.targetKey];
+      if (existing && JSON.stringify(existing) !== JSON.stringify(positioning)) {
+        throw new Error(`X profile already exists with different positioning: ${entry.targetKey}`);
+      }
+      await copyFile(path.join(config.xDirectory, positioning.fileName), path.join(ROOT, "x_profile", positioning.fileName));
+      target.profiles[entry.targetKey] = positioning;
+      imported.push({ id:entry.playerId, profileKey:entry.targetKey, fileName:positioning.fileName });
+    }
+  }
+  await writeFile(X_TARGET_JSON, `${JSON.stringify(target, null, 2)}\n`, "utf8");
   return imported;
 }
 
@@ -144,6 +225,7 @@ const sImported = await mergeProfiles({
   directoryKey: "sDirectory",
   positionsKey: "sPositions",
 });
+const xImported = await mergeXProfiles();
 
 console.log(JSON.stringify({
   batches: batches.map((config) => config.key),
@@ -151,6 +233,8 @@ console.log(JSON.stringify({
   importedS: sImported.filter((entry) => entry.status === "imported").length,
   unchanged: [...aImported, ...sImported].filter((entry) => entry.status === "unchanged").length,
   total: aImported.length + sImported.length,
+  importedX: xImported.length,
   aImported,
   sImported,
+  xImported,
 }, null, 2));

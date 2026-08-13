@@ -669,6 +669,66 @@ export const LEGENDARY_PROFILE_BY_PLAYER_ID = Object.freeze({
     "yPercent": 52.8,
     "widthPercent": 104,
     "optimizedFileName": "Meazza.webp"
+  },
+  "s4-dlc3-20260808-010": {
+    "playerId": "s4-dlc3-20260808-010",
+    "profileKey": "Ferenc Puskás",
+    "fileName": "Puskás.png",
+    "imageUrl": "/versus/legendary_profile/webp/Pusk%C3%A1s.webp?v=7b0676679cde",
+    "xPercent": 60.6,
+    "yPercent": 68.1,
+    "widthPercent": 140,
+    "optimizedFileName": "Puskás.webp"
+  },
+  "s4-dlc3-20260808-011": {
+    "playerId": "s4-dlc3-20260808-011",
+    "profileKey": "Hugo Sánchez",
+    "fileName": "Sánchez.png",
+    "imageUrl": "/versus/legendary_profile/webp/S%C3%A1nchez.webp?v=9584483b41a5",
+    "xPercent": 51.8,
+    "yPercent": 79.7,
+    "widthPercent": 160,
+    "optimizedFileName": "Sánchez.webp"
+  },
+  "s4-dlc3-20260808-015": {
+    "playerId": "s4-dlc3-20260808-015",
+    "profileKey": "Eric Cantona",
+    "fileName": "Cantona.png",
+    "imageUrl": "/versus/legendary_profile/webp/Cantona.webp?v=7cfabdb78888",
+    "xPercent": 34.4,
+    "yPercent": 51.2,
+    "widthPercent": 196,
+    "optimizedFileName": "Cantona.webp"
+  },
+  "s4-dlc3-20260808-016": {
+    "playerId": "s4-dlc3-20260808-016",
+    "profileKey": "Lev Yashin",
+    "fileName": "Yashin.png",
+    "imageUrl": "/versus/legendary_profile/webp/Yashin.webp?v=d61515ce6342",
+    "xPercent": 53.6,
+    "yPercent": 60.4,
+    "widthPercent": 140,
+    "optimizedFileName": "Yashin.webp"
+  },
+  "s4-dlc3-20260808-020": {
+    "playerId": "s4-dlc3-20260808-020",
+    "profileKey": "George Weah",
+    "fileName": "Weah.png",
+    "imageUrl": "/versus/legendary_profile/webp/Weah.webp?v=8800769038df",
+    "xPercent": 51.8,
+    "yPercent": 70.8,
+    "widthPercent": 132,
+    "optimizedFileName": "Weah.webp"
+  },
+  "s4-dlc3-20260808-034": {
+    "playerId": "s4-dlc3-20260808-034",
+    "profileKey": "Franck Ribéry",
+    "fileName": "Ribéry.png",
+    "imageUrl": "/versus/legendary_profile/webp/Rib%C3%A9ry.webp?v=5f2cc8e73184",
+    "xPercent": 54.3,
+    "yPercent": 74.5,
+    "widthPercent": 140,
+    "optimizedFileName": "Ribéry.webp"
   }
 });
 

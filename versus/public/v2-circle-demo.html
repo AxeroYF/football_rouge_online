@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>V2 圆圈比赛 Demo</title>
+  <link rel="stylesheet" href="/versus/v2-circle-demo.css" />
+</head>
+<body>
+  <main class="demo-shell">
+    <header class="scorebar">
+      <div class="engine-mark">
+        <span>YDL V2 ENGINE</span>
+        <strong>圆圈比赛演示</strong>
+      </div>
+      <div class="scoreboard" aria-live="polite">
+        <div class="team team-home"><i></i><span id="home-name">白队</span></div>
+        <strong id="score">0 : 0</strong>
+        <div class="team team-away"><span id="away-name">红队</span><i></i></div>
+      </div>
+      <div class="clock"><span>比赛时间</span><strong id="clock">00:00</strong></div>
+    </header>
+
+    <section class="match-layout">
+      <div class="pitch-panel">
+        <div class="pitch-wrap">
+          <canvas id="pitch" aria-label="V2 引擎圆圈比赛动画"></canvas>
+          <div class="event-flash" id="event-flash" hidden></div>
+        </div>
+        <div class="timeline">
+          <button id="play" class="primary-control" type="button">暂停</button>
+          <button id="replay" type="button">重播</button>
+          <div class="progress-wrap">
+            <input id="progress" type="range" min="0" max="1800" value="0" aria-label="比赛进度" />
+            <div class="phase-labels"><span>开球</span><span>15'</span><span>30'</span></div>
+          </div>
+          <div class="speed-control" aria-label="播放速度">
+            <button type="button" data-speed="1" class="active">1×</button>
+            <button type="button" data-speed="2">2×</button>
+            <button type="button" data-speed="4">4×</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="match-sidebar">
+        <section class="now-playing">
+          <div class="section-title"><span>当前攻势</span><b id="possession-label">等待开球</b></div>
+          <p id="current-event">V2 引擎正在加载比赛数据...</p>
+        </section>
+
+        <section class="stats-panel">
+          <div class="section-title"><span>比赛统计</span><b id="engine-version">V2</b></div>
+          <div id="stats" class="stats-grid"></div>
+        </section>
+
+        <section class="events-panel">
+          <div class="section-title"><span>比赛事件</span><b id="event-count">0</b></div>
+          <ol id="events" class="events-list"></ol>
+        </section>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="/versus/v2-circle-demo.js"></script>
+</body>
+</html>

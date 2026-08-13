@@ -3,6 +3,7 @@ import { trackedMutationVersion, trackedRawReference, unwrapTracked } from "./le
 
 export const S4_ASSET_SCHEMA_VERSION = 1;
 export const S4_ROSTER_LIMIT = 33;
+export const S4_ROSTER_EXPANSION_LIMIT = 15;
 export const S4_EXTERNAL_CARD_EXEMPT_LEVEL = 5;
 
 const clone = (value) => structuredClone(unwrapTracked(value));
@@ -51,6 +52,7 @@ function cardId(playerId, ownerId, now, sequence) {
 
 function normalizeCard(card) {
   card.upgradeLevel = Math.max(0, Math.min(8, Math.floor(Number(card.upgradeLevel ?? 0))));
+  card.ballonDorWins = Math.max(0, Math.floor(Number(card.ballonDorWins ?? 0)));
   card.traitIds = Array.isArray(card.traitIds) ? [...new Set(card.traitIds.map(String))] : [];
   card.acquisitionSource ??= "legacy-migration";
   card.externalAcquisition = Boolean(card.externalAcquisition);
@@ -67,6 +69,7 @@ export function ensureS4Assets(state) {
     ownerships:{},
     cards:{},
     traitOffers:{},
+    rosterLimitBonuses:{},
     transactions:[],
   };
   const assets = state.s4Assets;
@@ -75,6 +78,10 @@ export function ensureS4Assets(state) {
   assets.ownerships ??= {};
   assets.cards ??= {};
   assets.traitOffers ??= {};
+  assets.rosterLimitBonuses ??= {};
+  Object.entries(assets.rosterLimitBonuses).forEach(([ownerId, value]) => {
+    assets.rosterLimitBonuses[ownerId] = Math.max(0, Math.min(S4_ROSTER_EXPANSION_LIMIT, Math.floor(Number(value) || 0)));
+  });
   assets.transactions ??= [];
   Object.values(assets.cards).forEach(normalizeCard);
   // 运营覆盖可将非传奇球员升级为 S（传奇），而传奇不登记唯一所有权。
@@ -140,6 +147,14 @@ export function rosterFamilyUsesSlot(state, ownerId, playerId) {
 export function rosterSlotUsage(state, ownerId) {
   const families = new Set(cardsForOwner(state, ownerId).map((card) => card.playerId));
   return [...families].filter((playerId) => rosterFamilyUsesSlot(state, ownerId, playerId)).length;
+}
+
+export function rosterLimitBonusForOwner(state, ownerId) {
+  return Math.max(0, Math.min(S4_ROSTER_EXPANSION_LIMIT, Math.floor(Number(state.s4Assets?.rosterLimitBonuses?.[ownerId]) || 0)));
+}
+
+export function rosterLimitForOwner(state, ownerId) {
+  return S4_ROSTER_LIMIT + rosterLimitBonusForOwner(state, ownerId);
 }
 
 export function createS4Card(state, options) {
@@ -249,9 +264,10 @@ export function assertS4AssetInvariants(state, options = {}) {
       }
       const activeCardCount = cardsForOwner(state, ownerId).length;
       const rosterSlots = rosterSlotUsage(state, ownerId);
-      if (rosterSlots > S4_ROSTER_LIMIT) {
+      const rosterLimit = rosterLimitForOwner(state, ownerId);
+      if (rosterSlots > rosterLimit) {
         if (options.allowRosterOverflow) continue;
-        throw new Error(`球队超过${S4_ROSTER_LIMIT}人大名单额度：${team.id}（持有人${ownerId}，球员家族${cardFamilies.size}，活动卡${activeCardCount}，实际占用${rosterSlots}）`);
+        throw new Error(`球队超过${rosterLimit}人大名单额度：${team.id}（持有人${ownerId}，球员家族${cardFamilies.size}，活动卡${activeCardCount}，实际占用${rosterSlots}）`);
       }
     }
   }
@@ -262,6 +278,7 @@ export function publicS4Card(state, card) {
   return {
     id:card.id,
     playerId:card.playerId,
+    ballonDorWins:Number(card.ballonDorWins ?? 0),
     upgradeLevel:Number(card.upgradeLevel ?? 0),
     traitIds:clone(card.traitIds ?? []),
     acquisitionSource:card.acquisitionSource,
@@ -278,7 +295,8 @@ export function publicS4AssetsForOwner(state, ownerId) {
     .filter(([, candidateOwnerId]) => candidateOwnerId === ownerId)
     .map(([playerId]) => playerId);
   return {
-    rosterLimit:S4_ROSTER_LIMIT,
+    rosterLimit:rosterLimitForOwner(state, ownerId),
+    rosterLimitBonus:rosterLimitBonusForOwner(state, ownerId),
     rosterSlotsUsed:rosterSlotUsage(state, ownerId),
     ownershipPlayerIds,
     cards:cards.map((card) => publicS4Card(state, card)),

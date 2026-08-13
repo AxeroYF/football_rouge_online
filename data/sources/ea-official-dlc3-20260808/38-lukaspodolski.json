@@ -1,0 +1,257 @@
+{
+  "items": [
+    {
+      "id": 150516,
+      "rank": 4938,
+      "overallRating": 71,
+      "firstName": "Lukas",
+      "lastName": "Podolski",
+      "commonName": null,
+      "birthdate": "6/4/1985 12:00:00 AM",
+      "height": 183,
+      "skillMoves": 3,
+      "weakFootAbility": 3,
+      "preferredFoot": 2,
+      "leagueName": "PKO BP Ekstraklasa",
+      "weight": 88,
+      "avatarUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-portraits/p150516.png?padding=0.7",
+      "shieldUrl": "https://ratings-images-prod.pulse.ea.com/FC25/full/player-shields/en/150516.png?width=265",
+      "alternatePositions": [
+        {
+          "id": "18",
+          "label": "Center Attacking Midfielder",
+          "shortLabel": "CAM"
+        }
+      ],
+      "playerAbilities": [
+        {
+          "id": "trait1_4",
+          "label": "Power Shot",
+          "description": "Faster power shots with increased speed",
+          "imageUrl": "https://drop-assets.ea.com/images/3ohVoKWSsvT44qgjabWqfV/e536ef26ad854c3c4cbf63ed7954b9cd/Power_Shot.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_8",
+          "label": "Dead Ball",
+          "description": "Faster, accurate set pieces with longer trajectory preview",
+          "imageUrl": "https://drop-assets.ea.com/images/1razu2wcM3XA82VvB7NyUm/eec6b07080e49d6bf2d7a7951a22375f/Dead_Ball.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_128",
+          "label": "Gamechanger",
+          "description": "Fancy and Trivela shots are performed with improved accuracy.",
+          "imageUrl": "https://drop-assets.ea.com/images/2v8I0GQrtREaEJzJcyStKe/e46d719e4e5ed88ac5a1f671c7448f4a/Gamechanger.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        },
+        {
+          "id": "trait1_4194304",
+          "label": "First Touch",
+          "description": "Reduced trapping error, faster dribbling transition",
+          "imageUrl": "https://drop-assets.ea.com/images/3f727XsoDVLbT49oMk0HBu/2787568be8ccb2d5daa2d18fabacad97/First_Touch.png",
+          "type": {
+            "id": "playStyle",
+            "label": "Play Style"
+          }
+        }
+      ],
+      "gender": {
+        "id": 0,
+        "label": "Men's Football"
+      },
+      "nationality": {
+        "id": 21,
+        "label": "Germany",
+        "imageUrl": "https://drop-assets.ea.com/images/6IIMMGk0Uj1rcZ6DSHTpLL/93f95b602dc62594104f418c8f80ebb3/f_21.png"
+      },
+      "team": {
+        "id": 420,
+        "label": "Górnik Zabrze",
+        "imageUrl": "https://drop-assets.ea.com/images/59QrkW1rixjVQvyLu7Hzol/61853fcdd34c038b0f47fcda5948e58f/l420.png",
+        "isPopular": false
+      },
+      "position": {
+        "id": "25",
+        "shortLabel": "ST",
+        "label": "Striker",
+        "positionType": {
+          "id": "attack",
+          "name": "Attack"
+        }
+      },
+      "stats": {
+        "acceleration": {
+          "value": 45,
+          "diff": 0
+        },
+        "agility": {
+          "value": 58,
+          "diff": 0
+        },
+        "jumping": {
+          "value": 67,
+          "diff": 0
+        },
+        "stamina": {
+          "value": 67,
+          "diff": 0
+        },
+        "strength": {
+          "value": 73,
+          "diff": 0
+        },
+        "aggression": {
+          "value": 71,
+          "diff": 0
+        },
+        "balance": {
+          "value": 66,
+          "diff": 0
+        },
+        "ballControl": {
+          "value": 75,
+          "diff": 0
+        },
+        "composure": {
+          "value": 80,
+          "diff": 0
+        },
+        "crossing": {
+          "value": 70,
+          "diff": 0
+        },
+        "curve": {
+          "value": 74,
+          "diff": 0
+        },
+        "def": {
+          "value": 36,
+          "diff": 0
+        },
+        "defensiveAwareness": {
+          "value": 30,
+          "diff": 0
+        },
+        "dri": {
+          "value": 69,
+          "diff": 0
+        },
+        "dribbling": {
+          "value": 66,
+          "diff": 0
+        },
+        "finishing": {
+          "value": 67,
+          "diff": 0
+        },
+        "freeKickAccuracy": {
+          "value": 73,
+          "diff": 0
+        },
+        "gkDiving": {
+          "value": 10,
+          "diff": 0
+        },
+        "gkHandling": {
+          "value": 9,
+          "diff": 0
+        },
+        "gkKicking": {
+          "value": 16,
+          "diff": 0
+        },
+        "gkPositioning": {
+          "value": 9,
+          "diff": 0
+        },
+        "gkReflexes": {
+          "value": 9,
+          "diff": 0
+        },
+        "headingAccuracy": {
+          "value": 65,
+          "diff": 0
+        },
+        "interceptions": {
+          "value": 36,
+          "diff": 0
+        },
+        "longPassing": {
+          "value": 73,
+          "diff": 0
+        },
+        "longShots": {
+          "value": 68,
+          "diff": 0
+        },
+        "pac": {
+          "value": 48,
+          "diff": 0
+        },
+        "pas": {
+          "value": 72,
+          "diff": 0
+        },
+        "penalties": {
+          "value": 77,
+          "diff": 0
+        },
+        "phy": {
+          "value": 71,
+          "diff": 0
+        },
+        "positioning": {
+          "value": 77,
+          "diff": 0
+        },
+        "reactions": {
+          "value": 73,
+          "diff": 0
+        },
+        "sho": {
+          "value": 74,
+          "diff": 0
+        },
+        "shortPassing": {
+          "value": 72,
+          "diff": 0
+        },
+        "shotPower": {
+          "value": 90,
+          "diff": 0
+        },
+        "slidingTackle": {
+          "value": 30,
+          "diff": 0
+        },
+        "sprintSpeed": {
+          "value": 50,
+          "diff": 0
+        },
+        "standingTackle": {
+          "value": 35,
+          "diff": 0
+        },
+        "vision": {
+          "value": 74,
+          "diff": 0
+        },
+        "volleys": {
+          "value": 81,
+          "diff": 0
+        }
+      }
+    }
+  ],
+  "totalItems": 1
+}

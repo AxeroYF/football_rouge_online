@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ATTRIBUTE_NAMES, playerOverallFromAttributes, POSITION_GROUPS, roleGroup } from "../game/public/schema.js";
 import { isS4Legend, isXPlayer, moveRealPlayerToPool, normalizedS4LegendAttributes, REAL_PLAYER_BY_ID, REAL_PLAYERS, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP } from "./player-pool.js";
+import { playerCardStudioView } from "./player-card-studio-store.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -234,15 +235,39 @@ async function persist() {
 
 loadOverridesSync();
 
-export function ydlContentView() {
+function contentDistribution(key, fallback = "未填写") {
+  return Object.entries(REAL_PLAYERS.reduce((counts, player) => {
+    const value = String(player?.[key] ?? fallback).trim() || fallback;
+    counts[value] = (counts[value] ?? 0) + 1;
+    return counts;
+  }, {})).map(([label, count]) => ({ label, count, percent:Number((count / Math.max(1, REAL_PLAYERS.length) * 100).toFixed(1)) }))
+    .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+}
+
+function contentOverview(studio) {
   return {
+    totalPlayers:REAL_PLAYERS.length,
+    draftCount:studio.drafts.length,
+    profileCount:Object.keys(studio.profiles).length,
+    averageOverall:Number((REAL_PLAYERS.reduce((sum, player) => sum + Number(player.overall ?? 0), 0) / Math.max(1, REAL_PLAYERS.length)).toFixed(1)),
+    activeTraitCount:YDL_TRAIT_CARDS.length,
+  };
+}
+
+export function ydlContentSection(section = "summary") {
+  const common = {
     schemaVersion:CONTENT_SCHEMA_VERSION,
     updatedAt:overrides.updatedAt,
     roleGroups:[...TRAIT_ROLE_GROUPS],
     playerRoles:[...PLAYER_ROLES],
     attributeNames:[...ATTRIBUTE_NAMES],
     rolesByPool:clone(ROLES_BY_POOL),
-    players:REAL_PLAYERS.filter((player) => !isXPlayer(player)).map((player) => ({
+  };
+  if (section === "summary") {
+    const studio = playerCardStudioView();
+    return { ...common, overview:contentOverview(studio) };
+  }
+  if (section === "players") return { players:REAL_PLAYERS.filter((player) => !isXPlayer(player)).map((player) => ({
       id:player.id,
       name:player.name,
       sourceName:player.sourceName,
@@ -257,11 +282,62 @@ export function ydlContentView() {
       heightCm:player.heightCm,
       attributes:clone(player.attributes),
       isLegend:isS4Legend(player),
-    })),
-    traits:[
+      customPlayer:Boolean(player.customPlayer),
+      status:"active",
+      cardProfile:clone(player.cardProfile ?? null),
+    })) };
+  if (section === "studio") {
+    const studio = playerCardStudioView();
+    return {
+      profilePlayers:REAL_PLAYERS.map((player) => ({
+      id:player.id,
+      name:player.name,
+      sourceName:player.sourceName,
+      pool:player.pool,
+      role:player.role,
+      secondaryRole:player.secondaryRole,
+      overall:player.overall,
+      grade:player.grade,
+      nationality:player.nationality,
+      club:player.club,
+      isLegend:isS4Legend(player),
+      xPlayer:isXPlayer(player),
+      customPlayer:Boolean(player.customPlayer),
+      status:"active",
+      cardProfile:clone(player.cardProfile ?? null),
+      })),
+      playerBatches:studio.batches,
+      playerDrafts:studio.drafts,
+      cardStudio:{ mediaStorage:studio.mediaStorage, updatedAt:studio.updatedAt, profileCount:Object.keys(studio.profiles).length },
+    };
+  }
+  if (section === "analytics") {
+    const studio = playerCardStudioView();
+    return { analytics:{
+      totalPlayers:REAL_PLAYERS.length,
+      averageOverall:Number((REAL_PLAYERS.reduce((sum, player) => sum + Number(player.overall ?? 0), 0) / Math.max(1, REAL_PLAYERS.length)).toFixed(1)),
+      profileCount:Object.keys(studio.profiles).length,
+      profileCoverage:Number((Object.keys(studio.profiles).length / Math.max(1, REAL_PLAYERS.length) * 100).toFixed(1)),
+      nationality:contentDistribution("nationality"),
+      club:contentDistribution("club"),
+      grade:contentDistribution("grade"),
+      role:contentDistribution("role"),
+    } };
+  }
+  if (section === "traits") return { traits:[
       ...YDL_TRAIT_CARDS.map((trait) => traitView(trait)),
       ...Object.entries(overrides.traitDrafts ?? {}).map(([id, trait]) => traitView(normalizeTraitDraft(id, trait), { status:"draft", custom:true })),
-    ],
+    ] };
+  throw Object.assign(new Error("未知内容分区"), { statusCode:404 });
+}
+
+export function ydlContentView() {
+  return {
+    ...ydlContentSection("summary"),
+    ...ydlContentSection("players"),
+    ...ydlContentSection("studio"),
+    ...ydlContentSection("analytics"),
+    ...ydlContentSection("traits"),
   };
 }
 

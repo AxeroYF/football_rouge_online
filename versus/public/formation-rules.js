@@ -3,6 +3,10 @@ export const FORMATION_LINE_KEYS = Object.freeze(["attack", "midfield", "defense
 export const DEFAULT_FORMATION_LINES = Object.freeze({ attack:20, midfield:44, defense:68, goalkeeper:90 });
 export const FORMATION_LINE_MINIMUM_GAP = 8;
 export const GOALKEEPER_LINE_MINIMUM_Y = 82;
+export const FORMATION_ROLE_LANES = Object.freeze({
+  central:Object.freeze({ minimumX:26, maximumX:74 }),
+  centralDefense:Object.freeze({ minimumX:26, maximumX:74 }),
+});
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 
@@ -43,13 +47,13 @@ function legacyInferElevenBoardRoles(entries) {
     : 46;
   for (const entry of normalized) {
     if (entry.y >= 82) roles[entry.id] = "GK";
-    else if (entry.y >= 66) roles[entry.id] = entry.x < 30 ? "LB" : entry.x > 70 ? "RB" : "CB";
-    else if (entry.y >= 52 && entry.x < 30) roles[entry.id] = "LWB";
-    else if (entry.y >= 52 && entry.x > 70) roles[entry.id] = "RWB";
+    else if (entry.y >= 66) roles[entry.id] = entry.x < FORMATION_ROLE_LANES.centralDefense.minimumX ? "LB" : entry.x > FORMATION_ROLE_LANES.centralDefense.maximumX ? "RB" : "CB";
+    else if (entry.y >= 52 && entry.x < FORMATION_ROLE_LANES.centralDefense.minimumX) roles[entry.id] = "LWB";
+    else if (entry.y >= 52 && entry.x > FORMATION_ROLE_LANES.centralDefense.maximumX) roles[entry.id] = "RWB";
     else if (entry.y >= 59) roles[entry.id] = "CB";
-    else if (entry.y < 27) roles[entry.id] = entry.x < 38 ? "LW" : entry.x > 62 ? "RW" : "ST";
-    else if (entry.x < 38) roles[entry.id] = "LM";
-    else if (entry.x > 62) roles[entry.id] = "RM";
+    else if (entry.y < 27) roles[entry.id] = entry.x < FORMATION_ROLE_LANES.central.minimumX ? "LW" : entry.x > FORMATION_ROLE_LANES.central.maximumX ? "RW" : "ST";
+    else if (entry.x < FORMATION_ROLE_LANES.central.minimumX) roles[entry.id] = "LM";
+    else if (entry.x > FORMATION_ROLE_LANES.central.maximumX) roles[entry.id] = "RM";
     else roles[entry.id] = entry.y < midfieldReferenceY ? "AM" : "DM";
   }
   return roles;
@@ -80,16 +84,41 @@ export function inferElevenBoardRoles(entries = [], formationLines = null) {
   for (const entry of normalized) {
     const line = FORMATION_LINE_KEYS.reduce((closest, key) => Math.abs(entry.y - lines[key]) < Math.abs(entry.y - lines[closest]) ? key : closest, "attack");
     if (line === "goalkeeper") roles[entry.id] = "GK";
-    else if (line === "attack") roles[entry.id] = entry.x < 38 ? "LW" : entry.x > 62 ? "RW" : "ST";
+    else if (line === "attack") roles[entry.id] = entry.x < FORMATION_ROLE_LANES.central.minimumX ? "LW" : entry.x > FORMATION_ROLE_LANES.central.maximumX ? "RW" : "ST";
     else if (line === "defense") {
-      if (entry.x < 30) roles[entry.id] = entry.y < lines.defense ? "LWB" : "LB";
-      else if (entry.x > 70) roles[entry.id] = entry.y < lines.defense ? "RWB" : "RB";
+      if (entry.x < FORMATION_ROLE_LANES.centralDefense.minimumX) roles[entry.id] = entry.y < lines.defense ? "LWB" : "LB";
+      else if (entry.x > FORMATION_ROLE_LANES.centralDefense.maximumX) roles[entry.id] = entry.y < lines.defense ? "RWB" : "RB";
       else roles[entry.id] = "CB";
-    } else if (entry.x < 38) roles[entry.id] = "LM";
-    else if (entry.x > 62) roles[entry.id] = "RM";
+    } else if (entry.x < FORMATION_ROLE_LANES.central.minimumX) roles[entry.id] = "LM";
+    else if (entry.x > FORMATION_ROLE_LANES.central.maximumX) roles[entry.id] = "RM";
     else roles[entry.id] = entry.y < lines.midfield ? "AM" : "DM";
   }
   return roles;
+}
+
+export function formationRoleZones(formationLines = DEFAULT_FORMATION_LINES) {
+  const lines = sanitizeFormationLines(formationLines);
+  const attackBottom = (lines.attack + lines.midfield) / 2;
+  const midfieldBottom = (lines.midfield + lines.defense) / 2;
+  const defenseBottom = (lines.defense + lines.goalkeeper) / 2;
+  const central = FORMATION_ROLE_LANES.central;
+  const defense = FORMATION_ROLE_LANES.centralDefense;
+  const zone = (role, xMin, xMax, yMin, yMax) => ({ role, xMin, xMax, yMin, yMax });
+  return [
+    zone("LW", 0, central.minimumX, 0, attackBottom),
+    zone("ST", central.minimumX, central.maximumX, 0, attackBottom),
+    zone("RW", central.maximumX, 100, 0, attackBottom),
+    zone("LM", 0, central.minimumX, attackBottom, midfieldBottom),
+    zone("AM", central.minimumX, central.maximumX, attackBottom, lines.midfield),
+    zone("DM", central.minimumX, central.maximumX, lines.midfield, midfieldBottom),
+    zone("RM", central.maximumX, 100, attackBottom, midfieldBottom),
+    zone("LWB", 0, defense.minimumX, midfieldBottom, lines.defense),
+    zone("LB", 0, defense.minimumX, lines.defense, defenseBottom),
+    zone("CB", defense.minimumX, defense.maximumX, midfieldBottom, defenseBottom),
+    zone("RWB", defense.maximumX, 100, midfieldBottom, lines.defense),
+    zone("RB", defense.maximumX, 100, lines.defense, defenseBottom),
+    zone("GK", 0, 100, defenseBottom, 100),
+  ];
 }
 
 export function analyzeElevenBoardFormation(players = [], positions = {}, formationLines = null) {

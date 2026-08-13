@@ -36,6 +36,7 @@ function makeTeam(name, options = {}) {
     name,
     players,
     positions,
+    spatialRoles:Object.fromEntries(players.map((player) => [player.id, player.role])),
     tactic:options.tactic ?? "balanced",
     style:options.style ?? "possession",
     tacticalDimensions:options.tacticalDimensions,
@@ -63,6 +64,14 @@ test("V2区域模型建立20个有限数值区域且不修改输入", () => {
       assert.ok(values.every(Number.isFinite), `${team.name}:${zone.zone}`);
     }
   }
+});
+
+test("V2 空间快照保留本场纪律状态供第二黄牌判定", () => {
+  const home = makeTeam("booked-home");
+  home.players[1].matchStats = { yellowCards:1 };
+  const result = buildV2SpatialMatchup([home, makeTeam("opponent")]);
+
+  assert.equal(result.teams[0].players.find((player) => player.id === home.players[1].id).matchStats.yellowCards, 1);
 });
 
 test("客队战术板经过180度投影并能还原本方视角", () => {
@@ -164,6 +173,52 @@ test("不合理位置适配会降低同一空间内的球员贡献", () => {
   const zone = "box:leftHalfSpace";
 
   assert.ok(localZone(misplacedResult.teams[0], zone).own.attack < localZone(naturalResult.teams[0], zone).own.attack);
+});
+
+test("少中场多前锋阵型产生后场暴露并提高对手机会空间", () => {
+  const extremeLayout = [
+    ["GK", 50, 90],
+    ["LB", 18, 69], ["CB", 40, 69], ["CB", 60, 69], ["RB", 82, 69],
+    ["DM", 50, 47],
+    ["LW", 10, 18], ["ST", 30, 18], ["ST", 50, 18], ["ST", 70, 18], ["RW", 90, 18],
+  ];
+  const normal = buildV2SpatialMatchup([makeTeam("normal"), makeTeam("opponent")]);
+  const exposed = buildV2SpatialMatchup([makeTeam("extreme", { layout:extremeLayout }), makeTeam("opponent")]);
+
+  assert.ok(exposed.teams[0].backlineExposure > normal.teams[0].backlineExposure + 0.2);
+  assert.ok(exposed.teams[1].finalThirdControl > normal.teams[1].finalThirdControl);
+  assert.ok(localZone(exposed.teams[1], "box:center").exploitableSpace > localZone(normal.teams[1], "box:center").exploitableSpace);
+});
+
+test("相同人数结构下高位防线和纵向脱节都会增加后场暴露", () => {
+  const highLineLayout = ROLE_LAYOUT.map(([role, x, y]) => [role, x, ["LB", "CB", "RB"].includes(role) ? 45 : y]);
+  const disconnectedLayout = ROLE_LAYOUT.map(([role, x, y]) => [role, x, ["LW", "ST", "RW"].includes(role) ? 5 : y]);
+  const balanced = buildV2SpatialMatchup([makeTeam("balanced"), makeTeam("opponent")]);
+  const highLine = buildV2SpatialMatchup([makeTeam("high-line", { layout:highLineLayout }), makeTeam("opponent")]);
+  const disconnected = buildV2SpatialMatchup([makeTeam("disconnected", { layout:disconnectedLayout }), makeTeam("opponent")]);
+
+  assert.ok(highLine.teams[0].backlineExposure > balanced.teams[0].backlineExposure);
+  assert.ok(highLine.teams[0].backlineExposureBreakdown.highLineRisk > 0.7);
+  assert.ok(disconnected.teams[0].backlineExposure > balanced.teams[0].backlineExposure);
+  assert.ok(disconnected.teams[0].backlineExposureBreakdown.verticalGapRisk > 0);
+  assert.ok(Object.values(highLine.teams[0].backlineExposureBreakdown).filter((value) => value != null).every(Number.isFinite));
+});
+
+test("V2 三后卫叠加多个前腰会产生额外的转换防守风险", () => {
+  const doubleAmLayout = [
+    ["GK", 50, 90],
+    ["LB", 20, 69], ["CB", 50, 69], ["RB", 80, 69],
+    ["DM", 36, 49], ["DM", 64, 49],
+    ["LM", 16, 36], ["AM", 42, 33], ["AM", 58, 33], ["RM", 84, 36],
+    ["ST", 50, 16],
+  ];
+  const singleAmLayout = doubleAmLayout.map((entry, index) => index === 8 ? ["DM", entry[1], entry[2]] : entry);
+  const doubleAm = buildV2SpatialMatchup([makeTeam("double-am", { layout:doubleAmLayout }), makeTeam("opponent")]);
+  const singleAm = buildV2SpatialMatchup([makeTeam("single-am", { layout:singleAmLayout }), makeTeam("opponent")]);
+
+  assert.ok(doubleAm.teams[0].backlineExposure > singleAm.teams[0].backlineExposure + 0.09);
+  assert.equal(doubleAm.teams[0].backlineExposureBreakdown.advancedMidfielderExcess, 0.5);
+  assert.equal(doubleAm.teams[0].backlineExposureBreakdown.threeBackAdvancedMidfieldRisk, 0.5);
 });
 
 test("连续战术参数由心态、打法和自定义值共同确定", () => {

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>C罗 · 金球奖金色地球卡片 Demo</title>
+  <link rel="stylesheet" href="/versus/styles.css">
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 38%,#173326,#06120e 62%);color:#f5f7f1;font-family:Inter,"Microsoft YaHei",sans-serif}
+    .ballon-dor-demo{width:min(920px,calc(100% - 28px));padding:30px;display:grid;grid-template-columns:minmax(240px,300px) minmax(260px,1fr);gap:42px;align-items:center;border:1px solid rgba(245,211,74,.35);border-radius:26px;background:rgba(7,23,18,.9);box-shadow:0 28px 80px rgba(0,0,0,.46)}
+    .ballon-dor-demo-card{width:280px;max-width:100%;justify-self:center}
+    .ballon-dor-demo-copy>small{color:#f5d34a;font-size:10px;font-weight:900;letter-spacing:.16em}.ballon-dor-demo-copy h1{margin:8px 0 10px;font-size:30px}.ballon-dor-demo-copy p{margin:0;color:#9eb3aa;line-height:1.7}
+    .ballon-dor-demo-controls{margin-top:24px;display:flex;flex-wrap:wrap;gap:9px}.ballon-dor-demo-controls button{min-width:86px;min-height:42px;border:1px solid rgba(245,211,74,.38);border-radius:10px;color:#f5d34a;background:#10251d;font-weight:900;cursor:pointer}.ballon-dor-demo-controls button.active{color:#17190d;background:#f5d34a;box-shadow:0 7px 22px rgba(245,211,74,.22)}
+    .ballon-dor-demo-status{margin-top:16px;padding:12px 14px;border-left:3px solid #f5d34a;background:rgba(245,211,74,.07)}.ballon-dor-demo-status b,.ballon-dor-demo-status span{display:block}.ballon-dor-demo-status span{margin-top:4px;color:#9eb3aa;font-size:11px}
+    @media(max-width:680px){.ballon-dor-demo{margin:14px 0;padding:20px;grid-template-columns:1fr;gap:24px}.ballon-dor-demo-copy{text-align:center}.ballon-dor-demo-controls{justify-content:center}.ballon-dor-demo-status{text-align:left}}
+  </style>
+</head>
+<body>
+  <main class="ballon-dor-demo">
+    <button type="button" class="s4-player-card grade-s band-max has-player-profile has-ballon-dor ballon-dor-demo-card" aria-label="C罗，能力107，中锋，3次赛季金球奖">
+      <span class="s4-player-card-ballon-dor" data-demo-crowns title="3次赛季金球奖" aria-label="3次赛季金球奖"><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i></span>
+      <span class="s4-player-card-upgrade band-max">+8</span>
+      <div class="s4-player-card-head"><strong>107</strong><b>ST</b></div>
+      <div class="s4-player-card-grade"><span>S</span></div>
+      <div class="s4-player-card-name"><h3>C罗</h3></div>
+      <footer><b>利雅得胜利 / 葡萄牙</b></footer>
+      <img class="s4-player-card-profile" src="/versus/legendary_profile/webp/Cristiano_Ronaldo.webp?v=687fe917e33a" alt="" draggable="false" decoding="async" style="--profile-x:58.1%;--profile-y:52.9%;--profile-width:188%">
+    </button>
+    <section class="ballon-dor-demo-copy">
+      <small>SEASON BALLON D'OR · CARD DEMO</small>
+      <h1>C罗 · 金球奖金色地球卡片</h1>
+      <p>金色地球奖章固定在强化标下方，并为能力值和右上角强化等级保留独立空间。多次获奖会纵向累计显示；超过五次后以“五枚地球 + 额外次数”收纳。</p>
+      <div class="ballon-dor-demo-controls" aria-label="切换获奖次数">
+        <button type="button" data-demo-wins="1">1 冠</button>
+        <button type="button" class="active" data-demo-wins="3">3 冠</button>
+        <button type="button" data-demo-wins="6">6 冠</button>
+      </div>
+      <div class="ballon-dor-demo-status"><b data-demo-status>累计获得 3 次赛季金球奖</b><span>视觉 Demo · 尚未接入赛季评选和奖励结算</span></div>
+    </section>
+  </main>
+  <script>
+    const card = document.querySelector(".ballon-dor-demo-card");
+    const crowns = document.querySelector("[data-demo-crowns]");
+    const status = document.querySelector("[data-demo-status]");
+    document.querySelectorAll("[data-demo-wins]").forEach((button) => button.addEventListener("click", () => {
+      const wins = Number(button.dataset.demoWins);
+      const visible = Math.min(5, wins);
+      crowns.innerHTML = `${Array.from({ length:visible }, () => '<i aria-hidden="true"></i>').join("")}${wins > 5 ? `<b>+${wins - 5}</b>` : ""}`;
+      crowns.title = `${wins}次赛季金球奖`;
+      crowns.setAttribute("aria-label", `${wins}次赛季金球奖`);
+      card.setAttribute("aria-label", `C罗，能力107，中锋，${wins}次赛季金球奖`);
+      status.textContent = `累计获得 ${wins} 次赛季金球奖`;
+      document.querySelectorAll("[data-demo-wins]").forEach((entry) => entry.classList.toggle("active", entry === button));
+    }));
+  </script>
+</body>
+</html>

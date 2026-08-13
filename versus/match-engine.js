@@ -384,6 +384,16 @@ function scoreState(match, team) {
   return team.score > opponent.score ? "leading" : team.score < opponent.score ? "trailing" : "tied";
 }
 
+function situationalPlanKey(match, team) {
+  const opponent = match.teams[team.index === 0 ? 1 : 0];
+  const difference = Number(team.score) - Number(opponent.score);
+  const leadingThreshold = clamp(Math.round(Number(team.tacticalPlans?.leading?.triggerGoalDifference) || 1), 1, 5);
+  const trailingThreshold = clamp(Math.round(Number(team.tacticalPlans?.trailing?.triggerGoalDifference) || 1), 1, 5);
+  if (difference >= leadingThreshold) return "leading";
+  if (difference <= -trailingThreshold) return "trailing";
+  return "opening";
+}
+
 function refreshTeamBonds(team) {
   if (!team.bondCatalog) return;
   const restoredPlayers = team.players.map((player) => ({
@@ -402,8 +412,7 @@ function refreshTeamBonds(team) {
 
 function applySituationalPlan(match, team) {
   if (!team.tacticalPlans) return false;
-  const state = scoreState(match, team);
-  const planKey = state === "leading" ? "leading" : state === "trailing" ? "trailing" : "opening";
+  const planKey = situationalPlanKey(match, team);
   if (team.activePlan === planKey) return false;
   const plan = team.tacticalPlans[planKey];
   if (!plan || !TACTICS[plan.tactic] || !MATCH_STYLES[plan.style]) return false;
@@ -425,7 +434,7 @@ function applySituationalPlan(match, team) {
     });
     refreshTeamBonds(team);
   }
-  const labels = { opening:"开局/平局", leading:"领先", trailing:"落后" };
+  const labels = { opening:"默认", leading:"领先", trailing:"落后" };
   event(match, "tactical", team.index, `${team.name}切换为${labels[planKey]}方案：${TACTICS[plan.tactic].name} · ${MATCH_STYLES[plan.style].name}。`, { importance:"stage", plan:planKey, tactic:plan.tactic, style:plan.style });
   return true;
 }

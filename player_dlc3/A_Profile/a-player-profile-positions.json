@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "profileType": "a",
+  "grade": "A",
+  "coordinateSystem": "card-percent",
+  "card": {
+    "width": 286,
+    "height": 358
+  },
+  "note": "x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
+  "profiles": {
+    "Adriano": {
+      "fileName": "Adriano.png",
+      "xPercent": 47.1,
+      "yPercent": 59.4,
+      "widthPercent": 232
+    },
+    "Aimar": {
+      "fileName": "Aimar.png",
+      "xPercent": 61.3,
+      "yPercent": 79.2,
+      "widthPercent": 280
+    },
+    "Anelka": {
+      "fileName": "Anelka.png",
+      "xPercent": 73.1,
+      "yPercent": 61.9,
+      "widthPercent": 212
+    },
+    "Ayala": {
+      "fileName": "Ayala.png",
+      "xPercent": 50.3,
+      "yPercent": 78.5,
+      "widthPercent": 140
+    },
+    "Ballack": {
+      "fileName": "Ballack.png",
+      "xPercent": 33,
+      "yPercent": 57.7,
+      "widthPercent": 176
+    },
+    "Barthez": {
+      "fileName": "Barthez.png",
+      "xPercent": 73.1,
+      "yPercent": 52.6,
+      "widthPercent": 188
+    },
+    "Bonucci": {
+      "fileName": "Bonucci.png",
+      "xPercent": 50.7,
+      "yPercent": 57,
+      "widthPercent": 196
+    },
+    "Coutinho": {
+      "fileName": "Coutinho.png",
+      "xPercent": 51.8,
+      "yPercent": 57.4,
+      "widthPercent": 136
+    },
+    "David_Silva": {
+      "fileName": "David_Silva.png",
+      "xPercent": 48.6,
+      "yPercent": 59.3,
+      "widthPercent": 212
+    },
+    "Di_Maria": {
+      "fileName": "Di_Maria.png",
+      "xPercent": 49.6,
+      "yPercent": 71.2,
+      "widthPercent": 244
+    },
+    "Diego_Costa": {
+      "fileName": "Diego_Costa.png",
+      "xPercent": 35.1,
+      "yPercent": 50.9,
+      "widthPercent": 236
+    },
+    "Evra": {
+      "fileName": "Evra.png",
+      "xPercent": 53.9,
+      "yPercent": 67.5,
+      "widthPercent": 220
+    },
+    "Forlán": {
+      "fileName": "Forlán.png",
+      "xPercent": 22.8,
+      "yPercent": 59.6,
+      "widthPercent": 204
+    },
+    "Gilberto": {
+      "fileName": "Gilberto.png",
+      "xPercent": 50,
+      "yPercent": 57.9,
+      "widthPercent": 224
+    },
+    "Grosso": {
+      "fileName": "Grosso.png",
+      "xPercent": 47.2,
+      "yPercent": 49.5,
+      "widthPercent": 164
+    },
+    "Hierro": {
+      "fileName": "Hierro.png",
+      "xPercent": 50.7,
+      "yPercent": 64.7,
+      "widthPercent": 116
+    },
+    "Huntelaar": {
+      "fileName": "Huntelaar.png",
+      "xPercent": 58.4,
+      "yPercent": 61.9,
+      "widthPercent": 168
+    },
+    "Inzaghi": {
+      "fileName": "Inzaghi.png",
+      "xPercent": 50,
+      "yPercent": 61.3,
+      "widthPercent": 108
+    },
+    "Jesús_Navas": {
+      "fileName": "Jesús_Navas.png",
+      "xPercent": 38.3,
+      "yPercent": 51.4,
+      "widthPercent": 188
+    },
+    "Júnior": {
+      "fileName": "Júnior.png",
+      "xPercent": 69.8,
+      "yPercent": 58.2,
+      "widthPercent": 184
+    },
+    "Keane": {
+      "fileName": "Keane.png",
+      "xPercent": 52.8,
+      "yPercent": 50.6,
+      "widthPercent": 180
+    },
+    "Lehmann": {
+      "fileName": "Lehmann.png",
+      "xPercent": 57.1,
+      "yPercent": 67.8,
+      "widthPercent": 136
+    },
+    "Lilian_Thuram": {
+      "fileName": "Lilian_Thuram.png",
+      "xPercent": 50.4,
+      "yPercent": 57.1,
+      "widthPercent": 164
+    },
+    "Lizarazu": {
+      "fileName": "Lizarazu.png",
+      "xPercent": 49.6,
+      "yPercent": 57.7,
+      "widthPercent": 152
+    },
+    "Luca_Toni": {
+      "fileName": "Luca_Toni.png",
+      "xPercent": 53.2,
+      "yPercent": 58.8,
+      "widthPercent": 168
+    },
+    "Mata": {
+      "fileName": "Mata.png",
+      "xPercent": 39.4,
+      "yPercent": 57.6,
+      "widthPercent": 212
+    },
+    "Nuno_Gomes": {
+      "fileName": "Nuno_Gomes.png",
+      "xPercent": 40.8,
+      "yPercent": 55.1,
+      "widthPercent": 172
+    },
+    "Samuel": {
+      "fileName": "Samuel.png",
+      "xPercent": 46.4,
+      "yPercent": 62.2,
+      "widthPercent": 256
+    },
+    "Schweinsteiger": {
+      "fileName": "Schweinsteiger.png",
+      "xPercent": 47.9,
+      "yPercent": 57.9,
+      "widthPercent": 216
+    },
+    "Šuker": {
+      "fileName": "Šuker.png",
+      "xPercent": 41.1,
+      "yPercent": 52,
+      "widthPercent": 188
+    },
+    "Trezeguet": {
+      "fileName": "Trezeguet.png",
+      "xPercent": 41.1,
+      "yPercent": 63.8,
+      "widthPercent": 212
+    },
+    "Valdés": {
+      "fileName": "Valdés.png",
+      "xPercent": 45.1,
+      "yPercent": 63.9,
+      "widthPercent": 236
+    },
+    "Zambrotta": {
+      "fileName": "Zambrotta.png",
+      "xPercent": 55,
+      "yPercent": 53.1,
+      "widthPercent": 208
+    },
+    "Bellingham": {
+      "playerKey": "Bellingham",
+      "fileName": "Bellingham.png",
+      "xPercent": 45.2,
+      "yPercent": 84.5,
+      "widthPercent": 172
+    },
+    "Casemiro": {
+      "playerKey": "Casemiro",
+      "fileName": "Casemiro.png",
+      "xPercent": 55.3,
+      "yPercent": 50.9,
+      "widthPercent": 196
+    },
+    "Bento": {
+      "playerKey": "Bento",
+      "fileName": "Bento.png",
+      "xPercent": 58.9,
+      "yPercent": 58.5,
+      "widthPercent": 164
+    },
+    "Gravenberch": {
+      "playerKey": "Gravenberch",
+      "fileName": "Gravenberch.png",
+      "xPercent": 32.9,
+      "yPercent": 54.3,
+      "widthPercent": 188
+    }
+  }
+}

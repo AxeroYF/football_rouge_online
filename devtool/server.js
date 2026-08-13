@@ -26,6 +26,7 @@ const versusDirectory = path.resolve(here, "../versus/public");
 const aPlayerProfileDirectory = path.resolve(here, "../A_profile");
 const legendaryProfileDirectory = path.resolve(here, "../legendary_profile");
 const xPlayerProfileDirectory = path.resolve(here, "../x_profile");
+const playerProfileDirectory = path.resolve(process.env.YDL_PLAYER_PROFILE_ROOT ?? path.join(here, "../player_profiles"));
 const adminDirectory = path.resolve(here, "../admin/public");
 const port = Number(process.env.DEVTOOL_PORT ?? 4310);
 const host = process.env.VERSUS_HOST ?? "127.0.0.1";
@@ -33,7 +34,7 @@ const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
 const environment = process.env.APP_ENV ?? "production";
 const environmentLabel = process.env.APP_LABEL ?? "正式服";
 const matchEngine = process.env.APP_ENV === "test" && process.env.YDL_MATCH_ENGINE === "v2" ? "v2" : "v1";
-const maximumBodyBytes = 8 * 1024 * 1024;
+const maximumBodyBytes = 18 * 1024 * 1024;
 const metricsToken = process.env.YDL_METRICS_TOKEN ?? "";
 
 const mimeTypes = {
@@ -77,13 +78,24 @@ async function readJson(request) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
+async function readBuffer(request, limit = maximumBodyBytes) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limit) throw new Error("request body too large");
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 async function handleApi(request, response, pathname) {
   if (request.method === "GET" && pathname === "/api/diagnostics/metrics") {
     if (!metricsToken) return sendJson(response, 404, { ok:false, error:"API not found" });
     if (request.headers.authorization !== `Bearer ${metricsToken}`) return sendJson(response, 401, { ok:false, error:"unauthorized" });
     return sendJson(response, 200, { ok:true, metrics:snapshotRuntimeMetrics() });
   }
-  if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson);
+  if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson, readBuffer);
   if (request.method === "GET" && pathname === "/api/versus/config") {
     return sendJson(response, 200, { ok: true, publicOnly, environment, environmentLabel, matchEngine });
   }
@@ -176,10 +188,11 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
   const servesAPlayerProfile = pathname.startsWith("/versus/A_profile/");
   const servesLegendaryProfile = pathname.startsWith("/versus/legendary_profile/");
   const servesXPlayerProfile = pathname.startsWith("/versus/x_profile/");
+  const servesPlayerProfile = pathname.startsWith("/versus/player_profiles/");
   const servesAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const servesSource = pathname.startsWith("/src/");
   if (publicOnly && !servesVersus && !servesAdmin) return sendJson(response, 404, { ok: false, error: "not found" });
-  const directory = servesSource ? sourceDirectory : servesAdmin ? adminDirectory : servesAPlayerProfile ? aPlayerProfileDirectory : servesLegendaryProfile ? legendaryProfileDirectory : servesXPlayerProfile ? xPlayerProfileDirectory : servesVersus ? versusDirectory : servesGame ? gameDirectory : publicDirectory;
+  const directory = servesSource ? sourceDirectory : servesAdmin ? adminDirectory : servesAPlayerProfile ? aPlayerProfileDirectory : servesLegendaryProfile ? legendaryProfileDirectory : servesXPlayerProfile ? xPlayerProfileDirectory : servesPlayerProfile ? playerProfileDirectory : servesVersus ? versusDirectory : servesGame ? gameDirectory : publicDirectory;
   const gamePath = pathname === "/game"
     ? "/"
     : pathname.startsWith("/game/public/")
@@ -189,8 +202,9 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
   const aPlayerProfilePath = pathname.slice("/versus/A_profile".length) || "/";
   const legendaryProfilePath = pathname.slice("/versus/legendary_profile".length) || "/";
   const xPlayerProfilePath = pathname.slice("/versus/x_profile".length) || "/";
+  const playerProfilePath = pathname.slice("/versus/player_profiles".length) || "/";
   const adminPath = pathname.slice("/admin".length) || "/";
-  const requestedPath = servesSource ? pathname.slice(4) : servesAdmin ? adminPath : servesAPlayerProfile ? aPlayerProfilePath : servesLegendaryProfile ? legendaryProfilePath : servesXPlayerProfile ? xPlayerProfilePath : servesVersus ? versusPath : servesGame ? gamePath : pathname;
+  const requestedPath = servesSource ? pathname.slice(4) : servesAdmin ? adminPath : servesAPlayerProfile ? aPlayerProfilePath : servesLegendaryProfile ? legendaryProfilePath : servesXPlayerProfile ? xPlayerProfilePath : servesPlayerProfile ? playerProfilePath : servesVersus ? versusPath : servesGame ? gamePath : pathname;
   const decodedRequestedPath = decodeURIComponent(requestedPath);
   const requested = decodedRequestedPath === "/" ? "/index.html" : decodedRequestedPath;
   const safeRelative = path.normalize(requested).replace(/^(\.\.[/\\])+/, "");
@@ -206,6 +220,7 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
       servesAPlayerProfile
       || servesLegendaryProfile
       || servesXPlayerProfile
+      || servesPlayerProfile
     ) && path.extname(filePath).toLowerCase() === ".webp"
       && /^[a-f0-9]{12}$/.test(searchParams.get("v") ?? "");
     const contentType = mimeTypes[path.extname(filePath)] ?? "application/octet-stream";
@@ -255,7 +270,7 @@ const server = http.createServer(async (request, response) => {
       await serveStatic(response, url.pathname, url.searchParams);
     }
   } catch (error) {
-    sendJson(response, 400, {
+    sendJson(response, error.statusCode ?? 400, {
       ok: false,
       error: error.message,
       details: error.details ?? [],
@@ -278,7 +293,7 @@ const leagueTimer = setInterval(() => {
 }, 15_000);
 leagueTimer.unref();
 
-const liveSliceIntervalMs = Math.max(100, Math.min(2_000, Number(process.env.YDL_LIVE_SLICE_INTERVAL_MS ?? 250)));
+const liveSliceIntervalMs = Math.max(100, Math.min(2_000, Number(process.env.YDL_LIVE_SLICE_INTERVAL_MS ?? 100)));
 const liveSliceTimer = setInterval(() => {
   try { measureRuntimeSync("league.liveSlice", () => yellowDogsLeague.advanceLiveSlice()); }
   catch (error) { console.error("YellowDogs League 直播切片失败：", error); }

@@ -355,7 +355,7 @@ export class VersusRoomService {
   account(playerIdValue, accountToken) {
     const key = cleanPlayerId(playerIdValue).toLowerCase();
     const account = this.accounts.get(key);
-    if (!account || account.token !== accountToken) throw new Error("玩家ID尚未绑定或绑定凭证无效");
+    if (!account || account.token !== accountToken) throw Object.assign(new Error("玩家ID尚未绑定或绑定凭证无效"), { statusCode:401 });
     this.assertLoginAllowed(account);
     return account;
   }

@@ -78,6 +78,12 @@ const PROFILE_KEY_BY_PLAYER_ID = Object.freeze({
   "s4-dlc2-20260803-001":"Alfredo Di Stéfano",
   "s4-dlc2-20260803-059":"Vítor Baía",
   "s4-dlc2-20260803-063":"Giuseppe Meazza",
+  "s4-dlc3-20260808-010":"Ferenc Puskás",
+  "s4-dlc3-20260808-011":"Hugo Sánchez",
+  "s4-dlc3-20260808-015":"Eric Cantona",
+  "s4-dlc3-20260808-016":"Lev Yashin",
+  "s4-dlc3-20260808-020":"George Weah",
+  "s4-dlc3-20260808-034":"Franck Ribéry",
 });
 
 function normalizedProfile(profile, playerId, profileKey) {

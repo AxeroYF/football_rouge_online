@@ -1,3 +1,7 @@
+import { aPlayerProfileForPlayer } from "/versus/a-player-profiles.js";
+import { legendaryProfileForPlayer } from "/versus/legendary-profiles.js";
+import { xPlayerProfileForPlayer } from "/versus/x-player-profiles.js";
+
 const app = document.querySelector("#app");
 const modal = document.querySelector("#modal");
 const logoutButton = document.querySelector("#logout");
@@ -5,14 +9,30 @@ const TOKEN_KEY = "ft1-admin-session";
 const TACTICS = { allOutAttack:"全力进攻",positive:"积极进攻",balanced:"攻守平衡",defensive:"防守反击",parkBus:"全力防守" };
 const STYLES = { possession:"密集短传",longBall:"长传冲吊",wingPlay:"两翼齐飞",counterAttack:"防守反击",highPress:"高位压迫",lowBlock:"摆大巴",roughPlay:"伐木" };
 const ROLES = { GK:"门将",CB:"中后卫",LB:"左后卫",RB:"右后卫",LWB:"左边翼卫",RWB:"右边翼卫",DM:"后腰",AM:"前腰",LM:"左中场",RM:"右中场",ST:"中锋",LW:"左边锋",RW:"右边锋" };
+const STUDIO_ENGLISH_NAME_BY_ID = {
+  "legend-courtois":"Thibaut Courtois","legend-beckenbauer":"Franz Beckenbauer","legend-zidane":"Zinedine Zidane","legend-ronaldinho":"Ronaldinho","legend-kroos":"Toni Kroos","legend-beckham":"David Beckham","legend-modric":"Luka Modrić","legend-pele":"Pelé","legend-maradona":"Diego Maradona","legend-ronaldo-nazario":"Ronaldo Nazário","legend-messi":"Lionel Messi","legend-cristiano-ronaldo":"Cristiano Ronaldo","legend-mbappe":"Kylian Mbappé","legend-haaland":"Erling Haaland","legend-messi-rat":"Messi Rat",
+  "ydl-x-player-1":"Li Xuantai","ydl-x-player-2":"Li Junliang","ydl-x-player-3":"Huang Wei","ydl-x-player-4":"Yang Fan","ydl-x-player-5":"Zhang Yichi","ydl-x-player-6":"Zhai Bowen","ydl-x-player-7":"Li Bin","ydl-x-player-8":"Tang Hao","ydl-x-player-9":"Liu Zuhao","ydl-x-player-10":"Jin Dian",
+};
 let token = sessionStorage.getItem(TOKEN_KEY);
 let dashboard = null;
 let competitionTab = "formations";
 let leagueData = null;
 let contentData = null;
-let contentTab = "players";
+let contentTab = "studio";
+let contentLoadedSections = new Set();
 let selectedContentPlayerId = null;
 let selectedContentTraitId = null;
+let selectedStudioPlayerId = null;
+let studioUploadDataUrl = null;
+let studioUploadFileName = null;
+let studioUploadFile = null;
+let studioPosition = { xPercent:50, yPercent:52, widthPercent:200 };
+let studioDragState = null;
+let studioPublishSelection = new Set();
+let selectedPlayerBatchId = null;
+let playerExcelPreview = null;
+let batchImageQueue = [];
+let batchUploadRunning = false;
 
 async function loadEnvironment() {
   try {
@@ -37,6 +57,8 @@ async function api(path, options = {}) {
 
 function renderLogin(message = "") {
   token = null; sessionStorage.removeItem(TOKEN_KEY); logoutButton.hidden = true;
+  contentData = null;
+  contentLoadedSections = new Set();
   app.innerHTML = `<section class="login-shell"><form class="login-card" id="login-form"><small>SECURE ACCESS</small><h1>管理员登录</h1><p>玩家与比赛数据仅对管理员开放。</p><label>管理密码<input id="password" type="password" autocomplete="current-password" required autofocus /></label><button>进入后台</button><p class="login-error" id="login-error">${escapeHtml(message)}</p></form></section>`;
   document.querySelector("#login-form").onsubmit = async (event) => {
     event.preventDefault(); const error = document.querySelector("#login-error"); error.textContent = "正在验证…";
@@ -165,16 +187,12 @@ function renderLeagueAdmin() {
   const s4PlayerOptions = s4PlayerCatalog.map((player) => `<option value="${escapeHtml(player.id)}">${escapeHtml(player.name)} · ${escapeHtml(player.club ?? "自由球员")} · ${escapeHtml(ROLES[player.role] ?? player.role)} · ${player.overall} · ${player.grade}</option>`).join("");
   const s4CardGrantRows = (leagueData.s4CardGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${escapeHtml(grant.playerName)}</b><small>${escapeHtml(grant.playerId)}</small></td><td>${grant.upgradeLevel ? `+${grant.upgradeLevel}` : "无强化"}</td><td>${grant.quantity}张</td><td><b>${escapeHtml(grant.ownerName)}</b><small>${escapeHtml(grant.teamName)}</small></td><td>${grant.ownershipGranted ? "同时获得所有权" : "所有权不变"}</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="6">尚未发放指定球员卡</td></tr>`;
   const coinGrantRows = (leagueData.coinGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${coinText(grant.amount)}</b><small>${escapeHtml(grant.id)}</small></td><td>${grant.recipientMode === "all" ? "全体玩家" : "指定玩家"}</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放金币</td></tr>`;
-  const xGrowthGrantRows = (leagueData.xGrowthGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${grant.points}点</b><small>${escapeHtml(grant.id)}</small></td><td>全体X球员玩家</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放X球员加成点数</td></tr>`;
+  const xGrowthGrantRows = (leagueData.xGrowthGrants ?? []).slice(0, 30).map((grant) => `<tr><td><b>${grant.points}点</b><small>${escapeHtml(grant.id)}</small></td><td>${grant.recipientMode === "all" ? "全体X球员玩家" : "指定X球员玩家"}</td><td>${grant.recipientCount}人</td><td>${dateText(grant.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发放X球员加成点数</td></tr>`;
   const mailBroadcastRows = (leagueData.mailBroadcasts ?? []).slice(0, 30).map((mail) => `<tr><td><b>${escapeHtml(mail.title)}</b><small>${escapeHtml(mail.id)}</small></td><td>${escapeHtml(mail.summary)}</td><td>${mail.recipientCount}人</td><td>${dateText(mail.createdAt)}</td></tr>`).join("") || `<tr><td colspan="4">尚未发送全服邮件</td></tr>`;
   const badgePlayerOptions = leagueData.teams.filter((team) => !team.isAi).map((team) => `<option value="${escapeHtml(team.ownerId)}">${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)} · ${escapeHtml(team.ownerId)}</option>`).join("");
   const badgeRows = leagueData.teams.flatMap((team) => (team.championBadges ?? []).map((badge) => ({ ...badge, ownerId:team.ownerId, ownerName:team.ownerName, teamName:team.name }))).sort((left,right) => Number(right.awardedAt) - Number(left.awardedAt)).map((badge) => { const isCup = badge.competition === "cup" || badge.type === "cup-champion"; return `<tr><td><span class="admin-champion-badge ${isCup ? "cup-champion-badge" : ""}"><i>${isCup ? "🏆" : "♛"}</i>${escapeHtml(badge.season)}${isCup ? " 杯赛" : " 联赛"}</span></td><td><b>${escapeHtml(badge.ownerName)}</b><small>${escapeHtml(badge.ownerId)}</small></td><td>${escapeHtml(badge.teamName)}</td><td>${dateText(badge.awardedAt)}</td></tr>`; }).join("") || `<tr><td colspan="4">尚未发放冠军徽章</td></tr>`;
-  const worldCup = leagueData.worldCup;
-  const worldCupOps = leagueData.worldCupOperations ?? {};
-  const worldCupStartValue = new Date(Number(worldCup?.nextEventAt ?? Date.now() + 30 * 60 * 1000)).toLocaleString("sv-SE", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hour12:false }).replace(" ", "T");
   logoutButton.hidden = false;
   app.innerHTML = `${adminNavMarkup("league")}<header class="page-head"><div><h1>YellowDogs League</h1><p>${escapeHtml(season.name)} · ${season.status === "active" ? "进行中" : "已完成"} · 下一轮 ${dateText(season.nextRoundAt)}</p></div><button id="league-refresh">刷新联赛</button></header><section class="kpis league-admin-kpis"><article class="kpi"><small>当前赛季</small><b>${escapeHtml(season.name)}</b></article><article class="kpi"><small>联赛轮次</small><b>${season.currentRound}/${season.totalRounds}</b></article><article class="kpi"><small>已赛场次</small><b>${leagueData.matches}</b></article><article class="kpi"><small>真人球队</small><b>${humanTeams}/10</b></article><article class="kpi"><small>进行中选秀</small><b>${leagueData.drafts.length}</b></article></section><section class="league-admin-actions"><div><small>LEAGUE CONTROL</small><b>赛季运行控制</b><span>重启与新赛季都会保留真人球队、球员名单、金币和交易资产。</span></div><button id="league-simulate">立即模拟下一轮</button><button class="warning" id="league-restart">重启当前赛季</button><button class="danger" id="league-new-season">开启新赛季</button></section><div class="grid league-admin-grid"><section class="panel league-team-panel"><header class="panel-head"><div><h2>联赛球队</h2><small>积分与注册名单状态</small></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>球队</th><th>名单</th><th>赛</th><th>胜-平-负</th><th>进失</th><th>分</th></tr></thead><tbody>${leagueTeamRows()}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>球员池占用</h2><small>真人球队全服唯一，AI 不计入</small></div></header><div class="table-wrap"><table><thead><tr><th>位置池</th><th>总数</th><th>已签</th><th>选秀中</th><th>可用</th></tr></thead><tbody>${poolRows}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>进行中的选秀</h2><small>尚未确认 22 人名单的球队</small></div></header><div class="table-wrap"><table><thead><tr><th>球队/玩家</th><th>进度</th><th>开始时间</th></tr></thead><tbody>${drafts}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>赛季归档</h2><small>最近 12 次重启或换季记录</small></div></header><div class="table-wrap"><table><thead><tr><th>赛季</th><th>原因</th><th>轮次</th><th>比赛</th><th>归档时间</th></tr></thead><tbody>${archives}</tbody></table></div></section><section class="panel league-allocation-panel"><header class="panel-head"><div><h2>真人球员归属</h2><small>查看每名已签或选秀保留球员</small></div><input class="search" id="league-player-search" placeholder="搜索球员、球队或玩家" /></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>位置</th><th>能力</th><th>状态</th><th>归属</th></tr></thead><tbody id="league-allocation-body">${leagueAllocationRows()}</tbody></table></div></section></div>`;
-  document.querySelector(".league-admin-actions").insertAdjacentHTML("afterend", `<section class="panel league-world-cup-control"><header class="panel-head"><div><h2>今日世界杯运行控制</h2><small>错过杯赛决赛触发后，可独立补建并恢复今日赛事</small></div><b class="world-cup-status">${worldCup ? escapeHtml(worldCup.status) : "尚未创建"}</b></header><div class="world-cup-control-kpis"><span><small>杯赛决赛</small><b>${worldCupOps.cupFinalCompleted ? "已完成" : "未完成"}</b></span><span><small>赛程</small><b>${worldCup?.teams?.length ?? 0}队 / ${worldCup?.groups?.length ?? 0}组</b></span><span><small>场次</small><b>${worldCupOps.completedFixtures ?? 0}完 / ${worldCupOps.pendingFixtures ?? 0}待</b></span><span><small>直播</small><b>${worldCupOps.live ? "进行中" : "无"}</b></span><span><small>下一轮</small><b>${worldCup?.nextEventAt ? dateText(worldCup.nextEventAt) : "—"}</b></span><span><small>临时补位</small><b>${worldCupOps.temporaryFillerCount ?? 0}人</b></span></div><div class="world-cup-control-actions"><label><span>首轮/重排开球时间</span><input id="world-cup-starts-at" type="datetime-local" value="${worldCupStartValue}"></label><button class="primary" id="world-cup-bootstrap">补建今日世界杯</button><button id="world-cup-reanchor" ${worldCup && !worldCupOps.live ? "" : "disabled"}>重排未开赛时间</button><button class="warning" id="world-cup-start-next" ${worldCup && !worldCupOps.live && worldCupOps.pendingFixtures ? "" : "disabled"}>立即启动下一轮</button><button id="world-cup-repair" ${worldCup && !worldCupOps.live ? "" : "disabled"}>修复赛程名单</button><button class="danger" id="world-cup-close" ${worldCup && !worldCupOps.live && !["closed", "completed"].includes(worldCup.status) ? "" : "disabled"}>关闭今日世界杯</button></div></section>`);
   const automation = leagueData.dailyAutomation ?? {};
   document.querySelector(".league-admin-actions div span").textContent = automation.enabled
     ? `每日自动化已启用：北京时间09:51重置，10:01自动开启杯赛；联赛沿用10:00起每20分钟整点网格。上次奖励赛季：${automation.lastRewardedSeasonId ?? "暂无"}；上次自动重置：${automation.lastResetDate ?? "暂无"}。`
@@ -193,17 +211,11 @@ function renderLeagueAdmin() {
   document.querySelector(".league-team-panel").insertAdjacentHTML("afterend", `<section class="panel league-reward-mail-panel"><header class="panel-head"><div><h2>S4礼包发放</h2><small>旧赛季礼包已经下架；可向所有已建队玩家或指定玩家立即发放新礼包。</small></div></header><form id="league-s4-pack-grant-form" class="league-reward-mail-form"><label><span>礼包类型</span><select name="packType">${s4PackTypeOptions}</select></label><label><span>每人数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-s4-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4PackTypeOptions ? "" : "disabled"}>立即发放礼包</button></form><div class="table-wrap"><table><thead><tr><th>礼包</th><th>数量</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${s4GrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-admin-mail-panel"><header class="panel-head"><div><h2>全服更新邮件</h2><small>向所有已建队玩家发送管理员公告，邮件会立即出现在玩家收件箱。</small></div></header><form id="league-admin-mail-form" class="league-reward-mail-form league-admin-mail-form"><label><span>邮件标题</span><input name="title" maxlength="80" placeholder="例如：V2引擎与阵型线更新" required></label><label><span>邮件摘要（可选）</span><input name="summary" maxlength="200" placeholder="留空时自动截取正文"></label><label class="league-admin-mail-body"><span>邮件正文</span><textarea name="body" maxlength="5000" rows="7" placeholder="填写完整更新内容" required></textarea></label><button type="submit" ${humanTeams ? "" : "disabled"}>发送给全体玩家</button></form><div class="table-wrap"><table><thead><tr><th>标题</th><th>摘要</th><th>接收人数</th><th>发送时间</th></tr></thead><tbody>${mailBroadcastRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-coin-grant-panel"><header class="panel-head"><div><h2>金币即时发放</h2><small>向所有已建队玩家或指定玩家发放金币，提交后余额立即到账并发送邮件通知。</small></div></header><form id="league-coin-grant-form" class="league-reward-mail-form"><label><span>每人金币数量</span><input name="amount" type="number" min="1" max="1000000000" step="1" value="1000" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-coin-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4RecipientOptions ? "" : "disabled"}>立即发放金币</button></form><div class="table-wrap"><table><thead><tr><th>每人金额</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${coinGrantRows}</tbody></table></div></section>`);
-  document.querySelector(".league-coin-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-x-growth-grant-panel"><header class="panel-head"><div><h2>X球员加成点数发放</h2><small>向所有已经拥有X球员的玩家统一发放加成点数，提交后立即到账并发送邮件通知。</small></div></header><form id="league-x-growth-grant-form" class="league-reward-mail-form"><label><span>每名X球员获得点数</span><input name="points" type="number" min="1" max="1000" step="1" value="1" required></label><button type="submit" ${humanTeams ? "" : "disabled"}>向全部X球员发放</button></form><div class="table-wrap"><table><thead><tr><th>每人点数</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${xGrowthGrantRows}</tbody></table></div></section>`);
+  document.querySelector(".league-coin-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-x-growth-grant-panel"><header class="panel-head"><div><h2>X球员加成点数发放</h2><small>向所有或指定的、已经拥有X球员的玩家发放加成点数，提交后立即到账并发送邮件通知。</small></div></header><form id="league-x-growth-grant-form" class="league-reward-mail-form"><label><span>每名X球员获得点数</span><input name="points" type="number" min="1" max="1000" step="1" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有X球员玩家</option><option value="specified">指定玩家</option></select></label><label id="league-x-growth-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${humanTeams ? "" : "disabled"}>发放X球员点数</button></form><div class="table-wrap"><table><thead><tr><th>每人点数</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${xGrowthGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-card-grant-panel"><header class="panel-head"><div><h2>指定球员卡发放</h2><small>向任意已建队玩家发放指定球员、指定强化等级的测试卡；强化等级支持0至8级。</small></div></header><form id="league-s4-card-grant-form" class="league-card-grant-form"><label><span>接收玩家</span><select name="accountId" ${s4RecipientOptions ? "" : "disabled"}>${s4RecipientOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>搜索球员</span><input id="league-s4-player-search" placeholder="输入中文名、俱乐部、位置或ID"></label><label><span>指定球员</span><select id="league-s4-player-select" name="playerId" ${s4PlayerOptions ? "" : "disabled"}>${s4PlayerOptions || `<option>暂无球员数据</option>`}</select></label><label><span>强化等级</span><select name="upgradeLevel">${Array.from({ length:9 }, (_, level) => `<option value="${level}">${level ? `+${level}` : "无强化"}</option>`).join("")}</select></label><label><span>发放数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><button type="submit" ${s4RecipientOptions && s4PlayerOptions ? "" : "disabled"}>发放指定球员卡</button></form><div class="table-wrap"><table><thead><tr><th>球员</th><th>强化</th><th>数量</th><th>接收玩家</th><th>所有权</th><th>时间</th></tr></thead><tbody>${s4CardGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-card-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-badge-panel"><header class="panel-head"><div><h2>冠军徽章发放</h2><small>可发放皇冠联赛冠军徽章，或带赛季标记的奖杯杯赛冠军徽章</small></div></header><form id="league-badge-form" class="league-badge-form"><label><span>联赛玩家</span><select name="accountId" ${badgePlayerOptions ? "" : "disabled"}>${badgePlayerOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>冠军荣誉</span><select name="badge">${BADGE_OPTIONS.map((badge) => `<option value="${badge.competition}:${badge.season}">${badge.label}</option>`).join("")}</select></label><button type="submit" ${badgePlayerOptions ? "" : "disabled"}>发放徽章</button></form><div class="table-wrap"><table><thead><tr><th>徽章</th><th>玩家</th><th>球队</th><th>发放时间</th></tr></thead><tbody>${badgeRows}</tbody></table></div></section>`);
   bindAdminNav();
   document.querySelector("#league-refresh").onclick = loadLeagueAdmin;
-  const worldCupStartsAt = () => new Date(document.querySelector("#world-cup-starts-at").value).toISOString();
-  document.querySelector("#world-cup-bootstrap").onclick = () => runLeagueAdminAction("/api/admin/league/world-cup/bootstrap", { startsAt:worldCupStartsAt() }, "今日世界杯已补建，系统会按设定时间自动开赛");
-  document.querySelector("#world-cup-reanchor").onclick = () => runLeagueAdminAction("/api/admin/league/world-cup/reanchor", { startsAt:worldCupStartsAt() }, "世界杯未开赛轮次已重新定时");
-  document.querySelector("#world-cup-start-next").onclick = () => { if (window.confirm("确认立即启动下一轮世界杯比赛并接入电视台？")) runLeagueAdminAction("/api/admin/league/world-cup/start-next", {}, "下一轮世界杯已经启动"); };
-  document.querySelector("#world-cup-repair").onclick = () => runLeagueAdminAction("/api/admin/league/world-cup/repair", {}, "世界杯赛程与名单已完成修复");
-  document.querySelector("#world-cup-close").onclick = () => { if (window.confirm("确认关闭今日世界杯？未赛场次将不再启动，临时补位球员会立即清理。")) runLeagueAdminAction("/api/admin/league/world-cup/close", {}, "今日世界杯已关闭"); };
   document.querySelector("#league-player-search").oninput = (event) => {
     const term = event.target.value.trim().toLowerCase();
     const filtered = leagueData.allocations.filter((player) => `${player.name} ${player.id} ${player.teamName} ${player.ownerName ?? ""}`.toLowerCase().includes(term));
@@ -242,10 +254,24 @@ function renderLeagueAdmin() {
     }
   };
   const xGrowthGrantForm = document.querySelector("#league-x-growth-grant-form");
+  const xGrowthRecipientMode = xGrowthGrantForm.querySelector("[name=recipientMode]");
+  const xGrowthRecipientField = document.querySelector("#league-x-growth-recipient-field");
+  const syncXGrowthRecipients = () => {
+    const specified = xGrowthRecipientMode.value === "specified";
+    xGrowthRecipientField.hidden = !specified;
+    xGrowthRecipientField.querySelector("select").disabled = !specified;
+  };
+  xGrowthRecipientMode.onchange = syncXGrowthRecipients;
+  syncXGrowthRecipients();
   xGrowthGrantForm.onsubmit = (event) => {
     event.preventDefault();
-    const points = Number(new FormData(event.target).get("points"));
-    if (window.confirm(`确认向所有拥有X球员的玩家每人发放${points}点加成点数？点数会立即到账。`)) runLeagueAdminAction("/api/admin/league/x-growth/grant", { points }, "X球员加成点数已经发放并立即到账");
+    const form = new FormData(event.target);
+    const points = Number(form.get("points"));
+    const recipientMode = String(form.get("recipientMode"));
+    const accountIds = form.getAll("accountIds").map(String);
+    const scope = recipientMode === "all" ? "所有X球员玩家" : `${accountIds.length}名指定玩家`;
+    if (recipientMode === "specified" && !accountIds.length) return window.alert("请至少选择一名玩家");
+    if (window.confirm(`确认向${scope}每人发放${points}点X球员加成点数？点数会立即到账。`)) runLeagueAdminAction("/api/admin/league/x-growth/grant", { points, recipientMode, accountIds }, "X球员加成点数已经发放并立即到账");
   };
   document.querySelector("#league-simulate").onclick = () => runLeagueAdminAction("/api/admin/league/simulate", {}, "下一轮联赛及期间杯赛已模拟完成");
   document.querySelector("#league-start-simulation").onclick = () => {
@@ -356,7 +382,7 @@ function renderLeagueAdmin() {
     if (window.confirm("确认结束并归档当前赛季，立即开启下一赛季？真人球队、名单、金币和交易资产保留。")) runLeagueAdminAction("/api/admin/league/new-season", { confirm:"NEW_SEASON" }, "新赛季已开启");
   };
   document.querySelector("#league-cup-start").onclick = () => {
-    if (window.confirm("确认开启黄狗冠军杯？将由当前10支球队进行4轮瑞士轮，前八名进入两回合淘汰赛。")) runLeagueAdminAction("/api/admin/league/cup/start", {}, "黄狗冠军杯已开启，首轮将在下一个杯赛时间档开始");
+    if (window.confirm("确认开启黄狗冠军杯？当前10支球队将进行9轮单循环联赛，前八名进入两回合淘汰赛。")) runLeagueAdminAction("/api/admin/league/cup/start", {}, "黄狗冠军杯已开启，首轮将在下一个杯赛时间档开始");
   };
   document.querySelector("#league-daily-reward").onclick = () => {
     if (window.confirm("确认按当前已完成赛季排名补发每日奖励？已发放的赛季不会重复发奖。")) runLeagueAdminAction("/api/admin/league/daily-settlement/reward", {}, "当日排名奖励已补发或已确认发放");
@@ -585,26 +611,588 @@ function openCreateContentTrait() {
   };
 }
 
+function legacyStudioProfile(player) {
+  if (!player) return null;
+  if (player.grade === "X" || player.xPlayer) return xPlayerProfileForPlayer(player);
+  if (player.grade === "S" || player.isLegend) return legendaryProfileForPlayer(player);
+  if (player.grade === "A") return aPlayerProfileForPlayer(player);
+  return null;
+}
+
+function studioEntries() {
+  const drafts = (contentData.playerDrafts ?? []).map((player) => ({ ...player, draft:true }));
+  const active = (contentData.profilePlayers ?? contentData.players ?? []).map((player) => ({ ...player, draft:false }));
+  return [...drafts, ...active];
+}
+
+function selectedStudioPlayer() {
+  return studioEntries().find((player) => player.id === selectedStudioPlayerId) ?? null;
+}
+
+function studioProfile(player) {
+  return player?.cardProfile ?? legacyStudioProfile(player);
+}
+
+function studioEnglishName(player) {
+  const sourceName = String(player?.sourceName ?? "").trim();
+  return sourceName && sourceName !== String(player?.name ?? "").trim() ? sourceName : STUDIO_ENGLISH_NAME_BY_ID[player?.id] ?? "";
+}
+
+function studioSuggestedFileName(player) {
+  const base = studioEnglishName(player) || String(player?.name ?? player?.id ?? "player");
+  return `${base.replace(/[\\/:*?"<>|]+/g, "").trim().replace(/\s+/g, "_")}.png`;
+}
+
+function setStudioSelection(playerId) {
+  selectedStudioPlayerId = playerId;
+  if (studioUploadDataUrl) URL.revokeObjectURL(studioUploadDataUrl);
+  studioUploadDataUrl = null;
+  studioUploadFileName = null;
+  studioUploadFile = null;
+  const profile = studioProfile(selectedStudioPlayer());
+  studioPosition = {
+    xPercent:Number(profile?.xPercent ?? 50),
+    yPercent:Number(profile?.yPercent ?? 52),
+    widthPercent:Number(profile?.widthPercent ?? 200),
+  };
+}
+
+function studioPlayerRows(entries = studioEntries()) {
+  return entries.map((player) => {
+    const profile = studioProfile(player);
+    const englishName = studioEnglishName(player);
+    return `<div class="studio-player-row ${player.id === selectedStudioPlayerId ? "active" : ""}"><button type="button" data-studio-player="${escapeHtml(player.id)}"><span><b>${escapeHtml(player.name)}${englishName ? `<i>${escapeHtml(englishName)}</i>` : ""}</b><small>${escapeHtml(player.club)} · ${escapeHtml(player.nationality)}</small></span><em>${escapeHtml(player.role)} · ${escapeHtml(player.grade)}级</em><strong>${profile ? "已有卡画" : "待补卡画"}</strong></button>${player.draft ? `<label title="加入批量上线"><input type="checkbox" data-studio-publish="${escapeHtml(player.id)}"${studioPublishSelection.has(player.id) ? " checked" : ""}><span>暂存</span></label>` : ""}</div>`;
+  }).join("");
+}
+
+function filterStudioPlayers() {
+  const list = document.querySelector("#studio-player-list");
+  if (!list) return;
+  const search = document.querySelector("#studio-player-search")?.value.trim().toLowerCase() ?? "";
+  const status = document.querySelector("#studio-player-status")?.value ?? "all";
+  const grade = document.querySelector("#studio-player-grade")?.value ?? "all";
+  const entries = studioEntries().filter((player) =>
+    (status === "all" || status === "draft" && player.draft || status === "active" && !player.draft || status === "missing" && !studioProfile(player))
+    && (grade === "all" || player.grade === grade)
+    && `${player.name} ${player.sourceName ?? ""} ${player.club} ${player.nationality} ${player.id}`.toLowerCase().includes(search));
+  list.innerHTML = studioPlayerRows(entries) || `<p class="empty">没有匹配的球员卡</p>`;
+  bindStudioList();
+}
+
+function bindStudioList() {
+  document.querySelectorAll("[data-studio-player]").forEach((button) => {
+    button.onclick = () => {
+      setStudioSelection(button.dataset.studioPlayer);
+      renderStudioEditor();
+      filterStudioPlayers();
+    };
+  });
+  document.querySelectorAll("[data-studio-publish]").forEach((input) => {
+    input.onchange = () => {
+      if (input.checked) studioPublishSelection.add(input.dataset.studioPublish);
+      else studioPublishSelection.delete(input.dataset.studioPublish);
+      const button = document.querySelector("#studio-publish-selected");
+      if (button) button.textContent = `批量上线（${studioPublishSelection.size}）`;
+    };
+  });
+}
+
+function studioCardMarkup(player) {
+  const profile = studioProfile(player);
+  const imageUrl = studioUploadDataUrl ?? profile?.imageUrl ?? "";
+  return `<button type="button" class="s4-player-card grade-${String(player.grade ?? "C").toLowerCase()} band-base ${imageUrl ? "has-player-profile" : ""}" id="studio-card-preview" aria-label="${escapeHtml(`${player.name}卡画预览`)}">
+    <div class="s4-player-card-head"><strong>${Number(player.overall ?? player.requestedOverall ?? 0)}</strong>${player.role ? `<b>${escapeHtml(player.role)}</b>` : ""}</div>
+    <div class="s4-player-card-grade"><span>${escapeHtml(player.grade ?? "C")}</span></div>
+    <div class="s4-player-card-name"><h3>${escapeHtml(player.name)}</h3></div>
+    <footer><b>${escapeHtml(player.club ?? "无俱乐部")} / ${escapeHtml(player.nationality ?? "无国家队")}</b></footer>
+    ${imageUrl ? `<img class="s4-player-card-profile" id="studio-card-image" src="${escapeHtml(imageUrl)}" alt="" draggable="false" decoding="async" style="--profile-x:${studioPosition.xPercent}%;--profile-y:${studioPosition.yPercent}%;--profile-width:${studioPosition.widthPercent}%">` : ""}
+  </button>`;
+}
+
+function studioAttributeInputs(player) {
+  return contentData.attributeNames.map((key) => `<label class="content-attribute"><span>${escapeHtml(CONTENT_ATTRIBUTE_LABELS[key] ?? key)}<small>${escapeHtml(key)}</small></span><input type="number" min="1" max="96" value="${Number(player.attributes?.[key] ?? 50)}" data-studio-attribute="${escapeHtml(key)}"></label>`).join("");
+}
+
+function studioDraftFormMarkup(player) {
+  if (!player.draft) return `<section class="studio-active-meta"><b>正式球员库</b><p>${escapeHtml(player.name)}已经在线上球员池中。这里保存卡画后会立即用于新加载的卡片，不修改球员能力数据。</p></section>`;
+  const roles = contentData.playerRoles.map((role) => `<option value="${role}"${player.role === role ? " selected" : ""}>${escapeHtml(ROLES[role] ?? role)}（${role}）</option>`).join("");
+  return `<form id="studio-draft-form" class="studio-draft-form"><header><div><small>NEW CARD STAGING</small><h3>暂存球员资料</h3></div><button type="button" id="studio-regress-attributes">按总评与位置回归</button></header><div class="content-form-grid">
+    <label><span>中文显示名</span><input name="name" value="${escapeHtml(player.name)}" required></label><label><span>英文名 / PNG命名</span><input name="sourceName" value="${escapeHtml(player.sourceName ?? "")}" placeholder="例如 Lionel Messi" required></label><label><span>目标总评</span><input name="overall" type="number" min="1" max="96" value="${Number(player.requestedOverall ?? player.overall)}" required></label>
+    <label><span>评级</span><select name="grade">${["S","A","B","C"].map((grade) => `<option${player.grade === grade ? " selected" : ""}>${grade}</option>`).join("")}</select></label><label><span>主位置</span><select name="role">${roles}</select></label>
+    <label><span>国籍</span><input name="nationality" value="${escapeHtml(player.nationality)}" required></label><label><span>俱乐部</span><input name="club" value="${escapeHtml(player.club)}" required></label><label><span>身高</span><input name="heightCm" type="number" min="140" max="220" value="${player.heightCm}" required></label><label><span>惯用脚</span><select name="preferredFoot"><option value="right"${player.preferredFoot === "right" ? " selected" : ""}>右脚</option><option value="left"${player.preferredFoot === "left" ? " selected" : ""}>左脚</option><option value="both"${player.preferredFoot === "both" ? " selected" : ""}>双足</option></select></label>
+  </div><h4>26项能力值</h4><div class="content-attribute-grid">${studioAttributeInputs(player)}</div><footer><span id="studio-draft-status">可以手动修改全部能力，也可以重新回归。</span><button class="content-save-button">保存到暂存池</button></footer></form>`;
+}
+
+function studioApplyPosition() {
+  const image = document.querySelector("#studio-card-image");
+  if (image) {
+    image.style.setProperty("--profile-x", `${studioPosition.xPercent}%`);
+    image.style.setProperty("--profile-y", `${studioPosition.yPercent}%`);
+    image.style.setProperty("--profile-width", `${studioPosition.widthPercent}%`);
+  }
+  for (const [key, value] of Object.entries(studioPosition)) {
+    const input = document.querySelector(`[data-studio-position="${key}"]`);
+    const output = document.querySelector(`[data-studio-position-value="${key}"]`);
+    if (input) input.value = value;
+    if (output) output.textContent = `${Number(value).toFixed(1)}%`;
+  }
+}
+
+function bindStudioPositioner() {
+  document.querySelectorAll("[data-studio-position]").forEach((input) => {
+    input.oninput = () => { studioPosition[input.dataset.studioPosition] = Number(input.value); studioApplyPosition(); };
+  });
+  const card = document.querySelector("#studio-card-preview");
+  const image = document.querySelector("#studio-card-image");
+  if (card && image) {
+    card.onpointerdown = (event) => {
+      if (event.button !== 0) return;
+      const rect = card.getBoundingClientRect();
+      studioDragState = { pointerId:event.pointerId, startX:event.clientX, startY:event.clientY, x:studioPosition.xPercent, y:studioPosition.yPercent, width:rect.width, height:rect.height };
+      card.setPointerCapture(event.pointerId);
+      card.classList.add("dragging");
+    };
+    card.onpointermove = (event) => {
+      if (!studioDragState || studioDragState.pointerId !== event.pointerId) return;
+      studioPosition.xPercent = Math.max(-50, Math.min(150, Math.round((studioDragState.x + (event.clientX - studioDragState.startX) / studioDragState.width * 100) * 10) / 10));
+      studioPosition.yPercent = Math.max(-50, Math.min(150, Math.round((studioDragState.y + (event.clientY - studioDragState.startY) / studioDragState.height * 100) * 10) / 10));
+      studioApplyPosition();
+    };
+    card.onpointerup = card.onpointercancel = (event) => { if (studioDragState?.pointerId === event.pointerId) { studioDragState = null; card.classList.remove("dragging"); } };
+    card.onwheel = (event) => { event.preventDefault(); studioPosition.widthPercent = Math.max(40, Math.min(360, Math.round((studioPosition.widthPercent - Math.sign(event.deltaY) * 2) * 10) / 10)); studioApplyPosition(); };
+  }
+}
+
+async function uploadStudioProfile(playerId, file, position = studioPosition) {
+  const response = await fetch(`/api/admin/content/player-profiles/${encodeURIComponent(playerId)}/image`, {
+    method:"POST",
+    headers:{
+      ...(token ? { authorization:`Bearer ${token}` } : {}),
+      "content-type":file.type,
+      "x-ydl-file-name":encodeURIComponent(file.name),
+      "x-ydl-profile-x":String(position.xPercent),
+      "x-ydl-profile-y":String(position.yPercent),
+      "x-ydl-profile-width":String(position.widthPercent),
+    },
+    body:file,
+    cache:"no-store",
+  });
+  const value = await response.json();
+  if (!response.ok) throw Object.assign(new Error(value.error ?? "卡画上传失败"), { status:response.status });
+  return value;
+}
+
+function renderStudioEditor() {
+  const player = selectedStudioPlayer();
+  const editor = document.querySelector("#studio-editor");
+  if (!editor) return;
+  if (!player) return void (editor.innerHTML = `<p class="empty">请选择正式球员或暂存新卡</p>`);
+  const profile = studioProfile(player);
+  const englishName = studioEnglishName(player);
+  editor.innerHTML = `<section class="studio-editor-head"><div><small>${player.draft ? "暂存新卡" : "正式球员卡"} · ${escapeHtml(player.id)}</small><h2>${escapeHtml(player.name)}${englishName ? `<i>${escapeHtml(englishName)}</i>` : ""}</h2></div><strong>${player.overall}<small>${escapeHtml(player.grade)}级 · ${escapeHtml(player.role)}</small></strong></section>
+    <div class="studio-editor-grid"><section class="studio-stage"><header><div><small>CARD ART POSITIONER</small><h3>卡画定位</h3></div><span>${profile ? player.cardProfile ? "服务器WebP" : "旧卡画" : "尚无卡画"}</span></header>${studioCardMarkup(player)}<div class="studio-upload-row"><label><b>${studioUploadFileName ?? `上传：${studioSuggestedFileName(player)}`}</b><input id="studio-image-input" type="file" accept="image/png,image/webp"></label><button type="button" id="studio-reset-position">重置定位</button></div></section>
+    <section class="studio-controls"><h3>定位参数</h3>${[["xPercent","横向位置",-50,150,.1],["yPercent","纵向位置",-50,150,.1],["widthPercent","人物宽度",40,360,.5]].map(([key,label,min,max,step]) => `<label><span>${label}<b data-studio-position-value="${key}">${Number(studioPosition[key]).toFixed(1)}%</b></span><input type="range" min="${min}" max="${max}" step="${step}" value="${studioPosition[key]}" data-studio-position="${key}"></label>`).join("")}<p>X/S级卡画覆盖文字；A/B/C级卡画自动位于文字下层。</p><button type="button" class="content-save-button" id="studio-save-profile">保存定位并生成WebP</button><span id="studio-profile-status">${profile ? `当前资源：${escapeHtml(profile.optimizedFileName ?? profile.fileName ?? "旧卡画")}` : "首次保存必须上传图片"}</span></section></div>${studioDraftFormMarkup(player)}`;
+  bindStudioPositioner();
+  document.querySelector("#studio-image-input").onchange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const status = document.querySelector("#studio-profile-status");
+    if (file.size > 12 * 1024 * 1024) return void (status.textContent = "图片不能超过12MB");
+    try {
+      if (studioUploadDataUrl) URL.revokeObjectURL(studioUploadDataUrl);
+      studioUploadDataUrl = URL.createObjectURL(file);
+      studioUploadFileName = file.name;
+      studioUploadFile = file;
+      renderStudioEditor();
+    } catch (error) { status.textContent = error.message; }
+  };
+  document.querySelector("#studio-reset-position").onclick = () => { studioPosition = { xPercent:50, yPercent:52, widthPercent:200 }; studioApplyPosition(); };
+  document.querySelector("#studio-save-profile").onclick = async () => {
+    const status = document.querySelector("#studio-profile-status");
+    status.textContent = studioUploadDataUrl ? "正在上传并转换WebP…" : "正在保存定位…";
+    try {
+      const result = studioUploadFile
+        ? await uploadStudioProfile(player.id, studioUploadFile)
+        : await api(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}`, { method:"POST", body:{ ...studioPosition } });
+      const saved = result.profile;
+      contentData = { ...contentData, ...result.summary };
+      const target = player.draft ? contentData.playerDrafts.find((entry) => entry.id === player.id) : contentData.profilePlayers.find((entry) => entry.id === player.id);
+      if (target) target.cardProfile = saved;
+      const editable = (contentData.players ?? []).find((entry) => entry.id === player.id);
+      if (editable) editable.cardProfile = saved;
+      if (studioUploadDataUrl) URL.revokeObjectURL(studioUploadDataUrl);
+      studioUploadDataUrl = null;
+      studioUploadFileName = null;
+      studioUploadFile = null;
+      studioPosition = { xPercent:saved.xPercent, yPercent:saved.yPercent, widthPercent:saved.widthPercent };
+      renderStudioEditor();
+      filterStudioPlayers();
+    } catch (error) { status.textContent = error.message; }
+  };
+  const draftForm = document.querySelector("#studio-draft-form");
+  if (draftForm) {
+    const draftPatch = () => {
+      const form = new FormData(draftForm);
+      return { name:form.get("name"), sourceName:form.get("sourceName"), overall:Number(form.get("overall")), grade:form.get("grade"), role:form.get("role"), nationality:form.get("nationality"), club:form.get("club"), heightCm:Number(form.get("heightCm")), preferredFoot:form.get("preferredFoot"), attributeMode:"manual", attributes:Object.fromEntries([...document.querySelectorAll("[data-studio-attribute]")].map((input) => [input.dataset.studioAttribute, Number(input.value)])) };
+    };
+    document.querySelector("#studio-regress-attributes").onclick = async () => {
+      const form = new FormData(draftForm);
+      const status = document.querySelector("#studio-draft-status");
+      status.textContent = "正在按同位置球员样本回归…";
+      try {
+        const regression = (await api("/api/admin/content/player-drafts/regress", { method:"POST", body:{ role:form.get("role"), overall:Number(form.get("overall")) } })).regression;
+        Object.entries(regression.attributes).forEach(([key,value]) => { const input = document.querySelector(`[data-studio-attribute="${key}"]`); if (input) input.value = value; });
+        status.textContent = `已回归为${regression.role}位置总评${regression.overall}，保存后写入暂存池。`;
+      } catch (error) { status.textContent = error.message; }
+    };
+    draftForm.onsubmit = async (event) => {
+      event.preventDefault();
+      const status = document.querySelector("#studio-draft-status");
+      status.textContent = "正在保存暂存球员…";
+      try {
+        const saved = (await api(`/api/admin/content/player-drafts/${encodeURIComponent(player.id)}`, { method:"POST", body:draftPatch() })).draft;
+        contentData.playerDrafts[contentData.playerDrafts.findIndex((entry) => entry.id === saved.id)] = saved;
+        renderStudioEditor();
+        filterStudioPlayers();
+      } catch (error) { status.textContent = error.message; }
+    };
+  }
+}
+
+function openCreatePlayerDraft() {
+  const roles = contentData.playerRoles.map((role) => `<option value="${role}">${escapeHtml(ROLES[role] ?? role)}（${role}）</option>`).join("");
+  showModal(`<form id="studio-create-form" class="content-editor-form content-create-form"><header><div><small>NEW PLAYER CARD</small><h2>创建暂存球员</h2></div><button type="button" data-close>×</button></header><section><div class="content-form-grid"><label><span>中文显示名</span><input name="name" required autofocus></label><label><span>英文名 / PNG命名</span><input name="sourceName" placeholder="例如 Lionel Messi" required></label><label><span>目标总评</span><input name="overall" type="number" min="1" max="96" value="80" required></label><label><span>评级</span><select name="grade"><option>S</option><option>A</option><option selected>B</option><option>C</option></select></label><label><span>主位置</span><select name="role">${roles}</select></label><label><span>国籍</span><input name="nationality" required></label><label><span>俱乐部</span><input name="club" required></label><label><span>身高</span><input name="heightCm" type="number" min="140" max="220" value="180" required></label><label><span>惯用脚</span><select name="preferredFoot"><option value="right">右脚</option><option value="left">左脚</option><option value="both">双足</option></select></label></div></section><section class="content-draft-notice"><b>新球员先进入暂存池</b><p>系统先根据总评与位置生成26项能力。你可以继续手动调整、上传卡画，最后再批量上线。</p></section><footer><span id="studio-create-status">创建后不会立即进入抽卡池。</span><button class="content-save-button">创建暂存卡</button></footer></form>`);
+  document.querySelector("#studio-create-form").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const status = document.querySelector("#studio-create-status");
+    status.textContent = "正在创建暂存卡…";
+    try {
+      const result = await api("/api/admin/content/player-drafts", { method:"POST", body:{ name:form.get("name"), sourceName:form.get("sourceName"), overall:Number(form.get("overall")), grade:form.get("grade"), role:form.get("role"), nationality:form.get("nationality"), club:form.get("club"), heightCm:Number(form.get("heightCm")), preferredFoot:form.get("preferredFoot"), attributeMode:"regress" } });
+      const draft = result.draft;
+      contentData = { ...contentData, ...result.summary };
+      contentData.playerDrafts.unshift(draft);
+      setStudioSelection(draft.id);
+      closeModal();
+      renderContentAdmin();
+    } catch (error) { status.textContent = error.message; }
+  };
+}
+
+function contentStudioMarkup() {
+  return `<section class="studio-toolbar"><div><b>球员卡工作室</b><span>上传抠图、定位、WebP生成、新卡暂存与批量上线</span></div><button id="studio-create-player">+ 制作新卡</button><button id="studio-publish-selected">批量上线（${studioPublishSelection.size}）</button></section><section class="studio-workspace"><aside class="content-browser panel"><header class="panel-head"><div><h2>正式库与暂存池</h2><small>X/S/A/B/C全部支持上传卡画</small></div></header><div class="content-filters"><input class="search" id="studio-player-search" placeholder="搜索球员、俱乐部或国籍"><select id="studio-player-status"><option value="all">全部状态</option><option value="draft">仅暂存</option><option value="active">仅正式</option><option value="missing">缺少卡画</option></select><select id="studio-player-grade"><option value="all">全部等级</option>${["X","S","A","B","C"].map((grade) => `<option>${grade}</option>`).join("")}</select></div><div class="content-list studio-player-list" id="studio-player-list">${studioPlayerRows()}</div></aside><main class="studio-editor panel" id="studio-editor"></main></section>`;
+}
+
+function bindContentStudio() {
+  document.querySelector("#studio-player-search").oninput = filterStudioPlayers;
+  document.querySelector("#studio-player-status").onchange = filterStudioPlayers;
+  document.querySelector("#studio-player-grade").onchange = filterStudioPlayers;
+  document.querySelector("#studio-create-player").onclick = openCreatePlayerDraft;
+  document.querySelector("#studio-publish-selected").onclick = async () => {
+    if (!studioPublishSelection.size) return alert("请先勾选需要上线的暂存球员");
+    if (!confirm(`确认将${studioPublishSelection.size}名暂存球员批量上线？上线后会立即进入正式球员库。`)) return;
+    const button = document.querySelector("#studio-publish-selected");
+    button.disabled = true;
+    button.textContent = "正在上线…";
+    try {
+      const result = await api("/api/admin/content/player-drafts/publish", { method:"POST", body:{ ids:[...studioPublishSelection] } });
+      contentData = { ...contentData, ...result.summary, ...result.studio };
+      studioPublishSelection.clear();
+      selectedStudioPlayerId = contentData.profilePlayers.some((player) => player.id === selectedStudioPlayerId) ? selectedStudioPlayerId : contentData.profilePlayers[0]?.id;
+      renderContentAdmin();
+    } catch (error) { alert(error.message); button.disabled = false; button.textContent = `批量上线（${studioPublishSelection.size}）`; }
+  };
+  bindStudioList();
+  renderStudioEditor();
+}
+
+function playerBatchEntries() {
+  return contentData.playerBatches ?? [];
+}
+
+function selectedPlayerBatch() {
+  return playerBatchEntries().find((batch) => batch.id === selectedPlayerBatchId) ?? null;
+}
+
+function selectedBatchDrafts() {
+  return (contentData.playerDrafts ?? []).filter((draft) => draft.batchId === selectedPlayerBatchId);
+}
+
+function batchRowsMarkup() {
+  return playerBatchEntries().map((batch) => `<button type="button" class="batch-list-row ${batch.id === selectedPlayerBatchId ? "active" : ""}" data-player-batch="${escapeHtml(batch.id)}"><span><b>${escapeHtml(batch.name)}</b><small>${batch.status === "published" ? `已发布 · ${batch.publishedCount}人` : `${batch.draftCount}人 · ${batch.readyCount}张卡画`}</small></span><strong class="${batch.issueCount ? "has-issues" : ""}">${batch.status === "published" ? "已上线" : batch.issueCount ? `缺${batch.issueCount}` : "可发布"}</strong></button>`).join("") || `<p class="empty">还没有发布批次</p>`;
+}
+
+function batchDraftTableMarkup(drafts) {
+  return `<div class="batch-draft-table"><header><span>球员</span><span>等级/位置</span><span>能力来源</span><span>卡画</span></header>${drafts.map((player) => {
+    const englishName = studioEnglishName(player);
+    return `<button type="button" data-batch-edit-player="${escapeHtml(player.id)}"><span><b>${escapeHtml(player.name)}</b><small>${escapeHtml(englishName || "未填写英文名")}</small></span><span>${escapeHtml(player.grade)} · ${escapeHtml(player.role)} · ${player.overall}</span><span>${player.attributeMode === "manual" ? "Excel 26项" : "总评回归"}</span><strong class="${player.cardProfile ? "ready" : "missing"}">${player.cardProfile ? "WebP已完成" : "缺少卡画"}</strong></button>`;
+  }).join("") || `<p class="empty">该批次还没有球员，请先导入Excel。</p>`}</div>`;
+}
+
+function excelPreviewMarkup() {
+  if (!playerExcelPreview) return "";
+  const value = playerExcelPreview;
+  return `<section class="batch-import-preview"><header><div><b>Excel校验结果</b><small>${escapeHtml(value.sheetName)} · 共${value.totalRows}行</small></div><strong class="${value.invalidRows ? "has-issues" : ""}">${value.validRows}行可导入 / ${value.invalidRows}行错误</strong></header>${value.errors.length ? `<div class="batch-import-errors">${value.errors.slice(0, 30).map((error) => `<p><b>第${error.row}行 · ${escapeHtml(error.name)}</b><span>${escapeHtml(error.errors.join("；"))}</span></p>`).join("")}</div>` : `<p class="batch-import-ok">全部数据通过校验。导入后球员会进入当前发布批次。</p>`}${value.warnings.length ? `<p class="batch-import-warning">另有${value.warnings.length}条同名提醒，发布前请检查是否属于新版本卡。</p>` : ""}<footer><button type="button" id="batch-commit-excel" ${!value.validRows || value.invalidRows ? "disabled" : ""}>确认导入${value.validRows}名球员</button></footer></section>`;
+}
+
+function batchImageQueueMarkup() {
+  if (!batchImageQueue.length) return "";
+  const counts = Object.groupBy ? Object.groupBy(batchImageQueue, (entry) => entry.status) : batchImageQueue.reduce((groups, entry) => ((groups[entry.status] ??= []).push(entry), groups), {});
+  return `<section class="batch-image-results"><header><div><b>PNG自动匹配</b><small>共${batchImageQueue.length}个文件</small></div><span>已匹配 ${(counts.matched?.length ?? 0) + (counts.uploaded?.length ?? 0)} · 未匹配 ${counts.unmatched?.length ?? 0} · 冲突 ${counts.ambiguous?.length ?? 0}</span></header><div>${batchImageQueue.map((entry) => `<article class="status-${entry.status}"><span><b>${escapeHtml(entry.file.name)}</b><small>${entry.player ? `${escapeHtml(entry.player.name)} · ${escapeHtml(studioEnglishName(entry.player))}` : escapeHtml(entry.message ?? "未找到球员")}</small></span><strong>${entry.status === "matched" ? "待上传" : entry.status === "uploading" ? "转换中" : entry.status === "uploaded" ? "WebP完成" : entry.status === "failed" ? "失败" : entry.status === "ambiguous" ? "重名冲突" : "未匹配"}</strong></article>`).join("")}</div><footer><button type="button" id="batch-upload-matched" ${batchUploadRunning || !(counts.matched?.length) ? "disabled" : ""}>${batchUploadRunning ? "正在批量生成WebP…" : `上传并生成WebP（${counts.matched?.length ?? 0}）`}</button></footer></section>`;
+}
+
+function batchDetailMarkup(batch) {
+  if (!batch) return `<section class="batch-empty panel"><small>BATCH CARD PRODUCTION</small><h2>创建第一个发布批次</h2><p>一个批次对应一次批量制卡与上线任务。</p><button type="button" id="batch-empty-create">+ 新建发布批次</button></section>`;
+  const drafts = selectedBatchDrafts();
+  const published = batch.status === "published";
+  return `<main class="batch-detail panel"><header class="batch-detail-head"><div><small>${escapeHtml(batch.id)}</small><h2>${escapeHtml(batch.name)}</h2><p>${escapeHtml(batch.description || "暂无批次说明")}</p></div><strong>${published ? "已发布" : batch.issueCount ? "制作中" : "可发布"}<small>${batch.draftCount}待上线 · ${batch.publishedCount}已上线</small></strong></header>
+    <section class="batch-flow"><span class="done">1 创建批次</span><span class="${drafts.length ? "done" : ""}">2 Excel导入</span><span class="${batch.readyCount ? "done" : ""}">3 PNG匹配</span><span class="${drafts.length && !batch.issueCount ? "done" : ""}">4 完整性检查</span><span class="${published ? "done" : ""}">5 整批上线</span></section>
+    ${published ? `<section class="batch-published-note"><b>该批次已于${new Date(batch.publishedAt).toLocaleString()}上线</b><p>批次记录会永久保留；所属球员已经进入正式球员库。</p></section>` : `<section class="batch-actions"><article><small>STEP 1</small><h3>导入球员Excel</h3><p>26项全空时按总评与位置回归；填写时必须完整填写26项。</p><div><button type="button" id="batch-download-template">下载Excel模板</button><label>选择Excel<input type="file" id="batch-excel-input" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label></div></article><article><small>STEP 2</small><h3>批量匹配PNG</h3><p>按英文名自动匹配，忽略空格、下划线、大小写和扩展名。</p><label>选择多张PNG<input type="file" id="batch-png-input" accept="image/png,image/webp" multiple></label></article></section>${excelPreviewMarkup()}${batchImageQueueMarkup()}`}
+    <section class="batch-roster"><header><div><h3>批次球员与上线检查</h3><small>点击球员可进入卡画工作台进行单独定位</small></div><strong>${batch.readyCount}/${batch.draftCount} 卡画完成</strong></header>${batchDraftTableMarkup(drafts)}${!published ? `<footer><span>${batch.issueCount ? `仍有${batch.issueCount}名球员缺少卡画，暂时不能上线。` : drafts.length ? "全部检查通过，可以整批上线。" : "请先导入球员。"}</span><button type="button" id="batch-publish" ${batch.issueCount || !drafts.length ? "disabled" : ""}>整批上线</button></footer>` : ""}</section>
+  </main>`;
+}
+
+function contentBatchMarkup() {
+  return `<section class="batch-toolbar"><div><b>批量制卡中心</b><span>Excel导入 → PNG匹配 → WebP生成 → 整批上线</span></div><button type="button" id="batch-create">+ 新建发布批次</button></section><section class="batch-workspace"><aside class="batch-browser panel"><header><h2>发布批次</h2><small>${playerBatchEntries().length}个批次</small></header><div>${batchRowsMarkup()}</div></aside>${batchDetailMarkup(selectedPlayerBatch())}</section>`;
+}
+
+function normalizedImageMatchKey(value) {
+  return String(value ?? "").replace(/\.(png|webp)$/i, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, "");
+}
+
+function matchBatchImages(files) {
+  const drafts = selectedBatchDrafts();
+  const playersByKey = new Map();
+  drafts.forEach((player) => {
+    const keys = [player.id, player.name, player.sourceName, studioEnglishName(player), studioSuggestedFileName(player)].map(normalizedImageMatchKey).filter(Boolean);
+    [...new Set(keys)].forEach((key) => playersByKey.set(key, [...(playersByKey.get(key) ?? []), player]));
+  });
+  batchImageQueue = files.map((file) => {
+    const matches = playersByKey.get(normalizedImageMatchKey(file.name)) ?? [];
+    return matches.length === 1 ? { file, player:matches[0], status:"matched" }
+      : matches.length > 1 ? { file, player:null, status:"ambiguous", message:`匹配到${matches.length}名球员` }
+        : { file, player:null, status:"unmatched", message:"英文名或文件名未匹配" };
+  });
+  const matchedByPlayer = batchImageQueue.filter((entry) => entry.player).reduce((groups, entry) => ((groups[entry.player.id] ??= []).push(entry), groups), {});
+  Object.values(matchedByPlayer).filter((entries) => entries.length > 1).forEach((entries) => entries.forEach((entry) => { entry.status = "ambiguous"; entry.message = "多张图片匹配同一球员"; }));
+}
+
+async function uploadBatchImages() {
+  const pending = batchImageQueue.filter((entry) => entry.status === "matched");
+  if (!pending.length || batchUploadRunning) return;
+  batchUploadRunning = true;
+  renderContentAdmin();
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < pending.length) {
+      const entry = pending[cursor++];
+      entry.status = "uploading";
+      renderBatchImageQueueInPlace();
+      try {
+        const result = await uploadStudioProfile(entry.player.id, entry.file, { xPercent:50, yPercent:52, widthPercent:200 });
+        entry.status = "uploaded";
+        entry.player.cardProfile = result.profile;
+        const target = contentData.playerDrafts.find((draft) => draft.id === entry.player.id);
+        if (target) target.cardProfile = result.profile;
+        contentData = { ...contentData, ...result.summary };
+      } catch (error) { entry.status = "failed"; entry.message = error.message; }
+      renderBatchImageQueueInPlace();
+    }
+  };
+  await Promise.all(Array.from({ length:Math.min(3, pending.length) }, worker));
+  batchUploadRunning = false;
+  const refreshed = await api("/api/admin/content/studio");
+  contentData = { ...contentData, ...refreshed.content };
+  renderContentAdmin();
+}
+
+function renderBatchImageQueueInPlace() {
+  const current = document.querySelector(".batch-image-results");
+  if (!current) return;
+  const holder = document.createElement("div");
+  holder.innerHTML = batchImageQueueMarkup();
+  current.replaceWith(holder.firstElementChild);
+  const upload = document.querySelector("#batch-upload-matched");
+  if (upload) upload.onclick = uploadBatchImages;
+}
+
+function openCreatePlayerBatch() {
+  showModal(`<form id="batch-create-form" class="content-editor-form content-create-form"><header><div><small>NEW RELEASE BATCH</small><h2>创建发布批次</h2></div><button type="button" data-close>×</button></header><section><div class="content-form-grid"><label><span>批次名称</span><input name="name" required autofocus placeholder="例如：2026夏窗第一批"></label><label class="span-all"><span>批次说明</span><textarea name="description" rows="4" placeholder="记录卡池主题、上线目标或数据来源"></textarea></label></div></section><footer><span id="batch-create-status">创建后即可导入Excel和PNG。</span><button class="content-save-button">创建批次</button></footer></form>`);
+  document.querySelector("#batch-create-form").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const status = document.querySelector("#batch-create-status");
+    status.textContent = "正在创建批次…";
+    try {
+      const result = await api("/api/admin/content/player-batches", { method:"POST", body:{ name:form.get("name"), description:form.get("description") } });
+      contentData = { ...contentData, ...result.studio };
+      selectedPlayerBatchId = result.batch.id;
+      playerExcelPreview = null;
+      batchImageQueue = [];
+      closeModal();
+      renderContentAdmin();
+    } catch (error) { status.textContent = error.message; }
+  };
+}
+
+async function downloadPlayerExcelTemplate() {
+  const response = await fetch("/api/admin/content/player-import/template", { headers:{ authorization:`Bearer ${token}` }, cache:"no-store" });
+  if (!response.ok) { const value = await response.json(); throw new Error(value.error ?? "模板下载失败"); }
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "ydl-player-import-template.xlsx";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function previewPlayerExcel(file) {
+  const response = await fetch("/api/admin/content/player-import/preview", { method:"POST", headers:{ authorization:`Bearer ${token}`, "content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }, body:file, cache:"no-store" });
+  const value = await response.json();
+  if (!response.ok) throw new Error(value.error ?? "Excel解析失败");
+  playerExcelPreview = value.preview;
+  renderContentAdmin();
+}
+
+function bindContentBatch() {
+  document.querySelector("#batch-create")?.addEventListener("click", openCreatePlayerBatch);
+  document.querySelector("#batch-empty-create")?.addEventListener("click", openCreatePlayerBatch);
+  document.querySelectorAll("[data-player-batch]").forEach((button) => {
+    button.onclick = () => { selectedPlayerBatchId = button.dataset.playerBatch; playerExcelPreview = null; batchImageQueue = []; renderContentAdmin(); };
+  });
+  document.querySelector("#batch-download-template")?.addEventListener("click", () => downloadPlayerExcelTemplate().catch((error) => alert(error.message)));
+  document.querySelector("#batch-excel-input")?.addEventListener("change", (event) => { const file = event.target.files?.[0]; if (file) previewPlayerExcel(file).catch((error) => alert(error.message)); });
+  document.querySelector("#batch-commit-excel")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "正在写入暂存池…";
+    try {
+      const result = await api("/api/admin/content/player-import/commit", { method:"POST", body:{ batchId:selectedPlayerBatchId, rows:playerExcelPreview.rows } });
+      contentData = { ...contentData, ...result.summary, ...result.studio };
+      playerExcelPreview = null;
+      renderContentAdmin();
+    } catch (error) { button.disabled = false; button.textContent = "确认导入"; alert(error.message); }
+  });
+  document.querySelector("#batch-png-input")?.addEventListener("change", (event) => { matchBatchImages([...event.target.files]); renderContentAdmin(); });
+  document.querySelector("#batch-upload-matched")?.addEventListener("click", uploadBatchImages);
+  document.querySelectorAll("[data-batch-edit-player]").forEach((button) => {
+    button.onclick = () => { selectedStudioPlayerId = button.dataset.batchEditPlayer; contentTab = "studio"; setStudioSelection(selectedStudioPlayerId); renderContentAdmin(); };
+  });
+  document.querySelector("#batch-publish")?.addEventListener("click", async (event) => {
+    const batch = selectedPlayerBatch();
+    if (!confirm(`确认将“${batch.name}”的${batch.draftCount}名球员整批上线？`)) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "正在整批上线…";
+    try {
+      const result = await api(`/api/admin/content/player-batches/${encodeURIComponent(batch.id)}/publish`, { method:"POST", body:{} });
+      contentData = { ...contentData, ...result.summary, ...result.studio };
+      renderContentAdmin();
+    } catch (error) { button.disabled = false; button.textContent = "整批上线"; alert(error.message); }
+  });
+}
+
+function analyticsDistributionMarkup(title, entries, limit = 24) {
+  const maximum = Math.max(1, ...entries.map((entry) => entry.count));
+  return `<section class="content-analysis-panel panel"><header><h2>${escapeHtml(title)}</h2><small>共${entries.length}项</small></header><div>${entries.slice(0, limit).map((entry) => `<article><span><b>${escapeHtml(ROLES[entry.label] ?? entry.label)}</b><small>${entry.percent}%</small></span><i><em style="width:${entry.count / maximum * 100}%"></em></i><strong>${entry.count}</strong></article>`).join("")}</div></section>`;
+}
+
+function contentAnalyticsMarkup() {
+  const value = contentData.analytics;
+  return `<section class="content-analysis"><div class="kpis content-analysis-kpis"><article class="kpi"><small>球员总数</small><b>${value.totalPlayers}</b></article><article class="kpi"><small>平均能力</small><b>${value.averageOverall}</b></article><article class="kpi"><small>后台WebP卡画</small><b>${value.profileCount}</b></article><article class="kpi"><small>新仓库覆盖率</small><b>${value.profileCoverage}%</b></article></div><div class="content-analysis-grid">${analyticsDistributionMarkup("能力等级分布", value.grade)}${analyticsDistributionMarkup("主位置分布", value.role)}${analyticsDistributionMarkup("国籍分布", value.nationality)}${analyticsDistributionMarkup("俱乐部分布", value.club)}</div></section>`;
+}
+
+function contentSectionForTab(tab = contentTab) {
+  if (tab === "batch") return "studio";
+  return ["players", "studio", "analytics", "traits"].includes(tab) ? tab : "players";
+}
+
+function syncContentSelections() {
+  if (contentLoadedSections.has("players")) selectedContentPlayerId = contentData.players.some((player) => player.id === selectedContentPlayerId) ? selectedContentPlayerId : contentData.players[0]?.id;
+  if (contentLoadedSections.has("traits")) selectedContentTraitId = contentData.traits.some((trait) => trait.id === selectedContentTraitId) ? selectedContentTraitId : contentData.traits[0]?.id;
+  if (contentLoadedSections.has("studio")) {
+    const entries = studioEntries();
+    if (!entries.some((player) => player.id === selectedStudioPlayerId)) setStudioSelection(contentData.playerDrafts[0]?.id ?? contentData.profilePlayers[0]?.id ?? null);
+    if (!playerBatchEntries().some((batch) => batch.id === selectedPlayerBatchId)) selectedPlayerBatchId = playerBatchEntries().find((batch) => batch.status !== "published")?.id ?? playerBatchEntries()[0]?.id ?? null;
+  }
+}
+
+async function loadContentSection(section, { force = false, render = true } = {}) {
+  if (!force && contentLoadedSections.has(section)) {
+    if (render) renderContentAdmin();
+    return;
+  }
+  const activeButton = document.querySelector(`[data-content-tab="${section}"]`);
+  if (activeButton) { activeButton.disabled = true; activeButton.classList.add("loading"); }
+  try {
+    const value = await api(`/api/admin/content/${section}`);
+    contentData = { ...contentData, ...value.content };
+    contentLoadedSections.add(section);
+    syncContentSelections();
+    if (render && section === contentSectionForTab()) renderContentAdmin();
+  } catch (error) {
+    if (error.status === 401) renderLogin("登录已失效，请重新输入密码");
+    else {
+      if (activeButton) { activeButton.disabled = false; activeButton.classList.remove("loading"); }
+      alert(error.message);
+    }
+  }
+}
+
+async function refreshCurrentContent() {
+  const button = document.querySelector("#content-refresh");
+  const section = contentSectionForTab();
+  if (button) { button.disabled = true; button.textContent = "正在刷新当前模块…"; }
+  try {
+    const [summary, current] = await Promise.all([
+      api("/api/admin/content/summary"),
+      api(`/api/admin/content/${section}`),
+    ]);
+    contentData = { ...contentData, ...summary.content, ...current.content };
+    contentLoadedSections.add(section);
+    syncContentSelections();
+    renderContentAdmin();
+  } catch (error) {
+    if (error.status === 401) renderLogin("登录已失效，请重新输入密码");
+    else { if (button) { button.disabled = false; button.textContent = "刷新当前模块"; } alert(error.message); }
+  }
+}
+
 function renderContentAdmin() {
   logoutButton.hidden = false;
-  const playerActive = contentTab === "players";
-  app.innerHTML = `${adminNavMarkup("content")}<header class="page-head"><div><h1>S4球员与特性管理</h1><p>正式550人球员池与YDL位置制特性卡；保存后立即进入当前服务。</p></div><button id="content-refresh">刷新数据</button></header>
-    <section class="kpis content-kpis"><article class="kpi"><small>正式球员</small><b>${contentData.players.length}</b></article><article class="kpi"><small>传奇球员</small><b>${contentData.players.filter((player) => player.isLegend).length}</b></article><article class="kpi"><small>正式特性卡</small><b>${contentData.traits.filter((trait) => trait.status === "active").length}</b></article><article class="kpi"><small>待实现草稿</small><b>${contentData.traits.filter((trait) => trait.status === "draft").length}</b></article><article class="kpi"><small>适用位置分类</small><b>${contentData.roleGroups.length}</b></article></section>
-    <div class="content-tabs"><button data-content-tab="players" class="${playerActive ? "active" : ""}">球员库管理</button><button data-content-tab="traits" class="${playerActive ? "" : "active"}">特性卡管理</button></div>
-    <section class="content-workspace">
+  const libraryActive = contentTab === "players";
+  const traitsActive = contentTab === "traits";
+  const studioActive = contentTab === "studio";
+  const batchActive = contentTab === "batch";
+  const analyticsActive = contentTab === "analytics";
+  const libraryWorkspace = `<section class="content-workspace">
       <aside class="content-browser panel">
-        <header class="panel-head"><div><h2>${playerActive ? "S4正式球员库" : "YDL特性卡"}</h2><small>${playerActive ? "姓名、能力、评级、位置与26项属性" : "正式运行卡与待实现草稿"}</small></div>${playerActive ? "" : `<button class="content-add-button" id="content-trait-create">+ 添加特性</button>`}</header>
-        ${playerActive ? `<div class="content-filters"><input class="search" id="content-player-search" placeholder="搜索姓名、俱乐部或国籍" /><select id="content-player-pool"><option value="all">全部位置池</option>${Object.entries(LEAGUE_POOL_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join("")}</select><select id="content-player-grade"><option value="all">全部评级</option>${["S","A","B","C"].map((grade) => `<option>${grade}</option>`).join("")}</select></div><div class="content-list" id="content-player-list">${contentPlayerRows()}</div>`
+        <header class="panel-head"><div><h2>${libraryActive ? "S4正式球员库" : "YDL特性卡"}</h2><small>${libraryActive ? "姓名、能力、评级、位置与26项属性" : "正式运行卡与待实现草稿"}</small></div>${libraryActive ? "" : `<button class="content-add-button" id="content-trait-create">+ 添加特性</button>`}</header>
+        ${libraryActive ? `<div class="content-filters"><input class="search" id="content-player-search" placeholder="搜索姓名、俱乐部或国籍" /><select id="content-player-pool"><option value="all">全部位置池</option>${Object.entries(LEAGUE_POOL_LABELS).map(([value,label]) => `<option value="${value}">${label}</option>`).join("")}</select><select id="content-player-grade"><option value="all">全部评级</option>${["S","A","B","C"].map((grade) => `<option>${grade}</option>`).join("")}</select></div><div class="content-list" id="content-player-list">${contentPlayerRows()}</div>`
           : `<div class="content-filters"><input class="search" id="content-trait-search" placeholder="搜索特性名称或说明" /><select id="content-trait-role"><option value="all">全部适用位置</option>${contentData.roleGroups.map((role) => `<option value="${role}">${CONTENT_ROLE_LABELS[role]}</option>`).join("")}</select></div><div class="content-list" id="content-trait-list">${contentTraitRows()}</div>`}
       </aside>
       <main class="content-editor panel" id="content-editor"></main>
     </section>`;
+  const overview = contentData.overview;
+  app.innerHTML = `${adminNavMarkup("content")}<header class="page-head"><div><h1>球员卡与球员库管理</h1><p>维护正式球员数据、制作全等级卡画、暂存批量新卡，并查看球员库结构。</p></div><button id="content-refresh">刷新当前模块</button></header>
+    <section class="kpis content-kpis"><article class="kpi"><small>正式球员</small><b>${overview.totalPlayers}</b></article><article class="kpi"><small>新卡暂存</small><b>${overview.draftCount}</b></article><article class="kpi"><small>后台WebP卡画</small><b>${overview.profileCount}</b></article><article class="kpi"><small>平均能力</small><b>${overview.averageOverall}</b></article><article class="kpi"><small>正式特性卡</small><b>${overview.activeTraitCount}</b></article></section>
+    <div class="content-tabs"><button data-content-tab="players" class="${libraryActive ? "active" : ""}">球员数据</button><button data-content-tab="studio" class="${studioActive ? "active" : ""}">卡画工作台</button><button data-content-tab="batch" class="${batchActive ? "active" : ""}">批量制卡</button><button data-content-tab="analytics" class="${analyticsActive ? "active" : ""}">球员库分析</button><button data-content-tab="traits" class="${traitsActive ? "active" : ""}">特性卡</button></div>
+    ${studioActive ? contentStudioMarkup() : batchActive ? contentBatchMarkup() : analyticsActive ? contentAnalyticsMarkup() : libraryWorkspace}`;
   bindAdminNav();
-  document.querySelector("#content-refresh").onclick = loadContentAdmin;
+  document.querySelector("#content-refresh").onclick = refreshCurrentContent;
   document.querySelectorAll("[data-content-tab]").forEach((button) => {
-    button.onclick = () => { contentTab = button.dataset.contentTab; renderContentAdmin(); };
+    button.onclick = async () => {
+      contentTab = button.dataset.contentTab;
+      await loadContentSection(contentSectionForTab());
+    };
   });
-  if (playerActive) {
+  if (studioActive) {
+    bindContentStudio();
+  } else if (batchActive) {
+    bindContentBatch();
+  } else if (analyticsActive) {
+    return;
+  } else if (libraryActive) {
     document.querySelector("#content-player-search").oninput = filterContentPlayers;
     document.querySelector("#content-player-pool").onchange = filterContentPlayers;
     document.querySelector("#content-player-grade").onchange = filterContentPlayers;
@@ -619,11 +1207,20 @@ function renderContentAdmin() {
 }
 
 async function loadContentAdmin() {
-  app.innerHTML = `<section class="loading">正在读取S4球员与YDL特性数据…</section>`;
+  if (contentData?.overview && contentLoadedSections.has(contentSectionForTab())) {
+    renderContentAdmin();
+    return;
+  }
+  app.innerHTML = `<section class="loading">正在读取球员卡管理概况与当前模块…</section>`;
   try {
-    contentData = (await api("/api/admin/content")).content;
-    selectedContentPlayerId = contentData.players.some((player) => player.id === selectedContentPlayerId) ? selectedContentPlayerId : contentData.players[0]?.id;
-    selectedContentTraitId = contentData.traits.some((trait) => trait.id === selectedContentTraitId) ? selectedContentTraitId : contentData.traits[0]?.id;
+    const section = contentSectionForTab();
+    const [summary, current] = await Promise.all([
+      api("/api/admin/content/summary"),
+      api(`/api/admin/content/${section}`),
+    ]);
+    contentData = { players:[], profilePlayers:[], playerBatches:[], playerDrafts:[], traits:[], analytics:null, ...summary.content, ...current.content };
+    contentLoadedSections = new Set([section]);
+    syncContentSelections();
     renderContentAdmin();
   } catch (error) {
     if (error.status === 401) renderLogin("登录已失效，请重新输入密码");

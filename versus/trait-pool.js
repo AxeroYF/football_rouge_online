@@ -151,6 +151,22 @@ const YDL_CUSTOM_TRAIT_CARDS = Object.freeze([
     developerLabel:"YDL自定义正式卡",
   }),
   Object.freeze({
+    id:"custom-6d0bf2ee-2d26-4f56-9cb7-4c50960df85d",
+    name:"别打我大哥",
+    rarity:"epic",
+    category:"custom",
+    eligibleRoleGroups:Object.freeze(["ANY"]),
+    tags:Object.freeze(["injury", "team", "protection"]),
+    polarity:"positive",
+    summary:"该球员在场时，其他队友受伤会将伤病转移到自己身上",
+    rules:Object.freeze([Object.freeze({ hook:"teamInjuryTransfer", transferToSelf:true })]),
+    dropWeight:1,
+    maxLevel:1,
+    mode:"versus11",
+    source:"ydl-custom",
+    developerLabel:"YDL自定义正式卡",
+  }),
+  Object.freeze({
     id:"custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62",
     name:"大巴司机",
     rarity:"rare",
@@ -194,6 +210,7 @@ export const YDL_TRAIT_IDS = Object.freeze([
   "pace-budget",
   "custom-d98bfc9a-2168-4e80-982d-c1cebef18e80",
   "custom-dc038995-c237-4fa4-b29a-b0e5abf0921a",
+  "custom-6d0bf2ee-2d26-4f56-9cb7-4c50960df85d",
   "custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62",
 ]);
 export const YDL_TRAIT_CARDS = Object.freeze(YDL_TRAIT_IDS.map((id) => VERSUS_TRAIT_BY_ID[id]));

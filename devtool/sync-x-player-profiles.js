@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { X_PLAYERS } from "../versus/x-player-pool.js";
@@ -42,7 +42,6 @@ export async function syncXPlayerProfiles({ assetTargetDirectory = null } = {}) 
   const entries = [];
   for (const profileKey of sourceKeys) {
     const profile = normalizedProfile(profiles[profileKey], PLAYER_ID_BY_NAME[profileKey], profileKey);
-    await stat(path.join(PROFILE_DIRECTORY, profile.fileName));
     Object.assign(profile, await optimizedProfileAsset(PROFILE_DIRECTORY, "x_profile", profile.fileName));
     entries.push(profile);
   }

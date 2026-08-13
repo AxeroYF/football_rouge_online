@@ -1,23 +1,86 @@
 export const IN_POSSESSION_PLANS = Object.freeze({ balanced:"综合组织", shortPassing:"短传组织", vertical:"快速纵向推进", wideOverload:"边路展开", centralCombination:"中路渗透", longBall:"长传找前场" });
 export const OUT_OF_POSSESSION_PLANS = Object.freeze({ balanced:"综合防守", highPress:"高位逼抢", midBlock:"中位封锁", lowBlock:"低位防守", zonal:"区域协防", manMark:"紧密盯人" });
+
 export const IN_POSSESSION_DETAIL_OPTIONS = Object.freeze({
-  tempo:{ patient:"耐心", cautious:"偏慢", balanced:"均衡", quick:"快速", extreme:"极快" },
-  directness:{ short:"短传", shorter:"偏短", balanced:"混合", longer:"偏长", direct:"直接长传" },
   attackDirection:{ left:"左路", leftHalf:"左肋", center:"中路", rightHalf:"右肋", right:"右路", balanced:"均衡" },
   chanceCreation:{ patient:"耐心寻找", balanced:"均衡", shootOnSight:"尽快起脚" },
   longShots:{ reduce:"减少", balanced:"均衡", increase:"增加" },
   crossing:{ reduce:"减少", balanced:"均衡", increase:"增加" },
 });
+
 export const OUT_OF_POSSESSION_DETAIL_OPTIONS = Object.freeze({
-  pressing:{ retreat:"退守", low:"低压", standard:"标准", high:"高压", relentless:"疯狂逼抢" },
-  defensiveWidth:{ protectCenter:"保护中路", balanced:"均衡", forceWide:"限制边路" },
-  compactness:{ loose:"松散", balanced:"均衡", tight:"紧凑" },
+  defensiveWidth:{ protectCenter:"保护中路", balanced:"均衡", forceWide:"封锁边路" },
   defenseDirection:{ left:"重点防左", center:"重点防中", right:"重点防右", balanced:"均衡" },
-  marking:{ zonal:"区域防守", mixed:"混合", man:"重点盯人" },
+  marking:{ zonal:"区域防守", mixed:"混合", man:"贴身盯人" },
   lineStrategy:{ drop:"回收", hold:"保持", offside:"造越位" },
 });
-export const DEFAULT_IN_POSSESSION_DETAILS = Object.freeze({ tempo:"balanced", directness:"balanced", attackDirection:"balanced", chanceCreation:"balanced", longShots:"balanced", crossing:"balanced" });
-export const DEFAULT_OUT_OF_POSSESSION_DETAILS = Object.freeze({ pressing:"standard", defensiveWidth:"balanced", compactness:"balanced", defenseDirection:"balanced", marking:"mixed", lineStrategy:"hold" });
+
+export const DEFAULT_IN_POSSESSION_DETAILS = Object.freeze({ attackDirection:"balanced", chanceCreation:"balanced", longShots:"balanced", crossing:"balanced" });
+export const DEFAULT_OUT_OF_POSSESSION_DETAILS = Object.freeze({ defensiveWidth:"balanced", defenseDirection:"balanced", marking:"mixed", lineStrategy:"hold" });
+
+export const V2_POSSESSION_STYLES = Object.freeze({ balanced:"均衡组织", possession:"短传控制", vertical:"快速纵向", wingPlay:"边路展开", longBall:"直接长传" });
+export const V2_DEFENSIVE_BLOCKS = Object.freeze({ highPress:"高位防守", midBlock:"中位防守", lowBlock:"低位防守" });
+export const V2_TRANSITION_STYLES = Object.freeze({ retain:"稳住球权", balanced:"选择性反击", counterAttack:"立即反击" });
+export const V2_DUEL_INTENSITIES = Object.freeze({ cautious:"谨慎对抗", balanced:"正常对抗", roughPlay:"强硬对抗" });
+
+const SPLIT_TACTICAL_ADJUSTMENTS = Object.freeze({
+  possessionStyle:Object.freeze({
+    balanced:{},
+    possession:{ tempo:-8, directness:-22, attackingWidth:-4, compactness:8 },
+    vertical:{ tempo:9, directness:15 },
+    wingPlay:{ tempo:5, directness:5, attackingWidth:30, compactness:-8 },
+    longBall:{ tempo:7, directness:30, attackingWidth:6 },
+  }),
+  defensiveBlock:Object.freeze({
+    highPress:{ defensiveLine:22, pressing:32, compactness:12 },
+    midBlock:{},
+    lowBlock:{ defensiveLine:-20, pressing:-16, compactness:18 },
+  }),
+  transitionStyle:Object.freeze({
+    retain:{ tempo:-3, directness:-5, counterAttack:-18 },
+    balanced:{},
+    counterAttack:{ tempo:8, directness:14, counterAttack:20 },
+  }),
+  duelIntensity:Object.freeze({
+    cautious:{ tempo:-2, pressing:-8 },
+    balanced:{},
+    roughPlay:{ tempo:4, directness:8, pressing:16, compactness:6 },
+  }),
+});
+
+const LEGACY_STYLE_SPLITS = Object.freeze({
+  possession:{ possessionStyle:"possession", defensiveBlock:"midBlock", transitionStyle:"retain", duelIntensity:"balanced" },
+  longBall:{ possessionStyle:"longBall", defensiveBlock:"midBlock", transitionStyle:"balanced", duelIntensity:"balanced" },
+  wingPlay:{ possessionStyle:"wingPlay", defensiveBlock:"midBlock", transitionStyle:"balanced", duelIntensity:"balanced" },
+  counterAttack:{ possessionStyle:"balanced", defensiveBlock:"midBlock", transitionStyle:"counterAttack", duelIntensity:"balanced" },
+  highPress:{ possessionStyle:"balanced", defensiveBlock:"highPress", transitionStyle:"balanced", duelIntensity:"balanced" },
+  lowBlock:{ possessionStyle:"balanced", defensiveBlock:"lowBlock", transitionStyle:"balanced", duelIntensity:"balanced" },
+  roughPlay:{ possessionStyle:"balanced", defensiveBlock:"midBlock", transitionStyle:"balanced", duelIntensity:"roughPlay" },
+});
+
+export function resolveV2SplitTacticalPlan(plan = {}) {
+  const legacy = LEGACY_STYLE_SPLITS[plan.style] ?? LEGACY_STYLE_SPLITS.possession;
+  return {
+    possessionStyle:Object.hasOwn(V2_POSSESSION_STYLES, plan.possessionStyle) ? plan.possessionStyle : legacy.possessionStyle,
+    defensiveBlock:Object.hasOwn(V2_DEFENSIVE_BLOCKS, plan.defensiveBlock) ? plan.defensiveBlock : legacy.defensiveBlock,
+    transitionStyle:Object.hasOwn(V2_TRANSITION_STYLES, plan.transitionStyle) ? plan.transitionStyle : legacy.transitionStyle,
+    duelIntensity:Object.hasOwn(V2_DUEL_INTENSITIES, plan.duelIntensity) ? plan.duelIntensity : legacy.duelIntensity,
+  };
+}
+
+export function v2SplitTacticalAdjustments(plan = {}) {
+  const split = resolveV2SplitTacticalPlan(plan);
+  return Object.entries(split).reduce((result, [group, value]) => {
+    Object.entries(SPLIT_TACTICAL_ADJUSTMENTS[group]?.[value] ?? {}).forEach(([key, adjustment]) => {
+      result[key] = Number(result[key] ?? 0) + Number(adjustment);
+    });
+    return result;
+  }, {});
+}
+
+export function hasV2SplitTacticalPlan(plan = {}) {
+  return ["possessionStyle", "defensiveBlock", "transitionStyle", "duelIntensity"].some((key) => Object.hasOwn(plan, key));
+}
 
 export const IN_POSSESSION_ADJUSTMENTS = Object.freeze({
   balanced:{},
@@ -48,14 +111,10 @@ export function v2TacticalProfileAdjustments(inPossession = "balanced", outOfPos
 export function v2TacticalDetailAdjustments(inDetails = DEFAULT_IN_POSSESSION_DETAILS, outDetails = DEFAULT_OUT_OF_POSSESSION_DETAILS) {
   const result = {};
   const add = (key, value) => { result[key] = Number(result[key] ?? 0) + Number(value); };
-  add("tempo", { patient:-18, cautious:-9, balanced:0, quick:11, extreme:22 }[inDetails.tempo] ?? 0);
-  add("directness", { short:-24, shorter:-12, balanced:0, longer:13, direct:26 }[inDetails.directness] ?? 0);
   if (inDetails.chanceCreation === "patient") { add("tempo", -5); add("timeWasting", 8); }
   if (inDetails.chanceCreation === "shootOnSight") { add("tempo", 7); add("timeWasting", -8); }
   if (inDetails.crossing === "increase") { add("attackingWidth", 9); add("directness", 4); }
   if (inDetails.crossing === "reduce") add("attackingWidth", -7);
-  add("pressing", { retreat:-24, low:-12, standard:0, high:14, relentless:27 }[outDetails.pressing] ?? 0);
-  add("compactness", { loose:-16, balanced:0, tight:18 }[outDetails.compactness] ?? 0);
   if (outDetails.defensiveWidth === "protectCenter") add("compactness", 11);
   if (outDetails.defensiveWidth === "forceWide") add("compactness", -9);
   if (outDetails.marking === "man") { add("pressing", 8); add("compactness", -5); }

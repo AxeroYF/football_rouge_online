@@ -1,0 +1,23 @@
+Local development handoff scope, 2026-08-08
+
+Included source:
+- versus/league-service.js
+- versus/automatic-substitution.js
+- versus/api.js
+- versus/admin-api.js
+- versus/public/app.js
+- versus/public/styles.css
+- admin/public/app.js
+
+Included tests:
+- test/league.test.js
+- test/league-shards.test.js
+- test/s4-assets.test.js
+
+Deletion record:
+- test/world-cup.test.js (removed with World Cup mode)
+
+Excluded:
+- data/, Cloud_league_data/, outputs/, node_modules/, .git/
+- versus/public/v25-broadcast.js and V25-only assets
+- runtime state, credentials, server files, old handoff archives

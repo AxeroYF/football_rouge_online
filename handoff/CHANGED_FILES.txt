@@ -1,4 +1,54 @@
-更新时间：2026-08-04 13:27（Asia/Shanghai）
+更新时间：2026-08-12（Asia/Shanghai）
+最新权威状态：handoff/LATEST_20260812.md
+
+2026-08-12 最新增量：
+
+M versus/v2/match-engine-v2.js - 高压体能、控球时长、职责与事件平衡
+M versus/v2/match-parameters-v2.js/json - V2.1 平衡参数和严格校验
+M versus/v2/possession-chain-v2.js - 控球差异与第二黄牌出牌抑制
+M versus/v2/spatial-model-v2.js - 高位/多前腰/三后卫空间风险及单前锋支援
+M test/match-engine-v2*.test.js / spatial-model-v2.test.js - 定向回归
+?? docs/sql-storage-assessment-20260812.md - PostgreSQL 迁移评估与路线
+?? handoff/LATEST_20260812.md - 最新交接状态
+?? handoff/football-ydl-s4-v21-balance-hotfix-20260812-092423.tar.gz - 最新增量部署包
+
+明确排除：运行存档、账号、正式分片、Cloud_league_data、outputs、卡画大资源、临时目录和旧压缩包。
+
+历史更新时间：2026-08-11 18:12（Asia/Shanghai）
+最新权威状态：handoff/LATEST_20260811.md
+本文件以下内容保留为历史变更清单；新交接 ZIP 另包含 R3、荣誉室/邮件/战术 UI 相关源码与测试，以及 0811 真人战术分析图表。
+
+2026-08-11 18:12 最新增量：
+
+M versus/api.js - 荣誉室与球员目录按需接口、轻量响应
+M versus/league-service.js - 荣誉室幂等结算、邮件分类、强化邮件门槛、市场实时核对减负
+?? versus/honor-room-seed.js - 历史冠军与金球奖种子
+M versus/public/index.html - 正式“荣誉室”导航入口
+M versus/public/app.js - 荣誉室、背包详情、邮件分类、让球、体力红线、所有权与 +8 展示
+M versus/public/styles.css - 页面、邮件、体力条与 +8 框布局
+?? versus/public/s4-player-card.css - 复用球员卡展示样式
+?? versus/public/honor-room.css - 荣誉室样式
+?? versus/public/honor_assets/*.webp - 四类高分辨率奖杯资源
+?? test/honor-room.test.js - 荣誉室结算与展示回归
+?? handoff/football-ydl-s4-honor-mail-tactics-hotfix-20260811-161002-r3.tar.gz
+?? handoff/football-ydl-s4-handoff-20260811-1812.zip
+
+运维：删除已核对的非活动旧快照后根分区约 70%、可用约 12GB；活动分片不可手工删 revision。分析：0811 存档真人对真人 116 场，图表随交接包提供，原始存档不打包。
+
+2026-08-11 00:37 最新增量：
+
+M versus/trait-pool.js - 新增全位置正式特性“别打我大哥”，正式特性池增至 19 张
+M versus/v2/match-engine-v2.js - 队友伤病转移、真实伤退/换人/播报/赛后伤停归属
+M test/ydl-traits.test.js - 特性池数量、顺序和规则回归
+M test/match-engine-v2.test.js - “别打我大哥”完整伤病链路回归
+M versus/league-service.js - 私有池批量开包与市场增量响应、全位置包 1.5% 传奇 S
+M versus/s4-balance.js - 传奇卡包价格 10000 金币
+M versus/public/app.js - 开包堆叠/分页、市场分页、增量合并和传奇命中展示
+M versus/public/styles.css - 开包与市场分页/传奇命中样式
+?? handoff/football-ydl-s4-pack-market-legend-trait-hotfix-20260811-003616.tar.gz
+?? handoff/football-ydl-s4-handoff-20260811-0037.zip
+
+验证：V2/特性池定向测试 32/32；上一轮开包/市场专项 6 项和已有回归 10 项；未运行完整测试集。
 
 2026-08-04 13:27 黄狗世界杯与后台补开：
 
@@ -244,3 +294,44 @@ M versus/ydl-content-store.js
 明确排除：.tmp-browser-formation-lines/、data/s4-test/、outputs/、Cloud_league_data/、旧热更新包、账号与服务器凭据。
 
 以下为 2026-08-01 13:05 的历史清单：
+2026-08-05 22:00 V2 alpha.17、世界杯完善与圆圈比赛 Demo
+
+M A_profile/a-player-profile-positions.json
+?? A_miss_profile/a-player-profile-positions (1).json
+?? A_profile/webp/Ccurelia.webp
+?? A_profile/webp/Gravenberch.webp
+M devtool/sync-a-player-profiles.js
+?? devtool/generate-v2-circle-demo.js
+M versus/api.js
+M versus/league-service.js
+M versus/public/a-player-profiles.js
+M versus/public/app.js
+M versus/public/styles.css
+?? versus/public/v2-circle-demo.html
+?? versus/public/v2-circle-demo.css
+?? versus/public/v2-circle-demo.js
+?? versus/public/v2-circle-demo-data.json
+M versus/s4-balance-report.js
+M versus/v2/engine-comparison-v2-worker.js
+M versus/v2/engine-comparison-v2.js
+?? versus/v2/engine-comparison-v2-full-balance-matrix-alpha17.json
+?? versus/v2/engine-comparison-v2-scenario-matrix.js
+M versus/v2/match-engine-v2.js
+M versus/v2/match-parameters-v2.js
+M versus/v2/match-parameters-v2.json
+M versus/v2/possession-chain-v2.js
+M versus/v2/spatial-model-v2.js
+M versus/v2/team-snapshot-v2.js
+M versus/v2/ydl-league-engine-adapter.js
+M test/league.test.js
+M test/match-engine-v2-parameters.test.js
+M test/match-engine-v2.test.js
+M test/possession-chain-v2.test.js
+M test/s4-assets.test.js
+M test/spatial-model-v2.test.js
+M test/world-cup.test.js
+M test/ydl-league-engine-v2.test.js
+
+验证：圆圈 Demo 60 条 V2 控球链 / 37 个事件 / 30 分钟；语法、差异检查、桌面与手机浏览器通过。未运行完整测试。
+
+明确排除：运行存档、线上分片、Cloud_league_data、outputs、x_profile 临时图片、账号、密钥、备份和历史压缩包。

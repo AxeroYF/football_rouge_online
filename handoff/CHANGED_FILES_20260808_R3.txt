@@ -1,0 +1,79 @@
+YellowDogs League S4 local handoff scope, 2026-08-08 R3
+
+Handoff documents:
+- handoff/LATEST_20260808_R3.md
+- handoff/NEW_CHAT_PROMPT_20260808_R3.md
+- handoff/CHANGED_FILES_20260808_R3.txt
+- handoff/MANIFEST_20260808_R3.md
+
+Production/runtime source:
+- admin/public/app.js
+- versus/admin-api.js
+- versus/api.js
+- versus/automatic-substitution.js
+- versus/league-service.js
+- versus/league-shard-store.js
+- versus/match-engine.js
+- versus/player-pool-s4-dlc-generated.js
+- versus/public/a-player-profiles.js
+- versus/public/app.js
+- versus/public/formation-rules.js
+- versus/public/legendary-profiles.js
+- versus/public/styles.css
+- versus/public/x-player-profiles.js
+- versus/s4-assets.js
+- versus/s4-balance.js
+- versus/v2/match-engine-v2.js
+- versus/v2/match-parameters-v2.js
+- versus/v2/match-parameters-v2.json
+- versus/v2/possession-chain-v2.js
+- versus/v2/spatial-model-v2.js
+- versus/v2/team-snapshot-v2.js
+- versus/v2/ydl-league-engine-adapter.js
+
+DLC3 data and tooling:
+- A_profile/a-player-profile-positions.json
+- legendary_profile/legendary-profile-positions.json
+- x_profile/x-player-profile-positions.json
+- data/player-dlc3-s4-final.json
+- data/s4-player-pool-with-dlc.json
+- player_dlc3/list.txt
+- player_dlc3/dlc3-identities.json
+- player_dlc3/DLC3球员_S4耦合回归初版.json
+- player_dlc3/DLC3球员_S4耦合回归复核版.json
+- player_dlc3/A_Profile/a-player-profile-positions.json
+- player_dlc3/S_profile/legendary-profile-positions.json
+- player_dlc3/X_profile/x-player-profile-positions.json
+- devtool/build-player-dlc3-initial.py
+- devtool/import-player-dlc-profiles.js
+- devtool/import-player-dlc-to-s4.js
+- devtool/prepare-player-dlc3-runtime.js
+- devtool/regress-player-dlc3-edits.py
+- devtool/sync-a-player-profiles.js
+- devtool/sync-legendary-profiles.js
+- devtool/sync-x-player-profiles.js
+
+Focused tests:
+- test/admin.test.js
+- test/automatic-substitution.test.js
+- test/friendly-invitation-performance.test.js
+- test/league-shards.test.js
+- test/league.test.js
+- test/match-engine-v2-parameters.test.js
+- test/match-engine-v2.test.js
+- test/mirror-marketplace.test.js
+- test/possession-chain-v2.test.js
+- test/s4-assets.test.js
+- test/spatial-model-v2.test.js
+- test/versus-formation.test.js
+- test/versus.test.js
+- test/ydl-league-engine-v2.test.js
+
+Deletion record:
+- test/world-cup.test.js (World Cup mode removed)
+
+Excluded:
+- data/yellowdogs-league*, Cloud_league_data/, runtime shards, accounts and credentials
+- WebP/PNG card art, spreadsheets and raw EA source downloads
+- node_modules/, .git/, outputs/, old handoff/hotfix archives
+- versus/public/v25-* and other V2.5-only demos/assets

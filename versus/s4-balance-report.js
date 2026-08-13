@@ -1,13 +1,14 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { roleGroup } from "../game/public/schema.js";
+import { positionFitScore, roleGroup } from "../game/public/schema.js";
 import { advanceVersusMatch, createVersusMatch, HALFTIME_ADJUSTMENT_MS, REGULAR_DURATION_MS } from "./match-engine.js";
 import { isXPlayer, REAL_PLAYERS } from "./player-pool.js";
 import { defaultElevenPositions, inferElevenBoardRoles } from "./rules.js";
 import { applyS4Enhancement } from "./s4-balance.js";
 import { YDL_TRAIT_CARDS } from "./trait-pool.js";
 import { createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
+import { v2RecommendedPlayerDuties } from "./public/v2-tactical-guidance.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const argument = (name) => process.argv.find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3) ?? null;
@@ -89,8 +90,8 @@ function legendSlotFit(player, role) {
   return 0;
 }
 
-function assignLegendsToFormation(formationName, count, rng) {
-  const slots = FORMATIONS[formationName].map(([role], index) => ({ role, index }));
+function assignLegendsToFormation(formationName, count, rng, formationSlots = FORMATIONS[formationName]) {
+  const slots = formationSlots.map(([role], index) => ({ role, index }));
   const legends = REAL_PLAYERS.filter((player) => player.grade === "S");
   const candidates = legends.flatMap((player) => slots.map((slot) => ({
     player,
@@ -147,20 +148,22 @@ function xPlayer(role, id, upgradeLevel, traitIds) {
 function buildSeat(seed, side, archetype, options = {}) {
   const rng = seededRandom(`${seed}:${side}:${archetype}`);
   const formationName = options.formation ?? pick(rng, Object.keys(FORMATIONS));
+  const formationSlots = options.formationSlots ?? FORMATIONS[formationName];
+  if (!Array.isArray(formationSlots) || formationSlots.length !== 11) throw new Error(`模拟阵型${formationName}必须包含11个位置`);
   const used = new Set();
   const players = [];
   const positions = {};
   const legendCount = options.legendCount ?? (archetype === "legendHeavy" ? 5 : archetype === "standard" ? Number(rng() < .25) : Math.floor(rng() * 3));
   const exactLegendCount = options.legendCount != null || archetype === "legendHeavy";
-  const legendAssignments = exactLegendCount ? assignLegendsToFormation(formationName, legendCount, rng) : new Map();
+  const legendAssignments = exactLegendCount ? assignLegendsToFormation(formationName, legendCount, rng, formationSlots) : new Map();
   const nationalityPool = REAL_PLAYERS.filter((player) => !isXPlayer(player)).reduce((counts, player) => counts.set(player.nationality, (counts.get(player.nationality) ?? 0) + 1), new Map());
   const nationality = options.nationality ?? (archetype === "nationalityHeavy"
     ? pick(rng, [...nationalityPool.entries()].filter(([, count]) => count >= 10).map(([name]) => name))
     : null);
   let xRemaining = archetype === "xLed" ? 1 : 0;
   const xRoleGroup = options.xRoleGroup ?? pick(rng, ["GK", "DEF", "MID", "ATT"]);
-  const xIndex = xRemaining ? FORMATIONS[formationName].findIndex(([role]) => roleGroup(ROLE_FALLBACKS[role] ?? role) === xRoleGroup) : -1;
-  FORMATIONS[formationName].forEach(([role, x, y], index) => {
+  const xIndex = xRemaining ? formationSlots.findIndex(([role]) => roleGroup(ROLE_FALLBACKS[role] ?? role) === xRoleGroup) : -1;
+  formationSlots.forEach(([role, x, y], index) => {
     const upgradeLevel = options.upgradeLevel ?? upgradeFor(archetype, rng);
     const traitCount = options.traitCount ?? (archetype === "traitHeavy" ? (upgradeLevel >= 8 ? 2 : 1) : upgradeLevel >= 7 ? 2 : upgradeLevel >= 4 ? 1 : 0);
     let player;
@@ -189,22 +192,58 @@ function buildSeat(seed, side, archetype, options = {}) {
   });
   const shift = (source, yDelta, xScale = 1) => Object.fromEntries(Object.entries(source).map(([id, point]) => [id, { x:50 + (point.x - 50) * xScale, y:Math.max(8, Math.min(92, point.y + yDelta)) }]));
   const positionPresets = { position1:positions, position2:shift(positions, 4, .96), position3:shift(positions, -4, 1.04) };
+  const assignedRoles = Object.fromEntries(players.map((player, index) => [player.id, formationSlots[index][0]]));
+  const dutyRecommendations = options.playerDutyMode === "recommended"
+    ? v2RecommendedPlayerDuties(players, assignedRoles, (player, role) => positionFitScore(player, role))
+    : null;
+  const playerDuties = dutyRecommendations
+    ? Object.fromEntries(Object.entries(dutyRecommendations).map(([playerId, recommendation]) => [playerId, recommendation.id]))
+    : structuredClone(options.playerDuties ?? {});
   const tactic = options.tactic ?? pick(rng, TACTICS);
   const style = options.style ?? pick(rng, STYLES);
+  const openingPlan = {
+    tactic,
+    style,
+    inPossession:options.inPossession ?? "balanced",
+    outOfPossession:options.outOfPossession ?? "balanced",
+    inPossessionDetails:options.inPossessionDetails,
+    outOfPossessionDetails:options.outOfPossessionDetails,
+    tacticalDimensions:options.tacticalDimensions,
+    playerDuties,
+    positionPreset:"position1",
+  };
+  const tacticalPlans = options.lockTacticalProfile
+    ? { opening:openingPlan, leading:{ ...openingPlan }, trailing:{ ...openingPlan } }
+    : options.staticPlans ? null : { opening:openingPlan, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"possession", positionPreset:"position3" } };
+  const formationLines = options.formationLines ?? null;
   return {
     name:`${archetype}-${side}`,
     simulationFormation:formationName,
     simulationArchetype:archetype,
+    simulationFormationTags:options.formationTags ?? [],
+    simulationShapeRisk:options.shapeRisk ?? "normal",
+    simulationTacticalProfile:options.tacticalProfileId ?? `${tactic}:${style}`,
+    simulationDetailProfile:options.detailProfileId ?? "default",
+    simulationPlayerDutyMode:options.playerDutyMode ?? (Object.keys(playerDuties).length ? "custom" : "default"),
+    simulationBondMode:options.bondMode ?? "natural",
     players,
     positions:structuredClone(positionPresets.position1),
     positionPresets,
+    formationLines,
+    formationLinePresets:formationLines ? { position1:formationLines, position2:formationLines, position3:formationLines } : undefined,
     tactic,
     style,
-    tacticalPlans:options.staticPlans ? null : { opening:{ tactic, style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"possession", positionPreset:"position3" } },
-    attackFocus:pick(rng, FOCUSES),
-    defenseFocus:pick(rng, FOCUSES),
+    inPossession:openingPlan.inPossession,
+    outOfPossession:openingPlan.outOfPossession,
+    inPossessionDetails:openingPlan.inPossessionDetails,
+    outOfPossessionDetails:openingPlan.outOfPossessionDetails,
+    tacticalDimensions:openingPlan.tacticalDimensions,
+    playerDuties:openingPlan.playerDuties,
+    tacticalPlans,
+    attackFocus:options.attackFocus ?? pick(rng, FOCUSES),
+    defenseFocus:options.defenseFocus ?? pick(rng, FOCUSES),
     preserveFitness:true,
-    bondCatalog:createS4BondCatalog(REAL_PLAYERS),
+    bondCatalog:options.bondMode === "disabled" ? [] : createS4BondCatalog(REAL_PLAYERS),
     // The normal match engine refreshes the top two identity/structure bonds.
     // Keep this explicit in simulation seats so nationality-heavy scenarios exercise the same path.
     nationalityBond:nationality,

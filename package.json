@@ -35,6 +35,10 @@
     "balance:ydl:s4:fast": "node versus/s4-balance-report.js --config=s4-balance-config-fast.json",
     "balance:ydl:s4:fast:parallel": "node versus/s4-balance-report-parallel.js --config=s4-balance-config-fast.json",
     "compare:engine:v1-v2": "node versus/v2/engine-comparison-v2.js",
+    "balance:ydl:v2.1:full-realism": "node versus/v2/engine-comparison-v2.js --config=engine-comparison-v2.1-full-realism-baseline.json",
+    "balance:ydl:v2.1:full": "node versus/v2/engine-comparison-v2.js --config=v2.1-full-balance-simulation.json",
+    "baseline:ydl:v2.1d": "node versus/v2/dynamic-shape-baseline-v2.js --config=dynamic-shape-baseline-v2.config.json",
+    "baseline:ydl:v2.1d:candidate": "node versus/v2/dynamic-shape-candidate-baseline-v2.js --config=dynamic-shape-candidate-baseline-v2.config.json",
     "simulate:engine:v2": "node versus/v2/match-engine-v2-cli.js",
     "benchmark:engine:v2-server": "node versus/v2/server-pressure-benchmark-v2.js",
     "migrate:league:shards": "node devtool/migrate-league-to-shards.js",
@@ -43,7 +47,11 @@
     "traits": "node src/trait-cli.js --seed demo --role ST",
     "test": "node --test test/*.test.js"
   },
-  "devDependencies": {
-    "sharp": "^0.34.5"
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "sharp": "^0.35.3"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

@@ -101,7 +101,7 @@ export function buildV2TeamSnapshots(teams, options = {}) {
           legendSpecialAbility:false,
           xGrowthAttributes:true,
           xSelectedTraits:true,
-          substitutions:false,
+          substitutions:Boolean(parameters.state.substitutionsEnabled),
           legendSpecialAbility:false,
         },
         sourceCounts:{ legends:players.filter((player) => player.grade === "S" || player.legendary).length, xPlayers:players.filter((player) => player.grade === "X" || player.xPlayer).length },

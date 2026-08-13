@@ -10,6 +10,7 @@ const ROOT = path.resolve(HERE, "..");
 const PROFILE_DIRECTORY = path.join(ROOT, "A_profile");
 const POSITION_PATH = path.join(PROFILE_DIRECTORY, "a-player-profile-positions.json");
 const MODULE_PATH = path.join(ROOT, "versus/public/a-player-profiles.js");
+const ADDITIONAL_PROFILE_PLAYER_IDS = new Set(["s4-fc26-183898", "s4-fc26-239231", "s4-fc26-246104"]);
 
 function normalizedName(value) {
   return String(value ?? "")
@@ -19,15 +20,29 @@ function normalizedName(value) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+function normalizedWords(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 function eligiblePlayers() {
   return Object.values(REAL_PLAYER_BY_ID)
-    .filter((player) => player.grade === "A" && Number(player.overall) >= 87);
+    .filter((player) => (player.grade === "A" && Number(player.overall) >= 87) || ADDITIONAL_PROFILE_PLAYER_IDS.has(player.id));
 }
 
 function playerForProfileKey(profileKey, players) {
   const normalizedKey = normalizedName(profileKey);
   const exactMatches = players.filter((player) => normalizedName(player.sourceName) === normalizedKey);
-  const matches = exactMatches.length ? exactMatches : players.filter((player) => {
+  const keyWords = normalizedWords(profileKey);
+  const wordMatches = exactMatches.length ? [] : players.filter((player) => {
+    const sourceWords = ` ${normalizedWords(player.sourceName)} `;
+    return keyWords && sourceWords.includes(` ${keyWords} `);
+  });
+  const matches = exactMatches.length ? exactMatches : wordMatches.length ? wordMatches : players.filter((player) => {
     const normalizedSourceName = normalizedName(player.sourceName);
     return normalizedSourceName.includes(normalizedKey) || normalizedKey.includes(normalizedSourceName);
   });

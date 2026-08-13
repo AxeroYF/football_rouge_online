@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>联赛冠军奖杯 · 3D预览</title>
+  <link rel="stylesheet" href="/versus/league-trophy-demo.css" />
+</head>
+<body>
+  <main class="trophy-stage">
+    <canvas id="trophy-canvas" aria-label="联赛冠军奖杯3D模型"></canvas>
+
+    <header class="trophy-header">
+      <a href="/versus/" class="brand-mark" aria-label="返回黄狗联赛">
+        <span>YDL</span>
+        <strong>HONOURS</strong>
+      </a>
+      <div>
+        <small>YELLOWDOGS LEAGUE</small>
+        <h1>联赛冠军奖杯</h1>
+      </div>
+    </header>
+
+    <section class="trophy-inscription" aria-label="奖杯信息">
+      <small>LEAGUE CHAMPION</small>
+      <strong>荣耀铸于每一轮</strong>
+      <span>2026 · TROPHY No. 01</span>
+    </section>
+
+    <nav class="trophy-controls" aria-label="奖杯查看控制">
+      <div class="ribbon-swatches" aria-label="缎带颜色">
+        <button type="button" class="swatch swatch-blue active" data-ribbon="royal" aria-label="皇家蓝缎带" title="皇家蓝缎带"></button>
+        <button type="button" class="swatch swatch-red" data-ribbon="crimson" aria-label="冠军红缎带" title="冠军红缎带"></button>
+        <button type="button" class="swatch swatch-black" data-ribbon="noir" aria-label="典雅黑缎带" title="典雅黑缎带"></button>
+      </div>
+      <span class="control-divider"></span>
+      <button type="button" class="icon-control" id="toggle-rotation" aria-label="暂停自动旋转" title="暂停自动旋转">Ⅱ</button>
+      <button type="button" class="icon-control" id="reset-view" aria-label="重置视角" title="重置视角">↻</button>
+    </nav>
+
+    <footer class="edition-mark">
+      <span>01</span>
+      <div><small>FIRST EDITION</small><strong>LEAGUE TROPHY</strong></div>
+    </footer>
+  </main>
+  <script defer src="/versus/league-trophy-demo.bundle.js"></script>
+</body>
+</html>

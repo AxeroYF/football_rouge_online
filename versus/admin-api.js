@@ -2,7 +2,19 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { versusRooms } from "./room-service.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { yellowDogsLeague } from "./league-service.js";
-import { createYdlTraitDraft, updateYdlPlayer, updateYdlTrait, ydlContentView } from "./ydl-content-store.js";
+import { createYdlTraitDraft, updateYdlPlayer, updateYdlTrait, ydlContentSection, ydlContentView } from "./ydl-content-store.js";
+import {
+  createPlayerCardBatch,
+  createPlayerCardDraft,
+  createPlayerCardDrafts,
+  publishPlayerCardBatch,
+  publishPlayerCardDrafts,
+  regressPlayerAttributes,
+  savePlayerCardProfile,
+  updatePlayerCardBatch,
+  updatePlayerCardDraft,
+} from "./player-card-studio-store.js";
+import { buildPlayerImportWorkbook, parsePlayerImportWorkbook } from "./player-card-excel.js";
 
 const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971019";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -182,7 +194,7 @@ function matchDetail(matchId) {
   return hydrateHistoricalMatchDetail(match);
 }
 
-export async function handleAdminApi(request, response, pathname, readJson, sendJson) {
+export async function handleAdminApi(request, response, pathname, readJson, sendJson, readBuffer = null) {
   try {
     if (request.method === "POST" && pathname === "/api/admin/login") {
       const key = clientKey(request);
@@ -210,9 +222,95 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "GET" && pathname === "/api/admin/dashboard") return sendJson(response, 200, { ok: true, dashboard: buildDashboard() });
     if (request.method === "GET" && pathname === "/api/admin/league") return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
     if (request.method === "GET" && pathname === "/api/admin/content") return sendJson(response, 200, { ok:true, content:ydlContentView() });
+    const contentSectionMatch = pathname.match(/^\/api\/admin\/content\/(summary|players|studio|analytics|traits)$/);
+    if (request.method === "GET" && contentSectionMatch) return sendJson(response, 200, { ok:true, content:ydlContentSection(contentSectionMatch[1]) });
+    if (request.method === "GET" && pathname === "/api/admin/content/player-import/template") {
+      const workbook = await buildPlayerImportWorkbook();
+      response.writeHead(200, {
+        "content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "content-disposition":"attachment; filename=ydl-player-import-template.xlsx",
+        "content-length":workbook.length,
+        "cache-control":"no-store",
+      });
+      return response.end(workbook);
+    }
+    if (request.method === "POST" && pathname === "/api/admin/content/player-import/preview") {
+      if (!readBuffer) throw new Error("当前服务不支持Excel上传");
+      const preview = await parsePlayerImportWorkbook(await readBuffer(request, 8 * 1024 * 1024));
+      return sendJson(response, 200, { ok:true, preview });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/content/player-import/commit") {
+      const body = await readJson(request);
+      const drafts = await createPlayerCardDrafts(body.rows, body.batchId);
+      return sendJson(response, 201, { ok:true, drafts, studio:ydlContentSection("studio"), summary:ydlContentSection("summary") });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/content/player-batches") {
+      const body = await readJson(request);
+      const batch = await createPlayerCardBatch(body);
+      return sendJson(response, 201, { ok:true, batch, studio:ydlContentSection("studio") });
+    }
+    const contentBatchMatch = pathname.match(/^\/api\/admin\/content\/player-batches\/([^/]+)$/);
+    if (request.method === "POST" && contentBatchMatch) {
+      const body = await readJson(request);
+      const batch = await updatePlayerCardBatch(decodeURIComponent(contentBatchMatch[1]), body);
+      return sendJson(response, 200, { ok:true, batch, studio:ydlContentSection("studio") });
+    }
+    const contentBatchPublishMatch = pathname.match(/^\/api\/admin\/content\/player-batches\/([^/]+)\/publish$/);
+    if (request.method === "POST" && contentBatchPublishMatch) {
+      const result = await publishPlayerCardBatch(decodeURIComponent(contentBatchPublishMatch[1]));
+      return sendJson(response, 200, { ok:true, ...result, studio:ydlContentSection("studio"), summary:ydlContentSection("summary") });
+    }
     if (request.method === "POST" && pathname === "/api/admin/content/traits") {
       const body = await readJson(request);
       return sendJson(response, 201, { ok:true, trait:await createYdlTraitDraft(body) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/content/player-drafts") {
+      const body = await readJson(request);
+      const draft = await createPlayerCardDraft(body);
+      return sendJson(response, 201, { ok:true, draft, summary:ydlContentSection("summary") });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/content/player-drafts/regress") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, regression:regressPlayerAttributes(body.role, body.overall) });
+    }
+    if (request.method === "POST" && pathname === "/api/admin/content/player-drafts/publish") {
+      const body = await readJson(request);
+      const players = await publishPlayerCardDrafts(body.ids);
+      return sendJson(response, 200, {
+        ok:true,
+        players,
+        studio:ydlContentSection("studio"),
+        summary:ydlContentSection("summary"),
+      });
+    }
+    const contentDraftMatch = pathname.match(/^\/api\/admin\/content\/player-drafts\/([^/]+)$/);
+    if (request.method === "POST" && contentDraftMatch) {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, draft:await updatePlayerCardDraft(decodeURIComponent(contentDraftMatch[1]), body) });
+    }
+    const contentProfileMatch = pathname.match(/^\/api\/admin\/content\/player-profiles\/([^/]+)$/);
+    if (request.method === "POST" && contentProfileMatch) {
+      const body = await readJson(request);
+      const profile = await savePlayerCardProfile(decodeURIComponent(contentProfileMatch[1]), body);
+      return sendJson(response, 200, { ok:true, profile, summary:ydlContentSection("summary") });
+    }
+    const contentProfileImageMatch = pathname.match(/^\/api\/admin\/content\/player-profiles\/([^/]+)\/image$/);
+    if (request.method === "POST" && contentProfileImageMatch) {
+      if (!readBuffer) throw new Error("当前服务不支持二进制卡画上传");
+      const contentType = String(request.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
+      if (!['image/png', 'image/webp'].includes(contentType)) throw new Error("请上传PNG或WebP卡画");
+      const rawFileName = String(request.headers["x-ydl-file-name"] ?? "player.png");
+      let sourceFileName = rawFileName;
+      try { sourceFileName = decodeURIComponent(rawFileName); } catch {}
+      const profile = await savePlayerCardProfile(decodeURIComponent(contentProfileImageMatch[1]), {
+        imageBuffer:await readBuffer(request, 12 * 1024 * 1024),
+        mimeType:contentType,
+        sourceFileName,
+        xPercent:request.headers["x-ydl-profile-x"],
+        yPercent:request.headers["x-ydl-profile-y"],
+        widthPercent:request.headers["x-ydl-profile-width"],
+      });
+      return sendJson(response, 200, { ok:true, profile, summary:ydlContentSection("summary") });
     }
     const contentPlayerMatch = pathname.match(/^\/api\/admin\/content\/players\/([^/]+)$/);
     if (request.method === "POST" && contentPlayerMatch) {
@@ -235,25 +333,6 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     }
     if (request.method === "POST" && pathname === "/api/admin/league/cup/start") {
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.startCup() });
-    }
-    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/bootstrap") {
-      const body = await readJson(request);
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.bootstrapWorldCup(body.startsAt) });
-    }
-    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/reanchor") {
-      const body = await readJson(request);
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.reanchorWorldCup(body.startsAt) });
-    }
-    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/start-next") {
-      const started = yellowDogsLeague.startScheduledWorldCupEvent();
-      if (!started) throw new Error("当前没有可以立即启动的世界杯轮次");
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
-    }
-    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/repair") {
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.repairWorldCup() });
-    }
-    if (request.method === "POST" && pathname === "/api/admin/league/world-cup/close") {
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.closeWorldCup() });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/daily-settlement/reward") {
       return sendJson(response, 200, { ok:true, settlement:yellowDogsLeague.settleDailySeason({ manual:true }), league:yellowDogsLeague.adminView() });

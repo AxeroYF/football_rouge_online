@@ -1,5 +1,43 @@
 # V2 增量交接包清单
 
+## 2026-08-12 V2.1 平衡、SQL 评估与对话交接
+
+- 最新状态：`handoff/LATEST_20260812.md`。
+- SQL 迁移评估：`docs/sql-storage-assessment-20260812.md`。
+- 最新 V2.1 平衡热更新：`football-ydl-s4-v21-balance-hotfix-20260812-092423.tar.gz`，SHA256 `bda8ebe17ed57ab19522e4f98e2e7dc4c90647e3e32f0a3187eaaf6dda180f0c`。
+- 新交接 ZIP 仅用于恢复开发上下文，不得直接覆盖生产服务；不包含运行存档、账号、分片、模拟输出或卡画大资源。
+
+
+> 2026-08-11 18:12 最新交接包说明与文件边界见 `handoff/LATEST_20260811.md`。
+
+## 2026-08-11 18:12 荣誉室/邮件/战术 UI R3 与对话交接
+
+- 生产包：`football-ydl-s4-honor-mail-tactics-hotfix-20260811-161002-r3.tar.gz`。
+- SHA256：`5d4bc2b3d9b90e1013f9d8f1b03384a78c2fe3c228142f080fc01f77c4667e44`。
+- 运行文件：`versus/api.js`、`versus/league-service.js`、`versus/honor-room-seed.js`、`versus/public/index.html`、`versus/public/app.js`、`versus/public/styles.css`、`versus/public/s4-player-card.css`、`versus/public/honor-room.css` 与四张 `versus/public/honor_assets/*-v2.webp`。
+- R3 取代同日 R2/R1 和重叠的 003616 包；不包含存档、分片、账号、工作台数据、依赖或原始卡画。
+- 对话交接包：`football-ydl-s4-handoff-20260811-1812.zip`，包含 R3 归档、当前相关源码/测试、交接文档及 0811 分析 HTML/PNG；原始 31MB 赛季存档明确排除。
+- 服务器清理只删除非活动旧快照；活动 revision 绝大多数仍被 manifest 引用，禁止把手工删除命令写入部署流程。
+
+## 2026-08-11 00:37 开包/市场/传奇概率/新特性热更新与对话交接
+
+- 生产包：`football-ydl-s4-pack-market-legend-trait-hotfix-20260811-003616.tar.gz`。
+- SHA256：`b709afee062d2c1617f195ddb990cf739710fea53fe409fbc3b6f2b09b03ae8d`。
+- 生产文件：`versus/league-service.js`、`versus/s4-balance.js`、`versus/trait-pool.js`、`versus/v2/match-engine-v2.js`、`versus/public/app.js`、`versus/public/styles.css`。
+- 新卡“别打我大哥”为全位置正式特性；持卡人在场时承接其他队友伤病，伤退、换人、播报和赛后伤停使用转移后的真实球员。
+- 本包包含并取代 `football-ydl-s4-pack-market-legend-hotfix-20260811-000707.tar.gz`。
+- 对话交接包：`football-ydl-s4-handoff-20260811-0037.zip`，仅用于恢复本地开发上下文，不可整体覆盖生产服。
+- 定向测试 32/32；按用户要求未运行完整测试集。
+
+## 2026-08-05 22:00 V2 alpha.17 + 圆圈比赛完整交接包
+
+- 压缩包：`football-ydl-s4-v2-circle-demo-handoff-20260805-2200.zip`
+- 基础：继承 `football-ydl-s4-world-cup-handoff-20260804-1327.zip`，再以当前工作树覆盖 8 月 4 日之后的全部受控开发成果。
+- 新增圆圈 Demo：`devtool/generate-v2-circle-demo.js`、`versus/public/v2-circle-demo.html`、`versus/public/v2-circle-demo.css`、`versus/public/v2-circle-demo.js`、`versus/public/v2-circle-demo-data.json`。
+- 追加当前 V2/世界杯/AI 对战/友谊赛/伤停计时/球员卡源文件及相应测试；包内 `handoff/` 五份文档均为本次最新版。
+- 明确排除：`data/yellowdogs-league*`、线上分片、`Cloud_league_data/`、`outputs/`、历史压缩包、`.git/`、`node_modules/`、账号、密钥、备份及 `x_profile` 临时图片。
+- 验证：Demo 生成、JavaScript 语法、差异检查及桌面/手机浏览器检查通过；未运行完整测试。
+
 ## 2026-08-04 13:27 黄狗世界杯完整交接包
 
 - 压缩包：`football-ydl-s4-world-cup-handoff-20260804-1327.zip`

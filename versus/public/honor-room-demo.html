@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#100d09" />
+    <title>黄狗联赛 · 荣誉室 Demo</title>
+    <link rel="stylesheet" href="/versus/styles.css" />
+    <link rel="stylesheet" href="/versus/s4-player-card.css" />
+    <link rel="stylesheet" href="/versus/honor-room.css" />
+  </head>
+  <body class="honor-room-page">
+    <main class="honor-room" id="honor-room">
+      <header class="honor-topbar">
+        <a class="honor-brand" href="/versus/" aria-label="返回黄狗联赛">
+          <span>YD</span>
+          <div><b>荣誉室</b><small>YDL HALL OF HONOURS</small></div>
+        </a>
+        <div class="honor-topbar-copy">
+          <small>CLUB LEGACY ARCHIVE · VISUAL DEMO</small>
+          <span>奖杯、纪录与传奇球员共同组成俱乐部历史</span>
+        </div>
+        <button type="button" class="honor-theme-toggle" id="honor-theme-toggle" aria-label="切换展厅灯光">◐</button>
+      </header>
+
+      <nav class="honor-club-switcher" id="honor-club-switcher" aria-label="选择演示俱乐部"></nav>
+
+      <section class="honor-hero" id="honor-hero" aria-live="polite"></section>
+
+      <section class="honor-section trophy-gallery-section">
+        <header class="honor-section-heading">
+          <div><small>TROPHY GALLERY</small><h2>冠军陈列馆</h2></div>
+        </header>
+        <div class="honor-trophy-galleries" id="honor-trophy-galleries"></div>
+      </section>
+
+      <section class="honor-section appearances-section">
+        <header class="honor-section-heading">
+          <div><small>ALL-TIME APPEARANCES</small><h2>队史出场殿堂</h2></div>
+        </header>
+        <div class="appearance-podium" id="appearance-podium"></div>
+      </section>
+
+      <section class="honor-section record-feature-grid">
+        <article class="record-feature scorer-feature">
+          <header><div><small>ALL-TIME TOP SCORER</small><h2>队史最佳射手</h2></div><span>GOAL RECORD</span></header>
+          <div id="top-scorer-feature"></div>
+        </article>
+        <article class="record-feature ballon-feature">
+          <header><div><small>SEASON BALLON D'OR</small><h2>金球奖荣誉</h2></div><span>GOLDEN LEGACY</span></header>
+          <div id="ballon-dor-feature"></div>
+        </article>
+      </section>
+
+      <footer class="honor-footer">
+        <span>YELLOWDOGS LEAGUE · CLUB HISTORY</span>
+        <p>视觉 Demo：球员纪录使用当前已恢复的 13 季联赛及可用杯赛汇总；旧杯赛明细补齐后可无缝替换。</p>
+      </footer>
+    </main>
+
+    <div class="honor-toast" id="honor-toast" role="status"></div>
+    <script type="module" src="/versus/honor-room-demo.js"></script>
+  </body>
+</html>

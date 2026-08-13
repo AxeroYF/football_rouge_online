@@ -36,6 +36,10 @@ test("V2战术预设完整覆盖连续战术维度", () => {
   }
   assert.ok(V2_MATCH_PARAMETERS.state.leadingShotXgPenaltyPerGoal > 0);
   assert.ok(V2_MATCH_PARAMETERS.state.leadingShotXgMinimumMultiplier < 1);
+  assert.equal(Object.hasOwn(V2_MATCH_PARAMETERS.state, "homeAdvantageStageAdjustment"), false);
+  assert.equal(V2_MATCH_PARAMETERS.dynamicShape.modelVersion, "dynamic-shape-v2.1-stable.2");
+  assert.equal(V2_MATCH_PARAMETERS.dynamicShape.phaseTwo.enabled, true);
+  assert.equal(V2_MATCH_PARAMETERS.dynamicShape.phaseTwo.underload.referencePlayers, 11);
 });
 
 test("V2参数覆盖只能修改已知路径且返回新的冻结配置", () => {
@@ -44,6 +48,10 @@ test("V2参数覆盖只能修改已知路径且返回新的冻结配置", () => 
   assert.equal(V2_MATCH_PARAMETERS.state.chainAttemptProbabilityPerMinute, 0.55);
   assert.equal(Object.isFrozen(resolved.state), true);
   assert.throws(() => resolveV2MatchParameters({ state:{ hiddenMomentum:1 } }), /未知V2参数/);
+  assert.throws(
+    () => resolveV2MatchParameters({ dynamicShape:{ phaseTwo:{ transitionRecovery:{ defendingWidthMultiplier:1.2 } } } }),
+    /defendingWidthMultiplier/,
+  );
 });
 
 test("V2校验拒绝未归一权重、越界战术和重复结果所有权", () => {
@@ -60,18 +68,21 @@ test("V2校验拒绝未归一权重、越界战术和重复结果所有权", () 
 
 test("V2参数清单公开版本、20个空间区域和唯一结果负责人", () => {
   const manifest = v2ParameterManifest();
-  assert.equal(manifest.engineVersion, "2.0.0-alpha.15");
+  assert.equal(manifest.engineVersion, "2.1.0");
   assert.equal(manifest.zoneCount, 20);
   assert.equal(new Set(Object.values(manifest.effectOwnership)).size, Object.keys(manifest.effectOwnership).length);
-  assert.equal(V2_MATCH_PARAMETERS.events.injuryPerChain, 0.00018);
+  assert.equal(V2_MATCH_PARAMETERS.events.injuryPerChain, 0.00015);
+  assert.equal(V2_MATCH_PARAMETERS.events.baseFoulProbability, 0.09);
+  assert.ok(V2_MATCH_PARAMETERS.environment.weatherStageImpact.snow === undefined);
+  assert.equal(V2_MATCH_PARAMETERS.environment.weatherStageImpact.chance, 0.4);
   assert.deepEqual(V2_MATCH_PARAMETERS.environment.weatherEventPerChain, {
     sunny:0.00003,
     rain:0.00015,
-    storm:0.009,
+    storm:0.0038,
     snow:0.00024,
   });
   const stormWeight = V2_MATCH_PARAMETERS.environment.weatherWeights.storm
     / Object.values(V2_MATCH_PARAMETERS.environment.weatherWeights).reduce((sum, value) => sum + value, 0);
   const allMatchLightningInjuryChance = stormWeight * (1 - ((1 - V2_MATCH_PARAMETERS.environment.weatherEventPerChain.storm) ** 180));
-  assert.ok(allMatchLightningInjuryChance >= 0.079 && allMatchLightningInjuryChance <= 0.081);
+  assert.ok(allMatchLightningInjuryChance >= 0.049 && allMatchLightningInjuryChance <= 0.051);
 });

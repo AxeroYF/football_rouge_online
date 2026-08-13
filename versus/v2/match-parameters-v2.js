@@ -71,7 +71,7 @@ export function validateV2MatchParameters(parameters) {
   const errors = [];
   if (!isObject(parameters)) return { valid:false, errors:["V2参数必须是对象"] };
   if (parameters.schemaVersion !== 1) errors.push("schemaVersion必须为1");
-  if (!/^2\.0\.0-alpha\.\d+$/.test(String(parameters.engineVersion ?? ""))) errors.push("engineVersion必须是2.0.0-alpha.x");
+  if (!/^2\.1\.\d+$/.test(String(parameters.engineVersion ?? ""))) errors.push("engineVersion必须是2.1.x");
   if (parameters.status !== "parameter-specification") errors.push("当前V2状态必须是parameter-specification");
 
   validateRange(errors, parameters.ability, "ability");
@@ -124,6 +124,16 @@ export function validateV2MatchParameters(parameters) {
   for (const key of ["connectionDistance", "supportDistance", "pressureDistance", "influenceRadius", "influenceFalloff", "minimumInfluence", "tacticalDisplacementMaximum", "dynamicMovementMaximum", "defensiveTrackingRatio", "controlTemperature", "overloadPlayerAdvantage", "maximumLocalAdvantage"]) {
     if (!finite(spatial[key]) || Number(spatial[key]) <= 0) errors.push(`spatial.${key}必须是正数`);
   }
+  for (const key of ["minimumDefenders", "minimumMidfielders", "maximumAttackers", "defenderDeficitWeight", "midfielderDeficitWeight", "attackerExcessWeight", "highLineSafeY", "highLineMaximumRiskY", "verticalGapSafe", "verticalGapMaximum", "goalkeeperGapSafe", "goalkeeperGapMaximum", "pressingCommitmentMinimum", "pressingCommitmentMaximum", "highLineWeight", "verticalGapWeight", "goalkeeperGapWeight", "pressingCommitmentWeight", "advancedMidfielderExcessWeight", "threeBackAdvancedMidfielderWeight", "resistancePenaltyMaximum", "spaceBonusMaximum"]) {
+    if (!finite(spatial.backlineExposure?.[key]) || Number(spatial.backlineExposure[key]) < 0) errors.push(`spatial.backlineExposure.${key}必须是非负数`);
+  }
+  for (const key of ["advancedMidfielderPenaltyPerExtra", "advancedMidfielderMinimumMultiplier", "singleStrikerControlMultiplier", "singleStrikerAttackMultiplier", "singleStrikerSupportMultiplier", "wideMidfielderAttackMultiplier", "wideMidfielderSupportMultiplier"]) {
+    if (!finite(spatial.roleBalance?.[key]) || Number(spatial.roleBalance[key]) <= 0 || Number(spatial.roleBalance[key]) > 2) errors.push(`spatial.roleBalance.${key}必须位于(0,2]`);
+  }
+  if (!Number.isInteger(Number(spatial.roleBalance?.singleStrikerMaximumAdvancedMidfielders)) || Number(spatial.roleBalance.singleStrikerMaximumAdvancedMidfielders) < 0) errors.push("spatial.roleBalance.singleStrikerMaximumAdvancedMidfielders必须是非负整数");
+  for (const [minimumKey, maximumKey] of [["highLineMaximumRiskY", "highLineSafeY"], ["verticalGapSafe", "verticalGapMaximum"], ["goalkeeperGapSafe", "goalkeeperGapMaximum"], ["pressingCommitmentMinimum", "pressingCommitmentMaximum"]]) {
+    if (Number(spatial.backlineExposure?.[minimumKey]) >= Number(spatial.backlineExposure?.[maximumKey])) errors.push(`spatial.backlineExposure.${minimumKey} must be less than ${maximumKey}`);
+  }
   const movementStages = REQUIRED_CHAIN_STAGES.slice(1);
   const movementRoles = ["GK", "CB", "LB", "RB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"];
   for (const stage of movementStages) {
@@ -133,15 +143,78 @@ export function validateV2MatchParameters(parameters) {
     }
   }
 
+  const dynamicShape = parameters.dynamicShape ?? {};
+  if (!["off", "shadow", "stable", "candidate"].includes(dynamicShape.mode)) errors.push("dynamicShape.mode must be off, shadow, stable, or candidate");
+  if (typeof dynamicShape.modelVersion !== "string" || !dynamicShape.modelVersion.length) errors.push("dynamicShape.modelVersion must not be empty");
+  if (typeof dynamicShape.restrictionsEnabled !== "boolean") errors.push("dynamicShape.restrictionsEnabled must be boolean");
+  if (!finite(dynamicShape.stableInfluence) || Number(dynamicShape.stableInfluence) < 0 || Number(dynamicShape.stableInfluence) > 1) errors.push("dynamicShape.stableInfluence must be in [0,1]");
+  if (!Number.isInteger(Number(dynamicShape.diagnostics?.sampleEveryChains)) || Number(dynamicShape.diagnostics.sampleEveryChains) <= 0) errors.push("dynamicShape.diagnostics.sampleEveryChains must be a positive integer");
+  for (const [minimumKey, maximumKey] of [["minimumX", "maximumX"], ["minimumY", "maximumY"]]) {
+    if (!finite(dynamicShape.pitchBounds?.[minimumKey]) || !finite(dynamicShape.pitchBounds?.[maximumKey])) errors.push(`dynamicShape.pitchBounds.${minimumKey}/${maximumKey} must be finite`);
+    else if (Number(dynamicShape.pitchBounds[minimumKey]) >= Number(dynamicShape.pitchBounds[maximumKey])) errors.push(`dynamicShape.pitchBounds.${minimumKey} must be less than ${maximumKey}`);
+  }
+  if (!finite(dynamicShape.minimumPlayerDistance) || Number(dynamicShape.minimumPlayerDistance) <= 0) errors.push("dynamicShape.minimumPlayerDistance must be positive");
+  if (!finite(dynamicShape.maximumPlayerDisplacement) || Number(dynamicShape.maximumPlayerDisplacement) <= Number(dynamicShape.minimumPlayerDistance)) errors.push("dynamicShape.maximumPlayerDisplacement must exceed minimumPlayerDistance");
+  if (!Number.isInteger(Number(dynamicShape.separation?.maximumIterations)) || Number(dynamicShape.separation.maximumIterations) <= 0) errors.push("dynamicShape.separation.maximumIterations must be a positive integer");
+  if (!finite(dynamicShape.separation?.tolerance) || Number(dynamicShape.separation.tolerance) < 0) errors.push("dynamicShape.separation.tolerance must be finite and non-negative");
+  for (const role of ["GK", "CB", "FB", "WB", "DM", "CM", "AM", "W", "ST"]) {
+    if (!finite(dynamicShape.separation?.roleCorrectionWeight?.[role]) || Number(dynamicShape.separation.roleCorrectionWeight[role]) <= 0) errors.push(`dynamicShape.separation.roleCorrectionWeight.${role} must be positive`);
+  }
+  for (const key of ["attackingMinimum", "lateWideMinimum"]) {
+    if (!Number.isInteger(Number(dynamicShape.restDefense?.[key])) || Number(dynamicShape.restDefense[key]) < 0) errors.push(`dynamicShape.restDefense.${key} must be a non-negative integer`);
+  }
+  if (!finite(dynamicShape.restDefense?.protectionLineY) || Number(dynamicShape.restDefense.protectionLineY) < Number(dynamicShape.pitchBounds?.minimumY) || Number(dynamicShape.restDefense.protectionLineY) > Number(dynamicShape.pitchBounds?.maximumY)) errors.push("dynamicShape.restDefense.protectionLineY must be inside pitchBounds");
+  for (const path of ["ballSidePull.attacking", "ballSidePull.defending", "widthInfluence.attacking", "widthInfluence.defending", "fullback.ballSideAdvance", "fullback.farSideDepthRetention", "fullback.farSideTuck", "defensiveMidfielder.coverShift", "transition.attackingDepthMultiplier", "transition.defendingRecoveryMultiplier", "transition.attackingWidthMultiplier"]) {
+    const value = path.split(".").reduce((current, key) => current?.[key], dynamicShape);
+    if (!finite(value) || Number(value) < 0) errors.push(`dynamicShape.${path} must be finite and non-negative`);
+  }
+  for (const role of ["GK", "CB", "FB", "WB", "DM", "CM", "AM", "W", "ST"]) {
+    if (!finite(dynamicShape.roleMobility?.[role]) || Number(dynamicShape.roleMobility[role]) < 0) errors.push(`dynamicShape.roleMobility.${role} must be finite and non-negative`);
+  }
+  for (const stage of movementStages) {
+    if (!finite(dynamicShape.stageIntensity?.[stage]) || Number(dynamicShape.stageIntensity[stage]) < 0 || Number(dynamicShape.stageIntensity[stage]) > 1) errors.push(`dynamicShape.stageIntensity.${stage} must be in [0,1]`);
+  }
+  const phaseTwo = dynamicShape.phaseTwo ?? {};
+  if (typeof phaseTwo.enabled !== "boolean") errors.push("dynamicShape.phaseTwo.enabled must be boolean");
+  if (!finite(phaseTwo.scoreState?.startMinute) || Number(phaseTwo.scoreState.startMinute) < 0 || Number(phaseTwo.scoreState.startMinute) >= Number(parameters.state?.regulationMinutes ?? 90)) errors.push("dynamicShape.phaseTwo.scoreState.startMinute must be inside regulation time");
+  for (const key of ["trailingAttackingAdvance", "trailingDefendingAdvance", "leadingAttackingRetreat", "leadingDefendingRetreat"]) {
+    if (!finite(phaseTwo.scoreState?.[key]) || Number(phaseTwo.scoreState[key]) < 0) errors.push(`dynamicShape.phaseTwo.scoreState.${key} must be finite and non-negative`);
+  }
+  for (const key of ["trailingWidthExpansion", "leadingWidthCompression"]) {
+    if (!finite(phaseTwo.scoreState?.[key]) || Number(phaseTwo.scoreState[key]) < 0 || Number(phaseTwo.scoreState[key]) > 0.5) errors.push(`dynamicShape.phaseTwo.scoreState.${key} must be in [0,0.5]`);
+  }
+  if (!finite(phaseTwo.transitionRecovery?.defendingWidthMultiplier) || Number(phaseTwo.transitionRecovery.defendingWidthMultiplier) <= 0 || Number(phaseTwo.transitionRecovery.defendingWidthMultiplier) > 1) errors.push("dynamicShape.phaseTwo.transitionRecovery.defendingWidthMultiplier must be in (0,1]");
+  for (const mapName of ["roleDepthMultiplier", "attackingRunMultiplier"]) {
+    for (const role of ["GK", "CB", "FB", "WB", "DM", "CM", "AM", "W", "ST"]) {
+      if (!finite(phaseTwo.transitionRecovery?.[mapName]?.[role]) || Number(phaseTwo.transitionRecovery[mapName][role]) <= 0) errors.push(`dynamicShape.phaseTwo.transitionRecovery.${mapName}.${role} must be positive`);
+    }
+  }
+  for (const key of ["attackingRoleExpansion", "lateStageExpansion"]) {
+    if (!finite(phaseTwo.wideOccupancy?.[key]) || Number(phaseTwo.wideOccupancy[key]) < 0 || Number(phaseTwo.wideOccupancy[key]) > 0.5) errors.push(`dynamicShape.phaseTwo.wideOccupancy.${key} must be in [0,0.5]`);
+  }
+  if (!Number.isInteger(Number(phaseTwo.underload?.referencePlayers)) || Number(phaseTwo.underload.referencePlayers) <= 0) errors.push("dynamicShape.phaseTwo.underload.referencePlayers must be a positive integer");
+  if (!Number.isInteger(Number(phaseTwo.underload?.maximumMissingPlayers)) || Number(phaseTwo.underload.maximumMissingPlayers) < 0) errors.push("dynamicShape.phaseTwo.underload.maximumMissingPlayers must be a non-negative integer");
+  for (const key of ["widthCompressionPerMissing", "defensiveRetreatPerMissing", "attackingRestraintPerMissing"]) {
+    if (!finite(phaseTwo.underload?.[key]) || Number(phaseTwo.underload[key]) < 0) errors.push(`dynamicShape.phaseTwo.underload.${key} must be finite and non-negative`);
+  }
+
   const chain = parameters.chain ?? {};
   if (JSON.stringify(chain.stages) !== JSON.stringify(REQUIRED_CHAIN_STAGES)) errors.push(`chain.stages必须严格为${REQUIRED_CHAIN_STAGES.join(" -> ")}`);
   if (!finite(chain.openPlayXgScale) || Number(chain.openPlayXgScale) <= 0 || Number(chain.openPlayXgScale) > 1) errors.push("chain.openPlayXgScale必须位于(0,1]");
+  for (const key of ["selectionExponent", "controlProbabilityWeight", "minimumControlMultiplier", "maximumControlMultiplier"]) {
+    if (!finite(chain.possessionDuration?.[key]) || Number(chain.possessionDuration[key]) <= 0 || Number(chain.possessionDuration[key]) > 3) errors.push(`chain.possessionDuration.${key}必须位于(0,3]`);
+  }
+  if (Number(chain.possessionDuration?.minimumControlMultiplier) > Number(chain.possessionDuration?.maximumControlMultiplier)) errors.push("chain.possessionDuration.minimumControlMultiplier不能大于maximumControlMultiplier");
   const longShot = chain.longShot ?? {};
   for (const key of ["baseDecisionChance", "skillDecisionWeight", "longBallBonus", "lowBlockBonus", "attackingMentalityBonus", "minimumDecisionChance", "maximumDecisionChance", "baseXg", "skillXgWeight", "spaceXgWeight", "minimumXg", "maximumXg"]) {
     if (!finite(longShot[key]) || Number(longShot[key]) < 0 || Number(longShot[key]) > 1) errors.push(`chain.longShot.${key}必须位于[0,1]`);
   }
   if (Number(longShot.minimumDecisionChance) > Number(longShot.maximumDecisionChance)) errors.push("chain.longShot.minimumDecisionChance不能大于maximumDecisionChance");
   if (Number(longShot.minimumXg) > Number(longShot.maximumXg)) errors.push("chain.longShot.minimumXg不能大于maximumXg");
+  const breakaway = chain.breakaway ?? {};
+  for (const key of ["minimumHighLineRisk", "maximumXgBonus", "maximumXg", "transitionMultiplier", "directRouteMultiplier"]) {
+    if (!finite(breakaway[key]) || Number(breakaway[key]) < 0 || Number(breakaway[key]) > 1) errors.push(`chain.breakaway.${key}必须位于[0,1]`);
+  }
   for (const stage of REQUIRED_CHAIN_STAGES) validateRange(errors, chain.probabilityBounds?.[stage], `chain.probabilityBounds.${stage}`);
   for (const stage of REQUIRED_CHAIN_STAGES.slice(1)) {
     const baseProbability = chain.baseProbabilities?.[stage];
@@ -153,9 +226,10 @@ export function validateV2MatchParameters(parameters) {
   for (const key of ["directThreshold", "directMaximumChance", "directConnectionPenalty", "directSpaceReward", "counterMinimumChance", "counterMaximumChance", "counterConnectionBonus", "counterSpaceReward"]) {
     if (!finite(chain.route?.[key]) || Number(chain.route[key]) < 0 || Number(chain.route[key]) > 100) errors.push(`chain.route.${key}必须是有效非负数`);
   }
-  for (const key of ["fatiguePerChain", "pressingFatigueMaximum", "trailingUrgencyMaximum", "leadingControlMaximum"]) {
+  for (const key of ["fatiguePerChain", "pressingFatigueMaximum", "attackingPressFatigueMaximum", "trailingUrgencyMaximum", "leadingControlMaximum", "levelDecisivenessMaximum"]) {
     if (!finite(parameters.state?.[key]) || Number(parameters.state[key]) < 0 || Number(parameters.state[key]) > 1) errors.push(`state.${key}必须位于[0,1]`);
   }
+  if (!finite(parameters.state?.levelDecisivenessStartMinute) || Number(parameters.state.levelDecisivenessStartMinute) < 0 || Number(parameters.state.levelDecisivenessStartMinute) >= Number(parameters.state.regulationMinutes)) errors.push("state.levelDecisivenessStartMinute必须位于常规时间内");
   if (!finite(parameters.state?.leadingShotXgPenaltyPerGoal) || Number(parameters.state.leadingShotXgPenaltyPerGoal) < 0 || Number(parameters.state.leadingShotXgPenaltyPerGoal) > 0.5) errors.push("state.leadingShotXgPenaltyPerGoal必须位于[0,0.5]");
   if (!finite(parameters.state?.leadingShotXgMinimumMultiplier) || Number(parameters.state.leadingShotXgMinimumMultiplier) <= 0 || Number(parameters.state.leadingShotXgMinimumMultiplier) > 1) errors.push("state.leadingShotXgMinimumMultiplier必须位于(0,1]");
 
@@ -166,8 +240,12 @@ export function validateV2MatchParameters(parameters) {
   for (const group of ["cardProbability", "directRedProbability", "weatherEventPerChain"]) {
     for (const [key, value] of Object.entries(parameters.environment?.[group] ?? {})) if (!finite(value) || value < 0 || value > 1) errors.push(`environment.${group}.${key}必须在[0,1]内`);
   }
-  for (const key of ["injuryPerChain", "blackWhistlePerMatch"]) {
+  if (!finite(parameters.events?.secondYellowCardMultiplier) || Number(parameters.events.secondYellowCardMultiplier) < 0 || Number(parameters.events.secondYellowCardMultiplier) > 1) errors.push("events.secondYellowCardMultiplier必须位于[0,1]");
+  for (const key of ["injuryPerChain", "blackWhistlePerMatch", "ownGoalPerMatch", "weatherImpactPerMatch"]) {
     if (!finite(parameters.events?.[key]) || parameters.events[key] < 0 || parameters.events[key] > 1) errors.push(`events.${key}必须在[0,1]内`);
+  }
+  for (const key of ["foulMultiplier", "cardMultiplier", "directRedMultiplier", "foulInjuryMultiplier"]) {
+    if (!finite(parameters.events?.roughPlay?.[key]) || Number(parameters.events.roughPlay[key]) < 1 || Number(parameters.events.roughPlay[key]) > 5) errors.push(`events.roughPlay.${key}必须位于[1,5]内`);
   }
 
   const stacking = parameters.stacking ?? {};

@@ -1,6 +1,10 @@
+import { v2PlayerDutySuitability } from "./v2-player-duty-options.js";
+
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const average = (values, fallback = 60) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : fallback;
 const ROLE_GROUPS = Object.freeze({ GK:new Set(["GK"]), DEF:new Set(["CB", "LB", "RB", "LWB", "RWB"]), ATT:new Set(["ST", "LW", "RW"]) });
+const POSITION_ORDER = Object.freeze(["GK", "CB", "LB", "RB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
+const LEGACY_POSITIONS = Object.freeze({ DEF:"CB", MID:"DM", ATT:"ST", FB:"CB", CM:"DM", CF:"ST" });
 const METRICS = Object.freeze({
   buildUp:{ passing:.28, vision:.22, decisions:.2, firstTouch:.18, composure:.12 },
   progression:{ passing:.22, vision:.18, dribbling:.2, decisions:.16, pace:.12, acceleration:.12 },
@@ -21,6 +25,42 @@ function roleGroup(role) {
   if (ROLE_GROUPS.DEF.has(role)) return "DEF";
   if (ROLE_GROUPS.ATT.has(role)) return "ATT";
   return "MID";
+}
+
+function normalizePosition(role, preferredFoot = "right", salt = 0) {
+  if (role === "LWB") return "LB";
+  if (role === "RWB") return "RB";
+  if (POSITION_ORDER.includes(role)) return role;
+  if (["WB", "WM"].includes(role)) return preferredFoot === "left" ? "LM" : "RM";
+  if (role === "W") return preferredFoot === "left" ? "LW" : "RW";
+  if (role === "FB") return preferredFoot === "left" ? "LB" : "RB";
+  if (role === "AM") return salt % 2 === 0 ? "LM" : "RM";
+  return LEGACY_POSITIONS[role] ?? "DM";
+}
+
+function positionFitScore(player, assignedRole) {
+  const assigned = normalizePosition(assignedRole, player?.preferredFoot);
+  const primary = normalizePosition(player?.role, player?.preferredFoot);
+  const secondary = player?.secondaryRole ? normalizePosition(player.secondaryRole, player?.preferredFoot) : null;
+  const assignedGroup = roleGroup(assigned);
+  const primaryGroup = roleGroup(primary);
+  let fit = assigned === primary
+    ? 1
+    : assigned === secondary
+      ? .9
+      : assignedGroup === primaryGroup
+        ? .8
+        : assignedGroup === "GK"
+          ? Math.max(.35, Number(player?.hidden?.emergencyGoalkeeper ?? 35) / 100)
+          : .66;
+  const leftSide = ["LB", "LWB", "LM", "LW"].includes(assignedRole) || ["LB", "LM", "LW"].includes(assigned);
+  const rightSide = ["RB", "RWB", "RM", "RW"].includes(assignedRole) || ["RB", "RM", "RW"].includes(assigned);
+  if (leftSide || rightSide) {
+    if (player?.preferredFoot === "both") fit *= 1.03;
+    else if ((leftSide && player?.preferredFoot === "left") || (rightSide && player?.preferredFoot === "right")) fit *= 1.02;
+    else fit *= .95;
+  }
+  return clamp(fit, .35, 1.04);
 }
 
 function playerMetric(player, name) {
@@ -111,6 +151,16 @@ function spatialFit(players, roles, positions, formationLines, dimensions) {
     + closeness(maximumGap, lineTarget, 14) * .16;
 }
 
+export function calculateV2DutyFit(players, roles, plan = {}) {
+  const scores = players.flatMap((player) => {
+    const assignedRole = roles[player.id];
+    const dutyId = plan.playerDuties?.[player.id];
+    const score = dutyId ? v2PlayerDutySuitability(player, assignedRole, dutyId, positionFitScore(player, assignedRole)) : null;
+    return Number.isFinite(score) ? [score] : [];
+  });
+  return scores.length ? average(scores) : null;
+}
+
 export function calculateV2StructureFit(players, roles, positions, formationLines, dimensions) {
   return Math.round(clamp(spatialFit(players, roles, positions, formationLines, dimensions), 45, 100));
 }
@@ -124,6 +174,8 @@ export function calculateV2TacticalFit(players, roles, positions, formationLines
   const defending = outOfPossessionFit(plan, groups);
   const execution = dimensionExecutionFit(dimensions, groups, wide);
   const structure = calculateV2StructureFit(effectivePlayers, roles, positions, formationLines, dimensions);
-  const score = possession * .3 + defending * .3 + execution * .25 + structure * .15;
+  const baseScore = possession * .3 + defending * .3 + execution * .25 + structure * .15;
+  const duty = calculateV2DutyFit(effectivePlayers, roles, plan);
+  const score = duty === null ? baseScore : baseScore * .85 + duty * .15;
   return Math.round(clamp(score, 45, 99));
 }

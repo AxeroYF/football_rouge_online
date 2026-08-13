@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>YDL V2.5 动态阵型原型</title>
+  <link rel="stylesheet" href="/versus/v25-dynamic-shape-demo.css">
+</head>
+<body>
+  <main class="demo-shell">
+    <header class="topbar">
+      <div class="brand"><span>YELLOWDOGS LAB / ISOLATED PROTOTYPE</span><h1>V2.5 动态阵型</h1><p>不接入正式联赛 · 不修改 V2 结果</p></div>
+      <div class="score"><span><i class="azure"></i>苍穹竞技</span><strong id="score">0 <em>:</em> 0</strong><span>赤焰联队<i class="crimson"></i></span></div>
+      <div class="status"><span>场景时间</span><strong id="clock">12:00</strong><b id="live-status">● LIVE SHAPE</b></div>
+    </header>
+
+    <section class="workspace">
+      <div class="pitch-card">
+        <div class="pitch-head">
+          <div><span id="phase-kicker">PHASE 01 / 08</span><h2 id="phase-title">防守落位</h2></div>
+          <div class="legend"><span><i class="azure"></i>苍穹竞技 · 积极进攻</span><span><i class="crimson"></i>赤焰联队 · 防守反击</span></div>
+        </div>
+        <div class="pitch-wrap">
+          <canvas id="pitch" aria-label="V2.5动态阵型小圆点演示"></canvas>
+          <div class="phase-badge"><small id="possession-label">赤焰联队控球</small><strong id="shape-label">苍穹整体回收到本方半场</strong></div>
+          <div class="goal-flash" id="goal-flash" hidden><small>COUNTER ATTACK</small><strong>GOAL!</strong><span>赤焰联队 · 反击单刀破门</span></div>
+        </div>
+        <div class="controls">
+          <button id="play" class="primary" type="button">暂停</button>
+          <button id="previous" type="button">上一阶段</button>
+          <button id="next" type="button">下一阶段</button>
+          <label><span>动态幅度</span><input id="motion-scale" type="range" min="0" max="100" value="100"></label>
+          <button id="anchors" type="button" class="active">显示锚点</button>
+        </div>
+      </div>
+
+      <aside>
+        <section class="insight-card">
+          <header><span>当前机制</span><b>V2.5 SHAPE MODEL</b></header>
+          <p id="phase-description"></p>
+          <div class="metric-grid">
+            <div><small>进攻方整体重心</small><strong id="attack-centroid">--</strong></div>
+            <div><small>防守方整体重心</small><strong id="defense-centroid">--</strong></div>
+            <div><small>最大球员位移</small><strong id="max-displacement">--</strong></div>
+            <div><small>当前纵向压缩</small><strong id="compactness">--</strong></div>
+          </div>
+        </section>
+        <section class="phase-card">
+          <header><span>攻守周期</span><b>AUTO LOOP</b></header>
+          <ol id="phase-list"></ol>
+        </section>
+        <section class="principle-card">
+          <header><span>原型原则</span><b>V2 SAFE</b></header>
+          <ul><li>基础位置只是阵型锚点</li><li>全队随球权整体前压或回撤</li><li>不同职责拥有不同移动幅度</li><li>丢球后先出现过渡形态，再完成落位</li></ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="/versus/v25-dynamic-shape-demo.js"></script>
+</body>
+</html>

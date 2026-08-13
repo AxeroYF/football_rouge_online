@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateV2TacticalFit } from "../versus/public/v2-tactical-fit.js";
+import { calculateV2DutyFit, calculateV2TacticalFit } from "../versus/public/v2-tactical-fit.js";
 import { applyV2TacticalProfiles, DEFAULT_IN_POSSESSION_DETAILS, DEFAULT_OUT_OF_POSSESSION_DETAILS } from "../versus/public/v2-tactical-profiles.js";
 
 const roles = { gk:"GK", lb:"LB", cb1:"CB", cb2:"CB", rb:"RB", dm:"DM", cm:"AM", lm:"LM", rm:"RM", st1:"ST", st2:"ST" };
@@ -9,7 +9,7 @@ const positions = {
   dm:{ x:50, y:51 }, cm:{ x:50, y:39 }, lm:{ x:20, y:44 }, rm:{ x:80, y:44 }, st1:{ x:40, y:20 }, st2:{ x:60, y:20 },
 };
 const formationLines = { attack:20, midfield:44, defense:68, goalkeeper:90 };
-const attributes = ["passing", "vision", "decisions", "firstTouch", "composure", "dribbling", "pace", "acceleration", "strength", "agility", "tackling", "positioning", "marking", "crossing", "offBall", "finishing", "heading", "jumping", "goalkeeping", "reflexes", "stamina", "workRate", "aggression"];
+const attributes = ["passing", "firstTouch", "dribbling", "crossing", "finishing", "longShots", "heading", "setPieces", "tackling", "marking", "positioning", "vision", "decisions", "composure", "offBall", "discipline", "pace", "acceleration", "strength", "stamina", "agility", "jumping", "workRate", "aggression", "goalkeeping", "reflexes"];
 const players = (value) => Object.keys(roles).map((id) => ({ id, overall:value, attributes:Object.fromEntries(attributes.map((key) => [key, value])) }));
 const dimensions = { tempo:58, directness:45, attackingWidth:55, defensiveLine:58, pressing:62, compactness:60, counterAttack:50, timeWasting:10 };
 
@@ -31,7 +31,7 @@ test("V2战术适配度会评价阵型线与防线、宽度及紧凑度参数的
   assert.ok(aligned > disconnected);
 });
 
-test("详细持球与无球指令会转换为V2连续战术参数", () => {
+test("保留的详细持球与无球指令会转换为V2连续战术参数", () => {
   const detailed = applyV2TacticalProfiles(
     { tempo:50, directness:50, attackingWidth:50, defensiveLine:50, pressing:50, compactness:50, counterAttack:50, timeWasting:20 },
     "balanced",
@@ -39,10 +39,35 @@ test("详细持球与无球指令会转换为V2连续战术参数", () => {
     { ...DEFAULT_IN_POSSESSION_DETAILS, tempo:"extreme", directness:"direct", chanceCreation:"shootOnSight", crossing:"increase" },
     { ...DEFAULT_OUT_OF_POSSESSION_DETAILS, pressing:"relentless", compactness:"tight", marking:"man", lineStrategy:"offside" },
   );
-  assert.equal(detailed.tempo, 79);
-  assert.equal(detailed.directness, 80);
+  assert.equal(detailed.tempo, 57);
+  assert.equal(detailed.directness, 54);
   assert.equal(detailed.attackingWidth, 59);
   assert.equal(detailed.defensiveLine, 68);
-  assert.equal(detailed.pressing, 85);
-  assert.equal(detailed.compactness, 63);
+  assert.equal(detailed.pressing, 58);
+  assert.equal(detailed.compactness, 45);
+});
+
+test("球员职责按26项能力与位置适配度进入战术适配度", () => {
+  const basePlayers = players(70);
+  const striker = basePlayers.find((player) => player.id === "st1");
+  Object.assign(striker.attributes, {
+    strength:96, heading:94, jumping:93, firstTouch:91, passing:86,
+    decisions:88, composure:90, offBall:87, finishing:48, pace:52, acceleration:50,
+  });
+  const plan = {
+    tactic:"balanced",
+    style:"longBall",
+    inPossession:"longBall",
+    outOfPossession:"midBlock",
+    playerDuties:{ st1:"targetForward" },
+  };
+  const dutyFit = calculateV2DutyFit(basePlayers, roles, plan);
+  const tacticalFit = calculateV2TacticalFit(basePlayers, roles, positions, formationLines, plan, dimensions);
+  const mismatchedPlan = { ...plan, playerDuties:{ st1:"advancedForward" } };
+  const mismatchedDutyFit = calculateV2DutyFit(basePlayers, roles, mismatchedPlan);
+  const mismatchedTacticalFit = calculateV2TacticalFit(basePlayers, roles, positions, formationLines, mismatchedPlan, dimensions);
+
+  assert.ok(dutyFit > mismatchedDutyFit + 15);
+  assert.ok(tacticalFit > mismatchedTacticalFit);
+  assert.equal(calculateV2DutyFit(basePlayers, roles, { ...plan, playerDuties:{} }), null);
 });

@@ -1,5 +1,35 @@
 # 新任务接手提示
 
+> 第一优先级：完整阅读 `handoff/LATEST_20260812.md` 和 `docs/sql-storage-assessment-20260812.md`。继续在 `D:\Project\game_test\.worktrees\s4` 工作并保留脏工作树，禁止 reset/clean/checkout。最新 V2.1 平衡热更新是 `handoff/football-ydl-s4-v21-balance-hotfix-20260812-092423.tar.gz`，SHA256 `bda8ebe17ed57ab19522e4f98e2e7dc4c90647e3e32f0a3187eaaf6dda180f0c`，当前尚未确认线上部署。SQL 迁移建议 PostgreSQL + Repository/UnitOfWork + 关系表/JSONB 混合模型，先离线导入和影子写入，不要直接替换生产存储。
+
+> 第一优先级：完整阅读 `handoff/LATEST_20260811.md`，以其中的当前工作树边界、已完成改动和最新发布物为准。
+
+## 2026-08-11 18:12 接手提示（先读）
+
+继续在 `D:\Project\game_test\.worktrees\s4` 开发，保留当前脏工作树，禁止 reset/clean/checkout。当前最新生产候选是 `handoff/football-ydl-s4-honor-mail-tactics-hotfix-20260811-161002-r3.tar.gz`，SHA256 `5d4bc2b3d9b90e1013f9d8f1b03384a78c2fe3c228142f080fc01f77c4667e44`。R2 没有推送，R3 是修复普通 A 级 `+8` 卡面遮挡后的版本；尚未确认服务器已经部署，接手后不要假设已上线。
+
+R3 包含荣誉室、背包 YOOGLE 球员详情、邮件分类与 `+6` 以上全服强化邮件、具体让球显示、体力红线数字输入、磁贴体力变色、市场“附带所有权”、普通 A/B `+8` 专属框和收件箱字号等。不要再部署重叠旧包。
+
+服务器磁盘已从约 98% 清理到 70%，服务健康；只删除了核对为非活动的旧快照。活动分片的 3850 个 revision 中 3845 个仍被 manifest 引用，严禁手动删除 `revisions/*` 或历史 manifest。若继续处理空间，先在本地实现并测试离线 forceFull 压缩/原子切换工具。
+
+0811 赛季分析源在 `Cloud_league_data\0811\ydl-season-2026-08-11.json`，只分析 116 场真人对真人。摘要和图表见最新交接包的 `analysis/`，原始 31MB 存档不在 ZIP 内。最新交接 ZIP 为 `handoff/football-ydl-s4-handoff-20260811-1812.zip`，不是生产部署包。
+
+## 2026-08-11 00:37 接手提示（先读）
+
+继续在 `D:\Project\game_test\.worktrees\s4` 开发，保留脏工作树，禁止 reset/clean/checkout。最新新增全位置正式特性“别打我大哥”，其 V2.1 伤病转移链路已经覆盖真实伤退、自动换人、比赛播报和赛后伤停；原队友保持在场。正式特性池现为 19 张。
+
+最新生产包是 `handoff/football-ydl-s4-pack-market-legend-trait-hotfix-20260811-003616.tar.gz`，SHA256 `b709afee062d2c1617f195ddb990cf739710fea53fe409fbc3b6f2b09b03ae8d`。它取代同日 000707 包，并合并私有池/市场性能、全位置私有池 1.5% 随机传奇 S、传奇包 10000 金币和新特性。不要安装依赖，不覆盖任何数据目录。新特性定向测试 32/32 通过，按用户要求不要运行完整测试集。
+
+最新本地对话交接 ZIP 为 `handoff/football-ydl-s4-handoff-20260811-0037.zip`，只用于恢复上下文，不是服务器部署包。浏览器测试由用户自行完成。
+
+## 2026-08-05 22:00 接手提示（先读）
+
+继续在 `D:\Project\game_test\.worktrees\s4` 开发，保留当前脏工作树，禁止 reset/checkout 清理。先阅读 `handoff/CURRENT_STATE.md` 顶部，再执行只读 `git status --short`。
+
+最新成果包括世界杯完善、休赛期友谊赛和玩家阵容镜像、战术板 AI 对战、V2 alpha.17 平衡与详细播报、自动伤病换人、伤停计时热修、两张 A 卡，以及 `/versus/v2-circle-demo.html`。圆圈 Demo 的固定回放数据由 `node devtool/generate-v2-circle-demo.js` 生成，不要用手写随机事件替代真实 V2 控球链。
+
+最新完整开发交接包为 `D:\Project\game_test\handoff\football-ydl-s4-v2-circle-demo-handoff-20260805-2200.zip`。它用于恢复开发上下文，不是生产部署包。禁止打包或覆盖运行存档、线上分片、`Cloud_league_data/`、`outputs/`、账号、密钥和临时素材。本轮按用户要求未运行完整测试。
+
 ## 2026-08-04 13:27 接手提示（先读）
 
 继续在 `D:\Project\game_test\.worktrees\s4` 开发，不要重置或清理脏工作树。当前未提交成果是“黄狗世界杯”及同期后台性能修改。先阅读 `handoff/CURRENT_STATE.md` 顶部权威状态，再只读检查 `git status --short`。

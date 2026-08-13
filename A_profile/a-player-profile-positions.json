@@ -884,8 +884,218 @@
       "xPercent": 58.5,
       "yPercent": 54,
       "widthPercent": 188
+    },
+    "Marc Cucurella": {
+      "fileName": "Ccurelia.png",
+      "xPercent": 50,
+      "yPercent": 59.1,
+      "widthPercent": 128
+    },
+    "Ryan Gravenberch": {
+      "fileName": "Gravenberch.png",
+      "xPercent": 32.9,
+      "yPercent": 54.3,
+      "widthPercent": 188
+    },
+    "Patrice Evra": {
+      "fileName": "Evra.png",
+      "xPercent": 53.9,
+      "yPercent": 67.5,
+      "widthPercent": 220
+    },
+    "Bixente Lizarazu": {
+      "fileName": "Lizarazu.png",
+      "xPercent": 49.6,
+      "yPercent": 57.7,
+      "widthPercent": 152
+    },
+    "Lilian Thuram": {
+      "fileName": "Lilian_Thuram.png",
+      "xPercent": 50.4,
+      "yPercent": 57.1,
+      "widthPercent": 164
+    },
+    "Adriano": {
+      "fileName": "Adriano.png",
+      "xPercent": 47.1,
+      "yPercent": 59.4,
+      "widthPercent": 232
+    },
+    "Pablo Aimar": {
+      "fileName": "Aimar.png",
+      "xPercent": 61.3,
+      "yPercent": 79.2,
+      "widthPercent": 280
+    },
+    "Walter Samuel": {
+      "fileName": "Samuel.png",
+      "xPercent": 46.4,
+      "yPercent": 62.2,
+      "widthPercent": 256
+    },
+    "Roberto Ayala": {
+      "fileName": "Ayala.png",
+      "xPercent": 50.3,
+      "yPercent": 78.5,
+      "widthPercent": 140
+    },
+    "Fernando Hierro": {
+      "fileName": "Hierro.png",
+      "xPercent": 50.7,
+      "yPercent": 64.7,
+      "widthPercent": 116
+    },
+    "Michael Ballack": {
+      "fileName": "Ballack.png",
+      "xPercent": 33,
+      "yPercent": 57.7,
+      "widthPercent": 176
+    },
+    "Roy Keane": {
+      "fileName": "Keane.png",
+      "xPercent": 52.8,
+      "yPercent": 50.6,
+      "widthPercent": 180
+    },
+    "Fabio Grosso": {
+      "fileName": "Grosso.png",
+      "xPercent": 47.2,
+      "yPercent": 49.5,
+      "widthPercent": 164
+    },
+    "Davor Šuker": {
+      "fileName": "Šuker.png",
+      "xPercent": 41.1,
+      "yPercent": 52,
+      "widthPercent": 188
+    },
+    "Diego Forlán": {
+      "fileName": "Forlán.png",
+      "xPercent": 22.8,
+      "yPercent": 59.6,
+      "widthPercent": 204
+    },
+    "Diego Costa": {
+      "fileName": "Diego_Costa.png",
+      "xPercent": 35.1,
+      "yPercent": 50.9,
+      "widthPercent": 236
+    },
+    "Nicolas Anelka": {
+      "fileName": "Anelka.png",
+      "xPercent": 73.1,
+      "yPercent": 61.9,
+      "widthPercent": 212
+    },
+    "Gianluca Zambrotta": {
+      "fileName": "Zambrotta.png",
+      "xPercent": 55,
+      "yPercent": 53.1,
+      "widthPercent": 208
+    },
+    "Filippo Inzaghi": {
+      "fileName": "Inzaghi.png",
+      "xPercent": 50,
+      "yPercent": 61.3,
+      "widthPercent": 108
+    },
+    "Philippe Coutinho": {
+      "fileName": "Coutinho.png",
+      "xPercent": 51.8,
+      "yPercent": 57.4,
+      "widthPercent": 136
+    },
+    "Júnior": {
+      "fileName": "Júnior.png",
+      "xPercent": 69.8,
+      "yPercent": 58.2,
+      "widthPercent": 184
+    },
+    "Gilberto Silva": {
+      "fileName": "Gilberto.png",
+      "xPercent": 50,
+      "yPercent": 57.9,
+      "widthPercent": 224
+    },
+    "David Trezeguet": {
+      "fileName": "Trezeguet.png",
+      "xPercent": 41.1,
+      "yPercent": 63.8,
+      "widthPercent": 212
+    },
+    "Luca Toni": {
+      "fileName": "Luca_Toni.png",
+      "xPercent": 53.2,
+      "yPercent": 58.8,
+      "widthPercent": 168
+    },
+    "Fabien Barthez": {
+      "fileName": "Barthez.png",
+      "xPercent": 73.1,
+      "yPercent": 52.6,
+      "widthPercent": 188
+    },
+    "Jens Lehmann": {
+      "fileName": "Lehmann.png",
+      "xPercent": 57.1,
+      "yPercent": 67.8,
+      "widthPercent": 136
+    },
+    "Bastian Schweinsteiger": {
+      "fileName": "Schweinsteiger.png",
+      "xPercent": 47.9,
+      "yPercent": 57.9,
+      "widthPercent": 216
+    },
+    "Nuno Gomes": {
+      "fileName": "Nuno_Gomes.png",
+      "xPercent": 40.8,
+      "yPercent": 55.1,
+      "widthPercent": 172
+    },
+    "Leonardo Bonucci": {
+      "fileName": "Bonucci.png",
+      "xPercent": 50.7,
+      "yPercent": 57,
+      "widthPercent": 196
+    },
+    "Víctor Valdés": {
+      "fileName": "Valdés.png",
+      "xPercent": 45.1,
+      "yPercent": 63.9,
+      "widthPercent": 236
+    },
+    "David Silva": {
+      "fileName": "David_Silva.png",
+      "xPercent": 48.6,
+      "yPercent": 59.3,
+      "widthPercent": 212
+    },
+    "Jesús Navas": {
+      "fileName": "Jesús_Navas.png",
+      "xPercent": 38.3,
+      "yPercent": 51.4,
+      "widthPercent": 188
+    },
+    "Juan Mata": {
+      "fileName": "Mata.png",
+      "xPercent": 39.4,
+      "yPercent": 57.6,
+      "widthPercent": 212
+    },
+    "Klaas-Jan Huntelaar": {
+      "fileName": "Huntelaar.png",
+      "xPercent": 58.4,
+      "yPercent": 61.9,
+      "widthPercent": 168
+    },
+    "Ángel Di María": {
+      "fileName": "Di_Maria.png",
+      "xPercent": 49.6,
+      "yPercent": 71.2,
+      "widthPercent": 244
     }
   },
-  "generatedAt": "2026-08-03",
+  "generatedAt": "2026-08-08",
   "source": "merged existing A profiles with S4 DLC card art"
 }

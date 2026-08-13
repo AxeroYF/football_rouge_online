@@ -3,6 +3,7 @@ import test from "node:test";
 import { buildS4BalanceSeat } from "../versus/s4-balance-report.js";
 import { hydrateHistoricalMatchDetail } from "../versus/history-detail.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, publicYdlLeagueV2Match, v2PenaltyShootout } from "../versus/v2/ydl-league-engine-adapter.js";
+import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 
 test("YDL V2直播保持战术板边界站位与位置职责一致", () => {
   const seats = [
@@ -54,7 +55,13 @@ test("YDL V2 联赛适配器生成可结算和可观赛的完整报告", () => {
 
   assert.equal(match.version, 2);
   assert.equal(match.finished, true);
-  assert.equal(match.report.modelVersion, "match-engine-v2-alpha.15");
+  assert.equal(match.report.modelVersion, "match-engine-v2.1");
+  assert.equal(match.report.engineProfile, "v2.1-stable-dynamic.2");
+  assert.equal(match.report.dynamicShapeMode, "stable");
+  assert.equal(match.report.dynamicShapeModelVersion, "dynamic-shape-v2.1-stable.2");
+  assert.equal(match.report.dynamicShapeInfluence, 0.15);
+  assert.equal(match.report.dynamicShapePhaseTwo, true);
+  assert.equal(match.report.dotReplay, null);
   assert.equal(view.minute, 90);
   assert.ok(Number.isInteger(view.minute));
   assert.ok(view.events.every((event) => Number.isInteger(event.minute)));
@@ -69,8 +76,17 @@ test("YDL V2 联赛适配器生成可结算和可观赛的完整报告", () => {
   assert.ok(match.report.teams.every((team) => team.players.length === 11));
   assert.ok(match.report.teams.every((team) => team.players.every((player) => Number.isFinite(player.rating) && Number.isFinite(player.stats.goals))));
   assert.ok(match.report.teams.every((team) => Number.isFinite(team.stats.possession) && Number.isFinite(team.stats.xg)));
+  assert.equal(match.report.teams.reduce((sum, team) => sum + team.stats.possessionSeconds, 0), 90 * 60);
+  assert.equal(match.report.teams.reduce((sum, team) => sum + team.stats.possession, 0), 100);
+  assert.ok(match.report.teams.every((team) => team.stats.normalPossessions + team.stats.transitionPossessions === team.stats.possessions));
+  assert.ok(match.report.teams.every((team) => team.stats.normalPossessionSeconds + team.stats.transitionPossessionSeconds === team.stats.possessionSeconds));
+  assert.ok(match.report.teams.every((team) => team.stats.normalShots + team.stats.transitionShots === team.stats.shots));
+  assert.ok(match.report.teams.every((team) => Math.abs(team.stats.normalXg + team.stats.transitionXg - team.stats.xg) < 0.02));
   assert.ok(match.report.teams.every((team) => team.tacticalFit >= 45 && team.tacticalFit <= 99 && team.styleFit > 0));
-  assert.equal(match.report.tacticalReview.version, 1);
+  assert.equal(match.report.tacticalReview.version, 2);
+  assert.equal(match.report.tacticalReview.source, "v2-possession-chains");
+  assert.equal(match.report.tacticalReview.chainModelVersion, "possession-chain-v2.1");
+  assert.equal(match.report.tacticalReview.chainCount, match.chains.length);
   assert.deepEqual(match.report.tacticalReview.teams.map((team) => team.zones.length), [20, 20]);
   assert.deepEqual(match.report.tacticalReview.teams.map((team) => team.zones.reduce((sum, zone) => sum + zone.starts, 0)), match.report.teams.map((team) => team.stats.possessions));
   assert.deepEqual(match.report.tacticalReview.teams.map((team) => team.zones.reduce((sum, zone) => sum + zone.shots, 0)), match.report.teams.map((team) => team.stats.shots));
@@ -92,7 +108,127 @@ test("YDL V2 联赛适配器生成可结算和可观赛的完整报告", () => {
   oldV2Report.winnerIndex = 1;
   const hydrated = hydrateHistoricalMatchDetail({ ...oldV2Report, viewerIndex:0 });
   assert.ok(hydrated.analysisTimeline.every((snapshot) => snapshot.teams.every((team) => team.structureIndex > 0 && team.positionFit > 0 && team.tacticalFit > 0)));
-  assert.ok(hydrated.review.lossAttribution.items.find((item) => item.key === "formation").detail.includes("位置 0%") === false);
+  assert.equal(hydrated.review.version, 3);
+  assert.equal(hydrated.review.source, "v2-engine-report");
+  assert.equal(hydrated.review.engineFacts.chainCount, match.chains.length);
+  assert.equal(hydrated.review.phaseComparisons.length, 5);
+  assert.equal(hydrated.review.attackSources.length, 2);
+  assert.equal(hydrated.review.guidance.method, "v2-coach-guidance-v1");
+  assert.equal(hydrated.review.guidance.units.length, 5);
+  assert.equal(hydrated.review.guidance.causeChain.length, 4);
+  assert.ok(hydrated.review.guidance.recommendations.length >= 1);
+  assert.equal(hydrated.review.guidance.confidence.label, "高");
+  assert.equal(hydrated.review.lossAttribution.method, "v2-engine-evidence-attribution-v2");
+  assert.deepEqual(hydrated.review.lossAttribution.items.map((item) => item.key), ["buildup", "chance", "finishing", "transitionDefense", "execution"]);
+  assert.equal(hydrated.review.lossAttribution.items.reduce((sum, item) => sum + item.percent, 0), 100);
+  assert.ok(hydrated.review.lossAttribution.items.find((item) => item.key === "execution").detail.includes("位置 0%") === false);
+  assert.ok(hydrated.review.lossAttribution.dataSources.includes("V2六阶段控球链"));
+  assert.equal(hydrated.review.lossAttribution.confidence.label, "高");
+  assert.match(hydrated.review.lossAttribution.note, /OVR不单独重复计权/);
+});
+
+test("YDL V2.1d友谊赛灰度保存真实动态站位关键帧且不污染控球链", () => {
+  const seats = [
+    buildS4BalanceSeat("ydl-v21d-friendly-replay", "home", "traitHeavy"),
+    buildS4BalanceSeat("ydl-v21d-friendly-replay", "away", "enhanced"),
+  ];
+  const startedAt = 1_800_000_000_000;
+  const match = createYdlLeagueV2Match(seats, {
+    now:startedAt,
+    seed:"ydl-v21d-friendly-replay",
+    competitionMode:"friendly",
+    parameters:resolveV2MatchParameters({ dynamicShape:{ mode:"candidate" } }),
+    engineProfile:"v2.1d-friendly-candidate",
+    dotReplayEnabled:true,
+  });
+
+  advanceYdlLeagueV2Match(match, startedAt + 120_001, { maximumChains:Infinity });
+
+  assert.equal(match.finished, true);
+  assert.equal(match.report.engineProfile, "v2.1d-friendly-candidate");
+  assert.equal(match.report.dotReplay.version, 9);
+  assert.equal(match.report.dotReplay.engineProfile, "v2.1d-friendly-candidate");
+  assert.ok(match.report.dotReplay.frames.length >= 2);
+  assert.equal(match.report.dotReplay.frames[0].type, "kickoff");
+  assert.equal(match.report.dotReplay.frames.at(-1).type, "fulltime");
+  assert.ok(match.report.dotReplay.frames.every((frame) => frame.teams.length === 2
+    && frame.teams.every((team) => team.players.length >= 7)
+    && frame.teams.flatMap((team) => team.players).every((player) => Number.isFinite(player.x) && Number.isFinite(player.y) && player.x >= 0 && player.x <= 100 && player.y >= 0 && player.y <= 100)));
+  assert.ok(match.report.dotReplay.frames.every((frame) => Number.isFinite(frame.ball.x) && Number.isFinite(frame.ball.y)));
+  const dynamicFrame = match.report.dotReplay.frames.find((frame) => frame.sequence?.length > 1);
+  assert.ok(dynamicFrame);
+  assert.ok(dynamicFrame.sequence.every((phase) => phase.teams.length === 2 && Number.isFinite(phase.ball.x) && Number.isFinite(phase.ball.y)));
+  dynamicFrame.sequence.filter((phase) => Number.isFinite(Number(phase.offside?.line))).forEach((phase) => {
+    const direction = dynamicFrame.attackingTeamIndex === 1 ? 1 : -1;
+    const attackers = phase.teams.find((team) => team.teamIndex === dynamicFrame.attackingTeamIndex).players;
+    attackers.filter((player) => player.id !== phase.actorId && (direction === 1 ? player.y > 50 : player.y < 50)).forEach((player) => {
+      assert.ok(direction === 1 ? player.y <= phase.offside.line + 0.01 : player.y >= phase.offside.line - 0.01);
+    });
+  });
+  const passingFrame = match.report.dotReplay.frames.find((frame) => frame.sequence?.some((phase) => ["pass", "keyPass"].includes(phase.action)));
+  assert.ok(passingFrame);
+  passingFrame.sequence.filter((phase) => phase.actorId && phase.action !== "shotOutcome").forEach((phase) => {
+    const actor = phase.teams.flatMap((team) => team.players).find((player) => player.id === phase.actorId);
+    assert.ok(actor);
+    assert.ok(Math.hypot(actor.x - phase.ball.x, actor.y - phase.ball.y) < 3);
+  });
+  const goalFrame = match.report.dotReplay.frames.find((frame) => frame.type === "goal");
+  if (goalFrame) {
+    assert.ok(goalFrame.sequence.some((phase) => phase.action === "shot" && phase.actorId === goalFrame.actorId));
+    if (goalFrame.assistId) assert.ok(goalFrame.sequence.some((phase) => phase.action === "keyPass" && phase.actorId === goalFrame.assistId));
+    const attackingTouches = goalFrame.sequence.filter((phase) => phase.action !== "shotOutcome");
+    assert.ok(attackingTouches.filter((phase) => phase.action !== "shot" && (goalFrame.attackingTeamIndex === 1 ? phase.ball.y >= 96 : phase.ball.y <= 4)).length <= 1);
+    if (["setPiece", "freeKick", "penalty"].includes(goalFrame.attackType)) {
+      assert.ok(goalFrame.sequence.some((phase) => phase.action === "shot"));
+      assert.ok(goalFrame.sequence.some((phase) => phase.action === "shotOutcome"));
+    }
+    const phaseSignatures = goalFrame.sequence.map((phase) => JSON.stringify(phase.teams.map((team) => team.players.map((player) => [player.id, player.x, player.y]))));
+    assert.ok(new Set(phaseSignatures).size >= Math.min(4, goalFrame.sequence.length));
+    const shotPhase = goalFrame.sequence.find((phase) => phase.action === "shot");
+    const outcomePhase = goalFrame.sequence.find((phase) => phase.action === "shotOutcome");
+    assert.notDeepEqual(shotPhase?.teams, outcomePhase?.teams);
+  }
+  match.report.dotReplay.frames.filter((frame) => ["goal", "ownGoal"].includes(frame.type)).forEach((frame) => {
+    const organization = frame.sequence.filter((phase) => phase.actorId && phase.action !== "shotOutcome");
+    assert.ok(organization.length >= 4, `${frame.attackType} goal organization length ${organization.length}`);
+    assert.ok(new Set(organization.map((phase) => phase.actorId)).size >= 2);
+  });
+  const shotFrames = match.report.dotReplay.frames.filter((frame) => ["goal", "ownGoal", "save", "miss", "block"].includes(frame.type));
+  assert.ok(shotFrames.length > 0);
+  let actorTransitions = 0;
+  let passingTransitions = 0;
+  shotFrames.forEach((frame) => {
+    const touches = frame.sequence.filter((phase) => phase.action !== "shotOutcome" && phase.actorId);
+    touches.slice(1).forEach((phase, index) => {
+      actorTransitions += 1;
+      if (phase.actorId !== touches[index].actorId) passingTransitions += 1;
+    });
+    frame.sequence.filter((phase) => Number.isFinite(Number(phase.offside?.line))).forEach((phase) => {
+      const direction = frame.attackingTeamIndex === 1 ? 1 : -1;
+      const attackers = phase.teams.find((team) => team.teamIndex === frame.attackingTeamIndex).players;
+      attackers.filter((player) => player.id !== phase.actorId && (direction === 1 ? player.y > 50 : player.y < 50)).forEach((player) => {
+        assert.ok(direction === 1 ? player.y <= phase.offside.line + 0.01 : player.y >= phase.offside.line - 0.01);
+      });
+    });
+    const shotPhase = frame.sequence.find((phase) => phase.action === "shot");
+    assert.ok(shotPhase);
+    const attackingDepth = frame.attackingTeamIndex === 1 ? shotPhase.ball.y : 100 - shotPhase.ball.y;
+    assert.ok(attackingDepth >= 74 && attackingDepth <= 92, `${frame.attackType} shot depth ${attackingDepth}`);
+    assert.ok(shotPhase.ball.x >= 22 && shotPhase.ball.x <= 78, `${frame.attackType} shot width ${shotPhase.ball.x}`);
+    const defensiveRoles = shotPhase.defensiveRoles;
+    assert.ok(defensiveRoles?.pressureId);
+    assert.equal(defensiveRoles.coverIds.length, 2);
+    assert.ok(defensiveRoles.markerIds.length >= 2);
+    const roleIds = [defensiveRoles.pressureId, ...defensiveRoles.coverIds, ...defensiveRoles.markerIds];
+    assert.equal(new Set(roleIds).size, roleIds.length);
+    const defendingPlayers = shotPhase.teams.find((team) => team.teamIndex === 1 - frame.attackingTeamIndex).players;
+    const defendingIds = new Set(defendingPlayers.map((player) => player.id));
+    assert.ok(roleIds.every((playerId) => defendingIds.has(playerId)));
+    assert.ok(defendingPlayers.filter((player) => Math.hypot(player.x - shotPhase.ball.x, player.y - shotPhase.ball.y) <= 24).length >= 3);
+  });
+  assert.ok(actorTransitions > 0 && passingTransitions / actorTransitions >= 0.5);
+  assert.ok(match.report.events.filter((event) => event.dotReplayFrameId).every((event) => match.report.dotReplay.frames.some((frame) => frame.id === event.dotReplayFrameId)));
+  assert.ok(match.chains.every((chain) => !Object.hasOwn(chain, "replayShape") && !Object.hasOwn(chain, "replaySequence")));
 });
 
 test("YDL V2 公开直播使用整数分钟和完整中文互动播报", () => {

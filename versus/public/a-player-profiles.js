@@ -1459,6 +1459,356 @@ export const A_PLAYER_PROFILE_BY_PLAYER_ID = Object.freeze({
     "yPercent": 54,
     "widthPercent": 188,
     "optimizedFileName": "Guti.webp"
+  },
+  "s4-fc26-239231": {
+    "playerId": "s4-fc26-239231",
+    "profileKey": "Marc Cucurella",
+    "fileName": "Ccurelia.png",
+    "imageUrl": "/versus/A_profile/webp/Ccurelia.webp?v=04b615cd78c7",
+    "xPercent": 50,
+    "yPercent": 59.1,
+    "widthPercent": 128,
+    "optimizedFileName": "Ccurelia.webp"
+  },
+  "s4-fc26-246104": {
+    "playerId": "s4-fc26-246104",
+    "profileKey": "Ryan Gravenberch",
+    "fileName": "Gravenberch.png",
+    "imageUrl": "/versus/A_profile/webp/Gravenberch.webp?v=ed4e14f543f4",
+    "xPercent": 32.9,
+    "yPercent": 54.3,
+    "widthPercent": 188,
+    "optimizedFileName": "Gravenberch.webp"
+  },
+  "s4-dlc3-20260808-001": {
+    "playerId": "s4-dlc3-20260808-001",
+    "profileKey": "Patrice Evra",
+    "fileName": "Evra.png",
+    "imageUrl": "/versus/A_profile/webp/Evra.webp?v=b031769b028c",
+    "xPercent": 53.9,
+    "yPercent": 67.5,
+    "widthPercent": 220,
+    "optimizedFileName": "Evra.webp"
+  },
+  "s4-dlc3-20260808-003": {
+    "playerId": "s4-dlc3-20260808-003",
+    "profileKey": "Bixente Lizarazu",
+    "fileName": "Lizarazu.png",
+    "imageUrl": "/versus/A_profile/webp/Lizarazu.webp?v=105c81e52892",
+    "xPercent": 49.6,
+    "yPercent": 57.7,
+    "widthPercent": 152,
+    "optimizedFileName": "Lizarazu.webp"
+  },
+  "s4-dlc3-20260808-004": {
+    "playerId": "s4-dlc3-20260808-004",
+    "profileKey": "Lilian Thuram",
+    "fileName": "Lilian_Thuram.png",
+    "imageUrl": "/versus/A_profile/webp/Lilian_Thuram.webp?v=3bb22089381d",
+    "xPercent": 50.4,
+    "yPercent": 57.1,
+    "widthPercent": 164,
+    "optimizedFileName": "Lilian_Thuram.webp"
+  },
+  "s4-dlc3-20260808-005": {
+    "playerId": "s4-dlc3-20260808-005",
+    "profileKey": "Adriano",
+    "fileName": "Adriano.png",
+    "imageUrl": "/versus/A_profile/webp/Adriano.webp?v=2eca486bc9ad",
+    "xPercent": 47.1,
+    "yPercent": 59.4,
+    "widthPercent": 232,
+    "optimizedFileName": "Adriano.webp"
+  },
+  "s4-dlc3-20260808-006": {
+    "playerId": "s4-dlc3-20260808-006",
+    "profileKey": "Pablo Aimar",
+    "fileName": "Aimar.png",
+    "imageUrl": "/versus/A_profile/webp/Aimar.webp?v=fa41cfe6639e",
+    "xPercent": 61.3,
+    "yPercent": 79.2,
+    "widthPercent": 280,
+    "optimizedFileName": "Aimar.webp"
+  },
+  "s4-dlc3-20260808-007": {
+    "playerId": "s4-dlc3-20260808-007",
+    "profileKey": "Walter Samuel",
+    "fileName": "Samuel.png",
+    "imageUrl": "/versus/A_profile/webp/Samuel.webp?v=369f41f3bf54",
+    "xPercent": 46.4,
+    "yPercent": 62.2,
+    "widthPercent": 256,
+    "optimizedFileName": "Samuel.webp"
+  },
+  "s4-dlc3-20260808-008": {
+    "playerId": "s4-dlc3-20260808-008",
+    "profileKey": "Roberto Ayala",
+    "fileName": "Ayala.png",
+    "imageUrl": "/versus/A_profile/webp/Ayala.webp?v=f8a8de95deba",
+    "xPercent": 50.3,
+    "yPercent": 78.5,
+    "widthPercent": 140,
+    "optimizedFileName": "Ayala.webp"
+  },
+  "s4-dlc3-20260808-012": {
+    "playerId": "s4-dlc3-20260808-012",
+    "profileKey": "Fernando Hierro",
+    "fileName": "Hierro.png",
+    "imageUrl": "/versus/A_profile/webp/Hierro.webp?v=6edc8d090706",
+    "xPercent": 50.7,
+    "yPercent": 64.7,
+    "widthPercent": 116,
+    "optimizedFileName": "Hierro.webp"
+  },
+  "s4-dlc3-20260808-014": {
+    "playerId": "s4-dlc3-20260808-014",
+    "profileKey": "Michael Ballack",
+    "fileName": "Ballack.png",
+    "imageUrl": "/versus/A_profile/webp/Ballack.webp?v=64ec96989674",
+    "xPercent": 33,
+    "yPercent": 57.7,
+    "widthPercent": 176,
+    "optimizedFileName": "Ballack.webp"
+  },
+  "s4-dlc3-20260808-017": {
+    "playerId": "s4-dlc3-20260808-017",
+    "profileKey": "Roy Keane",
+    "fileName": "Keane.png",
+    "imageUrl": "/versus/A_profile/webp/Keane.webp?v=d2be29177ab4",
+    "xPercent": 52.8,
+    "yPercent": 50.6,
+    "widthPercent": 180,
+    "optimizedFileName": "Keane.webp"
+  },
+  "s4-dlc3-20260808-018": {
+    "playerId": "s4-dlc3-20260808-018",
+    "profileKey": "Fabio Grosso",
+    "fileName": "Grosso.png",
+    "imageUrl": "/versus/A_profile/webp/Grosso.webp?v=362b27f1581e",
+    "xPercent": 47.2,
+    "yPercent": 49.5,
+    "widthPercent": 164,
+    "optimizedFileName": "Grosso.webp"
+  },
+  "s4-dlc3-20260808-019": {
+    "playerId": "s4-dlc3-20260808-019",
+    "profileKey": "Davor Šuker",
+    "fileName": "Šuker.png",
+    "imageUrl": "/versus/A_profile/webp/%C5%A0uker.webp?v=20bb8d2cb1c3",
+    "xPercent": 41.1,
+    "yPercent": 52,
+    "widthPercent": 188,
+    "optimizedFileName": "Šuker.webp"
+  },
+  "s4-dlc3-20260808-021": {
+    "playerId": "s4-dlc3-20260808-021",
+    "profileKey": "Diego Forlán",
+    "fileName": "Forlán.png",
+    "imageUrl": "/versus/A_profile/webp/Forl%C3%A1n.webp?v=06611b02b5d9",
+    "xPercent": 22.8,
+    "yPercent": 59.6,
+    "widthPercent": 204,
+    "optimizedFileName": "Forlán.webp"
+  },
+  "s4-dlc3-20260808-022": {
+    "playerId": "s4-dlc3-20260808-022",
+    "profileKey": "Diego Costa",
+    "fileName": "Diego_Costa.png",
+    "imageUrl": "/versus/A_profile/webp/Diego_Costa.webp?v=4e2c796c7688",
+    "xPercent": 35.1,
+    "yPercent": 50.9,
+    "widthPercent": 236,
+    "optimizedFileName": "Diego_Costa.webp"
+  },
+  "s4-dlc3-20260808-023": {
+    "playerId": "s4-dlc3-20260808-023",
+    "profileKey": "Nicolas Anelka",
+    "fileName": "Anelka.png",
+    "imageUrl": "/versus/A_profile/webp/Anelka.webp?v=90c98be4e113",
+    "xPercent": 73.1,
+    "yPercent": 61.9,
+    "widthPercent": 212,
+    "optimizedFileName": "Anelka.webp"
+  },
+  "s4-dlc3-20260808-024": {
+    "playerId": "s4-dlc3-20260808-024",
+    "profileKey": "Gianluca Zambrotta",
+    "fileName": "Zambrotta.png",
+    "imageUrl": "/versus/A_profile/webp/Zambrotta.webp?v=2561fa2af73d",
+    "xPercent": 55,
+    "yPercent": 53.1,
+    "widthPercent": 208,
+    "optimizedFileName": "Zambrotta.webp"
+  },
+  "s4-dlc3-20260808-025": {
+    "playerId": "s4-dlc3-20260808-025",
+    "profileKey": "Filippo Inzaghi",
+    "fileName": "Inzaghi.png",
+    "imageUrl": "/versus/A_profile/webp/Inzaghi.webp?v=5a0310330b69",
+    "xPercent": 50,
+    "yPercent": 61.3,
+    "widthPercent": 108,
+    "optimizedFileName": "Inzaghi.webp"
+  },
+  "s4-dlc3-20260808-026": {
+    "playerId": "s4-dlc3-20260808-026",
+    "profileKey": "Philippe Coutinho",
+    "fileName": "Coutinho.png",
+    "imageUrl": "/versus/A_profile/webp/Coutinho.webp?v=c90884e45a19",
+    "xPercent": 51.8,
+    "yPercent": 57.4,
+    "widthPercent": 136,
+    "optimizedFileName": "Coutinho.webp"
+  },
+  "s4-dlc3-20260808-027": {
+    "playerId": "s4-dlc3-20260808-027",
+    "profileKey": "Júnior",
+    "fileName": "Júnior.png",
+    "imageUrl": "/versus/A_profile/webp/J%C3%BAnior.webp?v=ea4b327c687f",
+    "xPercent": 69.8,
+    "yPercent": 58.2,
+    "widthPercent": 184,
+    "optimizedFileName": "Júnior.webp"
+  },
+  "s4-dlc3-20260808-028": {
+    "playerId": "s4-dlc3-20260808-028",
+    "profileKey": "Gilberto Silva",
+    "fileName": "Gilberto.png",
+    "imageUrl": "/versus/A_profile/webp/Gilberto.webp?v=7cad52f0c9f4",
+    "xPercent": 50,
+    "yPercent": 57.9,
+    "widthPercent": 224,
+    "optimizedFileName": "Gilberto.webp"
+  },
+  "s4-dlc3-20260808-029": {
+    "playerId": "s4-dlc3-20260808-029",
+    "profileKey": "David Trezeguet",
+    "fileName": "Trezeguet.png",
+    "imageUrl": "/versus/A_profile/webp/Trezeguet.webp?v=522bac8a3845",
+    "xPercent": 41.1,
+    "yPercent": 63.8,
+    "widthPercent": 212,
+    "optimizedFileName": "Trezeguet.webp"
+  },
+  "s4-dlc3-20260808-031": {
+    "playerId": "s4-dlc3-20260808-031",
+    "profileKey": "Luca Toni",
+    "fileName": "Luca_Toni.png",
+    "imageUrl": "/versus/A_profile/webp/Luca_Toni.webp?v=6e86fd1ab050",
+    "xPercent": 53.2,
+    "yPercent": 58.8,
+    "widthPercent": 168,
+    "optimizedFileName": "Luca_Toni.webp"
+  },
+  "s4-dlc3-20260808-033": {
+    "playerId": "s4-dlc3-20260808-033",
+    "profileKey": "Fabien Barthez",
+    "fileName": "Barthez.png",
+    "imageUrl": "/versus/A_profile/webp/Barthez.webp?v=f61e5979bd4f",
+    "xPercent": 73.1,
+    "yPercent": 52.6,
+    "widthPercent": 188,
+    "optimizedFileName": "Barthez.webp"
+  },
+  "s4-dlc3-20260808-035": {
+    "playerId": "s4-dlc3-20260808-035",
+    "profileKey": "Jens Lehmann",
+    "fileName": "Lehmann.png",
+    "imageUrl": "/versus/A_profile/webp/Lehmann.webp?v=1e3832008187",
+    "xPercent": 57.1,
+    "yPercent": 67.8,
+    "widthPercent": 136,
+    "optimizedFileName": "Lehmann.webp"
+  },
+  "s4-dlc3-20260808-037": {
+    "playerId": "s4-dlc3-20260808-037",
+    "profileKey": "Bastian Schweinsteiger",
+    "fileName": "Schweinsteiger.png",
+    "imageUrl": "/versus/A_profile/webp/Schweinsteiger.webp?v=2f62f329d4da",
+    "xPercent": 47.9,
+    "yPercent": 57.9,
+    "widthPercent": 216,
+    "optimizedFileName": "Schweinsteiger.webp"
+  },
+  "s4-dlc3-20260808-039": {
+    "playerId": "s4-dlc3-20260808-039",
+    "profileKey": "Nuno Gomes",
+    "fileName": "Nuno_Gomes.png",
+    "imageUrl": "/versus/A_profile/webp/Nuno_Gomes.webp?v=54c39d1b0221",
+    "xPercent": 40.8,
+    "yPercent": 55.1,
+    "widthPercent": 172,
+    "optimizedFileName": "Nuno_Gomes.webp"
+  },
+  "s4-dlc3-20260808-040": {
+    "playerId": "s4-dlc3-20260808-040",
+    "profileKey": "Leonardo Bonucci",
+    "fileName": "Bonucci.png",
+    "imageUrl": "/versus/A_profile/webp/Bonucci.webp?v=fdae56427bd1",
+    "xPercent": 50.7,
+    "yPercent": 57,
+    "widthPercent": 196,
+    "optimizedFileName": "Bonucci.webp"
+  },
+  "s4-dlc3-20260808-042": {
+    "playerId": "s4-dlc3-20260808-042",
+    "profileKey": "Víctor Valdés",
+    "fileName": "Valdés.png",
+    "imageUrl": "/versus/A_profile/webp/Vald%C3%A9s.webp?v=f3559b2b478e",
+    "xPercent": 45.1,
+    "yPercent": 63.9,
+    "widthPercent": 236,
+    "optimizedFileName": "Valdés.webp"
+  },
+  "s4-dlc3-20260808-043": {
+    "playerId": "s4-dlc3-20260808-043",
+    "profileKey": "David Silva",
+    "fileName": "David_Silva.png",
+    "imageUrl": "/versus/A_profile/webp/David_Silva.webp?v=adde9171fc1f",
+    "xPercent": 48.6,
+    "yPercent": 59.3,
+    "widthPercent": 212,
+    "optimizedFileName": "David_Silva.webp"
+  },
+  "s4-dlc3-20260808-044": {
+    "playerId": "s4-dlc3-20260808-044",
+    "profileKey": "Jesús Navas",
+    "fileName": "Jesús_Navas.png",
+    "imageUrl": "/versus/A_profile/webp/Jes%C3%BAs_Navas.webp?v=6b4d6de8a270",
+    "xPercent": 38.3,
+    "yPercent": 51.4,
+    "widthPercent": 188,
+    "optimizedFileName": "Jesús_Navas.webp"
+  },
+  "s4-dlc3-20260808-045": {
+    "playerId": "s4-dlc3-20260808-045",
+    "profileKey": "Juan Mata",
+    "fileName": "Mata.png",
+    "imageUrl": "/versus/A_profile/webp/Mata.webp?v=e918cfe0aa1f",
+    "xPercent": 39.4,
+    "yPercent": 57.6,
+    "widthPercent": 212,
+    "optimizedFileName": "Mata.webp"
+  },
+  "s4-dlc3-20260808-047": {
+    "playerId": "s4-dlc3-20260808-047",
+    "profileKey": "Klaas-Jan Huntelaar",
+    "fileName": "Huntelaar.png",
+    "imageUrl": "/versus/A_profile/webp/Huntelaar.webp?v=59a3aec53007",
+    "xPercent": 58.4,
+    "yPercent": 61.9,
+    "widthPercent": 168,
+    "optimizedFileName": "Huntelaar.webp"
+  },
+  "s4-fc26-183898": {
+    "playerId": "s4-fc26-183898",
+    "profileKey": "Ángel Di María",
+    "fileName": "Di_Maria.png",
+    "imageUrl": "/versus/A_profile/webp/Di_Maria.webp?v=936e0f85f746",
+    "xPercent": 49.6,
+    "yPercent": 71.2,
+    "widthPercent": 244,
+    "optimizedFileName": "Di_Maria.webp"
   }
 });
 

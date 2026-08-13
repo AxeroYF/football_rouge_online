@@ -4,7 +4,9 @@ import { REAL_PLAYER_POOLS } from "../versus/player-pool.js";
 import {
   analyzeElevenBoardFormation,
   deriveFormationLines,
+  FORMATION_ROLE_LANES,
   FORMATION_LINE_MINIMUM_GAP,
+  formationRoleZones,
   GOALKEEPER_LINE_MINIMUM_Y,
   inferElevenBoardRoles as inferTacticalBoardRoles,
   moveFormationLine,
@@ -70,6 +72,32 @@ test("moving the reference lines changes the nearby player's recognized unit", (
 
   assert.equal(inferTacticalBoardRoles(entries, highDefense)["reference-player"], "CB");
   assert.equal(inferTacticalBoardRoles(entries, highMidfield)["reference-player"], "DM");
+});
+
+test("central defenders, midfielders and strikers use wider recognition lanes", () => {
+  const lines = { attack:20, midfield:44, defense:68, goalkeeper:90 };
+  const entries = [
+    { id:"st-edge", position:{ x:26, y:20 } },
+    { id:"am-edge", position:{ x:74, y:38 } },
+    { id:"dm-edge", position:{ x:26, y:50 } },
+    { id:"cb-left-edge", position:{ x:26, y:68 } },
+    { id:"cb-right-edge", position:{ x:74, y:68 } },
+  ];
+  assert.deepEqual(FORMATION_ROLE_LANES.central, FORMATION_ROLE_LANES.centralDefense);
+  assert.deepEqual(FORMATION_ROLE_LANES.centralDefense, { minimumX:26, maximumX:74 });
+  assert.deepEqual(inferTacticalBoardRoles(entries, lines), {
+    "st-edge":"ST", "am-edge":"AM", "dm-edge":"DM", "cb-left-edge":"CB", "cb-right-edge":"CB",
+  });
+});
+
+test("formation shadow zones expose the same role boundaries as recognition", () => {
+  const lines = { attack:20, midfield:44, defense:68, goalkeeper:90 };
+  const zones = formationRoleZones(lines);
+  assert.deepEqual(zones.map((zone) => zone.role), ["LW", "ST", "RW", "LM", "AM", "DM", "RM", "LWB", "LB", "CB", "RWB", "RB", "GK"]);
+  for (const zone of zones) {
+    const position = { x:(zone.xMin + zone.xMax) / 2, y:(zone.yMin + zone.yMax) / 2 };
+    assert.equal(inferTacticalBoardRoles([{ id:"sample", position }], lines).sample, zone.role);
+  }
 });
 
 test("old tactical boards derive safe reference-line defaults from their player layers", () => {

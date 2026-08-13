@@ -16,6 +16,8 @@ const versusTarget = path.resolve(here, "../versus/dist");
 const aPlayerProfileTarget = path.join(versusTarget, "A_profile");
 const legendaryProfileTarget = path.join(versusTarget, "legendary_profile");
 const xPlayerProfileTarget = path.join(versusTarget, "x_profile");
+const playerProfileSource = path.resolve(here, "../player_profiles");
+const playerProfileTarget = path.join(versusTarget, "player_profiles");
 
 const index = await readFile(path.join(source, "index.html"), "utf8");
 for (const required of ["styles.css", "app.js", "场边实验室"]) {
@@ -59,6 +61,9 @@ await cp(versusSource, versusTarget, { recursive: true });
 await syncAPlayerProfiles({ assetTargetDirectory:aPlayerProfileTarget });
 await syncLegendaryProfiles({ assetTargetDirectory:legendaryProfileTarget });
 await syncXPlayerProfiles({ assetTargetDirectory:xPlayerProfileTarget });
+await cp(playerProfileSource, playerProfileTarget, { recursive:true }).catch((error) => {
+  if (error.code !== "ENOENT") throw error;
+});
 await writeFile(
   path.join(versusTarget, "build-meta.json"),
   JSON.stringify({ builtAt: new Date().toISOString(), prototype: true }, null, 2) + "\n",

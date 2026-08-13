@@ -1,0 +1,3945 @@
+{
+  "generatedAt": "2026-08-05T08:08:39.202Z",
+  "engineVersion": "2.0.0-alpha.17",
+  "modelVersion": "match-engine-v2-alpha.17",
+  "seed": "ydl-v2-circle-demo-30-v1",
+  "durationMinutes": 30,
+  "chainCount": 60,
+  "weather": "sunny",
+  "score": [
+    1,
+    1
+  ],
+  "teams": [
+    {
+      "name": "白队",
+      "formation": "4-3-3",
+      "tactic": "positive",
+      "style": "possession",
+      "color": "#f4f7f5",
+      "outline": "#12221d",
+      "players": [
+        {
+          "id": "s4-retired-edwin-van-der-sar",
+          "name": "范德萨",
+          "shortName": "德萨",
+          "role": "GK",
+          "number": 1,
+          "base": {
+            "x": 50,
+            "y": 90
+          }
+        },
+        {
+          "id": "s4-fc26-216267",
+          "name": "罗伯逊",
+          "shortName": "伯逊",
+          "role": "LB",
+          "number": 2,
+          "base": {
+            "x": 16,
+            "y": 69
+          }
+        },
+        {
+          "id": "s4-dlc2-20260803-058",
+          "name": "费尔南多·库托",
+          "shortName": "库托",
+          "role": "CB",
+          "number": 3,
+          "base": {
+            "x": 38,
+            "y": 69
+          }
+        },
+        {
+          "id": "s4-fc26-253163",
+          "name": "阿劳霍",
+          "shortName": "劳霍",
+          "role": "CB",
+          "number": 4,
+          "base": {
+            "x": 62,
+            "y": 69
+          }
+        },
+        {
+          "id": "s4-fc26-239093",
+          "name": "克洛斯",
+          "shortName": "洛斯",
+          "role": "RB",
+          "number": 5,
+          "base": {
+            "x": 84,
+            "y": 69
+          }
+        },
+        {
+          "id": "s4-retired-pavel-nedved",
+          "name": "内德维德",
+          "shortName": "维德",
+          "role": "LM",
+          "number": 6,
+          "base": {
+            "x": 20,
+            "y": 45
+          }
+        },
+        {
+          "id": "s4-fc26-256079",
+          "name": "凯赛多",
+          "shortName": "赛多",
+          "role": "DM",
+          "number": 7,
+          "base": {
+            "x": 50,
+            "y": 45
+          }
+        },
+        {
+          "id": "s4-fc26-232639",
+          "name": "堂安律",
+          "shortName": "安律",
+          "role": "RM",
+          "number": 8,
+          "base": {
+            "x": 80,
+            "y": 45
+          }
+        },
+        {
+          "id": "s4-dlc-20260731-032",
+          "name": "阿扎尔",
+          "shortName": "扎尔",
+          "role": "LW",
+          "number": 9,
+          "base": {
+            "x": 18,
+            "y": 19
+          }
+        },
+        {
+          "id": "legend-cristiano-ronaldo",
+          "name": "C罗",
+          "shortName": "C罗",
+          "role": "ST",
+          "number": 10,
+          "base": {
+            "x": 50,
+            "y": 19
+          }
+        },
+        {
+          "id": "s4-fc26-192629",
+          "name": "阿斯帕斯",
+          "shortName": "帕斯",
+          "role": "RW",
+          "number": 11,
+          "base": {
+            "x": 82,
+            "y": 19
+          }
+        }
+      ],
+      "stats": {
+        "possessions": 29,
+        "normalPossessions": 22,
+        "transitionPossessions": 7,
+        "possessionSeconds": 2610,
+        "normalPossessionSeconds": 1980,
+        "transitionPossessionSeconds": 630,
+        "possessionControl": 28.372900000000005,
+        "shots": 2,
+        "normalShots": 1,
+        "transitionShots": 1,
+        "shotsOnTarget": 2,
+        "goals": 1,
+        "xg": 0.309,
+        "normalXg": 0.107,
+        "transitionXg": 0.202,
+        "saves": 1,
+        "corners": 0,
+        "fouls": 0,
+        "yellowCards": 0,
+        "redCards": 0,
+        "injuries": 0,
+        "substitutions": 0,
+        "setPieces": 1,
+        "penalties": 0
+      }
+    },
+    {
+      "name": "红队",
+      "formation": "4-2-3-1",
+      "tactic": "defensive",
+      "style": "longBall",
+      "color": "#f04e59",
+      "outline": "#4b0810",
+      "players": [
+        {
+          "id": "s4-dlc-20260731-044",
+          "name": "拉姆斯代尔",
+          "shortName": "代尔",
+          "role": "GK",
+          "number": 1,
+          "base": {
+            "x": 50,
+            "y": 10
+          }
+        },
+        {
+          "id": "s4-fc26-211688",
+          "name": "加亚",
+          "shortName": "加亚",
+          "role": "LB",
+          "number": 2,
+          "base": {
+            "x": 84,
+            "y": 31
+          }
+        },
+        {
+          "id": "s4-fc26-198176",
+          "name": "德弗里",
+          "shortName": "弗里",
+          "role": "CB",
+          "number": 3,
+          "base": {
+            "x": 62,
+            "y": 31
+          }
+        },
+        {
+          "id": "s4-fc26-278046",
+          "name": "库巴西",
+          "shortName": "巴西",
+          "role": "CB",
+          "number": 4,
+          "base": {
+            "x": 38,
+            "y": 31
+          }
+        },
+        {
+          "id": "s4-fc26-253149",
+          "name": "弗林鹏",
+          "shortName": "林鹏",
+          "role": "RB",
+          "number": 5,
+          "base": {
+            "x": 16,
+            "y": 31
+          }
+        },
+        {
+          "id": "s4-dlc2-20260803-061",
+          "name": "保罗·索萨",
+          "shortName": "索萨",
+          "role": "DM",
+          "number": 6,
+          "base": {
+            "x": 65,
+            "y": 45
+          }
+        },
+        {
+          "id": "s4-fc26-216352",
+          "name": "布罗佐维奇",
+          "shortName": "维奇",
+          "role": "DM",
+          "number": 7,
+          "base": {
+            "x": 35,
+            "y": 45
+          }
+        },
+        {
+          "id": "s4-retired-pavel-nedved",
+          "name": "内德维德",
+          "shortName": "维德",
+          "role": "LM",
+          "number": 8,
+          "base": {
+            "x": 80,
+            "y": 62
+          }
+        },
+        {
+          "id": "s4-fc26-192883",
+          "name": "姆希塔良",
+          "shortName": "塔良",
+          "role": "AM",
+          "number": 9,
+          "base": {
+            "x": 50,
+            "y": 64
+          }
+        },
+        {
+          "id": "s4-fc26-251852",
+          "name": "阿德耶米",
+          "shortName": "耶米",
+          "role": "RM",
+          "number": 10,
+          "base": {
+            "x": 20,
+            "y": 62
+          }
+        },
+        {
+          "id": "s4-fc26-258911",
+          "name": "阿罗科达雷",
+          "shortName": "达雷",
+          "role": "ST",
+          "number": 11,
+          "base": {
+            "x": 50,
+            "y": 83
+          }
+        }
+      ],
+      "stats": {
+        "possessions": 31,
+        "normalPossessions": 17,
+        "transitionPossessions": 14,
+        "possessionSeconds": 2790,
+        "normalPossessionSeconds": 1530,
+        "transitionPossessionSeconds": 1260,
+        "possessionControl": 31.6271,
+        "shots": 4,
+        "normalShots": 3,
+        "transitionShots": 1,
+        "shotsOnTarget": 2,
+        "goals": 1,
+        "xg": 0.54,
+        "normalXg": 0.396,
+        "transitionXg": 0.144,
+        "saves": 1,
+        "corners": 1,
+        "fouls": 1,
+        "yellowCards": 0,
+        "redCards": 0,
+        "injuries": 0,
+        "substitutions": 0,
+        "setPieces": 1,
+        "penalties": 0
+      }
+    }
+  ],
+  "keyframes": [
+    {
+      "minute": 0,
+      "chainIndex": -1,
+      "teamIndex": 0,
+      "stage": "kickoff",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 50
+      },
+      "success": true,
+      "outcome": "kickoff"
+    },
+    {
+      "minute": 0.03,
+      "chainIndex": 0,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 0.16,
+      "chainIndex": 0,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-198176",
+      "defenderId": "s4-fc26-232639",
+      "ball": {
+        "x": 70,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 0.28,
+      "chainIndex": 0,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 0.41,
+      "chainIndex": 0,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 0.52,
+      "chainIndex": 1,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0.196
+    },
+    {
+      "minute": 0.6,
+      "chainIndex": 1,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.196
+    },
+    {
+      "minute": 0.69,
+      "chainIndex": 1,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-232639",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 90,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.196
+    },
+    {
+      "minute": 0.77,
+      "chainIndex": 1,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-198176",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.196
+    },
+    {
+      "minute": 0.85,
+      "chainIndex": 1,
+      "teamIndex": 0,
+      "stage": "chance",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.196
+    },
+    {
+      "minute": 0.94,
+      "chainIndex": 1,
+      "teamIndex": 0,
+      "stage": "shot",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-dlc-20260731-044",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "shotCreated",
+      "possessionType": "normal",
+      "xg": 0.196
+    },
+    {
+      "minute": 1.04,
+      "chainIndex": 2,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 1.21,
+      "chainIndex": 2,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-216352",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 30,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 1.38,
+      "chainIndex": 2,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-dlc2-20260803-058",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 1.54,
+      "chainIndex": 3,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 1.71,
+      "chainIndex": 3,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-216267",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 10,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 1.88,
+      "chainIndex": 3,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 2.04,
+      "chainIndex": 4,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 2.21,
+      "chainIndex": 4,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-192883",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 30,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 2.38,
+      "chainIndex": 4,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 10,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 2.56,
+      "chainIndex": 5,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 2.81,
+      "chainIndex": 5,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-058",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 30,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 3.04,
+      "chainIndex": 6,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 3.21,
+      "chainIndex": 6,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 3.38,
+      "chainIndex": 6,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-dlc2-20260803-058",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 3.54,
+      "chainIndex": 7,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 3.71,
+      "chainIndex": 7,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-216267",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 10,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 3.88,
+      "chainIndex": 7,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-278046",
+      "ball": {
+        "x": 30,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.03,
+      "chainIndex": 8,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.16,
+      "chainIndex": 8,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-216352",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 50,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.28,
+      "chainIndex": 8,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.41,
+      "chainIndex": 8,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.54,
+      "chainIndex": 9,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.71,
+      "chainIndex": 9,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-fc26-192883",
+      "ball": {
+        "x": 50,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 4.88,
+      "chainIndex": 9,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-216352",
+      "ball": {
+        "x": 30,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 5.04,
+      "chainIndex": 10,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 5.21,
+      "chainIndex": 10,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 30,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 5.38,
+      "chainIndex": 10,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 5.54,
+      "chainIndex": 11,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 5.71,
+      "chainIndex": 11,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-fc26-192883",
+      "ball": {
+        "x": 50,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 5.88,
+      "chainIndex": 11,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-256079",
+      "defenderId": "s4-fc26-278046",
+      "ball": {
+        "x": 50,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 6.06,
+      "chainIndex": 12,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 6.31,
+      "chainIndex": 12,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 6.54,
+      "chainIndex": 13,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 6.71,
+      "chainIndex": 13,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-232639",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 90,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 6.88,
+      "chainIndex": 13,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 90,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.03,
+      "chainIndex": 14,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.13,
+      "chainIndex": 14,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-061",
+      "defenderId": "s4-fc26-232639",
+      "ball": {
+        "x": 70,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.22,
+      "chainIndex": 14,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.33,
+      "chainIndex": 14,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.42,
+      "chainIndex": 14,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.56,
+      "chainIndex": 15,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 7.81,
+      "chainIndex": 15,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 8.04,
+      "chainIndex": 16,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 8.21,
+      "chainIndex": 16,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 8.38,
+      "chainIndex": 16,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 8.54,
+      "chainIndex": 17,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 8.71,
+      "chainIndex": 17,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 8.88,
+      "chainIndex": 17,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-256079",
+      "defenderId": "s4-fc26-216352",
+      "ball": {
+        "x": 50,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 9.03,
+      "chainIndex": 18,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 9.16,
+      "chainIndex": 18,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 30,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 9.28,
+      "chainIndex": 18,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 10,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 9.41,
+      "chainIndex": 18,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 10,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 9.53,
+      "chainIndex": 19,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 9.63,
+      "chainIndex": 19,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-058",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 30,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 9.72,
+      "chainIndex": 19,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 9.82,
+      "chainIndex": 19,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-dlc-20260731-032",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 9.93,
+      "chainIndex": 19,
+      "teamIndex": 0,
+      "stage": "chance",
+      "actorId": "s4-dlc-20260731-032",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 10.04,
+      "chainIndex": 20,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 10.21,
+      "chainIndex": 20,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-278046",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 30,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 10.38,
+      "chainIndex": 20,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 10,
+        "y": 69
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 10.56,
+      "chainIndex": 21,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 10.81,
+      "chainIndex": 21,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 11.06,
+      "chainIndex": 22,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 11.31,
+      "chainIndex": 22,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 30,
+        "y": 69
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 11.56,
+      "chainIndex": 23,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 11.81,
+      "chainIndex": 23,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 12.04,
+      "chainIndex": 24,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 12.21,
+      "chainIndex": 24,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 12.38,
+      "chainIndex": 24,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-dlc2-20260803-058",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 12.56,
+      "chainIndex": 25,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 12.81,
+      "chainIndex": 25,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-058",
+      "defenderId": "s4-fc26-192883",
+      "ball": {
+        "x": 50,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 13.06,
+      "chainIndex": 26,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 13.31,
+      "chainIndex": 26,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 13.56,
+      "chainIndex": 27,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 13.81,
+      "chainIndex": 27,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 14.06,
+      "chainIndex": 28,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 14.31,
+      "chainIndex": 28,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 14.54,
+      "chainIndex": 29,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 14.71,
+      "chainIndex": 29,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-058",
+      "defenderId": "s4-fc26-216352",
+      "ball": {
+        "x": 30,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 14.88,
+      "chainIndex": 29,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-256079",
+      "defenderId": "s4-fc26-278046",
+      "ball": {
+        "x": 50,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 15.03,
+      "chainIndex": 30,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 15.16,
+      "chainIndex": 30,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-dlc2-20260803-058",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 15.28,
+      "chainIndex": 30,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 10,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 15.41,
+      "chainIndex": 30,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 10,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 15.54,
+      "chainIndex": 31,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 15.71,
+      "chainIndex": 31,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-216267",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 10,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 15.88,
+      "chainIndex": 31,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 16.06,
+      "chainIndex": 32,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 16.31,
+      "chainIndex": 32,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 16.56,
+      "chainIndex": 33,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 16.81,
+      "chainIndex": 33,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 17.06,
+      "chainIndex": 34,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 17.31,
+      "chainIndex": 34,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 17.53,
+      "chainIndex": 35,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 17.66,
+      "chainIndex": 35,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 17.78,
+      "chainIndex": 35,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-232639",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 17.91,
+      "chainIndex": 35,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "legend-cristiano-ronaldo",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 18.02,
+      "chainIndex": 36,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0.142
+    },
+    {
+      "minute": 18.1,
+      "chainIndex": 36,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-211688",
+      "defenderId": "s4-fc26-232639",
+      "ball": {
+        "x": 90,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.142
+    },
+    {
+      "minute": 18.19,
+      "chainIndex": 36,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.142
+    },
+    {
+      "minute": 18.27,
+      "chainIndex": 36,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.142
+    },
+    {
+      "minute": 18.35,
+      "chainIndex": 36,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.142
+    },
+    {
+      "minute": 18.44,
+      "chainIndex": 36,
+      "teamIndex": 1,
+      "stage": "shot",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "shotCreated",
+      "possessionType": "normal",
+      "xg": 0.142
+    },
+    {
+      "minute": 18.52,
+      "chainIndex": 37,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 18.63,
+      "chainIndex": 37,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-061",
+      "defenderId": "s4-fc26-232639",
+      "ball": {
+        "x": 70,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 18.73,
+      "chainIndex": 37,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-192883",
+      "defenderId": "s4-dlc2-20260803-058",
+      "ball": {
+        "x": 50,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 18.82,
+      "chainIndex": 37,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 18.93,
+      "chainIndex": 37,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-192883",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 19.04,
+      "chainIndex": 38,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 19.21,
+      "chainIndex": 38,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-058",
+      "defenderId": "s4-fc26-192883",
+      "ball": {
+        "x": 30,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 19.38,
+      "chainIndex": 38,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-256079",
+      "defenderId": "s4-fc26-198176",
+      "ball": {
+        "x": 50,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 19.52,
+      "chainIndex": 39,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0.153
+    },
+    {
+      "minute": 19.63,
+      "chainIndex": 39,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.153
+    },
+    {
+      "minute": 19.73,
+      "chainIndex": 39,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.153
+    },
+    {
+      "minute": 19.82,
+      "chainIndex": 39,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.153
+    },
+    {
+      "minute": 19.93,
+      "chainIndex": 39,
+      "teamIndex": 1,
+      "stage": "shot",
+      "actorId": "s4-fc26-192883",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "shotCreated",
+      "possessionType": "normal",
+      "xg": 0.153
+    },
+    {
+      "minute": 20.06,
+      "chainIndex": 40,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 20.31,
+      "chainIndex": 40,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-278046",
+      "defenderId": "s4-fc26-256079",
+      "ball": {
+        "x": 30,
+        "y": 36
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 20.56,
+      "chainIndex": 41,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 20.81,
+      "chainIndex": 41,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "legend-cristiano-ronaldo",
+      "defenderId": "s4-fc26-198176",
+      "ball": {
+        "x": 50,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 21.02,
+      "chainIndex": 42,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0.124
+    },
+    {
+      "minute": 21.1,
+      "chainIndex": 42,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-dlc2-20260803-061",
+      "defenderId": "s4-fc26-256079",
+      "ball": {
+        "x": 50,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.124
+    },
+    {
+      "minute": 21.19,
+      "chainIndex": 42,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.124
+    },
+    {
+      "minute": 21.27,
+      "chainIndex": 42,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.124
+    },
+    {
+      "minute": 21.35,
+      "chainIndex": 42,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0.124
+    },
+    {
+      "minute": 21.44,
+      "chainIndex": 42,
+      "teamIndex": 1,
+      "stage": "shot",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "shotCreated",
+      "possessionType": "normal",
+      "xg": 0.124
+    },
+    {
+      "minute": 21.56,
+      "chainIndex": 43,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 21.81,
+      "chainIndex": 43,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 22.04,
+      "chainIndex": 44,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.21,
+      "chainIndex": 44,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.38,
+      "chainIndex": 44,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.52,
+      "chainIndex": 45,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.63,
+      "chainIndex": 45,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.73,
+      "chainIndex": 45,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-232639",
+      "defenderId": "s4-dlc2-20260803-061",
+      "ball": {
+        "x": 70,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.82,
+      "chainIndex": 45,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 22.93,
+      "chainIndex": 45,
+      "teamIndex": 0,
+      "stage": "chance",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-198176",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "setPieceWon",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 23.06,
+      "chainIndex": 46,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 23.31,
+      "chainIndex": 46,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-216352",
+      "defenderId": "s4-fc26-256079",
+      "ball": {
+        "x": 30,
+        "y": 36
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 23.56,
+      "chainIndex": 47,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 23.81,
+      "chainIndex": 47,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-dlc-20260731-032",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 24.02,
+      "chainIndex": 48,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 24.13,
+      "chainIndex": 48,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253149",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 10,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 24.23,
+      "chainIndex": 48,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 24.32,
+      "chainIndex": 48,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 24.43,
+      "chainIndex": 48,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-192883",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 24.52,
+      "chainIndex": 49,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0.206
+    },
+    {
+      "minute": 24.6,
+      "chainIndex": 49,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-253163",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0.206
+    },
+    {
+      "minute": 24.69,
+      "chainIndex": 49,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-232639",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 90,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0.206
+    },
+    {
+      "minute": 24.77,
+      "chainIndex": 49,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0.206
+    },
+    {
+      "minute": 24.85,
+      "chainIndex": 49,
+      "teamIndex": 0,
+      "stage": "chance",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-198176",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0.206
+    },
+    {
+      "minute": 24.94,
+      "chainIndex": 49,
+      "teamIndex": 0,
+      "stage": "shot",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-dlc-20260731-044",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "shotCreated",
+      "possessionType": "transition",
+      "xg": 0.206
+    },
+    {
+      "minute": 25.04,
+      "chainIndex": 50,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 25.21,
+      "chainIndex": 50,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-216267",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 30,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 25.38,
+      "chainIndex": 50,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-256079",
+      "defenderId": "s4-fc26-216352",
+      "ball": {
+        "x": 50,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 25.53,
+      "chainIndex": 51,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 25.66,
+      "chainIndex": 51,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 50,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 25.78,
+      "chainIndex": 51,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-dlc2-20260803-058",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 25.91,
+      "chainIndex": 51,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-fc26-251852",
+      "defenderId": "s4-fc26-216267",
+      "ball": {
+        "x": 30,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 26.04,
+      "chainIndex": 52,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 30,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 26.21,
+      "chainIndex": 52,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-251852",
+      "ball": {
+        "x": 10,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 26.38,
+      "chainIndex": 52,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253149",
+      "ball": {
+        "x": 10,
+        "y": 31
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 26.56,
+      "chainIndex": 53,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 10,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 26.81,
+      "chainIndex": 53,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "transition",
+      "xg": 0
+    },
+    {
+      "minute": 27.02,
+      "chainIndex": 54,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.13,
+      "chainIndex": 54,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.23,
+      "chainIndex": 54,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-232639",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.32,
+      "chainIndex": 54,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 90,
+        "y": 9
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.43,
+      "chainIndex": 54,
+      "teamIndex": 0,
+      "stage": "chance",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 90,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.52,
+      "chainIndex": 55,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.63,
+      "chainIndex": 55,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-211688",
+      "defenderId": "s4-fc26-232639",
+      "ball": {
+        "x": 70,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.73,
+      "chainIndex": 55,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.82,
+      "chainIndex": 55,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 27.93,
+      "chainIndex": 55,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 90,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 28.06,
+      "chainIndex": 56,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 28.31,
+      "chainIndex": 56,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 90,
+        "y": 64
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 28.53,
+      "chainIndex": 57,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 90,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "transition",
+      "xg": 0.149
+    },
+    {
+      "minute": 28.66,
+      "chainIndex": 57,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0.149
+    },
+    {
+      "minute": 28.78,
+      "chainIndex": 57,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "transition",
+      "xg": 0.149
+    },
+    {
+      "minute": 28.91,
+      "chainIndex": 57,
+      "teamIndex": 1,
+      "stage": "shot",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-retired-edwin-van-der-sar",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "shotCreated",
+      "possessionType": "transition",
+      "xg": 0.149
+    },
+    {
+      "minute": 29.03,
+      "chainIndex": 58,
+      "teamIndex": 0,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 50,
+        "y": 84
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.16,
+      "chainIndex": 58,
+      "teamIndex": 0,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-239093",
+      "defenderId": "s4-retired-pavel-nedved",
+      "ball": {
+        "x": 70,
+        "y": 64
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.28,
+      "chainIndex": 58,
+      "teamIndex": 0,
+      "stage": "progression",
+      "actorId": "s4-fc26-256079",
+      "defenderId": "s4-fc26-216352",
+      "ball": {
+        "x": 50,
+        "y": 31
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.41,
+      "chainIndex": 58,
+      "teamIndex": 0,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-192629",
+      "defenderId": "s4-fc26-211688",
+      "ball": {
+        "x": 70,
+        "y": 9
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.52,
+      "chainIndex": 59,
+      "teamIndex": 1,
+      "stage": "possession",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 16
+      },
+      "success": true,
+      "outcome": "selected",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.63,
+      "chainIndex": 59,
+      "teamIndex": 1,
+      "stage": "buildUp",
+      "actorId": "s4-fc26-198176",
+      "defenderId": "s4-fc26-256079",
+      "ball": {
+        "x": 70,
+        "y": 36
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.73,
+      "chainIndex": 59,
+      "teamIndex": 1,
+      "stage": "progression",
+      "actorId": "s4-dlc2-20260803-061",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 69
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.82,
+      "chainIndex": 59,
+      "teamIndex": 1,
+      "stage": "finalThird",
+      "actorId": "s4-fc26-258911",
+      "defenderId": "s4-fc26-239093",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "retained",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 29.93,
+      "chainIndex": 59,
+      "teamIndex": 1,
+      "stage": "chance",
+      "actorId": "s4-retired-pavel-nedved",
+      "defenderId": "s4-fc26-253163",
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": false,
+      "outcome": "defensiveTurnover",
+      "possessionType": "normal",
+      "xg": 0
+    },
+    {
+      "minute": 30,
+      "chainIndex": 60,
+      "teamIndex": 1,
+      "stage": "fulltime",
+      "actorId": null,
+      "defenderId": null,
+      "ball": {
+        "x": 70,
+        "y": 91
+      },
+      "success": true,
+      "outcome": "fulltime"
+    }
+  ],
+  "events": [
+    {
+      "id": "v2-1",
+      "minute": 0.33,
+      "type": "kickoff",
+      "teamIndex": null,
+      "text": "比赛开始，YDL V2引擎正式开球。",
+      "importance": "stage",
+      "actorId": null,
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-2",
+      "minute": 0.33,
+      "type": "duel",
+      "teamIndex": 1,
+      "text": "德弗里与内德维德尝试连续短传，克洛斯及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-retired-pavel-nedved",
+      "opponentId": "s4-fc26-239093",
+      "score": null
+    },
+    {
+      "id": "v2-3",
+      "minute": 1,
+      "type": "attack",
+      "teamIndex": 0,
+      "text": "克洛斯、堂安律、阿斯帕斯连续接应，从后场耐心组织并通过远射为C罗创造起脚空间。",
+      "importance": "normal",
+      "actorId": "s4-fc26-192629",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-4",
+      "minute": 1,
+      "type": "save",
+      "teamIndex": 1,
+      "text": "拉姆斯代尔扑出C罗在前场右侧肋部接应远射后的射门并稳稳控制住皮球。",
+      "importance": "normal",
+      "actorId": "s4-dlc-20260731-044",
+      "opponentId": "legend-cristiano-ronaldo",
+      "score": null
+    },
+    {
+      "id": "v2-5",
+      "minute": 3.33,
+      "type": "counter",
+      "teamIndex": 1,
+      "text": "阿德耶米与阿罗科达雷尝试快速反击，费尔南多·库托及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": "s4-dlc2-20260803-058",
+      "score": null
+    },
+    {
+      "id": "v2-6",
+      "minute": 5.33,
+      "type": "counter",
+      "teamIndex": 1,
+      "text": "阿德耶米与阿罗科达雷尝试快速反击，范德萨及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": "s4-retired-edwin-van-der-sar",
+      "score": null
+    },
+    {
+      "id": "v2-7",
+      "minute": 9.33,
+      "type": "counter",
+      "teamIndex": 1,
+      "text": "阿德耶米尝试快速反击，罗伯逊及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-251852",
+      "opponentId": "s4-fc26-216267",
+      "score": null
+    },
+    {
+      "id": "v2-8",
+      "minute": 12.33,
+      "type": "duel",
+      "teamIndex": 1,
+      "text": "阿罗科达雷尝试纵向直传，费尔南多·库托及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": "s4-dlc2-20260803-058",
+      "score": null
+    },
+    {
+      "id": "v2-9",
+      "minute": 15.33,
+      "type": "counter",
+      "teamIndex": 1,
+      "text": "阿罗科达雷与阿德耶米尝试快速反击，罗伯逊及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-251852",
+      "opponentId": "s4-fc26-216267",
+      "score": null
+    },
+    {
+      "id": "v2-10",
+      "minute": 16.33,
+      "type": "duel",
+      "teamIndex": 1,
+      "text": "阿罗科达雷尝试纵向直传，范德萨及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": "s4-retired-edwin-van-der-sar",
+      "score": null
+    },
+    {
+      "id": "v2-11",
+      "minute": 18.33,
+      "type": "attack",
+      "teamIndex": 1,
+      "text": "加亚连续接应，从后场耐心组织并通过直塞配合为阿罗科达雷创造起脚空间。",
+      "importance": "normal",
+      "actorId": "s4-fc26-211688",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-12",
+      "minute": 18.33,
+      "type": "miss",
+      "teamIndex": 1,
+      "text": "阿罗科达雷在禁区中路接应直塞配合后攻门偏出，机会质量xG 0.14。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-13",
+      "minute": 20,
+      "type": "attack",
+      "teamIndex": 1,
+      "text": "阿罗科达雷连续接应，从后场耐心组织并通过直塞配合为姆希塔良创造起脚空间。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-14",
+      "minute": 20,
+      "type": "goal",
+      "teamIndex": 1,
+      "text": "姆希塔良破门！助攻：阿罗科达雷，直塞配合，xG 0.15，比分0:1。",
+      "importance": "major",
+      "actorId": "s4-fc26-192883",
+      "opponentId": "s4-retired-edwin-van-der-sar",
+      "score": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "v2-15",
+      "minute": 20.33,
+      "type": "tactical",
+      "teamIndex": 0,
+      "text": "standard-home根据实时比分切换为落后战术计划。",
+      "importance": "normal",
+      "actorId": null,
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-16",
+      "minute": 20.33,
+      "type": "tactical",
+      "teamIndex": 1,
+      "text": "pressing-away根据实时比分切换为领先战术计划。",
+      "importance": "normal",
+      "actorId": null,
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-17",
+      "minute": 20.33,
+      "type": "duel",
+      "teamIndex": 1,
+      "text": "库巴西尝试连续短传，凯赛多及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-278046",
+      "opponentId": "s4-fc26-256079",
+      "score": null
+    },
+    {
+      "id": "v2-18",
+      "minute": 21.33,
+      "type": "attack",
+      "teamIndex": 1,
+      "text": "保罗·索萨、内德维德连续接应，从后场耐心组织并通过直塞配合为阿罗科达雷创造起脚空间。",
+      "importance": "normal",
+      "actorId": "s4-retired-pavel-nedved",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-19",
+      "minute": 21.33,
+      "type": "save",
+      "teamIndex": 0,
+      "text": "范德萨扑出阿罗科达雷在禁区中路接应直塞配合后的射门并稳稳控制住皮球。",
+      "importance": "normal",
+      "actorId": "s4-retired-edwin-van-der-sar",
+      "opponentId": "s4-fc26-258911",
+      "score": null
+    },
+    {
+      "id": "v2-20",
+      "minute": 21.33,
+      "type": "corner",
+      "teamIndex": 1,
+      "text": "pressing-away获得角球。",
+      "importance": "normal",
+      "actorId": null,
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-21",
+      "minute": 21.33,
+      "type": "setPiece",
+      "teamIndex": 1,
+      "text": "德弗里为pressing-away主罚角球，阿罗科达雷向第一落点前插。",
+      "importance": "normal",
+      "actorId": "s4-fc26-198176",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-22",
+      "minute": 21.33,
+      "type": "clearance",
+      "teamIndex": 0,
+      "text": "罗伯逊判断落点，直接解围定位球。",
+      "importance": "normal",
+      "actorId": "s4-fc26-216267",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-23",
+      "minute": 23,
+      "type": "foul",
+      "teamIndex": 1,
+      "text": "德弗里在禁区右侧肋部对阿斯帕斯战术犯规，standard-home获得定位球。",
+      "importance": "normal",
+      "actorId": "s4-fc26-198176",
+      "opponentId": "s4-fc26-192629",
+      "score": null
+    },
+    {
+      "id": "v2-24",
+      "minute": 23,
+      "type": "setPiece",
+      "teamIndex": 0,
+      "text": "阿扎尔为standard-home主罚前场定位球，C罗向第一落点前插。",
+      "importance": "normal",
+      "actorId": "s4-dlc-20260731-032",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-25",
+      "minute": 23,
+      "type": "clearance",
+      "teamIndex": 1,
+      "text": "加亚赢下定位球争顶并完成解围。",
+      "importance": "normal",
+      "actorId": "s4-fc26-211688",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-26",
+      "minute": 24,
+      "type": "counter",
+      "teamIndex": 0,
+      "text": "阿扎尔尝试快速反击，弗林鹏及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-dlc-20260731-032",
+      "opponentId": "s4-fc26-253149",
+      "score": null
+    },
+    {
+      "id": "v2-27",
+      "minute": 24.33,
+      "type": "duel",
+      "teamIndex": 1,
+      "text": "阿罗科达雷与姆希塔良尝试连续短传，范德萨及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-192883",
+      "opponentId": "s4-retired-edwin-van-der-sar",
+      "score": null
+    },
+    {
+      "id": "v2-28",
+      "minute": 25,
+      "type": "attack",
+      "teamIndex": 0,
+      "text": "阿劳霍、堂安律连续接应，从后场耐心组织并通过倒三角回敲为阿斯帕斯创造起脚空间。",
+      "importance": "normal",
+      "actorId": "s4-fc26-232639",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-29",
+      "minute": 25,
+      "type": "goal",
+      "teamIndex": 0,
+      "text": "阿斯帕斯破门！助攻：堂安律，倒三角回敲，xG 0.20，比分1:1。",
+      "importance": "major",
+      "actorId": "s4-fc26-192629",
+      "opponentId": "s4-dlc-20260731-044",
+      "score": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "v2-30",
+      "minute": 25.33,
+      "type": "tactical",
+      "teamIndex": 0,
+      "text": "standard-home根据实时比分切换为开场战术计划。",
+      "importance": "normal",
+      "actorId": null,
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-31",
+      "minute": 25.33,
+      "type": "tactical",
+      "teamIndex": 1,
+      "text": "pressing-away根据实时比分切换为开场战术计划。",
+      "importance": "normal",
+      "actorId": null,
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-32",
+      "minute": 26,
+      "type": "duel",
+      "teamIndex": 1,
+      "text": "阿罗科达雷与阿德耶米尝试连续短传，罗伯逊及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-251852",
+      "opponentId": "s4-fc26-216267",
+      "score": null
+    },
+    {
+      "id": "v2-33",
+      "minute": 27.33,
+      "type": "duel",
+      "teamIndex": 0,
+      "text": "堂安律与阿斯帕斯尝试连续短传，加亚及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-192629",
+      "opponentId": "s4-fc26-211688",
+      "score": null
+    },
+    {
+      "id": "v2-34",
+      "minute": 28.33,
+      "type": "duel",
+      "teamIndex": 0,
+      "text": "克洛斯尝试连续短传，内德维德及时预判传球线路并完成拦截。",
+      "importance": "normal",
+      "actorId": "s4-fc26-239093",
+      "opponentId": "s4-retired-pavel-nedved",
+      "score": null
+    },
+    {
+      "id": "v2-35",
+      "minute": 29,
+      "type": "attack",
+      "teamIndex": 1,
+      "text": "内德维德连续接应，从后场耐心组织并通过直塞配合为阿罗科达雷创造起脚空间。",
+      "importance": "normal",
+      "actorId": "s4-retired-pavel-nedved",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-36",
+      "minute": 29,
+      "type": "miss",
+      "teamIndex": 1,
+      "text": "阿罗科达雷在禁区左侧肋部接应直塞配合后攻门偏出，机会质量xG 0.14。",
+      "importance": "normal",
+      "actorId": "s4-fc26-258911",
+      "opponentId": null,
+      "score": null
+    },
+    {
+      "id": "v2-37",
+      "minute": 30,
+      "type": "fulltime",
+      "teamIndex": null,
+      "text": "30 分钟比赛结束，比分 1:1。",
+      "importance": "stage",
+      "actorId": null,
+      "opponentId": null,
+      "score": [
+        1,
+        1
+      ]
+    }
+  ]
+}

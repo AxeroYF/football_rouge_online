@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 import { simulateV2PossessionChain } from "../versus/v2/possession-chain-v2.js";
 import { buildV2SpatialMatchup, buildV2StageSpatialCache } from "../versus/v2/spatial-model-v2.js";
 
@@ -50,8 +51,12 @@ test("V2控球链按六阶段沿区域连接完成一次进攻", () => {
   assert.deepEqual(chain.stages.slice(1, 4).map((stage) => stage.zone.split(":")[0]), ["buildUp", "finalThird", "box"]);
   assert.ok(chain.stages.slice(1).every((stage) => stage.success && Number.isFinite(stage.probability)));
   assert.equal(chain.goal, true);
+  assert.equal(chain.possessionType, "normal");
   assert.equal(chain.xg, chain.stages.at(-1).probability);
   assert.equal(chain.stages.at(-1).defender.role, "GK");
+  assert.ok(Number.isFinite(chain.stages.at(-1).defendingBacklineExposure));
+  assert.ok(Number.isFinite(chain.stages.at(-1).defendingLine));
+  assert.ok(Number.isFinite(chain.stages.at(-1).defendingBacklineExposureBreakdown.highLineRisk));
   assert.equal(Object.isFrozen(chain), true);
   assert.equal(Object.isFrozen(chain.stages[1].factors), true);
 });
@@ -63,6 +68,7 @@ test("造越位防线可以在进攻进入前场时终止控球链", () => {
   ], { rng:() => 0, recordRandomRolls:true });
   assert.equal(chain.terminalOutcome, "offside");
   assert.equal(chain.stages.at(-1).stage, "finalThird");
+  assert.deepEqual(chain.stages.at(-1).factors, {});
 });
 
 test("客队控球链也按自身视角从防守三区推进到禁区", () => {
@@ -136,13 +142,15 @@ test("丢失球权时只允许事件区域内的防守球员完成断球", () =>
 
 test("没有防守覆盖的区域不会虚构远距离抢断者", () => {
   const teams = [makeTeam("home"), makeTeam("away")];
-  const baseline = buildV2SpatialMatchup(teams);
-  const baselineStages = buildV2StageSpatialCache(teams);
-  const baselineChain = simulateV2PossessionChain(teams, { spatial:baseline, stageSpatials:baselineStages, rng:() => 0 });
+  const parameters = resolveV2MatchParameters({ dynamicShape:{ mode:"off" } });
+  const baseline = buildV2SpatialMatchup(teams, { parameters });
+  const baselineStages = buildV2StageSpatialCache(teams, { parameters });
+  const baselineChain = simulateV2PossessionChain(teams, { parameters, spatial:baseline, stageSpatials:baselineStages, rng:() => 0 });
   const contestedZone = baselineChain.stages.find((stage) => stage.stage === "buildUp").zone;
   const stageSpatials = structuredClone(baselineStages);
   stageSpatials[0].buildUp.teams[0].zones[contestedZone].opponent.contributors = [];
   const chain = simulateV2PossessionChain(teams, {
+    parameters,
     spatial:baseline,
     stageSpatials,
     rng:sequenceRng([0, 0, 0, 0, 0, 0.999]),
@@ -185,7 +193,7 @@ test("反击从断球区域直接启动而不倒退到组织区", () => {
   const teams = [makeTeam("counter", { tactic:"defensive", style:"counterAttack" }), makeTeam("opponent")];
   const chain = simulateV2PossessionChain(teams, {
     rng:() => 0,
-    transition:{ wonZone:"finalThird:center", previousDefendingTeamIndex:0 },
+    transition:{ attackingTeamIndex:0, wonZone:"finalThird:center", previousDefendingTeamIndex:1 },
     recordRandomRolls:true,
   });
   assert.equal(chain.startZone, "finalThird:center");
@@ -201,8 +209,20 @@ test("断球转换指定下一条控球链的反击球队", () => {
     transition:{ attackingTeamIndex:1, wonZone:"finalThird:center", previousDefendingTeamIndex:0 },
   });
   assert.equal(chain.attackingTeamIndex, 1);
+  assert.equal(chain.possessionType, "transition");
   assert.equal(chain.startZone, "finalThird:center");
   assert.equal(chain.stages[1].connection.routeType, "counter");
+});
+
+test("普通断球续接球权但不会自动获得快速反击加成", () => {
+  const teams = [makeTeam("home"), makeTeam("away", { tactic:"defensive", style:"counterAttack" })];
+  const chain = simulateV2PossessionChain(teams, {
+    rng:() => 0,
+    transition:{ attackingTeamIndex:1, wonZone:"buildUp:center", previousDefendingTeamIndex:0, counterOpportunity:false },
+  });
+  assert.equal(chain.attackingTeamIndex, 1);
+  assert.equal(chain.possessionType, "normal");
+  assert.notEqual(chain.stages[1].connection.routeType, "counter");
 });
 
 test("落后紧迫度与天气进入阶段概率且链序号不再重复扣除体能", () => {
@@ -213,11 +233,26 @@ test("落后紧迫度与天气进入阶段概率且链序号不再重复扣除�
   const levelBuildUp = level.stages.find((stage) => stage.stage === "buildUp");
   const lateLevelBuildUp = lateLevel.stages.find((stage) => stage.stage === "buildUp");
   const trailingBuildUp = trailing.stages.find((stage) => stage.stage === "buildUp");
+  const lateLevelChance = lateLevel.stages.find((stage) => stage.stage === "chance");
   assert.ok(trailingBuildUp.stateAdjustment.urgency > 0);
   assert.ok(trailingBuildUp.stateAdjustment.weather < 1);
+  assert.ok(trailingBuildUp.stateAdjustment.weatherImpact < 0);
+  assert.ok(Math.abs(trailingBuildUp.stateAdjustment.weatherImpact) < 0.02);
   assert.equal(lateLevelBuildUp.stateAdjustment.fatigue, 0);
   assert.equal(lateLevelBuildUp.probability, levelBuildUp.probability);
-  assert.ok(trailingBuildUp.probability < levelBuildUp.probability);
+  assert.ok(lateLevelChance.stateAdjustment.decisiveness > 0);
+  assert.equal(Object.hasOwn(lateLevelChance.stateAdjustment, "homeAdvantage"), false);
+  assert.ok(trailingBuildUp.probability > levelBuildUp.probability);
+});
+
+test("耐心寻找机会提高后续组织效率但不直接修改射门结果", () => {
+  const patientTeams = [makeTeam("patient", { inPossessionDetails:{ chanceCreation:"patient" } }), makeTeam("away")];
+  const balancedTeams = [makeTeam("balanced", { inPossessionDetails:{ chanceCreation:"balanced" } }), makeTeam("away")];
+  const patient = simulateV2PossessionChain(patientTeams, { rng:() => 0, state:{ minute:20, score:[0, 0] } });
+  const balanced = simulateV2PossessionChain(balancedTeams, { rng:() => 0, state:{ minute:20, score:[0, 0] } });
+  assert.ok(patient.stages.find((stage) => stage.stage === "chance").stateAdjustment.patience > 0);
+  assert.equal(balanced.stages.find((stage) => stage.stage === "chance").stateAdjustment.patience, 0);
+  assert.equal(patient.stages.find((stage) => stage.stage === "shot").stateAdjustment.patience, 0);
 });
 
 test("控球打法通过低直接度获得可观察的球权优势", () => {
@@ -243,6 +278,13 @@ test("粗野打法和严格裁判可把区域防守失败转为犯规与牌", ()
   assert.equal(foul.foul.occurred, true);
   assert.equal(foul.foul.card, "red");
   assert.equal(foul.foul.referee, "strict");
+});
+
+test("粗野打法恢复原有进攻效率且不再额外放大出牌率", () => {
+  const rough = simulateV2PossessionChain([makeTeam("rough", { style:"roughPlay" }), makeTeam("opponent")], { rng:() => 0 });
+
+  assert.equal(rough.stages.find((stage) => stage.stage === "chance").stateAdjustment.tactical > -0.02, true);
+  assert.ok(rough.stages.every((stage) => stage.stage === "possession" || Number.isFinite(stage.probability)));
 });
 
 test("严格裁判比宽松裁判提高犯规和出牌概率", () => {

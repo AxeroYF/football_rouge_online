@@ -23,8 +23,9 @@ const publicReferee = (key) => ({ key, ...(VERSUS_REFEREES[key] ?? VERSUS_REFERE
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, Number(value) || 0));
 
 function possessionPercent(match, teamIndex) {
+  const secondsTotal = match.teams.reduce((sum, team) => sum + Number(team.stats.possessionSeconds ?? 0), 0);
   const controlTotal = match.teams.reduce((sum, team) => sum + Number(team.stats.possessionControl ?? 0), 0);
-  const key = controlTotal > 0 ? "possessionControl" : "possessions";
+  const key = secondsTotal > 0 ? "possessionSeconds" : controlTotal > 0 ? "possessionControl" : "possessions";
   const total = match.teams.reduce((sum, team) => sum + Number(team.stats[key] ?? 0), 0) || 1;
   return Number((Number(match.teams[teamIndex].stats[key] ?? 0) / total * 100).toFixed(1));
 }
@@ -67,7 +68,7 @@ function buildTacticalReview(match) {
     }
   }
   for (const event of match.events ?? []) {
-    if (!["goal", "miss", "save"].includes(event.type)) continue;
+    if (!["goal", "miss", "save", "block"].includes(event.type)) continue;
     const teamIndex = Number(event.attackingTeamIndex ?? (event.type === "save" ? 1 - event.teamIndex : event.teamIndex));
     const zoneReview = teams[teamIndex]?.zones?.[event.zone];
     if (!zoneReview) continue;
@@ -80,18 +81,28 @@ function buildTacticalReview(match) {
     for (const zone of Object.values(team.zones)) zone.xg = Number(zone.xg.toFixed(3));
     team.zones = Object.values(team.zones);
   }
-  return { version:1, grid:{ lanes, bands }, teams };
+  return {
+    version:2,
+    source:"v2-possession-chains",
+    chainModelVersion:"possession-chain-v2.1",
+    spatialModelVersion:match.parameters?.dynamicShape?.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2-alpha.1",
+    chainCount:(match.chains ?? []).length,
+    grid:{ lanes, bands },
+    teams,
+  };
 }
 
 function reportPlayer(team, player) {
-  const stats = { tackles:0, ...player.matchStats };
-  const rating = Math.max(4, Math.min(10, 6.5 + stats.goals * 0.8 + stats.assists * 0.5 + stats.saves * 0.12 - stats.redCards * 1.5));
+  const stats = { tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, ...player.matchStats };
+  const defensiveContribution = stats.tackles * 0.08 + stats.interceptions * 0.09 + stats.clearances * 0.055 + stats.blocks * 0.12 + stats.pressuresWon * 0.035;
+  const rating = Math.max(4, Math.min(10, 6.5 + stats.goals * 0.8 + stats.assists * 0.5 + stats.saves * 0.12 + defensiveContribution - stats.redCards * 1.5));
   return {
-    id:player.id, name:player.name, role:player.role, assignedRole:player.assignedRole ?? player.role,
+    id:player.id, name:player.name, role:player.role, assignedRole:player.assignedRole ?? player.role, tacticalDuty:player.tacticalDuty ?? null,
     secondaryRole:player.secondaryRole, overall:player.overall, position:structuredClone(team.positions[player.id] ?? player.boardPosition ?? null),
     rating:Number(rating.toFixed(1)), heightCm:player.heightCm, nationality:player.nationality, club:player.club,
     grade:player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0), legendary:Boolean(player.legendary ?? player.grade === "S"),
     fitness:Number(player.state.fitness.toFixed(1)), active:player.active, sentOff:player.sentOff, injury:player.injury, stats,
+    startedMatch:Boolean(player.startedMatch), enteredAsSubstitute:Boolean(player.enteredAsSubstitute), substitutedOut:Boolean(player.substitutedOut), substitutedForId:player.substitutedForId ?? null,
     traits:player.traitDefinitions?.map(({ id, name, summary }) => ({ id, name, summary })) ?? [],
   };
 }
@@ -102,22 +113,28 @@ function reportTeam(match, team, teamIndex) {
   const plan = {
     tactic:team.tactic,
     style:team.style,
+    possessionStyle:team.possessionStyle,
+    defensiveBlock:team.defensiveBlock,
+    transitionStyle:team.transitionStyle,
+    duelIntensity:team.duelIntensity,
     inPossession:team.inPossession,
     outOfPossession:team.outOfPossession,
     inPossessionDetails:team.inPossessionDetails,
     outOfPossessionDetails:team.outOfPossessionDetails,
+    playerDuties:team.playerDuties,
   };
   const dimensions = resolveV2TacticalDimensions(team.tactic, team.style, team.tacticalDimensions, match.parameters);
   const tacticalFit = calculateV2TacticalFit(activePlayers, roles, team.positions, team.formationLines, plan, dimensions);
   return {
-    name:team.name, importedLineup:Boolean(team.importedLineup), tactic:team.tactic, style:team.style, inPossessionDetails:structuredClone(team.inPossessionDetails ?? null), outOfPossessionDetails:structuredClone(team.outOfPossessionDetails ?? null),
+    name:team.name, importedLineup:Boolean(team.importedLineup), tactic:team.tactic, style:team.style, possessionStyle:team.possessionStyle, defensiveBlock:team.defensiveBlock, transitionStyle:team.transitionStyle, duelIntensity:team.duelIntensity, inPossessionDetails:structuredClone(team.inPossessionDetails ?? null), outOfPossessionDetails:structuredClone(team.outOfPossessionDetails ?? null),
     attackFocus:team.attackFocus ?? "center", defenseFocus:team.defenseFocus ?? "center", styleFit:Number((tacticalFit / 100).toFixed(3)), tacticalFit,
     positionStructure:null, inMatchPositionAdjustment:team.activePlan !== "opening", markingTargetId:null,
     formation:analyzeElevenBoardFormation(activePlayers, team.positions, team.formationLines).name, activeCount:activePlayers.length,
     positions:structuredClone(team.positions),
+    playerDuties:structuredClone(team.playerDuties ?? {}),
     formationLines:structuredClone(team.formationLines),
     stats:{ ...team.stats, possession:possessionPercent(match, teamIndex), xg:Number(team.stats.xg.toFixed(2)) },
-    players:team.players.map((player) => reportPlayer(team, player)),
+    players:team.players.filter((player) => player.startedMatch || player.enteredAsSubstitute || player.active || player.injury || player.sentOff).map((player) => reportPlayer(team, player)),
   };
 }
 
@@ -207,7 +224,12 @@ function finishReport(match) {
   match.aggregateScore = aggregateScore;
   match.penalties = penalties;
   match.report = {
-    engineVersion:match.engineVersion, modelVersion:match.modelVersion, score:[...match.score],
+    engineVersion:match.engineVersion, modelVersion:match.modelVersion, engineProfile:match.engineProfile,
+    dynamicShapeMode:match.parameters?.dynamicShape?.mode ?? "off",
+    dynamicShapeModelVersion:match.parameters?.dynamicShape?.modelVersion ?? null,
+    dynamicShapeInfluence:Number(match.parameters?.dynamicShape?.stableInfluence ?? 0),
+    dynamicShapePhaseTwo:Boolean(match.parameters?.dynamicShape?.phaseTwo?.enabled),
+    score:[...match.score],
     aggregateBaseScore:aggregateBaseScore ? [...aggregateBaseScore] : null, aggregateScore:aggregateScore ? [...aggregateScore] : null, competitionMode:match.competitionMode, legNumber:match.legNumber,
     regulationScore:match.regulationScore ? [...match.regulationScore] : [...match.score], extraTimeScore:match.extraTimeScore ? [...match.extraTimeScore] : null,
     extraTimePlayed:Boolean(match.extraTimeStarted), penalties:penalties ? [...penalties] : null, penaltyShootout:shootout ? structuredClone(shootout) : null, winnerIndex, weather:publicWeather(match.environment.weather), referee:publicReferee(match.environment.referee),
@@ -215,6 +237,13 @@ function finishReport(match) {
     importantEvents:publicEvents(match.events.filter((event) => event.importance !== "normal")),
     events:publicEvents(match.events), analysisTimeline:structuredClone(match.analysisTimeline ?? []),
     tacticalReview:buildTacticalReview(match),
+    dotReplay:match.dotReplayEnabled ? {
+      version:9,
+      engineProfile:match.engineProfile,
+      modelVersion:match.parameters?.dynamicShape?.modelVersion ?? null,
+      coordinateSystem:"common-pitch-100",
+      frames:structuredClone(match.dotReplayFrames ?? []),
+    } : null,
     postMatchConsequences:structuredClone(match.postMatchConsequences),
   };
 }
@@ -249,6 +278,8 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   const match = createV2Match(teams, {
     seed:options.seed, weather:options.weather, referee:options.referee,
     possessionChains:regulationOnly ? REGULATION_CHAIN_COUNT : REGULATION_CHAIN_COUNT + EXTRA_TIME_CHAIN_COUNT,
+    parameters:options.parameters,
+    dotReplayEnabled:Boolean(options.dotReplayEnabled),
   });
   match.regulationChainCount = REGULATION_CHAIN_COUNT;
   match.scheduledDurationMinutes = regulationOnly ? 90 : 120;
@@ -256,6 +287,7 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   match.phase = "playing";
   match.segment = "regular";
   match.competitionMode = options.competitionMode ?? "league";
+  match.engineProfile = options.engineProfile ?? "v2.1-stable-dynamic.2";
   match.legNumber = Number(options.legNumber ?? 1);
   match.regulationOnly = regulationOnly;
   match.aggregateBaseScore = Array.isArray(options.aggregateBaseScore) ? options.aggregateBaseScore.map(Number) : null;
@@ -329,7 +361,7 @@ export function publicYdlLeagueV2Match(match, now = Date.now(), viewerIndex = nu
     return value;
   });
   return structuredClone({
-    engineVersion:match.engineVersion, modelVersion:match.modelVersion, phase:match.phase, segment:match.segment,
+    engineVersion:match.engineVersion, modelVersion:match.modelVersion, engineProfile:match.engineProfile, phase:match.phase, segment:match.segment,
     minute:publicMinute(snapshot.minute), score:snapshot.score, competitionMode:match.competitionMode, legNumber:match.legNumber,
     aggregateBaseScore:match.aggregateBaseScore ? [...match.aggregateBaseScore] : null, aggregateScore:match.aggregateScore ? [...match.aggregateScore] : null, weather:publicWeather(match.environment.weather), referee:publicReferee(match.environment.referee),
     blackWhistle:match.blackWhistleTriggered, teams, events:publicEvents(snapshot.events), pauseUsed:[true, true], pause:null,

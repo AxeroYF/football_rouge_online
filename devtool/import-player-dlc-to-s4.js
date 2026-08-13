@@ -19,6 +19,12 @@ const DLC_INPUTS = Object.freeze([
     idPrefix: "s4-dlc2-20260803-",
     sourceUpdatedAt: "2026-08-03",
   }),
+  Object.freeze({
+    input: path.join(ROOT, "data", "player-dlc3-s4-final.json"),
+    batch: "2026-08-08",
+    idPrefix: "s4-dlc3-20260808-",
+    sourceUpdatedAt: "2026-08-08",
+  }),
 ]);
 const OUTPUT_JSON = path.join(ROOT, "data", "s4-player-pool-with-dlc.json");
 const OUTPUT_MODULE = path.join(ROOT, "versus", "player-pool-s4-dlc-generated.js");

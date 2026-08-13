@@ -1,0 +1,40 @@
+{
+  "outputVersion": "S4-V2.1d-candidate-baseline-r5-20260809",
+  "seed": "yellowdogs-s4-v2.1d-candidate-baseline-r5-20260809",
+  "matches": 5000,
+  "minimumMatches": 5000,
+  "possessionChainsPerMatch": 180,
+  "maximumWorkers": 10,
+  "shardMatches": 20,
+  "progressIntervalMatches": 2,
+  "rawMatchSampleLimit": 100,
+  "scenarioMatrixFile": "engine-comparison-v2.1-full-realism-baseline.json",
+  "outputFile": "../../outputs/S4-V2.1d-candidate-baseline-r5-20260809.json",
+  "rawOutputFile": "../../outputs/S4-V2.1d-candidate-baseline-r5-20260809-raw-samples.json",
+  "ecosystemWeights": {
+    "standard": 25,
+    "enhanced": 20,
+    "traitHeavy": 15,
+    "legendHeavy": 15,
+    "xLed": 10,
+    "nationalityHeavy": 15
+  },
+  "guardrails": {
+    "maximumTotalGoalsDeltaPercent": 15,
+    "maximumTotalXgDeltaPercent": 15,
+    "maximumTotalShotsDeltaPercent": 15,
+    "maximumShotsOnTargetDeltaPercent": 15,
+    "maximumStageAverageProbabilityDelta": 0.08,
+    "maximumStageAttemptRateDeltaPercent": 20,
+    "maximumGoalsPerXgDelta": 0.08,
+    "maximumZeroZeroRateDeltaPoints": 4,
+    "maximumSixPlusGoalsRateDeltaPoints": 4,
+    "maximumSidePointsPerTeamGap": 0.08,
+    "maximumFormationPointsPerTeamDelta": 0.18,
+    "maximumTacticPointsPerTeamDelta": 0.18,
+    "maximumStylePointsPerTeamDelta": 0.18,
+    "maximumFormationCandidatePointsSpread": 0.35,
+    "maximumTacticCandidatePointsSpread": 0.35,
+    "maximumStyleCandidatePointsSpread": 0.35
+  }
+}

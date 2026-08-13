@@ -62,6 +62,29 @@ test("李俊良X级卡绑定自定义头像并移除中央评级圆圈", () => {
   assert.match(styles, /\.s4-player-card\.has-player-profile \.s4-player-card-grade\{visibility:hidden\}/);
 });
 
+test("黄威、李彬和金典X级卡绑定新增真人卡画", () => {
+  const expected = {
+    "ydl-x-player-3": { profileKey:"黄威", fileName:"huangwei.png", xPercent:41.9, yPercent:63.9, widthPercent:144 },
+    "ydl-x-player-7": { profileKey:"李彬", fileName:"libin.png", xPercent:59.1, yPercent:64.1, widthPercent:128 },
+    "ydl-x-player-10": { profileKey:"金典", fileName:"jindian.png", xPercent:53.2, yPercent:44.1, widthPercent:104 },
+  };
+  Object.entries(expected).forEach(([playerId, values]) => {
+    const profile = X_PLAYER_PROFILE_BY_PLAYER_ID[playerId];
+    Object.entries(values).forEach(([key, value]) => assert.equal(profile[key], value));
+    assertOptimizedProfileAsset(profile, "x_profile");
+  });
+});
+
+test("刘祖豪X级卡绑定DLC3真人卡画", () => {
+  const profile = X_PLAYER_PROFILE_BY_PLAYER_ID["ydl-x-player-9"];
+  assert.equal(profile.profileKey, "刘祖豪");
+  assert.equal(profile.fileName, "liuzuhao.png");
+  assert.equal(profile.xPercent, 47.9);
+  assert.equal(profile.yPercent, 56.6);
+  assert.equal(profile.widthPercent, 188);
+  assertOptimizedProfileAsset(profile, "x_profile");
+});
+
 test("全部高能力A级球员均绑定真人卡面且人物位于文字下层", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
@@ -70,7 +93,9 @@ test("全部高能力A级球员均绑定真人卡面且人物位于文字下层"
   const expectedPlayerIds = Object.values(REAL_PLAYER_BY_ID)
     .filter((player) => {
       const patch = contentOverrides[player.id] ?? {};
-      return (patch.grade ?? player.grade) === "A" && Number(patch.overall ?? player.overall) >= 87;
+      const additionalProfilePlayerIds = ["s4-fc26-183898", "s4-fc26-239231", "s4-fc26-246104"];
+      return ((patch.grade ?? player.grade) === "A" && Number(patch.overall ?? player.overall) >= 87)
+        || additionalProfilePlayerIds.includes(player.id);
     })
     .map((player) => player.id)
     .sort();
@@ -95,6 +120,12 @@ test("新版球员卡使用圆润双层边框并保留+5与+8强化变色", () =
   assert.match(styles, /\.s4-player-card::before\{[^}]*border-radius:23px/);
   assert.match(styles, /\.s4-player-card\.band-high:not\(\.grade-x\)\{[^}]*#f5cc55/);
   assert.match(styles, /\.s4-player-card\.band-max\{[^}]*#e12438/);
+  assert.match(styles, /\.s4-player-card\.grade-a\.band-max,\.s4-player-card\.grade-b\.band-max\{[^}]*#e62b42[^}]*border-width:4px/);
+  const maxFrame = styles.match(/\.s4-player-card\.grade-a\.band-max::before,\.s4-player-card\.grade-b\.band-max::before\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(maxFrame, /border:2px solid/);
+  assert.match(maxFrame, /border-color:#ffe98d #e1263d #650008 #dc2037/);
+  assert.match(maxFrame, /background:transparent/);
+  assert.doesNotMatch(maxFrame, /conic-gradient/);
   assert.match(styles, /\.s4-player-card\.grade-x\.band-high\{[^}]*#a6e6e1/);
   assert.match(styles, /\.s4-player-card\.grade-x\.band-max\{[^}]*#ff8fc4/);
   assert.match(styles, /\.s4-player-card::after\{[^}]*opacity:0[^}]*animation:none/);
@@ -134,23 +165,43 @@ test("背包三选一卡包使用独立悬浮选择层且卡牌网格保留间�
   assert.match(styles, /\.s4-market-card-grid\{gap:14px 13px\}/);
 });
 
-test("球员卡详情弹窗固定在视口中央", () => {
+test("背包球员卡详情复用YOOGLE档案并锁定实际强化等级", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
-  assert.match(appSource, /openLeagueDialog\([^;]+,\s*"s4-card-detail-dialog"\)/s);
+  assert.match(appSource, /function overviewPlayerDetailMarkup\(player, \{ upgradeLevel = 0, bondPercent = 0, card = null \} = \{\}\)/);
+  assert.match(appSource, /overviewPlayerDetailMarkup\(player, \{ card \}\)/);
+  assert.match(appSource, /cardMode \? card\.upgradeLevel : upgradeLevel/);
+  assert.match(appSource, /当前26项能力值/);
+  assert.match(appSource, /详情已锁定为这张卡的实际强化效果/);
+  assert.match(appSource, /"overview-player-dialog s4-card-detail-dialog"/);
+  const detailSource = appSource.slice(appSource.indexOf("function openS4CardDetail"), appSource.indexOf("function openS4PackResult"));
+  assert.doesNotMatch(detailSource, /\bapi\(|renderLeague\(/);
+  assert.doesNotMatch(detailSource, /playerDirectory/);
   assert.match(appSource, /overlay\.classList\.add\("s4-card-detail-overlay"\)/);
   assert.match(styles, /\.s4-card-detail-overlay\{display:grid;place-items:center\}/);
-  assert.match(styles, /\.s4-card-detail-dialog\{margin:0\}/);
-  assert.match(styles, /html\[data-league-theme="light"\] \.s4-card-detail>section\{[^}]*background:linear-gradient\(145deg,#fff,#f6f8fa\)/);
-  assert.match(styles, /html\[data-league-theme="light"\] \.s4-card-detail dl>div\{border-color:#e1e6ec\}/);
-  assert.match(styles, /html\[data-league-theme="light"\] \.s4-card-detail dd\{color:#263343\}/);
+  assert.match(styles, /\.overview-player-card-level\{[^}]*grid-template-columns:minmax\(0,1fr\) auto/);
+  assert.match(styles, /\.overview-player-ownership\.is-card-asset>section>div\{max-height:none;overflow:visible\}/);
 });
 
-test("赛后双方阵型支持按实际出现的开局领先落后阶段切换", () => {
+test("完整球员目录从联赛主响应拆分并在使用时按需载入", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+
+  assert.match(apiSource, /yellowDogsLeague\.view\(account, \{ developer, includePlayerDirectory:false \}\)/);
+  assert.match(apiSource, /\/api\/versus\/league\/player-directory/);
+  assert.match(serviceSource, /options\.includePlayerDirectory === false \? \{\} : \{ playerDirectory:publicS4PlayerDirectory/);
+  assert.match(serviceSource, /playerDirectoryView\(account\)/);
+  assert.match(appSource, /async function loadLeaguePlayerDirectory/);
+  assert.match(appSource, /previousLeague\?\.playerDirectory/);
+  assert.match(appSource, /data-overview-player-search[\s\S]*?loadLeaguePlayerDirectory/);
+});
+
+test("赛后双方阵型支持按实际出现的默认领先落后阶段切换", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   assert.match(appSource, /function historyStageViews\(detail, teamIndex\)/);
-  assert.match(appSource, /opening:"开局\/平局站位", leading:"领先站位", trailing:"落后站位"/);
+  assert.match(appSource, /opening:"默认站位", leading:"领先站位", trailing:"落后站位"/);
   assert.match(appSource, /disabled title="本场未出现"/);
   assert.match(appSource, /function switchHistoryStage\(button\)/);
   assert.match(appSource, /class="league-position-tabs history-stage-switch"/);
@@ -275,6 +326,9 @@ test("球员信息目录公开所有权、持卡玩家和逐卡强化排名", ()
   assert.equal(player.ownership.ownerName, firstUser.nickname);
   assert.equal(player.holders.find((holder) => holder.ownerId === firstUser.id).cardCount, 2);
   assert.equal(player.highestUpgradeLevel, 7);
+  assert.equal(Object.keys(player.attributes).length, 26);
+  assert.equal(player.heightCm, REAL_PLAYER_BY_ID[playerId].heightCm);
+  assert.equal(player.preferredFoot, REAL_PLAYER_BY_ID[playerId].preferredFoot);
   assert.equal(rankedCard.upgradeLevel, 7);
   assert.equal(rankedCard.ownerName, firstUser.nickname);
   assert.ok(directory.players.length > firstTeam.rosterIds.length);
@@ -709,6 +763,39 @@ test("出售唯一一张+5单卡时卡片与所有权同步转移", () => {
   assert.equal(buyerMail.payload.transferredCardLevel, 5);
   assert.match(sellerMail.body, /最后一张.*卡片与所有权一并转移/);
   assert.equal(sellerMail.payload.totalSellerIncome, Math.floor(cardMinimum * .95));
+});
+
+test("单卡市场商品信息标记实际会同步转移的所有权", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+  const listingSource = appSource.slice(appSource.indexOf("function marketListingCard"), appSource.indexOf("function leagueCardTradeMarkup"));
+
+  assert.match(listingSource, /item\.includesOwnership \? " · 附带所有权" : ""/);
+  assert.match(serviceSource, /const includesOwnership = listing\.kind === "card"[\s\S]*?ownershipOwner\(this\.state, listing\.playerId\) === listing\.sellerId[\s\S]*?assetStats\.cardCount === 1/);
+});
+
+test("市场实时所有权核对按卖家和球员复用持卡统计", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const seller = account("listing-index");
+  const team = join(service, seller);
+  const playerId = nonLegendBench(service, seller);
+  const first = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:8, acquisitionSource:"repeat-pack" });
+  const second = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:7, acquisitionSource:"repeat-pack" });
+  const rosterPlayer = service.view(seller).ownTeam.roster.find((player) => player.id === playerId);
+  service.listCard(seller, first.id, rosterPlayer.cards.find((card) => card.id === first.id).minimumListingPrice);
+  service.listCard(seller, second.id, rosterPlayer.cards.find((card) => card.id === second.id).minimumListingPrice);
+
+  const playerCards = service.playerCards.bind(service);
+  let playerCardQueries = 0;
+  service.playerCards = (...args) => {
+    playerCardQueries += 1;
+    return playerCards(...args);
+  };
+  const listings = service.activeListingsView();
+
+  assert.equal(listings.length, 2);
+  assert.equal(playerCardQueries, 1);
+  assert.ok(listings.every((listing) => listing.includesOwnership === false));
 });
 
 test("市场获得的+5以上单卡在买家没有所有权时不占33人大名单额度", () => {
@@ -1392,6 +1479,9 @@ test("细节战术保留八项连续滑杆并按比赛阶段保存持球与无�
   assert.match(appSource, /<header><b>无球防守<\/b><\/header>/);
   assert.match(appSource, /name="\$\{state\}InDetail_\$\{key\}"/);
   assert.match(appSource, /name="\$\{state\}OutDetail_\$\{key\}"/);
+  assert.match(appSource, /<span>比赛心态<\/span><select name="\$\{state\}Tactic">/);
+  assert.match(appSource, /<span>预设打法<\/span><select name="\$\{state\}Style">/);
+  assert.doesNotMatch(appSource, /name="\$\{state\}(PossessionStyle|DefensiveBlock|TransitionStyle|DuelIntensity)"/);
   assert.match(appSource, /Object\.entries\(V2_TACTICAL_DIMENSIONS\)/);
   assert.match(appSource, /name="\$\{state\}Dimension_\$\{key\}" min="0" max="100" step="1"/);
   assert.match(appSource, /data-tactical-dimension-output/);
@@ -1406,15 +1496,67 @@ test("细节战术保留八项连续滑杆并按比赛阶段保存持球与无�
   assert.match(profileSource, /chanceCreation:\{ patient:"耐心寻找", balanced:"均衡", shootOnSight:"尽快起脚" \}/);
   assert.match(profileSource, /lineStrategy:\{ drop:"回收", hold:"保持", offside:"造越位" \}/);
 });
-test("切换比赛心态或基础打法会同步刷新八项战术滑杆", () => {
+test("切换比赛心态或原有预设打法会同步刷新常驻的八项战术滑杆", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const presetSync = appSource.match(/function syncLeagueTacticalPresetControls\(control\) \{[\s\S]*?\n\}/)?.[0] ?? "";
-  assert.match(presetSync, /\^\(opening\|leading\|trailing\)\(Tactic\|Style\)\$/);
+  assert.match(presetSync, /Tactic\|Style/);
   assert.match(presetSync, /defaultV2TacticalDimensions\(tactic, style\)/);
   assert.match(presetSync, /draft\.tacticalPlans\[state\] = \{ \.\.\.draft\.tacticalPlans\[state\], tactic, style, tacticalDimensions \}/);
   assert.match(presetSync, /form\.elements\.namedItem\(name\)/);
   assert.match(presetSync, /data-tactical-dimension-output/);
   assert.match(appSource, /if \(syncLeagueTacticalPresetControls\(event\.target\)\) \{\s*scheduleLeagueTeamAutoSave\(260\);\s*return;/);
+  assert.match(appSource, /function originalV2StyleForPlan\(plan = \{\}, fallbackStyle = "possession"\)/);
+});
+test("球员职责在电脑磁贴下循环切换并在手机底部面板单独编辑", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const dutyOptions = readFileSync(new URL("../versus/public/v2-player-duty-options.js", import.meta.url), "utf8");
+  assert.match(appSource, /function leaguePlanStateForPositionPreset/);
+  assert.match(appSource, /class="league-magnet-duty"/);
+  assert.match(appSource, /data-league-duty-step="-1"/);
+  assert.match(appSource, /data-league-duty-step="1"/);
+  assert.match(appSource, /function leagueMobileDutySheetMarkup/);
+  assert.match(appSource, /openLeagueMobileDutySheet\(playerId\)/);
+  assert.match(appSource, /if \(event\.button !== 0 \|\| event\.target\.closest\("\[data-league-duty-step\]"\)\) return/);
+  assert.match(styles, /#league-squad-form \.league-squad-magnet \.league-magnet-duty/);
+  assert.match(styles, /\.league-magnet-duty\{[^}]*width:inherit/);
+  assert.match(styles, /\.league-mobile-duty-backdrop\{position:fixed/);
+  assert.match(styles, /@media\(max-width:1050px\),\(hover:none\) and \(pointer:coarse\)/);
+  assert.match(dutyOptions, /targetForward:\{ label:"支点中锋"/);
+  assert.match(dutyOptions, /v2PlayerDutyOptionsForRole/);
+});
+test("替补席提供可独立执行的自动替换与职责适配指导", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const guidance = readFileSync(new URL("../versus/public/v2-tactical-guidance.js", import.meta.url), "utf8");
+  assert.match(appSource, /data-league-auto-lineup[^>]*>自动替换球员</);
+  assert.match(appSource, /data-league-auto-duties[^>]*>适配职责</);
+  assert.match(appSource, /function automaticallyOptimizeLeagueLineup/);
+  assert.match(appSource, /function automaticallyAdaptLeagueDuties/);
+  assert.match(appSource, /const canUseBench = leagueActivePositionPreset === "position1"/);
+  assert.match(appSource, /const candidates = canUseBench \? roster : currentPlayers/);
+  assert.match(appSource, /v2OptimalLineupAssignment\(slots, candidates/);
+  assert.match(appSource, /if \(canUseBench\) \{\s*Object\.keys\(sourcePresets\)\.forEach\(applyAssignmentToPreset\);\s*leagueStartingIds = nextStarterIds;\s*\} else applyAssignmentToPreset\(leagueActivePositionPreset\)/);
+  assert.match(appSource, /仅重排默认首发/);
+  assert.match(appSource, /v2RecommendedPlayerDuties\(players, roles/);
+  assert.match(styles, /\.league-bench>header>\.league-bench-guidance/);
+  assert.match(styles, /grid-template-areas:"bench-title bench-guidance" "bench-subtitle bench-guidance"/);
+  assert.match(guidance, /function maximumWeightAssignment/);
+});
+test("场上磁贴拖向替补席时预览保持标准磁贴尺寸并移除职责条", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const squadBinding = appSource.slice(appSource.indexOf("function bindLeagueSquad()"), appSource.indexOf("function leagueLeaderboardRows"));
+  assert.match(squadBinding, /clone\.querySelector\("\.league-magnet-duty"\)\?\.remove\(\)/);
+  assert.doesNotMatch(squadBinding, /clone\.classList\.remove\("league-squad-magnet"/);
+  assert.match(styles, /\.league-field-drag-ghost\{[^}]*height:64px!important[^}]*max-height:64px!important/);
+});
+test("桌面战术板三栏使用完整球场高度并避免默认内部滚动", () => {
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const desktopTactics = styles.match(/@media\(min-width:1051px\)\{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(desktopTactics, /\.league-lineup-workspace\{height:1040px/);
+  assert.match(desktopTactics, /\.league-board-panel,\.league-bench,\.league-tactics-detail\{height:100%\}/);
+  assert.match(desktopTactics, /scrollbar-gutter:auto/);
 });
 test("赛后复盘监听比赛历史更新并自动刷新友谊赛记录", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
@@ -1660,6 +1802,36 @@ test("桌面联赛浅色主题只在宽屏生效并记忆用户选择", () => {
   ]) assert.ok(componentCompletionBlock.includes(selector), `missing desktop light selector: ${selector}`);
   assert.match(lightThemeBlock, /@media\(min-width:1051px\)\{[\s\S]*html\[data-league-theme="light"\]/);
 });
+test("页面刷新仅在账号凭证明确失效时清除本地登录态", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
+  const roomServiceSource = readFileSync(new URL("../versus/room-service.js", import.meta.url), "utf8");
+
+  assert.match(appSource, /if \(error\.status === 401\) \{[\s\S]*?storeAccount\(null\);[\s\S]*?storeSession\(null\);/);
+  assert.match(serverSource, /sendJson\(response, error\.statusCode \?\? 400,/);
+  assert.match(roomServiceSource, /凭证无效"\), \{ statusCode:401 \}\)/);
+});
+
+test("页面刷新按账号恢复联赛或黄狗TV的当前页面", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+
+  assert.match(appSource, /APP_VIEW_KEY = "football_test1_versus_view_v1"/);
+  assert.match(appSource, /return value\?\.playerId === account\?\.profile\?\.id \? value : null/);
+  assert.match(appSource, /function storeLeagueView\(\) \{[\s\S]*?leagueTab,[\s\S]*?leagueCupPage,[\s\S]*?leagueBackpackPage,[\s\S]*?leagueInboxMessageId,/);
+  assert.match(appSource, /function renderLeague\(\) \{[\s\S]*?storeLeagueView\(\)/);
+  assert.match(appSource, /function renderYellowDogsTv\(\) \{[\s\S]*?storeAppView\("yellowDogsTv", \{ yellowDogsTvTab \}\)/);
+  assert.match(appSource, /else if \(!\(await restoreAppView\(\)\)\) renderLanding\(\)/);
+  assert.match(appSource, /function logoutAccount\(\) \{[\s\S]*?clearAppView\(\)/);
+});
+
+test("联赛结算沿用比赛播报中的伤停场数", () => {
+  const leagueSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+
+  assert.match(leagueSource, /function injuryAbsenceMatches\(player\)/);
+  assert.equal((leagueSource.match(/injuryAbsenceMatches\(player\)/g) ?? []).length, 4);
+  assert.doesNotMatch(leagueSource, /injuryRounds = Math\.max\([^\n]+1 \+ \((?:roundNumber|event\.round|this\.state\.season\.currentRound) % 3\)/);
+});
+
 test("战术板拖动球员时按主位置与副位置高亮可替换磁贴", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
@@ -1704,7 +1876,7 @@ test("三栏数据榜单与强化排行榜限制在桌面可用高度内滚动",
   assert.match(styles, /\.league-stats-scroll\{min-height:0;overflow:auto/);
   assert.match(styles, /\.enhancement-ranking-page\{box-sizing:border-box;height:calc\(100dvh - 108px\);min-height:680px/);
   assert.match(styles, /\.enhancement-ranking-page \.enhancement-ranking-table\{min-height:0;overflow:auto/);
-  assert.match(styles, /\.league-board-heading>div:first-child\{min-width:190px;flex:0 0 190px\}/);
+  assert.match(styles, /\.league-board-controls\{width:100%;min-width:0;display:grid;grid-template-columns:minmax\(0,1fr\) auto/);
   assert.match(styles, /\.league-inbox\{height:calc\(100dvh - 108px\);min-height:680px\}/);
 });
 test("球员搜索与强化排行榜支持独立切换列表和球员卡展示", () => {
@@ -1723,6 +1895,24 @@ test("球员搜索与强化排行榜支持独立切换列表和球员卡展示",
   assert.match(styles, /\.enhancement-ranking-page \.enhancement-ranking-card-grid\{min-height:0;overflow:auto\}/);
   assert.match(styles, /\.player-search-page>\.player-directory-card-grid\{overflow:visible;overscroll-behavior:auto;scrollbar-gutter:auto\}/);
   assert.doesNotMatch(styles, /\.player-search-page,\.enhancement-ranking-page\{box-sizing:border-box;height:calc\(100dvh - 108px\)/);
+});
+test("联赛总览提供YOOGLE常驻搜索和默认球员档案弹窗", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+
+  assert.match(appSource, />YOOGLE</);
+  assert.match(appSource, /data-overview-player-search/);
+  assert.match(appSource, /data-overview-player-detail/);
+  assert.match(appSource, /(?:默认|预览)26项能力值/);
+  assert.match(appSource, /data-overview-preview-upgrade/);
+  assert.match(appSource, /data-overview-preview-bond/);
+  assert.match(appSource, /step="0\.5"/);
+  assert.match(appSource, /overviewPlayerPreviewValues/);
+  assert.match(appSource, /coreAttributes\.has\(key\)/);
+  assert.match(appSource, /player\.heightCm/);
+  assert.match(appSource, /player\.ownership/);
+  assert.match(styles, /\.overview-player-search:not\(\.has-query\) \.overview-player-search-home\{min-height:220px;align-content:center/);
+  assert.match(styles, /\.overview-player-dialog-overlay\{display:grid;place-items:center\}/);
 });
 test("背包所有权回收支持多选且传奇基础卡进入单卡市场", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
@@ -1817,11 +2007,15 @@ test("强化页局部刷新会同步复用卡片的等级与卡面内容", () =>
   assert.match(appSource, /enhancement-celebration-bind/);
   assert.match(appSource, /enhancement-celebration-traits/);
   assert.match(appSource, /celebration\.classList\.add\("traits-open"\)/);
+  assert.match(appSource, /function recoverPendingLeagueEnhancementResult\(\)[\s\S]*?league\.enhancement\?\.traitOffer[\s\S]*?leagueEnhancementCardEntry\(traitOffer\.cardId\)[\s\S]*?traitOffer,/);
+  assert.match(appSource, /const recovered = !leagueEnhancementResult;[\s\S]*?const pendingResult = leagueEnhancementResult \?\? recoverPendingLeagueEnhancementResult\(\);[\s\S]*?showLeagueEnhancementCelebration\(pendingResult\)[\s\S]*?if \(recovered\)[\s\S]*?classList\.add\("traits-open"\)/);
+  assert.match(appSource, /待绑定特性对应的球员卡不存在，请刷新页面后重试/);
   assert.match(appSource, /celebration\.querySelector\("\[data-celebration-bind\]"\)\?\.remove\(\);[\s\S]*?celebration\.classList\.remove\("traits-open", "trait-resolving"\)/);
   assert.match(styles, /\.traits-open \.enhancement-celebration-stage\{opacity:0/);
   assert.match(styles, /@keyframes enhancement-celebration-trait-in/);
   assert.match(styles, /@keyframes enhancement-celebration-trait-collect/);
   assert.match(styles, /@keyframes enhancement-celebration-main-return/);
+  assert.match(appSource, /function broadcastMagnet\(player\)[\s\S]*?const position = player\.position \?\? \{ x:50, y:50 \}[\s\S]*?left:\$\{position\.x\}%/);
   assert.match(appSource, /const materialLevelTooHigh = compatibleCards && materialLevel > mainLevel/);
   assert.match(appSource, /const canEnhance = compatibleCards && !materialLevelTooHigh/);
   assert.match(appSource, /const enhancementHint = materialLevelTooHigh \? ""/);
@@ -1848,18 +2042,59 @@ test("tactical board formation reference lines are draggable and persisted per m
   assert.match(appSource, /moveFormationLine\(leagueFormationLinePresets\[leagueActivePositionPreset\], key, y\)/);
   assert.match(appSource, /formationLinePresets:structuredClone\(leagueFormationLinePresets\)/);
   assert.match(appSource, /requestAnimationFrame/);
+  assert.match(appSource, /data-league-role-zones-toggle/);
+  assert.match(appSource, /class="league-relationship-controls"/);
+  assert.match(appSource, /class="league-board-tool-stack"/);
+  assert.match(appSource, /class="league-relationship-controls">\$\{relationshipControls\}\$\{fitnessControl\}/);
+  assert.doesNotMatch(appSource, /STARTING XI · POSITION AUTO DETECTION|<h2>首发战术板<\/h2>/);
+  assert.match(appSource, /name="leadingTriggerGoalDifference"/);
+  assert.match(appSource, /name="trailingTriggerGoalDifference"/);
+  assert.doesNotMatch(appSource, /各比赛阶段独立保存并按比分差距自动切换/);
+  assert.match(appSource, /formationRoleZonesMarkup\(formationLines\)/);
   assert.doesNotMatch(appSource, /<span>\$\{labels\[key\]\}<\/span>/);
   assert.match(styles, /\.formation-reference-line/);
+  assert.match(styles, /\.formation-role-zones/);
+  assert.match(styles, /data-league-theme="light"\] \.formation-role-zone\{color:#263343/);
+  assert.match(styles, /\.league-board-side>\.league-bond-ready\{grid-column:2;grid-row:1/);
   assert.match(styles, /cursor:pointer/);
 });
 
-test("opening unread inbox mail uses an immediate optimistic render and a compact receipt", () => {
+test("战术板体力条按数字体力红线变色并在输入时即时刷新", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+
+  assert.match(appSource, /function leagueMagnetFitnessMarkup\(fitnessValue\)/);
+  assert.match(appSource, /const low = fitness < threshold/);
+  assert.match(appSource, /data-magnet-fitness="\$\{fitness\}"/);
+  assert.match(appSource, /function refreshLeagueMagnetFitnessColors\(thresholdValue\)/);
+  assert.match(appSource, /refreshLeagueMagnetFitnessColors\(threshold\)/);
+  assert.match(appSource, /type="number" inputmode="numeric" name="fitnessThreshold" min="45" max="100" step="1"/);
+  assert.doesNotMatch(appSource, /type="range" name="fitnessThreshold"/);
+  assert.doesNotMatch(appSource, /data-fitness-threshold-output/);
+  assert.match(appSource, /numeric < 45 \|\| numeric > 100/);
+  assert.match(styles, /\.league-magnet-fitness\.is-below-threshold>span\{background:linear-gradient\(90deg,#ef4438 0%,#f06b36 48%,#f2bd3f 100%\)/);
+});
+
+test("inbox classification keeps reads local and uses compact single or batch receipts", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   assert.match(appSource, /async function leagueInboxReadRequest\(messageId\)/);
-  assert.match(appSource, /message\.readAt = optimisticReadAt;[\s\S]*?renderLeague\(\);[\s\S]*?inboxRead/);
+  assert.match(appSource, /message\.readAt = optimisticReadAt;[\s\S]*?refreshLeagueInboxInPlace\(\);[\s\S]*?inboxRead/);
   assert.doesNotMatch(appSource, /leagueRequest\("\/inbox\/read"/);
   assert.match(apiSource, /readInbox\(account, body\.messageId, \{ compact:true \}\)/);
+  assert.match(apiSource, /readInboxBatch\(account, body\.messageIds\)/);
+  assert.match(appSource, /\{ id:"action", label:"待处理" \}/);
+  assert.match(appSource, /"trade-offer":\{ label:"交易报价", category:"trades" \}/);
+  assert.match(appSource, /announcement:\{ label:"全服公告", category:"announcements" \}/);
+  assert.match(appSource, /"admin-update":\{ label:"管理员公告", category:"announcements" \}/);
+  assert.match(appSource, /data-league-inbox-category/);
+  assert.match(appSource, /data-league-inbox-unread/);
+  assert.match(appSource, /data-league-inbox-read-batch/);
+  assert.match(styles, /\.league-mail-categories\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(styles, /\.league-mail-categories button\{min-height:38px;font-size:11px;font-weight:900\}/);
+  assert.match(styles, /\.league-mail-categories button>b\{min-width:21px;height:21px;font-size:9px\}/);
+  assert.match(styles, /grid-template-rows:auto auto auto auto minmax\(0,1fr\)/);
 });
 
 test("tactical board tooltip uses the assigned position core attributes", () => {
@@ -1870,6 +2105,21 @@ test("tactical board tooltip uses the assigned position core attributes", () => 
   assert.match(tooltipBlock, /assignedRole === "GK"/);
   assert.match(tooltipBlock, /LEAGUE_ROLE_CORE_ATTRIBUTES\[assignedGroup\]/);
   assert.doesNotMatch(tooltipBlock, /player\.pool/);
+});
+
+test("mobile league screens retain card traits, inbox details, and cup records", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const cupSource = appSource.slice(appSource.indexOf("function leagueCupOverviewMarkup()"), appSource.indexOf("function updateLeagueScheduleClock()"));
+
+  assert.ok(appSource.includes("leagueInboxReadRequest(leagueInboxMessageId)"));
+  assert.ok(appSource.includes('const inboxMessage = event.target.closest("[data-league-inbox-message]");'));
+  assert.ok(appSource.includes('scrollIntoView({ behavior:"smooth", block:"start" })'));
+  assert.match(cupSource, /cup-standing-mobile-meta/);
+  assert.match(cupSource, /cup-standings-table/);
+  assert.match(styles, /.enhancement-card-grid .s4-player-card-traits{display:block/);
+  assert.match(styles, /.cup-standings-table{min-width:0;table-layout:fixed/);
+  assert.match(styles, /.cup-standing-mobile-meta{display:block!important/);
 });
 
 test("tactical board bond bonus display is optional and disabled by default", () => {
@@ -1973,6 +2223,19 @@ test("prediction page refresh uses the compact endpoint and updates only predict
   assert.match(renderSource, /current\.outerHTML !== markup/);
 });
 
+test("prediction page displays the exact handicap while keeping odds private", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const displaySource = appSource.slice(appSource.indexOf("function predictionHandicapText"), appSource.indexOf("function predictionLeaderboardMarkup"));
+  const dialogSource = appSource.slice(appSource.indexOf("function openPredictionMarket"), appSource.indexOf("function leagueCupOverviewMarkup"));
+
+  assert.match(displaySource, /handicap < 0\) return `主队让 \$\{Math\.abs\(handicap\)\} 球`/);
+  assert.match(displaySource, /handicap > 0\) return `客队让 \$\{handicap\} 球`/);
+  assert.match(displaySource, /return "均势盘 · 0球"/);
+  assert.doesNotMatch(displaySource, /market\.odds|option\.odds|payoutRate/);
+  assert.match(dialogSource, /赔率、后台模拟概率和收益率仍为内部数据，不对外展示/);
+  assert.doesNotMatch(dialogSource, /market\.odds|option\.odds|payoutRate/);
+});
+
 test("enhancement result never falls back to a stale account trait offer", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   assert.match(appSource, /const traitOffer = result \? result\.traitOffer \?\? null : league\.enhancement\?\.traitOffer \?\? null/);
@@ -2015,63 +2278,25 @@ test("V2 formal match stats update X player save tasks", () => {
   assert.equal(service.view(user).xGrowth.tasks.find((task) => task.id === "saves").completed, 1);
 });
 
-test("World Cup tactics live under the shared squad board and close after the daily window", () => {
+test("世界杯模式和国家队战术板已从玩家端与服务接口移除", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  const worldCupPageSource = appSource.slice(appSource.indexOf("function leagueWorldCupMarkup()"), appSource.indexOf("function leagueNavMarkup()"));
-  const worldCupOverviewSource = appSource.slice(appSource.indexOf("function worldCupOverviewMarkup()"), appSource.indexOf("function worldCupBracketMarkup()"));
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const adminApiSource = readFileSync(new URL("../versus/admin-api.js", import.meta.url), "utf8");
+  const adminSource = readFileSync(new URL("../admin/public/app.js", import.meta.url), "utf8");
 
-  assert.doesNotMatch(worldCupPageSource, /data-world-cup-page="tactics"/);
-  assert.doesNotMatch(worldCupPageSource, /data-world-cup-page="groups"/);
-  assert.match(appSource, /data-league-tactics-mode="club"/);
-  assert.match(appSource, /data-league-tactics-mode="worldcup"/);
-  assert.match(appSource, /const team = activeTacticsTeam\(\);\s+const roster = team\.roster/);
-  assert.match(appSource, /data-tactics-mode="\$\{leagueTacticsMode\}"/);
-  assert.match(appSource, /国家队战术已保存/);
-  assert.match(appSource, /endsAt \+ 30 \* 60 \* 1000/);
-  assert.match(appSource, /worldCup\.tacticsWindowOpen/);
-  assert.match(worldCupOverviewSource, /小组赛积分榜/);
-  assert.match(worldCupOverviewSource, /世界杯射手榜/);
-  assert.match(worldCupOverviewSource, /世界杯助攻榜/);
-  assert.doesNotMatch(worldCupOverviewSource, /world-cup-status|world-cup-rules|world-cup-integration/);
+  assert.doesNotMatch(appSource, /worldCup|world-cup|worldcup|世界杯|国家队战术板/);
+  assert.doesNotMatch(apiSource, /world-cup/);
+  assert.doesNotMatch(adminApiSource, /world-cup/);
+  assert.doesNotMatch(adminSource, /world-cup|世界杯/);
 });
 
-test("World Cup schedules filter the overview and show determined fixtures", () => {
+test("杯赛页面展示9轮联赛阶段、八强奖励和既有淘汰赛结构", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  const overviewSource = appSource.slice(appSource.indexOf("function worldCupOverviewMarkup()"), appSource.indexOf("function worldCupFixtureRowMarkup"));
-  const scheduleSource = appSource.slice(appSource.indexOf("function worldCupFixtureRowMarkup"), appSource.indexOf("function worldCupBracketMarkup()"));
-  const pageSource = appSource.slice(appSource.indexOf("function leagueWorldCupMarkup()"), appSource.indexOf("function leagueNavMarkup()"));
+  const cupSource = appSource.slice(appSource.indexOf("function leagueCupOverviewMarkup()"), appSource.indexOf("function updateLeagueScheduleClock()"));
 
-  assert.match(overviewSource, /worldCupScheduleRoundsMarkup\(\{ ownTeamId:league\.worldCup\?\.ownTeamId \}\)/);
-  assert.match(scheduleSource, /teamById\.has\(fixture\.homeId\) && teamById\.has\(fixture\.awayId\)/);
-  assert.match(scheduleSource, /data-league-match-detail=/);
-  assert.match(scheduleSource, /worldCupScheduleRoundsMarkup\(\{ determinedOnly:true \}\)/);
-  assert.match(pageSource, /schedule:worldCupFullScheduleMarkup/);
-  assert.match(pageSource, /data-world-cup-page="schedule"/);
-});
-
-test("club and national-team tactics use separate real fixture contexts", () => {
-  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
-  const nextMatchSource = appSource.slice(appSource.indexOf("function leagueNextMatchMarkup()"), appSource.indexOf("function leagueBackpackCardEntries()"));
-
-  assert.match(nextMatchSource, /fixture\.competition === "worldcup" && fixture\.status !== "complete"/);
-  assert.match(nextMatchSource, /worldCup\?\.teams\?\.find\(\(team\) => team\.id === worldCup\.ownTeamId\)/);
-  assert.match(nextMatchSource, /escapeHtml\(ownTeam\.country\)/);
-  assert.doesNotMatch(nextMatchSource, /西班牙国家队|比利时 AI|A组第1轮|今日 13:30/);
-  assert.match(serviceSource, /entry\.competition !== "worldcup"/);
-  assert.match(appSource, /`\$\{escapeHtml\(team\.name\)\}战术板`/);
-});
-
-test("World Cup preparation waits for the cup final before rendering kickoff and roster lock", () => {
-  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
-
-  assert.match(serviceSource, /createWorldCupPreparation\(null\)/);
-  assert.match(serviceSource, /this\.now\(\) \+ WORLD_CUP_INTERVAL_MS/);
-  assert.match(serviceSource, /this\.schedulePreparedWorldCupAfterCupFinal\(\)/);
-  assert.match(serviceSource, /startsAt > 0 \? startsAt - 10 \* 60 \* 1000 : Infinity/);
-  assert.match(appSource, /等待杯赛决赛/);
-  assert.match(appSource, /杯赛决赛后确定首轮时间/);
-  assert.match(appSource, /Number\.isFinite\(startsAt\) && startsAt > 0 && Number\(league\.serverTime/);
-  assert.match(appSource, /: "待定"/);
+  assert.match(cupSource, /leagueRounds/);
+  assert.match(cupSource, /LEAGUE STAGE · 9 ROUNDS/);
+  assert.doesNotMatch(cupSource, /league-cup-reward-note|第1至第4名另获10000金币|第5至第8名另获6000金币/);
+  assert.match(cupSource, /八强和半决赛两回合，决赛单场决胜/);
+  assert.doesNotMatch(cupSource, /瑞士轮/);
 });

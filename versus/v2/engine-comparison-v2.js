@@ -3,6 +3,7 @@ import path from "node:path";
 import { Worker } from "node:worker_threads";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { expandV2ScenarioMatrix } from "./engine-comparison-v2-scenario-matrix.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const argument = (name) => process.argv.find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3) ?? null;
@@ -114,8 +115,23 @@ function summarizeGroup(group, options = {}) {
       expectedGoalsAgainstPerMatch:ratio(group.v2XgAgainst, group.teamSamples),
       chainGoalsPerMatch:ratio(group.v2Goals, group.teamSamples),
       goalsAgainstPerMatch:ratio(group.v2GoalsAgainst, group.teamSamples),
+      shotsPerMatch:ratio(group.v2Shots, group.teamSamples),
+      shotsOnTargetPerMatch:ratio(group.v2ShotsOnTarget, group.teamSamples),
+      shotsOnTargetRatePercent:ratio(group.v2ShotsOnTarget, group.v2Shots, 100, 2),
+      goalConversionRatePercent:ratio(group.v2Goals, group.v2Shots, 100, 2),
       shotReachRatePercent:ratio(group.v2Shots, group.v2Possessions, 100, 2),
       turnoverRatePercent:ratio(group.v2Turnovers, group.v2Possessions, 100, 2),
+      transitionPossessionSharePercent:ratio(group.v2TransitionPossessions, group.v2NormalPossessions + group.v2TransitionPossessions, 100, 2),
+      transitionShotsPerMatch:ratio(group.v2TransitionShots, group.teamSamples),
+      foulsPerMatch:ratio(group.v2Fouls, group.teamSamples),
+      yellowCardsPerMatch:ratio(group.v2YellowCards, group.teamSamples),
+      redCardsPerMatch:ratio(group.v2RedCards, group.teamSamples),
+      injuriesPerMatch:ratio(group.v2Injuries, group.teamSamples),
+      injuryAbsenceRoundsPerMatch:ratio(group.v2InjuryAbsenceRounds, group.teamSamples),
+      foulInjuriesSufferedPerMatch:ratio(group.v2FoulInjuriesSuffered, group.teamSamples),
+      foulInjuriesCausedPerMatch:ratio(group.v2FoulInjuriesCaused, group.teamSamples),
+      substitutionsPerMatch:ratio(group.v2Substitutions, group.teamSamples),
+      averageBacklineExposure:ratio(group.v2BacklineExposure, group.teamSamples),
     },
   };
   if (!options.v2Only) summary.v1 = {
@@ -127,6 +143,49 @@ function summarizeGroup(group, options = {}) {
     xgForPerMatch:ratio(group.v1XgFor, group.teamSamples),
   };
   return summary;
+}
+
+function valueAtPath(source, pathValue) {
+  return String(pathValue).split(".").reduce((value, key) => value?.[key], source);
+}
+
+export function evaluateV2RealismBenchmarks(v2Results, benchmarkConfig = {}) {
+  const metrics = Object.entries(benchmarkConfig.metrics ?? {}).map(([pathValue, target]) => {
+    const value = Number(valueAtPath(v2Results, pathValue));
+    const minimum = Number(target.minimum);
+    const maximum = Number(target.maximum);
+    const status = !Number.isFinite(value) ? "missing" : value < minimum ? "low" : value > maximum ? "high" : "pass";
+    return { path:pathValue, label:target.label ?? pathValue, value:Number.isFinite(value) ? value : null, unit:target.unit ?? null, minimum, maximum, status, critical:Boolean(target.critical), weight:Number(target.weight ?? 1) };
+  });
+  const comparisons = (benchmarkConfig.comparisons ?? []).map((target) => {
+    const leftValue = Number(valueAtPath(v2Results, target.leftPath));
+    const rightValue = Number(valueAtPath(v2Results, target.rightPath));
+    const difference = leftValue - rightValue;
+    const minimum = Number(target.minimumDifference);
+    const maximum = Number(target.maximumDifference);
+    const status = !Number.isFinite(leftValue) || !Number.isFinite(rightValue) ? "missing" : difference < minimum ? "low" : difference > maximum ? "high" : "pass";
+    return { id:target.id, label:target.label ?? target.id, leftPath:target.leftPath, rightPath:target.rightPath, leftValue:Number.isFinite(leftValue) ? leftValue : null, rightValue:Number.isFinite(rightValue) ? rightValue : null, difference:Number.isFinite(difference) ? Number(difference.toFixed(4)) : null, unit:target.unit ?? null, minimumDifference:minimum, maximumDifference:maximum, status, critical:Boolean(target.critical), weight:Number(target.weight ?? 1) };
+  });
+  const checks = [...metrics, ...comparisons];
+  const totalWeight = checks.reduce((sum, check) => sum + check.weight, 0) || 1;
+  const passedWeight = checks.filter((check) => check.status === "pass").reduce((sum, check) => sum + check.weight, 0);
+  const overallPassRatePercent = Number((passedWeight / totalWeight * 100).toFixed(2));
+  const sampleRequirement = { minimumMatches:Number(benchmarkConfig.minimumMatches ?? 5000), actualMatches:Number(v2Results.matches ?? 0), met:Number(v2Results.matches ?? 0) >= Number(benchmarkConfig.minimumMatches ?? 5000) };
+  const criticalFailures = checks.filter((check) => check.critical && check.status !== "pass").map((check) => check.path ?? check.id);
+  const minimumPassRatePercent = Number(benchmarkConfig.minimumPassRatePercent ?? 80);
+  return {
+    version:benchmarkConfig.version ?? "v1",
+    reference:benchmarkConfig.reference ?? null,
+    verdict:sampleRequirement.met && criticalFailures.length === 0 && overallPassRatePercent >= minimumPassRatePercent ? "pass" : "review",
+    minimumPassRatePercent,
+    sampleRequirement,
+    overallPassRatePercent,
+    passed:checks.filter((check) => check.status === "pass").length,
+    failed:checks.filter((check) => check.status !== "pass").length,
+    criticalFailures,
+    metrics,
+    comparisons,
+  };
 }
 
 function summarize(config, aggregate) {
@@ -146,6 +205,7 @@ function summarize(config, aggregate) {
     shareOfShotsPercent:ratio(value.shots, aggregate.v2.shots, 100, 2),
     conversionRatePercent:ratio(value.goals, value.shots, 100, 3),
     goalsPerExpectedGoal:ratio(value.goals, value.xg),
+    shareOfGoalsPercent:ratio(value.goals, aggregate.v2.goals, 100, 2),
   }]));
   const shotTypes = Object.fromEntries(Object.entries(aggregate.v2.shotTypes ?? {}).map(([type, value]) => [type, {
     shots:value.shots,
@@ -156,18 +216,23 @@ function summarize(config, aggregate) {
     conversionRatePercent:ratio(value.goals, value.shots, 100, 3),
     goalsPerExpectedGoal:ratio(value.goals, value.xg),
   }]));
-  return {
-    schemaVersion:"yellowdogs-v1-v2-engine-comparison-v2",
+  const shotBucketAbsoluteError = Object.values(aggregate.v2.shotQuality ?? {}).reduce((sum, value) => sum + Math.abs(Number(value.goals ?? 0) - Number(value.xg ?? 0)), 0);
+  const goalTotal = Object.values(aggregate.v2.goalMinutes ?? {}).reduce((sum, value) => sum + Number(value), 0);
+  const goalMinutes = Object.fromEntries(Object.entries(aggregate.v2.goalMinutes ?? {}).map(([bucket, count]) => [bucket, { count, sharePercent:ratio(count, goalTotal, 100, 2) }]));
+  const goalBodyParts = Object.fromEntries(Object.entries(aggregate.v2.goalBodyParts ?? {}).map(([bodyPart, count]) => [bodyPart, { count, sharePercent:ratio(count, goalTotal, 100, 2) }]));
+  const report = {
+    schemaVersion:config.v2Only ? "yellowdogs-v2-realism-balance-v3" : "yellowdogs-v1-v2-engine-comparison-v2",
+    engineVersion:config.engineVersion ?? "V2",
     outputVersion:config.outputVersion,
     seed:config.seed,
     comparisonContract:{
       sharedInputs:["same deterministic player lineups", "same board coordinates", "same opening mentality and style", "same ecosystem archetype weights"],
       v2ConsumedInputs:["enhancement-adjusted 26 attributes", "fitness snapshot", "primary and secondary position fit", "board coordinates", "opening mentality and style", "attribute and conditional trait rules", "nationality and club bonds", "S and X player attributes", "weather and referee", "live minute and score state", "turnover transition zone"],
-      v2InputsPresentButNotYetConsumed:["substitution plans"],
-      v1:"complete current 90-minute match engine",
+      v2InputsPresentButNotYetConsumed:[],
+      ...(config.v2Only ? { scope:"V2-only realism and balance validation; V1 is not executed" } : { v1:"complete current 90-minute match engine" }),
       v2:"stage-dynamic spatial model plus stateful six-stage possession chains",
       directlyComparable:["goals or expected goals per match", "team and tactical direction", "initial position interactions", "attacking and defending player role participation"],
-      notYetComparable:["substitutions"],
+      notYetComparable:[],
     },
     analysisMethod:{
       mode:config.v2Only ? "V2 seeded ecosystem impact study" : "paired V1/V2 comparison",
@@ -175,7 +240,7 @@ function summarize(config, aggregate) {
       interpretation:"Dimension and head-to-head win rates are seeded ecosystem associations. Use sample counts and opposing-group splits before treating a difference as causal.",
       reproducibility:"Every match uses root seed + paired match index; the same config and engine revision reproduce the same inputs and outcomes.",
     },
-    config:{ matches, v2PossessionChainsPerMatch:config.v2PossessionChainsPerMatch, rawMatchSampleLimit:config.rawMatchSampleLimit, v2ShotXgBucketUpperBounds:config.v2ShotXgBucketUpperBounds, ecosystemWeights:config.ecosystemWeights, analysisDimensions:config.analysisDimensions, outputLimits:config.outputLimits },
+    config:{ engineVersion:config.engineVersion ?? "V2", matches, v2PossessionChainsPerMatch:config.v2PossessionChainsPerMatch, rawMatchSampleLimit:config.rawMatchSampleLimit, v2ShotXgBucketUpperBounds:config.v2ShotXgBucketUpperBounds, ecosystemWeights:config.ecosystemWeights, analysisDimensions:config.analysisDimensions, realismBenchmarks:config.realismBenchmarks, scenarioMatrix:config.scenarioMatrix ? { scenarioCount:config.scenarioCount, repetitionsPerScenario:config.scenarioMatrix.repetitionsPerScenario, mirrorHomeAway:config.scenarioMatrix.mirrorHomeAway, archetypePairing:config.scenarioMatrix.archetypePairing ?? "rotatedSame", environmentSampling:config.scenarioMatrix.environmentSampling ?? (config.scenarioMatrix.environmentRotation ? "rotation" : "weighted"), archetypeRotation:config.scenarioMatrix.archetypeRotation, environmentRotation:config.scenarioMatrix.environmentRotation, suiteIds:(config.scenarioMatrix.suites ?? []).filter((suite) => suite.enabled !== false).map((suite) => suite.id), disabledSuiteIds:(config.scenarioMatrix.suites ?? []).filter((suite) => suite.enabled === false).map((suite) => suite.id) } : null, outputLimits:config.outputLimits },
     results:{
       matches,
       ...(config.v2Only ? {} : { v1:{
@@ -192,19 +257,51 @@ function summarize(config, aggregate) {
         expectedGoalsPerMatch:ratio(aggregate.v2.xg, matches),
         chainGoalsPerMatch:ratio(aggregate.v2.goals, matches),
         goalsPerExpectedGoal:ratio(aggregate.v2.goals, aggregate.v2.xg),
+        shotsPerMatch:ratio(aggregate.v2.shots, matches),
+        shotsOnTargetPerMatch:ratio(aggregate.v2.shotsOnTarget, matches),
+        shotsOnTargetRatePercent:ratio(aggregate.v2.shotsOnTarget, aggregate.v2.shots, 100, 2),
         shotReachRatePercent:ratio(aggregate.v2.shots, possessions, 100, 2),
+        cornersPerMatch:ratio(aggregate.v2.corners, matches),
+        savesPerMatch:ratio(aggregate.v2.saves, matches),
+        blockedShotsPerMatch:ratio(aggregate.v2.blockedShots, matches),
+        offsidesPerMatch:ratio(aggregate.v2.offsides, matches),
         matchDistribution:{
           ...aggregate.v2.matchDistribution,
           homeWinRatePercent:ratio(aggregate.v2.matchDistribution.homeWins, matches, 100, 2),
           drawRatePercent:ratio(aggregate.v2.matchDistribution.draws, matches, 100, 2),
           awayWinRatePercent:ratio(aggregate.v2.matchDistribution.awayWins, matches, 100, 2),
+          sideWinRateGapPercent:Number(Math.abs(
+            ratio(aggregate.v2.matchDistribution.homeWins, matches, 100, 2)
+              - ratio(aggregate.v2.matchDistribution.awayWins, matches, 100, 2),
+          ).toFixed(2)),
           zeroZeroRatePercent:ratio(aggregate.v2.matchDistribution.zeroZero, matches, 100, 2),
           sixPlusGoalsRatePercent:ratio(aggregate.v2.matchDistribution.sixPlusGoals, matches, 100, 2),
           eightPlusGoalsRatePercent:ratio(aggregate.v2.matchDistribution.eightPlusGoals, matches, 100, 2),
           threePlusGoalMarginRatePercent:ratio(aggregate.v2.matchDistribution.threePlusGoalMargin, matches, 100, 2),
           fourPlusGoalMarginRatePercent:ratio(aggregate.v2.matchDistribution.fourPlusGoalMargin, matches, 100, 2),
+          bothTeamsScoredRatePercent:ratio(aggregate.v2.matchDistribution.bothTeamsScored, matches, 100, 2),
+          cleanSheetMatchRatePercent:ratio(aggregate.v2.matchDistribution.cleanSheetMatches, matches, 100, 2),
+          oneGoalMarginRatePercent:ratio(aggregate.v2.matchDistribution.oneGoalMargin, matches, 100, 2),
+          totalGoals:aggregate.v2.matchDistribution.totalGoals ?? {},
+          scorelines:aggregate.v2.matchDistribution.scorelines ?? {},
         },
-        goalMinutes:aggregate.v2.goalMinutes,
+        goalMinutes,
+        goalBodyParts,
+        xgCalibration:{
+          meanAbsoluteMatchError:ratio(aggregate.v2.xgCalibration.absoluteMatchErrorSum, matches),
+          rootMeanSquaredMatchError:Number(Math.sqrt(Number(aggregate.v2.xgCalibration.squaredMatchErrorSum ?? 0) / Math.max(1, matches)).toFixed(4)),
+          shotBucketAbsoluteErrorRatioPercent:ratio(shotBucketAbsoluteError, aggregate.v2.xg, 100, 2),
+          overperformanceRatePercent:ratio(aggregate.v2.xgCalibration.overperformanceMatches, matches, 100, 2),
+          underperformanceRatePercent:ratio(aggregate.v2.xgCalibration.underperformanceMatches, matches, 100, 2),
+        },
+        possessionDistribution:{
+          averageHomePossessionPercent:ratio(aggregate.v2.possessionDistribution.homePossessionPercent, matches),
+          averageAbsoluteDifferencePercent:ratio(aggregate.v2.possessionDistribution.absoluteDifferencePercent, matches),
+          matchesWith55PlusPercent:ratio(aggregate.v2.possessionDistribution.matchesWith55Plus, matches, 100, 2),
+          matchesWith60PlusPercent:ratio(aggregate.v2.possessionDistribution.matchesWith60Plus, matches, 100, 2),
+          matchesWith70PlusPercent:ratio(aggregate.v2.possessionDistribution.matchesWith70Plus, matches, 100, 2),
+        },
+        defensiveActions:Object.fromEntries(Object.entries(aggregate.v2.defensiveActions ?? {}).map(([key, value]) => [key, { total:value, perMatch:ratio(value, matches) }])),
         shotQuality,
         shotTypes,
         terminalOutcomes:aggregate.v2.terminalOutcomes,
@@ -217,6 +314,20 @@ function summarize(config, aggregate) {
           penaltiesPerMatch:ratio(aggregate.v2.discipline.penalties, matches),
           yellowCardsPerMatch:ratio(aggregate.v2.discipline.yellowCards, matches),
           redCardsPerMatch:ratio(aggregate.v2.discipline.redCards, matches),
+          matchesWithYellowCardRatePercent:ratio(aggregate.v2.discipline.matchesWithYellowCard, matches, 100, 2),
+          matchesWithRedCardRatePercent:ratio(aggregate.v2.discipline.matchesWithRedCard, matches, 100, 2),
+          simulationYellowCardSharePercent:ratio(aggregate.v2.discipline.simulationYellowCards, aggregate.v2.discipline.yellowCards, 100, 2),
+          directRedCardSharePercent:ratio(aggregate.v2.discipline.directRedCards, aggregate.v2.discipline.redCards, 100, 2),
+          secondYellowRedCardSharePercent:ratio(aggregate.v2.discipline.secondYellowRedCards, aggregate.v2.discipline.redCards, 100, 2),
+        },
+        injuries:{
+          ...aggregate.v2.injuries,
+          injuriesPerMatch:ratio(aggregate.v2.injuries.total, matches),
+          matchesWithInjuryRatePercent:ratio(aggregate.v2.injuries.matchesWithInjury, matches, 100, 2),
+          absenceRoundsPerInjury:ratio(aggregate.v2.injuries.totalAbsenceRounds, aggregate.v2.injuries.total),
+          foulInjurySharePercent:ratio(aggregate.v2.injuries.causedByFoul, aggregate.v2.injuries.total, 100, 2),
+          transferredByTraitRatePercent:ratio(aggregate.v2.injuries.transferredByTrait, aggregate.v2.injuries.total, 100, 2),
+          unreplacedInjuryRatePercent:ratio(aggregate.v2.injuries.unreplacedInjuries, aggregate.v2.injuries.total, 100, 2),
         },
         matchExecution:{
           ...aggregate.v2.matchExecution,
@@ -252,22 +363,30 @@ function summarize(config, aggregate) {
       ])),
     },
   };
+  report.realismBenchmark = evaluateV2RealismBenchmarks({ matches, ...report.results.v2, dimensions:report.results.dimensions, headToHead:report.results.headToHead }, config.realismBenchmarks);
+  return report;
 }
 
 async function main() {
   const sourceConfig = JSON.parse(await readFile(configPath, "utf8"));
   const outputArgument = argument("output");
+  const scenarios = sourceConfig.scenarioMatrix ? expandV2ScenarioMatrix(sourceConfig.scenarioMatrix) : [];
+  const configuredMatches = scenarios.length
+    ? scenarios.length * Math.max(1, Number(sourceConfig.scenarioMatrix.repetitionsPerScenario ?? 1))
+    : sourceConfig.matches;
   const config = {
     ...sourceConfig,
+    seed:argument("seed") ?? sourceConfig.seed,
     outputVersion:argument("version") ?? (outputArgument ? path.basename(outputArgument, path.extname(outputArgument)) : sourceConfig.outputVersion),
-    matches:Number(argument("matches") ?? sourceConfig.matches),
+    matches:Number(argument("matches") ?? configuredMatches),
     v2PossessionChainsPerMatch:Number(argument("chains") ?? sourceConfig.v2PossessionChainsPerMatch),
     rawMatchSampleLimit:Number(argument("samples") ?? sourceConfig.rawMatchSampleLimit),
     v2Only:String(argument("v2-only") ?? sourceConfig.v2Only ?? "false").toLowerCase() === "true",
     shardMatches:Number(argument("shard") ?? sourceConfig.shardMatches),
+    scenarioCount:scenarios.length,
   };
   const outputPath = path.resolve(outputArgument ?? path.resolve(here, `../../outputs/${config.outputVersion}.json`));
-  if (path.extname(outputPath).toLowerCase() !== ".json") throw new Error(`V1/V2 comparison output must use the .json extension: ${outputPath}`);
+  if (path.extname(outputPath).toLowerCase() !== ".json") throw new Error(`Engine simulation output must use the .json extension: ${outputPath}`);
   const requestedWorkers = Number(argument("workers") ?? 0);
   const workerCount = Math.max(1, Math.min(requestedWorkers || Math.max(1, os.cpus().length - 1), Number(config.maximumWorkers ?? 32)));
   const ranges = shardRanges(Number(config.matches), Number(config.shardMatches ?? 250));
@@ -286,19 +405,81 @@ async function main() {
   await mkdir(path.dirname(outputPath), { recursive:true });
   const maximumCoreBytes = Math.max(100_000, Number(config.outputLimits?.coreBytes ?? 2_000_000));
   const maximumRawBytes = Math.max(100_000, Number(config.outputLimits?.rawSamplesBytes ?? 8_000_000));
+  const maximumDimensionShardBytes = Math.max(100_000, Number(config.outputLimits?.dimensionShardBytes ?? maximumCoreBytes));
   let retainedRawSamples = rawMatchSamples;
-  let rawPayload = `${JSON.stringify({ schemaVersion:report.schemaVersion, outputVersion:report.outputVersion, seed:report.seed, rawMatchSamples:retainedRawSamples }, null, 2)}\n`;
+  let rawPayload = `${JSON.stringify({ schemaVersion:report.schemaVersion, engineVersion:report.engineVersion, outputVersion:report.outputVersion, seed:report.seed, rawMatchSamples:retainedRawSamples }, null, 2)}\n`;
   while (Buffer.byteLength(rawPayload) > maximumRawBytes && retainedRawSamples.length > 1) {
     retainedRawSamples = retainedRawSamples.slice(0, Math.max(1, Math.floor(retainedRawSamples.length / 2)));
-    rawPayload = `${JSON.stringify({ schemaVersion:report.schemaVersion, outputVersion:report.outputVersion, seed:report.seed, rawMatchSamples:retainedRawSamples }, null, 2)}\n`;
+    rawPayload = `${JSON.stringify({ schemaVersion:report.schemaVersion, engineVersion:report.engineVersion, outputVersion:report.outputVersion, seed:report.seed, rawMatchSamples:retainedRawSamples }, null, 2)}\n`;
   }
-  const corePayload = `${JSON.stringify({ ...report, outputProtection:{ rawSamplesSeparated:true, requestedRawMatchSampleCount:rawMatchSamples.length, retainedRawMatchSampleCount:retainedRawSamples.length, rawMatchSamplesFile:path.basename(rawPath), maximumCoreBytes, maximumRawBytes } }, null, 2)}\n`;
+  const dimensionNames = [...new Set([
+    ...Object.keys(report.results.dimensions ?? {}),
+    ...Object.keys(report.results.headToHead ?? {}),
+  ])].sort();
+  let dimensionFiles = [];
+  let reportForCore = report;
+  const baseProtection = {
+    rawSamplesSeparated:true,
+    requestedRawMatchSampleCount:rawMatchSamples.length,
+    retainedRawMatchSampleCount:retainedRawSamples.length,
+    rawMatchSamplesFile:path.basename(rawPath),
+    maximumCoreBytes,
+    maximumRawBytes,
+    maximumDimensionShardBytes,
+  };
+  const fullCorePayload = `${JSON.stringify({ ...report, outputProtection:{ ...baseProtection, dimensionsSeparated:false, dimensionFiles:[] } }, null, 2)}\n`;
+  if (config.outputLimits?.separateDimensions === true || Buffer.byteLength(fullCorePayload) > maximumCoreBytes) {
+    const dimensionChunks = [];
+    let current = [];
+    const chunkPayload = (entries) => `${JSON.stringify({
+      schemaVersion:report.schemaVersion,
+      engineVersion:report.engineVersion,
+      outputVersion:report.outputVersion,
+      seed:report.seed,
+      dimensions:Object.fromEntries(entries.map((name) => [name, report.results.dimensions?.[name] ?? {}])),
+      headToHead:Object.fromEntries(entries.map((name) => [name, report.results.headToHead?.[name] ?? {}])),
+    }, null, 2)}\n`;
+    for (const name of dimensionNames) {
+      const candidate = [...current, name];
+      if (current.length && Buffer.byteLength(chunkPayload(candidate)) > maximumDimensionShardBytes) {
+        dimensionChunks.push(current);
+        current = [name];
+      } else current = candidate;
+    }
+    if (current.length) dimensionChunks.push(current);
+    dimensionFiles = [];
+    for (let index = 0; index < dimensionChunks.length; index += 1) {
+      const dimensionPath = outputPath.replace(/\.json$/i, `-dimensions-${String(index + 1).padStart(3, "0")}.json`);
+      const payload = chunkPayload(dimensionChunks[index]);
+      await writeFile(dimensionPath, payload, "utf8");
+      dimensionFiles.push({
+        file:path.basename(dimensionPath),
+        bytes:Buffer.byteLength(payload),
+        dimensions:dimensionChunks[index],
+      });
+    }
+    reportForCore = {
+      ...report,
+      results:{ ...report.results, dimensions:{}, headToHead:{} },
+    };
+  }
+  const protectedReport = {
+    ...reportForCore,
+    outputProtection:{
+      ...baseProtection,
+      dimensionsSeparated:dimensionFiles.length > 0,
+      dimensionFiles,
+    },
+  };
+  let corePayload = `${JSON.stringify(protectedReport, null, 2)}\n`;
+  if (Buffer.byteLength(corePayload) > maximumCoreBytes) corePayload = `${JSON.stringify({ ...protectedReport, outputProtection:{ ...protectedReport.outputProtection, compactCore:true } })}\n`;
   const coreBytes = Buffer.byteLength(corePayload);
-  if (coreBytes > maximumCoreBytes) throw new Error(`Core result JSON ${coreBytes} bytes exceeds configured limit ${maximumCoreBytes}`);
   await writeFile(outputPath, corePayload, "utf8");
   await writeFile(rawPath, rawPayload, "utf8");
-  console.log(`V1/V2 comparison core JSON generated: ${outputPath}`);
-  console.log(`V1/V2 comparison diagnostic samples generated: ${rawPath}`);
+  const outputLabel = config.v2Only ? "V2 realism/balance" : "V1/V2 comparison";
+  console.log(`${outputLabel} core JSON generated: ${outputPath}`);
+  if (dimensionFiles.length) console.log(`${outputLabel} dimension JSON shards generated: ${dimensionFiles.map((entry) => entry.file).join(", ")}`);
+  console.log(`${outputLabel} diagnostic samples generated: ${rawPath}`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

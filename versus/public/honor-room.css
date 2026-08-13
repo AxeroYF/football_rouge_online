@@ -1,0 +1,184 @@
+/* Shared presentation for the official honor room and its standalone visual demo. */
+.honor-room,.honor-room-page {
+  color-scheme: dark;
+  --honor-bg:#0b0907;
+  --honor-panel:#15110c;
+  --honor-panel-2:#1c1710;
+  --honor-line:rgba(235,205,142,.2);
+  --honor-gold:#e5bc62;
+  --honor-ink:#f6f0e4;
+  --honor-muted:#a69b8a;
+}
+
+.honor-room,.honor-room * { box-sizing:border-box; }
+html:has(body.honor-room-page) { min-width:320px;scroll-behavior:smooth; }
+body.honor-room-page { margin:0;color:#f6f0e4;background:#080705; }
+.honor-room button,.honor-room a { font:inherit; }
+
+.honor-room {
+  --club-accent:#d7b06f;
+  --club-accent-2:#7d4e92;
+  min-height:100vh;
+  overflow:hidden;
+  color:var(--honor-ink);
+  background:
+    radial-gradient(circle at 84% 5%,color-mix(in srgb,var(--club-accent-2) 22%,transparent),transparent 28%),
+    radial-gradient(circle at 18% 16%,color-mix(in srgb,var(--club-accent) 12%,transparent),transparent 30%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 1px,transparent 1px 80px),
+    linear-gradient(180deg,#0e0b08,#080705 62%,#0b0907);
+  font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;
+  transition:background .4s ease;
+}
+
+.honor-room.cool-light {
+  --honor-bg:#080b0e;
+  --honor-panel:#10161b;
+  --honor-panel-2:#141d23;
+  --honor-line:rgba(182,218,235,.2);
+  --honor-gold:#d7dce0;
+  --honor-ink:#f2f6f7;
+  --honor-muted:#8d9ca4;
+}
+
+.honor-topbar {
+  min-height:76px;
+  padding:12px max(24px,calc((100vw - 1500px)/2));
+  display:flex;
+  align-items:center;
+  gap:28px;
+  border-bottom:1px solid var(--honor-line);
+  background:rgba(8,7,5,.78);
+  backdrop-filter:blur(18px);
+}
+
+.honor-brand { display:flex;align-items:center;gap:12px;color:inherit;text-decoration:none; }
+.honor-brand>span { width:46px;height:46px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--club-accent) 70%,#fff);color:#171006;background:var(--club-accent);font-weight:950;clip-path:polygon(50% 0,96% 20%,88% 82%,50% 100%,12% 82%,4% 20%); }
+.honor-brand b,.honor-brand small { display:block; }
+.honor-brand b { font-size:17px; }
+.honor-brand small,.honor-topbar-copy small { margin-top:3px;color:var(--honor-gold);font-size:8px;font-weight:800;letter-spacing:.16em; }
+.honor-topbar-copy { display:grid;gap:5px;padding-left:26px;border-left:1px solid var(--honor-line); }
+.honor-topbar-copy span { color:var(--honor-muted);font-size:11px; }
+.honor-theme-toggle { margin-left:auto;width:42px;height:42px;border:1px solid var(--honor-line);border-radius:50%;color:var(--honor-gold);background:rgba(255,255,255,.035);font-size:22px;cursor:pointer; }
+.honor-theme-toggle:hover { border-color:var(--honor-gold);background:rgba(255,255,255,.08); }
+
+.honor-club-switcher {
+  position:sticky;
+  z-index:20;
+  top:0;
+  padding:10px max(24px,calc((100vw - 1500px)/2));
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  border-bottom:1px solid var(--honor-line);
+  background:rgba(11,9,7,.9);
+  backdrop-filter:blur(18px);
+  scrollbar-width:thin;
+}
+.honor-club-switcher button { min-width:118px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid transparent;border-radius:7px;color:var(--honor-muted);background:rgba(255,255,255,.025);cursor:pointer; }
+.honor-club-switcher button span { font-weight:850; }
+.honor-club-switcher button small { font-size:9px; }
+.honor-club-switcher button::before { content:"";width:5px;height:22px;border-radius:3px;background:var(--club-accent);opacity:.28; }
+.honor-club-switcher button:hover,.honor-club-switcher button.active { color:var(--honor-ink);border-color:color-mix(in srgb,var(--club-accent) 55%,transparent);background:color-mix(in srgb,var(--club-accent) 10%,transparent); }
+.honor-club-switcher button.active::before { opacity:1;box-shadow:0 0 14px var(--club-accent); }
+
+.honor-hero {
+  position:relative;
+  min-height:310px;
+  padding:clamp(42px,5vw,70px) max(24px,calc((100vw - 1400px)/2));
+  display:flex;
+  align-items:center;
+  border-bottom:1px solid var(--honor-line);
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.2),rgba(0,0,0,.02)),
+    radial-gradient(circle at 38% 50%,color-mix(in srgb,var(--club-accent) 13%,transparent),transparent 34%);
+}
+.honor-hero::after { content:"";position:absolute;left:50%;bottom:0;width:min(720px,80vw);height:1px;background:linear-gradient(90deg,transparent,var(--club-accent),transparent);box-shadow:0 0 24px var(--club-accent);transform:translateX(-50%);opacity:.55; }
+.honor-hero-copy>small { color:var(--club-accent);font-size:10px;font-weight:900;letter-spacing:.2em; }
+.honor-hero-copy h1 { max-width:1100px;margin:10px 0 7px;font:500 clamp(40px,5vw,74px)/.98 Georgia,"Microsoft YaHei",serif;letter-spacing:-.055em;text-wrap:balance; }
+.honor-hero-copy p { margin:0;color:var(--honor-muted);font-size:14px; }
+.hero-stat-line { margin-top:27px;display:flex;flex-wrap:wrap;gap:8px; }
+.hero-stat-line span { min-width:145px;padding:10px 14px;border-left:2px solid var(--club-accent);background:rgba(255,255,255,.035);color:var(--honor-muted);font-size:10px; }
+.hero-stat-line b { display:block;margin-bottom:2px;color:var(--honor-ink);font:600 23px/1 Georgia,serif; }
+
+.honor-section { width:min(1400px,calc(100% - 48px));margin:0 auto;padding:clamp(52px,6vw,78px) 0; }
+.honor-section-heading { margin-bottom:34px;display:flex;align-items:end;justify-content:space-between;gap:28px; }
+.honor-section-heading small,.record-feature header small { color:var(--club-accent);font-size:9px;font-weight:900;letter-spacing:.2em; }
+.honor-section-heading h2,.record-feature header h2 { margin:7px 0 0;font:500 clamp(28px,3vw,43px)/1.05 Georgia,"Microsoft YaHei",serif; }
+.honor-section-heading p { max-width:440px;margin:0;color:var(--honor-muted);font-size:12px;line-height:1.7;text-align:right; }
+
+.honor-trophy-galleries { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px; }
+.honor-trophy-galleries.has-world-cup { grid-template-columns:1.08fr 1fr .72fr; }
+.trophy-gallery { min-width:0;border:1px solid var(--honor-line);border-radius:18px;background:linear-gradient(150deg,rgba(255,255,255,.045),rgba(255,255,255,.012));overflow:hidden; }
+.trophy-gallery>header { min-height:86px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--honor-line); }
+.trophy-gallery>header small { color:var(--honor-muted);font-size:8px;letter-spacing:.16em; }
+.trophy-gallery>header h3 { margin:5px 0 0;font-size:18px; }
+.trophy-gallery>header>strong { color:var(--honor-gold);font:400 38px/1 Georgia,serif; }
+.trophy-gallery>header>strong small { margin-left:3px;color:var(--honor-muted);font:700 10px/1 sans-serif; }
+.trophy-shelf { min-height:430px;padding:24px 18px 22px;display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));align-items:end;gap:20px 8px;background:radial-gradient(ellipse at 50% 82%,color-mix(in srgb,var(--club-accent) 12%,transparent),transparent 58%); }
+.type-worldCup .trophy-shelf { grid-template-columns:minmax(155px,220px);justify-content:center; }
+.honor-trophy { margin:0;min-width:0;text-align:center;animation:trophy-arrive .55s both;animation-delay:var(--trophy-delay); }
+.honor-trophy figcaption { margin-top:8px;padding:9px 6px 0;border-top:1px solid var(--honor-line); }
+.honor-trophy figcaption b,.honor-trophy figcaption small { display:block; }
+.honor-trophy figcaption b { color:var(--honor-ink);font:700 18px/1.1 Georgia,"Microsoft YaHei",serif;letter-spacing:.04em; }
+.trophy-model { width:100%;height:310px;margin:auto;display:flex;align-items:flex-end;justify-content:center;filter:drop-shadow(0 18px 13px rgba(0,0,0,.58));transition:transform .25s ease,filter .25s ease; }
+.type-worldCup .trophy-model { height:330px; }
+.honor-trophy:hover .trophy-model { transform:translateY(-5px) scale(1.035);filter:drop-shadow(0 24px 20px rgba(0,0,0,.68)) drop-shadow(0 0 16px color-mix(in srgb,var(--club-accent) 16%,transparent)); }
+.trophy-render { max-width:min(190px,100%);max-height:100%;width:auto;height:auto;display:block;object-fit:contain;object-position:center bottom;image-rendering:auto; }
+.empty-trophy-case { grid-column:1/-1;align-self:center;min-height:180px;display:grid;place-items:center;align-content:center;gap:8px;color:var(--honor-muted);border:1px dashed var(--honor-line);border-radius:14px;background:rgba(0,0,0,.13); }
+.empty-trophy-case span { color:var(--honor-line);font-size:54px; }.empty-trophy-case b{font-size:13px}.empty-trophy-case small{font-size:8px;letter-spacing:.16em}
+
+.appearances-section { border-top:1px solid var(--honor-line); }
+.appearance-podium { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:end;gap:18px; }
+.podium-entry { position:relative;padding:20px;border:1px solid var(--honor-line);border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.012)); }
+.podium-entry.rank-1 { padding-top:30px;border-color:color-mix(in srgb,var(--club-accent) 52%,var(--honor-line));background:radial-gradient(circle at 50% 20%,color-mix(in srgb,var(--club-accent) 15%,transparent),transparent 40%),linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.012));box-shadow:0 22px 70px color-mix(in srgb,var(--club-accent) 8%,transparent); }
+.podium-rank { display:flex;align-items:end;justify-content:space-between;margin-bottom:16px; }
+.podium-rank span { color:var(--club-accent);font:400 38px/1 Georgia,serif; }.podium-rank small{color:var(--honor-muted);font-size:7px;letter-spacing:.17em}
+.podium-card { width:min(235px,90%);margin:auto; }
+.honor-history-card { width:100%;min-height:0;border:2px solid transparent;cursor:pointer; }
+.podium-entry.rank-1 .podium-card { width:min(260px,94%); }
+.podium-entry>footer { margin-top:18px;padding-top:16px;display:flex;align-items:center;gap:15px;border-top:1px solid var(--honor-line); }
+.podium-entry>footer>strong { min-width:74px;color:var(--club-accent);font:500 35px/1 Georgia,serif; }.podium-entry>footer>strong small{margin-left:3px;font:800 9px/1 sans-serif}
+.podium-entry>footer div { min-width:0; }.podium-entry>footer b,.podium-entry>footer span{display:block}.podium-entry>footer b{font-size:14px}.podium-entry>footer span{margin-top:4px;color:var(--honor-muted);font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.record-feature-grid { display:grid;grid-template-columns:1fr 1fr;gap:18px;border-top:1px solid var(--honor-line); }
+.record-feature { min-width:0;border:1px solid var(--honor-line);border-radius:20px;background:linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.01));overflow:hidden; }
+.record-feature>header { padding:20px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--honor-line); }
+.record-feature>header h2 { font-size:27px; }.record-feature>header>span{color:var(--honor-muted);font-size:7px;letter-spacing:.18em}
+.record-feature-content { min-height:390px;padding:26px;display:grid;grid-template-columns:minmax(180px,230px) minmax(0,1fr);align-items:center;gap:26px; }
+.record-feature-card { width:100%; }.record-feature-copy>span{color:var(--club-accent);font-size:9px;font-weight:900;letter-spacing:.13em}.record-feature-copy h3{margin:8px 0 18px;font:500 31px/1.1 Georgia,"Microsoft YaHei",serif}.record-feature-copy>strong{display:block;color:var(--club-accent);font:500 55px/1 Georgia,serif}.record-feature-copy>strong small{margin-left:4px;font:800 13px/1 sans-serif}.record-feature-copy p{margin:10px 0 22px;color:var(--honor-muted);font-size:12px}.record-feature-copy dl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}.record-feature-copy dl div{padding:10px;border:1px solid var(--honor-line);background:rgba(0,0,0,.1)}.record-feature-copy dt{color:var(--honor-muted);font-size:8px}.record-feature-copy dd{margin:4px 0 0;font-size:12px;font-weight:800}
+.ballon-feature { background:radial-gradient(circle at 35% 40%,rgba(229,188,98,.12),transparent 38%),linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.01)); }
+.ballon-award-trophy { width:158px;margin:-14px 0 2px;filter:drop-shadow(0 18px 18px rgba(0,0,0,.5)); }
+.ballon-award-trophy .trophy-render,.empty-ballon-model .trophy-render { width:100%;max-width:none; }
+.empty-ballon { min-height:390px;padding:32px;display:grid;grid-template-columns:190px minmax(0,1fr);align-items:center;gap:28px; }
+.empty-ballon-model { width:180px;opacity:.48;filter:grayscale(.42) drop-shadow(0 18px 18px rgba(0,0,0,.5)); }
+.empty-ballon small{color:var(--honor-gold);font-size:8px;letter-spacing:.17em}.empty-ballon h3{margin:8px 0 9px;font:500 28px/1.1 Georgia,"Microsoft YaHei",serif}.empty-ballon p{margin:0;color:var(--honor-muted);font-size:11px;line-height:1.7}
+
+.honor-footer { padding:28px max(24px,calc((100vw - 1400px)/2));display:flex;justify-content:space-between;gap:24px;border-top:1px solid var(--honor-line);color:var(--honor-muted);background:rgba(0,0,0,.18);font-size:9px; }
+.honor-footer span { color:var(--honor-gold);font-weight:900;letter-spacing:.14em; }.honor-footer p{max-width:600px;margin:0;text-align:right;line-height:1.6}
+.honor-toast { position:fixed;z-index:100;left:50%;bottom:30px;padding:11px 17px;border:1px solid var(--honor-line);border-radius:9px;color:var(--honor-ink);background:rgba(10,8,6,.94);box-shadow:0 18px 50px rgba(0,0,0,.5);font-size:11px;opacity:0;pointer-events:none;transform:translate(-50%,14px);transition:.2s ease; }.honor-toast.visible{opacity:1;transform:translate(-50%,0)}
+.league-honor-room.honor-room { min-height:0;border:1px solid var(--honor-line);border-radius:18px; }
+.league-honor-room .honor-hero { border-radius:18px 18px 0 0; }
+.league-honor-room .honor-section { width:min(100% - 42px,1400px);content-visibility:auto;contain-intrinsic-size:auto 820px; }
+.honor-room-loading { min-height:520px;display:grid;place-content:center;justify-items:center;text-align:center; }
+.honor-room-loading>span { width:42px;height:42px;margin-bottom:16px;border:2px solid rgba(229,188,98,.2);border-top-color:#e5bc62;border-radius:50%;animation:honor-loading-spin .7s linear infinite; }
+.honor-room-loading h2 { margin:0;font-size:22px; }.honor-room-loading p{margin:8px 0 0;color:var(--muted);font-size:11px}
+.honor-record-empty { grid-column:1/-1;min-height:220px;display:grid;place-items:center;border:1px dashed var(--honor-line);border-radius:14px;color:var(--honor-muted);background:rgba(0,0,0,.12);font-size:13px; }
+
+@keyframes trophy-arrive { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none} }
+@keyframes honor-loading-spin { to{transform:rotate(360deg)} }
+
+@media (max-width:1100px) {
+  .honor-trophy-galleries,.honor-trophy-galleries.has-world-cup{grid-template-columns:1fr 1fr}.trophy-gallery.type-worldCup{grid-column:1/-1}.trophy-gallery.type-worldCup .trophy-shelf{grid-template-columns:minmax(170px,220px);justify-content:center}.record-feature-grid{grid-template-columns:1fr}.record-feature-content{grid-template-columns:240px minmax(0,1fr)}
+}
+
+@media (max-width:760px) {
+  .honor-topbar{padding:11px 16px}.honor-topbar-copy{display:none}.honor-club-switcher{padding:9px 14px}.honor-club-switcher button{min-width:104px}.honor-hero{min-height:0;padding:42px 20px 38px;text-align:center}.honor-hero-copy{width:100%}.honor-hero-copy h1{font-size:clamp(42px,14vw,70px)}.hero-stat-line{justify-content:center;margin-top:24px}.hero-stat-line span{min-width:110px;flex:1;padding:10px}.honor-section{width:min(100% - 28px,680px);padding:52px 0}.honor-section-heading{align-items:flex-start;flex-direction:column}.honor-section-heading p{text-align:left}.honor-trophy-galleries,.honor-trophy-galleries.has-world-cup{grid-template-columns:1fr}.trophy-gallery.type-worldCup{grid-column:auto}.trophy-gallery.type-worldCup .trophy-shelf{grid-template-columns:minmax(160px,210px)}.trophy-shelf{grid-template-columns:repeat(3,minmax(88px,1fr));min-height:380px}.appearance-podium{grid-template-columns:1fr}.podium-entry.rank-1{order:-1}.podium-card,.podium-entry.rank-1 .podium-card{width:min(230px,86%)}.record-feature-grid{grid-template-columns:1fr}.record-feature-content{grid-template-columns:1fr;text-align:center}.record-feature-card{width:min(230px,82%);margin:auto}.ballon-award-trophy{margin:-5px auto 4px}.record-feature-copy dl{text-align:left}.empty-ballon{grid-template-columns:1fr;text-align:center}.empty-ballon-model{margin:auto}.honor-footer{align-items:flex-start;flex-direction:column}.honor-footer p{text-align:left}
+}
+
+@media (max-width:420px) {
+  .hero-stat-line{display:grid;grid-template-columns:1fr 1fr}.hero-stat-line span:last-child{grid-column:1/-1}.trophy-shelf{grid-template-columns:repeat(2,minmax(105px,1fr));min-height:350px}.record-feature-content{padding:22px}.podium-entry{padding:15px}.honor-history-card{border-radius:22px}.honor-history-card .s4-player-card-name h3{font-size:17px}
+}
+
+@media (prefers-reduced-motion:reduce) {
+  *{scroll-behavior:auto!important}.honor-trophy,.honor-room-loading>span{animation:none}.s4-player-card{transition:none}
+}

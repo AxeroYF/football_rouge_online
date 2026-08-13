@@ -14,6 +14,30 @@
       "xPercent": 51.1,
       "yPercent": 55.4,
       "widthPercent": 128
+    },
+    "黄威": {
+      "fileName": "huangwei.png",
+      "xPercent": 41.9,
+      "yPercent": 63.9,
+      "widthPercent": 144
+    },
+    "金典": {
+      "fileName": "jindian.png",
+      "xPercent": 53.2,
+      "yPercent": 44.1,
+      "widthPercent": 104
+    },
+    "李彬": {
+      "fileName": "libin.png",
+      "xPercent": 59.1,
+      "yPercent": 64.1,
+      "widthPercent": 128
+    },
+    "刘祖豪": {
+      "fileName": "liuzuhao.png",
+      "xPercent": 47.9,
+      "yPercent": 56.6,
+      "widthPercent": 188
     }
   }
 }

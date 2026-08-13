@@ -18,6 +18,7 @@ const LARGE_STATE_KEYS = new Set([
   "liveCupRound",
   "liveWorldCupRound",
   "liveFriendlies",
+  "mirrorMarketplace",
 ]);
 const ALL_SCOPES = Object.freeze([
   "core",
@@ -31,6 +32,7 @@ const ALL_SCOPES = Object.freeze([
   "reports",
   "archives",
   "live",
+  "mirrorMarketplace",
 ]);
 const RAW_BY_PROXY = new WeakMap();
 const PROXY_BY_RAW = new WeakMap();
@@ -47,6 +49,7 @@ function scopeForKey(key) {
   if (["reports"].includes(key)) return "reports";
   if (["archives"].includes(key)) return "archives";
   if (["liveRound", "liveCupRound", "liveWorldCupRound", "liveFriendlies"].includes(key)) return "live";
+  if (["mirrorMarketplace"].includes(key)) return "mirrorMarketplace";
   return "core";
 }
 
@@ -271,6 +274,7 @@ export class LeagueShardStore {
     state.liveCupRound = live.liveCupRound ?? null;
     state.liveWorldCupRound = live.liveWorldCupRound ?? null;
     state.liveFriendlies = live.liveFriendlies ?? [];
+    state.mirrorMarketplace = this.readObjectShard(manifest.shards.mirrorMarketplace, { uploads:{}, usageByDate:{}, settledDates:[] });
     return state;
   }
 
@@ -362,6 +366,7 @@ export class LeagueShardStore {
       liveWorldCupRound:state.liveWorldCupRound ?? null,
       liveFriendlies:state.liveFriendlies ?? [],
     });
+    if (scopes.has("mirrorMarketplace") || !shards.mirrorMarketplace) shards.mirrorMarketplace = this.writeRevisionJson(temporaryRevisionPath, "mirror-marketplace.json", state.mirrorMarketplace ?? { uploads:{}, usageByDate:{}, settledDates:[] }, previous.shards?.mirrorMarketplace);
     renameSync(temporaryRevisionPath, revisionPath);
     const manifest = {
       schemaVersion:SHARD_SCHEMA_VERSION,
@@ -540,27 +545,36 @@ export class LeagueShardStore {
   cleanupRevisions(manifest) {
     if (!existsSync(this.revisionsPath)) return;
     const referenced = new Set();
-    const visitedFiles = new Set();
+    const queuedFiles = new Set();
     const pendingFiles = [];
+    const queueReferenceIndex = (reference) => {
+      const filePath = resolveRef(this.root, reference);
+      if (!filePath || queuedFiles.has(filePath)) return;
+      const fileName = path.basename(filePath);
+      if (fileName !== "matches-index.json" && fileName !== "archives-index.json") return;
+      queuedFiles.add(filePath);
+      pendingFiles.push(filePath);
+    };
     const collect = (value) => {
       if (typeof value === "string" && value.startsWith("revisions/")) {
         referenced.add(value.split("/")[1]);
-        pendingFiles.push(resolveRef(this.root, value));
+        queueReferenceIndex(value);
       }
       else if (Array.isArray(value)) value.forEach(collect);
       else if (value && typeof value === "object") Object.values(value).forEach(collect);
     };
     collect(manifest.shards);
     if (this.backupDir && existsSync(this.backupDir)) {
-      readdirSync(this.backupDir).filter((name) => name.endsWith(".json")).forEach((name) => {
+      readdirSync(this.backupDir).filter((name) => name.endsWith(".manifest.json")).forEach((name) => {
         try { collect(readJson(path.join(this.backupDir, name)).shards); } catch { /* ignore an incomplete backup */ }
       });
     }
     while (pendingFiles.length) {
       const filePath = pendingFiles.pop();
-      if (!filePath || visitedFiles.has(filePath) || !existsSync(filePath) || !filePath.endsWith(".json")) continue;
-      visitedFiles.add(filePath);
-      try { collect(readJson(filePath)); } catch { /* ignore a partial or non-JSON shard */ }
+      try {
+        const serialized = readFileSync(filePath, "utf8");
+        for (const match of serialized.matchAll(/"(revisions\/[^"\\]+)"/g)) collect(match[1]);
+      } catch { /* ignore a partial or missing shard index */ }
     }
     const recent = readdirSync(this.revisionsPath)
       .filter((name) => /^\d+$/.test(name))

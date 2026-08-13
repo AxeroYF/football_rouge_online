@@ -9,6 +9,46 @@ export const X_PLAYER_PROFILE_BY_PLAYER_ID = Object.freeze({
     "yPercent": 55.4,
     "widthPercent": 128,
     "optimizedFileName": "李俊良.webp"
+  },
+  "ydl-x-player-3": {
+    "playerId": "ydl-x-player-3",
+    "profileKey": "黄威",
+    "fileName": "huangwei.png",
+    "imageUrl": "/versus/x_profile/webp/huangwei.webp?v=28556d1ab85a",
+    "xPercent": 41.9,
+    "yPercent": 63.9,
+    "widthPercent": 144,
+    "optimizedFileName": "huangwei.webp"
+  },
+  "ydl-x-player-10": {
+    "playerId": "ydl-x-player-10",
+    "profileKey": "金典",
+    "fileName": "jindian.png",
+    "imageUrl": "/versus/x_profile/webp/jindian.webp?v=03e0a421859a",
+    "xPercent": 53.2,
+    "yPercent": 44.1,
+    "widthPercent": 104,
+    "optimizedFileName": "jindian.webp"
+  },
+  "ydl-x-player-7": {
+    "playerId": "ydl-x-player-7",
+    "profileKey": "李彬",
+    "fileName": "libin.png",
+    "imageUrl": "/versus/x_profile/webp/libin.webp?v=3f66b39075e2",
+    "xPercent": 59.1,
+    "yPercent": 64.1,
+    "widthPercent": 128,
+    "optimizedFileName": "libin.webp"
+  },
+  "ydl-x-player-9": {
+    "playerId": "ydl-x-player-9",
+    "profileKey": "刘祖豪",
+    "fileName": "liuzuhao.png",
+    "imageUrl": "/versus/x_profile/webp/liuzuhao.webp?v=a2f6f5c11b52",
+    "xPercent": 47.9,
+    "yPercent": 56.6,
+    "widthPercent": 188,
+    "optimizedFileName": "liuzuhao.webp"
   }
 });
 
