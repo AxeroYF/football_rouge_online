@@ -1,0 +1,13 @@
+{
+  "appId": "com.yellowdogs.tv",
+  "appName": "黄狗TV",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#071411"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

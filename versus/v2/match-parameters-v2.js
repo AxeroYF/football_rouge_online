@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { ATTRIBUTE_NAMES } from "../../game/public/schema.js";
+import { OFFLINE_ATTRIBUTE_SETTINGS, offlineEngineAttributeValue } from "../offline-attribute-settings.js";
 
 const PARAMETER_PATH = new URL("./match-parameters-v2.json", import.meta.url);
 const REQUIRED_CHAIN_STAGES = Object.freeze(["possession", "buildUp", "progression", "finalThird", "chance", "shot"]);
@@ -17,7 +18,11 @@ function deepFreeze(value) {
 }
 
 function clone(value) {
-  return structuredClone(value);
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((entry) => clone(entry));
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [key, clone(entry)]),
+  );
 }
 
 function mergeKnown(base, override, path = "parameters") {
@@ -124,10 +129,15 @@ export function validateV2MatchParameters(parameters) {
   for (const key of ["connectionDistance", "supportDistance", "pressureDistance", "influenceRadius", "influenceFalloff", "minimumInfluence", "tacticalDisplacementMaximum", "dynamicMovementMaximum", "defensiveTrackingRatio", "controlTemperature", "overloadPlayerAdvantage", "maximumLocalAdvantage"]) {
     if (!finite(spatial[key]) || Number(spatial[key]) <= 0) errors.push(`spatial.${key}必须是正数`);
   }
-  for (const key of ["minimumDefenders", "minimumMidfielders", "maximumAttackers", "defenderDeficitWeight", "midfielderDeficitWeight", "attackerExcessWeight", "highLineSafeY", "highLineMaximumRiskY", "verticalGapSafe", "verticalGapMaximum", "goalkeeperGapSafe", "goalkeeperGapMaximum", "pressingCommitmentMinimum", "pressingCommitmentMaximum", "highLineWeight", "verticalGapWeight", "goalkeeperGapWeight", "pressingCommitmentWeight", "advancedMidfielderExcessWeight", "threeBackAdvancedMidfielderWeight", "resistancePenaltyMaximum", "spaceBonusMaximum"]) {
+  for (const key of ["minimumDefenders", "minimumMidfielders", "maximumAttackers", "defenderDeficitWeight", "midfielderDeficitWeight", "attackerExcessWeight", "highLineSafeY", "highLineMaximumRiskY", "verticalGapSafe", "verticalGapMaximum", "goalkeeperGapSafe", "goalkeeperGapMaximum", "pressingCommitmentMinimum", "pressingCommitmentMaximum", "highLineWeight", "verticalGapWeight", "goalkeeperGapWeight", "pressingCommitmentWeight", "advancedMidfielderExcessWeight", "threeBackAdvancedMidfielderWeight", "resistancePenaltyMaximum", "spaceBonusMaximum", "underThreeDefenderPossessionMultiplierMinimum"]) {
     if (!finite(spatial.backlineExposure?.[key]) || Number(spatial.backlineExposure[key]) < 0) errors.push(`spatial.backlineExposure.${key}必须是非负数`);
   }
-  for (const key of ["advancedMidfielderPenaltyPerExtra", "advancedMidfielderMinimumMultiplier", "singleStrikerControlMultiplier", "singleStrikerAttackMultiplier", "singleStrikerSupportMultiplier", "wideMidfielderAttackMultiplier", "wideMidfielderSupportMultiplier"]) {
+  for (const stage of REQUIRED_CHAIN_STAGES.slice(1)) {
+    if (!finite(spatial.backlineExposure?.underThreeDefenderStagePenaltyMaximum?.[stage]) || Number(spatial.backlineExposure.underThreeDefenderStagePenaltyMaximum[stage]) < 0 || Number(spatial.backlineExposure.underThreeDefenderStagePenaltyMaximum[stage]) > 0.2) {
+      errors.push(`spatial.backlineExposure.underThreeDefenderStagePenaltyMaximum.${stage}必须位于[0,0.2]`);
+    }
+  }
+  for (const key of ["advancedMidfielderPenaltyPerExtra", "advancedMidfielderMinimumMultiplier", "singleStrikerControlMultiplier", "singleStrikerAttackMultiplier", "singleStrikerSupportMultiplier", "wideMidfielderAttackMultiplier", "wideMidfielderSupportMultiplier", "doublePivot451PivotControlMultiplier", "doublePivot451PivotDefenseMultiplier", "doublePivot451AttackUnitControlMultiplier", "doublePivot451AttackUnitAttackMultiplier", "doublePivot451AttackUnitSupportMultiplier"]) {
     if (!finite(spatial.roleBalance?.[key]) || Number(spatial.roleBalance[key]) <= 0 || Number(spatial.roleBalance[key]) > 2) errors.push(`spatial.roleBalance.${key}必须位于(0,2]`);
   }
   if (!Number.isInteger(Number(spatial.roleBalance?.singleStrikerMaximumAdvancedMidfielders)) || Number(spatial.roleBalance.singleStrikerMaximumAdvancedMidfielders) < 0) errors.push("spatial.roleBalance.singleStrikerMaximumAdvancedMidfielders必须是非负整数");
@@ -206,9 +216,10 @@ export function validateV2MatchParameters(parameters) {
   }
   if (Number(chain.possessionDuration?.minimumControlMultiplier) > Number(chain.possessionDuration?.maximumControlMultiplier)) errors.push("chain.possessionDuration.minimumControlMultiplier不能大于maximumControlMultiplier");
   const longShot = chain.longShot ?? {};
-  for (const key of ["baseDecisionChance", "skillDecisionWeight", "longBallBonus", "lowBlockBonus", "attackingMentalityBonus", "minimumDecisionChance", "maximumDecisionChance", "baseXg", "skillXgWeight", "spaceXgWeight", "minimumXg", "maximumXg"]) {
+  for (const key of ["baseDecisionChance", "skillDecisionWeight", "longBallBonus", "lowBlockBonus", "attackingMentalityBonus", "structureExposureDecisionBonus", "structureExposureXgBonus", "midfieldVacuumMinimumExposure", "midfieldVacuumBaseChance", "midfieldVacuumMaximumChance", "midfieldVacuumWideLaneMultiplier", "minimumDecisionChance", "maximumDecisionChance", "baseXg", "skillXgWeight", "spaceXgWeight", "minimumXg", "maximumXg"]) {
     if (!finite(longShot[key]) || Number(longShot[key]) < 0 || Number(longShot[key]) > 1) errors.push(`chain.longShot.${key}必须位于[0,1]`);
   }
+  if (Number(longShot.midfieldVacuumBaseChance) > Number(longShot.midfieldVacuumMaximumChance)) errors.push("chain.longShot.midfieldVacuumBaseChance must not exceed midfieldVacuumMaximumChance");
   if (Number(longShot.minimumDecisionChance) > Number(longShot.maximumDecisionChance)) errors.push("chain.longShot.minimumDecisionChance不能大于maximumDecisionChance");
   if (Number(longShot.minimumXg) > Number(longShot.maximumXg)) errors.push("chain.longShot.minimumXg不能大于maximumXg");
   const breakaway = chain.breakaway ?? {};
@@ -229,6 +240,14 @@ export function validateV2MatchParameters(parameters) {
   for (const key of ["fatiguePerChain", "pressingFatigueMaximum", "attackingPressFatigueMaximum", "trailingUrgencyMaximum", "leadingControlMaximum", "levelDecisivenessMaximum"]) {
     if (!finite(parameters.state?.[key]) || Number(parameters.state[key]) < 0 || Number(parameters.state[key]) > 1) errors.push(`state.${key}必须位于[0,1]`);
   }
+  const styleIdentity = parameters.tactics?.styleIdentity ?? {};
+  for (const key of ["minimumFit", "maximumFit"]) {
+    if (!finite(styleIdentity[key]) || Number(styleIdentity[key]) <= 0 || Number(styleIdentity[key]) > 2) errors.push(`tactics.styleIdentity.${key}必须位于(0,2]`);
+  }
+  if (Number(styleIdentity.minimumFit) > Number(styleIdentity.maximumFit)) errors.push("tactics.styleIdentity.minimumFit不能大于maximumFit");
+  for (const [style, keys] of Object.entries({ wingPlay:["attackMaximum", "crossingMaximum"], possession:["controlMaximum", "defenseMaximum"], longBall:["progressionMaximum", "headerXgMaximum"], roughPlay:["defenseMaximum", "pressureMaximum"], counterAttack:["transitionMaximum", "outletMaximum"], highPress:["pressureMaximum", "recoveryMaximum"], lowBlock:["defenseMaximum", "outletMaximum"] })) {
+    for (const key of keys) if (!finite(styleIdentity?.[style]?.[key]) || Number(styleIdentity[style][key]) < 0 || Number(styleIdentity[style][key]) > 0.5) errors.push(`tactics.styleIdentity.${style}.${key}必须位于[0,0.5]`);
+  }
   if (!finite(parameters.state?.levelDecisivenessStartMinute) || Number(parameters.state.levelDecisivenessStartMinute) < 0 || Number(parameters.state.levelDecisivenessStartMinute) >= Number(parameters.state.regulationMinutes)) errors.push("state.levelDecisivenessStartMinute必须位于常规时间内");
   if (!finite(parameters.state?.leadingShotXgPenaltyPerGoal) || Number(parameters.state.leadingShotXgPenaltyPerGoal) < 0 || Number(parameters.state.leadingShotXgPenaltyPerGoal) > 0.5) errors.push("state.leadingShotXgPenaltyPerGoal必须位于[0,0.5]");
   if (!finite(parameters.state?.leadingShotXgMinimumMultiplier) || Number(parameters.state.leadingShotXgMinimumMultiplier) <= 0 || Number(parameters.state.leadingShotXgMinimumMultiplier) > 1) errors.push("state.leadingShotXgMinimumMultiplier必须位于(0,1]");
@@ -236,6 +255,10 @@ export function validateV2MatchParameters(parameters) {
   validateWeightMap(errors, parameters.environment?.weatherWeights, "environment.weatherWeights");
   validateWeightMap(errors, parameters.environment?.refereeWeights, "environment.refereeWeights");
   for (const [key, value] of Object.entries(parameters.environment?.weatherExecution ?? {})) if (!finite(value) || value < 0.5 || value > 1.2) errors.push(`environment.weatherExecution.${key}必须在[0.5,1.2]内`);
+  for (const [key, value] of Object.entries(parameters.environment?.weatherFatigueMultiplier ?? {})) if (!finite(value) || value < 0.5 || value > 2) errors.push(`environment.weatherFatigueMultiplier.${key}必须在[0.5,2]内`);
+  const superStormStopRange = parameters.environment?.superStormStopMinuteRange ?? {};
+  for (const key of ["minimum", "maximum"]) if (!Number.isInteger(Number(superStormStopRange[key])) || Number(superStormStopRange[key]) < 61 || Number(superStormStopRange[key]) > 89) errors.push(`environment.superStormStopMinuteRange.${key}必须是61-89的整数`);
+  if (Number(superStormStopRange.minimum) > Number(superStormStopRange.maximum)) errors.push("environment.superStormStopMinuteRange.minimum不能大于maximum");
   for (const [key, value] of Object.entries(parameters.environment?.refereeDiscipline ?? {})) if (!finite(value) || value < 0.5 || value > 1.5) errors.push(`environment.refereeDiscipline.${key}必须在[0.5,1.5]内`);
   for (const group of ["cardProbability", "directRedProbability", "weatherEventPerChain"]) {
     for (const [key, value] of Object.entries(parameters.environment?.[group] ?? {})) if (!finite(value) || value < 0 || value > 1) errors.push(`environment.${group}.${key}必须在[0,1]内`);
@@ -244,6 +267,23 @@ export function validateV2MatchParameters(parameters) {
   for (const key of ["injuryPerChain", "blackWhistlePerMatch", "ownGoalPerMatch", "weatherImpactPerMatch"]) {
     if (!finite(parameters.events?.[key]) || parameters.events[key] < 0 || parameters.events[key] > 1) errors.push(`events.${key}必须在[0,1]内`);
   }
+  const brawl = parameters.events?.brawl ?? {};
+  if (!finite(brawl.basePerEligibleMatch) || Number(brawl.basePerEligibleMatch) < 0 || Number(brawl.basePerEligibleMatch) > 1) errors.push("events.brawl.basePerEligibleMatch必须位于[0,1]内");
+  if (!finite(brawl.aggressionBaseline) || Number(brawl.aggressionBaseline) < 0 || Number(brawl.aggressionBaseline) > 100) errors.push("events.brawl.aggressionBaseline必须位于[0,100]内");
+  for (const key of ["aggressionMultiplierMaximum", "oneSideRoughPlayMultiplier", "bothSidesRoughPlayMultiplier"]) {
+    if (!finite(brawl[key]) || Number(brawl[key]) < 1 || Number(brawl[key]) > 20) errors.push(`events.brawl.${key}必须位于[1,20]内`);
+  }
+  for (const key of ["lenient", "standard", "strict"]) {
+    if (!finite(brawl.refereeMultiplier?.[key]) || Number(brawl.refereeMultiplier[key]) <= 0 || Number(brawl.refereeMultiplier[key]) > 10) errors.push(`events.brawl.refereeMultiplier.${key}必须位于(0,10]内`);
+  }
+  for (const key of ["minimumMinute", "maximumMinute", "maximumGoalDifference"]) {
+    if (!finite(brawl[key]) || Number(brawl[key]) < 0 || Number(brawl[key]) > 90) errors.push(`events.brawl.${key}必须位于[0,90]内`);
+  }
+  if (Number(brawl.minimumMinute) > Number(brawl.maximumMinute)) errors.push("events.brawl.minimumMinute不能大于maximumMinute");
+  for (const key of ["dismissalsPerTeamMinimum", "dismissalsPerTeamMaximum"]) {
+    if (!Number.isInteger(Number(brawl[key])) || Number(brawl[key]) < 1 || Number(brawl[key]) > 10) errors.push(`events.brawl.${key}必须是1-10的整数`);
+  }
+  if (Number(brawl.dismissalsPerTeamMinimum) > Number(brawl.dismissalsPerTeamMaximum)) errors.push("events.brawl.dismissalsPerTeamMinimum不能大于dismissalsPerTeamMaximum");
   for (const key of ["foulMultiplier", "cardMultiplier", "directRedMultiplier", "foulInjuryMultiplier"]) {
     if (!finite(parameters.events?.roughPlay?.[key]) || Number(parameters.events.roughPlay[key]) < 1 || Number(parameters.events.roughPlay[key]) > 5) errors.push(`events.roughPlay.${key}必须位于[1,5]内`);
   }
@@ -273,6 +313,14 @@ assertV2MatchParameters(sourceParameters);
 
 export const V2_MATCH_PARAMETER_SOURCE = PARAMETER_PATH;
 export const V2_MATCH_PARAMETERS = deepFreeze(sourceParameters);
+
+export function v2EngineAttributeValue(value, parameters = V2_MATCH_PARAMETERS, attributeSettings = OFFLINE_ATTRIBUTE_SETTINGS) {
+  const numeric = Number(value);
+  const minimum = Number(parameters.ability.minimum);
+  if (!Number.isFinite(numeric)) return minimum;
+  return Math.max(minimum, offlineEngineAttributeValue(numeric, attributeSettings, Number(parameters.ability.maximum)));
+}
+
 
 export function resolveV2MatchParameters(overrides = {}) {
   const resolved = mergeKnown(V2_MATCH_PARAMETERS, overrides);

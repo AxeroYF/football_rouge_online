@@ -8,6 +8,7 @@ import {
   v2DutyOffsideMultiplier,
   v2DutyStageMultiplier,
 } from "./player-duties-v2.js";
+import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const round = (value, digits = 4) => Number(Number(value).toFixed(digits));
@@ -236,12 +237,36 @@ function routeScore(team, connection) {
     + Number(preferredLanes[lane] ?? 0);
 }
 
+function lowBlockOutletAvailability(team, parameters) {
+  if ((team.styleIdentity?.style ?? team.style) !== "lowBlock") return 1;
+  const config = parameters.tactics?.styleIdentity?.lowBlock ?? {};
+  const outlets = (team.players ?? []).filter((player) => ["ST", "LW", "RW", "LM", "RM", "AM"].includes(player.assignedRole));
+  const minimumAttackers = Math.max(1, Number(config.outletMinimumAttackers ?? 2));
+  const countMultiplier = clamp(outlets.length / minimumAttackers, 0, 1);
+  const outletScore = outlets.length
+    ? outlets.reduce((total, player) => total
+      + Number(player.metrics?.movement ?? 55) * 0.5
+      + Number(player.metrics?.pressResistance ?? 55) * 0.25
+      + Number(player.metrics?.finishing ?? 55) * 0.25, 0) / outlets.length
+    : 0;
+  const scoreFloor = Number(config.outletScoreFloor ?? 55);
+  const scoreCeiling = Math.max(scoreFloor + 1, Number(config.outletScoreCeiling ?? 86));
+  const qualityMultiplier = clamp((outletScore - scoreFloor) / (scoreCeiling - scoreFloor), 0, 1);
+  const minimumMultiplier = clamp(Number(config.outletMinimumMultiplier ?? 0.45), 0, 1);
+  return minimumMultiplier + (1 - minimumMultiplier) * countMultiplier * qualityMultiplier;
+}
+
 function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, transition) {
   const directness = team.tacticalDimensions.directness;
   const counter = team.tacticalDimensions.counterAttack;
   const routeParameters = parameters.chain.route;
+  const commitmentConfig = parameters.tactics.attackingCommitment ?? {};
+  const commitment = v2AttackingCommitmentProfile(team.tacticalDimensions, parameters);
+  const deepSeverity = Number(team.deepDefensiveSeverity ?? commitment.deepDefensiveSeverity);
+  const outletAvailability = lowBlockOutletAvailability(team, parameters);
+  const counterRouteMultiplier = 1 - deepSeverity * (1 - Number(commitmentConfig.counterRouteMinimumMultiplier ?? 0.66));
   const counterChance = transition?.wonZone
-    ? clamp(routeParameters.counterMinimumChance + counter / 100 * (routeParameters.counterMaximumChance - routeParameters.counterMinimumChance), 0, 1)
+    ? clamp((routeParameters.counterMinimumChance + counter / 100 * (routeParameters.counterMaximumChance - routeParameters.counterMinimumChance)) * counterRouteMultiplier * outletAvailability, 0, 1)
     : 0;
   const directChance = directness >= routeParameters.directThreshold
     ? (directness - routeParameters.directThreshold) / Math.max(1, 100 - routeParameters.directThreshold) * routeParameters.directMaximumChance
@@ -255,13 +280,30 @@ function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, tran
     const quality = routeType === "direct"
       ? clamp(selected.quality - routeParameters.directConnectionPenalty + team.zones[selected.target].exploitableSpace * routeParameters.directSpaceReward, 0.04, 1)
       : routeType === "counter"
-        ? clamp(selected.quality + routeParameters.counterConnectionBonus + team.zones[selected.target].exploitableSpace * routeParameters.counterSpaceReward, 0.04, 1)
+      ? (() => {
+          const bonusMultiplier = 1 - deepSeverity * (1 - Number(commitmentConfig.counterConnectionBonusMinimumMultiplier ?? 0.25));
+          const structuralPenalty = deepSeverity * Number(commitmentConfig.counterConnectionPenaltyMaximum ?? 0.045);
+          return clamp(
+            selected.quality
+            + routeParameters.counterConnectionBonus * bonusMultiplier
+            + team.zones[selected.target].exploitableSpace * routeParameters.counterSpaceReward * counterRouteMultiplier * outletAvailability
+            + (Number(team.styleIdentity?.outletMultiplier ?? 1) - 1) * 0.18
+            - structuralPenalty,
+            0.04,
+            1,
+          );
+        })()
         : selected.quality;
     return { ...selected, quality:round(quality), routeType };
   }
   const fallbackZones = Object.values(team.zones).filter((zone) => zone.band === routeTargetBand && zone.own.occupancy > 0);
   const target = weightedPick(fallbackZones, (zone) => Math.max(0.01, zone.controlShare + zone.exploitableSpace + (zone.progressionEdge + 1) / 2), rng);
-  return target ? { from:currentZone, to:target.zone, via:target.zone, target:target.zone, distance:null, quality:routeType === "direct" ? 0.08 : routeType === "counter" ? 0.24 : 0.12, fallback:true, routeType } : null;
+  const fallbackCounterQuality = clamp(
+    0.24 * counterRouteMultiplier * outletAvailability - deepSeverity * Number(commitmentConfig.counterConnectionPenaltyMaximum ?? 0.045),
+    0.04,
+    0.24,
+  );
+  return target ? { from:currentZone, to:target.zone, via:target.zone, target:target.zone, distance:null, quality:routeType === "direct" ? 0.08 : routeType === "counter" ? fallbackCounterQuality : 0.12, fallback:true, routeType } : null;
 }
 
 function startingZone(team, rng) {
@@ -269,7 +311,7 @@ function startingZone(team, rng) {
   return weightedPick(zones, (zone) => zone.own.control * 0.45 + zone.own.support * 0.25 + zone.own.occupancy * 20 + zone.controlShare * 15, rng)?.zone ?? "defensiveThird:center";
 }
 
-function possessionWeight(team) {
+function possessionWeight(team, parameters) {
   const midfield = Object.values(team.zones).filter((zone) => zone.band === "buildUp");
   const spatial = midfield.reduce((sum, zone) => sum + zone.own.control * 0.4 + zone.own.support * 0.2 + zone.controlShare * 30, 0);
   const dimensions = team.tacticalDimensions;
@@ -280,7 +322,14 @@ function possessionWeight(team) {
     + (50 - dimensions.directness) / 520
     + (50 - dimensions.tempo) / 1400
     + (dimensions.pressing - 50) / 1800;
-  return Math.max(1, spatial * clamp(retention, 0.86, 1.14));
+  const midfieldConfig = parameters.spatial.midfieldStructure ?? {};
+  const midfieldIntegrity = clamp(Number(team.midfieldIntegrity ?? 1), 0, 1);
+  const minimumMultiplier = clamp(Number(midfieldConfig.possessionMinimumMultiplier ?? 0.16), 0, 1);
+  const structureMultiplier = minimumMultiplier + (1 - minimumMultiplier) * Math.pow(midfieldIntegrity, Math.max(0.1, Number(midfieldConfig.possessionIntegrityExponent ?? 1.15)));
+  const backlineConfig = parameters.spatial.backlineExposure ?? {};
+  const underThreeDefenderFailure = clamp(Number(team.underThreeDefenderFailure ?? 0), 0, 1);
+  const underThreeDefenderPossessionMultiplier = 1 - underThreeDefenderFailure * (1 - Number(backlineConfig.underThreeDefenderPossessionMultiplierMinimum ?? 1));
+  return Math.max(1, spatial * clamp(retention, 0.86, 1.14) * structureMultiplier) * underThreeDefenderPossessionMultiplier;
 }
 
 export function v2RepeatYellowCardProbability(cardProbability, directRedProbability, yellowCards = 0, parameters = V2_MATCH_PARAMETERS) {
@@ -323,20 +372,22 @@ function stageFactors(team, opponent, zone, actor, defender, connection, stage) 
   };
 }
 
-function stateProbabilityAdjustment(parameters, team, stage, state, environment, chainIndex) {
+function stateProbabilityAdjustment(parameters, team, stage, state, environment, chainIndex, possessionType = "normal") {
   const snapshot = team.v2Snapshot ?? {};
   const score = state?.score;
   const scoreState = Array.isArray(score)
     ? score[team.teamIndex] > score[1 - team.teamIndex] ? "leading" : score[team.teamIndex] < score[1 - team.teamIndex] ? "trailing" : "level"
     : snapshot.scoreState ?? "level";
-  const urgency = scoreState === "trailing" ? parameters.state.trailingUrgencyMaximum * Number(state?.minute ?? snapshot.minute ?? 0) / parameters.state.regulationMinutes : 0;
-  const control = scoreState === "leading" && ["buildUp", "progression"].includes(stage) ? parameters.state.leadingControlMaximum : 0;
+  const commitment = v2AttackingCommitmentProfile(team.tacticalDimensions, parameters);
+  const stateBonusMultiplier = commitment.stateBonusMultiplier;
+  const urgency = (scoreState === "trailing" ? parameters.state.trailingUrgencyMaximum * Number(state?.minute ?? snapshot.minute ?? 0) / parameters.state.regulationMinutes : 0) * stateBonusMultiplier;
+  const control = (scoreState === "leading" && ["buildUp", "progression"].includes(stage) ? parameters.state.leadingControlMaximum : 0) * stateBonusMultiplier;
   const minute = Number(state?.minute ?? snapshot.minute ?? 0);
   const decisivenessStart = Number(parameters.state.levelDecisivenessStartMinute ?? parameters.state.regulationMinutes);
   const decisivenessProgress = clamp((minute - decisivenessStart) / Math.max(1, parameters.state.regulationMinutes - decisivenessStart), 0, 1);
-  const decisiveness = scoreState === "level" && ["finalThird", "chance"].includes(stage)
+  const decisiveness = (scoreState === "level" && ["finalThird", "chance"].includes(stage)
     ? Number(parameters.state.levelDecisivenessMaximum ?? 0) * decisivenessProgress
-    : 0;
+    : 0) * stateBonusMultiplier;
   const weather = parameters.environment.weatherExecution[environment?.weather ?? snapshot.weather ?? "sunny"] ?? 1;
   const weatherImpact = (weather - 1) * Number(parameters.environment.weatherStageImpact?.[stage] ?? 1);
   const patience = team.inPossessionDetails?.chanceCreation === "patient"
@@ -354,7 +405,59 @@ function stateProbabilityAdjustment(parameters, team, stage, state, environment,
     const offset = clamp((Number(team.tacticalDimensions?.[dimension] ?? definition.default) - Number(definition.default)) / halfRange, -1, 1);
     return total + offset * Number(weight);
   }, 0) + Number(parameters.tactics.stageProbabilityStyleAdjustments?.[team.splitTacticsExplicit ? team.defensiveBlock : team.style]?.[stage] ?? 0);
-  return { urgency, control, decisiveness, patience, tactical, weather, weatherImpact, fatigue, total:urgency + control + decisiveness + patience + tactical + weatherImpact - fatigue };
+  const highIntensityConfig = parameters.tactics.highIntensityOverlap ?? {};
+  const highIntensityWeights = highIntensityConfig.weights ?? {};
+  const highIntensityWeightTotal = Object.values(highIntensityWeights).reduce((total, weight) => total + Math.max(0, Number(weight) || 0), 0) || 1;
+  const highIntensity = Object.entries(highIntensityWeights).reduce((total, [dimension, weight]) => {
+    const definition = parameters.tactics.dimensions?.[dimension];
+    if (!definition) return total;
+    const range = Math.max(1, Number(definition.maximum) - Number(definition.default));
+    return total + clamp((Number(team.tacticalDimensions?.[dimension] ?? definition.default) - Number(definition.default)) / range, 0, 1) * Math.max(0, Number(weight) || 0);
+  }, 0) / highIntensityWeightTotal;
+  const highIntensityThreshold = clamp(Number(highIntensityConfig.threshold ?? 0.56), 0, 1);
+  const highIntensitySeverity = clamp((highIntensity - highIntensityThreshold) / Math.max(0.01, 1 - highIntensityThreshold), 0, 1);
+  const highIntensityPenalty = highIntensitySeverity * Number(highIntensityConfig.stagePenaltyMaximum?.[stage] ?? 0);
+  const commitmentConfig = parameters.tactics.attackingCommitment ?? {};
+  const transitionPenaltyMultiplier = possessionType === "transition" ? Number(commitmentConfig.transitionStagePenaltyMultiplier ?? 1.12) : 1;
+  const deepAttackPenalty = commitment.deepDefensiveSeverity * Number(commitmentConfig.stagePenaltyMaximum?.[stage] ?? 0) * transitionPenaltyMultiplier;
+  const midfieldIntegrity = clamp(Number(team.midfieldIntegrity ?? 1), 0, 1);
+  const midfieldPenalty = (1 - midfieldIntegrity) * Number(parameters.spatial.midfieldStructure?.stagePenaltyMaximum?.[stage] ?? 0);
+  const underThreeDefenderFailure = clamp(Number(team.underThreeDefenderFailure ?? 0), 0, 1);
+  const backlineConfig = parameters.spatial.backlineExposure ?? {};
+  const underThreeDefenderPenalty = underThreeDefenderFailure * Number(backlineConfig.underThreeDefenderStagePenaltyMaximum?.[stage] ?? 0);
+  const styleProgressionBonus = stage === "progression"
+    ? (Number(team.styleIdentity?.progressionMultiplier ?? 1) - 1) * 0.1
+    : 0;
+  const styleTransitionBonus = possessionType === "transition"
+    ? (Number(team.styleIdentity?.transitionMultiplier ?? 1) - 1) * (stage === "progression" ? 0.12 : stage === "chance" ? 0.08 : 0.04)
+    : 0;
+  const highPressRecoveryBonus = stage === "progression"
+    ? (Number(team.styleIdentity?.recoveryMultiplier ?? 1) - 1) * 0.08
+    : 0;
+  const captainBonus = snapshot.captaincy?.active ? Number(snapshot.captaincy.stage?.[stage] ?? 0) : 0;
+  return {
+    urgency,
+    control,
+    decisiveness,
+    patience,
+    tactical,
+    weather,
+    weatherImpact,
+    fatigue,
+    attackingCommitment:commitment.commitment,
+    deepDefensiveSeverity:commitment.deepDefensiveSeverity,
+    stateBonusMultiplier,
+    deepAttackPenalty,
+    midfieldIntegrity,
+    midfieldPenalty,
+    underThreeDefenderFailure,
+    underThreeDefenderPenalty,
+    highIntensityPenalty,
+    styleProgressionBonus,
+    styleTransitionBonus,
+    highPressRecoveryBonus,
+    total:urgency + control + decisiveness + patience + tactical + weatherImpact + captainBonus + styleProgressionBonus + styleTransitionBonus + highPressRecoveryBonus - fatigue - highIntensityPenalty - deepAttackPenalty - midfieldPenalty - underThreeDefenderPenalty,
+  };
 }
 
 function stageProbability(parameters, stage, factors, adjustment) {
@@ -367,12 +470,12 @@ function stageProbability(parameters, stage, factors, adjustment) {
 }
 
 function attemptStage(context, stage, currentZone, connection = null) {
-  const { team, opponent, parameters, rng, recordRandomRolls, state, environment, chainIndex, deferShotResolution, previousActorId, continuationWeight, previousStageContext } = context;
+  const { team, opponent, parameters, rng, recordRandomRolls, state, environment, chainIndex, possessionType, deferShotResolution, previousActorId, continuationWeight, previousStageContext } = context;
   const zone = team.zones[currentZone];
   const actor = chooseActor(team, currentZone, stage, rng, previousActorId, continuationWeight, connection, previousStageContext);
   const defender = chooseDefender(team, opponent, currentZone, stage, rng);
   const factors = stageFactors(team, opponent, zone, actor, defender, connection, stage);
-  const stateAdjustment = stateProbabilityAdjustment(parameters, team, stage, state, environment, chainIndex);
+  const stateAdjustment = stateProbabilityAdjustment(parameters, team, stage, state, environment, chainIndex, possessionType);
   const probability = stageProbability(parameters, stage, factors, stateAdjustment);
   const roll = safeRoll(rng);
   const success = stage === "shot" && deferShotResolution ? true : roll < probability;
@@ -382,11 +485,12 @@ function attemptStage(context, stage, currentZone, connection = null) {
   const duelIntensity = opponent.splitTacticsExplicit ? opponent.duelIntensity : opponent.style;
   const usesRoughPlay = duelIntensity === "roughPlay";
   const foulIntensityFactor = usesRoughPlay ? Number(roughPlay.foulMultiplier ?? 1.9) : duelIntensity === "cautious" ? 0.72 : 1;
+  const defensiveCaptaincy = opponent.v2Snapshot?.captaincy?.active ? opponent.v2Snapshot.captaincy : null;
   const defenderDiscipline = Number(defender?.metrics?.discipline ?? 70);
   const defenderAggression = Number(defender?.metrics?.pressing ?? 60);
   const penaltyDraw = actor?.v2TraitHooks?.find((rule) => rule.hook === "penaltyDraw");
   const foulProbability = !success && defender && stage !== "shot"
-    ? clamp((Number(parameters.events.baseFoulProbability ?? 0.025) + Math.max(0, defenderAggression - 65) / 700 + Math.max(0, 68 - defenderDiscipline) / 600) * refereeFactor * foulIntensityFactor * Number(penaltyDraw?.foulMultiplier ?? 1), 0.01, 0.32)
+    ? clamp((Number(parameters.events.baseFoulProbability ?? 0.025) + Math.max(0, defenderAggression - 65) / 700 + Math.max(0, 68 - defenderDiscipline) / 600) * refereeFactor * foulIntensityFactor * Number(defensiveCaptaincy?.foulMultiplier ?? 1) * Number(penaltyDraw?.foulMultiplier ?? 1), 0.01, 0.32)
     : 0;
   const foul = foulProbability > 0 && safeRoll(rng) < foulProbability;
   const penalty = foul && zone.band === "box" && safeRoll(rng) < clamp(
@@ -394,8 +498,8 @@ function attemptStage(context, stage, currentZone, connection = null) {
     Number(parameters.events.minimumPenaltyFoulProbability ?? 0.04),
     Number(parameters.events.maximumPenaltyFoulProbability ?? 0.24),
   );
-  const cardProbability = foul ? clamp((parameters.environment.cardProbability[referee] ?? 0.2) * (usesRoughPlay ? Number(roughPlay.cardMultiplier ?? 1.55) : duelIntensity === "cautious" ? 0.76 : 1), 0, 0.9) : 0;
-  const directRedProbability = foul ? clamp((parameters.environment.directRedProbability[referee] ?? 0.02) * (usesRoughPlay ? Number(roughPlay.directRedMultiplier ?? 2.2) : duelIntensity === "cautious" ? 0.68 : 1), 0, 0.35) : 0;
+  const cardProbability = foul ? clamp((parameters.environment.cardProbability[referee] ?? 0.2) * (usesRoughPlay ? Number(roughPlay.cardMultiplier ?? 1.55) : duelIntensity === "cautious" ? 0.76 : 1) * Number(defensiveCaptaincy?.cardMultiplier ?? 1), 0, 0.9) : 0;
+  const directRedProbability = foul ? clamp((parameters.environment.directRedProbability[referee] ?? 0.02) * (usesRoughPlay ? Number(roughPlay.directRedMultiplier ?? 2.2) : duelIntensity === "cautious" ? 0.68 : 1) * Number(defensiveCaptaincy?.directRedMultiplier ?? 1), 0, 0.35) : 0;
   const effectiveCardProbability = v2RepeatYellowCardProbability(cardProbability, directRedProbability, defender?.matchStats?.yellowCards, parameters);
   const cardRoll = foul ? safeRoll(rng) : 1;
   const card = cardRoll < directRedProbability ? "red" : cardRoll < effectiveCardProbability ? "yellow" : null;
@@ -419,6 +523,12 @@ function attemptStage(context, stage, currentZone, connection = null) {
     defendingBacklineExposure:Number(opponent.backlineExposure ?? 0),
     defendingBacklineExposureBreakdown:opponent.backlineExposureBreakdown ?? null,
     defendingLine:Number(opponent.tacticalDimensions?.defensiveLine ?? 50),
+    defendingStyle:opponent.style ?? null,
+    defendingTacticalDimensions:opponent.tacticalDimensions ?? null,
+    defendingStyleIdentity:opponent.styleIdentity ?? null,
+    defendingMidfieldIntegrity:Number(opponent.midfieldIntegrity ?? 1),
+    defendingLongShotExposure:Number(opponent.longShotExposure ?? 0),
+    attackingStyleIdentity:team.styleIdentity ?? null,
     ...(recordRandomRolls ? { roll:round(roll) } : {}),
     success,
     foul:{ occurred:foul, probability:round(foulProbability), referee, penalty, card, cardProbability:round(effectiveCardProbability), baseCardProbability:round(cardProbability), simulationYellow, traitId:penaltyDraw?.traitId ?? null, actorId:actor?.id ?? null },
@@ -443,7 +553,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
   const spatial = options.spatial ?? buildV2SpatialMatchup(snapshotTeams, { parameters });
   const stageSpatials = options.stageSpatials ?? buildV2StageSpatialCache(snapshotTeams, { parameters });
   const selectionExponent = Number(parameters.chain.possessionDuration?.selectionExponent ?? 1);
-  const weights = spatial.teams.map((team) => Math.pow(possessionWeight(team), selectionExponent));
+  const weights = spatial.teams.map((team) => Math.pow(possessionWeight(team, parameters), selectionExponent));
   const possessionShare = weights[0] / (weights[0] + weights[1]);
   const transitionAttackingIndex = Number(options.transition?.attackingTeamIndex);
   const counterOpportunity = (transitionAttackingIndex === 0 || transitionAttackingIndex === 1) && options.transition?.counterOpportunity !== false;
@@ -499,7 +609,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
     const continuationWeight = parameters.dynamicShape.mode === "candidate"
       ? Number(parameters.dynamicShape.teamPlay?.sameActorContinuationWeight ?? 0.5)
       : 1;
-    const context = { team, opponent, parameters, rng, recordRandomRolls, state:options.state, environment:options.environment, chainIndex:options.chainIndex, deferShotResolution:Boolean(options.deferShotResolution), previousActorId, previousStageContext, continuationWeight };
+    const context = { team, opponent, parameters, rng, recordRandomRolls, state:options.state, environment:options.environment, chainIndex:options.chainIndex, possessionType, deferShotResolution:Boolean(options.deferShotResolution), previousActorId, previousStageContext, continuationWeight };
     const dynamicShape = recordDynamicShape
       ? compactDynamicShapeTrace(effectiveStageSpatial.dynamicShape ?? buildV21StageDynamicShapeSnapshot(snapshotTeams, attackingIndex, stage, {
         parameters,
@@ -558,7 +668,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
   const weather = options.environment?.weather ?? "sunny";
   const weatherEventProbability = parameters.environment.weatherEventPerChain[weather] ?? 0;
   const weatherEvent = safeRoll(rng) < weatherEventProbability
-    ? { type:weather === "storm" ? "lightningInjury" : "weatherInjury", weather, probability:weatherEventProbability }
+    ? { type:["storm", "superStorm"].includes(weather) ? "lightningInjury" : "weatherInjury", weather, probability:weatherEventProbability }
     : null;
   return deepFreeze({
     engineVersion:parameters.engineVersion,

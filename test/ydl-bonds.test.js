@@ -5,21 +5,86 @@ import {
   createS4BondCatalog,
   evaluateS4LineupBonds,
   S4_BOND_BONUS_BY_COUNT,
+  S4_REGIONAL_BONDS,
 } from "../versus/public/bond-rules.js";
 import { REAL_PLAYERS } from "../versus/player-pool.js";
 import { S4_BOND_CATALOG } from "../versus/league-service.js";
 
 test("正式S4球员池生成满足门槛的国家队和俱乐部羁绊", () => {
+  const expectedNames = (field) => {
+    const counts = new Map();
+    REAL_PLAYERS.filter((player) => !player.xPlayer).forEach((player) => {
+      const name = String(player[field] ?? "").trim();
+      if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+    });
+    return [...counts.entries()]
+      .filter(([, count]) => count >= 10)
+      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], "zh-CN"))
+      .map(([name]) => name);
+  };
+
   assert.deepEqual(
-    S4_BOND_CATALOG.filter((bond) => bond.type === "nationality").map((bond) => bond.name),
-    ["西班牙", "巴西", "法国", "英格兰", "德国", "意大利", "葡萄牙", "阿根廷", "荷兰", "比利时", "克罗地亚"],
+    S4_BOND_CATALOG.filter((bond) => bond.type === "nationality" && !bond.regional).map((bond) => bond.name),
+    expectedNames("nationality"),
   );
   assert.deepEqual(
     S4_BOND_CATALOG.filter((bond) => bond.type === "club").map((bond) => bond.name),
-    ["皇家马德里", "巴塞罗那", "拜仁慕尼黑", "阿森纳", "AC米兰", "国际米兰", "马德里竞技", "曼城", "曼联", "利物浦", "尤文图斯", "巴黎圣日耳曼", "切尔西", "纽卡斯尔联", "那不勒斯", "托特纳姆热刺", "多特蒙德", "阿斯顿维拉", "加拉塔萨雷", "利雅得新月"],
+    expectedNames("club"),
   );
   assert.ok(S4_BOND_CATALOG.every((bond) => bond.poolCount >= 10));
   assert.deepEqual(S4_BOND_CATALOG, createS4BondCatalog(REAL_PLAYERS));
+});
+
+test("正式球员池上线五个地域羁绊并按非X成员统计", () => {
+  assert.deepEqual(S4_REGIONAL_BONDS.map((bond) => bond.name), ["北欧", "中东欧", "非洲", "中北美洲", "亚洲大洋洲"]);
+  const regionalCatalog = S4_BOND_CATALOG.filter((bond) => bond.regional);
+  assert.equal(regionalCatalog.length, 5);
+  S4_REGIONAL_BONDS.forEach((definition) => {
+    const catalogEntry = regionalCatalog.find((entry) => entry.id === `nationality-region:${definition.id}`);
+    const expectedPoolCount = REAL_PLAYERS.filter((player) => !player.xPlayer && definition.memberNationalities.includes(player.nationality)).length;
+    assert.equal(catalogEntry?.poolCount, expectedPoolCount);
+    assert.equal(catalogEntry?.label, "地域");
+    assert.ok(catalogEntry.poolCount >= 10);
+  });
+  const africa = S4_REGIONAL_BONDS.find((bond) => bond.id === "africa");
+  assert.ok(["摩洛哥", "尼日利亚", "喀麦隆", "刚果民主共和国", "南非", "埃及"].every((country) => africa.memberNationalities.includes(country)));
+});
+
+test("地域羁绊混合成员国后使用与国家羁绊相同的2%至6%曲线", () => {
+  const nationalities = ["瑞典", "瑞典", "瑞典", "瑞典", "丹麦", "丹麦", "丹麦", "丹麦", "挪威", "挪威", "挪威"];
+  const players = nationalities.map((nationality, index) => ({
+    id:`nordic-${index}`,
+    nationality,
+    club:`俱乐部-${index}`,
+    attributes:{ passing:80 },
+    traits:[],
+  }));
+  const catalog = createS4BondCatalog(players);
+  const bond = evaluateS4LineupBonds(players, catalog).find((entry) => entry.id === "nationality-region:nordic");
+
+  assert.equal(bond.count, 11);
+  assert.equal(bond.bonus, S4_BOND_BONUS_BY_COUNT[11]);
+  assert.equal(bond.regional, true);
+  assert.ok(applyS4BondBonuses(players, [bond]).every((player) => player.attributes.passing === 84.8));
+});
+
+test("国家与地域羁绊不叠加且同人数时优先具体国家", () => {
+  const lineup = [
+    ...Array.from({ length:5 }, (_, index) => ({ id:`sweden-${index}`, nationality:"瑞典", club:`首发-${index}`, traits:[] })),
+    ...Array.from({ length:6 }, (_, index) => ({ id:`other-${index}`, nationality:"法国", club:`其他-${index}`, traits:[] })),
+  ];
+  const catalog = createS4BondCatalog([
+    ...lineup,
+    ...Array.from({ length:5 }, (_, index) => ({ id:`sweden-pool-${index}`, nationality:"瑞典", club:`瑞典池-${index}` })),
+    ...Array.from({ length:5 }, (_, index) => ({ id:`denmark-pool-${index}`, nationality:"丹麦", club:`丹麦池-${index}` })),
+  ]);
+  const nationalityBonds = evaluateS4LineupBonds(lineup, catalog).filter((bond) => bond.type === "nationality");
+
+  assert.equal(nationalityBonds.length, 1);
+  assert.equal(nationalityBonds[0].name, "瑞典");
+  assert.equal(nationalityBonds[0].regional, false);
+  assert.equal(nationalityBonds[0].count, 5);
+  assert.equal(nationalityBonds[0].bonus, .02);
 });
 
 test("国家队与俱乐部羁绊可同时触发并只强化成员", () => {
@@ -147,11 +212,11 @@ test("身高结构羁绊使用强化特性修正后的有效身高", () => {
 
 test("钢铁防线、跟他们爆了与一起打麻将按当前站位强化对应成员", () => {
   const cases = [
-    { id:"structure:steel-defense", role:"CB", count:6, bonus:.05 },
-    { id:"structure:blow-them-up", role:"ST", count:5, bonus:.04 },
-    { id:"structure:mahjong-together", role:"DM", count:6, bonus:.05 },
+    { id:"structure:steel-defense", roleGroup:"DEF", count:6, bonus:.03 },
+    { id:"structure:blow-them-up", roleGroup:"ATT", count:5, bonus:.03 },
+    { id:"structure:mahjong-together", roleGroup:"MID", count:6, bonus:.03 },
   ];
-  cases.forEach(({ id, role, count, bonus }) => {
+  cases.forEach(({ id, roleGroup, count, bonus }) => {
     const players = structurePlayers((index) => ({ upgradeLevel:1 }));
     const fallbackRoles = id === "structure:steel-defense"
       ? ["CB", "CB", "CB", "CB", "CB", "CB", "DM", "DM", "DM", "ST", "GK"]
@@ -162,8 +227,14 @@ test("钢铁防线、跟他们爆了与一起打麻将按当前站位强化对�
     const bond = evaluateS4LineupBonds(players, [], { roles }).find((entry) => entry.id === id);
     assert.equal(bond.count, count);
     assert.equal(bond.bonus, bonus);
-    const boosted = applyS4BondBonuses(players, [bond]);
+    assert.equal(bond.targetRoleGroup, roleGroup);
+    const positionedPlayers = players.map((player) => ({ ...player, assignedRole:roles[player.id] }));
+    const boosted = applyS4BondBonuses(positionedPlayers, [bond]);
     assert.equal(boosted.filter((player) => player.ydlBondBonus === bonus).length, count);
     assert.equal(boosted.find((player) => !bond.memberIds.includes(player.id)).attributes.passing, 80);
+    const staleMemberId = bond.memberIds[0];
+    const moved = positionedPlayers.map((player) => player.id === staleMemberId ? { ...player, assignedRole:roleGroup === "DEF" ? "ST" : "CB" } : player);
+    const guarded = applyS4BondBonuses(moved, [bond]);
+    assert.equal(guarded.find((player) => player.id === staleMemberId).attributes.passing, 80);
   });
 });

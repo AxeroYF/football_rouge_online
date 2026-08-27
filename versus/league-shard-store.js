@@ -16,6 +16,7 @@ const LARGE_STATE_KEYS = new Set([
   "archives",
   "liveRound",
   "liveCupRound",
+  "liveSeasonFinalRound",
   "liveWorldCupRound",
   "liveFriendlies",
   "mirrorMarketplace",
@@ -48,7 +49,7 @@ function scopeForKey(key) {
   if (["matchPredictions"].includes(key)) return "predictions";
   if (["reports"].includes(key)) return "reports";
   if (["archives"].includes(key)) return "archives";
-  if (["liveRound", "liveCupRound", "liveWorldCupRound", "liveFriendlies"].includes(key)) return "live";
+  if (["liveRound", "liveCupRound", "liveSeasonFinalRound", "liveWorldCupRound", "liveFriendlies"].includes(key)) return "live";
   if (["mirrorMarketplace"].includes(key)) return "mirrorMarketplace";
   return "core";
 }
@@ -272,8 +273,10 @@ export class LeagueShardStore {
     const live = this.readObjectShard(manifest.shards.live, { liveRound:null, liveCupRound:null, liveWorldCupRound:null, liveFriendlies:[] });
     state.liveRound = live.liveRound ?? null;
     state.liveCupRound = live.liveCupRound ?? null;
+    state.liveSeasonFinalRound = Object.hasOwn(live, "liveSeasonFinalRound") ? live.liveSeasonFinalRound : state.liveSeasonFinalRound ?? null;
     state.liveWorldCupRound = live.liveWorldCupRound ?? null;
     state.liveFriendlies = live.liveFriendlies ?? [];
+    this.liveSeasonFinalMigrationNeeded = !Object.hasOwn(live, "liveSeasonFinalRound");
     state.mirrorMarketplace = this.readObjectShard(manifest.shards.mirrorMarketplace, { uploads:{}, usageByDate:{}, settledDates:[] });
     return state;
   }
@@ -330,10 +333,22 @@ export class LeagueShardStore {
     this.archivePaths.clear();
     return reference.entries.map((entry) => {
       this.archivePaths.set(String(entry.key), entry.path);
-      const archive = this.readObjectShard(entry.path, null);
-      if (archive) return archive;
-      return { archiveKey:entry.key, reason:entry.reason, archivedAt:entry.archivedAt, season:entry.season, standings:entry.standings ?? [], matches:[], playerStats:{} };
+      return {
+        archiveKey:entry.key,
+        reason:entry.reason,
+        archivedAt:entry.archivedAt,
+        season:entry.season,
+        standings:entry.standings ?? [],
+        matchCount:Number(entry.matchCount ?? 0),
+      };
     });
+  }
+
+  readFullArchive(archive) {
+    const key = String(archive?.archiveKey ?? archive?.key ?? archive ?? "");
+    const reference = this.archivePaths.get(key);
+    const filePath = resolveRef(this.root, reference);
+    return filePath && existsSync(filePath) ? readJson(filePath) : null;
   }
 
   save(state, options = {}) {
@@ -360,9 +375,10 @@ export class LeagueShardStore {
     if (scopes.has("predictions") || !shards.predictions) shards.predictions = this.writeRevisionJson(temporaryRevisionPath, "predictions.json", state.matchPredictions ?? {}, previous.shards?.predictions);
     if (scopes.has("reports") || !shards.reports) shards.reports = this.writeRevisionJson(temporaryRevisionPath, "reports.json", state.reports ?? {}, previous.shards?.reports);
     if (scopes.has("archives") || !shards.archives) shards.archives = this.writeArchives(temporaryRevisionPath, revisionPath, state.archives ?? [], previous.shards?.archives);
-    if (scopes.has("live") || !shards.live) shards.live = this.writeRevisionJson(temporaryRevisionPath, "live.json", {
+    if (scopes.has("live") || !shards.live || this.liveSeasonFinalMigrationNeeded) shards.live = this.writeRevisionJson(temporaryRevisionPath, "live.json", {
       liveRound:state.liveRound ?? null,
       liveCupRound:state.liveCupRound ?? null,
+      liveSeasonFinalRound:state.liveSeasonFinalRound ?? null,
       liveWorldCupRound:state.liveWorldCupRound ?? null,
       liveFriendlies:state.liveFriendlies ?? [],
     });
@@ -377,6 +393,7 @@ export class LeagueShardStore {
     };
     atomicWriteJson(this.manifestPath, manifest);
     this.manifest = manifest;
+    this.liveSeasonFinalMigrationNeeded = false;
     const now = Date.now();
     if (!this.lastCleanupAt || now - this.lastCleanupAt >= this.cleanupIntervalMs) {
       this.cleanupRevisions(manifest);
@@ -501,7 +518,7 @@ export class LeagueShardStore {
       const previous = previousEntries.get(key);
       let archivePath = previous?.path ?? this.archivePaths.get(key) ?? null;
       const previousPath = resolveRef(this.root, archivePath);
-      if (!previousPath || !existsSync(previousPath) || readFileSync(previousPath, "utf8") !== JSON.stringify(archive)) {
+      if (!previousPath || !existsSync(previousPath)) {
         const filePath = path.join(revisionPath, "archives", `${safePart(key)}.json`);
         atomicWriteJson(filePath, archive);
         archivePath = relativeToRoot(this.root, path.join(committedRevisionPath, "archives", `${safePart(key)}.json`));

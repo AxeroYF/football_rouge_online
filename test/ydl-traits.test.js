@@ -71,18 +71,18 @@ test("YDL后台和强化池包含19张已实现特性卡，极限一换一不进
 
 test("YDL数值、身高、位置、羁绊和固定体力规则按说明执行", () => {
   const shortage = carrier(["custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20"], { attributes:{ finishing:70, pace:71, dribbling:72 } });
-  assert.equal(shortage.heightCm, 160);
+  assert.equal(shortage.heightCm, 165);
   assert.equal(traitAdjustedAttribute(shortage, "finishing", 70), 75);
   assert.equal(traitAdjustedAttribute(shortage, "pace", 71), 76);
   assert.equal(traitAdjustedAttribute(shortage, "dribbling", 72), 77);
 
   const target = carrier(["aerial-beacon", "rain-boots", "sweeper-keeper", "opening-sprint", "stoppage-time-expert", "lone-finisher"]);
   assert.equal(target.heightCm, 190);
-  assert.equal(target.state.fitness, 90);
+  assert.equal(target.state.fitness, 94);
   assert.equal(traitPositionFit({ ...target, assignedRole:"ST" }, 0.56), 1);
-  assert.equal(traitAdjustedAttribute(target, "finishing", 80, { minute:20, weather:{ type:"rain" }, teamStyle:"balanced" }), 88);
+  assert.equal(Number(traitAdjustedAttribute(target, "finishing", 80, { minute:20, weather:{ type:"rain" }, teamStyle:"balanced" }).toFixed(1)), 89.6);
   assert.equal(traitAdjustedAttribute(target, "finishing", 80, { minute:80, weather:{ type:"sunny" }, teamStyle:"balanced" }), 88);
-  assert.equal(traitAdjustedAttribute(target, "finishing", 80, { minute:20, weather:{ type:"sunny" }, teamStyle:"roughPlay" }), 84);
+  assert.equal(traitAdjustedAttribute(target, "finishing", 80, { minute:20, weather:{ type:"sunny" }, teamStyle:"roughPlay" }), 88);
   assert.equal(traitAffinityMatches(target, "club", "任意俱乐部"), true);
   assert.equal(traitAffinityMatches(target, "nationality", "任意国家队"), true);
 
@@ -115,7 +115,7 @@ test("YDL事件型特性规则进入十一人模拟且正式比赛会清除旧�
   fixedSeat.players[1].traits = ["stoppage-time-expert"];
   const fixedMatch = createVersusMatch([fixedSeat, matchSeat("对手", 12)], { now:0, seed:"ydl-fixed-fitness", weather:"sunny" });
   advanceVersusMatch(fixedMatch, REGULAR_DURATION_MS / 4);
-  assert.equal(fixedMatch.teams[0].players.find((player) => player.id === fixedSeat.players[1].id).state.fitness, 90);
+  assert.equal(fixedMatch.teams[0].players.find((player) => player.id === fixedSeat.players[1].id).state.fitness, 94);
 });
 
 test("因凡蒂诺与一夫当关会改变黑哨和第一粒点球结果", () => {

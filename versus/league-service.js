@@ -1,19 +1,23 @@
 import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdir as mkdirAsync, open as openAsync, rename as renameAsync } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash, randomBytes } from "node:crypto";
 import { createTrackedState, LEAGUE_SHARD_SCOPES, LeagueShardStore, isLeagueShardPath, unwrapTracked } from "./league-shard-store.js";
-import { advanceVersusMatch, createVersusMatch, drawVersusReferee, drawVersusWeather, publicMatch, REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
+import { advanceVersusMatch, createVersusMatch, drawVersusReferee, publicMatch, REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "./player-pool.js";
 import { analyzeElevenFormation, drawUniqueMixedPlayers, drawUniquePlayers, inferElevenBoardRoles, sanitizePositions } from "./rules.js";
 import { ATTRIBUTE_LABELS, ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../game/public/schema.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
-import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, publicYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
+import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, drawYdlV2Weather, publicYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
 import { createV2MatchRng } from "./v2/match-engine-v2.js";
 import { resolveV2MatchParameters } from "./v2/match-parameters-v2.js";
 import { resolveV2PlayerDuty } from "./v2/player-duties-v2.js";
+import { buildV21TacticalShapePreview } from "./v2/tactical-shape-preview-v2.js";
 import { applyS4Enhancement, S4_ECONOMY, S4_ENHANCEMENT, S4_PACK_PRICES, S4_PRICING, s4BaseCardReferenceValue, s4CardValueMultiplier, s4EffectiveOverall, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, s4OwnershipReferenceValue } from "./s4-balance.js";
 import { applyS4BondBonuses, createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
+import { DEFAULT_CAPTAIN_STYLE, normalizeCaptainStyle } from "./public/captain-rules.js";
 import { analyzeElevenBoardFormation, deriveFormationLines, inferElevenBoardRoles as inferFormationBoardRoles, sanitizeFormationLines } from "./public/formation-rules.js";
 import {
   DEFAULT_IN_POSSESSION_DETAILS,
@@ -22,8 +26,20 @@ import {
   OUT_OF_POSSESSION_DETAIL_OPTIONS,
 } from "./public/v2-tactical-profiles.js";
 import { measureRuntimeSync } from "../src/runtime-metrics.js";
+import {
+  MIRROR_BATCH_CLOUD_NODE,
+  MIRROR_BATCH_DIRECTOR_CONCURRENCY,
+  MIRROR_BATCH_DIRECTOR_NODE,
+  MIRROR_BATCH_DIRECTOR_OWNER_NAME,
+  MIRROR_BATCH_DIRECTOR_SURCHARGE_PER_MATCH,
+  MIRROR_BATCH_WORKER_ENGINE_VERSION,
+  MIRROR_BATCH_WORKER_LEASE_MS,
+  MIRROR_BATCH_WORKER_ONLINE_MS,
+} from "./mirror-batch-worker-protocol.js";
 import { automaticSubstitutionRank, compareAutomaticSubstitutes } from "./automatic-substitution.js";
+import { createSeasonFinalState, positionLine, SEASON_FINAL_RULES, SEASON_FINAL_SCHEDULE_MINUTES, validateFinalBanSelection } from "./season-final-tournament.js";
 import { HONOR_ROOM_SEED } from "./honor-room-seed.js";
+import { CLUB_BADGE_PACK, CLUB_BADGES, COSMETIC_BADGE_BY_ID, COSMETIC_BADGE_MINIMUM_LISTING_PRICE, COSMETIC_BADGES, COUNTRY_BADGE_BY_ID, COUNTRY_BADGE_PACK, COUNTRY_BADGES, drawCosmeticBadgeChoices } from "./cosmetic-items.js";
 import {
   assertS4AssetInvariants,
   cardsForOwner,
@@ -119,7 +135,22 @@ function v2PlayerDutiesProperty(value, playerIds, roles, fallback = {}) {
   const playerDuties = sanitizeV2PlayerDuties(value, playerIds, roles, fallback);
   return Object.keys(playerDuties).length ? { playerDuties } : {};
 }
+
+function tacticalPlansWithInheritedDuties(tacticalPlans, rotations = []) {
+  const plans = clone(tacticalPlans ?? {});
+  for (const { outId, inId } of rotations) {
+    if (!outId || !inId || outId === inId) continue;
+    Object.values(plans).forEach((plan) => {
+      if (!plan?.playerDuties || !Object.hasOwn(plan.playerDuties, outId)) return;
+      plan.playerDuties[inId] = plan.playerDuties[outId];
+      delete plan.playerDuties[outId];
+    });
+  }
+  return plans;
+}
 export const S4_PACK_CATALOG = Object.freeze([
+  COUNTRY_BADGE_PACK,
+  CLUB_BADGE_PACK,
   Object.freeze({ id:"legend-random", name:"传奇随机卡包", price:S4_PACK_PRICES["legend-random"], kind:"legend", pool:"LEGEND", selectionMode:"choice", description:"随机展示3名传奇球员，选择其中1张球员卡。" }),
   Object.freeze({ id:"private-mixed", name:"私有池全位置随机礼包", price:S4_PACK_PRICES["private-mixed"], kind:"private", pool:"MIXED", selectionMode:"direct", description:"通常从你的私有池随机获得1张卡，并有1.5%概率直接获得随机传奇S球员卡。" }),
   Object.freeze({ id:"private-att", name:"私有池前场随机礼包", price:S4_PACK_PRICES["private-att"], kind:"private", pool:"ATT", selectionMode:"direct", description:"从你拥有所有权的前场球员中随机获得1张卡。" }),
@@ -128,11 +159,17 @@ export const S4_PACK_CATALOG = Object.freeze([
   Object.freeze({ id:"private-gk", name:"私有池门将随机礼包", price:S4_PACK_PRICES["private-gk"], kind:"private", pool:"GK", selectionMode:"direct", description:"从你拥有所有权的门将中随机获得1张卡。" }),
   Object.freeze({ id:"public-random", name:"公共池随机礼包", price:S4_PACK_PRICES["public-random"], kind:"public", pool:"MIXED", selectionMode:"choice", description:"从尚未被占用所有权的非传奇球员中随机展示3人，选择1张卡并获得其所有权。" }),
 ]);
+const S4_ADMIN_GIFT_PACK_CATALOG = Object.freeze([
+  Object.freeze({ id:"admin-legend-choice-plus2", name:"指定传奇球员卡+2礼包", price:0, kind:"legend", pool:"LEGEND", selectionMode:"choice", choiceMode:"all", fixedUpgradeLevel:2, adminOnly:true, description:"打开后可从全部传奇球员中指定1名，获得1张+2传奇球员卡。" }),
+  Object.freeze({ id:"admin-legend-choice-plus1", name:"指定传奇球员卡+1礼包", price:0, kind:"legend", pool:"LEGEND", selectionMode:"choice", choiceMode:"all", fixedUpgradeLevel:1, adminOnly:true, description:"打开后可从全部传奇球员中指定1名，获得1张+1传奇球员卡。" }),
+  Object.freeze({ id:"admin-private-choice-plus3", name:"私有池指定球员+3礼包", price:0, kind:"private", pool:"MIXED", selectionMode:"choice", choiceMode:"all", fixedUpgradeLevel:3, adminOnly:true, description:"打开后可从自己拥有所有权的私有池球员中指定1名，获得1张+3球员卡。" }),
+]);
 export const S4_PRIVATE_MIXED_LEGEND_RATE = 0.015;
+const S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL = 6;
 const LEGACY_S4_PACK_CATALOG = Object.freeze([
   Object.freeze({ id:"public-carnival", name:"公开池狂欢礼包", price:S4_PACK_PRICES["public-carnival"], kind:"public", pool:"MIXED", selectionMode:"choice", seasonPurchaseLimit:1, cardQuantity:50, description:"赛季限购1次。从公开池随机展示3人，选择1人并获得其所有权及50张+0基础卡。", retired:true }),
 ]);
-const S4_PACK_BY_ID = Object.freeze(Object.fromEntries([...S4_PACK_CATALOG, ...LEGACY_S4_PACK_CATALOG].map((pack) => [pack.id, pack])));
+const S4_PACK_BY_ID = Object.freeze(Object.fromEntries([...S4_PACK_CATALOG, ...S4_ADMIN_GIFT_PACK_CATALOG, ...LEGACY_S4_PACK_CATALOG].map((pack) => [pack.id, pack])));
 const S4_MAX_PACK_PURCHASE_QUANTITY = 100;
 const S4_ROSTER_EXPANSION_ITEM = Object.freeze({
   id:"paid-roster-slot",
@@ -141,6 +178,12 @@ const S4_ROSTER_EXPANSION_ITEM = Object.freeze({
   rosterSlots:1,
   purchaseLimit:S4_ROSTER_EXPANSION_LIMIT,
   description:"购买后立即将球队大名单永久上限提高1人，累计最多购买15个。",
+});
+const METEOR_STAND_ITEM = Object.freeze({
+  id:"meteor-stand",
+  name:"流星雨看台",
+  price:20_000,
+  description:"永久解锁流星雨看台外观。购买后可在俱乐部的球场管理中选择装备。",
 });
 const PACK_TIERS = Object.freeze({
   standard:Object.freeze({ id:"standard", name:"基础卡包", price:3500, guaranteeGrades:[], guarantee:"全位置混池·随机品质" }),
@@ -168,13 +211,43 @@ const DAILY_CUP_MINUTE = 1;
 const DAILY_SETTLEMENT_DELAY_MS = 10 * 60 * 1000;
 const DAILY_SETTLEMENT_PACK_TYPE = "legend-random";
 const DAILY_SETTLEMENT_PACK_QUANTITY = 2;
+const LEAGUE_RANKING_GIFT_PACK_TYPE = "admin-private-choice-plus3";
+const LEAGUE_RANKING_GIFT_QUANTITIES = Object.freeze({ 1:4, 2:3, 3:2, 4:2, 5:1, 6:1, 7:1, 8:1 });
 const BALLON_DOR_MINIMUM_APPEARANCES = 15;
 const BALLON_DOR_OWNER_REWARD = 10000;
 const BALLON_DOR_CUP_WEIGHT = 1.25;
-const BALLON_DOR_SCORING = Object.freeze({ goal:4, assist:3, rating:20, appearance:0.25, leagueChampion:12, cupChampion:10 });
+const BALLON_DOR_RECONCILIATION_VERSION = 2;
+const BALLON_DOR_SCORING = Object.freeze({ goal:4, assist:3, rating:20, appearance:0.25, leagueChampion:35, leagueRunnerUp:15, cupChampion:30, cupRunnerUp:10, seasonFinalChampion:50, seasonFinalRunnerUp:25 });
+
+function ballonDorBreakdown(candidate, placements) {
+  const weightedAverageRating = candidate.weightedRatingTotal / Math.max(1, candidate.weightedAppearances);
+  return {
+    goals:Number((candidate.weightedGoals * BALLON_DOR_SCORING.goal).toFixed(2)),
+    assists:Number((candidate.weightedAssists * BALLON_DOR_SCORING.assist).toFixed(2)),
+    rating:Number((Math.max(0, weightedAverageRating - 6) * BALLON_DOR_SCORING.rating).toFixed(2)),
+    appearances:Number((Math.min(30, candidate.weightedAppearances) * BALLON_DOR_SCORING.appearance).toFixed(2)),
+    leagueChampion:placements.leagueChampion ? BALLON_DOR_SCORING.leagueChampion : 0,
+    leagueRunnerUp:placements.leagueRunnerUp ? BALLON_DOR_SCORING.leagueRunnerUp : 0,
+    cupChampion:placements.cupChampion ? BALLON_DOR_SCORING.cupChampion : 0,
+    cupRunnerUp:placements.cupRunnerUp ? BALLON_DOR_SCORING.cupRunnerUp : 0,
+    seasonFinalChampion:placements.seasonFinalChampion ? BALLON_DOR_SCORING.seasonFinalChampion : 0,
+    seasonFinalRunnerUp:placements.seasonFinalRunnerUp ? BALLON_DOR_SCORING.seasonFinalRunnerUp : 0,
+  };
+}
+
+function compareBallonDorCandidates(left, right) {
+  return right.score - left.score
+    || right.weightedAverageRating - left.weightedAverageRating
+    || right.goals - left.goals
+    || right.assists - left.assists
+    || right.appearances - left.appearances
+    || left.teamId.localeCompare(right.teamId)
+    || left.playerId.localeCompare(right.playerId);
+}
 const COMPLETED_BROADCAST_RETENTION_MS = 2 * 60 * 60 * 1000;
 const LIVE_MATCH_PERSIST_INTERVAL_MS = Math.max(10_000, Math.min(120_000, Number(process.env.YDL_LIVE_MATCH_PERSIST_INTERVAL_MS ?? 30_000)));
 const LIVE_SETTLEMENT_PERSIST_DELAY_MS = 1_500;
+const LIVE_SETTLEMENT_JOB_GAP_MS = 25;
 const IN_SEASON_FRIENDLY_MINUTE_MARKS = Object.freeze([5, 15, 25, 35, 45, 55]);
 const OFFSEASON_FRIENDLY_MINUTE_MARKS = Object.freeze([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
 const IN_SEASON_FRIENDLY_TEAM_INTERVAL_MS = 10 * 60 * 1000;
@@ -182,6 +255,7 @@ const OFFSEASON_FRIENDLY_TEAM_INTERVAL_MS = 5 * 60 * 1000;
 const ACTIVE_START_HOUR = 10;
 const ACTIVE_END_HOUR = 22;
 const LEAGUE_FITNESS_DRAIN_FACTOR = 0.36;
+const GOALKEEPER_FITNESS_DRAIN_FACTOR = 0.5;
 const CHEMISTRY_GAIN_PER_MATCH = 6;
 const CHEMISTRY_VISIBLE_THRESHOLD = 30;
 const CHEMISTRY_MAX_BONUS = 0.015;
@@ -205,17 +279,78 @@ const publicLeagueMatch = (match, now, viewerIndex = null, revealAllStrategies =
 const MATCH_PREDICTION_LOCK_LEAD_MS = 2 * 60 * 1000;
 const MATCH_PREDICTION_MARGIN = 0.1;
 const MATCH_PREDICTION_MAX_PAYOUT_RATE = 12;
+const MATCH_PREDICTION_PRICING_VERSION = 9;
+const MATCH_PREDICTION_MAX_STAKE_BY_CATEGORY = Object.freeze({ goals:5000, halfFull:5000 });
 const MATCH_PREDICTION_OPTIONS = Object.freeze({
   result:Object.freeze(["home", "draw", "away"]),
-  goals:Object.freeze(["0-5", "6-10", "11+"]),
+  goals:Object.freeze(["0-3", "4-5", "6+"]),
   cards:Object.freeze(["0", "1", "2", "3", "4+"]),
+  halfFull:Object.freeze(["home-home", "home-draw", "home-away", "draw-home", "draw-draw", "draw-away", "away-home", "away-draw", "away-away"]),
 });
+// V1 deliberately remains the low-cost pricing engine, while V2 settles the real match.
+// These hidden card-market guards preserve V1's match-to-match variation without allowing
+// the stable V1/V2 discipline gap to turn the high-card selections into mechanical arbitrage.
+const MATCH_PREDICTION_CARD_PAYOUT_GUARDS = Object.freeze({
+  "0":Object.freeze({ multiplier:1.5, minimum:9.5, maximum:10.8 }),
+  "1":Object.freeze({ multiplier:1.4, minimum:4.4, maximum:5.2 }),
+  "2":Object.freeze({ multiplier:1, minimum:3.8, maximum:4.5 }),
+  "3":Object.freeze({ multiplier:.72, minimum:4.1, maximum:4.8 }),
+  "4+":Object.freeze({ multiplier:.37, minimum:2.4, maximum:2.7 }),
+});
+const MATCH_PREDICTION_MIN_PUBLISHED_RATE = 1.02;
+const MATCH_PREDICTION_LOW_ODDS_DISCOUNT = .93;
+const MATCH_PREDICTION_HIGH_ODDS_DISCOUNT = .77;
+const MATCH_PREDICTION_CONFUSION_RANGE = .04;
+// V2 results exposed a repeatable edge on the result selection helped by a
+// non-zero handicap. Charge that selection an additional line-specific risk
+// discount while leaving zero-ball markets and the other selections unchanged.
+const MATCH_PREDICTION_DIRECTED_RESULT_DISCOUNT = Object.freeze({ 1:.77, 2:.62 });
+// Cap the return of the entire 1X2 board instead of judging each displayed
+// number independently. A 72% board turns the former 1.88 / 2.58 / 3.10
+// example into roughly 1.68 / 2.31 / 2.77 while preserving its probability shape.
+const MATCH_PREDICTION_MAX_MARKET_RTP = Object.freeze({ result:.72 });
 export const S4_BOND_CATALOG = Object.freeze(createS4BondCatalog(REAL_PLAYERS));
 const INITIAL_WALLET_BALANCE = S4_ECONOMY.initialWalletBalance;
+const CLUB_STADIUM_DEFAULT_CAPACITY = 30_000;
+const CLUB_STADIUM_EXPANSIONS = Object.freeze([
+  Object.freeze({ capacity:35_000, cost:4_000 }),
+  Object.freeze({ capacity:40_000, cost:5_000 }),
+  Object.freeze({ capacity:45_000, cost:6_500 }),
+  Object.freeze({ capacity:50_000, cost:8_000 }),
+  Object.freeze({ capacity:55_000, cost:10_000 }),
+  Object.freeze({ capacity:60_000, cost:12_500 }),
+  Object.freeze({ capacity:65_000, cost:15_000 }),
+  Object.freeze({ capacity:70_000, cost:18_000 }),
+  Object.freeze({ capacity:75_000, cost:22_000 }),
+  Object.freeze({ capacity:80_000, cost:26_000 }),
+]);
+const CLUB_SPONSOR_OFFER_CHANCE = .35;
+const CLUB_SPONSOR_MAX_PENDING_OFFERS = 5;
+const CLUB_SPONSORS = Object.freeze([
+  Object.freeze({ id:"microsoft", name:"微软", icon:"/versus/assets/sponsors/microsoft.svg" }),
+  Object.freeze({ id:"apple", name:"苹果", icon:"/versus/assets/sponsors/apple.svg" }),
+  Object.freeze({ id:"emirates", name:"阿联酋航空", icon:"/versus/assets/sponsors/emirates.svg" }),
+  Object.freeze({ id:"nike", name:"耐克", icon:"/versus/assets/sponsors/nike.svg" }),
+  Object.freeze({ id:"adidas", name:"阿迪达斯", icon:"/versus/assets/sponsors/adidas.svg" }),
+  Object.freeze({ id:"jissbon", name:"杰士邦", icon:"/versus/assets/sponsors/jissbon.png" }),
+  Object.freeze({ id:"samsung", name:"三星", icon:"/versus/assets/sponsors/samsung.svg" }),
+  Object.freeze({ id:"sony", name:"索尼", icon:"/versus/assets/sponsors/sony.svg" }),
+  Object.freeze({ id:"mizuno", name:"美津浓", icon:"/versus/assets/sponsors/mizuno.svg" }),
+  Object.freeze({ id:"zhuren", name:"主任株式会社", icon:"/versus/assets/sponsors/zhuren-kabushiki-kaisha.png" }),
+]);
+const CLUB_SPONSOR_CONTRACTS = Object.freeze({
+  normal:Object.freeze({ id:"normal", name:"普通赞助", durationSeasons:1, bonus:5_000, requiredRank:10, description:"场边展示赞助商标识" }),
+  stadium:Object.freeze({ id:"stadium", name:"球场冠名", durationSeasons:2, bonus:15_000, requiredRank:6, description:"锁定主场名称并展示场边广告" }),
+  team:Object.freeze({ id:"team", name:"球队冠名", durationSeasons:2, bonus:30_000, requiredRank:3, description:"球队名称在全部赛事中追加赞助商后缀" }),
+});
 const DEFAULT_FITNESS_THRESHOLD = 65;
 const LEAGUE_MATCH_REWARDS = S4_ECONOMY.leagueMatchRewards;
 const CUP_ADVANCE_PACK_TYPE = S4_ECONOMY.cupAdvancePackType;
 const CUP_ADVANCE_PACK_QUANTITY = S4_ECONOMY.cupAdvancePackQuantity;
+const FINAL_PLACEMENT_REWARD_PACK_TYPES = Object.freeze({
+  champion:"admin-legend-choice-plus2",
+  runnerUp:"admin-legend-choice-plus1",
+});
 const CUP_LEAGUE_QUALIFIER_PACK_TYPE = "legend-random";
 const CUP_LEAGUE_QUALIFIER_PACK_QUANTITY = 2;
 const CUP_LEAGUE_TOP_FOUR_COINS = 10_000;
@@ -242,7 +377,7 @@ const AI_TRAINING_FORMATIONS = Object.freeze({
   ]),
   "4-2-3-1":Object.freeze([
     ["GK",50,90], ["LB",18,68], ["CB",40,68], ["CB",60,68], ["RB",82,68],
-    ["DM",40,51], ["DM",60,51], ["LW",20,23], ["AM",50,36], ["RW",80,23], ["ST",50,16],
+    ["DM",40,51], ["DM",60,51], ["LM",20,38], ["AM",50,36], ["RM",80,38], ["ST",50,16],
   ]),
   "4-1-4-1":Object.freeze([
     ["GK",50,90], ["LB",18,68], ["CB",40,68], ["CB",60,68], ["RB",82,68],
@@ -269,6 +404,15 @@ const AI_TRAINING_BENCH_ROLES = Object.freeze(["GK", "CB", "LB", "RB", "DM", "AM
 const AI_TRAINING_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 const MIRROR_MARKETPLACE_COMMISSION_RATE = 0.3;
 const MIRROR_MARKETPLACE_FULL_MULTIPLIER = 1.8;
+const MIRROR_MARKETPLACE_FORCED_FULL_PRICE = 300;
+const MIRROR_BATCH_MATCH_COUNT = 10;
+const MIRROR_BATCH_MIN_MATCH_COUNT = 10;
+const MIRROR_BATCH_MAX_MATCH_COUNT = 50;
+const MIRROR_BATCH_PRICE_DIVISOR = 3;
+const MIRROR_COMPUTE_NODE_TOKEN_MS = 12 * 60 * 60 * 1000;
+const MIRROR_BATCH_SERVICE_FEE_RATE = 0.3;
+const MIRROR_BATCH_MAX_ACTIVE_JOBS = 2;
+const MIRROR_BATCH_CHAINS_PER_TICK = 20;
 const MIRROR_MARKETPLACE_PRICES = Object.freeze(new Map([
   ["Akira", 200],
   ["皇马", 180],
@@ -374,7 +518,7 @@ const publicLeagueS4Card = (state, card) => {
     referenceValue,
     minimumListingPrice:referenceValue == null ? null : Math.ceil(referenceValue * S4_PRICING.cardListingFloorRate / 100) * 100,
     systemRecoveryValue:player ? s4SingleCardReleaseValue(player, card.upgradeLevel) : 0,
-    systemRecyclable:Number(card.upgradeLevel ?? 0) <= 4,
+    systemRecyclable:Number(card.upgradeLevel ?? 0) <= S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL,
     ownershipAnchorRequired,
     traits:(card.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]).map((id) => ({
       id,
@@ -504,6 +648,8 @@ function initialTeam(index) {
     attackFocus:["balanced", "left", "center", "right"][index % 4],
     defenseFocus:"balanced",
     fitnessThreshold:DEFAULT_FITNESS_THRESHOLD,
+    captainId:null,
+    captainStyle:DEFAULT_CAPTAIN_STYLE,
     tacticalPlans:{
       opening:{ tactic:["positive", "balanced", "defensive", "balanced", "allOutAttack"][index % 5], style:["possession", "wingPlay", "counterAttack", "highPress", "longBall", "lowBlock"][index % 6], positionPreset:"position1" },
       leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2", triggerGoalDifference:1 },
@@ -512,8 +658,10 @@ function initialTeam(index) {
     playerState:{},
     chemistry:{},
     championBadges:[],
+    seasonFinalChampionStars:[],
     table:freshTable(),
     form:[],
+    fitnessUpdatedAt:null,
   };
 }
 
@@ -522,7 +670,7 @@ function createState(now, seasonName = "S1") {
   return {
     version:2,
     ruleset:"S4",
-    season:{ id:`${seasonName}-${localDateKey(new Date(now))}`, name:seasonName, date:localDateKey(new Date(now)), status:"active", currentRound:0, totalRounds:18, nextRoundAt:null, firstRoundAt:null, startedAt:now, completedAt:null },
+    season:{ id:`${seasonName}-${localDateKey(new Date(now))}`, name:seasonName, date:localDateKey(new Date(now)), status:"active", currentRound:0, totalRounds:18, nextRoundAt:null, firstRoundAt:null, startedAt:now, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null },
     teams,
     rounds:roundRobin(teams.map((team) => team.id)),
     matches:[],
@@ -540,7 +688,7 @@ function createState(now, seasonName = "S1") {
     friendlyFixtures:[],
     lineupShares:{},
     matchPredictions:{ schemaVersion:1, markets:{}, bets:[], distributions:[] },
-    ballonDor:{ schemaVersion:2, results:[] },
+    ballonDor:{ schemaVersion:3, reconciliationVersion:BALLON_DOR_RECONCILIATION_VERSION, results:[] },
     honorRoom:clone(HONOR_ROOM_SEED),
     shopOffers:{},
     rewardOffers:{},
@@ -550,13 +698,16 @@ function createState(now, seasonName = "S1") {
     adminXGrowthGrants:[],
     adminMailBroadcasts:[],
     discipline:{ rewardSuspensions:{}, actions:[], withheldRewards:[] },
-    s4Assets:{ schemaVersion:1, nextCardSequence:1, ownerships:{}, cards:{}, traitOffers:{}, rosterLimitBonuses:{}, transactions:[] },
+    s4Assets:{ schemaVersion:1, nextCardSequence:1, ownerships:{}, cards:{}, traitOffers:{}, rosterLimitBonuses:{}, cosmetics:{ schemaVersion:1, inventory:{}, equipped:{} }, transactions:[] },
+    s4RosterEnforcement:{ schemaVersion:1, active:false, rosterLimit:S4_ROSTER_LIMIT, runId:null, seed:null, appliedAt:null, audit:[] },
     s4Packs:{ schemaVersion:1, nextSequence:1, inventory:{}, offers:{}, batchOpenings:{}, grants:[], cardGrants:[], legacyRetiredAt:now },
     liveRound:null,
     liveCupRound:null,
+    liveSeasonFinalRound:null,
     liveFriendlies:[],
-    mirrorMarketplace:{ uploads:{}, usageByDate:{}, settledDates:[] },
-    cup:{ format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null },
+    mirrorMarketplace:{ uploads:{}, usageByDate:{}, settledDates:[], batchJobs:[], batchReceipts:[], computeNodes:{} },
+    cup:{ format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null },
+    seasonFinalTournament:null,
     completedBroadcasts:[],
     archives:[],
     dailyAutomation:{
@@ -611,6 +762,17 @@ function atomicWrite(filePath, value, options = {}) {
   } finally { closeSync(descriptor); }
   renameSync(temporary, filePath);
 }
+async function atomicWriteAsync(filePath, value, options = {}) {
+  const temporary = `${filePath}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+  await mkdirAsync(path.dirname(filePath), { recursive:true });
+  const descriptor = await openAsync(temporary, "w");
+  try {
+    await descriptor.writeFile(JSON.stringify(value, null, options.compact ? undefined : 2), "utf8");
+    await descriptor.sync();
+  } finally { await descriptor.close(); }
+  await renameAsync(temporary, filePath);
+}
+
 
 function loadState(filePath, now) {
   if (!filePath || !existsSync(filePath)) return createState(now);
@@ -712,7 +874,7 @@ function validDraft(ids) {
   return ids.length === DRAFT_ROSTER_SIZE && new Set(ids).size === DRAFT_ROSTER_SIZE;
 }
 
-function seededConditions(seed) {
+function seededConditions(seed, options = {}) {
   let state = 2166136261;
   for (const character of String(seed)) {
     state ^= character.charCodeAt(0);
@@ -722,7 +884,7 @@ function seededConditions(seed) {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
     return state / 4294967296;
   };
-  return { weather:drawVersusWeather(rng), referee:drawVersusReferee(rng) };
+  return { weather:drawYdlV2Weather(rng, { ...options, weatherWeights:STABLE_V21_PARAMETERS.environment.weatherWeights }), referee:drawVersusReferee(rng) };
 }
 
 function pickStartingIds(rosterIds) {
@@ -741,6 +903,16 @@ function leagueBoardPositions(players) {
     { x:22, y:19 }, { x:50, y:19 }, { x:78, y:19 },
   ];
   return Object.fromEntries(players.slice(0, 11).map((player, index) => [player.id, slots[index]]));
+}
+
+function seededUnitInterval(seed) {
+  let state = 2166136261;
+  for (const character of String(seed)) {
+    state ^= character.charCodeAt(0);
+    state = Math.imul(state, 16777619) >>> 0;
+  }
+  state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+  return state / 4294967296;
 }
 
 function playerRoleFit(player, assignedRole) {
@@ -775,7 +947,7 @@ function removeRosterPlayerPreservingShape(team, playerId) {
 
 const LINEUP_SCHEME_LIMIT = 3;
 const LINEUP_SCHEME_COMPETITIONS = Object.freeze(["league", "cup", "friendly"]);
-const LINEUP_SHARE_TTL_MS = 24 * 60 * 60 * 1000;
+const LINEUP_SHARE_TTL_MS = 72 * 60 * 60 * 1000;
 
 function normalizedLineupSchemeCompetition(value) {
   const competition = String(value ?? "");
@@ -786,6 +958,7 @@ function lineupSchemeSnapshot(team, id = "lineup-1", name = "方案 1") {
   return clone({
     id,
     name,
+    revision:Math.max(0, Math.floor(Number(team.lineupSchemeRevision ?? 0))),
     preferredStarterIds:team.preferredStarterIds ?? [],
     positions:team.positions ?? {},
     positionPresets:team.positionPresets ?? {},
@@ -795,6 +968,8 @@ function lineupSchemeSnapshot(team, id = "lineup-1", name = "方案 1") {
     attackFocus:team.attackFocus,
     defenseFocus:team.defenseFocus,
     fitnessThreshold:team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD,
+    captainId:team.captainId ?? null,
+    captainStyle:normalizeCaptainStyle(team.captainStyle),
     tacticalPlans:team.tacticalPlans ?? {},
     competitionScope:normalizedLineupSchemeCompetition(team.competitionScope) ?? undefined,
   });
@@ -811,13 +986,16 @@ function applyLineupScheme(team, scheme) {
   team.defenseFocus = scheme.defenseFocus ?? team.defenseFocus;
   team.fitnessThreshold = scheme.fitnessThreshold ?? team.fitnessThreshold;
   team.tacticalPlans = clone(scheme.tacticalPlans ?? team.tacticalPlans);
+  team.captainId = scheme.captainId ?? null;
+  team.captainStyle = normalizeCaptainStyle(scheme.captainStyle);
 }
 
 function syncActiveLineupScheme(team) {
   const active = team.lineupSchemes?.find((scheme) => scheme.id === team.activeLineupSchemeId);
   if (!active) return;
+  const revision = Math.max(0, Math.floor(Number(active.revision ?? 0)));
   const snapshot = lineupSchemeSnapshot({ ...team, competitionScope:active.competitionScope }, active.id, active.name);
-  Object.assign(active, snapshot);
+  Object.assign(active, snapshot, { revision });
 }
 
 function rebuildLineupSchemeAssignments(team, preferredSchemeId = null) {
@@ -860,6 +1038,7 @@ function repairLineupSchemeAfterDeparture(team, scheme, playerId) {
   scheme.preferredStarterIds = draft.preferredStarterIds;
   scheme.positions = draft.positions;
   scheme.positionPresets = draft.positionPresets;
+  if (scheme.captainId === playerId) scheme.captainId = null;
 }
 
 function repairLineupSchemeAgainstRoster(team, scheme) {
@@ -904,6 +1083,7 @@ function repairLineupSchemeAgainstRoster(team, scheme) {
   scheme.preferredStarterIds = draft.preferredStarterIds;
   scheme.positions = draft.positions;
   scheme.positionPresets = draft.positionPresets;
+  if (!draft.preferredStarterIds.includes(scheme.captainId)) scheme.captainId = null;
 }
 
 function seededShuffle(values, seed) {
@@ -939,12 +1119,14 @@ function aiSubstitutes(teamIndex, roundNumber, humanOwned, starters) {
   return [...take("GK", 1), ...take("DEF", 2), ...take("MID", 2), ...take("ATT", 2)];
 }
 
-function publicTeam(team, includeRoster = false) {
+function publicTeam(team, includeRoster = false, equippedBadge = null, equippedClubBadge = null) {
   return {
-    id:team.id, name:team.name, isAi:!team.ownerId, ownerId:team.ownerId, ownerName:team.ownerName, championBadges:clone(team.championBadges ?? []), table:{ ...team.table }, form:[...team.form], tactic:team.tactic, style:team.style, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus,
+    id:team.id, name:team.name, isAi:!team.ownerId, ownerId:team.ownerId, ownerName:team.ownerName, equippedBadge:equippedBadge ? clone(equippedBadge) : null, equippedClubBadge:equippedClubBadge ? clone(equippedClubBadge) : null, championBadges:clone(team.championBadges ?? []), seasonFinalStarCount:(team.seasonFinalChampionStars ?? []).length, table:{ ...team.table }, form:[...team.form], tactic:team.tactic, style:team.style, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus,
     fitnessThreshold:team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD,
+    captainId:team.captainId ?? null,
+    captainStyle:normalizeCaptainStyle(team.captainStyle),
     tacticalPlans:clone(team.tacticalPlans ?? { opening:{ tactic:team.tactic, style:team.style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"possession", positionPreset:"position3" } }),
-    roster:includeRoster ? team.rosterIds.map((id) => ({ ...playerSummary(REAL_PLAYER_BY_ID[id]), state:{ fitness:100, suspension:0, cupSuspension:0, injuryRounds:0, ...(team.playerState[id] ?? {}) }, starter:team.preferredStarterIds.includes(id), listed:false })) : undefined,
+    roster:includeRoster ? team.rosterIds.map((id) => ({ ...playerSummary(REAL_PLAYER_BY_ID[id]), state:{ fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0, ...(team.playerState[id] ?? {}) }, starter:team.preferredStarterIds.includes(id), rosterOverlimitLocked:Boolean(team.playerState?.[id]?.rosterOverlimitLocked), listed:false })) : undefined,
     positions:includeRoster ? { ...team.positions } : undefined,
     positionPresets:includeRoster ? clone(team.positionPresets ?? Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, team.positions ?? {}]))) : undefined,
     formationLinePresets:includeRoster ? clone(team.formationLinePresets ?? {}) : undefined,
@@ -968,11 +1150,18 @@ export class YellowDogsLeagueService {
     this.lastBackupMaintenanceDate = null;
     this.liveCheckpointPersistedAt = new Map();
     this.pendingLiveCheckpointCleanup = new Set();
+    this.liveCheckpointIo = Promise.resolve();
     this.liveSettlementPersistTimer = null;
     this.cachedV2ReviewDemo = null;
+    this.liveSettlementJobs = [];
+    this.liveSettlementJobKeys = new Set();
+    this.liveSettlementJobTimer = null;
+    this.liveSettlementWaiters = [];
     this.liveAiTrainings = new Map();
     this.liveAdvanceCursors = { league:0, cup:0, friendly:0, aiTraining:0, auxiliary:0 };
     this.liveAdvanceRunning = false;
+    this.mirrorBatchWorkers = new Map();
+    this.playerDirectoryCache = null;
     this.dirtyScopes = new Set(["core"]);
     if (this.shardStore) {
       if (this.shardStore.exists()) this.state = this.shardStore.load();
@@ -1008,6 +1197,7 @@ export class YellowDogsLeagueService {
       player.overall = config.overall;
     });
     ensureS4Assets(this.state);
+    this.state.s4RosterEnforcement ??= { schemaVersion:1, active:false, rosterLimit:S4_ROSTER_LIMIT, runId:null, seed:null, appliedAt:null, audit:[] };
     this.state.s4Assets.traitThresholdCompensations ??= {};
     if (!this.state.s4Packs) {
       this.state.s4Packs = { schemaVersion:1, nextSequence:1, inventory:{}, offers:{}, batchOpenings:{}, grants:[], legacyRetiredAt:this.now() };
@@ -1051,15 +1241,21 @@ export class YellowDogsLeagueService {
     });
     this.state.liveRound ??= null;
     this.state.liveCupRound ??= null;
+    this.state.liveSeasonFinalRound ??= null;
     this.state.liveFriendlies ??= [];
     this.restoreLiveCheckpoints();
-    const resumedLiveEntries = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies];
+    const resumedLiveEntries = [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies];
     resumedLiveEntries.forEach((live) => {
       const match = live?.match;
       if (match?.version !== 2 || match.finished) return;
       match.rng = createV2MatchRng(`${match.simulationSeed ?? "ydl-v2"}:resume:${match.nextChainIndex ?? 0}:${match.events?.length ?? 0}`);
     });
-    this.state.cup ??= { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null };
+    this.state.cup ??= { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
+    this.state.cup.finalStartedAt ??= null;
+    this.state.seasonFinalTournament ??= null;
+    this.state.season.seasonFinalLeagueRanks ??= null;
+    this.state.season.seasonFinalLeagueRound ??= null;
+    this.state.season.seasonFinalLeagueLockedAt ??= null;
     this.state.cup.format ??= this.state.cup.stage === "swiss" ? "swiss-v1" : null;
     this.state.cup.leagueRounds ??= [];
     this.state.cup.swissRounds ??= [];
@@ -1076,14 +1272,37 @@ export class YellowDogsLeagueService {
     this.state.mirrorMarketplace.uploads ??= {};
     this.state.mirrorMarketplace.usageByDate ??= {};
     this.state.mirrorMarketplace.settledDates ??= [];
+    this.state.mirrorMarketplace.batchJobs ??= [];
+    this.state.mirrorMarketplace.batchReceipts ??= [];
+    this.state.mirrorMarketplace.computeNodes ??= {};
+    this.state.mirrorMarketplace.batchJobs.forEach((job) => {
+      job.executionNode ??= MIRROR_BATCH_CLOUD_NODE;
+      job.directorSurcharge = Math.max(0, Number(job.directorSurcharge ?? 0));
+      job.directorServiceFeeRevenue = Math.max(0, Number(job.directorServiceFeeRevenue ?? 0));
+      job.playerComputeNodeServiceFeeRevenue = Math.max(0, Number(job.playerComputeNodeServiceFeeRevenue ?? 0));
+      const match = job.activeMatch;
+      if (match?.version === 2 && !match.finished) match.rng = createV2MatchRng(`${match.simulationSeed ?? "ydl-v2"}:resume:${match.nextChainIndex ?? 0}:${match.events?.length ?? 0}`);
+    });
+    const completedBatchJobIds = new Set(this.state.mirrorMarketplace.batchReceipts.map((receipt) => receipt.id));
+    this.state.mirrorMarketplace.batchJobs = this.state.mirrorMarketplace.batchJobs.filter((job) => {
+      if (job.status !== "completed") return true;
+      const mailed = (this.state.inbox[job.teamId] ?? []).some((message) => message.type === "mirror-batch-report" && message.payload?.mirrorBatchJobId === job.id);
+      if (!mailed) return true;
+      if (!completedBatchJobIds.has(job.id)) this.state.mirrorMarketplace.batchReceipts.push({ ...this.mirrorBatchJobView(job), ownerId:job.ownerId, teamId:job.teamId });
+      return false;
+    });
+    this.state.mirrorMarketplace.batchReceipts = this.state.mirrorMarketplace.batchReceipts
+      .sort((left, right) => Number(left.completedAt ?? left.createdAt) - Number(right.completedAt ?? right.createdAt))
+      .slice(-500);
     this.state.matchPredictions ??= { schemaVersion:1, markets:{}, bets:[], distributions:[] };
     this.state.matchPredictions.schemaVersion = 1;
     this.state.matchPredictions.markets ??= {};
     this.state.matchPredictions.bets ??= [];
     this.state.matchPredictions.distributions ??= [];
-    this.state.ballonDor ??= { schemaVersion:2, results:[] };
-    this.state.ballonDor.schemaVersion = 2;
+    this.state.ballonDor ??= { schemaVersion:3, results:[] };
+    this.state.ballonDor.schemaVersion = 3;
     this.state.ballonDor.results ??= [];
+    const shouldReconcileBallonDor = Number(this.state.ballonDor.reconciliationVersion ?? 0) < BALLON_DOR_RECONCILIATION_VERSION;
     this.state.honorRoom ??= clone(HONOR_ROOM_SEED);
     this.state.honorRoom.schemaVersion = 1;
     this.state.honorRoom.processedSeasonIds ??= [];
@@ -1098,8 +1317,10 @@ export class YellowDogsLeagueService {
     this.state.dailyAutomation.lastCupStartDate ??= null;
     this.state.dailyAutomation.settlements ??= [];
     this.state.teams.forEach((team) => {
+      this.ensureClubManagement(team);
       team.chemistry ??= {};
       team.championBadges ??= [];
+      team.seasonFinalChampionStars ??= [];
       team.fitnessThreshold = Math.max(45, Math.min(100, Math.round(Number(team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD))));
       team.positionPresets ??= Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions ?? {})]));
       POSITION_PRESET_KEYS.forEach((key) => { team.positionPresets[key] ??= clone(team.positions ?? {}); });
@@ -1122,6 +1343,7 @@ export class YellowDogsLeagueService {
       const legacyScheme = lineupSchemeSnapshot(team);
       team.lineupSchemes = (Array.isArray(team.lineupSchemes) ? team.lineupSchemes : [legacyScheme]).slice(0, LINEUP_SCHEME_LIMIT).map((scheme, index) => ({
         ...lineupSchemeSnapshot({ ...team, ...scheme }, String(scheme?.id || `lineup-${index + 1}`), String(scheme?.name || `方案 ${index + 1}`).trim().slice(0, 20) || `方案 ${index + 1}`),
+        revision:Math.max(0, Math.floor(Number(scheme?.revision ?? 0))),
       }));
       if (!team.lineupSchemes.length) team.lineupSchemes = [legacyScheme];
       if (!team.lineupSchemes.some((scheme) => scheme.id === team.activeLineupSchemeId)) team.activeLineupSchemeId = team.lineupSchemes[0].id;
@@ -1148,7 +1370,12 @@ export class YellowDogsLeagueService {
       if (!this.state.cup.nextRoundAt || this.state.cup.nextRoundAt < earliestCupAt) this.state.cup.nextRoundAt = nextCupSlot(this.now(), this.state.season.firstRoundAt);
     }
     this.adoptState(this.state, false);
+    if (shouldReconcileBallonDor) {
+      this.backupFile(this.shardStore ? `pre-ballon-dor-reconciliation-v${BALLON_DOR_RECONCILIATION_VERSION}.manifest.json` : `pre-ballon-dor-reconciliation-v${BALLON_DOR_RECONCILIATION_VERSION}.json`);
+      if (this.reconcileHistoricalBallonDor()) this.save();
+    }
   }
+
 
   adoptState(nextState, markAll = true) {
     this.state = this.shardStore
@@ -1240,7 +1467,7 @@ export class YellowDogsLeagueService {
   restoreLiveCheckpoints() {
     const directory = this.liveCheckpointDirectory();
     if (!directory || !existsSync(directory)) return 0;
-    const liveByCode = new Map([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].map((live) => [String(live.code).toUpperCase(), live]));
+    const liveByCode = new Map([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].map((live) => [String(live.code).toUpperCase(), live]));
     let restored = 0;
     for (const name of readdirSync(directory)) {
       if (!name.endsWith(".json")) continue;
@@ -1261,13 +1488,27 @@ export class YellowDogsLeagueService {
   persistLiveMatch(live, now = this.now(), force = false) {
     const checkpointPath = this.liveCheckpointPath(live?.code);
     if (!checkpointPath || !live?.match) return false;
+    if (!force && !this.liveCheckpointPersistedAt.has(live.code)) {
+      const codeHash = [...String(live.code)].reduce((hash, character) => (hash * 31 + character.charCodeAt(0)) >>> 0, 0);
+      const spreadWindow = Math.max(1, LIVE_MATCH_PERSIST_INTERVAL_MS - 1_000);
+      const staggerMs = Math.min(LIVE_MATCH_PERSIST_INTERVAL_MS, 1_000 + codeHash % spreadWindow);
+      const startedAt = Number(live.startedAt ?? live.match.startedAt ?? now);
+      this.liveCheckpointPersistedAt.set(live.code, startedAt + staggerMs - LIVE_MATCH_PERSIST_INTERVAL_MS);
+    }
     const lastPersistedAt = Number(this.liveCheckpointPersistedAt.get(live.code) ?? 0);
     if (!force && now - lastPersistedAt < LIVE_MATCH_PERSIST_INTERVAL_MS) return false;
-    mkdirSync(path.dirname(checkpointPath), { recursive:true });
-    atomicWrite(checkpointPath, { version:1, code:live.code, persistedAt:now, match:live.match }, { copyBackup:false, compact:true });
     this.liveCheckpointPersistedAt.set(live.code, now);
+    const checkpoint = { version:1, code:live.code, persistedAt:now, match:live.match };
+    this.liveCheckpointIo = this.liveCheckpointIo
+      .then(() => atomicWriteAsync(checkpointPath, checkpoint, { compact:true }))
+      .catch((error) => {
+        if (this.liveCheckpointPersistedAt.get(live.code) === now) this.liveCheckpointPersistedAt.delete(live.code);
+        console.error(`YDL直播检查点异步写入失败：${live.code}`, error);
+      });
     return true;
   }
+
+  flushLiveCheckpointIo() { return this.liveCheckpointIo; }
 
   clearLiveCheckpoints(codes) {
     for (const code of codes) {
@@ -1281,10 +1522,11 @@ export class YellowDogsLeagueService {
     if (!this.statePath) return false;
     codes.forEach((code) => this.pendingLiveCheckpointCleanup.add(code));
     if (this.liveSettlementPersistTimer) return true;
-    this.liveSettlementPersistTimer = setTimeout(() => {
+    this.liveSettlementPersistTimer = setTimeout(async () => {
       this.liveSettlementPersistTimer = null;
       const completedCodes = [...this.pendingLiveCheckpointCleanup];
       try {
+        await this.flushLiveCheckpointIo();
         this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
         this.clearLiveCheckpoints(completedCodes);
         completedCodes.forEach((code) => this.pendingLiveCheckpointCleanup.delete(code));
@@ -1294,6 +1536,44 @@ export class YellowDogsLeagueService {
     }, LIVE_SETTLEMENT_PERSIST_DELAY_MS);
     this.liveSettlementPersistTimer.unref?.();
     return true;
+  }
+
+  queueLiveSettlement(live, settle) {
+    const key = String(live?.code ?? "");
+    if (!key || live.settlementPending || live.completed || this.liveSettlementJobKeys.has(key)) return false;
+    live.settlementPending = true;
+    this.liveSettlementJobKeys.add(key);
+    this.liveSettlementJobs.push({ key, live, settle });
+    this.scheduleNextLiveSettlementJob(0);
+    return true;
+  }
+
+  scheduleNextLiveSettlementJob(delay = LIVE_SETTLEMENT_JOB_GAP_MS) {
+    if (this.liveSettlementJobTimer || !this.liveSettlementJobs.length) return;
+    this.liveSettlementJobTimer = setTimeout(() => {
+      this.liveSettlementJobTimer = null;
+      const job = this.liveSettlementJobs.shift();
+      try { job.settle(); }
+      catch (error) {
+        job.live.settlementPending = false;
+        console.error(`YDL直播延后结算失败：${job.key}`, error);
+      } finally {
+        this.liveSettlementJobKeys.delete(job.key);
+        if (this.liveSettlementJobs.length) this.scheduleNextLiveSettlementJob();
+        else this.resolveLiveSettlementWaiters();
+      }
+    }, delay);
+  }
+
+  resolveLiveSettlementWaiters() {
+    if (this.liveSettlementJobs.length || this.liveSettlementJobTimer) return;
+    const waiters = this.liveSettlementWaiters.splice(0);
+    waiters.forEach((resolve) => resolve());
+  }
+
+  flushLiveSettlementJobs() {
+    if (!this.liveSettlementJobs.length && !this.liveSettlementJobTimer) return Promise.resolve();
+    return new Promise((resolve) => this.liveSettlementWaiters.push(resolve));
   }
 
   playerCards(accountId, playerId = null) {
@@ -1310,6 +1590,76 @@ export class YellowDogsLeagueService {
 
   rosterLimit(accountId) {
     return rosterLimitForOwner(this.state, accountId);
+  }
+
+  rosterOverlimitLocked(team, playerId) {
+    return Boolean(team?.playerState?.[playerId]?.rosterOverlimitLocked);
+  }
+
+  rosterEnforcementPreview() {
+    const rosterLimit = S4_ROSTER_LIMIT;
+    const players = this.state.teams.filter((team) => team.ownerId).map((team) => {
+      const rosterSlotsUsed = rosterSlotUsage(this.state, team.ownerId);
+      const excessCount = Math.max(0, rosterSlotsUsed - rosterLimit);
+      const lockedPlayerIds = excessCount > 0
+        ? [...(team.rosterEnforcement?.lockedPlayerIds ?? [])].filter((id) => team.rosterIds?.includes(id) && Boolean(team.playerState?.[id]?.rosterOverlimitLocked)).slice(0, excessCount)
+        : [];
+      return {
+        accountId:team.ownerId, ownerName:team.ownerName, teamId:team.id, teamName:team.name,
+        rosterSlotsUsed, rosterLimit, excessCount,
+        alreadyApplied:Boolean(excessCount > 0 && team.rosterEnforcement?.overLimit), lockedPlayerIds,
+        lockedPlayerNames:lockedPlayerIds.map((id) => REAL_PLAYER_BY_ID[id]?.name ?? id),
+      };
+    }).filter((entry) => entry.excessCount > 0 || entry.alreadyApplied);
+    return { active:Boolean(this.state.s4RosterEnforcement?.active), rosterLimit, generatedAt:this.now(), playerCount:players.length, totalExcess:players.reduce((sum, entry) => sum + entry.excessCount, 0), players };
+  }
+
+  applyRosterEnforcement(options = {}) {
+    if (options.confirm !== "APPLY_ROSTER_LIMIT_33") throw new Error("需要确认执行33人大名单清退");
+    ensureS4Assets(this.state);
+    this.state.s4RosterEnforcement ??= { schemaVersion:1, active:false, rosterLimit:S4_ROSTER_LIMIT, audit:[] };
+    const runId = String(options.runId ?? `roster-limit-33-${this.now()}`);
+    const seed = String(options.seed ?? runId);
+    const backupName = this.shardStore ? `before-roster-enforcement-${runId}.manifest.json` : `before-roster-enforcement-${runId}.json`;
+    const backupPath = this.backupFile(backupName);
+    this.state.s4RosterEnforcement = { schemaVersion:1, active:true, rosterLimit:S4_ROSTER_LIMIT, runId, seed, appliedAt:this.now(), audit:[] };
+    const players = [];
+    for (const team of this.state.teams.filter((entry) => entry.ownerId)) {
+      this.state.s4Assets.rosterLimitBonuses[team.ownerId] = 0;
+      const rosterSlotsUsed = rosterSlotUsage(this.state, team.ownerId);
+      const excessCount = Math.max(0, rosterSlotsUsed - S4_ROSTER_LIMIT);
+      const families = [...new Set((team.rosterIds ?? []).filter((id) => rosterFamilyUsesSlot(this.state, team.ownerId, id)))];
+      const lockedPlayerIds = seededShuffle(families, `${seed}:${team.ownerId}`).slice(0, excessCount);
+      team.playerState ??= {};
+      for (const playerId of families) {
+        const state = team.playerState[playerId] ?? (team.playerState[playerId] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
+        if (lockedPlayerIds.includes(playerId)) Object.assign(state, { rosterOverlimitLocked:true, rosterOverlimitLockedAt:this.now(), rosterOverlimitRunId:runId });
+        else { delete state.rosterOverlimitLocked; delete state.rosterOverlimitLockedAt; delete state.rosterOverlimitRunId; }
+      }
+      team.rosterEnforcement = { overLimit:excessCount > 0, rosterLimit:S4_ROSTER_LIMIT, excessCount, lockedPlayerIds, appliedAt:this.now(), runId };
+      const entry = { accountId:team.ownerId, teamId:team.id, rosterSlotsUsed, excessCount, lockedPlayerIds };
+      players.push(entry);
+      this.state.s4RosterEnforcement.audit.push(entry);
+    }
+    this.save();
+    return { runId, backupPath, rosterLimit:S4_ROSTER_LIMIT, playerCount:players.filter((entry) => entry.excessCount > 0).length, totalLocked:players.reduce((sum, entry) => sum + entry.lockedPlayerIds.length, 0), players };
+  }
+
+  reconcileRosterOverlimitState(team) {
+    if (!this.state.s4RosterEnforcement?.active || !team?.ownerId) return;
+    const rosterSlotsUsed = rosterSlotUsage(this.state, team.ownerId);
+    const excessCount = Math.max(0, rosterSlotsUsed - S4_ROSTER_LIMIT);
+    if (!excessCount) {
+      team.rosterEnforcement = { ...(team.rosterEnforcement ?? {}), overLimit:false, excessCount:0, lockedPlayerIds:[], resolvedAt:this.now() };
+      Object.values(team.playerState ?? {}).forEach((state) => { delete state.rosterOverlimitLocked; delete state.rosterOverlimitLockedAt; delete state.rosterOverlimitRunId; });
+      return;
+    }
+    const families = [...new Set((team.rosterIds ?? []).filter((id) => rosterFamilyUsesSlot(this.state, team.ownerId, id)))];
+    const retained = (team.rosterEnforcement?.lockedPlayerIds ?? []).filter((id) => families.includes(id));
+    const additions = seededShuffle(families.filter((id) => !retained.includes(id)), `${this.state.s4RosterEnforcement.seed}:${team.ownerId}`).slice(0, Math.max(0, excessCount - retained.length));
+    const lockedPlayerIds = [...new Set([...retained, ...additions])].slice(0, excessCount);
+    team.rosterEnforcement = { ...(team.rosterEnforcement ?? {}), overLimit:true, rosterLimit:S4_ROSTER_LIMIT, excessCount, lockedPlayerIds };
+    families.forEach((id) => { const state = team.playerState[id] ?? (team.playerState[id] = {}); if (lockedPlayerIds.includes(id)) state.rosterOverlimitLocked = true; else delete state.rosterOverlimitLocked; });
   }
 
   xPlayerConfig(playerId) {
@@ -1532,7 +1882,7 @@ export class YellowDogsLeagueService {
 
   ensureRosterFamily(team, playerId) {
     if (!team.rosterIds.includes(playerId)) team.rosterIds.push(playerId);
-    team.playerState[playerId] ??= { fitness:100, suspension:0, cupSuspension:0, injuryRounds:0 };
+    team.playerState[playerId] ??= { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 };
   }
 
   removeEmptyRosterFamily(team, playerId) {
@@ -1543,6 +1893,7 @@ export class YellowDogsLeagueService {
     if (active) applyLineupScheme(team, active);
     delete team.playerState[playerId];
     removePlayerChemistry(team, playerId);
+    this.reconcileRosterOverlimitState(team);
     return true;
   }
 
@@ -1590,6 +1941,66 @@ export class YellowDogsLeagueService {
 
   s4PackInventory(accountId) {
     return this.state.s4Packs.inventory[accountId] ?? (this.state.s4Packs.inventory[accountId] = []);
+  }
+
+  cosmeticInventory(accountId) {
+    const cosmetics = this.state.s4Assets.cosmetics;
+    return cosmetics.inventory[accountId] ?? (cosmetics.inventory[accountId] = {});
+  }
+
+  equippedCosmeticIds(accountId) {
+    const cosmetics = this.state.s4Assets.cosmetics;
+    return cosmetics.equipped[accountId] ?? (cosmetics.equipped[accountId] = {});
+  }
+
+  equippedTeamBadge(accountId) {
+    const itemId = accountId ? this.state.s4Assets.cosmetics?.equipped?.[accountId]?.teamBadge : null;
+    return itemId && COUNTRY_BADGE_BY_ID[itemId] ? COUNTRY_BADGE_BY_ID[itemId] : null;
+  }
+
+  equippedClubBadge(accountId) {
+    const itemId = accountId ? this.state.s4Assets.cosmetics?.equipped?.[accountId]?.clubBadge : null;
+    return itemId && COSMETIC_BADGE_BY_ID[itemId]?.slot === "clubBadge" ? COSMETIC_BADGE_BY_ID[itemId] : null;
+  }
+
+  cosmeticsView(accountId) {
+    const inventory = this.cosmeticInventory(accountId);
+    const equipped = this.equippedCosmeticIds(accountId);
+    const items = COSMETIC_BADGES
+      .filter((item) => Number(inventory[item.id] ?? 0) > 0)
+      .map((item) => ({ ...item, count:Number(inventory[item.id]), equipped:equipped[item.slot] === item.id, minimumListingPrice:COSMETIC_BADGE_MINIMUM_LISTING_PRICE }));
+    const countryOwned = items.filter((item) => item.slot === "teamBadge").length;
+    const clubOwned = items.filter((item) => item.slot === "clubBadge").length;
+    return {
+      schemaVersion:1,
+      items,
+      equipped:{ teamBadge:this.equippedTeamBadge(accountId), clubBadge:this.equippedClubBadge(accountId) },
+      collection:{
+        ownedUnique:items.length,
+        total:COSMETIC_BADGES.length,
+        country:{ ownedUnique:countryOwned, total:COUNTRY_BADGES.length },
+        club:{ ownedUnique:clubOwned, total:CLUB_BADGES.length },
+      },
+    };
+  }
+
+  equipCosmetic(account, itemIdValue, slotValue = null, options = {}) {
+    if (slotValue && typeof slotValue === "object") { options = slotValue; slotValue = null; }
+    if (!this.accountTeam(account.id)) throw new Error("你还没有加入联赛");
+    const itemId = String(itemIdValue ?? "").trim();
+    const requestedSlot = ["teamBadge", "clubBadge"].includes(String(slotValue ?? "")) ? String(slotValue) : "teamBadge";
+    const equipped = this.equippedCosmeticIds(account.id);
+    if (!itemId) delete equipped[requestedSlot];
+    else {
+      const item = COSMETIC_BADGE_BY_ID[itemId];
+      if (!item || Number(this.cosmeticInventory(account.id)[item.id] ?? 0) < 1) throw new Error("你尚未拥有这件装饰道具");
+      equipped[item.slot] = item.id;
+    }
+    this.save();
+    const teamBadgeDelta = this.equippedTeamBadge(account.id);
+    const clubBadgeDelta = this.equippedClubBadge(account.id);
+    if (options.compact) return this.compactMutationView(account, { ownTeam:true, cosmetics:true, extra:{ teamBadgeDelta, clubBadgeDelta } });
+    return this.view(account);
   }
 
   publicS4PackItem(item) {
@@ -1698,6 +2109,7 @@ export class YellowDogsLeagueService {
     const pack = S4_PACK_BY_ID[String(packType ?? "")];
     const count = Math.floor(Number(quantity));
     if (!team) throw new Error("你还没有加入联赛");
+    if (pack.adminOnly) throw new Error("该礼包只能由管理员发放");
     if (!pack) throw new Error("该礼包已下架或不存在");
     if (pack.retired) throw new Error("该礼包已下架或不存在");
     if (!Number.isInteger(count) || count < 1 || count > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次最多购买${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
@@ -1709,7 +2121,7 @@ export class YellowDogsLeagueService {
     if (this.wallet(account.id).balance < total) throw new Error("金币不足");
     this.wallet(account.id).balance -= total;
     const items = this.grantS4Pack(account.id, pack.id, count, { source:"shop" });
-    this.state.ledger.push({
+    if (options.skipAudit !== true) this.state.ledger.push({
       id:makeId("ledger", `${account.id}-${pack.id}-${count}`),
       accountId:account.id,
       amount:-total,
@@ -1725,6 +2137,7 @@ export class YellowDogsLeagueService {
   }
 
   buyRosterExpansion(account, quantity = 1, options = {}) {
+    throw new Error("大名单+1道具已下架，大名单上限已恢复为33人");
     const team = this.accountTeam(account.id);
     const count = Math.floor(Number(quantity));
     if (!team) throw new Error("你还没有加入联赛");
@@ -1755,8 +2168,33 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
+
+  ownsMeteorStand(accountId) {
+    return Boolean(accountId) && this.state.ledger.some((entry) => entry.accountId === accountId && entry.type === "stadium-cosmetic-buy" && entry.itemId === METEOR_STAND_ITEM.id);
+  }
+
+  buyMeteorStand(account, options = {}) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    if (this.ownsMeteorStand(account.id)) throw new Error("你已经拥有流星雨看台");
+    const wallet = this.wallet(account.id);
+    if (wallet.balance < METEOR_STAND_ITEM.price) throw new Error("金币不足");
+    wallet.balance -= METEOR_STAND_ITEM.price;
+    this.state.ledger.push({ id:makeId("ledger", `${account.id}-meteor-stand`), accountId:account.id, amount:-METEOR_STAND_ITEM.price, type:"stadium-cosmetic-buy", itemId:METEOR_STAND_ITEM.id, createdAt:this.now() });
+    this.save();
+    if (options.compact) return this.compactMutationView(account, { shop:true, ownTeam:true });
+    return this.view(account, { includePlayerDirectory:false });
+  }
+
   assertChoicePackRosterCapacity(accountId, pack, requestedCount = 1) {
     if (pack?.selectionMode !== "choice") return;
+    // Legendary cards do not consume roster slots, so a full roster must not
+    // block opening legendary choice packs.
+    if (["legend", "cosmetic"].includes(pack?.kind)) return;
+    if (pack?.choiceMode === "all" && pack.kind === "private") {
+      if (!this.privatePackCandidates(accountId, pack).length) throw new Error(`${pack.name}当前没有可选的私有池球员`);
+      return;
+    }
     const rosterLimit = this.rosterLimit(accountId);
     const availableSlots = Math.max(0, rosterLimit - this.rosterSlotsUsed(accountId));
     if (availableSlots <= 0) throw new Error(`${rosterLimit}人名单已满，暂时无法打开需要选人的礼包。请先前往背包的球员卡管理回收、解约或出售球员；礼包不会被消耗`);
@@ -1800,7 +2238,7 @@ export class YellowDogsLeagueService {
     item.resultPlayerId = player.id;
     item.resultCardId = card.id;
     this.state.ledger.push({ id:makeId("ledger", item.id), accountId:account.id, amount:0, type:"s4-pack-open", packType:pack.id, packId:item.id, playerId:player.id, cardId:card.id, legendaryHit, createdAt:this.now() });
-    recordS4AssetTransaction(this.state, {
+    if (options.skipAudit !== true) recordS4AssetTransaction(this.state, {
       id:makeId("asset-pack", item.id),
       type:"private-pack-card",
       playerId:player.id,
@@ -1859,18 +2297,77 @@ export class YellowDogsLeagueService {
     };
   }
 
+  s4RosterMutationDelta(accountId) {
+    const team = this.accountTeam(accountId);
+    if (!team) return null;
+    const snapshot = publicTeam(team, true);
+    return {
+      rosterPlayerIds:snapshot.roster.map((player) => player.id),
+      starterIds:snapshot.roster.filter((player) => player.starter).map((player) => player.id),
+      positions:snapshot.positions,
+      positionPresets:snapshot.positionPresets,
+      formationLinePresets:snapshot.formationLinePresets,
+      activeLineupSchemeId:snapshot.activeLineupSchemeId,
+      lineupSchemes:snapshot.lineupSchemes,
+      lineupSchemeAssignments:snapshot.lineupSchemeAssignments,
+      chemistryLinks:snapshot.chemistryLinks,
+      formation:snapshot.formation,
+    };
+  }
+
+  s4RecoveryMutationView(account, options = {}) {
+    const affectedPlayerIds = [...new Set((options.affectedPlayerIds ?? []).map(String))];
+    const removedPlayerIds = [...new Set((options.removedPlayerIds ?? []).map(String))];
+    return this.compactMutationView(account, { extra:{
+      removedS4CardIds:[...new Set((options.removedCardIds ?? []).map(String))],
+      removedS4PlayerIds:removedPlayerIds,
+      returnedS4OwnershipPlayerIds:[...new Set((options.returnedOwnershipPlayerIds ?? []).map(String))],
+      s4PlayerDeltas:affectedPlayerIds.map((playerId) => this.s4PlayerAssetDelta(account.id, playerId)),
+      s4RosterSlotsUsed:this.rosterSlotsUsed(account.id),
+      ...(removedPlayerIds.length ? { s4RosterDelta:this.s4RosterMutationDelta(account.id) } : {}),
+      ...(options.extra ?? {}),
+    } });
+  }
+
   createS4ChoiceOffer(account, item, pack, batch = null) {
-    const candidates = pack.kind === "legend" ? this.legendPackCandidates() : this.publicPackCandidates();
-    const choices = pack.kind === "public"
+    if (pack.kind === "cosmetic") {
+
+      const choices = drawCosmeticBadgeChoices(pack.cosmeticType, this.rng, 3);
+      const offer = {
+        id:makeId("s4-pack-offer", item.id),
+        packId:item.id,
+        packType:pack.id,
+        ownerId:account.id,
+        kind:pack.kind,
+        cosmeticType:pack.cosmeticType,
+        choiceMode:"random",
+        itemIds:choices.map((choice) => choice.id),
+        status:"pending",
+        createdAt:this.now(),
+        batchId:batch?.id ?? null,
+        batchIndex:batch ? batch.results.length + 1 : null,
+        batchTotal:batch?.packIds.length ?? null,
+      };
+      item.status = "choosing";
+      this.state.s4Packs.offers[account.id] = offer;
+      return offer;
+    }
+    const candidates = pack.choiceMode === "all"
+      ? pack.kind === "legend" ? this.legendPackCandidates() : this.privatePackCandidates(account.id, pack)
+      : pack.kind === "legend" ? this.legendPackCandidates() : this.publicPackCandidates();
+    const choices = pack.choiceMode === "all"
+      ? candidates
+      : pack.kind === "public"
       ? this.randomPublicS4Players(candidates, 3)
       : this.randomS4Players(candidates, 3);
-    if (choices.length !== 3) throw new Error(`${pack.name}当前不足3名可选球员`);
+    if (pack.choiceMode === "all" ? !choices.length : choices.length !== 3) throw new Error(`${pack.name}当前没有可选球员`);
     const offer = {
       id:makeId("s4-pack-offer", item.id),
       packId:item.id,
       packType:pack.id,
       ownerId:account.id,
       kind:pack.kind,
+      choiceMode:pack.choiceMode ?? "random",
       playerIds:choices.map((player) => player.id),
       status:"pending",
       createdAt:this.now(),
@@ -1883,7 +2380,25 @@ export class YellowDogsLeagueService {
     return offer;
   }
 
+  publicS4PackOffer(offer) {
+    if (!offer || offer.status !== "pending") return null;
+    if (offer.kind === "cosmetic") return {
+      ...clone(offer),
+      items:(offer.itemIds ?? []).map((id) => COSMETIC_BADGE_BY_ID[id]).filter(Boolean),
+      itemIds:undefined,
+    };
+    return {
+      ...clone(offer),
+      players:offer.playerIds.map((id) => playerSummary(REAL_PLAYER_BY_ID[id])),
+      playerIds:undefined,
+    };
+  }
+
   publicS4BatchResult(result) {
+    if (result.mode === "cosmetic-choice") {
+      const item = COSMETIC_BADGE_BY_ID[result.itemId];
+      return { mode:result.mode, packId:result.packId, item:item ? { ...item } : null };
+    }
     const player = REAL_PLAYER_BY_ID[result.playerId];
     const card = this.state.s4Assets.cards[result.cardId];
     return {
@@ -1943,21 +2458,84 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
+  chooseS4CosmeticPack(account, offerIdValue, itemIdValue, options = {}) {
+    const team = this.accountTeam(account.id);
+    const offer = this.state.s4Packs.offers[account.id];
+    const itemId = String(itemIdValue ?? "");
+    const item = this.s4PackInventory(account.id).find((candidate) => candidate.id === offer?.packId);
+    const pack = S4_PACK_BY_ID[offer?.packType];
+    const cosmetic = COSMETIC_BADGE_BY_ID[itemId];
+    if (!team || !offer || offer.kind !== "cosmetic" || offer.status !== "pending" || offer.id !== String(offerIdValue ?? "") || !(offer.itemIds ?? []).includes(itemId) || !item || !pack || !cosmetic || cosmetic.kind !== pack.cosmeticType) {
+      throw new Error("只能选择当前徽章包展示的徽章");
+    }
+    const inventory = this.cosmeticInventory(account.id);
+    inventory[itemId] = Math.max(0, Number(inventory[itemId] ?? 0)) + 1;
+    const equipped = this.equippedCosmeticIds(account.id);
+    if (!equipped[cosmetic.slot]) equipped[cosmetic.slot] = itemId;
+    offer.status = "selected";
+    offer.selectedItemId = itemId;
+    offer.closedAt = this.now();
+    item.status = "opened";
+    item.openedAt = this.now();
+    item.resultCosmeticItemId = itemId;
+    delete this.state.s4Packs.offers[account.id];
+    this.state.ledger.push({ id:makeId("ledger", item.id), accountId:account.id, amount:0, type:"s4-pack-open", packType:pack.id, packId:item.id, cosmeticItemId:itemId, createdAt:this.now() });
+    const packOpening = { mode:"cosmetic-choice", packId:item.id, item:{ ...cosmetic, count:inventory[itemId], equipped:equipped[cosmetic.slot] === itemId } };
+    const batch = offer.batchId ? this.state.s4Packs.batchOpenings[account.id] : null;
+    if (batch?.id === offer.batchId && batch.status === "active") {
+      batch.results.push({ mode:"cosmetic-choice", packId:item.id, itemId });
+      if (batch.results.length < batch.packIds.length) {
+        const nextPackId = batch.packIds[batch.results.length];
+        const nextItem = this.s4PackInventory(account.id).find((candidate) => candidate.id === nextPackId);
+        if (!nextItem || nextItem.status !== "unopened") throw new Error("批量开包队列中的下一份徽章包不可用");
+        this.createS4ChoiceOffer(account, nextItem, pack, batch);
+        this.save();
+        const packBatchOpening = { id:batch.id, mode:"cosmetic-choice", complete:false, packType:batch.packType, total:batch.packIds.length, completed:batch.results.length };
+        if (options.compact) return this.compactMutationView(account, { ownTeam:true, s4Packs:true, cosmetics:true, extra:{ packOpening, packBatchOpening, teamBadgeDelta:this.equippedTeamBadge(account.id), clubBadgeDelta:this.equippedClubBadge(account.id) } });
+        return { ...this.view(account), packOpening, packBatchOpening };
+      }
+      batch.status = "complete";
+      batch.completedAt = this.now();
+      const batchResult = {
+        id:batch.id,
+        mode:"cosmetic-choice",
+        complete:true,
+        packType:batch.packType,
+        total:batch.packIds.length,
+        results:batch.results.map((result) => this.publicS4BatchResult(result)),
+      };
+      delete this.state.s4Packs.batchOpenings[account.id];
+      this.save();
+      if (options.compact) return this.compactMutationView(account, { ownTeam:true, s4Packs:true, cosmetics:true, extra:{ packOpening, packBatchOpening:batchResult, teamBadgeDelta:this.equippedTeamBadge(account.id), clubBadgeDelta:this.equippedClubBadge(account.id) } });
+      return { ...this.view(account), packOpening, packBatchOpening:batchResult };
+    }
+    this.save();
+    if (options.compact) return this.compactMutationView(account, { ownTeam:true, s4Packs:true, cosmetics:true, extra:{ packOpening, teamBadgeDelta:this.equippedTeamBadge(account.id), clubBadgeDelta:this.equippedClubBadge(account.id) } });
+    return { ...this.view(account), packOpening };
+  }
+
   chooseS4Pack(account, offerIdValue, playerIdValue, options = {}) {
     const team = this.accountTeam(account.id);
     const offer = this.state.s4Packs.offers[account.id];
+    if (offer?.kind === "cosmetic") return this.chooseS4CosmeticPack(account, offerIdValue, playerIdValue, options);
     const playerId = String(playerIdValue ?? "");
     const item = this.s4PackInventory(account.id).find((candidate) => candidate.id === offer?.packId);
     const pack = S4_PACK_BY_ID[offer?.packType];
     if (!team || !offer || offer.status !== "pending" || offer.id !== String(offerIdValue ?? "") || !offer.playerIds.includes(playerId) || !item || !pack) {
       throw new Error("只能选择当前礼包展示的球员");
     }
+    if (pack.adminOnly && pack.kind === "private") {
+      const privateCandidates = new Set(this.privatePackCandidates(account.id, pack).map((player) => player.id));
+      if (!privateCandidates.has(playerId)) throw new Error("该球员已不在你的私有池中，请重新开启礼包");
+    }
     if (offer.kind === "public" && ownershipOwner(this.state, playerId)) throw new Error("该球员所有权已经被其他玩家获得，请重新开启礼包");
     const cardQuantity = Math.max(1, Number(pack.cardQuantity ?? 1));
+    const upgradeLevel = Number.isInteger(pack.fixedUpgradeLevel) ? pack.fixedUpgradeLevel : 0;
     const cards = Array.from({ length:cardQuantity }, (_, index) => this.grantS4Card(team, playerId, {
       grantOwnership:offer.kind === "public" && index === 0,
-      acquisitionSource:offer.kind === "public" ? "public-pack" : "legend-pack",
+      acquisitionSource:pack.adminOnly ? "admin-designated-pack" : offer.kind === "public" ? "public-pack" : "legend-pack",
       knownRosterFamily:offer.kind !== "public" || index > 0,
+      upgradeLevel,
     }));
     const card = cards[0];
     offer.status = "selected";
@@ -2400,6 +2978,8 @@ export class YellowDogsLeagueService {
       delete this.state.s4Packs.inventory[accountId];
       delete this.state.s4Packs.offers[accountId];
       delete this.state.s4Packs.batchOpenings[accountId];
+      delete this.state.s4Assets.cosmetics.inventory[accountId];
+      delete this.state.s4Assets.cosmetics.equipped[accountId];
       delete this.state.shopOffers[accountId];
       delete this.state.rewardOffers[accountId];
       delete this.state.drafts[accountId];
@@ -2631,6 +3211,275 @@ export class YellowDogsLeagueService {
     return this.state.teams.find((team) => team.ownerId === accountId) ?? null;
   }
 
+  ensureClubManagement(team) {
+    if (!team) return null;
+    const baseName = String(team.clubManagement?.baseTeamName ?? team.name ?? "球队");
+    team.clubManagement ??= {};
+    team.clubManagement.baseTeamName ??= baseName;
+    team.clubManagement.stadium ??= {};
+    team.clubManagement.stadium.name ??= `${baseName}主场`;
+    team.clubManagement.stadium.capacity = Math.max(CLUB_STADIUM_DEFAULT_CAPACITY, Math.round(Number(team.clubManagement.stadium.capacity ?? CLUB_STADIUM_DEFAULT_CAPACITY)));
+    team.clubManagement.stadium.standStyle ??= "none";
+    if (Number(team.clubManagement.stadium.standStyleDefaultVersion ?? 0) < 2) {
+      if (team.clubManagement.stadium.standStyle === "classic") team.clubManagement.stadium.standStyle = "none";
+      team.clubManagement.stadium.standStyleDefaultVersion = 2;
+    }
+    team.clubManagement.stadium.pitchStyle ??= "striped";
+    team.clubManagement.stadium.adLayout ??= "sideline";
+    team.clubManagement.stadium.backgroundEffect ??= team.clubManagement.stadium.standStyle === "meteor" ? "meteor" : "none";
+    if (team.clubManagement.stadium.standStyle === "meteor") team.clubManagement.stadium.standStyle = "none";
+    if (team.clubManagement.stadium.backgroundEffect === "meteor" && !this.ownsMeteorStand(team.ownerId)) team.clubManagement.stadium.backgroundEffect = "none";
+    delete team.clubManagement.supporters;
+    delete team.clubManagement.attendance;
+
+    team.clubManagement.sponsorship ??= {};
+    const sponsorship = team.clubManagement.sponsorship;
+    sponsorship.history ??= [];
+    sponsorship.offers ??= [];
+    sponsorship.activeContracts ??= [];
+    if (sponsorship.activeContract && !sponsorship.activeContracts.some((entry) => entry.id === sponsorship.activeContract.id)) sponsorship.activeContracts.push(sponsorship.activeContract);
+    delete sponsorship.activeContract;
+    sponsorship.offersInitialized = true;
+    if (team.ownerId && sponsorship.initialOfferGranted !== true) {
+      sponsorship.initialOfferGranted = true;
+      this.createClubSponsorOffer(team, { type:"normal", sourceCompetition:"initial", force:true });
+    }
+    return team.clubManagement;
+  }
+
+  setStoredTeamName(team, name) {
+    team.name = name;
+    Object.values(this.state.playerStats).forEach((entry) => { if (entry.teamId === team.id) entry.teamName = name; });
+    this.state.listings.forEach((entry) => { if (entry.sellerTeamId === team.id) entry.sellerTeamName = name; });
+    (this.state.reports[team.id] ?? []).forEach((report) => { report.teamName = name; });
+  }
+
+  activeClubSponsorContract(club, type) {
+    return (club?.sponsorship?.activeContracts ?? []).find((entry) => entry.type === type && Number(entry.remainingSeasons ?? 0) > 0) ?? null;
+  }
+
+  settleClubSponsorContractsForSeason(team, seasonId) {
+    const settledSeasonId = String(seasonId ?? "").trim();
+    if (!team || !settledSeasonId) return false;
+    const club = this.ensureClubManagement(team);
+    let changed = false;
+    let teamNamingExpired = false;
+    club.sponsorship.activeContracts.forEach((contract) => {
+      if (contract.lastSettledSeasonId === settledSeasonId) return;
+      contract.remainingSeasons = Math.max(0, Number(contract.remainingSeasons ?? contract.durationSeasons ?? 1) - 1);
+      contract.lastSettledSeasonId = settledSeasonId;
+      if (contract.remainingSeasons === 0 && contract.type === "team") teamNamingExpired = true;
+      changed = true;
+    });
+    if (!changed) return false;
+    club.sponsorship.activeContracts = club.sponsorship.activeContracts.filter((contract) => Number(contract.remainingSeasons ?? 0) > 0);
+    if (teamNamingExpired) this.setStoredTeamName(team, club.baseTeamName);
+    return true;
+  }
+
+  createClubSponsorOffer(team, options = {}) {
+    if (!team?.ownerId) return null;
+    const club = this.ensureClubManagement(team);
+    const sponsorship = club.sponsorship;
+    if ((sponsorship.offers ?? []).filter((entry) => entry.status === "pending").length >= CLUB_SPONSOR_MAX_PENDING_OFFERS) return null;
+    if (!options.force && this.rng() >= CLUB_SPONSOR_OFFER_CHANCE) return null;
+    const rank = this.standings().find((entry) => entry.id === team.id)?.rank ?? TEAM_COUNT;
+    const eligibleTypes = Object.values(CLUB_SPONSOR_CONTRACTS).filter((entry) => rank <= entry.requiredRank);
+    const requestedType = CLUB_SPONSOR_CONTRACTS[String(options.type ?? "")];
+    const type = requestedType ?? eligibleTypes[Math.floor(this.rng() * eligibleTypes.length)] ?? CLUB_SPONSOR_CONTRACTS.normal;
+    const activeSponsorIds = new Set(sponsorship.activeContracts.map((entry) => entry.sponsorId));
+    const pendingSponsorIds = new Set(sponsorship.offers.filter((entry) => entry.status === "pending" && entry.type === type.id).map((entry) => entry.sponsorId));
+    const candidates = CLUB_SPONSORS.filter((entry) => !activeSponsorIds.has(entry.id) && !pendingSponsorIds.has(entry.id));
+    const sponsorPool = candidates.length ? candidates : CLUB_SPONSORS;
+    const sponsor = sponsorPool[Math.floor(this.rng() * sponsorPool.length)] ?? sponsorPool[0];
+    const durationSeasons = Math.max(1, Math.min(3, Math.round(Number(options.durationSeasons ?? (1 + Math.floor(this.rng() * 3))))));
+    const offer = {
+      id:makeId("sponsor-offer", `${team.id}-${sponsor.id}-${type.id}-${this.now()}`),
+      sponsorId:sponsor.id,
+      sponsorName:sponsor.name,
+      sponsorIcon:sponsor.icon,
+      type:type.id,
+      typeName:type.name,
+      durationSeasons,
+      bonus:type.bonus * durationSeasons,
+      status:"pending",
+      sourceCompetition:String(options.sourceCompetition ?? "league"),
+      sourceMatchId:options.sourceMatchId ?? null,
+      createdSeasonId:this.state.season.id,
+      createdAt:this.now(),
+    };
+    sponsorship.offers.unshift(offer);
+    sponsorship.offers = sponsorship.offers.slice(0, 30);
+    return offer;
+  }
+
+  rollClubSponsorOffersAfterMatch(record) {
+    if (!record?.id || record.competition === "friendly") return [];
+    const created = [];
+    [record.homeId, record.awayId].forEach((teamId) => {
+      const team = this.state.teams.find((entry) => entry.id === teamId);
+      if (!team?.ownerId) return;
+      const club = this.ensureClubManagement(team);
+      if (club.sponsorship.offers.some((entry) => entry.sourceMatchId === record.id)) return;
+      const offer = this.createClubSponsorOffer(team, { sourceCompetition:record.competition ?? "league", sourceMatchId:record.id });
+      if (offer) created.push(offer);
+    });
+    return created;
+  }
+
+  clubManagementView(account) {
+    const team = this.accountTeam(account.id);
+    if (!team) return null;
+    const club = this.ensureClubManagement(team);
+    const rank = this.standings().find((entry) => entry.id === team.id)?.rank ?? TEAM_COUNT;
+    const meteorUnlocked = this.ownsMeteorStand(account.id);
+    const stadiumContract = this.activeClubSponsorContract(club, "stadium");
+    const stadiumSponsor = CLUB_SPONSORS.find((entry) => entry.id === stadiumContract?.sponsorId) ?? null;
+    const nextExpansion = CLUB_STADIUM_EXPANSIONS.find((entry) => entry.capacity > club.stadium.capacity) ?? null;
+    const activeSponsors = club.sponsorship.activeContracts.map((contract) => ({ ...contract, sponsor:CLUB_SPONSORS.find((entry) => entry.id === contract.sponsorId) ?? null }));
+    const attendanceRate = meteorUnlocked ? 1 : .82;
+    return clone({
+      ...club,
+      stadium:{
+        ...club.stadium,
+        displayName:stadiumContract && stadiumSponsor ? `${stadiumSponsor.name}竞技场` : club.stadium.name,
+        nameLocked:Boolean(stadiumContract),
+        nextExpansion,
+        attendanceRate,
+        estimatedTicketIncome:Math.floor(club.stadium.capacity * attendanceRate * .08),
+        unlockedStandStyles:["none", "classic", "steep", "continuous"],
+        unlockedBackgroundEffects:["none", ...(meteorUnlocked ? ["meteor"] : [])],
+      },
+      sponsorship:{ ...club.sponsorship, activeSponsors, activeSponsor:activeSponsors[0]?.sponsor ?? null },
+      sponsors:CLUB_SPONSORS,
+      contractTypes:Object.values(CLUB_SPONSOR_CONTRACTS).map((type) => ({ ...type, unlocked:rank <= type.requiredRank, currentRank:rank })),
+    });
+  }
+
+  updateClubStadium(account, body = {}) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    const club = this.ensureClubManagement(team);
+    const stadiumContract = this.activeClubSponsorContract(club, "stadium");
+    const name = String(body.name ?? club.stadium.name).trim();
+    if (stadiumContract && name !== club.stadium.name) throw new Error("球场冠名合同生效期间无法修改主场名称");
+    if (!name) throw new Error("主场名称不能为空");
+    if (name.length > 30) throw new Error("主场名称最多30个字符");
+    const standStyles = new Set(["none", "classic", "steep", "continuous"]);
+    const pitchStyles = new Set(["striped", "checker", "plain"]);
+    const backgroundEffects = new Set(["none", "meteor"]);
+    if (body.backgroundEffect === "meteor" && !this.ownsMeteorStand(account.id)) throw new Error("请先在商店购买流星雨看台");
+    club.stadium.name = name;
+    if (standStyles.has(body.standStyle)) club.stadium.standStyle = body.standStyle;
+    if (pitchStyles.has(body.pitchStyle)) club.stadium.pitchStyle = body.pitchStyle;
+    if (backgroundEffects.has(body.backgroundEffect)) club.stadium.backgroundEffect = body.backgroundEffect;
+    this.save();
+    return this.view(account, { includePlayerDirectory:false });
+  }
+
+  expandClubStadium(account) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    const club = this.ensureClubManagement(team);
+    const expansion = CLUB_STADIUM_EXPANSIONS.find((entry) => entry.capacity > club.stadium.capacity);
+    if (!expansion) throw new Error("球场已经达到当前最高容量");
+    const wallet = this.wallet(account.id);
+    if (wallet.balance < expansion.cost) throw new Error(`金币不足，扩建需要${expansion.cost}金币`);
+    wallet.balance -= expansion.cost;
+    club.stadium.capacity = expansion.capacity;
+    this.state.ledger.push({ id:makeId("ledger", `stadium-expansion-${team.id}-${expansion.capacity}`), accountId:account.id, amount:-expansion.cost, type:"stadium-expansion", teamId:team.id, capacity:expansion.capacity, createdAt:this.now() });
+    this.save();
+    return this.view(account, { includePlayerDirectory:false });
+  }
+
+  clubBroadcastVenue(team) {
+    const club = this.ensureClubManagement(team);
+    const stadiumContract = this.activeClubSponsorContract(club, "stadium");
+    const stadiumSponsor = CLUB_SPONSORS.find((entry) => entry.id === stadiumContract?.sponsorId) ?? null;
+    const sponsors = club.sponsorship.activeContracts
+      .filter((contract) => contract.type === "normal")
+      .map((contract) => CLUB_SPONSORS.find((entry) => entry.id === contract.sponsorId))
+      .filter((sponsor, index, entries) => sponsor && entries.findIndex((entry) => entry.id === sponsor.id) === index)
+      .map((sponsor) => ({ id:sponsor.id, name:sponsor.name, icon:sponsor.icon }));
+    return {
+      name:stadiumContract && stadiumSponsor ? `${stadiumSponsor.name}竞技场` : club.stadium.name,
+      standStyle:club.stadium.standStyle,
+      backgroundEffect:club.stadium.backgroundEffect,
+      pitchStyle:club.stadium.pitchStyle,
+      sponsors,
+    };
+  }
+
+  settleHomeTicketIncome(record) {
+    if (!record?.id || !record.homeId || record.competition === "friendly") return null;
+    const team = this.state.teams.find((entry) => entry.id === record.homeId);
+    if (!team?.ownerId) return null;
+    const existing = this.state.ledger.find((entry) => entry.type === "home-ticket-income" && entry.matchId === record.id && entry.accountId === team.ownerId);
+    if (existing) return existing;
+    const club = this.ensureClubManagement(team);
+    const attendanceRate = this.ownsMeteorStand(team.ownerId) ? 1 : .82;
+    const attendance = Math.floor(club.stadium.capacity * attendanceRate);
+    const amount = Math.floor(attendance * .08);
+    const entry = { id:makeId("ledger", `tickets-${record.id}`), accountId:team.ownerId, amount, type:"home-ticket-income", seasonId:this.state.season.id, round:record.round, matchId:record.id, competition:record.competition ?? "league", attendanceRate, attendance, capacity:club.stadium.capacity, createdAt:this.now() };
+    this.wallet(team.ownerId).balance += amount;
+    this.state.ledger.push(entry);
+    return entry;
+  }
+
+  homeTicketIncomeSummary(team, record) {
+    if (!team?.ownerId || !record?.id || record.homeId !== team.id) return null;
+    const entry = this.state.ledger.find((item) => item.type === "home-ticket-income" && item.matchId === record.id && item.accountId === team.ownerId);
+    if (!entry) return null;
+    return {
+      amount:Number(entry.amount ?? 0),
+      attendance:Number(entry.attendance ?? 0),
+      capacity:Number(entry.capacity ?? 0),
+      attendanceRate:Number(entry.attendanceRate ?? (entry.capacity ? entry.attendance / entry.capacity : 0)),
+    };
+  }
+  respondClubSponsorOffer(account, body = {}) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    const club = this.ensureClubManagement(team);
+    const offer = club.sponsorship.offers.find((entry) => entry.id === String(body.offerId ?? ""));
+    if (!offer || offer.status !== "pending") throw new Error("这份赞助报价已不存在或已经处理");
+    const action = String(body.action ?? "");
+    if (action === "reject") {
+      offer.status = "rejected";
+      offer.resolvedAt = this.now();
+      this.save();
+      return this.view(account, { includePlayerDirectory:false });
+    }
+    if (action !== "accept") throw new Error("请选择接受或拒绝赞助报价");
+    const sameType = club.sponsorship.activeContracts.filter((entry) => entry.type === offer.type);
+    const limit = offer.type === "normal" ? 3 : 1;
+    if (sameType.length >= limit) throw new Error(offer.type === "normal" ? "普通赞助最多同时签约三家公司" : `${offer.typeName}最多同时签约一家公司`);
+    if (club.sponsorship.activeContracts.some((entry) => entry.sponsorId === offer.sponsorId)) throw new Error("该赞助商已有生效中的合同");
+    const contract = {
+      id:makeId("sponsor", `${team.id}-${offer.sponsorId}-${offer.type}-${this.now()}`),
+      offerId:offer.id,
+      sponsorId:offer.sponsorId,
+      sponsorName:offer.sponsorName,
+      type:offer.type,
+      typeName:offer.typeName,
+      bonus:offer.bonus,
+      durationSeasons:offer.durationSeasons,
+      remainingSeasons:offer.durationSeasons,
+      signedSeasonId:this.state.season.id,
+      lastSettledSeasonId:null,
+      signedAt:this.now(),
+    };
+    offer.status = "accepted";
+    offer.resolvedAt = this.now();
+    club.sponsorship.activeContracts.push(contract);
+    club.sponsorship.history.unshift(clone(contract));
+    club.sponsorship.history = club.sponsorship.history.slice(0, 30);
+    this.wallet(account.id).balance += contract.bonus;
+    this.state.ledger.push({ id:makeId("ledger", contract.id), accountId:account.id, amount:contract.bonus, type:"sponsor-signing-bonus", teamId:team.id, sponsorId:contract.sponsorId, contractType:contract.type, durationSeasons:contract.durationSeasons, createdAt:this.now() });
+    if (contract.type === "team") this.setStoredTeamName(team, `${club.baseTeamName}-${contract.sponsorName}`);
+    this.save();
+    return this.view(account, { includePlayerDirectory:false });
+  }
   ensureDisciplineState() {
     this.state.adminCoinPenalties ??= [];
     this.state.discipline ??= { rewardSuspensions:{}, actions:[], withheldRewards:[] };
@@ -2703,6 +3552,22 @@ export class YellowDogsLeagueService {
         upgradeLevel,
         chance,
       },
+    }));
+  }
+
+  notifyEnhancementBatch(team, player, details) {
+    if (!team?.ownerId || !details?.quantity || !details.successCount || details.successCount < 1) return;
+    const maxLevel = Math.max(...(details.outcomes ?? []).filter((entry) => entry.success).map((entry) => Number(entry.afterLevel ?? 0)), 0);
+    if (maxLevel < 6) return;
+    const ownerName = team.ownerName ?? "玩家";
+    const playerInfo = `${player.club ?? "自由球员"} / ${player.nationality ?? "未知国家队"} / ${player.role} / 能力 ${player.overall}`;
+    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
+      id:`enhancement-batch-success:${details.batchId}:${recipient.ownerId}`,
+      type:"announcement",
+      title:`${player.name}批量强化完成`,
+      summary:`${ownerName}批量合成${details.quantity}次，成功${details.successCount}次，最高达到+${maxLevel}。`,
+      body:`玩家${ownerName}（${team.name}）完成${player.name}的批量强化：主卡+${details.mainLevel}、副卡+${details.materialLevel}，合成${details.quantity}次，成功${details.successCount}次，失败${details.failureCount}次，成功率${details.chance}%，最高强化至+${maxLevel}。球员信息：${playerInfo}。`,
+      payload:{ accountId:team.ownerId, ownerName, teamId:team.id, teamName:team.name, playerId:player.id, playerName:player.name, beforeLevel:details.mainLevel, materialLevel:details.materialLevel, upgradeLevel:maxLevel, chance:details.chance, quantity:details.quantity, successCount:details.successCount, failureCount:details.failureCount },
     }));
   }
 
@@ -2882,7 +3747,7 @@ export class YellowDogsLeagueService {
     const cup = this.state.cup;
     return cup.participants.map((teamId) => {
       const team = this.state.teams.find((entry) => entry.id === teamId);
-      return { id:teamId, name:team?.name ?? "未知球队", ...(cup.table[teamId] ?? { played:0, won:0, drawn:0, lost:0, goalsFor:0, goalsAgainst:0, points:0, seed:TEAM_COUNT, status:"active" }) };
+      return { id:teamId, name:team?.name ?? "未知球队", seasonFinalStarCount:(team?.seasonFinalChampionStars ?? []).length, ...(cup.table[teamId] ?? { played:0, won:0, drawn:0, lost:0, goalsFor:0, goalsAgainst:0, points:0, seed:TEAM_COUNT, status:"active" }) };
     }).sort((left, right) => right.points - left.points || (right.goalsFor - right.goalsAgainst) - (left.goalsFor - left.goalsAgainst) || right.goalsFor - left.goalsFor || left.seed - right.seed || left.name.localeCompare(right.name, "zh-CN"))
       .map((entry, index) => ({ ...entry, rank:index + 1 }));
   }
@@ -2914,7 +3779,7 @@ export class YellowDogsLeagueService {
     if (participants.length !== TEAM_COUNT) throw new Error("杯赛需要10支球队");
     const seedOrder = this.standings();
     const table = Object.fromEntries(seedOrder.map((entry) => [entry.id, { played:0, won:0, drawn:0, lost:0, goalsFor:0, goalsAgainst:0, points:0, seed:entry.rank, status:"active" }]));
-    this.state.cup = { format:"round-robin-v1", status:"active", stage:"league", participants, table, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:nextCupSlot(this.now(), this.state.season.firstRoundAt ?? this.state.season.nextRoundAt), championId:null, startedAt:this.now(), completedAt:null };
+    this.state.cup = { format:"round-robin-v1", status:"active", stage:"league", participants, table, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:nextCupSlot(this.now(), this.state.season.firstRoundAt ?? this.state.season.nextRoundAt), championId:null, startedAt:this.now(), finalStartedAt:null, completedAt:null };
     this.createCupLeagueStage();
     this.save();
     return this.adminView();
@@ -3007,6 +3872,545 @@ export class YellowDogsLeagueService {
     });
   }
 
+  seasonCompetitionDate() {
+    const storedDate = String(this.state.season?.date ?? "");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(storedDate)) return storedDate;
+    const fallback = Number(this.state.season?.startedAt ?? this.state.season?.completedAt ?? this.now());
+    return localDateKey(new Date(fallback));
+  }
+
+  seasonCompetitionDayExpired(now = this.now()) {
+    return this.seasonCompetitionDate() < localDateKey(new Date(now));
+  }
+
+  cancelExpiredSeasonFinal(now = this.now()) {
+    if (!this.seasonCompetitionDayExpired(now)) return false;
+    const tournament = this.state.seasonFinalTournament;
+    if (!tournament || ["completed", "cancelled"].includes(tournament.status)) return false;
+    tournament.status = "cancelled";
+    tournament.cancelledAt = Number(now);
+    tournament.cancellationReason = "competition-day-expired";
+    tournament.nextMatchAt = null;
+    (tournament.bracket ?? []).forEach((node) => {
+      if (node.status === "running") node.status = "cancelled";
+    });
+    if (this.state.liveSeasonFinalRound?.tournamentId === tournament.id) this.state.liveSeasonFinalRound = null;
+    return true;
+  }
+
+  ensureSeasonFinalTournament() {
+    if (this.seasonCompetitionDayExpired()) {
+      this.cancelExpiredSeasonFinal();
+      return this.state.seasonFinalTournament ?? null;
+    }
+    const leagueRanks = this.lockSeasonFinalLeagueRanks();
+    const tournamentReady = Boolean(leagueRanks) && this.state.cup?.status === "completed" && this.state.cup.completedAt != null && Number.isFinite(Number(this.state.cup.completedAt));
+    if (this.state.seasonFinalTournament?.seasonId !== this.state.season.id) this.state.seasonFinalTournament = null;
+    if (this.state.seasonFinalTournament && !this.state.seasonFinalTournament.preview) return this.ensureSeasonFinalSchedule(this.state.seasonFinalTournament);
+    if (this.state.seasonFinalTournament?.preview && !tournamentReady) return this.syncSeasonFinalPreviewSchedule(this.state.seasonFinalTournament);
+    if (this.state.seasonFinalTournament?.preview && tournamentReady) this.state.seasonFinalTournament = null;
+    if (!tournamentReady) {
+      const previewTeams = Array.from({ length:10 }, (_, index) => ({ id:`season-final-seed-${index + 1}`, name:`${index + 1}号种子`, ownerId:index === 9 ? null : `season-final-preview-${index + 1}` }));
+      const previewRanks = Object.fromEntries(previewTeams.map((team, index) => [team.id, index + 1]));
+      const previewCupResults = Object.fromEntries(previewTeams.map((team) => [team.id, { stage:"group", groupRank:10 }]));
+      this.state.seasonFinalTournament = { ...createSeasonFinalState({ id:`${this.state.season.id}-final-preview`, seasonId:this.state.season.id, teams:previewTeams, leagueRanks:previewRanks, cupResults:previewCupResults, createdAt:this.now() }), preview:true };
+      return this.syncSeasonFinalPreviewSchedule(this.state.seasonFinalTournament);
+    }
+    const cupResults = {};
+    const knockout = this.state.cup.knockout ?? {};
+    const finalTie = knockout.final?.[0];
+    if (finalTie?.teams?.length === 2) finalTie.teams.forEach((teamId) => { cupResults[teamId] = { stage: finalTie.winnerId === teamId ? "champion" : "finalist", groupRank: this.state.cup.table?.[teamId]?.seed }; });
+    const semifinalists = new Set((knockout.semifinals ?? []).flatMap((tie) => tie.teams ?? []));
+    const quarterfinalists = new Set((knockout.quarterfinals ?? []).flatMap((tie) => tie.teams ?? []));
+    Object.entries(this.state.cup.table ?? {}).forEach(([teamId, entry]) => {
+      const stage = semifinalists.has(teamId) ? "semifinal" : quarterfinalists.has(teamId) ? "quarterfinal" : entry.status === "qualified" ? "knockout" : "group";
+      cupResults[teamId] ??= { stage, groupRank: entry.seed ?? entry.rank };
+    });
+    this.state.seasonFinalTournament = createSeasonFinalState({ id:`${this.state.season.id}-final`, seasonId:this.state.season.id, teams:this.state.teams, leagueRanks, cupResults, createdAt:this.now(), scheduleAnchorAt:this.cupFinalStartedAt() ?? this.state.cup.completedAt });
+    this.state.seasonFinalTournament.leagueSnapshotRound = this.state.season.seasonFinalLeagueRound;
+    return this.state.seasonFinalTournament;
+  }
+
+  leagueRanksAfterRound(roundNumber = this.state.season.currentRound) {
+    const table = Object.fromEntries(this.state.teams.map((team) => [team.id, { points:0, goalsFor:0, goalsAgainst:0 }]));
+    const matches = this.state.matches.filter((match) => !match.competition && Number(match.round) <= roundNumber);
+    if (!matches.length) return Object.fromEntries(this.standings().map((entry) => [entry.id, entry.rank]));
+    matches.forEach((match) => {
+      const home = table[match.homeId]; const away = table[match.awayId];
+      if (!home || !away || !match.score) return;
+      home.goalsFor += Number(match.score[0]); home.goalsAgainst += Number(match.score[1]);
+      away.goalsFor += Number(match.score[1]); away.goalsAgainst += Number(match.score[0]);
+      if (match.score[0] > match.score[1]) home.points += 3;
+      else if (match.score[1] > match.score[0]) away.points += 3;
+      else { home.points += 1; away.points += 1; }
+    });
+    return Object.fromEntries([...this.state.teams].sort((left, right) => {
+      const a = table[left.id]; const b = table[right.id];
+      return b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) || b.goalsFor - a.goalsFor || left.name.localeCompare(right.name, "zh-CN");
+    }).map((team, index) => [team.id, index + 1]));
+  }
+
+  lockSeasonFinalLeagueRanks() {
+    if (this.state.season.seasonFinalLeagueRanks) return this.state.season.seasonFinalLeagueRanks;
+    if (this.state.cup?.status !== "completed" || this.state.cup.completedAt == null) return null;
+    const completedRound = Math.max(0, Number(this.state.season.currentRound) || 0);
+    this.state.season.seasonFinalLeagueRanks = this.leagueRanksAfterRound(completedRound);
+    this.state.season.seasonFinalLeagueRound = completedRound;
+    this.state.season.seasonFinalLeagueLockedAt = Number(this.state.cup.completedAt);
+    return this.state.season.seasonFinalLeagueRanks;
+  }
+
+  ensureSeasonFinalSchedule(tournament) {
+    if (!tournament || tournament.preview) return tournament;
+    const exactAnchor = this.cupFinalStartedAt();
+    const canReschedule = !(tournament.matches?.length) && (tournament.bracket ?? []).every((node) => node.status === "pending");
+    const anchor = Number(exactAnchor != null && canReschedule ? exactAnchor : tournament.scheduleAnchorAt ?? exactAnchor ?? this.state.cup.completedAt ?? tournament.createdAt);
+    if (!Number.isFinite(anchor)) return tournament;
+    const migrated = tournament.scheduleAnchorAt == null || !Number.isFinite(Number(tournament.scheduleAnchorAt)) || Number(tournament.scheduleAnchorAt) !== anchor;
+    tournament.scheduleAnchorAt = anchor;
+    tournament.finalBanDeadlineAt = anchor + SEASON_FINAL_RULES.finalBanDeadlineMinutes * 60 * 1000;
+    tournament.bracket.forEach((node) => { node.scheduledAt = anchor + SEASON_FINAL_SCHEDULE_MINUTES[node.id] * 60 * 1000; });
+    if (migrated || !Number.isFinite(Number(tournament.nextMatchAt))) {
+      const pendingTimes = tournament.bracket.filter((node) => node.status === "pending").map((node) => node.scheduledAt);
+      tournament.nextMatchAt = pendingTimes.length ? Math.min(...pendingTimes) : null;
+    }
+    return tournament;
+  }
+
+  cupFinalStartedAt() {
+    const cup = this.state.cup;
+    const stored = Number(cup?.finalStartedAt);
+    if (Number.isFinite(stored) && stored > 0) return stored;
+    const finalEvent = [...(cup?.events ?? [])].reverse().find((event) => event.stage === "final");
+    const eventStartedAt = Number(finalEvent?.startedAt);
+    if (Number.isFinite(eventStartedAt) && eventStartedAt > 0) return eventStartedAt;
+    if (finalEvent && this.state.liveCupRound?.eventId === finalEvent.id) {
+      const liveStartedAt = Number(this.state.liveCupRound.startedAt);
+      if (Number.isFinite(liveStartedAt) && liveStartedAt > 0) return liveStartedAt;
+    }
+    const finalLeg = cup?.knockout?.final?.[0]?.legs?.[0];
+    const finalRecord = finalLeg?.matchId ? this.state.matches.find((match) => match.id === finalLeg.matchId) : null;
+    const playedAt = Number(finalRecord?.playedAt);
+    if (Number.isFinite(playedAt) && playedAt > 0 && String(finalRecord?.report?.engineVersion ?? "").startsWith("2.1")) {
+      const extraTimeDuration = finalRecord.report.extraTimePlayed ? 40_000 : 0;
+      const penaltyKickCount = Number(finalRecord.report.penaltyShootout?.kicks?.length ?? 0);
+      const penaltyDuration = finalRecord.report.penaltyShootout ? (penaltyKickCount + 1) * 2_000 : 0;
+      return playedAt - 120_000 - extraTimeDuration - penaltyDuration;
+    }
+    return null;
+  }
+
+  projectedCupFinalAt() {
+    const cup = this.state.cup;
+    if (cup?.status === "completed" && cup.completedAt != null) return this.cupFinalStartedAt() ?? Number(cup.completedAt);
+    const nextAt = Number(cup?.nextRoundAt);
+    if (!Number.isFinite(nextAt) || !cup?.events?.length) return null;
+    const current = cup.events.find((event) => event.status === "running") ?? cup.events.find((event) => event.status === "pending");
+    if (!current) return null;
+    let slotsBeforeFinal = null;
+    if (current.stage === "league") {
+      const remainingLeagueEvents = cup.events.filter((event) => event.stage === "league" && ["pending", "running"].includes(event.status)).length;
+      slotsBeforeFinal = Math.max(0, remainingLeagueEvents - 1) + 5;
+    } else if (current.stage === "quarterfinals") slotsBeforeFinal = current.leg === 1 ? 4 : 3;
+    else if (current.stage === "semifinals") slotsBeforeFinal = current.leg === 1 ? 2 : 1;
+    else if (current.stage === "final") slotsBeforeFinal = 0;
+    if (!Number.isInteger(slotsBeforeFinal)) return null;
+    return nextAt + slotsBeforeFinal * CUP_INTERVAL_MS;
+  }
+
+  syncSeasonFinalPreviewSchedule(tournament) {
+    if (!tournament?.preview) return tournament;
+    const anchor = this.projectedCupFinalAt();
+    tournament.scheduleAnchorAt = anchor;
+    tournament.nextMatchAt = anchor == null ? null : anchor + SEASON_FINAL_RULES.firstMatchDelayMinutes * 60 * 1000;
+    tournament.finalBanDeadlineAt = anchor == null ? null : anchor + SEASON_FINAL_RULES.finalBanDeadlineMinutes * 60 * 1000;
+    tournament.bracket.forEach((node) => { node.scheduledAt = anchor == null ? null : anchor + SEASON_FINAL_SCHEDULE_MINUTES[node.id] * 60 * 1000; });
+    return tournament;
+  }
+
+  seasonFinalTournamentView(account = null) {
+    const tournament = this.ensureSeasonFinalTournament();
+    if (!tournament) return null;
+    const seedNames = new Map((tournament.seedSnapshot ?? []).map((entry) => [entry.teamId, entry.teamName ?? `${entry.seed}号种子`]));
+    const teamName = (id) => this.state.teams.find((team) => team.id === id)?.name ?? seedNames.get(id) ?? "待定";
+    const resolvedName = (source) => teamName(this.seasonFinalNodeTeamId(tournament, source));
+    const bracket = tournament.bracket.map((node) => {
+      const match = tournament.matches.find((entry) => entry.seasonFinalNodeId === node.id);
+      const live = this.state.liveSeasonFinalRound?.matches.find((entry) => entry.nodeId === node.id && !entry.completed);
+      const resolvedStartsAt = match?.playedAt ?? (live ? this.state.liveSeasonFinalRound?.startedAt : node.scheduledAt ?? tournament.nextMatchAt);
+      const startsAt = resolvedStartsAt == null ? null : Number(resolvedStartsAt);
+      return { ...node, startsAt, homeName:resolvedName(node.home), awayName:resolvedName(node.away) };
+    });
+    return clone({ ...tournament, seedSnapshot:tournament.seedSnapshot.map((entry) => ({ ...entry, teamName:teamName(entry.teamId) })), bracket, finalBan:this.seasonFinalBanView(account, tournament) });
+  }
+
+  seasonFinalNodeTeamId(tournament, source) {
+    if (!source || !String(source).includes(".")) return source ?? null;
+    const [nodeId, result] = String(source).split(".");
+    return tournament.bracket.find((node) => node.id === nodeId)?.[result] ?? null;
+  }
+
+  seasonFinalBanEligiblePlayers(team, roundNumber = 100) {
+    if (!team) return [];
+    const playerIds = team.ownerId
+      ? team.rosterIds ?? []
+      : (() => {
+          const starters = aiLineup(this.state.teams.indexOf(team), roundNumber, this.ownedPlayerIds());
+          return [...starters, ...aiSubstitutes(this.state.teams.indexOf(team), roundNumber, this.ownedPlayerIds(), starters)].map((player) => player.id);
+        })();
+    return [...new Set(playerIds)].map((playerId) => {
+      const player = REAL_PLAYER_BY_ID[playerId];
+      const state = team.playerState?.[playerId] ?? {};
+      if (!player) return null;
+      return {
+        id:player.id,
+        name:player.name,
+        role:player.role,
+        line:positionLine(player.role),
+        overall:s4EffectiveOverall(player, this.representativeCard(team.ownerId, player.id)?.upgradeLevel ?? 0),
+        isAvailable:Number(state.seasonFinalSuspension ?? 0) <= 0 && Number(state.injuryRounds ?? 0) <= 0,
+      };
+    }).filter((player) => player && player.line !== "GK");
+  }
+
+  seasonFinalBanDecision(tournament, nodeId, teamId) {
+    const decisionNodeId = String(nodeId).startsWith("FINAL-") ? "FINAL-1" : nodeId;
+    return (tournament.finalBanDecisions ?? []).find((entry) => entry.nodeId === decisionNodeId && entry.teamId === teamId) ?? null;
+  }
+
+  automaticSeasonFinalBanSelection(opponent, roundNumber) {
+    const candidates = this.seasonFinalBanEligiblePlayers(opponent, roundNumber).filter((player) => player.isAvailable);
+    const choose = (line) => candidates.filter((player) => player.line === line).sort((left, right) => right.overall - left.overall || left.id.localeCompare(right.id))[0]?.id ?? null;
+    return { forward:choose("ATT"), midfield:choose("MID"), defense:choose("DEF") };
+  }
+
+  ensureSeasonFinalBanDecisions(node, tournament) {
+    const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
+    const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
+    const roundNumber = 100 + node.order;
+    const bannedPlayerIdsByTeam = {};
+    for (const [teamId, opponentTeamId] of [[homeId, awayId], [awayId, homeId]]) {
+      const opponent = this.state.teams.find((team) => team.id === opponentTeamId);
+      const candidates = this.seasonFinalBanEligiblePlayers(opponent, roundNumber);
+      const decisionNodeId = node.group === "final" ? "FINAL-1" : node.id;
+      let decision = this.seasonFinalBanDecision(tournament, decisionNodeId, teamId);
+      if (!decision || !validateFinalBanSelection(decision.selection, candidates).valid) {
+        const selection = this.automaticSeasonFinalBanSelection(opponent, roundNumber);
+        const validation = validateFinalBanSelection(selection, candidates);
+        if (!validation.valid) throw new Error(`无法为${opponent?.name ?? "对手"}生成完整的赛季总决赛禁用名单`);
+        decision = { nodeId:decisionNodeId, teamId, opponentTeamId, selection:validation.selection, automatic:true, submittedAt:this.now() };
+        tournament.finalBanDecisions = (tournament.finalBanDecisions ?? []).filter((entry) => !(entry.nodeId === decisionNodeId && entry.teamId === teamId));
+        tournament.finalBanDecisions.push(decision);
+      }
+      bannedPlayerIdsByTeam[opponentTeamId] = Object.values(decision.selection);
+    }
+    this.notifySeasonFinalBanResults(tournament);
+    return bannedPlayerIdsByTeam;
+  }
+
+  confirmedSeasonFinalBanDecisions(tournament = this.state.seasonFinalTournament) {
+    if (!tournament || tournament.preview || tournament.status === "completed") return null;
+    const node = tournament.bracket?.find((entry) => entry.id === "FINAL-1");
+    const homeId = this.seasonFinalNodeTeamId(tournament, node?.home);
+    const awayId = this.seasonFinalNodeTeamId(tournament, node?.away);
+    if (!homeId || !awayId) return null;
+    const decisions = [homeId, awayId].map((teamId) => this.seasonFinalBanDecision(tournament, "FINAL-1", teamId));
+    if (decisions.some((decision) => !decision)) return null;
+    return { node, homeId, awayId, decisions };
+  }
+
+  seasonFinalBannedPlayerIds(teamId, tournament = this.state.seasonFinalTournament) {
+    const confirmed = this.confirmedSeasonFinalBanDecisions(tournament);
+    if (!confirmed) return [];
+    const opponentDecision = confirmed.decisions.find((decision) => decision.opponentTeamId === teamId);
+    return opponentDecision ? Object.values(opponentDecision.selection ?? {}).filter(Boolean) : [];
+  }
+
+  notifySeasonFinalBanResults(tournament = this.state.seasonFinalTournament) {
+    const confirmed = this.confirmedSeasonFinalBanDecisions(tournament);
+    if (!confirmed) return false;
+    tournament.finalBanNotificationSignatures ??= {};
+    const playerNames = (ids) => ids.map((id) => REAL_PLAYER_BY_ID[id]?.name ?? id);
+    let changed = false;
+    for (const teamId of [confirmed.homeId, confirmed.awayId]) {
+      const team = this.state.teams.find((entry) => entry.id === teamId);
+      if (!team?.ownerId) continue;
+      const ownDecision = confirmed.decisions.find((decision) => decision.teamId === teamId);
+      const opponentDecision = confirmed.decisions.find((decision) => decision.opponentTeamId === teamId);
+      const ownBannedNames = playerNames(Object.values(opponentDecision?.selection ?? {}));
+      const opponentBannedNames = playerNames(Object.values(ownDecision?.selection ?? {}));
+      const signature = JSON.stringify({ own:ownBannedNames, opponent:opponentBannedNames });
+      if (tournament.finalBanNotificationSignatures[teamId] === signature) continue;
+      tournament.finalBanNotificationSignatures[teamId] = signature;
+      this.pushInbox(team, {
+        id:`season-final-ban-result:${tournament.id}:${teamId}`,
+        type:"season-final-ban",
+        title:"赛季总决赛禁用名单已确定",
+        summary:`本队被禁用：${ownBannedNames.join("、")}。`,
+        body:`最终决赛双方禁用名单已经确定。本队被对手禁用的球员：${ownBannedNames.join("、")}；本队禁用的对手球员：${opponentBannedNames.join("、")}。以上名单沿用至第二回合。`,
+        payload:{ tournamentId:tournament.id, nodeId:"FINAL-1", bannedPlayerIds:Object.values(opponentDecision?.selection ?? {}), opponentBannedPlayerIds:Object.values(ownDecision?.selection ?? {}) },
+      });
+      changed = true;
+    }
+    return changed;
+  }
+
+  finalizeSeasonFinalBansIfDue(tournament = this.state.seasonFinalTournament, now = this.now()) {
+    if (!tournament || tournament.preview || ["completed", "cancelled"].includes(tournament.status) || now < Number(tournament.finalBanDeadlineAt ?? Infinity)) return false;
+    const node = tournament.bracket?.find((entry) => entry.id === "FINAL-1" && entry.status === "pending");
+    if (!node || !this.seasonFinalNodeTeamId(tournament, node.home) || !this.seasonFinalNodeTeamId(tournament, node.away)) return false;
+    const before = JSON.stringify({ decisions:tournament.finalBanDecisions ?? [], notifications:tournament.finalBanNotificationSignatures ?? {} });
+    this.ensureSeasonFinalBanDecisions(node, tournament);
+    return JSON.stringify({ decisions:tournament.finalBanDecisions ?? [], notifications:tournament.finalBanNotificationSignatures ?? {} }) !== before;
+  }
+
+  seasonFinalBanView(account, tournament = this.ensureSeasonFinalTournament()) {
+    if (!account?.id || !tournament || tournament.preview || tournament.status === "completed") return null;
+    const node = tournament.bracket.find((entry) => entry.id === "FINAL-1" && this.seasonFinalNodeTeamId(tournament, entry.home) && this.seasonFinalNodeTeamId(tournament, entry.away));
+    if (!node) return null;
+    const team = this.accountTeam(account.id);
+    const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
+    const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
+    if (!team || ![homeId, awayId].includes(team.id)) return null;
+    const opponentId = team.id === homeId ? awayId : homeId;
+    const opponent = this.state.teams.find((entry) => entry.id === opponentId);
+    const decision = this.seasonFinalBanDecision(tournament, node.id, team.id);
+    return {
+      nodeId:node.id,
+      opponentTeamId:opponentId,
+      opponentTeamName:opponent?.name ?? "对手",
+      deadlineAt:tournament.finalBanDeadlineAt,
+      locked:node.status !== "pending" || this.now() >= Number(tournament.finalBanDeadlineAt ?? node.scheduledAt),
+      submitted:Boolean(decision),
+      automatic:Boolean(decision?.automatic),
+      selection:decision?.selection ?? null,
+      candidates:this.seasonFinalBanEligiblePlayers(opponent, 100 + node.order).filter((player) => player.isAvailable),
+    };
+  }
+
+  submitSeasonFinalBan(account, selection = {}) {
+    const tournament = this.ensureSeasonFinalTournament();
+    const view = this.seasonFinalBanView(account, tournament);
+    if (!view) throw new Error("当前没有需要你提交的赛季总决赛禁用名单");
+    if (view.locked) throw new Error("赛季总决赛禁用名单提交时间已截止，不能再修改");
+    const validation = validateFinalBanSelection(selection, view.candidates);
+    if (!validation.valid) throw new Error("必须从对手可用阵容中各选择一名前锋、中场和后卫");
+    const team = this.accountTeam(account.id);
+    const decision = { nodeId:view.nodeId, teamId:team.id, opponentTeamId:view.opponentTeamId, selection:validation.selection, automatic:false, submittedAt:this.now() };
+    tournament.finalBanDecisions = (tournament.finalBanDecisions ?? []).filter((entry) => !(entry.nodeId === view.nodeId && entry.teamId === team.id));
+    tournament.finalBanDecisions.push(decision);
+    this.notifySeasonFinalBanResults(tournament);
+    this.save();
+    return this.seasonFinalTournamentView(account);
+  }
+
+  nextSeasonFinalNode(tournament = this.ensureSeasonFinalTournament()) {
+    if (!tournament || ["completed", "cancelled"].includes(tournament.status)) return null;
+    return tournament.bracket.find((node) => node.status === "pending" && this.seasonFinalNodeTeamId(tournament, node.home) && this.seasonFinalNodeTeamId(tournament, node.away)) ?? null;
+  }
+
+  dueSeasonFinalNodes(tournament = this.ensureSeasonFinalTournament(), now = this.now()) {
+    if (!tournament || tournament.preview || ["completed", "cancelled"].includes(tournament.status)) return [];
+    return tournament.bracket.filter((node) => node.status === "pending" && Number(node.scheduledAt) <= now && this.seasonFinalNodeTeamId(tournament, node.home) && this.seasonFinalNodeTeamId(tournament, node.away));
+  }
+
+  startSeasonFinalNode(node, tournament = this.ensureSeasonFinalTournament(), options = {}) {
+    if (!node || !tournament || tournament.preview || tournament.seasonId !== this.state.season.id || (this.state.liveSeasonFinalRound && !options.batch)) return false;
+    const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
+    const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
+    if (!homeId || !awayId) return false;
+    const finalLeg = node.group === "final" ? Number(node.id.slice(-1)) : 0;
+    const firstLeg = tournament.bracket.find((entry) => entry.id === "FINAL-1");
+    const aggregateBaseScore = finalLeg === 2 && firstLeg?.score ? [firstLeg.score[1], firstLeg.score[0]] : null;
+    const fixture = { id:`${tournament.id}:${node.id}`, homeId, awayId };
+    if (node.id === "FINAL-1") this.refreshSeasonFinalists(tournament, [homeId, awayId]);
+    const bannedPlayerIdsByTeam = node.group === "final" ? this.ensureSeasonFinalBanDecisions(node, tournament) : {};
+    if (!options.batch) this.cupNewUnavailable = new Set();
+    const created = this.createFixtureMatch(fixture, 100 + node.order, this.now(), {
+      seed:`${tournament.id}:${node.id}`,
+      competitionMode:"cup",
+      availabilityMode:"season-final",
+      legNumber:finalLeg || 1,
+      allowSuperStorm:false,
+      regulationOnly:finalLeg === 1,
+      aggregateBaseScore,
+      bannedPlayerIdsByTeam,
+    });
+    node.status = "running";
+    tournament.status = "running";
+    const live = { code:`YDL-FINAL-${this.state.season.name}-${node.id}`, nodeId:node.id, round:`赛季总决赛 ${node.id}`, competition:"赛季总决赛", match:created.match, spectators:{} };
+    if (!created.home.ownerId && !created.away.ownerId) {
+      settleAutomatedMatch(created.match, created.startedAt);
+      this.completeSeasonFinalNode(node, created.match, tournament, { deferAvailability:options.batch });
+      return true;
+    }
+    if (options.batch) options.liveMatches.push(live);
+    else this.state.liveSeasonFinalRound = { tournamentId:tournament.id, startedAt:this.now(), matches:[live], newUnavailable:[...this.cupNewUnavailable] };
+    return true;
+  }
+
+  refreshSeasonFinalists(tournament, teamIds, refreshedAt = this.now()) {
+    if (!tournament || tournament.stateRefreshAt != null) return false;
+    [...new Set(teamIds)].forEach((teamId) => {
+      const team = this.state.teams.find((entry) => entry.id === teamId);
+      if (!team) return;
+      team.playerState ??= {};
+      (team.rosterIds ?? []).forEach((playerId) => {
+        const state = team.playerState[playerId] ?? (team.playerState[playerId] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
+        state.fitness = 100;
+        state.injuryRounds = 0;
+      });
+      team.fitnessUpdatedAt = refreshedAt;
+    });
+    tournament.stateRefreshAt = refreshedAt;
+    tournament.stateRefreshTeamIds = [...new Set(teamIds)];
+    return true;
+  }
+
+  startSeasonFinalWave(nodes, tournament = this.ensureSeasonFinalTournament()) {
+    if (!nodes?.length || !tournament || this.state.liveSeasonFinalRound) return false;
+    const liveMatches = [];
+    this.cupNewUnavailable = new Set();
+    let started = false;
+    nodes.forEach((node) => { started = this.startSeasonFinalNode(node, tournament, { batch:true, liveMatches }) || started; });
+    if (liveMatches.length) this.state.liveSeasonFinalRound = { tournamentId:tournament.id, startedAt:this.now(), matches:liveMatches, newUnavailable:[...this.cupNewUnavailable] };
+    else if (started) this.advanceSeasonFinalAvailability();
+    const pendingTimes = tournament.bracket.filter((node) => node.status === "pending").map((node) => Number(node.scheduledAt)).filter(Number.isFinite);
+    tournament.nextMatchAt = pendingTimes.length ? Math.min(...pendingTimes) : null;
+    return started;
+  }
+
+  completeSeasonFinalNode(node, match, tournament = this.ensureSeasonFinalTournament(), options = {}) {
+    if (!node || node.status === "complete") return tournament.matches.find((entry) => entry.seasonFinalNodeId === node?.id) ?? null;
+    const record = { id:`${tournament.id}-${node.id}-${tournament.matches.length + 1}`, competition:"season-final", seasonFinalNodeId:node.id, round:node.order + 1, playedAt:this.now(), homeId:match.teams?.[0]?.id ?? this.seasonFinalNodeTeamId(tournament, node.home), awayId:match.teams?.[1]?.id ?? this.seasonFinalNodeTeamId(tournament, node.away), score:[...(match.report?.score ?? [0, 0])], penalties:match.report?.penalties ?? null, formations:match.report?.teams?.map((team) => team.formation) ?? [], autoRotations:clone(match.leagueAutoRotations ?? [[], []]), report:match.report };
+    const homeId = record.homeId; const awayId = record.awayId;
+    const penaltyWinnerId = record.penalties?.[0] > record.penalties?.[1] ? homeId : record.penalties?.[1] > record.penalties?.[0] ? awayId : null;
+    const engineWinnerId = Number.isInteger(match.winnerIndex) ? [homeId, awayId][match.winnerIndex] : null;
+    let winnerId = record.score[0] > record.score[1] ? homeId : record.score[1] > record.score[0] ? awayId : penaltyWinnerId ?? engineWinnerId ?? awayId;
+    if (node.id === "FINAL-1") {
+      node.score = record.score; node.matchIds.push(record.id); node.status = "complete";
+      tournament.finalTie.firstLegId = record.id;
+    } else if (node.id === "FINAL-2") {
+      const first = tournament.bracket.find((entry) => entry.id === "FINAL-1");
+      const aggregate = [Number(first.score?.[0] ?? 0) + record.score[1], Number(first.score?.[1] ?? 0) + record.score[0]];
+      const winnerBracketTeamId = this.seasonFinalNodeTeamId(tournament, first.home);
+      const loserBracketTeamId = this.seasonFinalNodeTeamId(tournament, first.away);
+      winnerId = aggregate[0] > aggregate[1] ? winnerBracketTeamId : aggregate[1] > aggregate[0] ? loserBracketTeamId : penaltyWinnerId ?? engineWinnerId ?? winnerId;
+      node.score = record.score; node.winner = winnerId; node.loser = winnerId === homeId ? awayId : homeId; node.matchIds.push(record.id); node.status = "complete";
+      tournament.finalTie.secondLegId = record.id; tournament.finalTie.aggregateScore = aggregate; tournament.finalTie.extraTime = Boolean(match.report?.extraTime); tournament.finalTie.penalties = Boolean(record.penalties); tournament.finalTie.championId = winnerId; tournament.status = "completed";
+      const runnerUpId = [winnerBracketTeamId, loserBracketTeamId, homeId, awayId].find((teamId) => teamId && teamId !== winnerId) ?? null;
+      this.awardSeasonFinalChampionStar(winnerId, tournament);
+      this.grantSeasonFinalPlacementReward(winnerId, tournament, "champion");
+      if (runnerUpId) this.grantSeasonFinalPlacementReward(runnerUpId, tournament, "runnerUp");
+    } else {
+      node.winner = winnerId; node.loser = winnerId === homeId ? awayId : homeId; node.score = record.score; node.matchIds.push(record.id); node.status = "complete";
+      if (node.id === "W2") tournament.finalTie.winnerBracketChampionId = winnerId;
+      if (node.id === "B8") tournament.finalTie.loserBracketChampionId = winnerId;
+    }
+    tournament.matches.push(record);
+    this.settleHomeTicketIncome(record);
+    this.rollClubSponsorOffersAfterMatch(record);
+    const fixture = { id:`${tournament.id}:${node.id}`, homeId:record.homeId, awayId:record.awayId };
+    this.settleMatchPrediction("season-final", node.id, fixture, record);
+    this.recordSeasonFinalPlayerConsequences(record);
+    this.createSeasonFinalMatchInbox(node, record, tournament);
+    if (!options.deferAvailability) this.advanceSeasonFinalAvailability();
+    this.distributePredictionProfit("season-final", node.id, `赛季总决赛 ${node.id}`);
+    if (tournament.status === "completed") this.settleBallonDor();
+    return record;
+  }
+
+  recordSeasonFinalPlayerConsequences(record) {
+    const report = record.report;
+    if (!report?.teams) return;
+    this.state.cup.playerStats ??= {};
+    this.cupNewUnavailable ??= new Set();
+    const teams = [record.homeId, record.awayId].map((teamId) => this.state.teams.find((team) => team.id === teamId));
+    teams.forEach((team, teamIndex) => {
+      if (!team) return;
+      const reportPlayers = report.teams?.[teamIndex]?.players ?? [];
+      const playedPlayerIds = new Set(reportPlayers.map((player) => player.id));
+      reportPlayers.forEach((player) => {
+        const key = `${team.id}:${player.id}`;
+        const stat = this.state.cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
+        const penaltiesWon = (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
+        stat.appearances += 1;
+        stat.goals += Number(player.stats?.goals ?? 0);
+        stat.assists += Number(player.stats?.assists ?? 0);
+        stat.saves += Number(player.stats?.saves ?? 0);
+        stat.tackles += Number(player.stats?.tackles ?? 0);
+        stat.interceptions += Number(player.stats?.interceptions ?? 0);
+        stat.clearances += Number(player.stats?.clearances ?? 0);
+        stat.blocks += Number(player.stats?.blocks ?? 0);
+        stat.pressuresWon += Number(player.stats?.pressuresWon ?? 0);
+        stat.penaltiesWon += penaltiesWon;
+        stat.yellowCards += Number(player.stats?.yellowCards ?? 0);
+        stat.redCards += Number(player.stats?.redCards ?? 0);
+        stat.ratingTotal += Number(player.rating ?? 0);
+        this.state.cup.playerStats[key] = stat;
+        if (isXPlayer(REAL_PLAYER_BY_ID[player.id])) this.settleXGrowthTasks(player.id);
+        if (team.ownerId && team.playerState[player.id]) {
+          const state = team.playerState[player.id];
+          const beforeMatch = Number(state.fitness ?? 100);
+          const drain = Math.max(0, beforeMatch - Number(player.fitness ?? beforeMatch));
+          const drainFactor = player.role === "GK" ? LEAGUE_FITNESS_DRAIN_FACTOR * GOALKEEPER_FITNESS_DRAIN_FACTOR : LEAGUE_FITNESS_DRAIN_FACTOR;
+          state.fitness = Math.max(35, Math.min(100, Number((beforeMatch - drain * drainFactor).toFixed(1))));
+          if (player.stats?.redCards) {
+            state.seasonFinalSuspension = Math.max(Number(state.seasonFinalSuspension ?? 0), 1);
+            this.cupNewUnavailable.add(`${team.id}:${player.id}:suspension`);
+          }
+          if (player.injury) {
+            state.injuryRounds = Math.max(Number(state.injuryRounds ?? 0), injuryAbsenceMatches(player));
+            this.cupNewUnavailable.add(`${team.id}:${player.id}:injury`);
+          }
+        }
+      });
+      this.recoverUnusedPlayers(team, playedPlayerIds);
+      const chemistryPlayers = reportPlayers.filter((player) => !player.substitutedOut);
+      this.recordChemistry(team, chemistryPlayers.map((player) => REAL_PLAYER_BY_ID[player.id]).filter(Boolean), Object.fromEntries(chemistryPlayers.map((player) => [player.id, player.position])));
+      team.fitnessUpdatedAt = this.now();
+    });
+  }
+
+  createSeasonFinalMatchInbox(node, record, tournament) {
+    const teams = [record.homeId, record.awayId].map((teamId) => this.state.teams.find((team) => team.id === teamId));
+    teams.forEach((team, ownIndex) => {
+      if (!team?.ownerId) return;
+      const opponent = teams[ownIndex === 0 ? 1 : 0];
+      const ownScore = record.score[ownIndex];
+      const opponentScore = record.score[ownIndex === 0 ? 1 : 0];
+      const resultText = ownScore > opponentScore ? "取胜" : ownScore === opponentScore ? "战平" : "失利";
+      const nextNode = this.nextSeasonFinalNode(tournament);
+      const homeTicketIncome = this.homeTicketIncomeSummary(team, record);
+      this.pushInbox(team, {
+        id:`season-final:${tournament.id}:${node.id}:${team.id}`,
+        type:"matchweek",
+        title:`赛季总决赛 · ${node.id} 战报`,
+        summary:`${team.name} ${ownScore}:${opponentScore} ${opponent?.name ?? "对手"}，本场${resultText}。${homeTicketIncome ? ` 主场门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}`,
+        body:`${tournament.status === "completed" ? `本届赛季总决赛已经结束，冠军为${this.state.teams.find((entry) => entry.id === tournament.finalTie.championId)?.name ?? "待定"}。` : nextNode ? `下一场为赛季总决赛 ${nextNode.id}，预计稍后开始。` : "后续对阵尚待确认。"}${homeTicketIncome ? ` 本场共有${homeTicketIncome.attendance.toLocaleString("zh-CN")}名观众入场，门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}`,
+        matchId:record.id,
+        payload:{ results:[this.matchSummary(record)], competition:"season-final", nodeId:node.id, homeTicketIncome },
+      });
+    });
+  }
+
+  simulateNextSeasonFinalMatch() {
+    const tournament = this.ensureSeasonFinalTournament();
+    if (!tournament || tournament.preview || !this.state.season.seasonFinalLeagueRanks || this.state.cup?.status !== "completed") throw new Error("杯赛决赛结束并锁定最近一轮联赛排名后才能开始赛季总决赛");
+    if (this.state.liveSeasonFinalRound) throw new Error("赛季总决赛当前有进行中的比赛");
+    const node = this.nextSeasonFinalNode(tournament);
+    if (!node) throw new Error("当前没有可进行的赛季总决赛比赛");
+    const started = this.startSeasonFinalNode(node, tournament);
+    if (this.state.liveSeasonFinalRound) {
+      const live = this.state.liveSeasonFinalRound.matches[0];
+      settleAutomatedMatch(live.match, this.now());
+      this.completeSeasonFinalNode(node, live.match, tournament);
+      this.state.liveSeasonFinalRound = null;
+    }
+    this.save();
+    return this.seasonFinalTournamentView();
+  }
+
   draftMutationView(account) {
     return {
       updatedAt:this.state.updatedAt,
@@ -3018,13 +4422,19 @@ export class YellowDogsLeagueService {
   ownTeamView(account) {
     const team = this.accountTeam(account.id);
     if (!team) return null;
-    const listingByPlayer = new Map(this.state.listings.filter((item) => item.status === "active").map((item) => [item.playerId, item]));
-    const ownTeam = publicTeam(team, true);
+    // Heal legacy enforcement records after a player was removed before the
+    // reconciliation hook was introduced.
+    this.reconcileRosterOverlimitState(team);
+    const listingByPlayer = new Map(this.state.listings.filter((item) => item.status === "active" && item.playerId).map((item) => [item.playerId, item]));
+    const ownTeam = publicTeam(team, true, this.equippedTeamBadge(team.ownerId), this.equippedClubBadge(team.ownerId));
+    const seasonFinalBannedPlayerIds = new Set(this.seasonFinalBannedPlayerIds(team.id));
+    ownTeam.chemistryLinks = this.publicChemistryLinksForTeam(team);
     ownTeam.roster.forEach((player) => {
       const source = REAL_PLAYER_BY_ID[player.id];
       const cards = this.playerCards(account.id, player.id);
       const activeCard = cards[0] ?? null;
       player.listed = listingByPlayer.has(player.id);
+      player.state.seasonFinalBanned = seasonFinalBannedPlayerIds.has(player.id);
       player.referencePrice = s4OwnershipReferenceValue(source);
       player.minimumPrice = ownershipMinimumListingPrice(source);
       player.cards = cards.map((card) => publicLeagueS4Card(this.state, card));
@@ -3035,7 +4445,7 @@ export class YellowDogsLeagueService {
         card.referenceValue = s4CardReferenceValue(source, card.upgradeLevel);
         card.minimumListingPrice = Math.ceil(card.referenceValue * S4_PRICING.cardListingFloorRate / 100) * 100;
         card.systemRecoveryValue = s4SingleCardReleaseValue(source, card.upgradeLevel);
-        card.systemRecyclable = Number(card.upgradeLevel ?? 0) <= 4;
+        card.systemRecyclable = Number(card.upgradeLevel ?? 0) <= S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL;
       });
       player.activeCardId = activeCard?.id ?? null;
       player.upgradeLevel = Number(activeCard?.upgradeLevel ?? 0);
@@ -3074,6 +4484,7 @@ export class YellowDogsLeagueService {
     });
     const roles = inferElevenBoardRoles(starters.map((player) => ({ id:player.id, position:team.positions[player.id] })));
     ownTeam.bonds = evaluateS4LineupBonds(starters, S4_BOND_CATALOG, { roles });
+    ownTeam.clubManagement = this.clubManagementView(account);
     return ownTeam;
   }
 
@@ -3087,13 +4498,15 @@ export class YellowDogsLeagueService {
         return { ...pack, purchasedQuantity, remainingQuantity:pack.seasonPurchaseLimit == null ? null : Math.max(0, pack.seasonPurchaseLimit - purchasedQuantity) };
       }),
       maxPurchaseQuantity:S4_MAX_PACK_PURCHASE_QUANTITY,
+      meteorStand:{ ...METEOR_STAND_ITEM, owned:this.ownsMeteorStand(accountId) },
       rosterExpansion:{
         ...S4_ROSTER_EXPANSION_ITEM,
+        retired:true,
         purchasedQuantity,
         remainingQuantity:Math.max(0, S4_ROSTER_EXPANSION_LIMIT - purchasedQuantity),
         currentRosterLimit:this.rosterLimit(accountId),
         maximumRosterLimit:S4_ROSTER_LIMIT + S4_ROSTER_EXPANSION_LIMIT,
-      },
+    },
     };
   }
 
@@ -3102,11 +4515,7 @@ export class YellowDogsLeagueService {
     const batchOpening = this.state.s4Packs.batchOpenings[accountId];
     return {
       inventory:this.s4PackInventory(accountId).filter((item) => ["unopened", "choosing"].includes(item.status)).map((item) => this.publicS4PackItem(item)),
-      offer:offer?.status === "pending" ? {
-        ...clone(offer),
-        players:offer.playerIds.map((id) => playerSummary(REAL_PLAYER_BY_ID[id])),
-        playerIds:undefined,
-      } : null,
+      offer:this.publicS4PackOffer(offer),
       batchOpening:batchOpening?.status === "active" ? {
         id:batchOpening.id,
         packType:batchOpening.packType,
@@ -3119,6 +4528,14 @@ export class YellowDogsLeagueService {
   }
 
   listingView(listing, context = null) {
+    if (listing.kind === "cosmetic") {
+      const item = COSMETIC_BADGE_BY_ID[listing.cosmeticItemId];
+      return {
+        ...listing,
+        item:item ? { ...item, minimumListingPrice:COSMETIC_BADGE_MINIMUM_LISTING_PRICE } : null,
+        sellerTeamName:context?.teamById?.get(listing.sellerTeamId)?.name ?? this.state.teams.find((entry) => entry.id === listing.sellerTeamId)?.name ?? "未知球队",
+      };
+    }
     const assetKey = `${listing.sellerId}\u0000${listing.playerId}`;
     const assetStats = context?.assetStats?.get(assetKey) ?? (() => {
       const cards = this.playerCards(listing.sellerId, listing.playerId);
@@ -3146,6 +4563,7 @@ export class YellowDogsLeagueService {
     const teamById = new Map(this.state.teams.map((team) => [team.id, team]));
     const assetStats = new Map();
     listings.forEach((listing) => {
+      if (listing.kind === "cosmetic") return;
       const key = `${listing.sellerId}\u0000${listing.playerId}`;
       if (assetStats.has(key)) return;
       const cards = this.playerCards(listing.sellerId, listing.playerId);
@@ -3168,6 +4586,7 @@ export class YellowDogsLeagueService {
     if (options.ownTeam) result.ownTeam = this.ownTeamView(account);
     if (options.shop) result.shop = this.shopView(account.id);
     if (options.s4Packs) result.s4Packs = this.s4PacksView(account.id);
+    if (options.cosmetics) result.cosmetics = this.cosmeticsView(account.id);
     if (options.listings) result.listings = this.activeListingsView();
     if (options.extra) Object.assign(result, options.extra);
     return clone(result);
@@ -3196,9 +4615,10 @@ export class YellowDogsLeagueService {
       updatedAt:this.state.updatedAt,
       season:this.state.season,
       cup:this.cupView(),
+      seasonFinalTournament:this.seasonFinalTournamentView(account),
       serverTime:this.now(),
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20, serverPause:true, fixtures:team ? this.teamSchedule(team.id) : [] },
-      teams:this.standings().map((entry) => ({ ...publicTeam(this.state.teams.find((teamEntry) => teamEntry.id === entry.id)), rank:entry.rank })),
+      teams:this.standings().map((entry) => { const teamEntry = this.state.teams.find((candidate) => candidate.id === entry.id); return { ...publicTeam(teamEntry, false, this.equippedTeamBadge(teamEntry?.ownerId), this.equippedClubBadge(teamEntry?.ownerId)), rank:entry.rank }; }),
       ownTeam,
       bondCatalog:S4_BOND_CATALOG,
       draft:this.draftView(account),
@@ -3231,13 +4651,10 @@ export class YellowDogsLeagueService {
           })),
         } : null,
       },
+      cosmetics:this.cosmeticsView(account.id),
       s4Packs:{
         inventory:this.s4PackInventory(account.id).filter((item) => ["unopened", "choosing"].includes(item.status)).map((item) => this.publicS4PackItem(item)),
-        offer:this.state.s4Packs.offers[account.id]?.status === "pending" ? {
-          ...clone(this.state.s4Packs.offers[account.id]),
-          players:this.state.s4Packs.offers[account.id].playerIds.map((id) => playerSummary(REAL_PLAYER_BY_ID[id])),
-          playerIds:undefined,
-        } : null,
+        offer:this.publicS4PackOffer(this.state.s4Packs.offers[account.id]),
         batchOpening:this.state.s4Packs.batchOpenings[account.id]?.status === "active" ? {
           id:this.state.s4Packs.batchOpenings[account.id].id,
           packType:this.state.s4Packs.batchOpenings[account.id].packType,
@@ -3249,12 +4666,12 @@ export class YellowDogsLeagueService {
       },
       leaderboards:this.leaderboards(),
       cupLeaderboards:this.cupLeaderboards(),
-      teamLeaderboards:team ? this.leaderboards(team.id) : { scorers:[], assists:[], ratings:[], saves:[], cards:[] },
+      teamLeaderboards:team ? this.teamLeaderboards(team.id) : { scorers:[], assists:[], ratings:[], saves:[], cards:[] },
       ...(options.includePlayerDirectory === false ? {} : { playerDirectory:publicS4PlayerDirectory(this.state) }),
       ballonDor:{ latest:clone(this.state.ballonDor?.results?.at(-1) ?? null) },
       honorRoomUpdatedAt:this.state.honorRoom.updatedAt,
       matchRounds:this.matchRounds(),
-      recentMatches:this.state.matches.slice().reverse().map((match) => this.matchSummary(match)),
+      recentMatches:[...this.state.matches, ...(this.state.seasonFinalTournament?.matches ?? [])].sort((left, right) => Number(right.playedAt ?? 0) - Number(left.playedAt ?? 0)).map((match) => this.matchSummary(match)),
       reviewHistory:team ? this.teamHistory(team.id).filter((match) => match.hasDotReplay) : [],
       reviewDemo:null,
       rewardOffers:[],
@@ -3294,6 +4711,26 @@ export class YellowDogsLeagueService {
     return { scorers:sort("goals"), assists:sort("assists"), ratings:[...entries].filter((entry) => entry.appearances > 0).sort((a,b) => b.averageRating - a.averageRating).slice(0,20), saves:sort("saves"), cards:[...entries].filter((entry) => entry.yellowCards || entry.redCards).sort((a,b) => b.redCards - a.redCards || b.yellowCards - a.yellowCards).slice(0,20) };
   }
 
+  teamLeaderboards(teamId) {
+    const fields = ["appearances", "goals", "assists", "saves", "tackles", "interceptions", "clearances", "blocks", "pressuresWon", "penaltiesWon", "yellowCards", "redCards", "ratingTotal"];
+    const combined = new Map();
+    [this.state.playerStats, this.state.cup?.playerStats].forEach((source) => Object.values(source ?? {}).filter((entry) => entry.teamId === teamId).forEach((entry) => {
+      const key = `${entry.teamId}:${entry.playerId}`;
+      const total = combined.get(key) ?? { ...entry, key };
+      fields.forEach((field) => { total[field] = Number(total[field] ?? 0) + (combined.has(key) ? Number(entry[field] ?? 0) : 0); });
+      combined.set(key, total);
+    }));
+    const entries = [...combined.values()].map((entry) => ({ ...entry, averageRating:entry.appearances ? Number((entry.ratingTotal / entry.appearances).toFixed(2)) : 0 }));
+    const sort = (field) => [...entries].filter((entry) => entry[field] > 0).sort((a,b) => b[field] - a[field] || b.averageRating - a.averageRating).slice(0, CLUB_ROSTER_LIMIT);
+    return {
+      scorers:sort("goals"),
+      assists:sort("assists"),
+      ratings:[...entries].filter((entry) => entry.appearances >= Math.max(1, Math.ceil(this.state.season.currentRound * .25))).sort((a,b) => b.averageRating - a.averageRating).slice(0, CLUB_ROSTER_LIMIT),
+      saves:sort("saves"),
+      cards:[...entries].filter((entry) => entry.yellowCards || entry.redCards).sort((a,b) => b.redCards - a.redCards || b.yellowCards - a.yellowCards).slice(0, CLUB_ROSTER_LIMIT),
+    };
+  }
+
   matchSummary(match) {
     const home = this.state.teams.find((team) => team.id === match.homeId);
     const away = this.state.teams.find((team) => team.id === match.awayId);
@@ -3306,6 +4743,8 @@ export class YellowDogsLeagueService {
         ? ({ group:`${match.worldCupGroupId ?? ""}组第${match.round}轮`, quarterfinal:"世界杯四分之一决赛", semifinal:"世界杯半决赛", final:"世界杯决赛" }[match.worldCupStage] ?? "黄狗世界杯")
       : competition === "friendly"
         ? "友谊赛"
+      : competition === "season-final"
+        ? `赛季总决赛 · ${match.seasonFinalNodeId ?? "淘汰赛"}`
         : Number.isFinite(Number(match.round)) ? `第${match.round}轮` : "联赛";
     return {
       id:match.id,
@@ -3409,23 +4848,54 @@ export class YellowDogsLeagueService {
       const ownIsHome = fixture.homeId === teamId;
       const match = fixture.matchId ? this.state.matches.find((entry) => entry.id === fixture.matchId) : null;
       const live = this.state.liveCupRound?.matches.find((entry) => entry.fixtureId === fixture.id && !entry.completed);
-      const conditions = this.fixtureConditions(fixture, event.round);
+      const conditions = this.fixtureConditions(fixture, event.round, { competitionMode:"cup", legNumber:event.leg });
       const label = ["league", "swiss"].includes(event.stage) ? `${event.stage === "league" ? "联赛阶段" : "瑞士轮"}第${event.round}轮` : `${CUP_STAGE_NAMES[event.stage] ?? event.stage} · 第${event.leg}回合`;
       const pendingIndex = pendingCupEvents.indexOf(event);
       const scheduledAt = Number(this.state.cup.nextRoundAt) + Math.max(0, pendingIndex) * CUP_INTERVAL_MS;
       return { id:`cup:${fixture.id}`, competition:"cup", competitionName:"黄狗冠军杯", round:event.round, stage:event.stage, leg:event.leg, label, startsAt:match?.playedAt ?? (live ? this.state.liveCupRound.startedAt : event.status === "pending" ? scheduledAt : this.now()), status:match ? "complete" : live ? "live" : "scheduled", opponentId:ownIsHome ? fixture.awayId : fixture.homeId, opponentName:this.state.teams.find((team) => team.id === (ownIsHome ? fixture.awayId : fixture.homeId))?.name ?? "待定", venue:ownIsHome ? "home" : "away", matchId:match?.id ?? null, broadcastCode:live?.code ?? null, score:match ? (ownIsHome ? [...match.score] : [match.score[1], match.score[0]]) : null, weather:conditions.weather, referee:conditions.referee };
     }).filter(Boolean));
+    const tournament = this.state.seasonFinalTournament;
+    const seasonFinalFixtures = tournament && !tournament.preview ? tournament.bracket.map((node) => {
+      const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
+      const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
+      if (!homeId || !awayId || ![homeId, awayId].includes(teamId)) return null;
+      const ownIsHome = homeId === teamId;
+      const opponentId = ownIsHome ? awayId : homeId;
+      const match = tournament.matches.find((entry) => entry.seasonFinalNodeId === node.id);
+      const live = this.state.liveSeasonFinalRound?.matches.find((entry) => entry.nodeId === node.id && !entry.completed);
+      const finalLeg = node.group === "final" ? Number(node.id.slice(-1)) : 1;
+      const conditions = this.fixtureConditions({ homeId, awayId }, 100 + node.order, { competitionMode:"cup", legNumber:finalLeg, allowSuperStorm:false });
+      return {
+        id:`season-final:${tournament.id}:${node.id}:${teamId}`,
+        competition:"season-final",
+        competitionName:"赛季总决赛",
+        round:node.order + 1,
+        stage:node.group,
+        leg:node.group === "final" ? finalLeg : 1,
+        label:node.id,
+        startsAt:match?.playedAt ?? Number(live ? this.state.liveSeasonFinalRound.startedAt : node.scheduledAt ?? tournament.nextMatchAt ?? this.now()),
+        status:match ? "complete" : live ? "live" : "scheduled",
+        opponentId,
+        opponentName:this.state.teams.find((team) => team.id === opponentId)?.name ?? "待定",
+        venue:ownIsHome ? "home" : "away",
+        matchId:match?.id ?? null,
+        broadcastCode:live?.code ?? null,
+        score:match ? (ownIsHome ? [...match.score] : [match.score[1], match.score[0]]) : null,
+        weather:conditions.weather,
+        referee:conditions.referee,
+      };
+    }).filter(Boolean) : [];
     const friendlyFixtures = this.state.friendlyFixtures.filter((fixture) => fixture.homeId === teamId || fixture.awayId === teamId).map((fixture) => {
       const ownIsHome = fixture.homeId === teamId;
       const opponentId = ownIsHome ? fixture.awayId : fixture.homeId;
       const opponent = this.state.teams.find((team) => team.id === opponentId);
       return { id:`friendly:${fixture.id}`, competition:"friendly", competitionName:"YDL友谊赛", round:0, label:"友谊赛", startsAt:fixture.startsAt, status:fixture.status, opponentId, opponentName:opponent?.name ?? "未知球队", venue:ownIsHome ? "home" : "away", matchId:fixture.matchId ?? null, broadcastCode:fixture.broadcastCode ?? null, score:fixture.score ? (ownIsHome ? [...fixture.score] : [fixture.score[1], fixture.score[0]]) : null, weather:null, referee:null };
     });
-    return [...leagueFixtures, ...cupFixtures, ...friendlyFixtures].sort((left, right) => left.startsAt - right.startsAt || left.competition.localeCompare(right.competition));
+    return [...leagueFixtures, ...cupFixtures, ...seasonFinalFixtures, ...friendlyFixtures].sort((left, right) => left.startsAt - right.startsAt || left.competition.localeCompare(right.competition));
   }
 
   teamHistory(teamId) {
-    return this.state.matches
+    return [...this.state.matches, ...(this.state.seasonFinalTournament?.matches ?? [])]
       .filter((match) => match.homeId === teamId || match.awayId === teamId)
       .sort((left, right) => Number(right.playedAt ?? 0) - Number(left.playedAt ?? 0) || Number(right.round ?? 0) - Number(left.round ?? 0))
       .map((match) => this.matchSummary(match));
@@ -3433,6 +4903,22 @@ export class YellowDogsLeagueService {
 
   liveView(account) {
     const team = this.accountTeam(account.id);
+    const leagueStandings = this.standings().map(({ id, rank }) => {
+      const standingTeam = this.state.teams.find((entry) => entry.id === id);
+      const table = standingTeam?.table ?? {};
+      return {
+        id,
+        rank,
+        name:standingTeam?.name ?? "未知球队",
+        played:Number(table.played ?? 0),
+        won:Number(table.won ?? 0),
+        drawn:Number(table.drawn ?? 0),
+        lost:Number(table.lost ?? 0),
+        goalsFor:Number(table.goalsFor ?? 0),
+        goalsAgainst:Number(table.goalsAgainst ?? 0),
+        points:Number(table.points ?? 0),
+      };
+    });
     return clone({
       serverTime:this.now(),
       season:{
@@ -3443,6 +4929,8 @@ export class YellowDogsLeagueService {
         totalRounds:this.state.season.totalRounds,
       },
       team:team ? { id:team.id, name:team.name, ownerName:team.ownerName } : null,
+      leagueStandings,
+      cup:this.cupView(),
       schedule:team ? this.teamSchedule(team.id) : [],
       history:team ? this.teamHistory(team.id) : [],
       broadcasts:this.broadcasts(),
@@ -3450,7 +4938,7 @@ export class YellowDogsLeagueService {
   }
 
   predictionMarketId(competition, roundKey, fixture) {
-    const fixtureKey = competition === "cup" ? fixture.id : `${fixture.homeId}-${fixture.awayId}`;
+    const fixtureKey = competition === "league" ? `${fixture.homeId}-${fixture.awayId}` : fixture.id;
     return `${competition}:${this.state.season.id}:${roundKey}:${fixtureKey}`;
   }
 
@@ -3491,8 +4979,43 @@ export class YellowDogsLeagueService {
           matchOptions:{
             competitionMode:"cup",
             legNumber:cupEvent.leg,
+            allowSuperStorm:["league", "swiss"].includes(cupEvent.stage),
             regulationOnly:cupEvent.stage === "league" ? true : cupEvent.stage === "swiss" || cupEvent.stage === "final" ? false : cupEvent.leg === 1,
             aggregateBaseScore:cupEvent.leg === 2 && firstLeg ? [firstLeg.score[1], firstLeg.score[0]] : null,
+          },
+        });
+      });
+    }
+    const tournament = this.state.seasonFinalTournament;
+    if (tournament && !tournament.preview && !["completed", "cancelled"].includes(tournament.status)) {
+      tournament.bracket.filter((node) => node.status === "pending" && Number(node.scheduledAt) > this.now()).forEach((node) => {
+        const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
+        const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
+        if (!homeId || !awayId) return;
+        const finalLeg = node.group === "final" ? Number(node.id.slice(-1)) : 0;
+        const firstLeg = tournament.bracket.find((entry) => entry.id === "FINAL-1");
+        const fixture = { id:`${tournament.id}:${node.id}`, homeId, awayId };
+        const bannedPlayerIdsByTeam = node.group === "final"
+          ? Object.fromEntries([homeId, awayId].map((teamId) => [teamId, this.seasonFinalBannedPlayerIds(teamId, tournament)]))
+          : {};
+        entries.push({
+          id:this.predictionMarketId("season-final", node.id, fixture),
+          competition:"season-final",
+          competitionName:"赛季总决赛",
+          round:node.order + 1,
+          stage:node.group,
+          leg:finalLeg || 1,
+          roundKey:node.id,
+          fixture,
+          startsAt:Number(node.scheduledAt),
+          matchOptions:{
+            competitionMode:"cup",
+            availabilityMode:"season-final",
+            legNumber:finalLeg || 1,
+            allowSuperStorm:false,
+            regulationOnly:finalLeg === 1,
+            aggregateBaseScore:finalLeg === 2 && firstLeg?.score ? [firstLeg.score[1], firstLeg.score[0]] : null,
+            bannedPlayerIdsByTeam,
           },
         });
       });
@@ -3501,11 +5024,49 @@ export class YellowDogsLeagueService {
   }
 
   predictionGoalBand(total) {
-    return total <= 5 ? "0-5" : total <= 10 ? "6-10" : "11+";
+    return total <= 3 ? "0-3" : total <= 5 ? "4-5" : "6+";
+  }
+
+  predictionGoalBandForMarket(total, market) {
+    const legacy = Number(market?.pricingVersion ?? 0) < 9
+      && Object.prototype.hasOwnProperty.call(market?.payoutRates?.goals ?? {}, "0-5");
+    return legacy ? (total <= 5 ? "0-5" : total <= 10 ? "6-10" : "11+") : this.predictionGoalBand(total);
   }
 
   predictionCardBand(total) {
     return total <= 0 ? "0" : total === 1 ? "1" : total === 2 ? "2" : total === 3 ? "3" : "4+";
+  }
+
+  predictionScoreAtMinute(report, minute = 45) {
+    const score = [0, 0];
+    const scoringTypes = new Set(["goal", "butterFingers", "ownGoal", "superWorldie"]);
+    for (const event of report?.events ?? []) {
+      if (Number(event.minute) > minute) continue;
+      if (event.type === "penalty" && event.scored) {
+        if ([0, 1].includes(Number(event.teamIndex))) score[Number(event.teamIndex)] += 1;
+        continue;
+      }
+      if (!scoringTypes.has(event.type)) continue;
+      if (Array.isArray(event.score) && event.score.length >= 2) {
+        score[0] = Number(event.score[0] ?? score[0]);
+        score[1] = Number(event.score[1] ?? score[1]);
+      } else if ([0, 1].includes(Number(event.teamIndex))) {
+        score[Number(event.teamIndex)] += 1;
+      }
+    }
+    return score;
+  }
+
+  predictionHalfFullOutcome(report) {
+    const halfTimeScore = Array.isArray(report?.halfTimeScore) ? report.halfTimeScore : this.predictionScoreAtMinute(report, 45);
+    const regulationScore = Array.isArray(report?.events) && report.events.length
+      ? this.predictionScoreAtMinute(report, 90)
+      : Array.isArray(report?.regulationScore) ? report.regulationScore : report?.score ?? [0, 0];
+    return {
+      halfTimeScore,
+      regulationScore:[Number(regulationScore[0] ?? 0), Number(regulationScore[1] ?? 0)],
+      outcome:`${this.predictionResult(halfTimeScore)}-${this.predictionResult(regulationScore)}`,
+    };
   }
 
   predictionResult(score, homeHandicap = 0) {
@@ -3538,7 +5099,10 @@ export class YellowDogsLeagueService {
         best = candidate;
       }
     }
-    return { handicap:best.handicap, counts:best.counts };
+    const handicap = Math.max(-2, Math.min(2, best.handicap));
+    const counts = { home:0, draw:0, away:0 };
+    scores.forEach((score) => { counts[this.predictionResult(score, handicap)] += 1; });
+    return { handicap, counts };
   }
 
   predictionHandicapHint(handicap) {
@@ -3546,7 +5110,7 @@ export class YellowDogsLeagueService {
     if (!Number.isInteger(value)) return "盘口分析中";
     if (value < 0) return "主队让球";
     if (value > 0) return "客队让球";
-    return "均势盘";
+    return "零球盘";
   }
 
   predictionClosesAt(startsAt) {
@@ -3554,13 +5118,21 @@ export class YellowDogsLeagueService {
   }
 
   predictionCategoryLabel(category) {
-    return { result:"胜平负", goals:"总进球", cards:"红黄牌总数" }[category] ?? category;
+    return { result:"胜平负", goals:"总进球", cards:"红黄牌总数", halfFull:"半全场" }[category] ?? category;
   }
 
   predictionSelectionLabel(market, category, selection) {
     if (category === "result") return selection === "home" ? `${market.homeName}胜` : selection === "away" ? `${market.awayName}胜` : "平局";
-    if (category === "goals") return selection === "0-5" ? "0–5球" : selection === "6-10" ? "6–10球" : "11球及以上";
+    if (category === "goals") return {
+      "0-3":"0–3球", "4-5":"4–5球", "6+":"6球及以上",
+      "0-5":"0–5球", "6-10":"6–10球", "11+":"11球及以上",
+    }[selection] ?? selection;
     if (category === "cards") return selection === "4+" ? "4张及以上" : `${selection}张`;
+    if (category === "halfFull") {
+      const label = { home:"胜", draw:"平", away:"负" };
+      const [halfTime, fullTime] = String(selection).split("-");
+      return `${label[halfTime] ?? halfTime}${label[fullTime] ?? fullTime}`;
+    }
     return selection;
   }
 
@@ -3573,11 +5145,145 @@ export class YellowDogsLeagueService {
     }));
   }
 
+  predictionPayoutRatesFromProbabilities(probabilities, options, maximumRate = MATCH_PREDICTION_MAX_PAYOUT_RATE) {
+    return Object.fromEntries(options.map((option) => {
+      const probability = Math.max(Number.EPSILON, Number(probabilities?.[option]) || 0);
+      const rate = Math.max(1.05, Math.min(maximumRate, (1 - MATCH_PREDICTION_MARGIN) / probability));
+      return [option, Number(rate.toFixed(3))];
+    }));
+  }
+
+  predictionHalfFullPayoutRates(probabilities) {
+    return Object.fromEntries(MATCH_PREDICTION_OPTIONS.halfFull.map((selection) => {
+      const probability = Math.max(Number.EPSILON, Number(probabilities?.[selection]) || 0);
+      const fairRate = (1 - MATCH_PREDICTION_MARGIN) / probability;
+      // Soft-compress rare paths without making different probabilities collide
+      // at a fixed ceiling. Prices remain strictly ordered as probability changes.
+      const rate = fairRate <= 7 ? fairRate : 7 + 1.35 * Math.log1p(fairRate - 7);
+      return [selection, Number(Math.max(1.05, rate).toFixed(3))];
+    }));
+  }
+
+  predictionHalfFullPricingProbabilities(counts, samples) {
+    const fullTimeOptions = MATCH_PREDICTION_OPTIONS.result;
+    const halfTimeOptions = MATCH_PREDICTION_OPTIONS.result;
+    const transitionPrior = Object.freeze({
+      home:Object.freeze({ home:.55, draw:.35, away:.1 }),
+      draw:Object.freeze({ home:.2, draw:.6, away:.2 }),
+      away:Object.freeze({ home:.1, draw:.35, away:.55 }),
+    });
+    const transitionPriorWeight = .7;
+    const fullTimeCounts = Object.fromEntries(fullTimeOptions.map((fullTime) => [fullTime,
+      halfTimeOptions.reduce((sum, halfTime) => sum + Number(counts?.[`${halfTime}-${fullTime}`] ?? 0), 0),
+    ]));
+    // Team strength first determines the full-time result mass. A fixed transition
+    // prior is then blended with this match's V1 paths, so even a zero-count path
+    // moves down/up with the favorite's final-win/final-loss probability instead
+    // of inheriting a sample-size artefact.
+    const fullTimeDenominator = Math.max(0, Number(samples) || 0) + fullTimeOptions.length;
+    const probabilities = {};
+    fullTimeOptions.forEach((fullTime) => {
+      const fullTimeCount = fullTimeCounts[fullTime];
+      const fullTimeProbability = (fullTimeCount + 1) / fullTimeDenominator;
+      halfTimeOptions.forEach((halfTime) => {
+        const selection = `${halfTime}-${fullTime}`;
+        const empiricalProbability = fullTimeCount > 0
+          ? Number(counts?.[selection] ?? 0) / fullTimeCount
+          : transitionPrior[fullTime][halfTime];
+        const conditionalProbability = transitionPriorWeight * transitionPrior[fullTime][halfTime]
+          + (1 - transitionPriorWeight) * empiricalProbability;
+        probabilities[selection] = fullTimeProbability * conditionalProbability;
+      });
+    });
+    return Object.fromEntries(MATCH_PREDICTION_OPTIONS.halfFull.map((selection) => [selection,
+      Number(probabilities[selection].toFixed(6)),
+    ]));
+  }
+
+  predictionCardPayoutRates(counts, samples) {
+    const rawRates = this.predictionPayoutRates(counts, samples, MATCH_PREDICTION_OPTIONS.cards);
+    return Object.fromEntries(MATCH_PREDICTION_OPTIONS.cards.map((option) => {
+      const guard = MATCH_PREDICTION_CARD_PAYOUT_GUARDS[option];
+      const calibrated = Number(rawRates[option] ?? 1.05) * guard.multiplier;
+      const rate = Math.max(guard.minimum, Math.min(guard.maximum, calibrated));
+      return [option, Number(rate.toFixed(3))];
+    }));
+  }
+
+  predictionPublishedPayoutRate(rateValue, marketId, category, selection, directedDiscount = 1) {
+    const rate = Math.max(1.05, Number(rateValue) || 1.05);
+    const highOddsWeight = Math.min(1, Math.max(0, (rate - 1) / 6));
+    let discount = MATCH_PREDICTION_LOW_ODDS_DISCOUNT
+      + (MATCH_PREDICTION_HIGH_ODDS_DISCOUNT - MATCH_PREDICTION_LOW_ODDS_DISCOUNT) * highOddsWeight;
+    if (category === "halfFull" && rate > 7) {
+      // Keep long prices ordered by their underlying probability, but charge an
+      // increasingly larger risk discount instead of flattening them at a cap.
+      discount *= Math.max(.65, 1 - (rate - 7) * .03);
+    }
+    const confusion = 1 + (seededUnitInterval(`${marketId}:${category}:${selection}:published-rate-v${MATCH_PREDICTION_PRICING_VERSION}`) * 2 - 1) * MATCH_PREDICTION_CONFUSION_RANGE;
+    const resultRiskDiscount = Number.isFinite(Number(directedDiscount))
+      ? Math.max(0, Math.min(1, Number(directedDiscount)))
+      : 1;
+    return Number(Math.max(MATCH_PREDICTION_MIN_PUBLISHED_RATE, rate * discount * resultRiskDiscount * confusion).toFixed(2));
+  }
+
+  predictionMarketRtp(rates) {
+    const inverseTotal = Object.values(rates ?? {}).reduce((sum, rateValue) => {
+      const rate = Number(rateValue);
+      return Number.isFinite(rate) && rate > 0 ? sum + 1 / rate : sum;
+    }, 0);
+    return inverseTotal > 0 ? 1 / inverseTotal : 0;
+  }
+
+  predictionCapMarketRtp(rates, targetRtp) {
+    const target = Number(targetRtp);
+    if (!Number.isFinite(target) || target <= 0 || this.predictionMarketRtp(rates) <= target) return rates;
+    let lowerScale = 0;
+    let upperScale = 1;
+    const scaledRates = (scale) => Object.fromEntries(Object.entries(rates).map(([selection, rateValue]) => [
+      selection,
+      Number(Math.max(MATCH_PREDICTION_MIN_PUBLISHED_RATE, Number(rateValue) * scale).toFixed(2)),
+    ]));
+    for (let index = 0; index < 32; index += 1) {
+      const scale = (lowerScale + upperScale) / 2;
+      if (this.predictionMarketRtp(scaledRates(scale)) <= target) lowerScale = scale;
+      else upperScale = scale;
+    }
+    let result = scaledRates(lowerScale);
+    // Two-decimal display rounding can cross the cap by a fraction. Prefer
+    // trimming the longest price first, which also reinforces the high-odds cut.
+    while (this.predictionMarketRtp(result) > target + 1e-9) {
+      const selection = Object.entries(result).sort((left, right) => right[1] - left[1])[0]?.[0];
+      if (!selection || result[selection] <= MATCH_PREDICTION_MIN_PUBLISHED_RATE) break;
+      result = { ...result, [selection]:Number(Math.max(MATCH_PREDICTION_MIN_PUBLISHED_RATE, result[selection] - .01).toFixed(2)) };
+    }
+    return result;
+  }
+
+  predictionPublishedPayoutRates(payoutRates, marketId, resultHandicap = 0) {
+    const handicap = Number(resultHandicap);
+    const directedResultSelection = handicap > 0 ? "home" : handicap < 0 ? "away" : null;
+    const directedResultDiscount = MATCH_PREDICTION_DIRECTED_RESULT_DISCOUNT[Math.min(2, Math.abs(handicap))] ?? 1;
+    return Object.fromEntries(Object.entries(payoutRates).map(([category, rates]) => {
+      const published = Object.fromEntries(Object.entries(rates).map(([selection, rate]) => [selection,
+        this.predictionPublishedPayoutRate(
+          rate,
+          marketId,
+          category,
+          selection,
+          category === "result" && selection === directedResultSelection ? directedResultDiscount : 1,
+        ),
+      ]));
+      return [category, this.predictionCapMarketRtp(published, MATCH_PREDICTION_MAX_MARKET_RTP[category])];
+    }));
+  }
+
   generatePredictionMarket(entry) {
     const existing = this.state.matchPredictions.markets[entry.id];
     if (existing && existing.status !== "preparing" && Number.isInteger(existing.resultHandicap)) return existing;
     const goalCounts = Object.fromEntries(MATCH_PREDICTION_OPTIONS.goals.map((key) => [key, 0]));
     const cardCounts = Object.fromEntries(MATCH_PREDICTION_OPTIONS.cards.map((key) => [key, 0]));
+    const halfFullCounts = Object.fromEntries(MATCH_PREDICTION_OPTIONS.halfFull.map((key) => [key, 0]));
     const simulatedScores = [];
     const totals = {
       goals:[0, 0],
@@ -3596,9 +5302,11 @@ export class YellowDogsLeagueService {
       const report = created.match.report;
       const totalGoals = report.score[0] + report.score[1];
       const totalCards = report.teams.reduce((sum, team) => sum + Number(team.stats.yellowCards ?? 0) + Number(team.stats.redCards ?? 0), 0);
+      const halfFull = this.predictionHalfFullOutcome(report);
       simulatedScores.push([...report.score]);
       goalCounts[this.predictionGoalBand(totalGoals)] += 1;
       cardCounts[this.predictionCardBand(totalCards)] += 1;
+      halfFullCounts[halfFull.outcome] += 1;
       report.teams.forEach((team, teamIndex) => {
         totals.goals[teamIndex] += Number(report.score[teamIndex] ?? 0);
         totals.xg[teamIndex] += Number(team.stats.xg ?? 0);
@@ -3611,10 +5319,18 @@ export class YellowDogsLeagueService {
     const samples = MATCH_PREDICTION_SIMULATIONS;
     const resultBalance = this.predictionResultHandicap(simulatedScores);
     const resultCounts = resultBalance.counts;
+    const halfFullPricingProbabilities = this.predictionHalfFullPricingProbabilities(halfFullCounts, samples);
     const probabilities = {
       result:Object.fromEntries(MATCH_PREDICTION_OPTIONS.result.map((key) => [key, Number((resultCounts[key] / samples).toFixed(4))])),
       goals:Object.fromEntries(MATCH_PREDICTION_OPTIONS.goals.map((key) => [key, Number((goalCounts[key] / samples).toFixed(4))])),
       cards:Object.fromEntries(MATCH_PREDICTION_OPTIONS.cards.map((key) => [key, Number((cardCounts[key] / samples).toFixed(4))])),
+      halfFull:Object.fromEntries(MATCH_PREDICTION_OPTIONS.halfFull.map((key) => [key, Number((halfFullCounts[key] / samples).toFixed(4))])),
+    };
+    const rawPayoutRates = {
+      result:this.predictionPayoutRates(resultCounts, samples, MATCH_PREDICTION_OPTIONS.result),
+      goals:this.predictionPayoutRates(goalCounts, samples, MATCH_PREDICTION_OPTIONS.goals),
+      cards:this.predictionCardPayoutRates(cardCounts, samples),
+      halfFull:this.predictionHalfFullPayoutRates(halfFullPricingProbabilities),
     };
     const market = {
       id:entry.id,
@@ -3637,8 +5353,9 @@ export class YellowDogsLeagueService {
       resultHandicap:resultBalance.handicap,
       simulation:{
         samples,
-        counts:{ result:resultCounts, goals:goalCounts, cards:cardCounts },
+        counts:{ result:resultCounts, goals:goalCounts, cards:cardCounts, halfFull:halfFullCounts },
         probabilities,
+        pricingProbabilities:{ halfFull:halfFullPricingProbabilities },
         expected:{
           goals:totals.goals.map((value) => Number((value / samples).toFixed(3))),
           xg:totals.xg.map((value) => Number((value / samples).toFixed(3))),
@@ -3646,11 +5363,9 @@ export class YellowDogsLeagueService {
           redCards:totals.redCards.map((value) => Number((value / samples).toFixed(3))),
         },
       },
-      payoutRates:{
-        result:this.predictionPayoutRates(resultCounts, samples, MATCH_PREDICTION_OPTIONS.result),
-        goals:this.predictionPayoutRates(goalCounts, samples, MATCH_PREDICTION_OPTIONS.goals),
-        cards:this.predictionPayoutRates(cardCounts, samples, MATCH_PREDICTION_OPTIONS.cards),
-      },
+      pricingVersion:MATCH_PREDICTION_PRICING_VERSION,
+      rawPayoutRates,
+      payoutRates:this.predictionPublishedPayoutRates(rawPayoutRates, entry.id, resultBalance.handicap),
       settlement:null,
     };
     this.state.matchPredictions.markets[market.id] = market;
@@ -3681,6 +5396,8 @@ export class YellowDogsLeagueService {
       status:"preparing",
       resultHandicap:null,
       simulation:null,
+      pricingVersion:null,
+      rawPayoutRates:null,
       payoutRates:null,
       settlement:null,
     };
@@ -3702,7 +5419,7 @@ export class YellowDogsLeagueService {
         changed = true;
       }
       if (market.status === "open"
-        && !Number.isInteger(market.resultHandicap)
+        && (!Number.isInteger(market.resultHandicap) || Number(market.pricingVersion ?? 0) !== MATCH_PREDICTION_PRICING_VERSION)
         && !this.state.matchPredictions.bets.some((bet) => bet.marketId === market.id)) {
         market.status = "preparing";
         changed = true;
@@ -3752,11 +5469,19 @@ export class YellowDogsLeagueService {
       .filter((market) => activeIds.has(market.id))
       .sort((left, right) => left.startsAt - right.startsAt || left.competition.localeCompare(right.competition) || left.id.localeCompare(right.id))
       .map((market) => {
+        const goalOptions = Object.prototype.hasOwnProperty.call(market.payoutRates?.goals ?? {}, "0-5")
+          ? [["0-5", "0–5球"], ["6-10", "6–10球"], ["11+", "11球及以上"]]
+          : [["0-3", "0–3球"], ["4-5", "4–5球"], ["6+", "6球及以上"]];
+        const publicPayoutRate = (category, selection) => {
+          const rate = Number(market.payoutRates?.[category]?.[selection]);
+          return Number.isFinite(rate) ? rate : null;
+        };
         const ownBets = bets.filter((bet) => bet.marketId === market.id).map((bet) => ({
           id:bet.id,
           category:bet.category,
           selection:bet.selection,
           amount:bet.amount,
+          payoutRate:Number(bet.payoutRate),
           status:bet.status,
           payout:bet.status === "won" ? bet.payout : 0,
           createdAt:bet.createdAt,
@@ -3784,26 +5509,65 @@ export class YellowDogsLeagueService {
           eligible:Boolean(team && open && !ownTeamMatch),
           lockedReason:!team ? "请先建立联赛球队" : ownTeamMatch ? "不能预测自己球队参加的比赛" : preparing ? "系统正在生成本场预测数据" : open ? null : "本场预测已经截止",
           maxStake:MATCH_PREDICTION_MAX_STAKE,
+          maxStakes:Object.fromEntries(Object.keys(MATCH_PREDICTION_OPTIONS).map((category) => [
+            category,
+            MATCH_PREDICTION_MAX_STAKE_BY_CATEGORY[category] ?? MATCH_PREDICTION_MAX_STAKE,
+          ])),
           options:{
             result:[
-              { id:"home", label:`${market.homeName}胜` },
-              { id:"draw", label:"平局" },
-              { id:"away", label:`${market.awayName}胜` },
+              { id:"home", label:`${market.homeName}胜`, payoutRate:publicPayoutRate("result", "home") },
+              { id:"draw", label:"平局", payoutRate:publicPayoutRate("result", "draw") },
+              { id:"away", label:`${market.awayName}胜`, payoutRate:publicPayoutRate("result", "away") },
             ],
-            goals:[
-              { id:"0-5", label:"0–5球" },
-              { id:"6-10", label:"6–10球" },
-              { id:"11+", label:"11球及以上" },
-            ],
+            goals:goalOptions.map(([selection, label]) => ({
+              id:selection,
+              label,
+              payoutRate:publicPayoutRate("goals", selection),
+            })),
             cards:[
-              { id:"0", label:"0张" },
-              { id:"1", label:"1张" },
-              { id:"2", label:"2张" },
-              { id:"3", label:"3张" },
-              { id:"4+", label:"4张及以上" },
+              { id:"0", label:"0张", payoutRate:publicPayoutRate("cards", "0") },
+              { id:"1", label:"1张", payoutRate:publicPayoutRate("cards", "1") },
+              { id:"2", label:"2张", payoutRate:publicPayoutRate("cards", "2") },
+              { id:"3", label:"3张", payoutRate:publicPayoutRate("cards", "3") },
+              { id:"4+", label:"4张及以上", payoutRate:publicPayoutRate("cards", "4+") },
             ],
+            halfFull:MATCH_PREDICTION_OPTIONS.halfFull.map((selection) => ({
+              id:selection,
+              label:this.predictionSelectionLabel(market, "halfFull", selection),
+              payoutRate:publicPayoutRate("halfFull", selection),
+            })),
           },
           myBets:ownBets,
+        };
+      });
+  }
+
+  publicPredictionHistory(account, limitValue = 100) {
+    const limit = Math.max(1, Math.min(200, Math.floor(Number(limitValue) || 100)));
+    return this.state.matchPredictions.bets
+      .filter((bet) => bet.accountId === account.id)
+      .sort((left, right) => Number(right.createdAt ?? 0) - Number(left.createdAt ?? 0))
+      .slice(0, limit)
+      .map((bet) => {
+        const market = this.state.matchPredictions.markets[bet.marketId];
+        return {
+          id:bet.id,
+          marketId:bet.marketId,
+          competition:market?.competition ?? null,
+          competitionName:market?.competitionName ?? "比赛预测",
+          homeName:market?.homeName ?? "未知球队",
+          awayName:market?.awayName ?? "未知球队",
+          startsAt:market?.startsAt ?? null,
+          category:bet.category,
+          categoryLabel:this.predictionCategoryLabel(bet.category),
+          selection:bet.selection,
+          selectionLabel:market ? this.predictionSelectionLabel(market, bet.category, bet.selection) : bet.selection,
+          amount:bet.amount,
+          payoutRate:Number(bet.payoutRate),
+          status:bet.status,
+          payout:bet.status === "won" ? Number(bet.payout ?? 0) : 0,
+          createdAt:bet.createdAt,
+          settledAt:bet.settledAt ?? null,
         };
       });
   }
@@ -3814,6 +5578,7 @@ export class YellowDogsLeagueService {
       serverTime:this.now(),
       wallet:{ balance:this.wallet(account.id).balance },
       matchPredictions:this.publicMatchPredictions(account),
+      predictionHistory:this.publicPredictionHistory(account),
       predictionLeaderboard:this.predictionLeaderboard(),
     });
   }
@@ -3830,8 +5595,12 @@ export class YellowDogsLeagueService {
     if (!market) throw new Error("找不到这场待预测比赛");
     if (market.status !== "open" || this.now() >= Number(market.closesAt)) throw new Error("本场比赛预测已经截止");
     if ([market.homeId, market.awayId].includes(team.id)) throw new Error("不能预测自己球队参加的比赛");
-    if (!MATCH_PREDICTION_OPTIONS[category]?.includes(selection)) throw new Error("预测选项无效");
-    if (!Number.isInteger(amount) || amount < 1 || amount > MATCH_PREDICTION_MAX_STAKE) throw new Error(`单个选项投资必须为1至${MATCH_PREDICTION_MAX_STAKE}金币的整数`);
+    const marketSelections = Object.keys(market.payoutRates?.[category] ?? {});
+    if (!MATCH_PREDICTION_OPTIONS[category] || !marketSelections.includes(selection)) throw new Error("预测选项无效");
+    const lockedPayoutRate = Number(market.payoutRates?.[category]?.[selection]);
+    if (!Number.isFinite(lockedPayoutRate) || lockedPayoutRate <= 0) throw new Error("本场暂未开放该预测分类");
+    const maxStake = MATCH_PREDICTION_MAX_STAKE_BY_CATEGORY[category] ?? MATCH_PREDICTION_MAX_STAKE;
+    if (!Number.isInteger(amount) || amount < 1 || amount > maxStake) throw new Error(`该预测类别投资必须为1至${maxStake}金币的整数`);
     if (this.state.matchPredictions.bets.some((bet) => bet.marketId === marketId && bet.accountId === account.id && bet.category === category)) {
       throw new Error("同一场比赛的同一预测类别只能投资一次");
     }
@@ -3846,7 +5615,7 @@ export class YellowDogsLeagueService {
       category,
       selection,
       amount,
-      payoutRate:Number(market.payoutRates[category][selection]),
+      payoutRate:lockedPayoutRate,
       status:"pending",
       payout:0,
       createdAt:this.now(),
@@ -3866,13 +5635,15 @@ export class YellowDogsLeagueService {
     });
     const categoryLabel = this.predictionCategoryLabel(category);
     const selectionLabel = this.predictionSelectionLabel(market, category, selection);
+    const payoutRate = lockedPayoutRate;
+    const potentialPayout = Math.max(1, Math.floor(amount * payoutRate));
     const resultHandicap = Number.isInteger(market.resultHandicap) ? market.resultHandicap : 0;
     this.pushInbox(team, {
       id:`prediction-placed:${bet.id}`,
       type:"prediction",
       title:"比赛预测已受理",
-      summary:`${market.homeName} vs ${market.awayName}：${categoryLabel}选择“${selectionLabel}”，投资${amount}金币。`,
-      body:`你的比赛预测已经提交成功。比赛：${market.homeName} vs ${market.awayName}；本场胜平负按主队${resultHandicap >= 0 ? "+" : ""}${resultHandicap}球结算；预测类别：${categoryLabel}；预测选项：${selectionLabel}；投入：${amount}金币。比赛结束后系统会自动结算，并通过收件箱告知返还与净收益。`,
+      summary:`${market.homeName} vs ${market.awayName}：${categoryLabel}选择“${selectionLabel}”，赔率${payoutRate.toFixed(2)}，投资${amount}金币。`,
+      body:`你的比赛预测已经提交成功。比赛：${market.homeName} vs ${market.awayName}；本场胜平负按主队${resultHandicap >= 0 ? "+" : ""}${resultHandicap}球结算；${category === "halfFull" ? "半全场按主队视角的45分钟结果和90分钟常规时间结果结算，加时赛与点球大战不计入；" : ""}预测类别：${categoryLabel}；本玩法单场最多投入${maxStake}金币；预测选项：${selectionLabel}；锁定赔率：${payoutRate.toFixed(2)}；投入：${amount}金币；命中预计返还：${potentialPayout}金币（含本金）。比赛结束后系统会自动结算。`,
       payload:{
         marketId,
         betId:bet.id,
@@ -3886,6 +5657,8 @@ export class YellowDogsLeagueService {
         selection,
         selectionLabel,
         amount,
+        payoutRate,
+        potentialPayout,
         resultHandicap,
         status:"pending",
       },
@@ -3900,12 +5673,14 @@ export class YellowDogsLeagueService {
     if (!market || market.settlement) return null;
     const totalGoals = Number(record.score[0] ?? 0) + Number(record.score[1] ?? 0);
     const totalCards = record.report.teams.reduce((sum, team) => sum + Number(team.stats.yellowCards ?? 0) + Number(team.stats.redCards ?? 0), 0);
+    const halfFull = this.predictionHalfFullOutcome(record.report);
     const resultHandicap = Number.isInteger(market.resultHandicap) ? market.resultHandicap : 0;
     const adjustedScore = [Number(record.score[0] ?? 0) + resultHandicap, Number(record.score[1] ?? 0)];
     const outcomes = {
       result:this.predictionResult(record.score, resultHandicap),
-      goals:this.predictionGoalBand(totalGoals),
+      goals:this.predictionGoalBandForMarket(totalGoals, market),
       cards:this.predictionCardBand(totalCards),
+      halfFull:halfFull.outcome,
     };
     market.status = "settled";
     market.settlement = {
@@ -3917,6 +5692,8 @@ export class YellowDogsLeagueService {
       adjustedScore,
       totalGoals,
       totalCards,
+      halfTimeScore:halfFull.halfTimeScore,
+      regulationScore:halfFull.regulationScore,
     };
     this.state.matchPredictions.bets.filter((bet) => bet.marketId === marketId && bet.status === "pending").forEach((bet) => {
       const won = outcomes[bet.category] === bet.selection;
@@ -3950,7 +5727,7 @@ export class YellowDogsLeagueService {
           summary:won
             ? `投入${bet.amount}金币，返还${bet.payout}金币，净收益+${netProfit}金币。`
             : `投入${bet.amount}金币，本次返还0金币，净收益-${bet.amount}金币。`,
-          body:`比赛结果：${market.homeName} ${record.score[0]}:${record.score[1]} ${market.awayName}。胜平负按主队${resultHandicap >= 0 ? "+" : ""}${resultHandicap}球结算，让球后比分为${adjustedScore[0]}:${adjustedScore[1]}。你的${categoryLabel}预测为“${selectionLabel}”，实际结果为“${outcomeLabel}”。本次投入${bet.amount}金币，返还${bet.payout}金币，净收益${netProfit >= 0 ? "+" : ""}${netProfit}金币。`,
+          body:`比赛结果：${market.homeName} ${record.score[0]}:${record.score[1]} ${market.awayName}。胜平负按主队${resultHandicap >= 0 ? "+" : ""}${resultHandicap}球结算，让球后比分为${adjustedScore[0]}:${adjustedScore[1]}。${bet.category === "halfFull" ? `半场比分${halfFull.halfTimeScore[0]}:${halfFull.halfTimeScore[1]}，90分钟常规时间比分${halfFull.regulationScore[0]}:${halfFull.regulationScore[1]}。` : ""}你的${categoryLabel}预测为“${selectionLabel}”，实际结果为“${outcomeLabel}”。本次投入${bet.amount}金币，返还${bet.payout}金币，净收益${netProfit >= 0 ? "+" : ""}${netProfit}金币。`,
           matchId:record.id,
           payload:{
             marketId,
@@ -3970,6 +5747,8 @@ export class YellowDogsLeagueService {
             adjustedScore,
             totalGoals,
             totalCards,
+            halfTimeScore:halfFull.halfTimeScore,
+            regulationScore:halfFull.regulationScore,
           },
         });
       }
@@ -4073,9 +5852,11 @@ export class YellowDogsLeagueService {
       name:team.name,
       isAi:!team.ownerId,
       ownerName:team.ownerName,
+      equippedBadge:this.equippedTeamBadge(team.ownerId),
+      equippedClubBadge:this.equippedClubBadge(team.ownerId),
       table:{ ...team.table },
       formation:lineup.length === 11 ? analyzeElevenFormation(lineup, positions).name : null,
-      starters:lineup.map((player) => ({ ...publicStarter(player), position:{ ...positions[player.id] } })),
+      starters:lineup.map((player) => ({ ...publicStarter(player), position:{ ...positions[player.id] }, captain:player.id === team.captainId })),
       roster,
       recentHistory:recentHistoryPage.history,
       historyTotal:recentHistoryPage.total,
@@ -4086,7 +5867,8 @@ export class YellowDogsLeagueService {
 
   matchDetail(account, matchIdValue) {
     if (String(matchIdValue ?? "") === "__v2_review_demo__") return this.v2ReviewDemoDetail();
-    const match = this.state.matches.find((entry) => entry.id === String(matchIdValue ?? ""));
+    const match = this.state.matches.find((entry) => entry.id === String(matchIdValue ?? ""))
+      ?? this.state.seasonFinalTournament?.matches?.find((entry) => entry.id === String(matchIdValue ?? ""));
     if (!match?.report) throw new Error("找不到这场比赛的详细记录");
     const ownTeam = this.accountTeam(account.id);
     const viewerTeamId = match.competition === "worldcup" ? null : ownTeam?.id;
@@ -4268,6 +6050,8 @@ export class YellowDogsLeagueService {
     const existingPlayerTeams = this.state.teams.filter((entry) => entry.ownerId && entry.ownerId !== account.id);
     const joinRound = Math.min(this.state.season.totalRounds, this.state.season.currentRound + 1);
     team.name = draft.teamName;
+    team.clubManagement = null;
+    this.ensureClubManagement(team);
     team.ownerId = account.id;
     team.ownerName = account.nickname;
     team.joinedAt = this.now();
@@ -4278,7 +6062,7 @@ export class YellowDogsLeagueService {
     team.activeLineupSchemeId = "lineup-1";
     team.lineupSchemes = [lineupSchemeSnapshot({ ...team, competitionScope:"all" }, "lineup-1", "方案 1")];
     team.lineupSchemeAssignments = { league:"lineup-1", cup:"lineup-1", friendly:"lineup-1" };
-    team.playerState = Object.fromEntries(team.rosterIds.map((id) => [id, { fitness:100, suspension:0, injuryRounds:0 }]));
+    team.playerState = Object.fromEntries(team.rosterIds.map((id) => [id, { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 }]));
     draft.selectedIds.forEach((playerId) => this.grantS4Card(team, playerId, {
       grantOwnership:true,
       acquisitionSource:"initial-draft",
@@ -4326,6 +6110,8 @@ export class YellowDogsLeagueService {
         attackFocus:team.attackFocus,
         defenseFocus:team.defenseFocus,
         fitnessThreshold:team.fitnessThreshold,
+        captainId:team.captainId ?? null,
+        captainStyle:normalizeCaptainStyle(team.captainStyle),
         tacticalPlans:team.tacticalPlans,
         activeLineupSchemeId:team.activeLineupSchemeId,
         lineupSchemes:team.lineupSchemes,
@@ -4340,7 +6126,7 @@ export class YellowDogsLeagueService {
     if (!team) throw new Error("找不到这支球队");
     const offset = Math.max(0, Math.floor(Number(offsetValue) || 0));
     const limit = Math.max(1, Math.min(20, Math.floor(Number(limitValue) || 8)));
-    const matches = this.state.matches
+    const matches = [...this.state.matches, ...(this.state.seasonFinalTournament?.matches ?? [])]
       .filter((match) => match.homeId === team.id || match.awayId === team.id)
       .sort((left, right) => Number(right.playedAt ?? 0) - Number(left.playedAt ?? 0) || Number(right.round ?? 0) - Number(left.round ?? 0));
     const history = matches.slice(offset, offset + limit).map((match) => this.matchSummary(match));
@@ -4348,12 +6134,63 @@ export class YellowDogsLeagueService {
     return clone({ teamId:team.id, history, total:matches.length, nextOffset:nextOffset < matches.length ? nextOffset : null });
   }
 
+  tacticalShapePreview(account, body = {}) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    const starters = [...new Set(body.starterIds ?? team.preferredStarterIds ?? [])];
+    if (starters.length !== 11 || starters.some((id) => !team.rosterIds.includes(id))) throw new Error("动态预览需要完整的11人首发阵容");
+    const players = starters.map((id) => REAL_PLAYER_BY_ID[id]).filter(Boolean);
+    if (players.length !== 11) throw new Error("动态预览无法识别当前首发球员");
+    const planState = ["opening", "leading", "trailing"].includes(body.planState) ? body.planState : "opening";
+    const positionPreset = { opening:"position1", leading:"position2", trailing:"position3" }[planState];
+    const positionSource = body.positionPresets?.[positionPreset]
+      ?? (positionPreset === "position1" ? body.positions : null)
+      ?? team.positionPresets?.[positionPreset]
+      ?? team.positions;
+    const positions = sanitizePositions(players, positionSource);
+    const formationLines = sanitizeFormationLines(
+      body.formationLinePresets?.[positionPreset]
+        ?? team.formationLinePresets?.[positionPreset]
+        ?? deriveFormationLines(players.map((player) => ({ id:player.id, position:positions[player.id] }))),
+    );
+    const roles = inferFormationBoardRoles(players.map((player) => ({ id:player.id, position:positions[player.id] })), formationLines);
+    const fallback = team.tacticalPlans?.[planState] ?? team.tacticalPlans?.opening ?? { tactic:team.tactic, style:team.style };
+    const submitted = body.tacticalPlans?.[planState] ?? {};
+    const plan = {
+      tactic:TACTICS.has(submitted.tactic) ? submitted.tactic : fallback.tactic ?? "balanced",
+      style:STYLES.has(submitted.style) ? submitted.style : fallback.style ?? "possession",
+      inPossession:IN_POSSESSION_PLANS.has(submitted.inPossession) ? submitted.inPossession : fallback.inPossession ?? "balanced",
+      outOfPossession:OUT_OF_POSSESSION_PLANS.has(submitted.outOfPossession) ? submitted.outOfPossession : fallback.outOfPossession ?? "balanced",
+      ...v2TacticalDetailsProperty(submitted, fallback),
+      ...v2TacticalDimensionsProperty(submitted.tacticalDimensions, fallback.tacticalDimensions, submitted),
+      ...v2PlayerDutiesProperty(submitted.playerDuties, starters, roles, fallback.playerDuties),
+    };
+    const scoreState = planState === "leading" ? "leading" : planState === "trailing" ? "trailing" : "level";
+    const minute = planState === "opening" ? 25 : 70;
+    return buildV21TacticalShapePreview({
+      players,
+      positions,
+      roles,
+      plan,
+      attackFocus:body.attackFocus ?? team.attackFocus,
+      defenseFocus:body.defenseFocus ?? team.defenseFocus,
+      scoreState,
+      minute,
+      parameters:STABLE_V21_PARAMETERS,
+    });
+  }
+
   saveTeam(account, body, options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
     if (body.lineupSchemeId && body.lineupSchemeId !== team.activeLineupSchemeId) throw new Error("阵容方案已切换，请刷新后重试");
+    const activeScheme = team.lineupSchemes?.find((scheme) => scheme.id === team.activeLineupSchemeId);
+    const currentRevision = Math.max(0, Math.floor(Number(activeScheme?.revision ?? 0)));
+    const submittedRevision = Number(body.lineupSchemeRevision);
+    if (currentRevision > 0 && !Number.isFinite(submittedRevision)) throw new Error("当前阵容方案已被其他设备更新，请刷新后重试");
+    if (Number.isFinite(submittedRevision) && Math.floor(submittedRevision) !== currentRevision) throw new Error("当前阵容方案已被其他设备更新，请刷新后重试");
     const starters = [...new Set(body.starterIds ?? [])];
-    if (starters.length !== 11 || starters.some((id) => !team.rosterIds.includes(id))) throw new Error("必须从注册名单中选择11名首发");
+    if (starters.length !== 11 || starters.some((id) => !team.rosterIds.includes(id) || this.rosterOverlimitLocked(team, id))) throw new Error("必须从注册名单中选择11名未被超限锁定的球员");
     const players = starters.map((id) => REAL_PLAYER_BY_ID[id]);
     const submittedPresets = body.positionPresets;
     const submittedLinePresets = body.formationLinePresets;
@@ -4371,6 +6208,10 @@ export class YellowDogsLeagueService {
     }));
     team.preferredStarterIds = starters;
     team.positionPresets = positionPresets;
+    const captainId = String(body.captainId ?? "");
+    if (captainId && !starters.includes(captainId)) throw new Error("队长必须来自当前方案的默认11人首发");
+    team.captainId = captainId || null;
+    team.captainStyle = normalizeCaptainStyle(body.captainStyle);
     team.formationLinePresets = formationLinePresets;
     team.positions = clone(positionPresets.position1);
     if (TACTICS.has(body.tactic)) team.tactic = body.tactic;
@@ -4399,6 +6240,8 @@ export class YellowDogsLeagueService {
     team.tactic = team.tacticalPlans.opening.tactic;
     team.style = team.tacticalPlans.opening.style;
     syncActiveLineupScheme(team);
+    const savedScheme = team.lineupSchemes?.find((scheme) => scheme.id === team.activeLineupSchemeId);
+    if (savedScheme) savedScheme.revision = currentRevision + 1;
     this.save();
     if (options.compact) return this.teamSaveMutationView(team);
     return this.view(account);
@@ -4411,6 +6254,7 @@ export class YellowDogsLeagueService {
     team.activeLineupSchemeId ??= team.lineupSchemes[0].id;
     syncActiveLineupScheme(team);
     const action = String(body.action ?? "select");
+    if (body.expectedActiveLineupSchemeId && body.expectedActiveLineupSchemeId !== team.activeLineupSchemeId) throw new Error("阵容方案已在其他设备切换，请刷新后重试");
     if (action === "create") {
       if (team.lineupSchemes.length >= LINEUP_SCHEME_LIMIT) throw new Error("最多只能保存3套阵容方案");
       const used = new Set(team.lineupSchemes.map((scheme) => scheme.id));
@@ -4478,7 +6322,9 @@ export class YellowDogsLeagueService {
       expiresAt,
       scheme:clone(scheme),
     };
-    this.save();
+    // Sharing only changes the small lineup-share map. Avoid creating a daily backup
+    // and a second full-state .bak copy on this latency-sensitive action.
+    this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
     return { code, createdAt:now, expiresAt };
   }
 
@@ -4508,6 +6354,8 @@ export class YellowDogsLeagueService {
       .map(([sourceId, duty]) => [playerIdMap.get(sourceId), duty]));
     const mappedScheme = clone(shared.scheme);
     mappedScheme.preferredStarterIds = importedStarterIds.map((sourceId) => playerIdMap.get(sourceId));
+    mappedScheme.captainId = playerIdMap.get(shared.scheme?.captainId) ?? null;
+    mappedScheme.captainStyle = normalizeCaptainStyle(shared.scheme?.captainStyle);
     mappedScheme.positions = remapPositions(shared.scheme.positions);
     mappedScheme.positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((preset) => [preset, remapPositions(shared.scheme.positionPresets?.[preset] ?? shared.scheme.positions)]));
     mappedScheme.tacticalPlans = Object.fromEntries(Object.entries(shared.scheme.tacticalPlans ?? {}).map(([state, plan]) => [state, {
@@ -4534,13 +6382,15 @@ export class YellowDogsLeagueService {
     const name = String(nameValue ?? "").trim();
     if (!name) throw new Error("球队名称不能为空");
     if (name.length > 30) throw new Error("球队名称最多30个字符");
-    const normalizedName = name.toLocaleLowerCase("zh-CN");
+    const club = this.ensureClubManagement(team);
+    const teamContract = this.activeClubSponsorContract(club, "team");
+    const activeSponsor = CLUB_SPONSORS.find((entry) => entry.id === teamContract?.sponsorId);
+    const storedName = teamContract && activeSponsor ? `${name}-${activeSponsor.name}` : name;
+    const normalizedName = storedName.toLocaleLowerCase("zh-CN");
     if (this.state.teams.some((entry) => entry.id !== team.id && entry.name.toLocaleLowerCase("zh-CN") === normalizedName)
       || Object.values(this.state.drafts).some((draft) => draft.teamName.toLocaleLowerCase("zh-CN") === normalizedName)) throw new Error("该球队名称已经被使用");
-    team.name = name;
-    Object.values(this.state.playerStats).forEach((entry) => { if (entry.teamId === team.id) entry.teamName = name; });
-    this.state.listings.forEach((entry) => { if (entry.sellerTeamId === team.id) entry.sellerTeamName = name; });
-    (this.state.reports[team.id] ?? []).forEach((report) => { report.teamName = name; });
+    club.baseTeamName = name;
+    this.setStoredTeamName(team, storedName);
     this.save();
     return this.view(account);
   }
@@ -4636,6 +6486,39 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
+  listCosmetic(account, itemIdValue, priceValue, options = {}) {
+    const team = this.accountTeam(account.id);
+    const item = COSMETIC_BADGE_BY_ID[String(itemIdValue ?? "")];
+    const price = Math.floor(Number(priceValue));
+    const inventory = this.cosmeticInventory(account.id);
+    const availableCount = Number(inventory[item?.id] ?? 0);
+    if (!team || !item || availableCount < 1) throw new Error("这枚徽章不在你的可交易道具中");
+    if (!Number.isFinite(price) || price < COSMETIC_BADGE_MINIMUM_LISTING_PRICE) throw new Error(`道具挂牌价不能低于${COSMETIC_BADGE_MINIMUM_LISTING_PRICE}金币`);
+    const equipped = this.equippedCosmeticIds(account.id);
+    const wasEquipped = equipped[item.slot] === item.id;
+    const remainingCount = availableCount - 1;
+    if (remainingCount > 0) inventory[item.id] = remainingCount;
+    else delete inventory[item.id];
+    if (wasEquipped && remainingCount < 1) delete equipped[item.slot];
+    this.state.listings.push({
+      id:makeId("cosmetic-listing", `${item.id}-${this.state.listings.length}`),
+      kind:"cosmetic",
+      cosmeticItemId:item.id,
+      cosmeticSlot:item.slot,
+      wasEquipped,
+      sellerId:account.id,
+      sellerTeamId:team.id,
+      price,
+      status:"active",
+      createdAt:this.now(),
+    });
+    this.save();
+    const teamBadgeDelta = this.equippedTeamBadge(account.id);
+    const clubBadgeDelta = this.equippedClubBadge(account.id);
+    if (options.compact) return this.compactMutationView(account, { cosmetics:true, extra:{ listing:this.listingView(this.state.listings.at(-1)), teamBadgeDelta, clubBadgeDelta } });
+    return this.view(account);
+  }
+
   inboxMessageDeletable(message) {
     if (message.type === "friendly-invite" && this.state.friendlyInvitations.some((item) => item.id === message.payload?.friendlyInvitationId && item.status === "pending" && this.now() < this.friendlyInvitationExpiresAt(item))) return false;
     if (message.type === "trade-offer" && this.state.cardTradeOffers.some((item) => item.id === message.payload?.tradeOfferId && item.status === "pending")) return false;
@@ -4690,10 +6573,21 @@ export class YellowDogsLeagueService {
   cancelListing(account, listingId, options = {}) {
     const listing = this.state.listings.find((item) => item.id === listingId && item.status === "active");
     if (!listing || listing.sellerId !== account.id) throw new Error("找不到你的这笔挂牌");
+    if (listing.kind === "cosmetic") {
+      const item = COSMETIC_BADGE_BY_ID[listing.cosmeticItemId];
+      if (!item) throw new Error("挂牌徽章已经失效");
+      const inventory = this.cosmeticInventory(account.id);
+      inventory[item.id] = Number(inventory[item.id] ?? 0) + 1;
+      const equipped = this.equippedCosmeticIds(account.id);
+      if (listing.wasEquipped && !equipped[item.slot]) equipped[item.slot] = item.id;
+    }
     listing.status = "cancelled";
     listing.closedAt = this.now();
     this.save();
-    if (options.compact) return this.compactMutationView(account, { extra:{ cancelledListingId:listing.id } });
+    if (options.compact) {
+      const cosmetic = listing.kind === "cosmetic";
+      return this.compactMutationView(account, { cosmetics:cosmetic, extra:{ cancelledListingId:listing.id, ...(cosmetic ? { teamBadgeDelta:this.equippedTeamBadge(account.id), clubBadgeDelta:this.equippedClubBadge(account.id) } : {}) } });
+    }
     return this.view(account);
   }
 
@@ -4784,27 +6678,33 @@ export class YellowDogsLeagueService {
     const entries = [];
     for (let index = this.state.ledger.length - 1; index >= 0 && entries.length < limit; index -= 1) {
       const entry = this.state.ledger[index];
-      if (entry.accountId === accountId && entry.type === "s4-card-enhancement") entries.push(entry);
+      if (entry.accountId === accountId && ["s4-card-enhancement", "s4-card-enhancement-batch"].includes(entry.type)) entries.push(entry);
     }
     return entries.map((entry) => {
         const mainPlayer = entry.mainPlayer ?? playerSummary(REAL_PLAYER_BY_ID[entry.playerId]);
         const materialPlayerId = entry.materialPlayerId ?? this.state.s4Assets.cards[entry.materialCardId]?.playerId ?? entry.playerId;
         const materialPlayer = entry.materialPlayer ?? playerSummary(REAL_PLAYER_BY_ID[materialPlayerId]);
+        const isBatch = entry.type === "s4-card-enhancement-batch";
+        const batchOutcomes = isBatch ? (entry.outcomes ?? []) : [];
+        const batchAfterLevel = isBatch ? Math.max(...batchOutcomes.map((outcome) => Number(outcome.afterLevel ?? entry.mainLevel ?? 0)), Number(entry.mainLevel ?? 0)) : null;
         return {
           id:entry.id,
           createdAt:entry.createdAt,
           mainPlayer,
-          mainCard:{ id:entry.mainCardId, playerId:mainPlayer.id, upgradeLevel:Number(entry.beforeLevel ?? 0), effectiveOverall:s4EffectiveOverall(mainPlayer, Number(entry.beforeLevel ?? 0)), traits:[] },
+          mainCard:{ id:entry.mainCardId ?? `${entry.id}:main`, playerId:mainPlayer.id, upgradeLevel:Number(entry.beforeLevel ?? entry.mainLevel ?? 0), effectiveOverall:s4EffectiveOverall(mainPlayer, Number(entry.beforeLevel ?? entry.mainLevel ?? 0)), traits:[] },
           materialPlayer,
           materialCard:{ id:entry.materialCardId, playerId:materialPlayer.id, upgradeLevel:Number(entry.materialLevel ?? 0), effectiveOverall:s4EffectiveOverall(materialPlayer, Number(entry.materialLevel ?? 0)), traits:[] },
           resultPlayer:mainPlayer,
-          resultCard:{ id:entry.mainCardId, playerId:mainPlayer.id, upgradeLevel:Number(entry.afterLevel ?? entry.beforeLevel ?? 0), effectiveOverall:s4EffectiveOverall(mainPlayer, Number(entry.afterLevel ?? entry.beforeLevel ?? 0)), traits:[] },
+          resultCard:{ id:entry.mainCardId ?? `${entry.id}:result`, playerId:mainPlayer.id, upgradeLevel:Number(entry.afterLevel ?? batchAfterLevel ?? entry.beforeLevel ?? entry.mainLevel ?? 0), effectiveOverall:s4EffectiveOverall(mainPlayer, Number(entry.afterLevel ?? batchAfterLevel ?? entry.beforeLevel ?? entry.mainLevel ?? 0)), traits:[] },
           protectionUsed:Boolean(entry.protectionUsed),
           protectionCost:Number(entry.protectionCost ?? -Math.min(0, Number(entry.amount ?? 0))),
           chance:Number(entry.chance ?? 0),
-          success:Boolean(entry.success),
-          beforeLevel:Number(entry.beforeLevel ?? 0),
-          afterLevel:Number(entry.afterLevel ?? entry.beforeLevel ?? 0),
+          success:isBatch ? Number(entry.successCount ?? 0) > 0 : Boolean(entry.success),
+          beforeLevel:Number(entry.beforeLevel ?? entry.mainLevel ?? 0),
+          afterLevel:Number(entry.afterLevel ?? batchAfterLevel ?? entry.beforeLevel ?? entry.mainLevel ?? 0),
+          batchQuantity:isBatch ? Number(entry.quantity ?? batchOutcomes.length) : 0,
+          batchSuccessCount:isBatch ? Number(entry.successCount ?? 0) : 0,
+          batchFailureCount:isBatch ? Number(entry.failureCount ?? 0) : 0,
         };
       });
   }
@@ -4815,6 +6715,35 @@ export class YellowDogsLeagueService {
     const mainCard = this.state.s4Assets.cards[String(mainCardIdValue ?? "")];
     const materialCard = this.state.s4Assets.cards[String(materialCardIdValue ?? "")];
     if (!team) throw new Error("你还没有加入联赛");
+    const requestId = String(options.requestId ?? "").trim();
+    if (requestId && !/^[A-Za-z0-9._:-]{8,128}$/.test(requestId)) throw new Error("合卡请求标识无效");
+    let repeated = null;
+    for (let index = this.state.ledger.length - 1; requestId && index >= 0; index -= 1) {
+      const entry = this.state.ledger[index];
+      if (entry.type === "s4-card-enhancement" && entry.accountId === account.id && entry.requestId === requestId) {
+        repeated = entry;
+        break;
+      }
+    }
+    if (repeated) {
+      if (repeated.mainCardId !== String(mainCardIdValue ?? "")
+        || repeated.materialCardId !== String(materialCardIdValue ?? "")
+        || Boolean(repeated.requestedProtection) !== Boolean(useProtection)) {
+        throw new Error("合卡请求标识与原请求不一致");
+      }
+      const enhancementResult = clone(repeated.enhancementResultSnapshot);
+      if (options.compact) return clone({
+        updatedAt:this.state.updatedAt,
+        serverTime:this.now(),
+        wallet:this.wallet(account.id),
+        ...(options.skipHistory === true ? {} : { enhancementHistory:this.enhancementHistory(account.id) }),
+        removedCardId:repeated.materialCardId,
+        removedPlayerId:repeated.removedPlayerId ?? null,
+        enhancementResult,
+      });
+      return { ...this.view(account), enhancementResult };
+    }
+    if (this.rosterOverlimitLocked(team, mainCard?.playerId) || this.rosterOverlimitLocked(team, materialCard?.playerId)) throw new Error("超限锁定球员不能参与合卡");
     if (!mainCard || mainCard.status !== "active" || mainCard.ownerId !== account.id) throw new Error("请选择有效的主卡");
     if (!materialCard || materialCard.status !== "active" || materialCard.ownerId !== account.id) throw new Error("请选择有效的副卡");
     if (mainCard.id === materialCard.id) throw new Error("主卡和副卡不能是同一张卡");
@@ -4862,7 +6791,31 @@ export class YellowDogsLeagueService {
       materialLevel,
       source:"enhancement",
     }) : null;
-    this.state.ledger.push({
+    const enhancementResult = {
+      id:resultId,
+      success,
+      chance,
+      beforeLevel:mainLevel,
+      materialLevel,
+      afterLevel:Number(mainCard.upgradeLevel),
+      protectionUsed,
+      protectionCost,
+      player:playerSummary(player),
+      card:publicLeagueS4Card(this.state, mainCard),
+      traitOffer:traitOffer ? {
+        id:traitOffer.id,
+        cardId:traitOffer.cardId,
+        upgradeLevel:traitOffer.upgradeLevel,
+        unlockLevel:traitOffer.unlockLevel,
+        traits:traitOffer.traitIds.map((id) => ({
+          id,
+          name:YDL_TRAIT_BY_ID[id]?.name ?? id,
+          summary:YDL_TRAIT_BY_ID[id]?.summary ?? "特性效果由联赛后台配置。",
+          eligibleRoleGroups:[...(YDL_TRAIT_BY_ID[id]?.eligibleRoleGroups ?? ["ANY"])],
+        })),
+      } : null,
+    };
+    if (options.skipAudit !== true) this.state.ledger.push({
       id:makeId("ledger", resultId),
       accountId:account.id,
       amount:-protectionCost,
@@ -4880,9 +6833,13 @@ export class YellowDogsLeagueService {
       success,
       protectionUsed,
       protectionCost,
+      requestId:requestId || null,
+      requestedProtection:Boolean(useProtection),
+      removedPlayerId:consumesMaterialFamily ? materialCard.playerId : null,
+      enhancementResultSnapshot:clone(enhancementResult),
       createdAt:this.now(),
     });
-    recordS4AssetTransaction(this.state, {
+    if (options.skipAudit !== true) recordS4AssetTransaction(this.state, {
       id:resultId,
       type:"card-enhancement",
       playerId:mainCard.playerId,
@@ -4892,44 +6849,20 @@ export class YellowDogsLeagueService {
       metadata:{ beforeLevel:mainLevel, materialLevel, afterLevel:mainCard.upgradeLevel, chance, success, protectionUsed },
       createdAt:this.now(),
     });
-    this.notifyEnhancementSuccess(team, player, mainCard, {
+    if (options.skipNotify !== true) this.notifyEnhancementSuccess(team, player, mainCard, {
       resultId,
       success,
       chance,
       beforeLevel:mainLevel,
       materialLevel,
     });
-    this.save();
-    const enhancementResult = {
-        id:resultId,
-        success,
-        chance,
-        beforeLevel:mainLevel,
-        materialLevel,
-        afterLevel:Number(mainCard.upgradeLevel),
-        protectionUsed,
-        protectionCost,
-        player:playerSummary(player),
-        card:publicLeagueS4Card(this.state, mainCard),
-        traitOffer:traitOffer ? {
-          id:traitOffer.id,
-          cardId:traitOffer.cardId,
-          upgradeLevel:traitOffer.upgradeLevel,
-          unlockLevel:traitOffer.unlockLevel,
-          traits:traitOffer.traitIds.map((id) => ({
-            id,
-            name:YDL_TRAIT_BY_ID[id]?.name ?? id,
-            summary:YDL_TRAIT_BY_ID[id]?.summary ?? "特性效果由联赛后台配置。",
-            eligibleRoleGroups:[...(YDL_TRAIT_BY_ID[id]?.eligibleRoleGroups ?? ["ANY"])],
-          })),
-        } : null,
-      };
+    if (options.skipSave !== true) this.save();
     if (options.compact) {
       return clone({
         updatedAt:this.state.updatedAt,
         serverTime:this.now(),
         wallet:this.wallet(account.id),
-        enhancementHistory:this.enhancementHistory(account.id),
+        ...(options.skipHistory === true ? {} : { enhancementHistory:this.enhancementHistory(account.id) }),
         removedCardId:materialCard.id,
         removedPlayerId:consumesMaterialFamily ? materialCard.playerId : null,
         enhancementResult,
@@ -4939,6 +6872,102 @@ export class YellowDogsLeagueService {
       ...this.view(account),
       enhancementResult,
     };
+  }
+
+  batchEnhanceS4Cards(account, playerIdValue, mainLevelValue, materialLevelValue, quantityValue, options = {}) {
+    const playerId = String(playerIdValue ?? "");
+    const mainLevel = Math.floor(Number(mainLevelValue));
+    const materialLevel = Math.floor(Number(materialLevelValue));
+    const requestedQuantity = Math.floor(Number(quantityValue));
+    const player = REAL_PLAYER_BY_ID[playerId];
+    if (!player || isXPlayer(player)) throw new Error("批量合卡只支持普通球员");
+    if (!Number.isInteger(mainLevel) || mainLevel < 0 || mainLevel >= S4_ENHANCEMENT_MAX_LEVEL) throw new Error("主卡等级必须为0至7");
+    if (mainLevel >= 3) throw new Error("批量合卡不支持预期达到+4及以上的结果，请逐张合成并绑定特性");
+    if (!Number.isInteger(materialLevel) || materialLevel < 0 || materialLevel > S4_ENHANCEMENT_MAX_LEVEL) throw new Error("副卡等级必须为0至8");
+    if (materialLevel > mainLevel) throw new Error("主卡等级不能低于副卡等级");
+    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1) throw new Error("批量次数必须至少为1");
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    if (this.rosterOverlimitLocked(team, playerId)) throw new Error("超限锁定球员不能参与合卡");
+    const activeCards = this.playerCards(account.id, playerId).filter((card) => card.status === "active");
+    const pendingTraitCardIds = new Set(Object.values(this.state.s4Assets.traitOffers ?? {}).filter((offer) => offer.ownerId === account.id && offer.status === "pending").map((offer) => offer.cardId));
+    const mainCount = activeCards.filter((card) => Number(card.upgradeLevel ?? 0) === mainLevel && !pendingTraitCardIds.has(card.id)).length;
+    const materialCount = activeCards.filter((card) => Number(card.upgradeLevel ?? 0) === materialLevel && !card.ownershipAnchorRequired).length;
+    const maximumQuantity = mainLevel === materialLevel ? Math.floor(Math.min(mainCount, materialCount) / 2) : Math.min(mainCount, materialCount);
+    if (!maximumQuantity) throw new Error("没有足够的指定等级卡片可供批量合卡");
+    const quantity = Math.min(requestedQuantity, maximumQuantity);
+    const chance = s4EnhancementChance(mainLevel, materialLevel);
+    let successCount = 0;
+    let failureCount = 0;
+    const outcomes = [];
+    for (let index = 0; index < quantity; index += 1) {
+      const currentCards = this.playerCards(account.id, playerId).filter((card) => card.status === "active");
+      const currentPendingTraitCardIds = new Set(Object.values(this.state.s4Assets.traitOffers ?? {}).filter((offer) => offer.ownerId === account.id && offer.status === "pending").map((offer) => offer.cardId));
+      const mainCard = currentCards.find((card) => Number(card.upgradeLevel ?? 0) === mainLevel && !currentPendingTraitCardIds.has(card.id));
+      const materialCard = currentCards.find((card) => Number(card.upgradeLevel ?? 0) === materialLevel && !card.ownershipAnchorRequired && card.id !== mainCard?.id);
+      if (!mainCard || !materialCard) break;
+      const result = this.enhanceS4Card(account, mainCard.id, materialCard.id, false, { compact:true, skipSave:true, skipNotify:true, skipAudit:true, skipHistory:true });
+      outcomes.push({ mainCardId:mainCard.id, materialCardId:materialCard.id, beforeLevel:mainLevel, materialLevel, afterLevel:result.enhancementResult.afterLevel, success:result.enhancementResult.success, resultId:result.enhancementResult.id });
+      if (result.enhancementResult.success) successCount += 1;
+      else failureCount += 1;
+    }
+    const remainingCards = this.playerCards(account.id, playerId).filter((card) => card.status === "active");
+    const finalLevelCounts = {};
+    remainingCards.forEach((card) => {
+      const level = Number(card.upgradeLevel ?? 0);
+      finalLevelCounts[level] = (finalLevelCounts[level] ?? 0) + 1;
+    });
+    const batchId = makeId("enhancement-batch", `${account.id}-${playerId}`);
+    this.state.ledger.push({
+      id:makeId("ledger", batchId),
+      accountId:account.id,
+      amount:0,
+      type:"s4-card-enhancement-batch",
+      playerId,
+      mainLevel,
+      materialLevel,
+      chance,
+      quantity:successCount + failureCount,
+      successCount,
+      failureCount,
+      outcomes,
+      createdAt:this.now(),
+    });
+    recordS4AssetTransaction(this.state, {
+      id:batchId,
+      type:"card-enhancement-batch",
+      playerId,
+      cardIds:outcomes.flatMap((entry) => [entry.mainCardId, entry.materialCardId]),
+      fromOwnerId:account.id,
+      metadata:{ mainLevel, materialLevel, chance, quantity:successCount + failureCount, successCount, failureCount, outcomes },
+      createdAt:this.now(),
+    });
+    this.notifyEnhancementBatch(team, player, { batchId, mainLevel, materialLevel, chance, quantity:successCount + failureCount, successCount, failureCount, outcomes });
+    this.save({ scopes:["core", "assets", "ledger", "inbox"], skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+    const pendingTraitOffers = Object.values(this.state.s4Assets.traitOffers ?? {})
+      .filter((offer) => offer.ownerId === account.id && offer.status === "pending" && offer.playerId === playerId)
+      .map((offer) => ({ id:offer.id, cardId:offer.cardId, playerId:offer.playerId, upgradeLevel:offer.upgradeLevel, unlockLevel:offer.unlockLevel, traits:offer.traitIds.map((id) => ({ id, name:YDL_TRAIT_BY_ID[id]?.name ?? id, summary:YDL_TRAIT_BY_ID[id]?.summary ?? "特性效果由联赛后台配置。", eligibleRoleGroups:[...(YDL_TRAIT_BY_ID[id]?.eligibleRoleGroups ?? ["ANY"])] })) }));
+    const result = {
+      playerId,
+      player:playerSummary(player),
+      mainLevel,
+      materialLevel,
+      requestedQuantity,
+      maximumQuantity,
+      quantity:successCount + failureCount,
+      chance,
+      expectedSuccesses:Number(((successCount + failureCount) * chance / 100).toFixed(2)),
+      successCount,
+      failureCount,
+      finalCardCount:remainingCards.length,
+      finalLevelCounts,
+      cards:remainingCards.map((card) => publicLeagueS4Card(this.state, card)),
+      pendingTraitOffers,
+      wallet:this.wallet(account.id),
+      updatedAt:this.state.updatedAt,
+      serverTime:this.now(),
+    };
+    return options.compact ? clone(result) : { ...this.view(account), batchEnhancementResult:result };
   }
 
   chooseS4EnhancementTrait(account, offerIdValue, traitIdValue, options = {}) {
@@ -5002,13 +7031,13 @@ export class YellowDogsLeagueService {
     return { ...this.view(account), enhancementTraitResult };
   }
 
-  releaseCard(account, cardIdValue, confirmOwnershipReturn = false) {
+  releaseCard(account, cardIdValue, confirmOwnershipReturn = false, options = {}) {
     const team = this.accountTeam(account.id);
     const card = this.state.s4Assets.cards[String(cardIdValue ?? "")];
     const player = REAL_PLAYER_BY_ID[card?.playerId];
     if (!team || !card || card.status !== "active" || card.ownerId !== account.id || !player) throw new Error("不能解约该球员卡");
     if (isXPlayer(player)) throw new Error("X级球员不可回收或解约");
-    if (Number(card.upgradeLevel ?? 0) >= 5) throw new Error("+5及以上强化卡无法解约");
+    if (Number(card.upgradeLevel ?? 0) > S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL) throw new Error(`+${S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL + 1}及以上强化卡无法解约`);
     if (this.cardLockedByTrade(card.id)) throw new Error("该球员卡正在交易报价中");
     if (this.state.listings.some((item) => item.status === "active" && (item.cardId === card.id || item.playerId === card.playerId && item.kind === "ownership"))) throw new Error("请先撤回球员资产挂牌");
     const familyCards = this.playerCards(account.id, card.playerId);
@@ -5033,17 +7062,26 @@ export class YellowDogsLeagueService {
       createdAt:this.now(),
     });
     this.save();
+    if (options.compact) {
+      return this.s4RecoveryMutationView(account, {
+        affectedPlayerIds:[card.playerId],
+        removedCardIds:[card.id],
+        removedPlayerIds:familyCards.length === 1 ? [card.playerId] : [],
+        returnedOwnershipPlayerIds:returnsOwnership ? [card.playerId] : [],
+        extra:{ cardRecoveryResult:{ cardCount:1, amount } },
+      });
+    }
     return this.view(account);
   }
 
-  releaseCards(account, cardIdsValue) {
+  releaseCards(account, cardIdsValue, options = {}) {
     const team = this.accountTeam(account.id);
     const cardIds = [...new Set((Array.isArray(cardIdsValue) ? cardIdsValue : []).map((id) => String(id ?? "")).filter(Boolean))];
     if (!team || !cardIds.length) throw new Error("请至少选择一张需要回收的球员卡");
     const cards = cardIds.map((id) => this.state.s4Assets.cards[id]);
     if (cards.some((card) => !card || card.status !== "active" || card.ownerId !== account.id || !REAL_PLAYER_BY_ID[card.playerId])) throw new Error("选择中包含无效球员卡");
     if (cards.some((card) => isXPlayer(card.playerId))) throw new Error("X级球员不可回收或解约");
-    if (cards.some((card) => Number(card.upgradeLevel ?? 0) >= 5)) throw new Error("+5及以上强化卡无法回收");
+    if (cards.some((card) => Number(card.upgradeLevel ?? 0) > S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL)) throw new Error(`+${S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL + 1}及以上强化卡无法回收`);
     if (cards.some((card) => this.cardLockedByTrade(card.id))) throw new Error("选择中包含正在交易报价中的球员卡");
     if (cards.some((card) => this.state.listings.some((item) => item.status === "active" && (item.cardId === card.id || item.kind === "ownership" && item.playerId === card.playerId)))) throw new Error("请先撤回相关球员资产挂牌");
     const selectedByPlayer = new Map();
@@ -5066,7 +7104,16 @@ export class YellowDogsLeagueService {
     removedFamilies.forEach((playerId) => this.removeEmptyRosterFamily(team, playerId));
     this.wallet(account.id).balance += amount;
     this.save();
-    return { ...this.view(account), cardRecoveryResult:{ cardCount:cards.length, amount } };
+    const cardRecoveryResult = { cardCount:cards.length, amount };
+    if (options.compact) {
+      return this.s4RecoveryMutationView(account, {
+        affectedPlayerIds:[...selectedByPlayer.keys()],
+        removedCardIds:cards.map((card) => card.id),
+        removedPlayerIds:removedFamilies,
+        extra:{ cardRecoveryResult },
+      });
+    }
+    return { ...this.view(account), cardRecoveryResult };
   }
 
   cardTradeOfferView(offer) {
@@ -5365,10 +7412,10 @@ export class YellowDogsLeagueService {
     }
   }
 
-  releasePlayer(account, playerId) {
+  releasePlayer(account, playerId, options = {}) {
     const card = this.representativeCard(account.id, playerId);
     if (!card) throw new Error("不能解约该球员");
-    return this.releaseCard(account, card.id, true);
+    return this.releaseCard(account, card.id, true, options);
   }
 
   ownershipReturnPlan(account, playerId) {
@@ -5388,7 +7435,7 @@ export class YellowDogsLeagueService {
     return { team, player, playerId, retained, recovered, recoveryAmount, ownershipAmount, amount:recoveryAmount + ownershipAmount };
   }
 
-  returnOwnerships(account, playerIdsValue) {
+  returnOwnerships(account, playerIdsValue, options = {}) {
     const playerIds = [...new Set((Array.isArray(playerIdsValue) ? playerIdsValue : [playerIdsValue]).map(String).filter(Boolean))];
     if (!playerIds.length) throw new Error("请至少选择一名需要回收所有权的球员");
     const plans = playerIds.map((playerId) => this.ownershipReturnPlan(account, playerId));
@@ -5412,23 +7459,60 @@ export class YellowDogsLeagueService {
         createdAt:this.now(),
       });
     });
+    this.reconcileRosterOverlimitState(team);
     this.save();
-    return {
-      ...this.view(account),
-      ownershipRecoveryResult:{
-        playerCount:plans.length,
-        recoveredCardCount:plans.reduce((sum, plan) => sum + plan.recovered.length, 0),
-        amount:plans.reduce((sum, plan) => sum + plan.amount, 0),
-      },
+    const ownershipRecoveryResult = {
+      playerCount:plans.length,
+      recoveredCardCount:plans.reduce((sum, plan) => sum + plan.recovered.length, 0),
+      amount:plans.reduce((sum, plan) => sum + plan.amount, 0),
     };
+    if (options.compact) {
+      return this.s4RecoveryMutationView(account, {
+        affectedPlayerIds:plans.map((plan) => plan.playerId),
+        removedCardIds:plans.flatMap((plan) => plan.recovered.map((card) => card.id)),
+        removedPlayerIds:plans.filter((plan) => !plan.retained.length).map((plan) => plan.playerId),
+        returnedOwnershipPlayerIds:plans.map((plan) => plan.playerId),
+        extra:{ ownershipRecoveryResult },
+      });
+    }
+    return { ...this.view(account), ownershipRecoveryResult };
   }
 
-  returnOwnership(account, playerId) {
-    return this.returnOwnerships(account, [playerId]);
+  returnOwnership(account, playerId, options = {}) {
+    return this.returnOwnerships(account, [playerId], options);
   }
+  buyCosmeticListing(account, listing, options = {}) {
+    const buyer = this.accountTeam(account.id);
+    const seller = this.state.teams.find((team) => team.id === listing?.sellerTeamId && team.ownerId === listing?.sellerId);
+    const item = COSMETIC_BADGE_BY_ID[listing?.cosmeticItemId];
+    if (!buyer || !seller || !listing || listing.status !== "active" || listing.kind !== "cosmetic" || listing.sellerId === account.id || !item) throw new Error("当前无法购买这件道具");
+    if (this.wallet(account.id).balance < listing.price) throw new Error("金币不足");
+    const buyerInventory = this.cosmeticInventory(account.id);
+    buyerInventory[item.id] = Number(buyerInventory[item.id] ?? 0) + 1;
+    const buyerEquipped = this.equippedCosmeticIds(account.id);
+    if (!buyerEquipped[item.slot]) buyerEquipped[item.slot] = item.id;
+    this.wallet(account.id).balance -= listing.price;
+    const saleIncome = Math.floor(listing.price * (1 - S4_ECONOMY.marketFeeRate));
+    this.wallet(listing.sellerId).balance += saleIncome;
+    listing.status = "sold";
+    listing.buyerId = account.id;
+    listing.closedAt = this.now();
+    this.state.ledger.push(
+      { id:makeId("ledger", listing.id), accountId:account.id, amount:-listing.price, type:"cosmetic-buy", cosmeticItemId:item.id, counterpartyId:listing.sellerId, listingId:listing.id, createdAt:this.now() },
+      { id:makeId("ledger", `${listing.id}-seller`), accountId:listing.sellerId, amount:saleIncome, type:"cosmetic-sale", cosmeticItemId:item.id, counterpartyId:account.id, listingId:listing.id, createdAt:this.now() },
+    );
+    const fee = listing.price - saleIncome;
+    this.pushInbox(buyer, { id:`cosmetic-buy:${listing.id}`, type:"transfer", title:`${item.name} 购买成功`, summary:`支付${listing.price}金币，道具已经进入背包。`, body:`交易对方：${seller.name}。你当前持有${buyerInventory[item.id]}枚${item.name}。`, payload:{ listingId:listing.id, listingKind:"cosmetic", cosmeticItemId:item.id, price:listing.price, counterpartyId:listing.sellerId, counterpartyName:seller.name, perspective:"buyer" } });
+    this.pushInbox(seller, { id:`cosmetic-sale:${listing.id}`, type:"transfer", title:`${item.name} 出售成功`, summary:`成交价${listing.price}金币，扣除${fee}金币手续费，实际到账${saleIncome}金币。`, body:`买方：${buyer.name}。本次徽章道具交易已经完成。`, payload:{ listingId:listing.id, listingKind:"cosmetic", cosmeticItemId:item.id, price:listing.price, fee, saleIncome, counterpartyId:account.id, counterpartyName:buyer.name, perspective:"seller" } });
+    this.save();
+    if (options.compact) return this.compactMutationView(account, { cosmetics:true, extra:{ marketPurchase:{ listingId:listing.id, listingKind:"cosmetic", cosmeticItemId:item.id, sellerId:listing.sellerId, price:listing.price, item:{ ...item, count:buyerInventory[item.id], equipped:buyerEquipped[item.slot] === item.id, minimumListingPrice:COSMETIC_BADGE_MINIMUM_LISTING_PRICE } }, teamBadgeDelta:this.equippedTeamBadge(account.id), clubBadgeDelta:this.equippedClubBadge(account.id) } });
+    return this.view(account);
+  }
+
   buyListing(account, listingId, options = {}) {
     const buyer = this.accountTeam(account.id);
     const listing = this.state.listings.find((item) => item.id === listingId && item.status === "active");
+    if (listing?.kind === "cosmetic") return this.buyCosmeticListing(account, listing, options);
     if (!buyer || !listing || listing.sellerId === account.id) throw new Error("当前无法购买这名球员");
     const seller = this.state.teams.find((team) => team.id === listing.sellerTeamId && team.ownerId === listing.sellerId);
     if (!seller?.rosterIds.includes(listing.playerId)) throw new Error("卖方已不再持有这名球员");
@@ -5590,14 +7674,17 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
-  selectActualLineup(team, roundNumber, competition = "league") {
+  selectActualLineup(team, roundNumber, competition = "league", options = {}) {
     const humanOwned = this.ownedPlayerIds();
+    const bannedPlayerIds = new Set((options.bannedPlayerIds ?? []).map(String));
     if (!team.ownerId) {
       const teamIndex = this.state.teams.indexOf(team);
-      const lineup = aiLineup(teamIndex, roundNumber, humanOwned);
-      return { lineup, substitutes:aiSubstitutes(teamIndex, roundNumber, humanOwned, lineup), rotations:[] };
+      const preferred = aiLineup(teamIndex, roundNumber, humanOwned);
+      const reserves = aiSubstitutes(teamIndex, roundNumber, humanOwned, preferred);
+      const available = [...preferred, ...reserves].filter((player) => !bannedPlayerIds.has(String(player.id)));
+      return { lineup:available.slice(0, 11), substitutes:available.slice(11), rotations:[] };
     }
-    const desired = team.preferredStarterIds.filter((id) => team.rosterIds.includes(id));
+    const desired = team.preferredStarterIds.filter((id) => team.rosterIds.includes(id) && !this.rosterOverlimitLocked(team, id));
     const threshold = Number(team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD);
     const effectiveFitness = (id) => {
       const fixedFitness = fixedFitnessFromTraitIds(this.representativeCard(team.ownerId, id)?.traitIds);
@@ -5607,20 +7694,36 @@ export class YellowDogsLeagueService {
     const hardAvailable = (id) => {
       const state = team.playerState[id] ?? {};
       if (competition === "friendly") return Number(state.injuryRounds ?? 0) <= 0;
-      const suspension = competition === "cup" ? Number(state.cupSuspension ?? 0) : Number(state.suspension ?? 0);
-      return suspension <= 0 && Number(state.injuryRounds ?? 0) <= 0 && effectiveFitness(id) >= 45;
+      const suspension = competition === "season-final"
+        ? Number(state.seasonFinalSuspension ?? 0)
+        : competition === "cup" ? Number(state.cupSuspension ?? 0) : Number(state.suspension ?? 0);
+      return !bannedPlayerIds.has(String(id)) && suspension <= 0 && Number(state.injuryRounds ?? 0) <= 0 && effectiveFitness(id) >= 45;
     };
     const assignedRoles = inferElevenBoardRoles(desired.map((id) => ({ id, position:team.positions[id] })));
     const selected = [];
     const rotations = [];
-    const bench = team.rosterIds.filter((id) => !desired.includes(id) && hardAvailable(id));
+    const bench = team.rosterIds.filter((id) => !desired.includes(id) && !this.rosterOverlimitLocked(team, id) && hardAvailable(id));
+    const effectiveOverall = (player) => s4EffectiveOverall(
+      player,
+      this.representativeCard(team.ownerId, player.id)?.upgradeLevel ?? 0,
+    );
     const takeReplacement = (starterId, requireFresh) => {
       const assignedRole = assignedRoles[starterId] ?? REAL_PLAYER_BY_ID[starterId]?.role;
       const candidates = bench
         .filter((id) => !requireFresh || effectiveFitness(id) > threshold)
-        .map((id) => REAL_PLAYER_BY_ID[id])
+        .map((id) => {
+          const player = REAL_PLAYER_BY_ID[id];
+          const card = this.representativeCard(team.ownerId, id);
+          return player ? { ...player, traits:[...(card?.traitIds ?? [])] } : null;
+        })
         .filter((player) => player && (!requireFresh || automaticSubstitutionRank(assignedRole, player) > 0))
-        .sort((left, right) => compareAutomaticSubstitutes(assignedRole, left, right, (player) => effectiveFitness(player.id)))[0];
+        .sort((left, right) => compareAutomaticSubstitutes(
+          assignedRole,
+          left,
+          right,
+          (player) => effectiveFitness(player.id),
+          effectiveOverall,
+        ))[0];
       if (!candidates) return null;
       bench.splice(bench.indexOf(candidates.id), 1);
       return candidates.id;
@@ -5633,7 +7736,10 @@ export class YellowDogsLeagueService {
       const substitute = forcedOut ? takeReplacement(starterId, false) : atRedLine ? takeReplacement(starterId, true) : null;
       if (substitute) {
         selected.push(substitute);
-        rotations.push({ outId:starterId, outName:REAL_PLAYER_BY_ID[starterId]?.name, inId:substitute, inName:REAL_PLAYER_BY_ID[substitute]?.name, reason:forcedOut ? ((competition === "cup" ? Number(state.cupSuspension ?? 0) : Number(state.suspension ?? 0)) > 0 ? "停赛" : Number(state.injuryRounds ?? 0) > 0 ? "伤缺" : "体能不足45") : `体能${Math.round(fitness)}达到红线${threshold}` });
+        const suspension = competition === "season-final"
+          ? Number(state.seasonFinalSuspension ?? 0)
+          : competition === "cup" ? Number(state.cupSuspension ?? 0) : Number(state.suspension ?? 0);
+        rotations.push({ outId:starterId, outName:REAL_PLAYER_BY_ID[starterId]?.name, inId:substitute, inName:REAL_PLAYER_BY_ID[substitute]?.name, reason:forcedOut ? (bannedPlayerIds.has(String(starterId)) ? "赛季总决赛禁用" : suspension > 0 ? "停赛" : Number(state.injuryRounds ?? 0) > 0 ? "伤缺" : "体能不足45") : `体能${Math.round(fitness)}达到红线${threshold}` });
       } else if (!forcedOut) selected.push(starterId);
     }
     while (selected.length < 11 && bench.length) selected.push(bench.shift());
@@ -5725,16 +7831,17 @@ export class YellowDogsLeagueService {
     return `${this.state.season.id}:${roundNumber}:${fixture.homeId}:${fixture.awayId}`;
   }
 
-  fixtureConditions(fixture, roundNumber) {
-    return seededConditions(this.fixtureSeed(fixture, roundNumber));
+  fixtureConditions(fixture, roundNumber, options = {}) {
+    return seededConditions(this.fixtureSeed(fixture, roundNumber), options);
   }
 
   createFixtureMatch(fixture, roundNumber, startedAt = this.now(), options = {}) {
     const home = this.state.teams.find((team) => team.id === fixture.homeId);
     const away = this.state.teams.find((team) => team.id === fixture.awayId);
     const competitionMode = options.competitionMode ?? "league";
+    const availabilityMode = options.availabilityMode ?? competitionMode;
     const teams = [home, away].map((team) => lineupTeamForCompetition(team, competitionMode));
-    const selections = teams.map((team) => this.selectActualLineup(team, roundNumber, competitionMode));
+    const selections = teams.map((team) => this.selectActualLineup(team, roundNumber, availabilityMode, { bannedPlayerIds:options.bannedPlayerIdsByTeam?.[team.id] ?? [] }));
     const lineups = selections.map((selection) => selection.lineup);
     const positionPresets = teams.map((team, index) => Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, this.actualPositions(team, lineups[index], key)])));
     const formationLinePresets = teams.map((team) => Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, sanitizeFormationLines(team.formationLinePresets?.[key])])));
@@ -5742,7 +7849,7 @@ export class YellowDogsLeagueService {
       const openingPreset = team.tacticalPlans?.opening?.positionPreset ?? "position1";
       return clone(positionPresets[index][openingPreset] ?? positionPresets[index].position1);
     });
-    const conditions = this.fixtureConditions(fixture, roundNumber);
+    const conditions = this.fixtureConditions(fixture, roundNumber, options);
     const matchEngine = options.matchEngine ?? MATCH_ENGINE_BY_COMPETITION[competitionMode] ?? DEFAULT_MATCH_ENGINE;
     const seats = teams.map((team, index) => {
       const starters = this.chemistryAdjustedLineup(team, lineups[index], positions[index]).map((player) => ({ ...player, active:true }));
@@ -5750,11 +7857,37 @@ export class YellowDogsLeagueService {
         const card = this.representativeCard(team.ownerId, player.id);
         return { ...applyS4Enhancement(player, card?.upgradeLevel ?? 0), traits:(card?.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]), active:false };
       }) : [];
-      return { name:team.name, players:[...starters, ...substitutes], positions:positions[index], positionPresets:positionPresets[index], formationLinePresets:formationLinePresets[index], tactic:team.tacticalPlans?.opening?.tactic ?? team.tactic, style:team.tacticalPlans?.opening?.style ?? team.style, tacticalPlans:unwrapTracked(team.tacticalPlans), bondCatalog:S4_BOND_CATALOG, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus, preserveFitness:true };
+      const tacticalPlans = tacticalPlansWithInheritedDuties(unwrapTracked(team.tacticalPlans), selections[index].rotations);
+      return { name:team.name, players:[...starters, ...substitutes], positions:positions[index], positionPresets:positionPresets[index], formationLinePresets:formationLinePresets[index], tactic:tacticalPlans.opening?.tactic ?? team.tactic, style:tacticalPlans.opening?.style ?? team.style, tacticalPlans, bondCatalog:S4_BOND_CATALOG, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus, captainId:starters.some((player) => player.id === team.captainId) ? team.captainId : null, captainStyle:normalizeCaptainStyle(team.captainStyle), preserveFitness:true };
     });
-    const match = createLeagueMatch(unwrapTracked(seats), { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode, legNumber:options.legNumber ?? 1, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false, matchEngine, parameters:matchEngine === "v2" ? STABLE_V21_PARAMETERS : undefined, engineProfile:"v2.1-stable-dynamic.2", dotReplayEnabled:false });
+    const match = createLeagueMatch(unwrapTracked(seats), { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode, legNumber:options.legNumber ?? 1, allowSuperStorm:options.allowSuperStorm, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false, matchEngine, parameters:matchEngine === "v2" ? STABLE_V21_PARAMETERS : undefined, engineProfile:"v2.1-stable-dynamic.2", dotReplayEnabled:false });
+    match.stadium = this.clubBroadcastVenue(home);
     match.leagueAutoRotations = selections.map((selection) => selection.rotations);
     return { home, away, match, startedAt };
+  }
+
+  publicChemistryLinksForTeam(team, starterIds = team.preferredStarterIds, positions = team.positions) {
+    const links = publicChemistryLinks(team, starterIds, positions);
+    const starters = starterIds.map((id) => REAL_PLAYER_BY_ID[id]).filter(Boolean);
+    eligibleChemistryPairs(starters, positions).forEach((pair) => {
+      const carrier = pair.playerIds
+        .map((id) => this.representativeCard(team.ownerId, id))
+        .filter(Boolean)
+        .map((card) => (card.traitIds ?? []).map((id) => YDL_TRAIT_BY_ID[id]).filter(Boolean))
+        .flat()
+        .find((trait) => (trait.rules ?? []).some((rule) => rule.hook === "chemistry" && rule.linkNearby));
+      if (!carrier) return;
+      const rule = carrier.rules.find((entry) => entry.hook === "chemistry" && entry.linkNearby);
+      const existing = links.find((link) => link.playerIds.slice().sort().join("::") === pair.key);
+      if (existing) {
+        existing.value = Math.max(Number(existing.value ?? 0), Number(rule.value ?? 100));
+        existing.bonus = Number(CHEMISTRY_MAX_BONUS.toFixed(4));
+        existing.source = "trait";
+        return;
+      }
+      links.push({ playerIds:[...pair.playerIds], appearances:0, value:Number(rule.value ?? 100), bonus:Number(CHEMISTRY_MAX_BONUS.toFixed(4)), source:"trait" });
+    });
+    return links.sort((left, right) => right.value - left.value);
   }
 
   aiTrainingTacticalPlans(value = {}) {
@@ -5808,7 +7941,7 @@ export class YellowDogsLeagueService {
   }
 
   aiTrainingPlayerSeat(team) {
-    const starterIds = team.preferredStarterIds.filter((id) => team.rosterIds.includes(id)).slice(0, 11);
+    const starterIds = team.preferredStarterIds.filter((id) => team.rosterIds.includes(id) && !this.rosterOverlimitLocked(team, id)).slice(0, 11);
     if (starterIds.length !== 11 || new Set(starterIds).size !== 11) throw new Error("请先在战术板保存有效的 11 人首发阵容");
     const lineup = starterIds.map((id) => ({ ...REAL_PLAYER_BY_ID[id], state:{ fitness:100 } }));
     const positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, sanitizePositions(lineup, team.positionPresets?.[key] ?? team.positions)]));
@@ -5816,7 +7949,7 @@ export class YellowDogsLeagueService {
     const openingPreset = team.tacticalPlans?.opening?.positionPreset ?? "position1";
     const positions = clone(positionPresets[openingPreset] ?? positionPresets.position1);
     const starters = this.chemistryAdjustedLineup(team, lineup, positions).map((player) => ({ ...player, state:{ fitness:100 }, active:true }));
-    const substitutes = team.rosterIds.filter((id) => !starterIds.includes(id)).map((id) => {
+    const substitutes = team.rosterIds.filter((id) => !starterIds.includes(id) && !this.rosterOverlimitLocked(team, id)).map((id) => {
       const player = REAL_PLAYER_BY_ID[id];
       const card = this.representativeCard(team.ownerId, id);
       return { ...applyS4Enhancement(player, card?.upgradeLevel ?? 0), state:{ fitness:100 }, traits:(card?.traitIds ?? []).filter((traitId) => YDL_TRAIT_BY_ID[traitId]), active:false };
@@ -5834,7 +7967,90 @@ export class YellowDogsLeagueService {
       attackFocus:team.attackFocus,
       defenseFocus:team.defenseFocus,
       preserveFitness:true,
+      captainId:starters.some((player) => player.id === team.captainId) ? team.captainId : null,
+      captainStyle:normalizeCaptainStyle(team.captainStyle),
     };
+  }
+
+  mirrorSchemeSnapshots(team) {
+    const schemes = team.lineupSchemes?.length
+      ? team.lineupSchemes
+      : [lineupSchemeSnapshot(team, team.activeLineupSchemeId ?? "lineup-1", "方案 1")];
+    return schemes.map((scheme) => {
+      const configured = { ...team };
+      applyLineupScheme(configured, scheme);
+      return {
+        schemeId:scheme.id,
+        schemeName:scheme.name,
+        revision:Math.max(0, Number(scheme.revision ?? 0)),
+        snapshot:clone(this.aiTrainingPlayerSeat(configured)),
+      };
+    });
+  }
+
+  forcedSeedMirrorTeams() {
+    const tournament = this.state.seasonFinalTournament;
+    if (this.state.season.status !== "completed" || !tournament || tournament.preview || tournament.seasonId !== this.state.season.id) return [];
+    return (tournament.seedSnapshot ?? [])
+      .filter((entry) => !entry.isAi && Number(entry.seed) >= 1 && Number(entry.seed) <= 3)
+      .sort((left, right) => Number(left.seed) - Number(right.seed))
+      .map((entry) => ({ seed:Number(entry.seed), team:this.state.teams.find((team) => team.id === entry.teamId && team.ownerId) }))
+      .filter((entry) => entry.team);
+  }
+
+  mirrorUploadSnapshots(upload) {
+    if (Array.isArray(upload?.snapshots) && upload.snapshots.length) return upload.snapshots.filter((entry) => entry?.snapshot);
+    return upload?.snapshot ? [{ schemeId:null, schemeName:null, revision:null, snapshot:upload.snapshot }] : [];
+  }
+
+  syncForcedSeedMirrorUploads() {
+    const uploads = this.state.mirrorMarketplace.uploads;
+    const forcedTeams = this.forcedSeedMirrorTeams();
+    const forcedOwnerIds = new Set(forcedTeams.map(({ team }) => team.ownerId));
+    const date = localDateKey(new Date(this.now()));
+    let changed = false;
+
+    Object.entries(uploads).forEach(([ownerId, upload]) => {
+      if (!upload?.forcedBySeed || forcedOwnerIds.has(ownerId)) return;
+      const manualEnabled = Boolean(upload.manualEnabled && upload.manualSnapshot);
+      Object.assign(upload, {
+        enabled:manualEnabled,
+        snapshot:manualEnabled ? upload.manualSnapshot : null,
+        snapshots:manualEnabled ? [{ schemeId:null, schemeName:null, revision:null, snapshot:upload.manualSnapshot }] : [],
+        updatedAt:this.now(),
+      });
+      delete upload.forcedBySeed;
+      delete upload.forcedSeed;
+      delete upload.forcedDate;
+      delete upload.schemeSignature;
+      changed = true;
+    });
+
+    forcedTeams.forEach(({ seed, team }) => {
+      const current = uploads[team.ownerId] ?? {};
+      const manualEnabled = current.manualEnabled ?? Boolean(current.enabled && !current.forcedBySeed);
+      const manualSnapshot = current.manualSnapshot ?? (manualEnabled ? current.snapshot : null);
+      const schemes = team.lineupSchemes?.length ? team.lineupSchemes : [lineupSchemeSnapshot(team)];
+      const schemeSignature = schemes.map((scheme) => `${scheme.id}:${Math.max(0, Number(scheme.revision ?? 0))}`).join("|");
+      const needsRefresh = !current.forcedBySeed || current.forcedDate !== date || Number(current.forcedSeed) !== seed || current.schemeSignature !== schemeSignature;
+      if (!needsRefresh && current.enabled && this.mirrorUploadSnapshots(current).length === schemes.length) return;
+      const snapshots = this.mirrorSchemeSnapshots(team);
+      uploads[team.ownerId] = {
+        ...current,
+        enabled:true,
+        manualEnabled:Boolean(manualEnabled),
+        manualSnapshot,
+        forcedBySeed:true,
+        forcedSeed:seed,
+        forcedDate:date,
+        schemeSignature,
+        snapshot:snapshots[0]?.snapshot ?? null,
+        snapshots,
+        updatedAt:this.now(),
+      };
+      changed = true;
+    });
+    return changed;
   }
 
   mirrorMarketplacePrice(team) {
@@ -5842,54 +8058,114 @@ export class YellowDogsLeagueService {
   }
 
   mirrorMarketplaceCatalog(account) {
+    this.syncForcedSeedMirrorUploads();
     const ownTeam = this.accountTeam(account.id);
     const uploads = this.state.mirrorMarketplace.uploads;
     const entries = this.state.teams.flatMap((team) => {
       const basePrice = this.mirrorMarketplacePrice(team);
       if (!team.ownerId || basePrice == null || team.ownerId === account.id) return [];
-      const common = { teamId:team.id, ownerName:team.ownerName, teamName:team.name };
+      const upload = uploads[team.ownerId];
+      const common = {
+        teamId:team.id,
+        ownerName:team.ownerName,
+        teamName:team.name,
+        forcedSeed:upload?.forcedBySeed ? Number(upload.forcedSeed) : null,
+      };
       const variants = [{ ...common, kind:"basic", price:basePrice }];
-      if (uploads[team.ownerId]?.enabled && uploads[team.ownerId]?.snapshot) {
-        variants.push({ ...common, kind:"full", price:Math.round(basePrice * MIRROR_MARKETPLACE_FULL_MULTIPLIER) });
+      if (upload?.enabled) {
+        this.mirrorUploadSnapshots(upload).forEach((entry) => variants.push({
+          ...common,
+          kind:"full",
+          price:upload.forcedBySeed ? MIRROR_MARKETPLACE_FORCED_FULL_PRICE : Math.round(basePrice * MIRROR_MARKETPLACE_FULL_MULTIPLIER),
+          mirrorSchemeId:entry.schemeId ?? null,
+          mirrorSchemeName:entry.schemeName ?? null,
+        }));
       }
       return variants;
     }).sort((left, right) => (MIRROR_MARKETPLACE_PRICES.get(right.ownerName) ?? 0) - (MIRROR_MARKETPLACE_PRICES.get(left.ownerName) ?? 0)
-      || (left.kind === "basic" ? -1 : 1));
+      || (left.kind === right.kind
+        ? String(left.mirrorSchemeId ?? "").localeCompare(String(right.mirrorSchemeId ?? ""))
+        : left.kind === "basic" ? -1 : 1));
     const ownUpload = ownTeam ? uploads[account.id] : null;
+    const cloudActiveJobs = this.mirrorBatchCapacityEntries(MIRROR_BATCH_CLOUD_NODE);
+    const computeNodes = this.mirrorComputeNodeStatuses(account);
     return {
       available:this.state.season.status !== "active",
       commissionRate:MIRROR_MARKETPLACE_COMMISSION_RATE,
       fullMultiplier:MIRROR_MARKETPLACE_FULL_MULTIPLIER,
-      fullUploadEnabled:Boolean(ownUpload?.enabled && ownUpload?.snapshot),
+      batchMatchCount:MIRROR_BATCH_MATCH_COUNT,
+      batchMinimumMatchCount:MIRROR_BATCH_MIN_MATCH_COUNT,
+      batchMaximumMatchCount:MIRROR_BATCH_MAX_MATCH_COUNT,
+      batchServiceFeeRate:MIRROR_BATCH_SERVICE_FEE_RATE,
+      batchPriceDivisor:MIRROR_BATCH_PRICE_DIVISOR,
+      batchCapacity:MIRROR_BATCH_MAX_ACTIVE_JOBS,
+      activeBatchJobs:this.mirrorBatchCapacityEntries(),
+      batchNodes:[{ id:MIRROR_BATCH_CLOUD_NODE, label:"云服务器", online:true, acceptingJobs:true, status:"accepting", capacity:MIRROR_BATCH_MAX_ACTIVE_JOBS, activeCount:cloudActiveJobs.length, availableSlots:Math.max(0, MIRROR_BATCH_MAX_ACTIVE_JOBS - cloudActiveJobs.length), estimatedSeconds:1_350, surchargePerMatch:0, serviceFeeRate:MIRROR_BATCH_SERVICE_FEE_RATE, activeJobs:cloudActiveJobs }, ...computeNodes],
+      ownComputeNodes:computeNodes.filter((node) => node.isOwned),
+      activeBatchJob:this.mirrorBatchJobView(this.state.mirrorMarketplace.batchJobs.find((job) => job.ownerId === account.id && ["queued", "running"].includes(job.status))),
+      fullUploadEnabled:Boolean(ownUpload?.enabled && this.mirrorUploadSnapshots(ownUpload).length),
+      fullUploadLocked:Boolean(ownUpload?.forcedBySeed),
+      forcedSeed:ownUpload?.forcedBySeed ? Number(ownUpload.forcedSeed) : null,
+      fullUploadCount:this.mirrorUploadSnapshots(ownUpload).length,
       fullUploadUpdatedAt:ownUpload?.updatedAt ?? null,
       entries,
     };
   }
-
   setFullMirrorUpload(account, enabledValue) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("请先加入联赛并保存自己的战术板");
+    this.syncForcedSeedMirrorUploads();
     const enabled = enabledValue === true;
+    const current = this.state.mirrorMarketplace.uploads[account.id] ?? {};
+    if (!enabled && current.forcedBySeed) {
+      throw new Error(`你是今日${current.forcedSeed}号种子，全部战术板完整镜像由系统强制上传，休赛期不可取消`);
+    }
     if (!enabled) {
-      this.state.mirrorMarketplace.uploads[account.id] = { enabled:false, snapshot:null, updatedAt:this.now() };
-    } else {
       this.state.mirrorMarketplace.uploads[account.id] = {
-        enabled:true,
-        snapshot:clone(this.aiTrainingPlayerSeat(team)),
+        ...current,
+        enabled:false,
+        manualEnabled:false,
+        manualSnapshot:null,
+        snapshot:null,
+        snapshots:[],
         updatedAt:this.now(),
       };
+    } else if (!current.forcedBySeed) {
+      const activeScheme = team.lineupSchemes?.find((scheme) => scheme.id === team.activeLineupSchemeId);
+      const snapshot = clone(this.aiTrainingPlayerSeat(team));
+      this.state.mirrorMarketplace.uploads[account.id] = {
+        ...current,
+        enabled:true,
+        manualEnabled:true,
+        manualSnapshot:snapshot,
+        snapshot,
+        snapshots:[{
+          schemeId:activeScheme?.id ?? null,
+          schemeName:activeScheme?.name ?? "当前战术板",
+          revision:Math.max(0, Number(activeScheme?.revision ?? 0)),
+          snapshot,
+        }],
+        updatedAt:this.now(),
+      };
+    } else {
+      current.enabled = true;
     }
     this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true });
     return this.compactMutationView(account, { extra:{ mirrorMarketplace:this.mirrorMarketplaceCatalog(account) } });
   }
 
-  chargeMirrorInvocation(account, mirrorTeam, kind) {
+  chargeMirrorInvocation(account, mirrorTeam, kind, mirrorSchemeId = null) {
+    this.syncForcedSeedMirrorUploads();
     const basePrice = this.mirrorMarketplacePrice(mirrorTeam);
     if (basePrice == null) throw new Error("该玩家的镜像暂未开放调用");
     const full = kind === "full";
     const upload = this.state.mirrorMarketplace.uploads[mirrorTeam.ownerId];
-    if (full && (!upload?.enabled || !upload.snapshot)) throw new Error("该玩家尚未上传完整战术镜像");
-    const price = full ? Math.round(basePrice * MIRROR_MARKETPLACE_FULL_MULTIPLIER) : basePrice;
+    const fullSnapshots = full && upload?.enabled ? this.mirrorUploadSnapshots(upload) : [];
+    const selectedSnapshot = full
+      ? (mirrorSchemeId ? fullSnapshots.find((entry) => entry.schemeId === mirrorSchemeId) : fullSnapshots[0])
+      : null;
+    if (full && !selectedSnapshot) throw new Error("该玩家尚未上传所选完整战术镜像");
+    const price = full ? (upload?.forcedBySeed ? MIRROR_MARKETPLACE_FORCED_FULL_PRICE : Math.round(basePrice * MIRROR_MARKETPLACE_FULL_MULTIPLIER)) : basePrice;
     const wallet = this.wallet(account.id);
     if (wallet.balance < price) throw new Error(`金币不足，调用该镜像需要${price}金币`);
     wallet.balance -= price;
@@ -5912,7 +8188,16 @@ export class YellowDogsLeagueService {
     usage.gross += price;
     usage.platformCommission += platformCommission;
     usage.ownerRevenue += ownerRevenue;
-    return { kind:full ? "full" : "basic", price, platformCommission, ownerRevenue, upload };
+    return {
+      kind:full ? "full" : "basic",
+      price,
+      platformCommission,
+      ownerRevenue,
+      upload,
+      snapshot:selectedSnapshot?.snapshot ?? null,
+      mirrorSchemeId:selectedSnapshot?.schemeId ?? null,
+      mirrorSchemeName:selectedSnapshot?.schemeName ?? null,
+    };
   }
 
   refundMirrorInvocation(account, mirrorTeam, charge) {
@@ -5955,11 +8240,818 @@ export class YellowDogsLeagueService {
     return changed;
   }
 
+  mirrorComputeNodeConfig(nodeIdValue) {
+    const nodeId = String(nodeIdValue ?? "");
+    if (nodeId === MIRROR_BATCH_DIRECTOR_NODE) {
+      const team = this.directorMirrorRevenueTeam();
+      return {
+        id:MIRROR_BATCH_DIRECTOR_NODE,
+        ownerId:team?.ownerId ?? null,
+        teamId:team?.id ?? null,
+        label:"主任高速服务器",
+        visibility:"public",
+        maximumConcurrency:MIRROR_BATCH_DIRECTOR_CONCURRENCY,
+        legacy:true,
+      };
+    }
+    return this.state.mirrorMarketplace.computeNodes?.[nodeId] ?? null;
+  }
+
+  saveMirrorComputeNode(account, info = {}) {
+    const existingId = String(info.nodeId ?? "");
+    const existing = existingId ? this.state.mirrorMarketplace.computeNodes[existingId] : null;
+    if (existing && existing.ownerId !== account.id) throw new Error("无权修改该计算节点");
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("请先加入联赛");
+    const nodeId = existing?.id ?? `worker-${randomBytes(8).toString("hex")}`;
+    const rotateToken = !existing?.tokenHash || info.rotateToken === true;
+    const workerToken = rotateToken ? randomBytes(32).toString("base64url") : null;
+    const node = {
+      id:nodeId,
+      ownerId:account.id,
+      teamId:team.id,
+      label:String(info.label ?? existing?.label ?? `${team.ownerName ?? team.name}的计算节点`).trim().slice(0, 40) || "玩家计算节点",
+      visibility:info.visibility === "public" ? "public" : "private",
+      maximumConcurrency:Math.min(MIRROR_BATCH_DIRECTOR_CONCURRENCY, Math.max(1, Math.floor(Number(info.maximumConcurrency ?? existing?.maximumConcurrency ?? 1)))),
+      tokenHash:rotateToken ? createHash("sha256").update(workerToken).digest("hex") : existing.tokenHash,
+      tokenExpiresAt:rotateToken ? this.now() + MIRROR_COMPUTE_NODE_TOKEN_MS : Number(existing.tokenExpiresAt ?? 0),
+      createdAt:existing?.createdAt ?? this.now(),
+      updatedAt:this.now(),
+    };
+    this.state.mirrorMarketplace.computeNodes[nodeId] = node;
+    if (rotateToken) this.mirrorBatchWorkers.delete(nodeId);
+    this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return this.compactMutationView(account, {
+      extra:{
+        mirrorMarketplace:this.mirrorMarketplaceCatalog(account),
+        workerCredential:workerToken ? { nodeId, token:workerToken, expiresAt:node.tokenExpiresAt, engineVersion:MIRROR_BATCH_WORKER_ENGINE_VERSION } : null,
+      },
+    });
+  }
+
+  removeMirrorComputeNode(account, nodeIdValue) {
+    const nodeId = String(nodeIdValue ?? "");
+    const node = this.state.mirrorMarketplace.computeNodes[nodeId];
+    if (!node || node.ownerId !== account.id) throw new Error("计算节点不存在或无权删除");
+    if (this.mirrorBatchCapacityEntries(nodeId).length) throw new Error("该节点仍有批量任务，暂时不能删除");
+    delete this.state.mirrorMarketplace.computeNodes[nodeId];
+    this.mirrorBatchWorkers.delete(nodeId);
+    this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return this.compactMutationView(account, { extra:{ mirrorMarketplace:this.mirrorMarketplaceCatalog(account) } });
+  }
+
+  authenticateMirrorComputeNode(nodeIdValue, tokenValue) {
+    const node = this.state.mirrorMarketplace.computeNodes[String(nodeIdValue ?? "")];
+    const token = String(tokenValue ?? "");
+    if (!node?.tokenHash || !token) return null;
+    if (Number(node.tokenExpiresAt ?? 0) <= this.now()) return null;
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    return tokenHash === node.tokenHash ? node : null;
+  }
+
+  mirrorComputeNodeStatuses(account = null) {
+    const visible = Object.values(this.state.mirrorMarketplace.computeNodes ?? {})
+      .filter((node) => node.visibility === "public" || node.ownerId === account?.id)
+      .map((node) => this.directorMirrorWorkerStatus(node.id, account?.id));
+    return [this.directorMirrorWorkerStatus(MIRROR_BATCH_DIRECTOR_NODE, account?.id), ...visible]
+      .sort((left, right) => Number(right.isOwned) - Number(left.isOwned) || Number(right.online) - Number(left.online) || left.label.localeCompare(right.label, "zh-CN"));
+  }
+  directorMirrorRevenueTeam() {
+    const target = MIRROR_BATCH_DIRECTOR_OWNER_NAME.toLocaleLowerCase("en-US");
+    return this.state.teams.find((team) => team.ownerId && String(team.ownerName ?? "").trim().toLocaleLowerCase("en-US") === target) ?? null;
+  }
+
+  reclaimExpiredDirectorMirrorLeases() {
+    const now = this.now();
+    let changed = false;
+    this.state.mirrorMarketplace.batchJobs.forEach((job) => {
+      if ((job.executionNode ?? MIRROR_BATCH_CLOUD_NODE) === MIRROR_BATCH_CLOUD_NODE || job.status !== "running" || !job.workerLease) return;
+      if (Number(job.workerLease.expiresAt ?? 0) > now) return;
+      job.status = "queued";
+      job.workerProgress = 0;
+      job.lastWorkerError = "玩家计算节点租约超时，任务已重新排队";
+      delete job.workerLease;
+      changed = true;
+    });
+    return changed;
+  }
+
+  directorMirrorWorkerStatus(nodeIdValue = MIRROR_BATCH_DIRECTOR_NODE, viewerOwnerId = null) {
+    this.reclaimExpiredDirectorMirrorLeases();
+    const nodeId = String(nodeIdValue ?? MIRROR_BATCH_DIRECTOR_NODE);
+    const config = this.mirrorComputeNodeConfig(nodeId);
+    const worker = this.mirrorBatchWorkers.get(nodeId);
+    const compatible = worker?.engineVersion === MIRROR_BATCH_WORKER_ENGINE_VERSION;
+    const online = Boolean(config && worker && compatible && this.now() - Number(worker.lastHeartbeatAt ?? 0) <= MIRROR_BATCH_WORKER_ONLINE_MS);
+    const capacity = Math.min(MIRROR_BATCH_DIRECTOR_CONCURRENCY, Math.max(1, Number(config?.maximumConcurrency ?? 1)), Math.max(1, Number(worker?.maximumConcurrency ?? config?.maximumConcurrency ?? 1)));
+    const activeJobs = this.mirrorBatchCapacityEntries(nodeId);
+    const acceptingJobs = Boolean(online && worker?.acceptingJobs !== false);
+    const status = !online ? "offline" : !acceptingJobs ? "standby" : activeJobs.length >= capacity ? "full" : "accepting";
+    return {
+      id:nodeId,
+      ownerId:config?.ownerId ?? null,
+      label:config?.label ?? "玩家计算节点",
+      visibility:config?.visibility ?? "private",
+      isOwned:Boolean(viewerOwnerId && config?.ownerId === viewerOwnerId),
+      credentialExpiresAt:viewerOwnerId && config?.ownerId === viewerOwnerId ? Number(config.tokenExpiresAt ?? 0) || null : null,
+      online,
+      acceptingJobs,
+      status,
+      compatible:Boolean(compatible),
+      capacity,
+      activeCount:activeJobs.length,
+      availableSlots:acceptingJobs ? Math.max(0, capacity - activeJobs.length) : 0,
+      estimatedSeconds:120,
+      surchargePerMatch:MIRROR_BATCH_DIRECTOR_SURCHARGE_PER_MATCH,
+      serviceFeeRate:viewerOwnerId && config?.ownerId === viewerOwnerId ? 0 : MIRROR_BATCH_SERVICE_FEE_RATE,
+      engineVersion:MIRROR_BATCH_WORKER_ENGINE_VERSION,
+      workerId:online ? nodeId : null,
+      lastHeartbeatAt:worker?.lastHeartbeatAt ?? null,
+      activeJobs,
+    };
+  }
+
+  registerDirectorMirrorWorker(info = {}) {
+    const requestedWorkerId = String(info.workerId ?? "").trim().slice(0, 120);
+    const nodeId = requestedWorkerId === "axero-director-pc" ? MIRROR_BATCH_DIRECTOR_NODE : requestedWorkerId;
+    const engineVersion = String(info.engineVersion ?? "").trim();
+    if (!nodeId || !this.mirrorComputeNodeConfig(nodeId)) throw new Error("高速Worker节点不存在");
+    if (engineVersion !== MIRROR_BATCH_WORKER_ENGINE_VERSION) {
+      const error = new Error(`高速Worker引擎版本不匹配，需要${MIRROR_BATCH_WORKER_ENGINE_VERSION}`);
+      error.statusCode = 409;
+      throw error;
+    }
+    const now = this.now();
+    const activeLeaseIds = new Set((info.activeLeaseIds ?? []).map(String));
+    this.mirrorBatchWorkers.set(nodeId, {
+      workerId:nodeId,
+      engineVersion,
+      maximumConcurrency:Math.min(MIRROR_BATCH_DIRECTOR_CONCURRENCY, Math.max(1, Number(this.mirrorComputeNodeConfig(nodeId)?.maximumConcurrency ?? 1)), Math.max(1, Number(info.maximumConcurrency ?? 1))),
+      acceptingJobs:info.acceptingJobs !== false,
+      lastHeartbeatAt:now,
+    });
+    this.state.mirrorMarketplace.batchJobs.forEach((job) => {
+      if (job.workerLease?.workerId !== nodeId || !activeLeaseIds.has(String(job.workerLease.leaseId))) return;
+      job.workerLease.expiresAt = now + MIRROR_BATCH_WORKER_LEASE_MS;
+      job.workerLease.lastHeartbeatAt = now;
+    });
+    return this.directorMirrorWorkerStatus(nodeId);
+  }
+
+  assertDirectorMirrorWorker(workerId, engineVersion) {
+    const nodeId = String(workerId ?? "");
+    const status = this.directorMirrorWorkerStatus(nodeId);
+    if (!status.acceptingJobs || engineVersion !== MIRROR_BATCH_WORKER_ENGINE_VERSION) {
+      const error = new Error(status.online ? "玩家计算节点当前在线待机，尚未开启接受计算服务" : "玩家计算节点当前离线或版本不匹配");
+      error.statusCode = 409;
+      throw error;
+    }
+    return status;
+  }
+
+  leaseDirectorMirrorBatchJob(info = {}) {
+    const workerId = String(info.workerId ?? "") === "axero-director-pc" ? MIRROR_BATCH_DIRECTOR_NODE : String(info.workerId ?? "");
+    const engineVersion = String(info.engineVersion ?? "");
+    this.assertDirectorMirrorWorker(workerId, engineVersion);
+    const reclaimed = this.reclaimExpiredDirectorMirrorLeases();
+    const job = this.state.mirrorMarketplace.batchJobs
+      .filter((entry) => entry.executionNode === workerId && entry.status === "queued")
+      .sort((left, right) => Number(left.createdAt) - Number(right.createdAt))[0];
+    if (!job) {
+      if (reclaimed) this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+      return null;
+    }
+    const now = this.now();
+    const leaseId = makeId("mirror-worker-lease", `${job.id}:${workerId}:${now}`);
+    job.status = "running";
+    job.workerProgress = 0;
+    job.workerLease = { leaseId, workerId, leasedAt:now, lastHeartbeatAt:now, expiresAt:now + MIRROR_BATCH_WORKER_LEASE_MS };
+    job.updatedAt = now;
+    const matches = Array.from({ length:job.totalMatches }, (_, index) => {
+      const number = index + 1;
+      const seed = `${this.state.season.id}:${job.id}:${number}`;
+      const conditions = seededConditions(seed);
+      return { number, seed, weather:conditions.weather.key, referee:conditions.referee };
+    });
+    this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return {
+      jobId:job.id,
+      leaseId,
+      engineVersion:MIRROR_BATCH_WORKER_ENGINE_VERSION,
+      totalMatches:job.totalMatches,
+      callerSeat:clone(job.callerSeat),
+      opponentSeat:clone(job.opponentSeat),
+      matches,
+    };
+  }
+
+  directorMirrorBatchLease(jobId, leaseId) {
+    const job = this.state.mirrorMarketplace.batchJobs.find((entry) => entry.id === String(jobId ?? ""));
+    if (!job) {
+      const receipt = (this.state.mirrorMarketplace.batchReceipts ?? []).find((entry) => entry.id === String(jobId ?? ""));
+      if (!receipt) throw new Error("高速模拟任务不存在");
+      const message = (this.state.inbox[receipt.teamId] ?? []).find((entry) => entry.type === "mirror-batch-report" && entry.payload?.mirrorBatchJobId === receipt.id);
+      return { job:receipt, completed:true, report:message?.report ?? null };
+    }
+    if (job.status === "completed") return { job, completed:true, report:job.report ?? null };
+    if ((job.executionNode ?? MIRROR_BATCH_CLOUD_NODE) === MIRROR_BATCH_CLOUD_NODE || job.workerLease?.leaseId !== String(leaseId ?? "")) {
+      const error = new Error("高速模拟任务租约无效或已过期");
+      error.statusCode = 409;
+      throw error;
+    }
+    if (Number(job.workerLease.expiresAt ?? 0) <= this.now()) {
+      const error = new Error("高速模拟任务租约已过期");
+      error.statusCode = 409;
+      throw error;
+    }
+    return { job, completed:false };
+  }
+
+  updateDirectorMirrorBatchProgress(info = {}) {
+    const lease = this.directorMirrorBatchLease(info.jobId, info.leaseId);
+    if (lease.completed) return this.mirrorBatchJobView(lease.job);
+    const completedMatches = Math.min(lease.job.totalMatches, Math.max(0, Math.floor(Number(info.completedMatches ?? 0))));
+    lease.job.workerProgress = Math.max(Number(lease.job.workerProgress ?? 0), completedMatches);
+    lease.job.updatedAt = this.now();
+    this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return this.mirrorBatchJobView(lease.job);
+  }
+
+  completeDirectorMirrorBatchJob(info = {}) {
+    const lease = this.directorMirrorBatchLease(info.jobId, info.leaseId);
+    if (lease.completed) return { mirrorBatchJob:this.mirrorBatchJobView(lease.job), report:clone(lease.report ?? lease.job.report ?? null) };
+    const reports = Array.isArray(info.reports) ? info.reports : [];
+    if (reports.length !== lease.job.totalMatches) throw new Error(`高速模拟结果必须包含${lease.job.totalMatches}场`);
+    const expectedSeeds = new Map(Array.from({ length:lease.job.totalMatches }, (_, index) => {
+      const number = index + 1;
+      return [number, `${this.state.season.id}:${lease.job.id}:${number}`];
+    }));
+    const seen = new Set();
+    const results = reports.map((entry) => {
+      const number = Math.floor(Number(entry?.number));
+      if (!expectedSeeds.has(number) || seen.has(number) || entry?.seed !== expectedSeeds.get(number)) throw new Error("高速模拟结果编号或随机种子无效");
+      if (!Array.isArray(entry.report?.score) || entry.report.score.length !== 2 || !Array.isArray(entry.report?.teams) || entry.report.teams.length !== 2) throw new Error("高速模拟比赛报告结构无效");
+      seen.add(number);
+      return this.mirrorBatchMatchResult({ report:entry.report }, number);
+    }).sort((left, right) => left.number - right.number);
+    lease.job.results = results;
+    delete lease.job.workerLease;
+    delete lease.job.workerProgress;
+    this.finalizeMirrorBatchJob(lease.job);
+    this.save({ scopes:["core", "mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return { mirrorBatchJob:this.mirrorBatchJobView(lease.job), report:clone(lease.job.report) };
+  }
+
+  failDirectorMirrorBatchJob(info = {}) {
+    const lease = this.directorMirrorBatchLease(info.jobId, info.leaseId);
+    if (lease.completed) return this.mirrorBatchJobView(lease.job);
+    lease.job.status = "queued";
+    lease.job.workerProgress = 0;
+    lease.job.lastWorkerError = String(info.error ?? "高速Worker执行失败").slice(0, 500);
+    lease.job.updatedAt = this.now();
+    delete lease.job.workerLease;
+    this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return this.mirrorBatchJobView(lease.job);
+  }
+
+  mirrorBatchCapacityEntries(executionNode = null) {
+    return this.state.mirrorMarketplace.batchJobs
+      .filter((job) => ["queued", "running"].includes(job.status) && (!executionNode || (job.executionNode ?? MIRROR_BATCH_CLOUD_NODE) === executionNode))
+      .sort((left, right) => Number(left.createdAt) - Number(right.createdAt))
+      .map((job) => {
+        const team = this.state.teams.find((entry) => entry.id === job.teamId || entry.ownerId === job.ownerId);
+        const completedMatches = Math.max(Number(job.results?.length ?? 0), Number(job.workerProgress ?? 0));
+        const totalMatches = Number(job.totalMatches ?? MIRROR_BATCH_MATCH_COUNT);
+        return {
+          ownerId:job.ownerId,
+          ownerName:team?.ownerName ?? "未知玩家",
+          teamName:team?.name ?? "未知球队",
+          status:job.status,
+          executionNode:job.executionNode ?? MIRROR_BATCH_CLOUD_NODE,
+          completedMatches,
+          totalMatches,
+          remainingMatches:Math.max(0, totalMatches - completedMatches),
+        };
+      });
+  }
+
+  mirrorBatchJobView(job) {
+    if (!job) return null;
+    return {
+      id:job.id,
+      requestId:job.requestId,
+      status:job.status,
+      executionNode:job.executionNode ?? MIRROR_BATCH_CLOUD_NODE,
+      computeNodeOwnerId:job.computeNodeOwnerId ?? null,
+      computeNodeLabel:job.computeNodeLabel ?? (job.executionNode === MIRROR_BATCH_CLOUD_NODE ? "云服务器" : "玩家计算节点"),
+      usesOwnComputeNode:Boolean(job.usesOwnComputeNode),
+      completedMatches:Math.max(Number(job.results?.length ?? 0), Number(job.workerProgress ?? 0)),
+      totalMatches:Number(job.totalMatches ?? MIRROR_BATCH_MATCH_COUNT),
+      mirrorTeamId:job.mirrorTeamId,
+      mirrorKind:job.mirrorKind,
+      mirrorSchemeId:job.mirrorSchemeId ?? null,
+      mirrorSchemeName:job.mirrorSchemeName ?? null,
+      opponentName:job.opponentName,
+      unitPrice:job.unitPrice,
+      batchPriceDivisor:MIRROR_BATCH_PRICE_DIVISOR,
+      subtotal:job.subtotal,
+      serviceFee:job.serviceFee,
+      directorSurcharge:Number(job.directorSurcharge ?? 0),
+      directorServiceFeeRevenue:Number(job.directorServiceFeeRevenue ?? 0),
+      playerComputeNodeServiceFeeRevenue:Number(job.playerComputeNodeServiceFeeRevenue ?? 0),
+      totalCost:job.totalCost,
+      createdAt:job.createdAt,
+      completedAt:job.completedAt ?? null,
+    };
+  }
+
+  createMirrorBatchSimulation(account, config = {}) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("请先加入联赛并保存自己的战术板");
+    const mirrorTeamId = String(config.mirrorTeamId ?? "");
+    if (mirrorTeamId && this.state.season.status === "active") throw new Error("玩家阵容镜像仅在休赛期开放");
+    const requestId = String(config.requestId ?? "").trim().slice(0, 120);
+    if (!requestId) throw new Error("批量模拟请求缺少requestId");
+    const totalMatches = Math.floor(Number(config.totalMatches ?? config.matchCount ?? MIRROR_BATCH_MATCH_COUNT));
+    if (totalMatches < MIRROR_BATCH_MIN_MATCH_COUNT || totalMatches > MIRROR_BATCH_MAX_MATCH_COUNT || totalMatches % 10 !== 0) {
+      throw new Error(`批量模拟场次必须为10、20、30、40或50场`);
+    }
+    const marketplace = this.state.mirrorMarketplace;
+    const repeated = marketplace.batchJobs.find((job) => job.ownerId === account.id && job.requestId === requestId)
+      ?? (marketplace.batchReceipts ?? []).find((receipt) => receipt.ownerId === account.id && receipt.requestId === requestId);
+    if (repeated) return this.compactMutationView(account, { extra:{ mirrorBatchJob:this.mirrorBatchJobView(repeated) } });
+    const activeJob = marketplace.batchJobs.find((job) => job.ownerId === account.id && ["queued", "running"].includes(job.status));
+    if (activeJob) throw new Error(`已有批量模拟正在排队（${Math.max(Number(activeJob.results?.length ?? 0), Number(activeJob.workerProgress ?? 0))}/${activeJob.totalMatches}），请等待系统邮件`);
+
+    const requestedNode = String(config.executionNode ?? MIRROR_BATCH_CLOUD_NODE);
+    const executionNode = requestedNode === MIRROR_BATCH_CLOUD_NODE ? MIRROR_BATCH_CLOUD_NODE : requestedNode;
+    const computeNode = executionNode === MIRROR_BATCH_CLOUD_NODE ? null : this.mirrorComputeNodeConfig(executionNode);
+    if (executionNode !== MIRROR_BATCH_CLOUD_NODE && (!computeNode || (computeNode.visibility !== "public" && computeNode.ownerId !== account.id))) {
+      throw new Error("请选择有效的玩家计算节点");
+    }
+    const nodeStatus = computeNode ? this.directorMirrorWorkerStatus(executionNode, account.id) : null;
+    if (nodeStatus && !nodeStatus.acceptingJobs) {
+      const error = new Error(nodeStatus.online ? `${nodeStatus.label}当前在线待机，尚未开启接受计算服务` : `${nodeStatus.label}当前离线，请选择其他节点`);
+      error.statusCode = 409;
+      error.details = nodeStatus.activeJobs;
+      throw error;
+    }
+    const capacity = nodeStatus?.capacity ?? MIRROR_BATCH_MAX_ACTIVE_JOBS;
+    const capacityEntries = this.mirrorBatchCapacityEntries(executionNode);
+    if (capacityEntries.length >= capacity) {
+      const error = new Error(`${nodeStatus?.label ?? "云服务器"}任务已满，请稍后尝试`);
+      error.statusCode = 409;
+      error.details = capacityEntries;
+      throw error;
+    }
+
+    const tacticalPlans = this.aiTrainingTacticalPlans(config.tacticalPlans);
+    let mirrorTeam = null;
+    let mirrorKind = "system-ai";
+    let selectedSnapshot = null;
+    let unitPrice = 0;
+    let opponentName;
+    let opponentSeat;
+    if (mirrorTeamId) {
+      this.syncForcedSeedMirrorUploads();
+      mirrorTeam = this.state.teams.find((entry) => entry.id === mirrorTeamId && entry.ownerId);
+      if (!mirrorTeam) throw new Error("请选择有效的玩家阵容镜像");
+      if (mirrorTeam.ownerId === account.id) throw new Error("不能调用自己的阵容镜像");
+      mirrorKind = String(config.mirrorKind ?? "basic") === "full" ? "full" : "basic";
+      const mirrorSchemeId = String(config.mirrorSchemeId ?? "") || null;
+      const basePrice = this.mirrorMarketplacePrice(mirrorTeam);
+      if (basePrice == null) throw new Error("该玩家的镜像暂未开放调用");
+      const upload = marketplace.uploads[mirrorTeam.ownerId];
+      const snapshots = mirrorKind === "full" && upload?.enabled ? this.mirrorUploadSnapshots(upload) : [];
+      selectedSnapshot = mirrorKind === "full"
+        ? (mirrorSchemeId ? snapshots.find((entry) => entry.schemeId === mirrorSchemeId) : snapshots[0])
+        : null;
+      if (mirrorKind === "full" && !selectedSnapshot) throw new Error("该玩家尚未上传所选完整战术镜像");
+      unitPrice = mirrorKind === "full"
+        ? (upload?.forcedBySeed ? MIRROR_MARKETPLACE_FORCED_FULL_PRICE : Math.round(basePrice * MIRROR_MARKETPLACE_FULL_MULTIPLIER))
+        : basePrice;
+      opponentName = mirrorKind === "full"
+        ? `${mirrorTeam.ownerName ?? mirrorTeam.name}完整战术镜像${selectedSnapshot?.schemeName ? ` · ${selectedSnapshot.schemeName}` : ""}`
+        : `${mirrorTeam.ownerName ?? mirrorTeam.name}玩家镜像`;
+      const sourceSeat = mirrorKind === "full" ? clone(selectedSnapshot.snapshot) : this.aiTrainingPlayerSeat(mirrorTeam);
+      opponentSeat = mirrorKind === "full" ? { ...sourceSeat, name:opponentName } : {
+        ...sourceSeat,
+        name:opponentName,
+        tactic:tacticalPlans.opening.tactic,
+        style:tacticalPlans.opening.style,
+        tacticalPlans,
+        attackFocus:FOCUSES.has(config.attackFocus) ? config.attackFocus : "balanced",
+        defenseFocus:FOCUSES.has(config.defenseFocus) ? config.defenseFocus : "balanced",
+      };
+    } else {
+      const formation = String(config.formation ?? "4-3-3");
+      const aiSelection = this.aiTrainingPlayers(formation, config.averageOverall);
+      const positions = Object.fromEntries(aiSelection.starters.map(({ player, position }) => [player.id, position]));
+      const formationLines = deriveFormationLines(aiSelection.starters.map(({ player, position }) => ({ id:player.id, position })));
+      opponentName = `AI 训练队 · ${formation} · ${aiSelection.averageOverall}`;
+      opponentSeat = {
+        name:opponentName,
+        players:[
+          ...aiSelection.starters.map(({ player }) => ({ ...player, state:{ fitness:100 }, traits:[], active:true })),
+          ...aiSelection.substitutes.map((player) => ({ ...player, state:{ fitness:100 }, traits:[], active:false })),
+        ],
+        positions,
+        positionPresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(positions)])),
+        formationLinePresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(formationLines)])),
+        tactic:tacticalPlans.opening.tactic,
+        style:tacticalPlans.opening.style,
+        tacticalPlans,
+        bondCatalog:[],
+        attackFocus:FOCUSES.has(config.attackFocus) ? config.attackFocus : "balanced",
+        defenseFocus:FOCUSES.has(config.defenseFocus) ? config.defenseFocus : "balanced",
+        preserveFitness:true,
+      };
+    }
+
+    const subtotal = Math.round(unitPrice * totalMatches / MIRROR_BATCH_PRICE_DIVISOR);
+    const usesOwnComputeNode = Boolean(computeNode && computeNode.ownerId === account.id);
+    const serviceFee = usesOwnComputeNode ? 0 : Math.round(subtotal * MIRROR_BATCH_SERVICE_FEE_RATE);
+    const baseTotalCost = subtotal;
+    const directorSurcharge = 0;
+    const directorServiceFeeRevenue = executionNode === MIRROR_BATCH_DIRECTOR_NODE && !usesOwnComputeNode ? serviceFee : 0;
+    const playerComputeNodeServiceFeeRevenue = computeNode && executionNode !== MIRROR_BATCH_DIRECTOR_NODE && !usesOwnComputeNode ? serviceFee : 0;
+    const directorRevenueTeam = directorServiceFeeRevenue > 0 ? this.directorMirrorRevenueTeam() : null;
+    const computeNodeRevenueTeam = playerComputeNodeServiceFeeRevenue > 0
+      ? this.state.teams.find((entry) => entry.id === computeNode.teamId && entry.ownerId === computeNode.ownerId) ?? null
+      : null;
+    if (directorServiceFeeRevenue > 0 && !directorRevenueTeam) throw new Error(`联赛中未找到${MIRROR_BATCH_DIRECTOR_OWNER_NAME}账号，暂时无法使用主任高速服务器`);
+    if (playerComputeNodeServiceFeeRevenue > 0 && !computeNodeRevenueTeam) throw new Error(`${nodeStatus?.label ?? "玩家计算节点"}的节点主人账号不存在，暂时无法使用`);
+    const totalCost = subtotal + serviceFee;
+    const wallet = this.wallet(account.id);
+    if (wallet.balance < totalCost) throw new Error(`金币不足，${totalMatches}场批量模拟需要${totalCost}金币`);
+    const createdAt = this.now();
+    const job = {
+      id:makeId("mirror-batch", `${account.id}:${requestId}`),
+      requestId,
+      ownerId:account.id,
+      teamId:team.id,
+      mirrorOwnerId:mirrorTeam?.ownerId ?? null,
+      mirrorTeamId:mirrorTeam?.id ?? null,
+      mirrorKind,
+      mirrorSchemeId:selectedSnapshot?.schemeId ?? null,
+      mirrorSchemeName:selectedSnapshot?.schemeName ?? null,
+      opponentName,
+      computeNodeOwnerId:computeNode?.ownerId ?? null,
+      computeNodeLabel:nodeStatus?.label ?? "云服务器",
+      usesOwnComputeNode,
+      executionNode,
+      unitPrice,
+      subtotal,
+      serviceFee,
+      baseTotalCost,
+      directorSurcharge,
+      directorServiceFeeRevenue,
+      playerComputeNodeServiceFeeRevenue,
+      totalCost,
+      totalMatches:totalMatches,
+      status:"queued",
+      callerSeat:clone(this.aiTrainingPlayerSeat(team)),
+      opponentSeat:clone(opponentSeat),
+      results:[],
+      createdAt,
+      updatedAt:createdAt,
+    };
+
+    wallet.balance -= totalCost;
+    const mirrorCommission = mirrorTeam ? Math.round(subtotal * MIRROR_MARKETPLACE_COMMISSION_RATE) : 0;
+    const platformCommission = mirrorCommission + serviceFee - directorServiceFeeRevenue - playerComputeNodeServiceFeeRevenue;
+    const ownerRevenue = mirrorTeam ? subtotal - mirrorCommission : 0;
+    if (mirrorTeam) {
+      const date = localDateKey(new Date(createdAt));
+      const usageForDate = marketplace.usageByDate[date] ?? (marketplace.usageByDate[date] = {});
+      const usage = usageForDate[mirrorTeam.ownerId] ?? (usageForDate[mirrorTeam.ownerId] = {
+        ownerId:mirrorTeam.ownerId,
+        teamId:mirrorTeam.id,
+        ownerName:mirrorTeam.ownerName,
+        teamName:mirrorTeam.name,
+        basicCalls:0,
+        fullCalls:0,
+        gross:0,
+        platformCommission:0,
+        ownerRevenue:0,
+        serviceFees:0,
+      });
+      usage[mirrorKind === "full" ? "fullCalls" : "basicCalls"] += totalMatches;
+      usage.gross += totalCost;
+      usage.platformCommission += platformCommission;
+      usage.ownerRevenue += ownerRevenue;
+      usage.serviceFees = Number(usage.serviceFees ?? 0) + serviceFee;
+    }
+    if (directorServiceFeeRevenue > 0) {
+      this.wallet(directorRevenueTeam.ownerId).balance += directorServiceFeeRevenue;
+      this.state.ledger.push({ id:`director-worker-service-fee:${job.id}`, accountId:account.id, amount:-directorServiceFeeRevenue, type:"director-mirror-worker-service-fee", beneficiaryAccountId:directorRevenueTeam.ownerId, mirrorBatchJobId:job.id, matches:totalMatches, createdAt });
+      this.state.ledger.push({ id:`director-worker-revenue:${job.id}`, accountId:directorRevenueTeam.ownerId, amount:directorServiceFeeRevenue, type:"director-mirror-worker-revenue", payerAccountId:account.id, mirrorBatchJobId:job.id, matches:totalMatches, createdAt });
+      this.pushInbox(directorRevenueTeam, {
+        id:`director-mirror-worker-revenue:${job.id}`,
+        type:"director-worker-revenue",
+        title:"主任高速服务器服务费收益到账",
+        summary:`${team.ownerName ?? team.name}调用${totalMatches}场高速模拟，服务费${directorServiceFeeRevenue}金币已到账。`,
+        body:`玩家${team.ownerName ?? "未知玩家"}（${team.name}）选择主任高速服务器运行${totalMatches}场批量模拟，30%批量服务费共${directorServiceFeeRevenue}金币已汇入Axero球队账户。`,
+        payload:{ mirrorBatchJobId:job.id, payerOwnerId:account.id, payerTeamId:team.id, matches:totalMatches, amount:directorServiceFeeRevenue, source:"batch-service-fee" },
+      });
+    }
+
+
+    if (playerComputeNodeServiceFeeRevenue > 0) {
+      this.wallet(computeNodeRevenueTeam.ownerId).balance += playerComputeNodeServiceFeeRevenue;
+      this.state.ledger.push({ id:`compute-node-service-fee:${job.id}`, accountId:account.id, amount:-playerComputeNodeServiceFeeRevenue, type:"compute-node-service-fee", beneficiaryAccountId:computeNodeRevenueTeam.ownerId, computeNodeId:executionNode, mirrorBatchJobId:job.id, matches:totalMatches, createdAt });
+      this.state.ledger.push({ id:`compute-node-revenue:${job.id}`, accountId:computeNodeRevenueTeam.ownerId, amount:playerComputeNodeServiceFeeRevenue, type:"compute-node-revenue", payerAccountId:account.id, computeNodeId:executionNode, mirrorBatchJobId:job.id, matches:totalMatches, createdAt });
+      this.pushInbox(computeNodeRevenueTeam, {
+        id:`compute-node-revenue:${job.id}`,
+        type:"compute-node-revenue",
+        title:"计算节点服务费收益到账",
+        summary:`${team.ownerName ?? team.name}调用你的计算节点，服务费${playerComputeNodeServiceFeeRevenue}金币已到账。`,
+        body:`玩家${team.ownerName ?? "未知玩家"}（${team.name}）选择你的计算节点“${nodeStatus?.label ?? "玩家计算节点"}”运行${totalMatches}场批量模拟，30%节点服务费共${playerComputeNodeServiceFeeRevenue}金币已汇入你的球队账户。`,
+        payload:{ mirrorBatchJobId:job.id, computeNodeId:executionNode, payerOwnerId:account.id, payerTeamId:team.id, matches:totalMatches, amount:playerComputeNodeServiceFeeRevenue, source:"batch-service-fee" },
+      });
+    }
+    marketplace.batchJobs.push(job);
+    const cutoff = createdAt - 30 * 24 * 60 * 60 * 1000;
+    marketplace.batchJobs = marketplace.batchJobs.filter((entry) => ["queued", "running"].includes(entry.status) || Number(entry.completedAt ?? entry.createdAt) >= cutoff).slice(-200);
+    this.save({ scopes:["core", "mirrorMarketplace"], skipDailyBackup:true });
+    return this.compactMutationView(account, { extra:{ mirrorBatchJob:this.mirrorBatchJobView(job) } });
+  }
+  mirrorBatchTacticalProfile(seat = {}) {
+    const starters = (seat.players ?? []).filter((player) => player.active !== false).slice(0, 11);
+    const plans = seat.tacticalPlans ?? {};
+    const states = [
+      ["opening", "默认", "position1"],
+      ["leading", "领先", "position2"],
+      ["trailing", "落后", "position3"],
+    ];
+    const phases = states.map(([state, label, fallbackPreset]) => {
+      const plan = plans[state] ?? plans.opening ?? {};
+      const preset = plan.positionPreset ?? fallbackPreset;
+      const positions = seat.positionPresets?.[preset] ?? seat.positions ?? {};
+      const formationLines = seat.formationLinePresets?.[preset];
+      let formation = "未知阵型";
+      try {
+        if (starters.length === 11) formation = analyzeElevenBoardFormation(starters, positions, formationLines).name;
+      } catch { /* keep a readable fallback for legacy snapshots */ }
+      return {
+        state,
+        label,
+        formation,
+        tactic:plan.tactic ?? seat.tactic ?? "balanced",
+        style:plan.style ?? seat.style ?? "possession",
+        triggerGoalDifference:state === "opening" ? null : Math.max(1, Number(plan.triggerGoalDifference ?? 1)),
+      };
+    });
+    return {
+      name:String(seat.name ?? "球队"),
+      averageOverall:starters.length ? Number((starters.reduce((sum, player) => sum + Number(player.overall ?? 0), 0) / starters.length).toFixed(1)) : 0,
+      attackFocus:seat.attackFocus ?? "balanced",
+      defenseFocus:seat.defenseFocus ?? "balanced",
+      phases,
+    };
+  }
+
+  mirrorBatchMatchResult(match, number) {
+    const report = match.report;
+    const compactTeam = (team = {}) => {
+      const stats = team.stats ?? {};
+      const leaders = [...(team.players ?? [])]
+        .sort((left, right) => Number(right.rating ?? 0) - Number(left.rating ?? 0) || Number(right.stats?.goals ?? 0) - Number(left.stats?.goals ?? 0))
+        .slice(0, 3)
+        .map((player) => ({
+          id:player.id,
+          name:player.name,
+          rating:Number(player.rating ?? 0),
+          goals:Number(player.stats?.goals ?? 0),
+          assists:Number(player.stats?.assists ?? 0),
+          shots:Number(player.stats?.shots ?? 0),
+          shotsOnTarget:Number(player.stats?.shotsOnTarget ?? 0),
+          tackles:Number(player.stats?.tackles ?? 0),
+          interceptions:Number(player.stats?.interceptions ?? 0),
+          saves:Number(player.stats?.saves ?? 0),
+        }));
+      return {
+        formation:team.formation ?? null,
+        tactic:team.tactic ?? null,
+        style:team.style ?? null,
+        attackFocus:team.attackFocus ?? null,
+        defenseFocus:team.defenseFocus ?? null,
+        tacticalFit:Number(team.tacticalFit ?? Number(team.styleFit ?? 0) * 100),
+        xg:Number(stats.xg ?? 0),
+        shots:Number(stats.shots ?? 0),
+        shotsOnTarget:Number(stats.shotsOnTarget ?? 0),
+        possession:Number(stats.possession ?? stats.possessionControl ?? 0),
+        corners:Number(stats.corners ?? 0),
+        fouls:Number(stats.fouls ?? 0),
+        saves:Number(stats.saves ?? 0),
+        tackles:Number(stats.tackles ?? 0),
+        interceptions:Number(stats.interceptions ?? 0),
+        clearances:Number(stats.clearances ?? 0),
+        pressuresWon:Number(stats.pressuresWon ?? 0),
+        leaders,
+      };
+    };
+    const own = compactTeam(report.teams[0]);
+    const opponent = compactTeam(report.teams[1]);
+    const scoreFor = Number(report.score[0] ?? 0);
+    const scoreAgainst = Number(report.score[1] ?? 0);
+    return {
+      number,
+      result:scoreFor > scoreAgainst ? "W" : scoreFor === scoreAgainst ? "D" : "L",
+      scoreFor,
+      scoreAgainst,
+      own,
+      opponent,
+      topPlayer:own.leaders[0] ?? null,
+      opponentTopPlayer:opponent.leaders[0] ?? null,
+    };
+  }
+
+  finalizeMirrorBatchJob(job) {
+    const results = job.results ?? [];
+    const total = Math.max(1, results.length);
+    const sum = (selector) => results.reduce((value, result) => value + Number(selector(result) ?? 0), 0);
+    const average = (selector, digits = 1) => Number((sum(selector) / total).toFixed(digits));
+    const percent = (numerator, denominator) => denominator > 0 ? Number((numerator / denominator * 100).toFixed(1)) : 0;
+    const wins = results.filter((result) => result.result === "W").length;
+    const draws = results.filter((result) => result.result === "D").length;
+    const losses = results.length - wins - draws;
+    const goalsFor = sum((result) => result.scoreFor);
+    const goalsAgainst = sum((result) => result.scoreAgainst);
+    const xgFor = sum((result) => result.own.xg);
+    const xgAgainst = sum((result) => result.opponent.xg);
+    const shotsFor = sum((result) => result.own.shots);
+    const shotsAgainst = sum((result) => result.opponent.shots);
+    const shotsOnTargetFor = sum((result) => result.own.shotsOnTarget);
+    const shotsOnTargetAgainst = sum((result) => result.opponent.shotsOnTarget);
+    const cleanSheets = results.filter((result) => result.scoreAgainst === 0).length;
+    const failedToScore = results.filter((result) => result.scoreFor === 0).length;
+    const highVarianceMatches = results.filter((result) => Math.abs(result.scoreFor - result.scoreAgainst) >= 2).length;
+    const oneGoalMatches = results.filter((result) => Math.abs(result.scoreFor - result.scoreAgainst) === 1).length;
+    const playerTotals = new Map();
+    results.forEach((result) => {
+      for (const player of result.own.leaders ?? []) {
+        const current = playerTotals.get(player.id) ?? { id:player.id, name:player.name, appearances:0, ratingTotal:0, goals:0, assists:0 };
+        current.appearances += 1;
+        current.ratingTotal += player.rating;
+        current.goals += player.goals;
+        current.assists += player.assists;
+        playerTotals.set(player.id, current);
+      }
+    });
+    const bestPlayer = [...playerTotals.values()].map((player) => ({ ...player, averageRating:Number((player.ratingTotal / player.appearances).toFixed(2)) }))
+      .sort((left, right) => right.averageRating - left.averageRating || right.goals - left.goals)[0] ?? null;
+    const ownProfile = this.mirrorBatchTacticalProfile(job.callerSeat);
+    const opponentProfile = this.mirrorBatchTacticalProfile(job.opponentSeat);
+    const xgDifference = Number(((xgFor - xgAgainst) / total).toFixed(2));
+    const shotDifference = Number(((shotsFor - shotsAgainst) / total).toFixed(1));
+    const possession = average((result) => result.own.possession, 1);
+    const possessionAgainst = average((result) => result.opponent.possession, 1);
+    const recommendations = [];
+    if (xgDifference <= -0.25) recommendations.push("场均xG明显落后：应减少低质量远射，并通过中场接应或边路套上把进攻推进到更高价值区域。");
+    else if (xgDifference >= 0.25 && wins < 5) recommendations.push("机会质量领先但胜率没有兑现：重点检查终结球员、禁区职责和领先后的比赛管理。");
+    if (shotsOnTargetAgainst / total >= 5) recommendations.push("对手场均射正偏高：建议降低防线暴露，增加后腰保护或调整失球侧的防守职责。");
+    if (failedToScore >= 3) recommendations.push(`有${failedToScore}场未能进球：落后方案启动后仍缺少稳定破局点，可提高进攻宽度或增加禁区人数。`);
+    if (possession >= 55 && shotDifference < 0) recommendations.push("控球占优但射门落后，存在无效控球；需要提升向前传递、反抢后的快速推进和禁区触球。");
+    if (cleanSheets <= 2 && goalsAgainst > goalsFor) recommendations.push("零封率偏低且总失球更多，优先优化由攻转守站位，再考虑进一步增加进攻风险。");
+    if (!recommendations.length) recommendations.push("当前方案的机会、射门和赛果较均衡；建议保留默认结构，仅针对领先与落后节点做小幅调整后复测。");
+    const summary = wins >= 6
+      ? `${results.length}场模拟取得${wins}胜，整体表现占优；${xgFor >= xgAgainst ? "机会质量同样领先，可以继续沿用当前方案。" : "但预期进球处于下风，仍需警惕结果波动。"}`
+      : losses >= 6
+        ? `${results.length}场模拟遭遇${losses}负，当前方案面对该对手处于下风；建议优先调整防守结构与攻守转换。`
+        : `${results.length}场模拟为${wins}胜${draws}平${losses}负，双方较为接近；可结合xG差、射门差和战术阶段继续微调。`;
+    const report = {
+      schemaVersion:2,
+      jobId:job.id,
+      opponentName:job.opponentName,
+      mirrorKind:job.mirrorKind,
+      mirrorSchemeName:job.mirrorSchemeName,
+      totalMatches:results.length,
+      wins,
+      draws,
+      losses,
+      goalsFor,
+      goalsAgainst,
+      average:{
+        xgFor:Number((xgFor / total).toFixed(2)),
+        xgAgainst:Number((xgAgainst / total).toFixed(2)),
+        shotsFor:Number((shotsFor / total).toFixed(1)),
+        shotsAgainst:Number((shotsAgainst / total).toFixed(1)),
+        shotsOnTargetFor:Number((shotsOnTargetFor / total).toFixed(1)),
+        shotsOnTargetAgainst:Number((shotsOnTargetAgainst / total).toFixed(1)),
+        possession,
+        possessionAgainst,
+        cornersFor:average((result) => result.own.corners, 1),
+        cornersAgainst:average((result) => result.opponent.corners, 1),
+        foulsFor:average((result) => result.own.fouls, 1),
+        foulsAgainst:average((result) => result.opponent.fouls, 1),
+      },
+      efficiency:{
+        shotAccuracyFor:percent(shotsOnTargetFor, shotsFor),
+        shotAccuracyAgainst:percent(shotsOnTargetAgainst, shotsAgainst),
+        conversionFor:percent(goalsFor, shotsFor),
+        conversionAgainst:percent(goalsAgainst, shotsAgainst),
+        xgPerShotFor:shotsFor ? Number((xgFor / shotsFor).toFixed(3)) : 0,
+        xgPerShotAgainst:shotsAgainst ? Number((xgAgainst / shotsAgainst).toFixed(3)) : 0,
+      },
+      stability:{ cleanSheets, failedToScore, oneGoalMatches, highVarianceMatches },
+      tacticalProfiles:{ own:ownProfile, opponent:opponentProfile },
+      analysis:{
+        verdict:summary,
+        attack:`场均${(goalsFor / total).toFixed(2)}球、${(xgFor / total).toFixed(2)} xG，射正率${percent(shotsOnTargetFor, shotsFor)}%，进球转化率${percent(goalsFor, shotsFor)}%。`,
+        defense:`场均失${(goalsAgainst / total).toFixed(2)}球、被制造${(xgAgainst / total).toFixed(2)} xG，${cleanSheets}场零封，对手射正率${percent(shotsOnTargetAgainst, shotsAgainst)}%。`,
+        control:`场均控球${possession}%（对手${possessionAgainst}%），场均射门差${shotDifference >= 0 ? "+" : ""}${shotDifference}，场均xG差${xgDifference >= 0 ? "+" : ""}${xgDifference}。`,
+        consistency:`${oneGoalMatches}场一球差、${highVarianceMatches}场分差达到2球以上、${failedToScore}场被零封，反映当前方案的结果波动。`,
+        recommendations,
+      },
+      bestPlayer,
+      results:clone(results),
+      pricing:{ executionNode:job.executionNode ?? MIRROR_BATCH_CLOUD_NODE, computeNodeLabel:job.computeNodeLabel ?? null, usesOwnComputeNode:Boolean(job.usesOwnComputeNode), unitPrice:job.unitPrice, batchPriceDivisor:MIRROR_BATCH_PRICE_DIVISOR, subtotal:job.subtotal, serviceFee:job.serviceFee, directorSurcharge:Number(job.directorSurcharge ?? 0), directorServiceFeeRevenue:Number(job.directorServiceFeeRevenue ?? 0), playerComputeNodeServiceFeeRevenue:Number(job.playerComputeNodeServiceFeeRevenue ?? 0), totalCost:job.totalCost },
+      summary,
+      completedAt:this.now(),
+    };
+    job.status = "completed";
+    job.completedAt = report.completedAt;
+    job.updatedAt = report.completedAt;
+    job.report = report;
+    delete job.activeMatch;
+    delete job.activeMatchStartedAt;
+    delete job.callerSeat;
+    delete job.opponentSeat;
+    delete job.workerLease;
+    delete job.workerProgress;
+    const team = this.accountTeam(job.ownerId);
+    this.pushInbox(team, {
+      id:`mirror-batch-report:${job.id}`,
+      type:"mirror-batch-report",
+      title:`${results.length}场批量模拟深度报告`,
+      summary:`${job.opponentName} · ${wins}胜${draws}平${losses}负 · 总比分${report.goalsFor}:${report.goalsAgainst}`,
+      body:`${summary} 邮件内已附逐场数据、双方三阶段战术对照、攻防效率与调整建议。`,
+      report,
+      payload:{ mirrorBatchJobId:job.id },
+    });
+    const marketplace = this.state.mirrorMarketplace;
+    const receipt = { ...this.mirrorBatchJobView(job), ownerId:job.ownerId, teamId:job.teamId };
+    marketplace.batchReceipts = [...(marketplace.batchReceipts ?? []).filter((entry) => entry.id !== job.id), receipt]
+      .sort((left, right) => Number(left.completedAt ?? left.createdAt) - Number(right.completedAt ?? right.createdAt))
+      .slice(-500);
+    marketplace.batchJobs = marketplace.batchJobs.filter((entry) => entry.id !== job.id);
+    return report;
+  }
+  advanceMirrorBatchSimulations(maximumJobs = 1, options = {}) {
+    if (this.state.season.status === "active") return false;
+    const jobs = this.state.mirrorMarketplace.batchJobs
+      .filter((job) => ["queued", "running"].includes(job.status) && (job.executionNode ?? MIRROR_BATCH_CLOUD_NODE) === MIRROR_BATCH_CLOUD_NODE)
+      .sort((left, right) => Number(left.createdAt) - Number(right.createdAt));
+    if (!jobs.length) return false;
+    const maximumChainsPerMatch = Math.max(1, Number(options.maximumChainsPerMatch ?? 4));
+    let processed = 0;
+    let advanced = false;
+    for (const job of jobs) {
+      if (processed >= Math.max(1, Number(maximumJobs) || 1)) break;
+      job.status = "running";
+      const number = Number(job.results?.length ?? 0) + 1;
+      if (!job.activeMatch) {
+        const seed = `${this.state.season.id}:${job.id}:${number}`;
+        const conditions = seededConditions(seed);
+        job.activeMatch = createLeagueMatch(unwrapTracked([clone(job.callerSeat), clone(job.opponentSeat)]), {
+          now:this.now(),
+          seed,
+          weather:conditions.weather.key,
+          referee:conditions.referee.key,
+          regulationOnly:true,
+          competitionMode:"friendly",
+          recordEvents:false,
+          matchEngine:"v2",
+        });
+        job.activeMatchStartedAt = this.now();
+        advanced = true;
+      }
+      const activeMatch = unwrapTracked(job.activeMatch);
+      const before = Number(activeMatch.nextChainIndex ?? 0);
+      const advanceAt = Number(job.activeMatchStartedAt ?? this.now()) + REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + 1;
+      advanceLeagueMatch(activeMatch, advanceAt, { maximumChains:maximumChainsPerMatch });
+      job.activeMatch = activeMatch;
+      advanced = advanced || Number(activeMatch.nextChainIndex ?? 0) > before || Boolean(activeMatch.report);
+      if (activeMatch.report) {
+        job.results.push(this.mirrorBatchMatchResult(activeMatch, number));
+        delete job.activeMatch;
+        delete job.activeMatchStartedAt;
+        if (job.results.length >= job.totalMatches) this.finalizeMirrorBatchJob(job);
+      }
+      job.updatedAt = this.now();
+      processed += 1;
+    }
+    if (advanced) this.save({ scopes:["core", "mirrorMarketplace"], skipDailyBackup:true, skipLiveBackupCopy:true });
+    return advanced;
+  }
+
   createAiTraining(account, config = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("请先加入联赛并保存自己的战术板");
     const tacticalPlans = this.aiTrainingTacticalPlans(config.tacticalPlans);
     const mirrorTeamId = String(config.mirrorTeamId ?? "");
+    const mirrorSchemeId = String(config.mirrorSchemeId ?? "") || null;
     let opponentSeat;
     let actualAverageOverall;
     let targetOverall = null;
@@ -5969,12 +9061,13 @@ export class YellowDogsLeagueService {
       if (this.state.season.status === "active") throw new Error("玩家阵容镜像仅在休赛期开放");
       const mirrorTeam = this.state.teams.find((entry) => entry.id === mirrorTeamId && entry.ownerId);
       if (!mirrorTeam) throw new Error("选择的玩家阵容镜像不存在");
+      if (mirrorTeam.ownerId === account.id) throw new Error("不能调用自己的阵容镜像");
       const mirrorKind = String(config.mirrorKind ?? "basic") === "full" ? "full" : "basic";
-      mirrorCharge = this.chargeMirrorInvocation(account, mirrorTeam, mirrorKind);
+      mirrorCharge = this.chargeMirrorInvocation(account, mirrorTeam, mirrorKind, mirrorSchemeId);
       opponentLabel = mirrorKind === "full"
-        ? `${mirrorTeam.ownerName ?? mirrorTeam.name}完整战术镜像`
+        ? `${mirrorTeam.ownerName ?? mirrorTeam.name}完整战术镜像${mirrorCharge.mirrorSchemeName ? ` · ${mirrorCharge.mirrorSchemeName}` : ""}`
         : `${mirrorTeam.ownerName ?? mirrorTeam.name}玩家镜像`;
-      const sourceSeat = mirrorKind === "full" ? clone(mirrorCharge.upload.snapshot) : this.aiTrainingPlayerSeat(mirrorTeam);
+      const sourceSeat = mirrorKind === "full" ? clone(mirrorCharge.snapshot) : this.aiTrainingPlayerSeat(mirrorTeam);
       opponentSeat = mirrorKind === "full" ? { ...sourceSeat, name:opponentLabel } : {
         ...sourceSeat,
         name:opponentLabel,
@@ -6030,12 +9123,13 @@ export class YellowDogsLeagueService {
         recordEvents:this.recordMatchEvents !== false,
         matchEngine:"v2",
       });
+      match.stadium = this.clubBroadcastVenue(team);
     } catch (error) {
       if (mirrorCharge) this.refundMirrorInvocation(account, this.state.teams.find((entry) => entry.id === mirrorTeamId), mirrorCharge);
       throw error;
     }
     const spectatorToken = makeId("training-viewer", account.id);
-    const live = { code, ownerId:account.id, round:"AI 对战", match, spectators:{ [spectatorToken]:{ name:account.name ?? team.ownerName ?? "玩家", lastSeenAt:startedAt } }, startedAt, aiTraining:true, actualAverageOverall, targetOverall, formation:opponentLabel, mirrorTeamId:mirrorTeamId || null, mirrorKind:mirrorCharge?.kind ?? null };
+    const live = { code, ownerId:account.id, round:"AI 对战", match, spectators:{ [spectatorToken]:{ name:account.name ?? team.ownerName ?? "玩家", lastSeenAt:startedAt } }, startedAt, aiTraining:true, actualAverageOverall, targetOverall, formation:opponentLabel, mirrorTeamId:mirrorTeamId || null, mirrorKind:mirrorCharge?.kind ?? null, mirrorSchemeId:mirrorCharge?.mirrorSchemeId ?? null };
     this.liveAiTrainings.set(code, live);
     if (mirrorCharge) this.save({ scopes:["core", "mirrorMarketplace"], skipDailyBackup:true });
     return { spectatorToken, broadcast:this.broadcastView(live), actualAverageOverall, targetOverall, walletBalance:this.wallet(account.id).balance, mirrorCharge:mirrorCharge ? { kind:mirrorCharge.kind, price:mirrorCharge.price } : null };
@@ -6166,7 +9260,8 @@ export class YellowDogsLeagueService {
       const timeText = new Date(startsAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
       this.state.teams.filter((team) => team.ownerId).forEach((team) => {
         const participant = [fromTeam.id, toTeam.id].includes(team.id);
-        this.pushInbox(team, { id:`friendly-scheduled:${fixture.id}:${team.id}`, type:"friendly", title:participant ? "友谊赛已经排定" : "全服友谊赛直播预告", summary:`${fromTeam.name} vs ${toTeam.name}，${timeText}开赛。`, body:participant ? "比赛将以100体力开赛，不消耗体力且红黄牌不计入正式赛事；受伤仍会正常形成伤停。" : "比赛开始后欢迎前往电视台观看直播。", payload:{ friendlyFixtureId:fixture.id, startsAt, homeTeamId:fromTeam.id, awayTeamId:toTeam.id } });
+        const injuryNotice = this.state.season.status === "completed" ? "比赛仍会正常判定受伤和伤退，但不会形成正式伤停。" : "受伤仍会正常形成伤停。";
+        this.pushInbox(team, { id:`friendly-scheduled:${fixture.id}:${team.id}`, type:"friendly", title:participant ? "友谊赛已经排定" : "全服友谊赛直播预告", summary:`${fromTeam.name} vs ${toTeam.name}，${timeText}开赛。`, body:participant ? `比赛将以100体力开赛，不消耗体力且红黄牌不计入正式赛事；${injuryNotice}` : "比赛开始后欢迎前往电视台观看直播。", payload:{ friendlyFixtureId:fixture.id, startsAt, homeTeamId:fromTeam.id, awayTeamId:toTeam.id } });
       });
     }
     this.save({ scopes:["core", "inbox"], skipDailyBackup:true });
@@ -6178,6 +9273,7 @@ export class YellowDogsLeagueService {
   startScheduledFriendlies(now = this.now()) {
     let changed = false;
     this.state.friendlyFixtures.filter((fixture) => fixture.status === "scheduled" && fixture.startsAt <= now).forEach((fixture) => {
+      fixture.offseason = this.state.season.status === "completed";
       const created = this.createFixtureMatch(fixture, Math.max(1, this.state.season.currentRound + 1), fixture.startsAt, { competitionMode:"friendly", seed:`${this.state.season.id}:${fixture.id}` });
       const live = { code:`YDL-FRIENDLY-${fixture.id}`, fixtureId:fixture.id, round:"友谊赛", match:created.match, spectators:{}, startedAt:fixture.startsAt, completed:false };
       fixture.status = "live";
@@ -6199,15 +9295,18 @@ export class YellowDogsLeagueService {
     fixture.matchId = id;
     fixture.completedAt = this.now();
     fixture.score = [...report.score];
-    [home, away].forEach((team, index) => report.teams[index].players.forEach((player) => {
-      if (!player.injury || !team.playerState[player.id]) return;
-      team.playerState[player.id].injuryRounds = Math.max(Number(team.playerState[player.id].injuryRounds ?? 0), injuryAbsenceMatches(player));
-    }));
+    const offseason = fixture.offseason ?? this.state.season.status === "completed";
+    if (!offseason) {
+      [home, away].forEach((team, index) => report.teams[index].players.forEach((player) => {
+        if (!player.injury || !team.playerState[player.id]) return;
+        team.playerState[player.id].injuryRounds = Math.max(Number(team.playerState[player.id].injuryRounds ?? 0), injuryAbsenceMatches(player));
+      }));
+    }
     return record;
   }
 
   liveAdvanceBatch(entries, key, maximumMatches = Infinity) {
-    const pending = entries.filter((entry) => !entry.completed);
+    const pending = entries.filter((entry) => !entry.completed && !entry.settlementPending);
     if (!pending.length || Number(maximumMatches) <= 0) return [];
     if (!Number.isFinite(Number(maximumMatches)) || Number(maximumMatches) >= pending.length) return pending;
     const count = Math.max(1, Math.min(pending.length, Math.floor(Number(maximumMatches))));
@@ -6220,7 +9319,6 @@ export class YellowDogsLeagueService {
   advanceLiveFriendlies(now = this.now(), options = {}) {
     let changed = this.startScheduledFriendlies(now);
     let advanced = false;
-    const completedCodes = [];
     this.liveAdvanceBatch(this.state.liveFriendlies, "friendly", options.maximumMatches).forEach((live) => {
       const before = Number(live.match.nextChainIndex ?? 0);
       advanceLeagueMatch(live.match, now, { maximumChains:options.maximumChainsPerMatch });
@@ -6230,17 +9328,18 @@ export class YellowDogsLeagueService {
         if (didAdvance && options.persist !== false) this.persistLiveMatch(live, now);
         return;
       }
-      const fixture = this.state.friendlyFixtures.find((item) => item.id === live.fixtureId);
-      this.finalizeFriendlyFixture(fixture, live.match);
-      live.completed = true;
-      this.state.completedBroadcasts.push({ code:live.code, round:"友谊赛", matchId:fixture.matchId, completedAt:this.now(), spectators:clone(live.spectators ?? {}), match:publicLeagueMatch(live.match, this.now(), null, true), competition:"YDL友谊赛" });
-      completedCodes.push(live.code);
-      changed = true;
+      if (options.persist !== false) this.persistLiveMatch(live, now, true);
+      advanced = this.queueLiveSettlement(live, () => {
+        const fixture = this.state.friendlyFixtures.find((item) => item.id === live.fixtureId);
+        this.finalizeFriendlyFixture(fixture, live.match);
+        live.completed = true;
+        delete live.settlementPending;
+        this.state.completedBroadcasts.push({ code:live.code, round:"友谊赛", matchId:fixture.matchId, completedAt:this.now(), spectators:clone(live.spectators ?? {}), match:publicLeagueMatch(live.match, this.now(), null, true), competition:"YDL友谊赛" });
+        this.state.liveFriendlies = this.state.liveFriendlies.filter((entry) => !entry.completed);
+        if (!this.scheduleLiveSettlementSave([live.code])) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+      }) || advanced;
     });
-    if (changed) {
-      this.state.liveFriendlies = this.state.liveFriendlies.filter((live) => !live.completed);
-      if (!this.scheduleLiveSettlementSave(completedCodes)) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
-    }
+    if (changed) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
     return changed || advanced;
   }
 
@@ -6251,6 +9350,8 @@ export class YellowDogsLeagueService {
     const id = `${this.state.season.id}-R${roundNumber}-${home.id}-${away.id}`;
     const record = { id, round:roundNumber, playedAt:this.now(), homeId:home.id, awayId:away.id, homeName:home.name, awayName:away.name, score:[...report.score], formations:report.teams.map((team) => team.formation), autoRotations:clone(match.leagueAutoRotations ?? [[], []]), report };
     this.state.matches.push(record);
+    this.settleHomeTicketIncome(record);
+    this.rollClubSponsorOffersAfterMatch(record);
     fixture.matchId = id;
     this.settleMatchPrediction("league", `R${roundNumber}`, fixture, record);
     [home, away].forEach((team, index) => {
@@ -6273,7 +9374,8 @@ export class YellowDogsLeagueService {
           const beforeMatch = Number(state.fitness ?? 100);
           const engineFitness = Number(player.fitness ?? beforeMatch);
           const matchDrain = Math.max(0, beforeMatch - engineFitness);
-          state.fitness = Math.max(35, Math.min(100, Number((beforeMatch - matchDrain * LEAGUE_FITNESS_DRAIN_FACTOR).toFixed(1))));
+          const drainFactor = player.role === "GK" ? LEAGUE_FITNESS_DRAIN_FACTOR * GOALKEEPER_FITNESS_DRAIN_FACTOR : LEAGUE_FITNESS_DRAIN_FACTOR;
+          state.fitness = Math.max(35, Math.min(100, Number((beforeMatch - matchDrain * drainFactor).toFixed(1))));
           if (player.stats.redCards) state.suspension = Math.max(state.suspension ?? 0, 1);
           if (player.stats.redCards) this.roundNewUnavailable?.add(`${team.id}:${player.id}:suspension`);
           if (player.injury) {
@@ -6287,6 +9389,7 @@ export class YellowDogsLeagueService {
       const chemistryLineup = chemistryPlayers.map((player) => REAL_PLAYER_BY_ID[player.id]).filter(Boolean);
       const chemistryPositions = Object.fromEntries(chemistryPlayers.map((player) => [player.id, player.position]));
       this.recordChemistry(team, chemistryLineup, chemistryPositions);
+      team.fitnessUpdatedAt = this.now();
     });
     return record;
   }
@@ -6305,6 +9408,8 @@ export class YellowDogsLeagueService {
     const id = `${this.state.season.id}-CUP-${event.stage}-${event.round}-L${event.leg}-${home.id}-${away.id}`;
     const record = { id, competition:"cup", cupStage:event.stage, cupRound:event.round, legNumber:event.leg, playedAt:this.now(), homeId:home.id, awayId:away.id, homeName:home.name, awayName:away.name, score:[...report.score], penalties:report.penalties ?? null, formations:report.teams.map((team) => team.formation), autoRotations:clone(match.leagueAutoRotations ?? [[], []]), report };
     this.state.matches.push(record);
+    this.settleHomeTicketIncome(record);
+    this.rollClubSponsorOffersAfterMatch(record);
     fixture.matchId = id;
     fixture.status = "complete";
     fixture.score = [...report.score];
@@ -6324,7 +9429,8 @@ export class YellowDogsLeagueService {
           const state = team.playerState[player.id];
           const beforeMatch = Number(state.fitness ?? 100);
           const drain = Math.max(0, beforeMatch - Number(player.fitness ?? beforeMatch));
-          state.fitness = Math.max(35, Math.min(100, Number((beforeMatch - drain * LEAGUE_FITNESS_DRAIN_FACTOR).toFixed(1))));
+          const drainFactor = player.role === "GK" ? LEAGUE_FITNESS_DRAIN_FACTOR * GOALKEEPER_FITNESS_DRAIN_FACTOR : LEAGUE_FITNESS_DRAIN_FACTOR;
+          state.fitness = Math.max(35, Math.min(100, Number((beforeMatch - drain * drainFactor).toFixed(1))));
           if (player.stats.redCards) state.cupSuspension = Math.max(state.cupSuspension ?? 0, 1);
           if (player.stats.redCards) { this.cupNewUnavailable ??= new Set(); this.cupNewUnavailable.add(`${team.id}:${player.id}:suspension`); }
           if (player.injury) {
@@ -6337,6 +9443,7 @@ export class YellowDogsLeagueService {
       this.recoverUnusedPlayers(team, playedPlayerIds);
       const chemistryPlayers = report.teams[index].players.filter((player) => !player.substitutedOut);
       this.recordChemistry(team, chemistryPlayers.map((player) => REAL_PLAYER_BY_ID[player.id]).filter(Boolean), Object.fromEntries(chemistryPlayers.map((player) => [player.id, player.position])));
+      team.fitnessUpdatedAt = this.now();
     });
     if (["league", "swiss"].includes(event.stage)) {
       [home, away].forEach((team, index) => {
@@ -6368,15 +9475,16 @@ export class YellowDogsLeagueService {
       const injured = team.rosterIds.filter((id) => Number(team.playerState[id]?.injuryRounds ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].injuryRounds }));
       const suspended = team.rosterIds.filter((id) => Number(team.playerState[id]?.cupSuspension ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].cupSuspension }));
       const next = this.nextOpponent(team.id);
+      const homeTicketIncome = this.homeTicketIncomeSummary(team, record);
       this.pushInbox(team, {
         id:`cup-matchweek:${this.state.season.id}:${event.id}:${record.id}:${team.id}`,
         type:"matchweek",
         title:`黄狗冠军杯 · ${stageLabel}战报`,
-        summary:`${team.name} ${ownScore}:${opponentScore} ${opponent.name}，本场${resultText}。`,
-        body:`黄狗冠军杯${stageLabel}结束。${next ? `下一场为${next.competitionName} ${next.label}，对阵 ${next.name}。` : "当前没有已确定的后续比赛。"}`,
+        summary:`${team.name} ${ownScore}:${opponentScore} ${opponent.name}，本场${resultText}。${homeTicketIncome ? ` 主场门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}`,
+        body:`黄狗冠军杯${stageLabel}结束。${homeTicketIncome ? `本场共有${homeTicketIncome.attendance.toLocaleString("zh-CN")}名观众入场，门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}${next ? `下一场为${next.competitionName} ${next.label}，对阵 ${next.name}。` : "当前没有已确定的后续比赛。"}`,
         round:event.round,
         matchId:record.id,
-        payload:{ results:[this.matchSummary(record)], rank, points:team.table.points, injured, suspended, next, autoRotations:record.autoRotations?.[ownIndex] ?? [], competition:"cup", stage:event.stage, leg:event.leg },
+        payload:{ results:[this.matchSummary(record)], rank, points:team.table.points, injured, suspended, next, autoRotations:record.autoRotations?.[ownIndex] ?? [], competition:"cup", stage:event.stage, leg:event.leg, homeTicketIncome },
       });
     });
   }
@@ -6408,6 +9516,7 @@ export class YellowDogsLeagueService {
     if (event.transitionedAt) return;
     const alreadySettled = event.status === "complete";
     const cup = this.state.cup;
+    if (event.stage === "final") cup.finalStartedAt ??= this.cupFinalStartedAt();
     if (!alreadySettled) this.advanceCupAvailability();
     const predictionLabel = ["league", "swiss"].includes(event.stage)
       ? `黄狗冠军杯${event.stage === "league" ? "联赛阶段" : "瑞士轮"}第${event.round}轮`
@@ -6461,9 +9570,13 @@ export class YellowDogsLeagueService {
           winners.forEach((teamId) => this.grantCupReward(teamId, event, "advance"));
           this.createKnockoutStage("final", winners); cup.stage = "final";
         } else {
-          this.grantCupReward(winners[0], event, "champion");
-          cup.status = "completed"; cup.stage = "completed"; cup.championId = winners[0]; cup.completedAt = this.now();
+          const championId = winners[0];
+          const runnerUpId = ties[0]?.teams?.find((teamId) => teamId !== championId) ?? null;
+          this.grantCupReward(championId, event, "champion");
+          if (runnerUpId) this.grantCupReward(runnerUpId, event, "runnerUp");
+          cup.status = "completed"; cup.stage = "completed"; cup.championId = championId; cup.completedAt = this.now();
           this.settleBallonDor();
+          this.ensureSeasonFinalTournament();
         }
       }
     }
@@ -6483,7 +9596,10 @@ export class YellowDogsLeagueService {
     const cup = this.state.cup;
     const event = cup.events.find((entry) => entry.status === "pending");
     if (!event) return false;
+    const startedAt = this.now();
     event.status = "running";
+    event.startedAt = startedAt;
+    if (event.stage === "final") cup.finalStartedAt = startedAt;
     this.cupNewUnavailable = new Set();
     const fixtures = this.cupEventFixtures(event);
     const liveMatches = [];
@@ -6491,7 +9607,7 @@ export class YellowDogsLeagueService {
       const tie = ["league", "swiss"].includes(event.stage) ? null : cup.knockout[event.stage].find((entry) => entry.legs.includes(fixture));
       const firstLeg = tie?.legs[0];
       const aggregateBaseScore = event.leg === 2 && firstLeg ? [firstLeg.score[1], firstLeg.score[0]] : null;
-      const created = measureRuntimeSync("league.cup.createFixtureMatch", () => this.createFixtureMatch(fixture, event.round, this.now(), { seed:`${this.state.season.id}:${event.id}:${fixture.id}`, competitionMode:"cup", legNumber:event.leg, regulationOnly:event.stage === "league" ? true : event.stage === "swiss" || event.stage === "final" ? false : event.leg === 1, aggregateBaseScore }));
+      const created = measureRuntimeSync("league.cup.createFixtureMatch", () => this.createFixtureMatch(fixture, event.round, startedAt, { seed:`${this.state.season.id}:${event.id}:${fixture.id}`, competitionMode:"cup", legNumber:event.leg, allowSuperStorm:["league", "swiss"].includes(event.stage), regulationOnly:event.stage === "league" ? true : event.stage === "swiss" || event.stage === "final" ? false : event.leg === 1, aggregateBaseScore }));
       if (created.home.ownerId || created.away.ownerId) liveMatches.push({ code:`YDL-CUP-${this.state.season.name}-${event.stage}-${event.leg}-M${index + 1}`, round:event.round, fixtureId:fixture.id, match:created.match, spectators:{} });
       else {
         measureRuntimeSync("league.cup.settleAutomatedMatch", () => settleAutomatedMatch(created.match, created.startedAt));
@@ -6499,7 +9615,7 @@ export class YellowDogsLeagueService {
       }
     });
     if (!liveMatches.length) { this.completeCupEvent(event); this.save(); return true; }
-    this.state.liveCupRound = { eventId:event.id, startedAt:this.now(), matches:liveMatches, newUnavailable:[...this.cupNewUnavailable] };
+    this.state.liveCupRound = { eventId:event.id, startedAt, matches:liveMatches, newUnavailable:[...this.cupNewUnavailable] };
     this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
     return true;
   }
@@ -6509,16 +9625,20 @@ export class YellowDogsLeagueService {
     if (cup.status !== "active" || this.state.liveCupRound) return null;
     const event = cup.events.find((entry) => entry.status === "pending");
     if (!event) return null;
+    const startedAt = this.now();
     event.status = "running";
+    event.startedAt = startedAt;
+    if (event.stage === "final") cup.finalStartedAt = startedAt;
     this.cupNewUnavailable = new Set();
     this.cupEventFixtures(event).forEach((fixture) => {
       const tie = ["league", "swiss"].includes(event.stage) ? null : cup.knockout[event.stage].find((entry) => entry.legs.includes(fixture));
       const firstLeg = tie?.legs[0];
       const aggregateBaseScore = event.leg === 2 && firstLeg ? [firstLeg.score[1], firstLeg.score[0]] : null;
-      const created = this.createFixtureMatch(fixture, event.round, this.now(), {
+      const created = this.createFixtureMatch(fixture, event.round, startedAt, {
         seed:`${this.state.season.id}:${event.id}:${fixture.id}`,
         competitionMode:"cup",
         legNumber:event.leg,
+        allowSuperStorm:["league", "swiss"].includes(event.stage),
         regulationOnly:event.stage === "league" ? true : event.stage === "swiss" || event.stage === "final" ? false : event.leg === 1,
         aggregateBaseScore,
       });
@@ -6551,35 +9671,89 @@ export class YellowDogsLeagueService {
       const didAdvance = Number(live.match.nextChainIndex ?? 0) > before;
       advanced = advanced || didAdvance;
       if (live.match.report) {
-        const fixture = this.cupEventFixtures(event).find((entry) => entry.id === live.fixtureId);
-        this.finalizeCupFixture(fixture, event, live.match);
-        live.completed = true;
-        advanced = true;
+        if (options.persist !== false) this.persistLiveMatch(live, now, true);
+        advanced = this.queueLiveSettlement(live, () => {
+          const currentLiveRound = this.state.liveCupRound;
+          const currentEvent = this.state.cup.events.find((entry) => entry.id === currentLiveRound?.eventId);
+          if (!currentLiveRound || !currentEvent) { delete live.settlementPending; return; }
+          this.cupNewUnavailable = new Set(currentLiveRound.newUnavailable ?? []);
+          const fixture = this.cupEventFixtures(currentEvent).find((entry) => entry.id === live.fixtureId);
+          this.finalizeCupFixture(fixture, currentEvent, live.match);
+          live.completed = true;
+          delete live.settlementPending;
+          currentLiveRound.newUnavailable = [...this.cupNewUnavailable];
+          if (currentLiveRound.matches.every((entry) => entry.completed)) {
+            const completedCodes = currentLiveRound.matches.map((entry) => entry.code);
+            this.archiveCompletedBroadcasts({ roundNumber:currentEvent.round, matches:currentLiveRound.matches });
+            this.completeCupEvent(currentEvent);
+            this.state.liveCupRound = null;
+            if (!this.scheduleLiveSettlementSave(completedCodes)) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+          }
+        }) || advanced;
       } else if (didAdvance && options.persist !== false) this.persistLiveMatch(live, now);
     }
     liveRound.newUnavailable = [...this.cupNewUnavailable];
-    if (liveRound.matches.every((entry) => entry.completed)) {
-      const completedCodes = liveRound.matches.map((live) => live.code);
-      this.archiveCompletedBroadcasts({ roundNumber:event.round, matches:liveRound.matches });
-      this.completeCupEvent(event);
-      this.state.liveCupRound = null;
-      if (!this.scheduleLiveSettlementSave(completedCodes)) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+    return advanced;
+  }
+
+  advanceLiveSeasonFinalRound(now = this.now(), options = {}) {
+    if (this.seasonCompetitionDayExpired(now)) {
+      const changed = this.cancelExpiredSeasonFinal(now);
+      if (changed && options.persist !== false) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+      return changed;
     }
+    const liveRound = this.state.liveSeasonFinalRound;
+    if (!liveRound) return false;
+    const tournament = this.state.seasonFinalTournament;
+    if (!tournament) return false;
+    this.cupNewUnavailable = new Set(liveRound.newUnavailable ?? []);
+    let advanced = false;
+    for (const live of this.liveAdvanceBatch(liveRound.matches, "season-final", options.maximumMatches)) {
+      const node = tournament.bracket.find((entry) => entry.id === live.nodeId);
+      if (!node || !live?.match) continue;
+      const before = Number(live.match.nextChainIndex ?? 0);
+      advanceLeagueMatch(live.match, now, { maximumChains:options.maximumChainsPerMatch });
+      const didAdvance = Number(live.match.nextChainIndex ?? 0) > before;
+      advanced = advanced || didAdvance;
+      if (live.match.report) {
+        if (options.persist !== false) this.persistLiveMatch(live, now, true);
+        advanced = this.queueLiveSettlement(live, () => {
+          const currentLiveRound = this.state.liveSeasonFinalRound;
+          const currentTournament = this.state.seasonFinalTournament;
+          const currentNode = currentTournament?.bracket.find((entry) => entry.id === live.nodeId);
+          if (!currentLiveRound || !currentTournament || !currentNode) { delete live.settlementPending; return; }
+          this.cupNewUnavailable = new Set(currentLiveRound.newUnavailable ?? []);
+          const record = this.completeSeasonFinalNode(currentNode, live.match, currentTournament, { deferAvailability:true });
+          live.matchId = record?.id ?? null;
+          live.completed = true;
+          delete live.settlementPending;
+          currentLiveRound.newUnavailable = [...this.cupNewUnavailable];
+          if (currentLiveRound.matches.every((entry) => entry.completed)) {
+            const completedCodes = currentLiveRound.matches.map((entry) => entry.code);
+            this.archiveCompletedBroadcasts({ roundNumber:`赛季总决赛 ${currentLiveRound.matches.map((entry) => entry.nodeId).join("/")}`, matches:currentLiveRound.matches });
+            this.advanceSeasonFinalAvailability();
+            this.state.liveSeasonFinalRound = null;
+            if (!this.scheduleLiveSettlementSave(completedCodes)) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+          }
+        }) || advanced;
+      } else if (didAdvance && options.persist !== false) this.persistLiveMatch(live, now);
+    }
+    liveRound.newUnavailable = [...this.cupNewUnavailable];
     return advanced;
   }
 
   recoverUnusedPlayers(team, playedPlayerIds) {
-    if (!team.ownerId) return;
+    if (!team?.ownerId) return;
     team.rosterIds.forEach((id) => {
       if (playedPlayerIds.has(id)) return;
-      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, injuryRounds:0 });
+      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
       state.fitness = Math.min(100, Number(state.fitness ?? 100) + 18);
     });
   }
 
   advanceAvailability() {
     this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => {
-      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, injuryRounds:0 });
+      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
       if (!this.roundNewUnavailable?.has(`${team.id}:${id}:suspension`)) state.suspension = Math.max(0, Number(state.suspension ?? 0) - 1);
       if (!this.roundNewUnavailable?.has(`${team.id}:${id}:injury`)) state.injuryRounds = Math.max(0, Number(state.injuryRounds ?? 0) - 1);
     }));
@@ -6587,9 +9761,19 @@ export class YellowDogsLeagueService {
 
   advanceCupAvailability() {
     this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => {
-      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, injuryRounds:0 });
+      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
       const legacyKey = `${team.id}:${id}`;
       if (!this.cupNewUnavailable?.has(legacyKey) && !this.cupNewUnavailable?.has(`${legacyKey}:suspension`)) state.cupSuspension = Math.max(0, Number(state.cupSuspension ?? 0) - 1);
+      if (!this.cupNewUnavailable?.has(`${legacyKey}:injury`)) state.injuryRounds = Math.max(0, Number(state.injuryRounds ?? 0) - 1);
+    }));
+    this.cupNewUnavailable = null;
+  }
+
+  advanceSeasonFinalAvailability() {
+    this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => {
+      const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
+      const legacyKey = `${team.id}:${id}`;
+      if (!this.cupNewUnavailable?.has(`${legacyKey}:suspension`)) state.seasonFinalSuspension = Math.max(0, Number(state.seasonFinalSuspension ?? 0) - 1);
       if (!this.cupNewUnavailable?.has(`${legacyKey}:injury`)) state.injuryRounds = Math.max(0, Number(state.injuryRounds ?? 0) - 1);
     }));
     this.cupNewUnavailable = null;
@@ -6599,6 +9783,10 @@ export class YellowDogsLeagueService {
     this.ensureDisciplineState();
     const packRewardEnabled = Number(this.state.season.startedAt ?? 0) >= S4_LEAGUE_ROUND_PACK_REWARD_START_AT;
     this.state.teams.filter((team) => team.ownerId).forEach((team) => {
+      const match = this.state.matches.find((entry) => entry.round === roundNumber
+        && (!entry.competition || entry.competition === "league")
+        && (entry.homeId === team.id || entry.awayId === team.id));
+      if (match?.homeId === team.id) this.settleHomeTicketIncome(match);
       const disciplineGrantId = `league-round-reward:${this.state.season.id}:${roundNumber}`;
       const previouslyWithheld = this.state.discipline.withheldRewards.some((entry) => entry.accountId === team.ownerId && entry.grantId === disciplineGrantId);
       if (this.rewardsSuspended(team.ownerId) || previouslyWithheld) {
@@ -6608,9 +9796,6 @@ export class YellowDogsLeagueService {
       const coinRewarded = this.state.ledger.some((entry) => entry.type === "league-match-reward" && entry.accountId === team.ownerId && entry.seasonId === this.state.season.id && entry.round === roundNumber);
       const packRewarded = this.state.ledger.some((entry) => entry.type === "league-round-pack-reward" && entry.accountId === team.ownerId && entry.seasonId === this.state.season.id && entry.round === roundNumber);
       if (coinRewarded && (!packRewardEnabled || packRewarded)) return;
-      const match = this.state.matches.find((entry) => entry.round === roundNumber
-        && (!entry.competition || entry.competition === "league")
-        && (entry.homeId === team.id || entry.awayId === team.id));
       if (!match) return;
       const ownIndex = match.homeId === team.id ? 0 : 1;
       const ownScore = Number(match.score[ownIndex] ?? 0);
@@ -6702,7 +9887,7 @@ export class YellowDogsLeagueService {
       type:"reward",
       title:"黄狗冠军杯八强奖励已送达",
       summary:`联赛阶段第${rank}名，获得${amount.toLocaleString("zh-CN")}金币和${CUP_LEAGUE_QUALIFIER_PACK_QUANTITY}个传奇随机卡包。`,
-      body:`黄狗冠军杯9轮联赛阶段已经结束，你以第${rank}名晋级八强。${amount.toLocaleString("zh-CN")}金币和${CUP_LEAGUE_QUALIFIER_PACK_QUANTITY}个传奇随机卡包已经发放到球队账户。杯赛冠军奖励仍由管理员另行发放。`,
+      body:`黄狗冠军杯9轮联赛阶段已经结束，你以第${rank}名晋级八强。${amount.toLocaleString("zh-CN")}金币和${CUP_LEAGUE_QUALIFIER_PACK_QUANTITY}个传奇随机卡包已经发放到球队账户。冠亚军礼包将在决赛结束后自动发放。`,
       round:9,
       payload:{ amount, competition:"cup", stage:"league", award:"qualification", rank, grantId, packType:CUP_LEAGUE_QUALIFIER_PACK_TYPE, quantity:CUP_LEAGUE_QUALIFIER_PACK_QUANTITY, packIds:items.map((item) => item.id) },
     });
@@ -6712,16 +9897,20 @@ export class YellowDogsLeagueService {
   grantCupReward(teamId, event, kind) {
     this.ensureDisciplineState();
     const team = this.state.teams.find((entry) => entry.id === teamId);
-    if (!team?.ownerId || kind !== "advance" || !["quarterfinals", "semifinals"].includes(event.stage)) return null;
-    const awardKey = `${event.id}:${kind}`;
-    const disciplineGrantId = `cup-reward:${this.state.season.id}:${awardKey}`;
+    const advanceReward = kind === "advance" && ["quarterfinals", "semifinals"].includes(event.stage);
+    const finalPackType = event.stage === "final" ? FINAL_PLACEMENT_REWARD_PACK_TYPES[kind] ?? null : null;
+    if (!team?.ownerId || (!advanceReward && !finalPackType)) return null;
+    const awardKey = finalPackType ? `${this.state.season.id}:${event.id}:${kind}` : `${event.id}:${kind}`;
+    const disciplineGrantId = finalPackType ? `cup-reward:${awardKey}` : `cup-reward:${this.state.season.id}:${awardKey}`;
     const previouslyWithheld = this.state.discipline.withheldRewards.some((entry) => entry.accountId === team.ownerId && entry.grantId === disciplineGrantId);
     if (this.rewardsSuspended(team.ownerId) || previouslyWithheld) {
       if (!previouslyWithheld) this.withholdReward(team.ownerId, "cup", disciplineGrantId, { round:event.round, stage:event.stage, rewardType:kind });
       return null;
     }
     if (this.state.ledger.some((entry) => entry.type === "cup-pack-reward" && entry.accountId === team.ownerId && entry.grantId === awardKey)) return null;
-    const items = this.grantS4Pack(team.ownerId, CUP_ADVANCE_PACK_TYPE, CUP_ADVANCE_PACK_QUANTITY, { source:"cup", grantId:awardKey });
+    const packType = finalPackType ?? CUP_ADVANCE_PACK_TYPE;
+    const quantity = finalPackType ? 1 : CUP_ADVANCE_PACK_QUANTITY;
+    const items = this.grantS4Pack(team.ownerId, packType, quantity, { source:finalPackType ? "cup-final" : "cup", grantId:awardKey });
     const ledgerEntry = {
       id:makeId("ledger", `${team.id}-${awardKey}`),
       accountId:team.ownerId,
@@ -6731,22 +9920,95 @@ export class YellowDogsLeagueService {
       competition:"cup",
       stage:event.stage,
       award:kind,
-      packType:CUP_ADVANCE_PACK_TYPE,
-      quantity:CUP_ADVANCE_PACK_QUANTITY,
+      packType,
+      quantity,
       packIds:items.map((item) => item.id),
       round:event.round,
       createdAt:this.now(),
     };
     this.state.ledger.push(ledgerEntry);
+    if (finalPackType) {
+      const placementName = kind === "champion" ? "冠军" : "亚军";
+      const pack = S4_PACK_BY_ID[packType];
+      this.pushInbox(team, {
+        id:`cup-reward:${awardKey}:${team.id}`,
+        type:"reward",
+        title:`黄狗冠军杯${placementName}奖励已送达`,
+        summary:`获得1份${pack.name}。`,
+        body:`恭喜获得本届黄狗冠军杯${placementName}。1份${pack.name}已经发放到礼包背包，可以随时开启。`,
+        round:event.round,
+        payload:{ amount:0, competition:"cup", stage:"final", award:kind, grantId:awardKey, packType, quantity, packIds:items.map((item) => item.id) },
+      });
+      return ledgerEntry;
+    }
     const stageName = CUP_STAGE_NAMES[event.stage] ?? "决赛";
     this.pushInbox(team, {
       id:`cup-reward:${this.state.season.id}:${awardKey}:${team.id}`,
       type:"reward",
       title:`黄狗冠军杯${stageName}晋级奖励已送达`,
       summary:`获得 ${CUP_ADVANCE_PACK_QUANTITY} 个公共池随机礼包。`,
-      body:`恭喜晋级黄狗冠军杯${stageName === "四分之一决赛" ? "半决赛" : "决赛"}，${CUP_ADVANCE_PACK_QUANTITY}个公共池随机礼包已经发放到背包。决赛冠军奖励由管理员另行发放。`,
+      body:`恭喜晋级黄狗冠军杯${stageName === "四分之一决赛" ? "半决赛" : "决赛"}，${CUP_ADVANCE_PACK_QUANTITY}个公共池随机礼包已经发放到背包。冠亚军礼包将在决赛结束后自动发放。`,
       round:event.round,
       payload:{ amount:0, competition:"cup", stage:event.stage, award:kind, grantId:awardKey, packType:CUP_ADVANCE_PACK_TYPE, quantity:CUP_ADVANCE_PACK_QUANTITY, packIds:items.map((item) => item.id) },
+    });
+    return ledgerEntry;
+  }
+
+  awardSeasonFinalChampionStar(teamId, tournament) {
+    const team = this.state.teams.find((entry) => entry.id === teamId);
+    if (!team || !tournament?.id) return null;
+    team.seasonFinalChampionStars ??= [];
+    const existing = team.seasonFinalChampionStars.find((entry) => entry.tournamentId === tournament.id);
+    if (existing) return existing;
+    const star = {
+      tournamentId:tournament.id,
+      seasonId:tournament.seasonId ?? this.state.season.id,
+      awardedAt:this.now(),
+    };
+    team.seasonFinalChampionStars.push(star);
+    return star;
+  }
+
+  grantSeasonFinalPlacementReward(teamId, tournament, kind) {
+    this.ensureDisciplineState();
+    const team = this.state.teams.find((entry) => entry.id === teamId);
+    const packType = FINAL_PLACEMENT_REWARD_PACK_TYPES[kind] ?? null;
+    if (!team?.ownerId || !tournament?.id || !packType) return null;
+    const awardKey = `${tournament.id}:${kind}`;
+    const disciplineGrantId = `season-final-reward:${awardKey}`;
+    const previouslyWithheld = this.state.discipline.withheldRewards.some((entry) => entry.accountId === team.ownerId && entry.grantId === disciplineGrantId);
+    if (this.rewardsSuspended(team.ownerId) || previouslyWithheld) {
+      if (!previouslyWithheld) this.withholdReward(team.ownerId, "season-final", disciplineGrantId, { stage:"final", rewardType:kind, tournamentId:tournament.id });
+      return null;
+    }
+    if (this.state.ledger.some((entry) => entry.type === "season-final-pack-reward" && entry.accountId === team.ownerId && entry.grantId === awardKey)) return null;
+    const items = this.grantS4Pack(team.ownerId, packType, 1, { source:"season-final", grantId:awardKey });
+    const ledgerEntry = {
+      id:makeId("ledger", `${team.id}-${awardKey}`),
+      accountId:team.ownerId,
+      amount:0,
+      type:"season-final-pack-reward",
+      grantId:awardKey,
+      competition:"season-final",
+      stage:"final",
+      award:kind,
+      packType,
+      quantity:1,
+      packIds:items.map((item) => item.id),
+      tournamentId:tournament.id,
+      seasonId:tournament.seasonId ?? this.state.season.id,
+      createdAt:this.now(),
+    };
+    this.state.ledger.push(ledgerEntry);
+    const placementName = kind === "champion" ? "冠军" : "亚军";
+    const pack = S4_PACK_BY_ID[packType];
+    this.pushInbox(team, {
+      id:`season-final-reward:${awardKey}:${team.id}`,
+      type:"reward",
+      title:`赛季总决赛${placementName}奖励已送达`,
+      summary:`获得1份${pack.name}${kind === "champion" ? "，并永久增加一颗总决赛冠军星" : ""}。`,
+      body:`恭喜获得本届赛季总决赛${placementName}。1份${pack.name}已经发放到礼包背包${kind === "champion" ? "；冠军星已经记入球队永久荣誉，并会展示在联赛和杯赛积分榜的球队名称后" : ""}。`,
+      payload:{ amount:0, competition:"season-final", stage:"final", award:kind, grantId:awardKey, packType, quantity:1, packIds:items.map((item) => item.id), seasonFinalStarAwarded:kind === "champion" },
     });
     return ledgerEntry;
   }
@@ -6936,6 +10198,7 @@ export class YellowDogsLeagueService {
       this.state.season.status = "completed";
       this.state.season.completedAt = this.now();
       this.settleBallonDor();
+      this.ensureSeasonFinalTournament();
     }
     else {
       this.state.season.nextRoundAt = nextSlot(this.now());
@@ -6965,15 +10228,16 @@ export class YellowDogsLeagueService {
       const injured = team.rosterIds.filter((id) => Number(team.playerState[id]?.injuryRounds ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].injuryRounds }));
       const suspended = team.rosterIds.filter((id) => Number(team.playerState[id]?.suspension ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].suspension }));
       const next = this.nextOpponent(team.id);
+      const homeTicketIncome = this.homeTicketIncomeSummary(team, matchRecord);
       this.pushInbox(team, {
         id:`matchweek:${this.state.season.id}:${roundNumber}`,
         type:"matchweek",
         title:`第${roundNumber}轮比赛周战报`,
-        summary:`${team.name} ${ownScore}:${opponentScore} ${opponentName}，本轮${resultText}。`,
-        body:`球队目前排名第 ${rank}，积 ${team.table.points} 分。${next ? `下一轮将${next.venue === "home" ? "主场" : "客场"}迎战 ${next.name}。` : "本赛季赛程已经完成。"}`,
+        summary:`${team.name} ${ownScore}:${opponentScore} ${opponentName}，本轮${resultText}。${homeTicketIncome ? ` 主场门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}`,
+        body:`球队目前排名第 ${rank}，积 ${team.table.points} 分。${homeTicketIncome ? `本场共有${homeTicketIncome.attendance.toLocaleString("zh-CN")}名观众入场，门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}${next ? `下一轮将${next.venue === "home" ? "主场" : "客场"}迎战 ${next.name}。` : "本赛季赛程已经完成。"}`,
         round:roundNumber,
         matchId:ownMatch.id,
-        payload:{ results, rank, points:team.table.points, injured, suspended, next, autoRotations },
+        payload:{ results, rank, points:team.table.points, injured, suspended, next, autoRotations, homeTicketIncome },
       });
       if (autoRotations.length) {
         const details = autoRotations.map((rotation) => `${rotation.outName}因${rotation.reason}由${rotation.inName}自动替换`).join("；");
@@ -7052,13 +10316,21 @@ export class YellowDogsLeagueService {
       const didAdvance = Number(live.match.nextChainIndex ?? 0) > before;
       advanced = advanced || didAdvance;
       if (live.match.report) {
-        this.finalizeFixture(round.fixtures[live.fixtureIndex], round.number, live.match);
-        live.completed = true;
-        advanced = true;
+        if (options.persist !== false) this.persistLiveMatch(live, now, true);
+        advanced = this.queueLiveSettlement(live, () => {
+          const currentLiveRound = this.state.liveRound;
+          const currentRound = this.state.rounds.find((entry) => entry.number === currentLiveRound?.roundNumber);
+          if (!currentLiveRound || !currentRound) { delete live.settlementPending; return; }
+          this.roundNewUnavailable = new Set(currentLiveRound.newUnavailable ?? []);
+          this.finalizeFixture(currentRound.fixtures[live.fixtureIndex], currentRound.number, live.match);
+          live.completed = true;
+          delete live.settlementPending;
+          currentLiveRound.newUnavailable = [...this.roundNewUnavailable];
+          if (currentLiveRound.matches.every((entry) => entry.completed)) this.finishRound(currentRound, { deferSave:true });
+        }) || advanced;
       } else if (didAdvance && options.persist !== false) this.persistLiveMatch(live, now);
     }
     liveRound.newUnavailable = [...this.roundNewUnavailable];
-    if (liveRound.matches.every((entry) => entry.completed)) this.finishRound(round, { deferSave:true });
     return advanced;
   }
 
@@ -7070,6 +10342,8 @@ export class YellowDogsLeagueService {
         ? this.advanceLiveRound(now, { maximumMatches:1, maximumChainsPerMatch:1 })
         : this.state.liveCupRound
           ? this.advanceLiveCupRound(now, { maximumMatches:1, maximumChainsPerMatch:1 })
+          : this.state.liveSeasonFinalRound
+            ? this.advanceLiveSeasonFinalRound(now, { maximumChainsPerMatch:1 })
           : false;
       if (mainAdvanced) return true;
 
@@ -7096,7 +10370,7 @@ export class YellowDogsLeagueService {
 
   liveMatch(codeValue) {
     const code = String(codeValue ?? "").toUpperCase();
-    const live = this.liveAiTrainings.get(code) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === code && !entry.completed);
+    const live = this.liveAiTrainings.get(code) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === code && !entry.completed);
     if (!live) throw new Error("这场联赛直播已经结束");
     return live;
   }
@@ -7111,7 +10385,7 @@ export class YellowDogsLeagueService {
       this.state.completedBroadcasts.push({
         code:live.code,
         round:liveRound.roundNumber,
-        matchId:fixture?.matchId ?? null,
+        matchId:fixture?.matchId ?? live.matchId ?? null,
         completedAt:this.now(),
         spectators:clone(live.spectators ?? {}),
         match:publicLeagueMatch(live.match, this.now(), null, true),
@@ -7143,7 +10417,7 @@ export class YellowDogsLeagueService {
 
   broadcasts() {
     this.purgeCompletedBroadcasts();
-    return clone([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].filter((live) => !live.completed).map((live) => {
+    return clone([...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].filter((live) => !live.completed).map((live) => {
       this.cleanupLiveSpectators(live);
       const snapshot = publicLeagueMatch(live.match, this.now(), null, true);
       return {
@@ -7155,7 +10429,7 @@ export class YellowDogsLeagueService {
         segment:snapshot.segment,
         weather:snapshot.weather,
         spectatorCount:Object.keys(live.spectators ?? {}).length,
-        competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League",
+        competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : live.code.startsWith("YDL-FINAL-") ? "赛季总决赛" : "YellowDogs League",
       };
     }));
   }
@@ -7185,11 +10459,35 @@ export class YellowDogsLeagueService {
         homeName:teamName(fixture.homeId), awayName:teamName(fixture.awayId),
       }));
     }
+    const tournament = this.state.seasonFinalTournament;
+    if (tournament && !tournament.preview && !["completed", "cancelled"].includes(tournament.status)) {
+      tournament.bracket.filter((node) => node.status === "pending" && Number(node.scheduledAt) > now).forEach((node) => {
+        const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
+        const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
+        if (!homeId || !awayId) return;
+        const fixture = { homeId, awayId };
+        if (!hasClubOwner(fixture)) return;
+        upcoming.push({
+          id:`season-final:${tournament.id}:${node.id}`,
+          competition:"season-final",
+          competitionName:"赛季总决赛",
+          round:node.order + 1,
+          label:node.group === "final" ? `${node.id} · 最终决赛第${Number(node.id.slice(-1))}回合` : node.id,
+          startsAt:Number(node.scheduledAt),
+          homeName:teamName(homeId),
+          awayName:teamName(awayId),
+        });
+      });
+    }
     return clone(upcoming.sort((left, right) => Number(left.startsAt) - Number(right.startsAt) || left.competition.localeCompare(right.competition)).slice(0, 24));
   }
 
   broadcastView(live) {
     this.cleanupLiveSpectators(live);
+    const homeTeam = live.aiTraining
+      ? this.accountTeam(live.ownerId)
+      : this.state.teams.find((team) => team.name === live.match?.teams?.[0]?.name);
+    if (homeTeam) live.match.stadium = this.clubBroadcastVenue(homeTeam);
     const protectMirrorTactics = live.aiTraining && live.mirrorKind === "full";
     const match = publicLeagueMatch(live.match, this.now(), protectMirrorTactics ? 0 : null, true);
     if (protectMirrorTactics) {
@@ -7228,7 +10526,7 @@ export class YellowDogsLeagueService {
 
   watchView(code, spectatorToken) {
     const codeKey = String(code ?? "").toUpperCase();
-    const live = this.liveAiTrainings.get(codeKey) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
+    const live = this.liveAiTrainings.get(codeKey) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
     if (live) {
       if (!live.spectators?.[spectatorToken]) throw new Error("观赛会话已过期，请重新进入直播");
       live.spectators[spectatorToken].lastSeenAt = this.now();
@@ -7249,7 +10547,7 @@ export class YellowDogsLeagueService {
 
   leaveWatch(code, spectatorToken) {
     const codeKey = String(code ?? "").toUpperCase();
-    const live = this.liveAiTrainings.get(codeKey) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
+    const live = this.liveAiTrainings.get(codeKey) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
     if (live) delete live.spectators?.[spectatorToken];
     const completed = this.completedBroadcast(code);
     if (completed) delete completed.spectators?.[spectatorToken];
@@ -7262,6 +10560,54 @@ export class YellowDogsLeagueService {
       packType:DAILY_SETTLEMENT_PACK_TYPE,
       packQuantity:DAILY_SETTLEMENT_PACK_QUANTITY,
     };
+  }
+
+  settleLeagueRankingGiftPacks() {
+    const season = this.state.season;
+    if (season.status !== "completed") return null;
+    const settlementId = `${season.id}+league-ranking-gifts`;
+    const standings = this.standings();
+    const rewardedAt = this.now();
+    const recipients = standings.filter((entry) => LEAGUE_RANKING_GIFT_QUANTITIES[entry.rank]).map((entry) => {
+      const team = this.state.teams.find((candidate) => candidate.id === entry.id);
+      const quantity = LEAGUE_RANKING_GIFT_QUANTITIES[entry.rank];
+      if (!team?.ownerId) return { teamId:entry.id, rank:entry.rank, quantity, packIds:[], skipped:true };
+      const grantId = `${settlementId}:${team.ownerId}`;
+      const existing = this.state.ledger.find((ledgerEntry) => ledgerEntry.type === "league-ranking-gift-settlement" && ledgerEntry.grantId === grantId);
+      if (existing) return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, quantity, packIds:existing.packIds ?? [], alreadyGranted:true };
+      const packs = this.grantS4Pack(team.ownerId, LEAGUE_RANKING_GIFT_PACK_TYPE, quantity, { source:"league-ranking-settlement", grantId });
+      const packIds = packs.map((pack) => pack.id);
+      this.state.ledger.push({
+        id:`league-ranking-gift-settlement:${season.id}:${team.ownerId}`,
+        accountId:team.ownerId,
+        amount:0,
+        type:"league-ranking-gift-settlement",
+        grantId,
+        seasonId:season.id,
+        rank:entry.rank,
+        packType:LEAGUE_RANKING_GIFT_PACK_TYPE,
+        quantity,
+        packIds,
+        createdAt:rewardedAt,
+      });
+      this.pushInbox(team, {
+        id:`league-ranking-gifts:${season.id}:${team.ownerId}`,
+        type:"reward",
+        title:`${season.name} 联赛名次追加奖励已到账`,
+        summary:`最终排名第${entry.rank}名，获得${quantity}个私有池+3指定礼包。`,
+        body:`本赛季联赛最终排名第${entry.rank}名，${quantity}个私有池+3指定礼包已经发放到 S4 礼包背包。`,
+        payload:{ settlementId, seasonId:season.id, rank:entry.rank, competition:"league", award:"ranking-gift", packType:LEAGUE_RANKING_GIFT_PACK_TYPE, quantity, packIds },
+      });
+      return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, quantity, packIds };
+    });
+    const settlement = { id:settlementId, seasonId:season.id, seasonName:season.name, status:"completed", rewardedAt, packType:LEAGUE_RANKING_GIFT_PACK_TYPE, recipients };
+    this.state.dailyAutomation.leagueRankingGiftSettlements ??= [];
+    const index = this.state.dailyAutomation.leagueRankingGiftSettlements.findIndex((entry) => entry.id === settlementId);
+    if (index >= 0) this.state.dailyAutomation.leagueRankingGiftSettlements[index] = settlement;
+    else this.state.dailyAutomation.leagueRankingGiftSettlements.push(settlement);
+    this.state.dailyAutomation.leagueRankingGiftSettlements = this.state.dailyAutomation.leagueRankingGiftSettlements.slice(-30);
+    this.save();
+    return clone(settlement);
   }
 
   ballonDorCandidates() {
@@ -7315,22 +10661,27 @@ export class YellowDogsLeagueService {
     collect(this.state.playerStats, "league", 1);
     collect(this.state.cup?.playerStats, "cup", BALLON_DOR_CUP_WEIGHT);
 
-    const leagueChampionId = this.state.season.status === "completed" ? this.standings()[0]?.id ?? null : null;
+    const leagueStandings = this.state.season.status === "completed" ? this.standings() : [];
+    const leagueChampionId = leagueStandings[0]?.id ?? null;
+    const leagueRunnerUpId = leagueStandings[1]?.id ?? null;
     const cupChampionId = this.state.cup?.status === "completed" ? this.state.cup.championId ?? null : null;
+    const cupFinal = this.state.cup?.status === "completed" ? this.state.cup.knockout?.final?.[0] ?? null : null;
+    const cupRunnerUpId = cupChampionId ? cupFinal?.teams?.find((teamId) => teamId !== cupChampionId) ?? null : null;
+    const seasonFinalTie = this.state.seasonFinalTournament?.status === "completed" ? this.state.seasonFinalTournament.finalTie : null;
+    const seasonFinalChampionId = seasonFinalTie?.championId ?? null;
+    const seasonFinalRunnerUpId = seasonFinalChampionId ? [seasonFinalTie.winnerBracketChampionId, seasonFinalTie.loserBracketChampionId].find((teamId) => teamId && teamId !== seasonFinalChampionId) ?? null : null;
     return [...candidates.values()].filter((candidate) => candidate.appearances >= BALLON_DOR_MINIMUM_APPEARANCES && this.representativeCard(candidate.ownerId, candidate.playerId)).map((candidate) => {
       const averageRating = candidate.ratingTotal / Math.max(1, candidate.appearances);
       const weightedAverageRating = candidate.weightedRatingTotal / Math.max(1, candidate.weightedAppearances);
       const leagueChampion = candidate.teamId === leagueChampionId;
+      const leagueRunnerUp = candidate.teamId === leagueRunnerUpId;
       const cupChampion = candidate.teamId === cupChampionId;
+      const cupRunnerUp = candidate.teamId === cupRunnerUpId;
+      const seasonFinalChampion = candidate.teamId === seasonFinalChampionId;
+      const seasonFinalRunnerUp = candidate.teamId === seasonFinalRunnerUpId;
       const card = this.representativeCard(candidate.ownerId, candidate.playerId);
-      const breakdown = {
-        goals:Number((candidate.weightedGoals * BALLON_DOR_SCORING.goal).toFixed(2)),
-        assists:Number((candidate.weightedAssists * BALLON_DOR_SCORING.assist).toFixed(2)),
-        rating:Number((Math.max(0, weightedAverageRating - 6) * BALLON_DOR_SCORING.rating).toFixed(2)),
-        appearances:Number((Math.min(30, candidate.weightedAppearances) * BALLON_DOR_SCORING.appearance).toFixed(2)),
-        leagueChampion:leagueChampion ? BALLON_DOR_SCORING.leagueChampion : 0,
-        cupChampion:cupChampion ? BALLON_DOR_SCORING.cupChampion : 0,
-      };
+      const placements = { leagueChampion, leagueRunnerUp, cupChampion, cupRunnerUp, seasonFinalChampion, seasonFinalRunnerUp };
+      const breakdown = ballonDorBreakdown(candidate, placements);
       const score = Object.values(breakdown).reduce((sum, value) => sum + value, 0);
       return {
         playerId:candidate.playerId,
@@ -7349,23 +10700,286 @@ export class YellowDogsLeagueService {
         weightedAverageRating:Number(weightedAverageRating.toFixed(3)),
         league:{ ...candidate.league, averageRating:candidate.league.appearances ? Number((candidate.league.ratingTotal / candidate.league.appearances).toFixed(2)) : 0 },
         cup:{ ...candidate.cup, averageRating:candidate.cup.appearances ? Number((candidate.cup.ratingTotal / candidate.cup.appearances).toFixed(2)) : 0 },
-        champions:{ league:leagueChampion, cup:cupChampion },
+        champions:{ league:placements.leagueChampion, cup:placements.cupChampion, seasonFinal:placements.seasonFinalChampion },
+        runnerUps:{ league:placements.leagueRunnerUp, cup:placements.cupRunnerUp, seasonFinal:placements.seasonFinalRunnerUp },
         breakdown,
         score:Number(score.toFixed(2)),
       };
-    }).sort((left, right) => right.score - left.score
-      || right.weightedAverageRating - left.weightedAverageRating
-      || right.goals - left.goals
-      || right.assists - left.assists
-      || right.appearances - left.appearances
-      || left.teamId.localeCompare(right.teamId)
-      || left.playerId.localeCompare(right.playerId));
+    }).sort(compareBallonDorCandidates);
+  }
+
+  archivedBallonDorCandidates(archive, previousResult) {
+    const standings = [...(archive?.standings ?? [])].sort((left, right) => Number(left.rank ?? TEAM_COUNT) - Number(right.rank ?? TEAM_COUNT));
+    const teams = new Map(standings.map((standing) => {
+      const archivedTeam = standing.team ?? {};
+      const currentTeam = this.state.teams.find((team) => team.id === standing.id || team.ownerId && team.ownerId === archivedTeam.ownerId);
+      return [standing.id, {
+        id:standing.id,
+        name:archivedTeam.name ?? standing.name ?? currentTeam?.name ?? standing.id,
+        ownerId:archivedTeam.ownerId ?? currentTeam?.ownerId ?? null,
+        ownerName:archivedTeam.ownerName ?? currentTeam?.ownerName ?? null,
+      }];
+    }));
+    const previousCandidates = [previousResult?.winner, ...(previousResult?.candidates ?? [])].filter(Boolean);
+    const previousByKey = new Map(previousCandidates.map((candidate) => [`${candidate.teamId}:${candidate.playerId}`, candidate]));
+    const candidates = new Map();
+    const collect = (source, competition, weight) => {
+      Object.values(source ?? {}).forEach((entry) => {
+        const player = REAL_PLAYER_BY_ID[entry.playerId];
+        const team = teams.get(entry.teamId);
+        const appearances = Math.max(0, Number(entry.appearances ?? 0));
+        if (!player || !team?.ownerId || !appearances) return;
+        const candidateKey = `${team.id}:${player.id}`;
+        const current = candidates.get(candidateKey) ?? {
+          candidateKey,
+          playerId:player.id,
+          playerName:player.name,
+          role:player.role,
+          grade:player.grade,
+          teamId:team.id,
+          teamName:team.name,
+          ownerId:team.ownerId,
+          ownerName:team.ownerName,
+          appearances:0,
+          goals:0,
+          assists:0,
+          ratingTotal:0,
+          weightedAppearances:0,
+          weightedGoals:0,
+          weightedAssists:0,
+          weightedRatingTotal:0,
+          league:{ appearances:0, goals:0, assists:0, ratingTotal:0 },
+          cup:{ appearances:0, goals:0, assists:0, ratingTotal:0 },
+        };
+        const goals = Math.max(0, Number(entry.goals ?? 0));
+        const assists = Math.max(0, Number(entry.assists ?? 0));
+        const ratingTotal = Math.max(0, Number(entry.ratingTotal ?? 0));
+        current.appearances += appearances;
+        current.goals += goals;
+        current.assists += assists;
+        current.ratingTotal += ratingTotal;
+        current.weightedAppearances += appearances * weight;
+        current.weightedGoals += goals * weight;
+        current.weightedAssists += assists * weight;
+        current.weightedRatingTotal += ratingTotal * weight;
+        current[competition].appearances += appearances;
+        current[competition].goals += goals;
+        current[competition].assists += assists;
+        current[competition].ratingTotal += ratingTotal;
+        candidates.set(candidateKey, current);
+      });
+    };
+    collect(archive?.playerStats, "league", 1);
+    collect(archive?.cup?.playerStats, "cup", BALLON_DOR_CUP_WEIGHT);
+
+    const leagueChampionId = standings[0]?.id ?? null;
+    const leagueRunnerUpId = standings[1]?.id ?? null;
+    const cupChampionId = archive?.cup?.status === "completed" ? archive.cup.championId ?? null : null;
+    const cupFinal = archive?.cup?.status === "completed" ? archive.cup.knockout?.final?.[0] ?? null : null;
+    const cupRunnerUpId = cupChampionId ? cupFinal?.teams?.find((teamId) => teamId !== cupChampionId) ?? null : null;
+    const seasonFinalTie = archive?.seasonFinalTournament?.status === "completed" ? archive.seasonFinalTournament.finalTie : null;
+    const seasonFinalChampionId = seasonFinalTie?.championId ?? null;
+    const seasonFinalRunnerUpId = seasonFinalChampionId ? [seasonFinalTie.winnerBracketChampionId, seasonFinalTie.loserBracketChampionId].find((teamId) => teamId && teamId !== seasonFinalChampionId) ?? null : null;
+    return [...candidates.values()].filter((candidate) => candidate.appearances >= BALLON_DOR_MINIMUM_APPEARANCES).map((candidate) => {
+      const weightedAverageRating = candidate.weightedRatingTotal / Math.max(1, candidate.weightedAppearances);
+      const averageRating = candidate.ratingTotal / Math.max(1, candidate.appearances);
+      const placements = {
+        leagueChampion:candidate.teamId === leagueChampionId,
+        leagueRunnerUp:candidate.teamId === leagueRunnerUpId,
+        cupChampion:candidate.teamId === cupChampionId,
+        cupRunnerUp:candidate.teamId === cupRunnerUpId,
+        seasonFinalChampion:candidate.teamId === seasonFinalChampionId,
+        seasonFinalRunnerUp:candidate.teamId === seasonFinalRunnerUpId,
+      };
+      const breakdown = ballonDorBreakdown(candidate, placements);
+      const previous = previousByKey.get(candidate.candidateKey);
+      const currentCard = this.representativeCard(candidate.ownerId, candidate.playerId);
+      return {
+        playerId:candidate.playerId,
+        playerName:candidate.playerName,
+        role:candidate.role,
+        grade:candidate.grade,
+        teamId:candidate.teamId,
+        teamName:candidate.teamName,
+        ownerId:candidate.ownerId,
+        ownerName:candidate.ownerName,
+        cardId:previous?.cardId ?? currentCard?.id ?? null,
+        appearances:candidate.appearances,
+        goals:candidate.goals,
+        assists:candidate.assists,
+        averageRating:Number(averageRating.toFixed(2)),
+        weightedAverageRating:Number(weightedAverageRating.toFixed(3)),
+        league:{ ...candidate.league, averageRating:candidate.league.appearances ? Number((candidate.league.ratingTotal / candidate.league.appearances).toFixed(2)) : 0 },
+        cup:{ ...candidate.cup, averageRating:candidate.cup.appearances ? Number((candidate.cup.ratingTotal / candidate.cup.appearances).toFixed(2)) : 0 },
+        champions:{ league:placements.leagueChampion, cup:placements.cupChampion, seasonFinal:placements.seasonFinalChampion },
+        runnerUps:{ league:placements.leagueRunnerUp, cup:placements.cupRunnerUp, seasonFinal:placements.seasonFinalRunnerUp },
+        breakdown,
+        score:Number(Object.values(breakdown).reduce((sum, value) => sum + value, 0).toFixed(2)),
+      };
+    }).sort(compareBallonDorCandidates);
+  }
+
+  ballonDorReconciliationCard(candidate) {
+    const recorded = candidate?.cardId ? this.state.s4Assets.cards[candidate.cardId] : null;
+    if (recorded) return recorded;
+    const current = this.representativeCard(candidate?.ownerId, candidate?.playerId);
+    if (current) return current;
+    return Object.values(this.state.s4Assets.cards ?? {})
+      .filter((card) => card.playerId === candidate?.playerId && card.previousOwnerId === candidate?.ownerId)
+      .sort((left, right) => Number(right.upgradeLevel ?? 0) - Number(left.upgradeLevel ?? 0)
+        || Number(right.traitIds?.length ?? 0) - Number(left.traitIds?.length ?? 0)
+        || String(left.id).localeCompare(String(right.id)))[0] ?? null;
+  }
+
+  ballonDorSeasonLabel(seasonId, fallback = null) {
+    const processedSeasonIds = this.state.honorRoom?.processedSeasonIds ?? [];
+    const processedIndex = processedSeasonIds.indexOf(seasonId);
+    if (processedIndex >= 0) return `S${processedIndex + 1}`;
+    if (seasonId && seasonId === this.state.season?.id) return `S${processedSeasonIds.length + 1}`;
+    return fallback ?? seasonId ?? "未知赛季";
+  }
+
+  reconcileHistoricalBallonDor() {
+    const ballonDor = this.state.ballonDor ?? (this.state.ballonDor = { schemaVersion:3, results:[] });
+    if (Number(ballonDor.reconciliationVersion ?? 0) >= BALLON_DOR_RECONCILIATION_VERSION) return false;
+    const auditedAt = this.now();
+    const archivesBySeason = new Map((this.state.archives ?? []).map((archive) => [archive.season?.id, archive]));
+    const audits = [];
+    const results = [...(ballonDor.results ?? [])];
+
+    results.forEach((previousResult) => {
+      if (previousResult.status !== "completed" || !previousResult.winner) return;
+      const archiveSummary = archivesBySeason.get(previousResult.seasonId);
+      const archive = archiveSummary && this.shardStore
+        ? this.shardStore.readFullArchive(archiveSummary) ?? archiveSummary
+        : archiveSummary;
+      const seasonLabel = this.ballonDorSeasonLabel(previousResult.seasonId, previousResult.seasonName);
+      const candidates = archive
+        ? this.archivedBallonDorCandidates(archive, previousResult)
+        : previousResult.seasonId === this.state.season.id && this.state.season.status === "completed"
+          ? this.ballonDorCandidates()
+          : [];
+      if (!candidates.length) {
+        audits.push({ seasonId:previousResult.seasonId, seasonName:previousResult.seasonName, seasonLabel, status:"insufficient-data", previousWinner:clone(previousResult.winner) });
+        return;
+      }
+
+      const winner = { ...candidates[0] };
+      const previousWinner = previousResult.winner;
+      const changed = previousWinner.teamId !== winner.teamId || previousWinner.playerId !== winner.playerId;
+      let rewardStatus = "unchanged";
+      let rewardAmount = 0;
+      let revokedCardId = null;
+      let awardedCardId = winner.cardId ?? null;
+      if (changed) {
+        const previousCard = previousWinner.cardId ? this.state.s4Assets.cards[previousWinner.cardId] : null;
+        if (previousCard) {
+          previousCard.ballonDorWins = Math.max(0, Number(previousCard.ballonDorWins ?? 0) - 1);
+          revokedCardId = previousCard.id;
+        }
+        const winningCard = this.ballonDorReconciliationCard(winner);
+        if (winningCard) {
+          winningCard.ballonDorWins = Number(winningCard.ballonDorWins ?? 0) + 1;
+          winner.cardId = winningCard.id;
+          winner.awardNumber = winningCard.ballonDorWins;
+          awardedCardId = winningCard.id;
+        } else winner.awardNumber = 1;
+
+        const alreadyRewarded = this.state.ledger.some((entry) => entry.type === "ballon-dor-owner-reward" && entry.seasonId === previousResult.seasonId && entry.accountId === winner.ownerId);
+        if (alreadyRewarded) rewardStatus = "already-rewarded";
+        else {
+          rewardStatus = "supplemented";
+          rewardAmount = BALLON_DOR_OWNER_REWARD;
+          this.wallet(winner.ownerId).balance += rewardAmount;
+          this.state.ledger.push({
+            id:`ballon-dor-reconciliation:${previousResult.seasonId}:${winner.ownerId}`,
+            accountId:winner.ownerId,
+            amount:rewardAmount,
+            type:"ballon-dor-owner-reward",
+            grantId:`ballon-dor-reconciliation:${previousResult.seasonId}:${winner.ownerId}`,
+            seasonId:previousResult.seasonId,
+            playerId:winner.playerId,
+            cardId:winner.cardId ?? null,
+            teamId:winner.teamId,
+            reconciliationVersion:BALLON_DOR_RECONCILIATION_VERSION,
+            createdAt:auditedAt,
+          });
+        }
+      } else winner.awardNumber = Number(previousWinner.awardNumber ?? this.state.s4Assets.cards[previousWinner.cardId]?.ballonDorWins ?? 1);
+
+      const podium = candidates.slice(0, 3).map((candidate, index) => ({ rank:index + 1, ...candidate, ...(index === 0 ? { cardId:winner.cardId } : {}) }));
+      const corrected = {
+        ...previousResult,
+        minimumAppearances:BALLON_DOR_MINIMUM_APPEARANCES,
+        cupWeight:BALLON_DOR_CUP_WEIGHT,
+        scoring:{ ...BALLON_DOR_SCORING },
+        winner,
+        rewardedOwnerId:winner.ownerId,
+        ownerReward:BALLON_DOR_OWNER_REWARD,
+        podium,
+        candidates:candidates.slice(0, 10).map((candidate, index) => index === 0 ? { ...candidate, cardId:winner.cardId } : candidate),
+        reconciliation:{ version:BALLON_DOR_RECONCILIATION_VERSION, auditedAt, changed, previousWinner:clone(previousWinner), rewardStatus, rewardAmount },
+      };
+      const resultIndex = ballonDor.results.findIndex((entry) => entry.id === previousResult.id);
+      if (resultIndex >= 0) ballonDor.results[resultIndex] = corrected;
+      if (archive) archive.ballonDorResult = clone(corrected);
+
+      if (changed && this.state.honorRoom?.processedSeasonIds?.includes(previousResult.seasonId)) {
+        Object.values(this.state.honorRoom.clubs ?? {}).forEach((club) => {
+          club.ballonDor = (club.ballonDor ?? []).filter((award) => award.seasonId !== previousResult.seasonId);
+        });
+        const winnerTeam = this.state.teams.find((team) => team.ownerId === winner.ownerId);
+        if (winnerTeam) this.ensureHonorRoomClub(winnerTeam).ballonDor.push({ season:seasonLabel, seasonId:previousResult.seasonId, playerId:winner.playerId, playerName:winner.playerName });
+        this.state.honorRoom.updatedAt = auditedAt;
+      }
+
+      audits.push({
+        seasonId:previousResult.seasonId,
+        seasonName:previousResult.seasonName,
+        seasonLabel,
+        status:changed ? "changed" : "unchanged",
+        previousWinner:{ ownerId:previousWinner.ownerId, ownerName:previousWinner.ownerName, playerId:previousWinner.playerId, playerName:previousWinner.playerName, score:previousWinner.score },
+        winner:{ ownerId:winner.ownerId, ownerName:winner.ownerName, playerId:winner.playerId, playerName:winner.playerName, score:winner.score },
+        rewardStatus,
+        rewardAmount,
+        revokedCardId,
+        awardedCardId,
+      });
+    });
+
+    const changedAudits = audits.filter((audit) => audit.status === "changed");
+    const supplemented = audits.filter((audit) => audit.rewardStatus === "supplemented");
+    const publicLines = audits.length ? audits.map((audit, index) => {
+      if (audit.status === "insufficient-data") return `${index + 1}. ${audit.seasonLabel}：缺少完整赛季归档，保留原评选结果。`;
+      if (audit.status === "unchanged") return `${index + 1}. ${audit.seasonLabel}：复核后得主不变，仍为${audit.winner.ownerName}的${audit.winner.playerName}（${Number(audit.winner.score ?? 0).toFixed(2)}分）。`;
+      const rewardText = audit.rewardStatus === "supplemented" ? `新得主补发${audit.rewardAmount.toLocaleString("zh-CN")}金币` : "新得主已有该赛季奖励记录，不重复发放金币";
+      return `${index + 1}. ${audit.seasonLabel}：原得主${audit.previousWinner.ownerName}的${audit.previousWinner.playerName}调整为${audit.winner.ownerName}的${audit.winner.playerName}（${Number(audit.winner.score ?? 0).toFixed(2)}分）；原金球标识收回，原已发金币不追回；${rewardText}。`;
+    }) : ["当前没有需要追溯复核的已发金球奖。"];
+    const ruleText = "新标准：联赛冠军35分、联赛亚军15分、杯赛冠军30分、杯赛亚军10分；其余进球、助攻、评分、出场门槛及杯赛1.25倍权重保持不变。";
+    this.state.teams.filter((team) => team.ownerId).forEach((team) => {
+      const personal = [];
+      changedAudits.forEach((audit) => {
+        if (audit.previousWinner.ownerId === team.ownerId) personal.push(`${audit.seasonLabel}：${audit.previousWinner.playerName}的原金球奖标识已收回，已发金币不追回。`);
+        if (audit.winner.ownerId === team.ownerId) personal.push(`${audit.seasonLabel}：${audit.winner.playerName}补发金球奖；${audit.rewardStatus === "supplemented" ? `${audit.rewardAmount.toLocaleString("zh-CN")}金币已到账` : "金币已有发放记录，本次不重复发放"}。`);
+      });
+      this.pushInbox(team, {
+        id:`ballon-dor-reconciliation-v${BALLON_DOR_RECONCILIATION_VERSION}:${team.ownerId}`,
+        type:"announcement",
+        title:"金球奖评分调整及历史重新评选公告",
+        summary:`金球奖冠亚军加分已经调整，已复核${audits.length}届，改判${changedAudits.length}届，补发金币${supplemented.length}笔。`,
+        body:`${ruleText}\n\n历史复核结果：\n${publicLines.join("\n")}\n\n${personal.length ? `与你相关的处理：\n${personal.join("\n")}` : "你没有需要没收或补发的个人奖项。"}\n\n本次处理原则：错误金球标识予以收回，正确得主补发金球标识和应得奖励；过去已经发出的金币一律不追回，同一赛季已有金球奖励记录的玩家不重复领取。`,
+        payload:{ reconciliationVersion:BALLON_DOR_RECONCILIATION_VERSION, auditedAt, auditedSeasons:audits.length, changedSeasons:changedAudits.length, supplementedRewards:supplemented.length },
+      });
+    });
+    ballonDor.reconciliationVersion = BALLON_DOR_RECONCILIATION_VERSION;
+    ballonDor.reconciliation = { version:BALLON_DOR_RECONCILIATION_VERSION, auditedAt, audits:clone(audits) };
+    return true;
   }
 
   settleBallonDor() {
     const season = this.state.season;
-    if (season.status !== "completed" || this.state.cup?.status === "active") return null;
-    this.state.ballonDor ??= { schemaVersion:2, results:[] };
+    if (season.status !== "completed" || this.state.cup?.status !== "completed" || this.state.seasonFinalTournament?.status !== "completed") return null;
+    this.state.ballonDor ??= { schemaVersion:3, reconciliationVersion:BALLON_DOR_RECONCILIATION_VERSION, results:[] };
     const existing = this.state.ballonDor.results.find((entry) => entry.seasonId === season.id);
     if (existing) return clone(existing);
     const candidates = this.ballonDorCandidates();
@@ -7405,7 +11019,7 @@ export class YellowDogsLeagueService {
       this.state.ledger.push({ id:`ballon-dor-owner-reward:${season.id}:${rewardedOwnerId}`, accountId:rewardedOwnerId, amount:BALLON_DOR_OWNER_REWARD, type:"ballon-dor-owner-reward", grantId, seasonId:season.id, playerId:winner.playerId, cardId:winner.cardId, teamId:winner.teamId, createdAt:result.awardedAt });
     }
 
-    const championText = [winner.champions.league ? "联赛冠军" : null, winner.champions.cup ? "杯赛冠军" : null].filter(Boolean).join("、") || "无冠军加成";
+    const championText = [winner.champions.league ? "联赛冠军" : null, winner.runnerUps.league ? "联赛亚军" : null, winner.champions.cup ? "杯赛冠军" : null, winner.runnerUps.cup ? "杯赛亚军" : null, winner.champions.seasonFinal ? "赛季总决赛冠军" : null, winner.runnerUps.seasonFinal ? "赛季总决赛亚军" : null].filter(Boolean).join("、") || "无冠亚军加成";
     const podiumText = podium.map((candidate) => `第${candidate.rank}名：${candidate.ownerName}的${candidate.playerName}（${candidate.teamName}），${candidate.score.toFixed(2)}分，${candidate.appearances}场${candidate.goals}球${candidate.assists}助攻，平均评分${candidate.averageRating.toFixed(2)}`).join("；");
     const awardDate = localDateKey(new Date(result.awardedAt));
     this.state.teams.filter((team) => team.ownerId).forEach((team) => {
@@ -7415,7 +11029,7 @@ export class YellowDogsLeagueService {
         type:rewarded ? "reward" : "announcement",
         title:`${awardDate} 当日金球奖：${winner.ownerName}的${winner.playerName}`,
         summary:`${winner.ownerName}的${winner.playerName}以${winner.score.toFixed(2)}分当选，${winner.appearances}场贡献${winner.goals}球、${winner.assists}次助攻，平均评分${winner.averageRating.toFixed(2)}。`,
-        body:`本次评选合并联赛与杯赛正式数据，参评门槛为至少${BALLON_DOR_MINIMUM_APPEARANCES}次出场，杯赛表现按${BALLON_DOR_CUP_WEIGHT}倍计入。${winner.playerName}的冠军情况：${championText}。得分构成为：进球${winner.breakdown.goals}分、助攻${winner.breakdown.assists}分、评分${winner.breakdown.rating}分、出场稳定性${winner.breakdown.appearances}分、联赛冠军${winner.breakdown.leagueChampion}分、杯赛冠军${winner.breakdown.cupChampion}分。金球积分前三名：${podiumText}。${rewarded ? `你持有该球员卡，${BALLON_DOR_OWNER_REWARD.toLocaleString("zh-CN")}金币奖励已经到账。` : "获奖球员卡将永久累计一枚金色地球标识。"}`,
+        body:`本次评选在赛季总决赛结束后进行，合并联赛与杯赛正式数据，参评门槛为至少${BALLON_DOR_MINIMUM_APPEARANCES}次出场，杯赛表现按${BALLON_DOR_CUP_WEIGHT}倍计入。${winner.playerName}的冠亚军情况：${championText}。得分构成为：进球${winner.breakdown.goals}分、助攻${winner.breakdown.assists}分、评分${winner.breakdown.rating}分、出场稳定性${winner.breakdown.appearances}分、联赛冠军${winner.breakdown.leagueChampion}分、联赛亚军${winner.breakdown.leagueRunnerUp}分、杯赛冠军${winner.breakdown.cupChampion}分、杯赛亚军${winner.breakdown.cupRunnerUp}分、赛季总决赛冠军${winner.breakdown.seasonFinalChampion}分、赛季总决赛亚军${winner.breakdown.seasonFinalRunnerUp}分。金球积分前三名：${podiumText}。${rewarded ? `你持有该球员卡，${BALLON_DOR_OWNER_REWARD.toLocaleString("zh-CN")}金币奖励已经到账。` : "获奖球员卡将永久累计一枚金色地球标识。"}`,
         payload:{ ballonDorResultId:result.id, winner:result.winner, podium, rewarded, rewardAmount:rewarded ? BALLON_DOR_OWNER_REWARD : 0 },
       });
     });
@@ -7425,6 +11039,9 @@ export class YellowDogsLeagueService {
   settleDailySeason(options = {}) {
     this.ensureDisciplineState();
     const season = this.state.season;
+    if (season.status !== "completed") throw new Error("当前联赛尚未完成，不能发放赛季排名奖励");
+    if (this.state.cup?.status !== "completed" || this.state.seasonFinalTournament?.status !== "completed") return null;
+    const leagueRankingGiftSettlement = this.settleLeagueRankingGiftPacks();
     const settlementId = `${season.id}+daily-settlement`;
     const automation = this.state.dailyAutomation;
     const existing = automation.settlements.find((entry) => entry.id === settlementId);
@@ -7432,9 +11049,8 @@ export class YellowDogsLeagueService {
     const ballonDorResult = this.settleBallonDor();
     if (automation.lastRewardedSeasonId === season.id || existing?.status === "completed") {
       if (!hadBallonDorResult && ballonDorResult) this.save();
-      return clone(existing);
+      return clone(existing ?? leagueRankingGiftSettlement);
     }
-    if (season.status !== "completed") throw new Error("当前联赛尚未完成，不能发放赛季排名奖励");
     if (!options.manual && this.now() < Number(season.completedAt ?? 0) + DAILY_SETTLEMENT_DELAY_MS) return null;
 
     const standings = this.standings();
@@ -7485,7 +11101,7 @@ export class YellowDogsLeagueService {
       return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, points:entry.points, ...reward, packIds };
     });
 
-    const settlement = { id:settlementId, seasonId:season.id, seasonName:season.name, status:"completed", rewardedAt, recipients, ballonDorResultId:ballonDorResult?.id ?? null };
+    const settlement = { id:settlementId, seasonId:season.id, seasonName:season.name, status:"completed", rewardedAt, recipients, ballonDorResultId:ballonDorResult?.id ?? null, leagueRankingGiftSettlementId:leagueRankingGiftSettlement?.id ?? null };
     const index = automation.settlements.findIndex((entry) => entry.id === settlementId);
     if (index >= 0) automation.settlements[index] = settlement;
     else automation.settlements.push(settlement);
@@ -7504,27 +11120,29 @@ export class YellowDogsLeagueService {
     const date = localDateKey(new Date(now));
     const automation = this.state.dailyAutomation;
     if (!options.manual && automation.lastResetDate === date) return false;
-    if (this.state.season.status === "completed" && this.state.cup?.status === "active") {
-      throw new Error("杯赛尚未结束，不能在金球奖完成评选前重置当日赛事");
+    const seasonFinalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
+    if (process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed" && (this.state.cup?.status !== "completed" || !seasonFinalResolved)) {
+      throw new Error("杯赛或赛季总决赛尚未结束，不能在金球奖完成评选前重置当日赛事");
     }
-    if (!options.skipRewardCheck && this.state.season.status === "completed" && automation.lastRewardedSeasonId !== this.state.season.id) {
+    if (process.env.YDL_OFFLINE_MODE !== "1" && !options.skipRewardCheck && this.state.season.status === "completed" && automation.lastRewardedSeasonId !== this.state.season.id) {
       throw new Error("当前已完赛联赛尚未发放排名奖励，请先手动补发奖励");
     }
 
     if (!options.skipBackup) this.backupFile(`before-daily-reset-${date}-${now}.json`);
     if (!options.skipHonorRoomUpdate) this.updateHonorRoomForCompletedSeason();
     if (!options.skipArchive) this.archiveSeason(options.reason ?? (options.manual ? "manual-daily-reset" : "automatic-daily-reset"));
+    const completedSeasonId = this.state.season.id;
     this.state.teams.forEach((team) => {
+      this.settleClubSponsorContractsForSeason(team, completedSeasonId);
       team.table = freshTable();
       team.form = [];
+      team.fitnessUpdatedAt = now;
       team.rosterIds.forEach((playerId) => {
-        team.playerState[playerId] = { fitness:100, suspension:0, cupSuspension:0, injuryRounds:0 };
+        team.playerState[playerId] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 };
       });
     });
     const seasonName = this.state.season.name;
-    const firstRoundAt = options.manual
-      ? nextSlot(now)
-      : beijingTimestamp(date, ACTIVE_START_HOUR);
+    const firstRoundAt = nextSlot(now);
     this.state.season = {
       id:`${seasonName}-${date}-${firstRoundAt.toString(36)}`,
       name:seasonName,
@@ -7536,16 +11154,26 @@ export class YellowDogsLeagueService {
       firstRoundAt,
       startedAt:firstRoundAt,
       completedAt:null,
+      seasonFinalLeagueRanks:null,
+      seasonFinalLeagueRound:null,
+      seasonFinalLeagueLockedAt:null,
     };
-    this.state.rounds = roundRobin(this.state.teams.map((team) => team.id));
+    // Keep a day's schedule stable across reloads while changing pairings between daily seasons.
+    const dailyTeamOrder = seededShuffle(this.state.teams.map((team) => team.id), `league:${this.state.season.id}`);
+    this.state.rounds = roundRobin(dailyTeamOrder);
     this.state.matches = [];
     this.state.playerStats = {};
+    this.state.matchPredictions = { schemaVersion:1, markets:{}, bets:[], distributions:[] };
+    this.state.completedBroadcasts = [];
     this.state.liveRound = null;
     this.state.liveCupRound = null;
+    this.state.liveSeasonFinalRound = null;
+    this.state.seasonFinalTournament = null;
+    this.syncForcedSeedMirrorUploads();
     this.state.liveFriendlies = [];
     this.state.friendlyInvitations = [];
     this.state.friendlyFixtures = [];
-    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null };
+    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     automation.lastResetDate = date;
     automation.lastCupStartDate = null;
     if (!options.skipSave) this.save();
@@ -7565,7 +11193,10 @@ export class YellowDogsLeagueService {
     if (this.state.season.status === "completed") changed = Boolean(this.settleDailySeason() ?? changed);
 
     const resetAt = beijingTimestamp(date, DAILY_RESET_HOUR, DAILY_RESET_MINUTE);
-    if (date > automation.initializedDate && now >= resetAt && automation.lastResetDate !== date) {
+    const seasonFinalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
+    const seasonReadyForReset = process.env.YDL_OFFLINE_MODE === "1" || this.state.season.status !== "completed"
+      || (this.state.cup?.status === "completed" && seasonFinalResolved && automation.lastRewardedSeasonId === this.state.season.id);
+    if (date > automation.initializedDate && now >= resetAt && automation.lastResetDate !== date && seasonReadyForReset) {
       this.resetDailyCompetitions();
       changed = true;
     }
@@ -7583,18 +11214,35 @@ export class YellowDogsLeagueService {
   tick() {
     const now = this.now();
     if (this.statePath && localDateKey(new Date(now)) !== this.lastBackupMaintenanceDate) this.maintainBackups();
+    const staleSeasonFinalChanged = this.cancelExpiredSeasonFinal(now);
+    if (staleSeasonFinalChanged) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
     const compensationChanged = measureRuntimeSync("league.compensation", () => this.dispatchS4TraitThresholdCompensation());
     const automationChanged = this.runDailyAutomation();
     measureRuntimeSync("league.predictionMarkets", () => this.ensurePredictionMarkets());
     const friendlyInvitationChanged = measureRuntimeSync("league.expireInvitations", () => this.expireFriendlyInvitations(now));
     if (friendlyInvitationChanged) this.save({ skipDailyBackup:true });
     const friendlyChanged = measureRuntimeSync("league.advanceFriendlies", () => this.advanceLiveFriendlies(now, { maximumMatches:0 })) || friendlyInvitationChanged;
-    if (this.state.liveRound || this.state.liveCupRound) return friendlyChanged || automationChanged || compensationChanged;
+    const tournament = this.ensureSeasonFinalTournament();
+    const forcedMirrorChanged = this.syncForcedSeedMirrorUploads();
+    const mirrorBatchChanged = this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound
+      ? false
+      : measureRuntimeSync("league.advanceMirrorBatchSimulations", () => this.advanceMirrorBatchSimulations(MIRROR_BATCH_MAX_ACTIVE_JOBS, { maximumChainsPerMatch:MIRROR_BATCH_CHAINS_PER_TICK }));
+    if (forcedMirrorChanged) this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true });
+    const seasonFinalBanChanged = this.finalizeSeasonFinalBansIfDue(tournament, now);
+    if (seasonFinalBanChanged) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+    if (this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound) return friendlyChanged || automationChanged || compensationChanged || staleSeasonFinalChanged || seasonFinalBanChanged || forcedMirrorChanged || mirrorBatchChanged;
+    if (tournament && !tournament.preview && tournament.status !== "completed" && now >= Number(tournament.nextMatchAt ?? Infinity)) {
+      const nodes = this.dueSeasonFinalNodes(tournament, now);
+      if (nodes.length && this.startSeasonFinalWave(nodes, tournament)) {
+        this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
+        return true;
+      }
+    }
     if (this.state.cup.status === "active" && activeTime(now) && now >= Number(this.state.cup.nextRoundAt ?? Infinity)) {
       return measureRuntimeSync("league.startScheduledCupEvent", () => this.startScheduledCupEvent());
     }
     const dailyLeagueWindow = this.state.dailyAutomation.lastResetDate === localDateKey(new Date(now)) && now >= Number(this.state.season.firstRoundAt ?? Infinity);
-    if (this.state.season.status !== "active" || (!activeTime(now) && !dailyLeagueWindow) || now < this.state.season.nextRoundAt) return friendlyChanged || automationChanged || compensationChanged;
+    if (this.state.season.status !== "active" || (!activeTime(now) && !dailyLeagueWindow) || now < this.state.season.nextRoundAt) return friendlyChanged || automationChanged || compensationChanged || staleSeasonFinalChanged || seasonFinalBanChanged || forcedMirrorChanged || mirrorBatchChanged;
     return measureRuntimeSync("league.startScheduledRound", () => this.startScheduledRound());
   }
 
@@ -7733,12 +11381,14 @@ export class YellowDogsLeagueService {
         appearances:0,
         goals:0,
         assists:0,
+        redCards:0,
         ratingTotal:0,
       });
       player.playerName = entry.playerName ?? player.playerName;
       player.appearances += Number(entry.appearances ?? 0);
       player.goals += Number(entry.goals ?? 0);
       player.assists += Number(entry.assists ?? 0);
+      player.redCards = Number(player.redCards ?? 0) + Number(entry.redCards ?? 0);
       player.ratingTotal += Number(entry.ratingTotal ?? 0);
     });
     addStats(this.state.playerStats);
@@ -7781,6 +11431,7 @@ export class YellowDogsLeagueService {
       appearances:Number(stat.appearances ?? 0),
       goals:Number(stat.goals ?? 0),
       assists:Number(stat.assists ?? 0),
+      redCards:Number(stat.redCards ?? 0),
       averageRating:stat.appearances ? Number((Number(stat.ratingTotal ?? 0) / Number(stat.appearances)).toFixed(2)) : 0,
       upgradeLevel,
     };
@@ -7795,16 +11446,37 @@ export class YellowDogsLeagueService {
       .sort((left, right) => Number(right.appearances ?? 0) - Number(left.appearances ?? 0) || Number(right.goals ?? 0) - Number(left.goals ?? 0) || String(left.playerName).localeCompare(String(right.playerName), "zh-CN"))
       .slice(0, 3)
       .map((stat) => this.honorRoomPlayerView(account.id, club, stat));
-    const scorerStat = [...players].sort((left, right) => Number(right.goals ?? 0) - Number(left.goals ?? 0) || Number(right.appearances ?? 0) - Number(left.appearances ?? 0) || String(left.playerName).localeCompare(String(right.playerName), "zh-CN"))[0] ?? null;
+    const scorerStats = [...players].filter((player) => Number(player.goals ?? 0) > 0).sort((left, right) => Number(right.goals ?? 0) - Number(left.goals ?? 0) || Number(right.appearances ?? 0) - Number(left.appearances ?? 0) || String(left.playerName).localeCompare(String(right.playerName), "zh-CN")).slice(0, 3);
+    const assisterStats = [...players].filter((player) => Number(player.assists ?? 0) > 0).sort((left, right) => Number(right.assists ?? 0) - Number(left.assists ?? 0) || Number(right.appearances ?? 0) - Number(left.appearances ?? 0) || String(left.playerName).localeCompare(String(right.playerName), "zh-CN")).slice(0, 3);
+    const redCardStats = [...players].filter((player) => Number(player.redCards ?? 0) > 0).sort((left, right) => Number(right.redCards ?? 0) - Number(left.redCards ?? 0) || Number(right.appearances ?? 0) - Number(left.appearances ?? 0) || String(left.playerName).localeCompare(String(right.playerName), "zh-CN")).slice(0, 3);
     const latestBallonDor = club.ballonDor?.at(-1) ?? null;
     const ballonStat = latestBallonDor ? club.players?.[latestBallonDor.playerId] ?? { playerId:latestBallonDor.playerId, playerName:latestBallonDor.playerName } : null;
+    const ballonDorWinners = [...new Set((club.ballonDor ?? []).map((award) => award.playerId))].map((playerId) => {
+      const awards = (club.ballonDor ?? []).filter((award) => award.playerId === playerId);
+      const latestAward = awards.at(-1);
+      const stat = club.players?.[playerId] ?? { playerId, playerName:latestAward?.playerName ?? playerId };
+      return {
+        playerId,
+        playerName:latestAward?.playerName ?? stat.playerName,
+        awardCount:awards.length,
+        seasons:awards.map((award) => award.season),
+        latestSeason:latestAward?.season ?? null,
+        record:this.honorRoomPlayerView(account.id, club, stat),
+      };
+    }).sort((left, right) => right.awardCount - left.awardCount || String(right.latestSeason ?? "").localeCompare(String(left.latestSeason ?? ""), "zh-CN"));
     return clone({
       updatedAt:this.state.honorRoom.updatedAt,
       seasonCount:this.state.honorRoom.processedSeasonIds.length,
       club:{ ownerId:team.ownerId, ownerName:team.ownerName, teamId:team.id, teamName:team.name },
       honors:club.honors,
       appearances,
-      scorer:this.honorRoomPlayerView(account.id, club, scorerStat),
+      scorers:scorerStats.map((stat) => this.honorRoomPlayerView(account.id, club, stat)),
+      assisters:assisterStats.map((stat) => this.honorRoomPlayerView(account.id, club, stat)),
+      redCardLeaders:redCardStats.map((stat) => this.honorRoomPlayerView(account.id, club, stat)),
+      scorer:this.honorRoomPlayerView(account.id, club, scorerStats[0]),
+      assister:this.honorRoomPlayerView(account.id, club, assisterStats[0]),
+      redCardLeader:this.honorRoomPlayerView(account.id, club, redCardStats[0]),
+      ballonDorWinners,
       ballonDor:latestBallonDor ? {
         ...latestBallonDor,
         awardCount:(club.ballonDor ?? []).filter((award) => award.playerId === latestBallonDor.playerId).length,
@@ -7815,7 +11487,15 @@ export class YellowDogsLeagueService {
 
   playerDirectoryView(account) {
     if (!this.accountTeam(account.id)) return { players:[], enhancementRanking:[] };
-    return clone(publicS4PlayerDirectory(this.state));
+    // The directory is shared by every player and only changes after a persisted mutation.
+    // Keep one immutable response snapshot per state revision instead of rebuilding its card index per request.
+    if (this.playerDirectoryCache?.updatedAt !== this.state.updatedAt) {
+      this.playerDirectoryCache = {
+        updatedAt:this.state.updatedAt,
+        value:publicS4PlayerDirectory(this.state),
+      };
+    }
+    return clone(this.playerDirectoryCache.value);
   }
 
   teamReport(team) {
@@ -7846,39 +11526,49 @@ export class YellowDogsLeagueService {
 
   archiveSeasonUnmeasured(reason) {
     this.state.archives ??= [];
-    this.state.archives.push({
+    const archive = {
       reason,
       archivedAt:this.now(),
-      season:clone(this.state.season),
+      season:this.state.season,
       standings:this.standings().map((entry) => ({ ...entry, team:publicTeam(this.state.teams.find((team) => team.id === entry.id)) })),
-      matches:clone(this.state.matches),
-      playerStats:clone(this.state.playerStats),
-      cup:clone(this.state.cup),
-      ballonDorResult:clone(this.state.ballonDor?.results?.find((entry) => entry.seasonId === this.state.season.id) ?? null),
-    });
-    this.state.archives = this.state.archives.slice(-12);
+      matches:this.state.matches,
+      playerStats:this.state.playerStats,
+      cup:this.state.cup,
+      seasonFinalTournament:this.state.seasonFinalTournament,
+      ballonDorResult:this.state.ballonDor?.results?.find((entry) => entry.seasonId === this.state.season.id) ?? null,
+    };
+    this.state.archives.push(this.shardStore ? archive : clone(archive));
+    if (this.state.archives.length > 12) this.state.archives.splice(0, this.state.archives.length - 12);
   }
 
-  resetCompetition(name, reason, status = "active") {
-    if (this.state.season.status === "completed" && this.state.cup?.status === "active") throw new Error("杯赛尚未结束，不能在金球奖完成评选前开启新赛季");
+  resetCompetition(name, reason, status = "active", options = {}) {
+    if (process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed" && (this.state.cup?.status !== "completed" || this.state.seasonFinalTournament?.status !== "completed")) throw new Error("杯赛或赛季总决赛尚未结束，不能在金球奖完成评选前开启新赛季");
     if (this.state.season.status === "completed") this.settleBallonDor();
     this.archiveSeason(reason);
+    const previousRanks = new Map(this.standings().map((entry) => [entry.id, entry.rank]));
+    const completedSeasonId = this.state.season.id;
     this.state.teams.forEach((team) => {
+      if (options.advanceSponsorContracts === true) this.settleClubSponsorContractsForSeason(team, completedSeasonId);
       team.table = freshTable();
       team.form = [];
       if (team.ownerId) {
         this.wallet(team.ownerId).balance = INITIAL_WALLET_BALANCE;
         team.rosterIds.forEach((id) => {
-          team.playerState[id] = { fitness:100, suspension:0, injuryRounds:0 };
+          team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 };
         });
       }
     });
+    // 休赛期跨过00:00后产生的镜像调用与新赛季重置可能处于同一自然日。
+    // 钱包重置完成后一次结清全部待结算日期，避免严格“小于当天”导致收益永久滞留。
+    this.settleMirrorMarketplace("9999-12-31");
     const startedAt = this.now();
     const firstRoundAt = status === "active" ? nextSlot(startedAt) : null;
-    this.state.season = { id:`${name}-${localDateKey(new Date(startedAt))}-${startedAt.toString(36)}`, name, date:localDateKey(new Date(startedAt)), status, currentRound:0, totalRounds:18, nextRoundAt:firstRoundAt, firstRoundAt, startedAt:status === "active" ? startedAt : null, registrationOpenedAt:status === "registration" ? startedAt : null, completedAt:null };
+    this.state.season = { id:`${name}-${localDateKey(new Date(startedAt))}-${startedAt.toString(36)}`, name, date:localDateKey(new Date(startedAt)), status, currentRound:0, totalRounds:18, nextRoundAt:firstRoundAt, firstRoundAt, startedAt:status === "active" ? startedAt : null, registrationOpenedAt:status === "registration" ? startedAt : null, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null };
     this.state.rounds = roundRobin(this.state.teams.map((team) => team.id));
     this.state.matches = [];
     this.state.playerStats = {};
+    this.state.seasonFinalTournament = null;
+    this.syncForcedSeedMirrorUploads();
     this.state.ledger = [];
     this.state.adminPackGrants = [];
     this.state.adminCoinGrants = [];
@@ -7886,10 +11576,11 @@ export class YellowDogsLeagueService {
     this.state.reports = {};
     this.state.liveRound = null;
     this.state.liveCupRound = null;
+    this.state.liveSeasonFinalRound = null;
     this.state.liveFriendlies = [];
     this.state.friendlyInvitations = [];
     this.state.friendlyFixtures = [];
-    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, completedAt:null };
+    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     this.save();
     return this.adminView();
   }
@@ -7900,7 +11591,7 @@ export class YellowDogsLeagueService {
 
   startNewSeason() {
     const current = Number(String(this.state.season.name).match(/\d+/)?.[0] ?? 1);
-    return this.resetCompetition(`S${current + 1}`, "new-season", "registration");
+    return this.resetCompetition(`S${current + 1}`, "new-season", "registration", { advanceSponsorContracts:true });
   }
 
   fullReset() {
@@ -7978,6 +11669,8 @@ export class YellowDogsLeagueService {
       "card-sale":"单卡售出",
       "ownership-buy":"球员所有权买入",
       "ownership-sale":"球员所有权售出",
+      "cosmetic-buy":"徽章道具买入",
+      "cosmetic-sale":"徽章道具售出",
       "ownership-return":"球员所有权返还系统",
       "s4-pack-buy":"S4礼包购买",
       "roster-expansion-buy":"付费大名单扩容",
@@ -8055,7 +11748,7 @@ export class YellowDogsLeagueService {
       const signings = entries.filter((entry) => ["pack-sign", "round-pack-sign", "three-round-pack-sign", "cup-pack-sign", "admin-player-card-grant"].includes(entry.type));
       const releases = entries.filter((entry) => ["release", "ownership-return"].includes(entry.type));
       const enhancements = entries.filter((entry) => entry.type === "s4-card-enhancement");
-      const transfers = entries.filter((entry) => ["transfer-buy", "transfer-sale", "card-buy", "card-sale", "ownership-buy", "ownership-sale", "card-trade-escrow", "card-trade-refund", "card-trade-settlement"].includes(entry.type));
+      const transfers = entries.filter((entry) => ["transfer-buy", "transfer-sale", "card-buy", "card-sale", "ownership-buy", "ownership-sale", "cosmetic-buy", "cosmetic-sale", "card-trade-escrow", "card-trade-refund", "card-trade-settlement"].includes(entry.type));
       return {
         accountId:team.ownerId,
         ownerName:team.ownerName,
@@ -8081,6 +11774,136 @@ export class YellowDogsLeagueService {
 
   adminView() {
     return measureRuntimeSync("league.adminView", () => this.adminViewUnmeasured());
+  }
+
+  adminSimulationBaseline() {
+    const teams = this.state.teams
+      .filter((team) => team.ownerId)
+      .map((team) => {
+        const account = { id:team.ownerId };
+        const view = this.ownTeamView(account);
+        const roster = (view?.roster ?? []).map((player) => {
+          const card = player.cards?.find((entry) => entry.id === player.activeCardId) ?? player.cards?.[0] ?? null;
+          const source = REAL_PLAYER_BY_ID[player.id] ?? player;
+          return {
+            ...applyS4Enhancement(playerSummary(source), card?.upgradeLevel ?? player.upgradeLevel ?? 0),
+            state:player.state ?? { fitness:100 },
+            starter:Boolean(player.starter),
+            traits:(card?.traits ?? []).map((trait) => trait.id),
+          };
+        });
+        return {
+          id:team.id,
+          ownerId:team.ownerId,
+          ownerName:team.ownerName,
+          name:team.name,
+          players:roster,
+          preferredStarterIds:[...(team.preferredStarterIds ?? [])],
+          positions:clone(team.positions ?? {}),
+          positionPresets:clone(team.positionPresets ?? {}),
+          formationLinePresets:clone(team.formationLinePresets ?? {}),
+          tactic:team.tactic,
+          style:team.style,
+          attackFocus:team.attackFocus,
+          defenseFocus:team.defenseFocus,
+          tacticalPlans:clone(team.tacticalPlans ?? {}),
+          activeLineupSchemeId:team.activeLineupSchemeId ?? null,
+          lineupSchemes:clone(team.lineupSchemes ?? []),
+          lineupSchemeAssignments:clone(team.lineupSchemeAssignments ?? {}),
+        };
+      });
+    return clone({ generatedAt:this.now(), season:this.state.season, teams });
+  }
+
+  adminPredictionBetsToday(nowValue = this.now()) {
+    const dateKey = localDateKey(new Date(nowValue));
+    const startsAt = beijingTimestamp(dateKey, 0);
+    const endsAt = startsAt + 24 * 60 * 60 * 1000;
+    const markets = this.state.matchPredictions?.markets ?? {};
+    const todayBets = (this.state.matchPredictions?.bets ?? [])
+      .filter((bet) => Number(bet.createdAt) >= startsAt && Number(bet.createdAt) < endsAt)
+      .sort((left, right) => Number(right.createdAt) - Number(left.createdAt));
+    const playerTeams = this.state.teams
+      .filter((team) => team.ownerId)
+      .sort((left, right) => String(left.ownerName).localeCompare(String(right.ownerName), "zh-CN"));
+    const detailsFor = (bets) => bets.map((bet) => {
+      const market = markets[bet.marketId];
+      const payoutRate = Number(bet.payoutRate ?? 0);
+      const amount = Number(bet.amount ?? 0);
+      const payout = Number(bet.payout ?? 0);
+      const settled = bet.status === "won" || bet.status === "lost";
+      const outcome = market?.settlement?.outcomes?.[bet.category] ?? null;
+      return {
+        id:bet.id,
+        marketId:bet.marketId,
+        createdAt:Number(bet.createdAt),
+        settledAt:bet.settledAt == null ? null : Number(bet.settledAt),
+        status:bet.status,
+        competition:market?.competition ?? null,
+        competitionName:market?.competitionName ?? "未知赛事",
+        round:market?.round ?? null,
+        stage:market?.stage ?? null,
+        leg:market?.leg ?? null,
+        startsAt:market?.startsAt ?? null,
+        homeName:market?.homeName ?? "未知主队",
+        awayName:market?.awayName ?? "未知客队",
+        resultHandicap:Number.isInteger(market?.resultHandicap) ? market.resultHandicap : null,
+        category:bet.category,
+        categoryLabel:this.predictionCategoryLabel(bet.category),
+        selection:bet.selection,
+        selectionLabel:market ? this.predictionSelectionLabel(market, bet.category, bet.selection) : bet.selection,
+        outcome,
+        outcomeLabel:market && outcome ? this.predictionSelectionLabel(market, bet.category, outcome) : null,
+        score:Array.isArray(market?.settlement?.score) ? [...market.settlement.score] : null,
+        halfTimeScore:Array.isArray(market?.settlement?.halfTimeScore) ? [...market.settlement.halfTimeScore] : null,
+        regulationScore:Array.isArray(market?.settlement?.regulationScore) ? [...market.settlement.regulationScore] : null,
+        amount,
+        payoutRate,
+        potentialPayout:payoutRate > 0 ? Math.max(1, Math.floor(amount * payoutRate)) : 0,
+        payout,
+        netProfit:settled ? payout - amount : null,
+      };
+    });
+    const summarize = (bets) => {
+      const settled = bets.filter((bet) => bet.status === "won" || bet.status === "lost");
+      const pending = bets.filter((bet) => bet.status === "pending");
+      const totalStake = bets.reduce((sum, bet) => sum + Number(bet.amount ?? 0), 0);
+      const settledStake = settled.reduce((sum, bet) => sum + Number(bet.amount ?? 0), 0);
+      const pendingStake = pending.reduce((sum, bet) => sum + Number(bet.amount ?? 0), 0);
+      const payout = settled.reduce((sum, bet) => sum + Number(bet.payout ?? 0), 0);
+      return {
+        betCount:bets.length,
+        settledCount:settled.length,
+        pendingCount:pending.length,
+        wonCount:settled.filter((bet) => bet.status === "won").length,
+        lostCount:settled.filter((bet) => bet.status === "lost").length,
+        totalStake,
+        settledStake,
+        pendingStake,
+        payout,
+        realizedNet:payout - settledStake,
+      };
+    };
+    const players = playerTeams.map((team) => {
+      const bets = todayBets.filter((bet) => bet.accountId === team.ownerId);
+      return {
+        accountId:team.ownerId,
+        ownerName:team.ownerName,
+        teamId:team.id,
+        teamName:team.name,
+        ...summarize(bets),
+        bets:detailsFor(bets),
+      };
+    });
+    return unwrapTracked({
+      dateKey,
+      startsAt,
+      endsAt,
+      generatedAt:Number(nowValue),
+      timezone:"Asia/Shanghai",
+      totals:summarize(todayBets),
+      players,
+    });
   }
 
   adminViewUnmeasured() {
@@ -8134,6 +11957,7 @@ export class YellowDogsLeagueService {
     return unwrapTracked({
       season:this.state.season,
       cup:this.cupView(),
+      seasonFinalTournament:this.seasonFinalTournamentView(),
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20 },
       dailyAutomation:clone(this.state.dailyAutomation),
       teams:this.standings().map((entry) => {
@@ -8145,7 +11969,7 @@ export class YellowDogsLeagueService {
       drafts:Object.entries(this.state.drafts).map(([accountId, draft]) => ({ accountId, teamName:draft.teamName, selectedCount:draft.selectedIds.length, startedAt:draft.startedAt })),
       matches:this.state.matches.length,
       backups:this.backupView(),
-      s4PackCatalog:S4_PACK_CATALOG.map((pack) => ({ ...pack })),
+      s4PackCatalog:[...S4_PACK_CATALOG, ...S4_ADMIN_GIFT_PACK_CATALOG].map((pack) => ({ ...pack })),
       s4PackGrants:this.state.s4Packs.grants.slice().sort((left, right) => right.createdAt - left.createdAt),
       s4PlayerCatalog:REAL_PLAYERS.filter((player) => !isXPlayer(player)).map((player) => ({ id:player.id, name:player.name, role:player.role, secondaryRole:player.secondaryRole, pool:player.pool, overall:player.overall, grade:player.grade, nationality:player.nationality, club:player.club })),
       s4CardGrants:(this.state.s4Packs.cardGrants ?? []).slice().sort((left, right) => right.createdAt - left.createdAt),
@@ -8168,7 +11992,7 @@ export class YellowDogsLeagueService {
       },
       rewardGrants:[],
       lastFullResetAt:this.state.lastFullResetAt ?? null,
-      archives:(this.state.archives ?? []).map((archive) => ({ reason:archive.reason, archivedAt:archive.archivedAt, season:archive.season, matchCount:archive.matches?.length ?? 0 })),
+      archives:(this.state.archives ?? []).map((archive) => ({ reason:archive.reason, archivedAt:archive.archivedAt, season:archive.season, matchCount:archive.matchCount ?? archive.matches?.length ?? 0 })),
     });
   }
 }

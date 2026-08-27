@@ -248,7 +248,8 @@ export function playerCardStudioView() {
       publishedCount:published.length,
       profileCount,
       readyCount:drafts.filter((player) => studio.profiles[player.id]).length,
-      issueCount:drafts.filter((player) => !studio.profiles[player.id]).length,
+      missingProfileCount:drafts.filter((player) => !studio.profiles[player.id]).length,
+      issueCount:0,
     };
   }).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
   return {
@@ -346,7 +347,6 @@ async function publishDraftIds(ids, batch = null) {
   const records = uniqueIds.map((id) => {
     const draft = studio.drafts[id];
     if (!draft) throw new Error(`暂存球员不存在：${id}`);
-    if (!studio.profiles[id]) throw new Error(`${draft.name}尚未上传并保存卡画`);
     if (REAL_PLAYER_BY_ID[id]) throw new Error(`球员ID已在正式库中：${id}`);
     return { ...clone(draft), status:"active", publishedAt:new Date().toISOString(), updatedAt:new Date().toISOString() };
   });

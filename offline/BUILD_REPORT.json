@@ -1,0 +1,48 @@
+{
+  "product": "YDL S4 Offline",
+  "version": "1.0.0",
+  "target": "macOS 12+ / Apple Silicon arm64",
+  "generatedAt": "2026-08-25T18:30:00+08:00",
+  "sourceBackup": {
+    "name": "ydl-s4-final-20260825-172250.tar.gz",
+    "sha256": "8DB0686F0461C437F049C9888A758C168DE45B22B827D2DC2CD9C30DAC89DD0A"
+  },
+  "preserved": {
+    "teams": 10,
+    "leagueMatches": 148,
+    "seasonArchives": 12,
+    "completePlayerPool": 842,
+    "serverPlayerOverrides": 188,
+    "serverPlayerProfiles": 132
+  },
+  "removed": {
+    "originalAccountsAndCredentials": true,
+    "adminOperationHistory": true,
+    "accountMatchHistory": true,
+    "inboxAndBroadcastHistory": true,
+    "disciplineHistory": true,
+    "friendliesAndLiveSessions": true,
+    "computeMarketplaceState": true,
+    "privateServerConfigurationAndLogs": true
+  },
+  "runtime": {
+    "node": "Apple Silicon arm64",
+    "exceljs": "4.4.0",
+    "sharp": "0.35.3",
+    "sharpPlatform": "darwin-arm64"
+  },
+  "verification": {
+    "offlineHealth": true,
+    "matchEngine": "v2",
+    "teamCatalogCount": 10,
+    "testedTeamSwitches": 3,
+    "otherTeamLineupSavePersistedAfterRestart": true,
+    "adminLogin": true,
+    "friendBattleApiStatus": 404,
+    "friendlyLeagueApiStatus": 404,
+    "computeWorkerApiStatus": 404,
+    "knownServerSecretHits": 0,
+    "privateConfigOrLogFiles": 0,
+    "npmAuditKnownVulnerabilities": 0
+  }
+}

@@ -6,9 +6,39 @@ import {
   buildV2StageSpatialCache,
   createV2Zones,
   resolveV2TacticalDimensions,
+  v2DoublePivot451Profile,
+  v2MidfieldStructureProfile,
   v2PerspectivePosition,
+  v2StyleIdentityProfile,
   v2WorldPosition,
 } from "../versus/v2/spatial-model-v2.js";
+
+const DOUBLE_PIVOT_451_LAYOUT = Object.freeze([
+  ["GK", 50, 90],
+  ["LB", 18, 68], ["CB", 40, 68], ["CB", 60, 68], ["RB", 82, 68],
+  ["DM", 40, 51], ["DM", 60, 51],
+  ["LM", 20, 38], ["AM", 50, 36], ["RM", 80, 38],
+  ["ST", 50, 16],
+]);
+
+test("V2中场真空结构几乎丧失完整性并暴露远射空间", () => {
+  const emptyMidfieldLayout = [
+    ["GK", 50, 92],
+    ["LB", 5, 75], ["CB", 19, 79], ["CB", 32, 81], ["CB", 44, 82],
+    ["CB", 56, 82], ["CB", 68, 81], ["CB", 81, 79], ["RB", 95, 75],
+    ["ST", 38, 18], ["ST", 62, 18],
+  ];
+  const empty = buildV2SpatialMatchup([makeTeam("empty-midfield", { layout:emptyMidfieldLayout }), makeTeam("normal-opponent")]);
+  const stable = buildV2SpatialMatchup([makeTeam("stable"), makeTeam("stable-opponent")]);
+  const profile = v2MidfieldStructureProfile(empty.teams[0].players);
+
+  assert.equal(profile.breakdown.midfieldPlayerCount, 0);
+  assert.ok(profile.breakdown.maximumVerticalGap >= 50);
+  assert.ok(empty.teams[0].midfieldIntegrity <= 0.1);
+  assert.ok(empty.teams[0].longShotExposure >= 0.95);
+  assert.ok(stable.teams[0].midfieldIntegrity >= 0.75);
+  assert.ok(stable.teams[0].midfieldIntegrity > empty.teams[0].midfieldIntegrity + 0.6);
+});
 
 const ROLE_LAYOUT = Object.freeze([
   ["GK", 50, 90],
@@ -49,6 +79,31 @@ function localZone(team, id) {
   return team.zones[id];
 }
 
+test("双后腰、单前腰、左右中场和单前锋精确触发4-2-3-1增强", () => {
+  const team = makeTeam("double-pivot-451", { layout:DOUBLE_PIVOT_451_LAYOUT });
+  assert.equal(v2DoublePivot451Profile(team.players).active, true);
+
+  const threeAdvancedMidfielders = structuredClone(team);
+  threeAdvancedMidfielders.players[7].role = "AM";
+  threeAdvancedMidfielders.players[9].role = "AM";
+  assert.equal(v2DoublePivot451Profile(threeAdvancedMidfielders.players).active, false);
+
+  const opponent = makeTeam("double-pivot-opponent");
+  const strengthened = buildV2SpatialMatchup([team, opponent]);
+  const neutral = buildV2SpatialMatchup([team, opponent], { parameters:{ spatial:{ roleBalance:{
+    doublePivot451PivotControlMultiplier:1,
+    doublePivot451PivotDefenseMultiplier:1,
+    doublePivot451AttackUnitControlMultiplier:1,
+    doublePivot451AttackUnitAttackMultiplier:1,
+    doublePivot451AttackUnitSupportMultiplier:1,
+  } } } });
+  const total = (matchup, key) => Object.values(matchup.teams[0].zones).reduce((sum, zone) => sum + zone.own[key], 0);
+  assert.ok(total(strengthened, "control") > total(neutral, "control"));
+  assert.ok(total(strengthened, "attack") > total(neutral, "attack"));
+  assert.ok(total(strengthened, "defense") > total(neutral, "defense"));
+  assert.ok(total(strengthened, "support") > total(neutral, "support"));
+});
+
 test("V2区域模型建立20个有限数值区域且不修改输入", () => {
   const teams = [makeTeam("home"), makeTeam("away")];
   const original = structuredClone(teams);
@@ -64,6 +119,44 @@ test("V2区域模型建立20个有限数值区域且不修改输入", () => {
       assert.ok(values.every(Number.isFinite), `${team.name}:${zone.zone}`);
     }
   }
+});
+
+test("七种V2打法按对应位置与能力形成受上限约束的实战适配", () => {
+  const profile = (style, configure) => {
+    const team = makeTeam(`${style}-fit`, { style });
+    configure(team);
+    const spatial = buildV2SpatialMatchup([team, makeTeam(`${style}-opponent`)]);
+    return v2StyleIdentityProfile(team, spatial.teams[0].players);
+  };
+  const wingStrong = profile("wingPlay", (team) => team.players.filter((player) => ["LW", "RW", "LB", "RB"].includes(player.role)).forEach((player) => Object.assign(player.attributes, { passing:96, vision:95, crossing:98, dribbling:92, offBall:91, pace:94, acceleration:93 })));
+  const wingLimited = profile("wingPlay", (team) => team.players.filter((player) => ["LW", "RW", "LB", "RB"].includes(player.role)).forEach((player) => Object.assign(player.attributes, { passing:48, vision:48, crossing:45, dribbling:46, offBall:47, pace:50, acceleration:49 })));
+  const possessionStrong = profile("possession", (team) => team.players.filter((player) => ["CB", "LB", "RB", "DM", "AM"].includes(player.role)).forEach((player) => Object.assign(player.attributes, { passing:96, vision:94, decisions:93, firstTouch:92, composure:92, tackling:91, positioning:90, marking:89 })));
+  const possessionLimited = profile("possession", (team) => team.players.filter((player) => ["CB", "LB", "RB", "DM", "AM"].includes(player.role)).forEach((player) => Object.assign(player.attributes, { passing:48, vision:46, decisions:47, firstTouch:48, composure:46, tackling:49, positioning:48, marking:47 })));
+  const longStrong = profile("longBall", (team) => team.players.forEach((player) => Object.assign(player.attributes, { passing:92, vision:88, decisions:88, heading:96, jumping:94, strength:93, offBall:91 })));
+  const longLimited = profile("longBall", (team) => team.players.forEach((player) => Object.assign(player.attributes, { passing:48, vision:46, decisions:46, heading:45, jumping:46, strength:47, offBall:47 })));
+  const roughStrong = profile("roughPlay", (team) => team.players.filter((player) => ["CB", "LB", "RB", "DM", "AM"].includes(player.role)).forEach((player) => Object.assign(player.attributes, { tackling:97, positioning:94, marking:93, strength:94, stamina:92, workRate:94, aggression:96 })));
+  const roughLimited = profile("roughPlay", (team) => team.players.filter((player) => ["CB", "LB", "RB", "DM", "AM"].includes(player.role)).forEach((player) => Object.assign(player.attributes, { tackling:45, positioning:47, marking:46, strength:48, stamina:46, workRate:47, aggression:45 })));
+  const counterStrong = profile("counterAttack", (team) => team.players.forEach((player) => Object.assign(player.attributes, { tackling:92, marking:90, positioning:91, passing:94, vision:91, decisions:90, pace:91, acceleration:92, offBall:93, finishing:90, pressResistance:89 })));
+  const counterLimited = profile("counterAttack", (team) => team.players.forEach((player) => Object.assign(player.attributes, { tackling:48, marking:47, positioning:46, passing:48, vision:47, decisions:46, pace:47, acceleration:46, offBall:45, finishing:48, pressResistance:47 })));
+  const pressStrong = profile("highPress", (team) => team.players.forEach((player) => Object.assign(player.attributes, { stamina:94, workRate:95, aggression:93, pace:91, acceleration:90, tackling:92, positioning:90, shotPrevention:90 })));
+  const pressLimited = profile("highPress", (team) => team.players.forEach((player) => Object.assign(player.attributes, { stamina:46, workRate:45, aggression:47, pace:48, acceleration:47, tackling:46, positioning:45, shotPrevention:46 })));
+  const blockStrong = profile("lowBlock", (team) => team.players.forEach((player) => Object.assign(player.attributes, { shotPrevention:94, positioning:93, marking:92, tackling:91, strength:90, goalkeeping:94, reflexes:93, pressResistance:89 })));
+  const blockLimited = profile("lowBlock", (team) => team.players.forEach((player) => Object.assign(player.attributes, { shotPrevention:46, positioning:45, marking:47, tackling:48, strength:47, goalkeeping:46, reflexes:45, pressResistance:46 })));
+
+  assert.ok(wingStrong.crossingMultiplier > wingLimited.crossingMultiplier);
+  assert.ok(possessionStrong.controlMultiplier > possessionLimited.controlMultiplier);
+  assert.ok(possessionStrong.defenseMultiplier > possessionLimited.defenseMultiplier);
+  assert.ok(longStrong.progressionMultiplier > longLimited.progressionMultiplier);
+  assert.ok(longStrong.headerXgMultiplier > longLimited.headerXgMultiplier);
+  assert.ok(roughStrong.defenseMultiplier > roughLimited.defenseMultiplier);
+  assert.ok(roughStrong.pressureMultiplier > roughLimited.pressureMultiplier);
+  assert.ok(counterStrong.transitionMultiplier > counterLimited.transitionMultiplier);
+  assert.ok(counterStrong.outletMultiplier > counterLimited.outletMultiplier);
+  assert.ok(pressStrong.pressureMultiplier > pressLimited.pressureMultiplier);
+  assert.ok(pressStrong.recoveryMultiplier > pressLimited.recoveryMultiplier);
+  assert.ok(blockStrong.defenseMultiplier > blockLimited.defenseMultiplier);
+  assert.ok(blockStrong.outletMultiplier > blockLimited.outletMultiplier);
+  for (const item of [wingStrong, possessionStrong, longStrong, roughStrong, counterStrong, pressStrong, blockStrong]) assert.ok(item.fit >= 0.82 && item.fit <= 1.18);
 });
 
 test("V2 空间快照保留本场纪律状态供第二黄牌判定", () => {
@@ -103,6 +196,27 @@ test("中路增加一名球员会形成局部人数与控制优势", () => {
 
   assert.ok(localZone(overloaded.teams[0], zone).numericalAdvantage > localZone(base.teams[0], zone).numericalAdvantage);
   assert.ok(localZone(overloaded.teams[0], zone).controlShare > localZone(base.teams[0], zone).controlShare);
+});
+
+test("中路过密的额外占位采用递减收益而非线性滚大", () => {
+  const base = makeTeam("base-central");
+  const oneExtra = makeTeam("one-extra-central");
+  const twoExtra = makeTeam("two-extra-central");
+  [oneExtra.players[7], twoExtra.players[7], twoExtra.players[10]].forEach((player) => {
+    player.role = "AM";
+  });
+  oneExtra.positions[oneExtra.players[7].id] = { x:50, y:46 };
+  twoExtra.positions[twoExtra.players[7].id] = { x:50, y:46 };
+  twoExtra.positions[twoExtra.players[10].id] = { x:50, y:46 };
+  const opponent = makeTeam("central-opponent");
+  const zone = "finalThird:center";
+  const baseline = localZone(buildV2SpatialMatchup([base, opponent]).teams[0], zone);
+  const first = localZone(buildV2SpatialMatchup([oneExtra, opponent]).teams[0], zone);
+  const second = localZone(buildV2SpatialMatchup([twoExtra, opponent]).teams[0], zone);
+
+  assert.ok(first.controlShare > baseline.controlShare);
+  assert.ok(second.controlShare > first.controlShare);
+  assert.ok(second.controlShare - first.controlShare < first.controlShare - baseline.controlShare);
 });
 
 test("边锋拉宽会提高边路占位并降低同区域对手控制", () => {
@@ -188,6 +302,49 @@ test("少中场多前锋阵型产生后场暴露并提高对手机会空间", ()
   assert.ok(exposed.teams[0].backlineExposure > normal.teams[0].backlineExposure + 0.2);
   assert.ok(exposed.teams[1].finalThirdControl > normal.teams[1].finalThirdControl);
   assert.ok(localZone(exposed.teams[1], "box:center").exploitableSpace > localZone(normal.teams[1], "box:center").exploitableSpace);
+});
+
+test("两后卫在禁区与边路产生比三后卫更明显的区域防守断层", () => {
+  const threeBackLayout = [
+    ["GK", 50, 90],
+    ["CB", 24, 70], ["CB", 50, 70], ["CB", 76, 70],
+    ["LM", 14, 48], ["DM", 36, 52], ["AM", 50, 40], ["DM", 64, 52], ["RM", 86, 48],
+    ["ST", 38, 18], ["ST", 62, 18],
+  ];
+  const twoBackLayout = [
+    ["GK", 50, 90],
+    ["CB", 35, 70], ["CB", 65, 70],
+    ["DM", 34, 48], ["DM", 50, 48], ["DM", 66, 48],
+    ["AM", 36, 36], ["AM", 64, 36],
+    ["ST", 30, 16], ["ST", 50, 14], ["ST", 70, 16],
+  ];
+  const opponent = makeTeam("coverage-opponent");
+  const threeBack = buildV2SpatialMatchup([makeTeam("three-back", { layout:threeBackLayout }), opponent]);
+  const twoBack = buildV2SpatialMatchup([makeTeam("two-back", { layout:twoBackLayout }), opponent]);
+  const center = "box:center";
+  const flank = "box:farLeft";
+
+  assert.ok(twoBack.teams[0].backlineExposure > threeBack.teams[0].backlineExposure + 0.35);
+  assert.ok(localZone(twoBack.teams[1], center).coverageDeficit > localZone(threeBack.teams[1], center).coverageDeficit);
+  assert.ok(localZone(twoBack.teams[1], flank).coverageDeficit > localZone(threeBack.teams[1], flank).coverageDeficit);
+});
+
+test("少于三后卫的结构失衡独立于中前场人数，二后卫惩罚较轻", () => {
+  const oneBackLayout = [
+    ["GK", 50, 90], ["CB", 50, 72],
+    ["DM", 18, 52], ["DM", 34, 50], ["DM", 50, 48], ["DM", 66, 50], ["DM", 82, 52], ["AM", 38, 34], ["AM", 62, 34],
+    ["ST", 35, 17], ["ST", 65, 17],
+  ];
+  const twoBackLayout = oneBackLayout.map((entry, index) => index === 2 ? ["CB", entry[1], 70] : entry);
+  const opponent = makeTeam("one-back-opponent");
+  const oneBack = buildV2SpatialMatchup([makeTeam("one-back", { layout:oneBackLayout }), opponent]);
+  const twoBack = buildV2SpatialMatchup([makeTeam("two-back", { layout:twoBackLayout }), opponent]);
+
+  assert.equal(oneBack.teams[0].backlineExposureBreakdown.defenderCount, 1);
+  assert.ok(oneBack.teams[0].underThreeDefenderFailure > 0.6);
+  assert.ok(twoBack.teams[0].underThreeDefenderFailure > 0);
+  assert.ok(twoBack.teams[0].underThreeDefenderFailure < oneBack.teams[0].underThreeDefenderFailure);
+  assert.ok(oneBack.teams[0].backlineExposure > twoBack.teams[0].backlineExposure);
 });
 
 test("相同人数结构下高位防线和纵向脱节都会增加后场暴露", () => {

@@ -10,8 +10,10 @@ import {
   simulateV2Match,
   v2HighLineBreakawayProfile,
   v2FatigueLoadMultiplier,
+  v2MidfieldVacuumLongShotOpportunityProfile,
   v2PossessionDurationProfile,
   v2ShotBodyPartProfile,
+  v2SelectSetPieceTaker,
   v2ShotOutcomeProfile,
   v2SetPieceChanceProfile,
   v2SetPieceTargetPool,
@@ -19,10 +21,82 @@ import {
 } from "../versus/v2/match-engine-v2.js";
 import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 import { v2RepeatYellowCardProbability } from "../versus/v2/possession-chain-v2.js";
+import { REAL_PLAYERS } from "../versus/player-pool.js";
 
 const injuryImmuneTrait = "custom-dc038995-c237-4fa4-b29a-b0e5abf0921a";
+test("场上队长包办点球和任意球，离场后不自动递补", () => {
+  const captain = { id:"captain", name:"Captain", role:"CM", active:true, attributes:{ finishing:40, setPieces:35 } };
+  const specialist = { id:"specialist", name:"Specialist", role:"ST", active:true, attributes:{ finishing:95, setPieces:96 } };
+  const match = {
+    teams:[{ captainId:captain.id, players:[captain, specialist] }],
+    snapshotTeams:[{ players:[captain, specialist] }],
+  };
+
+  assert.equal(v2SelectSetPieceTaker(match, 0, "penalty").id, captain.id);
+  assert.equal(v2SelectSetPieceTaker(match, 0, "freeKick").id, captain.id);
+  assert.equal(v2SelectSetPieceTaker(match, 0, "corner").id, specialist.id);
+
+  captain.active = false;
+  assert.equal(v2SelectSetPieceTaker(match, 0, "penalty").id, specialist.id);
+  assert.equal(v2SelectSetPieceTaker(match, 0, "freeKick").id, specialist.id);
+  assert.equal(match.teams[0].captainId, captain.id);
+});
 const injuryTransferTrait = "custom-6d0bf2ee-2d26-4f56-9cb7-4c50960df85d";
 const lightningProtectionTrait = "touchline-flywheel";
+
+test("V2只在中场真空造成的前场受阻节点生成额外远射机会", () => {
+  const exposedTurnover = {
+    endZone:"finalThird:center",
+    stages:[{
+      stage:"finalThird",
+      zone:"finalThird:center",
+      outcome:"defensiveTurnover",
+      turnover:{ teamIndex:1, playerId:"defender" },
+      foul:{ occurred:false },
+      defendingLongShotExposure:1,
+    }],
+  };
+  const exposed = v2MidfieldVacuumLongShotOpportunityProfile(exposedTurnover, resolveV2MatchParameters(), 0);
+  assert.equal(exposed.eligible, true);
+  assert.equal(exposed.created, true);
+  assert.equal(exposed.opportunityChance, 0.26);
+
+  const intactMidfield = structuredClone(exposedTurnover);
+  intactMidfield.stages[0].defendingLongShotExposure = 0.2;
+  const intact = v2MidfieldVacuumLongShotOpportunityProfile(intactMidfield, resolveV2MatchParameters(), 0);
+  assert.equal(intact.eligible, false);
+  assert.equal(intact.created, false);
+
+  const wideTurnover = structuredClone(exposedTurnover);
+  wideTurnover.stages[0].zone = "finalThird:farLeft";
+  const wide = v2MidfieldVacuumLongShotOpportunityProfile(wideTurnover, resolveV2MatchParameters(), 0);
+  assert.equal(wide.eligible, true);
+  assert.ok(wide.opportunityChance < exposed.opportunityChance);
+});
+
+test("V2中场真空远射机会会进入正式射门结算链", () => {
+  const noMidfieldFormation = [
+    ["GK", 50, 90],
+    ["LB", 8, 72], ["CB", 20, 70], ["CB", 32, 71], ["CB", 44, 70],
+    ["CB", 56, 70], ["CB", 68, 71], ["CB", 80, 70], ["RB", 92, 72],
+    ["ST", 38, 18], ["ST", 62, 18],
+  ];
+  const matchSeats = seats("midfield-vacuum-shot-chain", {
+    home:{ formation:"4-3-3", tactic:"balanced", style:"possession", lockTacticalProfile:true },
+    away:{ formation:"4-3-3", formationSlots:noMidfieldFormation, tactic:"parkBus", style:"lowBlock", lockTacticalProfile:true },
+  });
+  const match = simulateV2Match(matchSeats, {
+    seed:"midfield-vacuum-shot-chain",
+    possessionChains:180,
+    parameters:parameters({
+      chain:{ longShot:{ midfieldVacuumMinimumExposure:0.55, midfieldVacuumBaseChance:1, midfieldVacuumMaximumChance:1, midfieldVacuumWideLaneMultiplier:1 } },
+    }),
+  });
+  const generated = match.chains.filter((chain) => chain.attackingTeamIndex === 0 && chain.midfieldVacuumLongShot?.created);
+  assert.ok(generated.length > 0);
+  assert.ok(generated.every((chain) => chain.stages.at(-1)?.midfieldVacuumOpportunity === true));
+  assert.ok(match.events.filter((event) => event.attackType === "longShot").length >= generated.length);
+});
 
 function parameters(overrides = {}) {
   return resolveV2MatchParameters({
@@ -38,6 +112,24 @@ function seats(seed, options = {}) {
     buildS4BalanceSeat(seed, "away", options.awayArchetype ?? "standard", options.away ?? {}),
   ];
 }
+
+test("V2比赛快照和播报中的单项能力均不超过99", () => {
+  const cappedSeats = seats("ability-cap-99");
+  for (const seat of cappedSeats) {
+    seat.bondCatalog = [];
+    for (const player of seat.players) player.attributes = Object.fromEntries(Object.keys(player.attributes).map((key) => [key, 109]));
+  }
+  const match = createV2Match(cappedSeats, { seed:"ability-cap-99", possessionChains:20 });
+  advanceV2Match(match, 1);
+  const snapshot = match.snapshotTeams[0].players[0];
+  assert.equal(snapshot.displayAttributes.passing, 99);
+  assert.equal(snapshot.attributes.passing, 99);
+  assert.ok(match.snapshotTeams.flatMap((team) => team.players).every((player) => Object.values(player.attributes).every((value) => Number(value) <= 99)));
+  advanceV2Match(match, 19);
+  const visibleAbilityDetails = match.events.map((event) => event.detail ?? "").filter((detail) => /终结能力|扑救能力|任意球能力/.test(detail));
+  assert.ok(visibleAbilityDetails.length > 0);
+  assert.ok(visibleAbilityDetails.every((detail) => !/能力[： ](?:1\d\d|[2-9]\d\d)/.test(detail)), visibleAbilityDetails.join("\n"));
+});
 
 test("V2 定位球主罚者不会成为自己的传中接应点", () => {
   const taker = { id:"taker", role:"RB" };
@@ -399,12 +491,18 @@ test("V2打穿高位防线只提高既有单刀xG而不生成额外射门", () =
   const highLineChain = structuredClone(baseChain);
   highLineChain.stages[0].defendingBacklineExposureBreakdown.highLineRisk = 0.9;
   highLineChain.stages[0].defendingLine = 88;
+  const highPressChain = structuredClone(baseChain);
+  highPressChain.stages[0].defendingStyle = "highPress";
+  highPressChain.stages[0].defendingTacticalDimensions = { pressing:96, defensiveLine:90 };
   const normal = v2HighLineBreakawayProfile(0.12, baseChain, "throughBall", parameters());
   const brokenHighLine = v2HighLineBreakawayProfile(0.12, highLineChain, "throughBall", parameters());
+  const exposedHighPress = v2HighLineBreakawayProfile(0.12, highPressChain, "throughBall", parameters());
 
   assert.equal(normal.breakaway, false);
   assert.equal(brokenHighLine.breakaway, true);
   assert.ok(brokenHighLine.xg > normal.xg);
+  assert.ok(exposedHighPress.xg > normal.xg);
+  assert.ok(exposedHighPress.highPressSeverity > 0);
   assert.ok(brokenHighLine.xg <= 0.5);
 });
 
@@ -456,6 +554,111 @@ test("V2红牌会移除球员并记录赛后停赛", () => {
   assert.ok(match.postMatchConsequences.suspensions.every((entry) => entry.matches === 1 && entry.reason === "redCard"));
 });
 
+test("V2群架会连续出示红牌，单边伐木方额外罚下一人", () => {
+  const match = simulateV2Match(seats("brawl-one-rough", {
+    home:{ style:"roughPlay" },
+    away:{ style:"possession" },
+  }), {
+    seed:"brawl-one-rough",
+    possessionChains:3,
+    weather:"sunny",
+    referee:"lenient",
+    forceBrawl:true,
+    parameters:parameters({
+      events:{
+        injuryPerChain:0,
+        blackWhistlePerMatch:0,
+        brawl:{ dismissalsPerTeamMinimum:1, dismissalsPerTeamMaximum:1 },
+      },
+      environment:{
+        cardProbability:{ lenient:0, standard:0, strict:0 },
+        directRedProbability:{ lenient:0, standard:0, strict:0 },
+        weatherEventPerChain:{ sunny:0, rain:0, storm:0, snow:0 },
+      },
+    }),
+  });
+  const brawl = match.events.find((event) => event.type === "brawl");
+  assert.ok(brawl);
+  assert.equal(brawl.refereeMultiplier, 1.8);
+  assert.deepEqual(brawl.dismissalCounts, [2, 1]);
+  const brawlReds = match.events.filter((event) => event.dismissalReason === "brawl");
+  assert.equal(brawlReds.length, 3);
+  assert.deepEqual(brawlReds.map((event) => event.teamIndex), [0, 0, 1]);
+  brawlReds.forEach((event) => {
+    const player = match.teams[event.teamIndex].players.find((entry) => entry.id === event.actorId);
+    assert.notEqual(player.assignedRole ?? player.role, "GK");
+    assert.equal(player.sentOff, true);
+  });
+  assert.equal(match.postMatchConsequences.suspensions.filter((entry) => entry.reason === "redCard").length, 3);
+  const brawlIndex = match.events.indexOf(brawl);
+  assert.ok(match.events.slice(brawlIndex + 1, brawlIndex + 4).every((event) => event.dismissalReason === "brawl"));
+});
+
+test("V2群架检查时间随比赛种子分布在20至80分钟窗口而非固定21分钟", () => {
+  const brawlMinutes = Array.from({ length:16 }, (_, index) => {
+    const seed = `brawl-timing-${index + 1}`;
+    const match = createV2Match(seats(seed), {
+      seed,
+      possessionChains:180,
+      weather:"sunny",
+      referee:"standard",
+      forceBrawl:true,
+      parameters:parameters({
+        events:{ injuryPerChain:0, blackWhistlePerMatch:0, ownGoalPerMatch:0, brawl:{ minimumMinute:20, maximumMinute:80, dismissalsPerTeamMinimum:1, dismissalsPerTeamMaximum:1 } },
+        environment:{
+          cardProbability:{ lenient:0, standard:0, strict:0 },
+          directRedProbability:{ lenient:0, standard:0, strict:0 },
+          weatherEventPerChain:{ sunny:0, rain:0, storm:0, snow:0 },
+        },
+      }),
+    });
+    advanceV2Match(match, 1);
+    return Math.ceil((match.brawlCheckChainIndex + 0.5) / match.possessionChainCount * 90);
+  });
+  assert.equal(brawlMinutes.every((minute) => Number.isInteger(minute) && minute >= 21 && minute <= 80), true);
+  assert.ok(new Set(brawlMinutes).size >= 8, `群架分钟分布不足：${brawlMinutes.join(",")}`);
+  assert.notDeepEqual(brawlMinutes, Array(brawlMinutes.length).fill(21));
+});
+
+test("V2群架在综合裁判和当前平均侵略性下约为普通1%、单方伐木5%", () => {
+  const config = resolveV2MatchParameters();
+  const brawl = config.events.brawl;
+  const aggressionValues = REAL_PLAYERS
+    .filter((player) => player.role !== "GK")
+    .map((player) => Number(player.attributes?.aggression ?? 60));
+  const averageAggression = aggressionValues.reduce((sum, value) => sum + value, 0) / aggressionValues.length;
+  const aggressionMultiplier = Math.min(
+    Number(brawl.aggressionMultiplierMaximum),
+    Math.max(1, 1 + Math.max(0, averageAggression - Number(brawl.aggressionBaseline)) / 15),
+  );
+  const refereeWeights = config.environment.refereeWeights;
+  const refereeWeightTotal = Object.values(refereeWeights).reduce((sum, value) => sum + Number(value), 0);
+  const weightedRefereeMultiplier = Object.entries(refereeWeights).reduce((sum, [key, weight]) => (
+    sum + Number(weight) / refereeWeightTotal * Number(brawl.refereeMultiplier[key])
+  ), 0);
+  const ordinaryProbability = Number(brawl.basePerEligibleMatch) * aggressionMultiplier * weightedRefereeMultiplier;
+  const oneSideRoughProbability = ordinaryProbability * Number(brawl.oneSideRoughPlayMultiplier);
+
+  assert.ok(Math.abs(ordinaryProbability - 0.01) < 0.0002, `普通群架概率应约为1%，实际为${ordinaryProbability}`);
+  assert.ok(Math.abs(oneSideRoughProbability - 0.05) < 0.001, `单方伐木群架概率应约为5%，实际为${oneSideRoughProbability}`);
+  assert.equal(brawl.aggressionMultiplierMaximum, 1.5);
+});
+
+test("V2双方伐木触发群架时维持相同罚下人数", () => {
+  const match = simulateV2Match(seats("brawl-both-rough", {
+    home:{ style:"roughPlay" },
+    away:{ style:"roughPlay" },
+  }), {
+    seed:"brawl-both-rough",
+    possessionChains:3,
+    forceBrawl:true,
+    parameters:parameters({ events:{ brawl:{ dismissalsPerTeamMinimum:2, dismissalsPerTeamMaximum:2 } } }),
+  });
+  const brawl = match.events.find((event) => event.type === "brawl");
+  assert.ok(brawl);
+  assert.deepEqual(brawl.dismissalCounts, [2, 2]);
+});
+
 test("V2伤病会导致少一人并记录伤停后果，伤病免疫特性生效", () => {
   const immuneSeats = seats("injury-immune");
   immuneSeats[0].players.forEach((player) => { player.traits = [injuryImmuneTrait]; });
@@ -498,6 +701,36 @@ test("V2别打我大哥会把场上队友的伤病转移给特性持有者", () 
   assert.equal(match.postMatchConsequences.injuries.length, 1);
   assert.equal(match.postMatchConsequences.injuries[0].playerId, transferEvent.actorId);
   assert.equal(match.postMatchConsequences.injuries[0].injuryTransferred, true);
+});
+
+test("V2别打我大哥与赖着不死组合会先转移伤病再免疫，双方均不伤退", () => {
+  const combinedSeats = seats("injury-transfer-immune");
+  combinedSeats.forEach((seat) => {
+    seat.players.forEach((player, index) => {
+      player.traits = index === 0 ? [injuryTransferTrait, injuryImmuneTrait] : [];
+    });
+  });
+  const match = simulateV2Match(combinedSeats, {
+    seed:"injury-transfer-immune",
+    possessionChains:1,
+    weather:"sunny",
+    parameters:resolveV2MatchParameters({
+      events:{ injuryPerChain:1, blackWhistlePerMatch:0 },
+      environment:{ weatherEventPerChain:{ sunny:0, rain:0, storm:0, snow:0 } },
+    }),
+  });
+  const transferEvents = match.events.filter((event) => event.type === "trait" && event.traitName === "别打我大哥");
+  const immunityEvents = match.events.filter((event) => event.type === "trait" && event.traitName === "赖着不死");
+  assert.ok(transferEvents.length >= 1);
+  assert.equal(immunityEvents.length, transferEvents.length);
+  transferEvents.forEach((event) => {
+    assert.notEqual(event.actorId, event.protectedPlayerId);
+    assert.ok(immunityEvents.some((immunity) => immunity.actorId === event.actorId));
+  });
+  assert.equal(match.teams.flatMap((team) => team.players).some((player) => player.injury), false);
+  assert.equal(match.teams.flatMap((team) => team.players).some((player) => !player.active), false);
+  assert.equal(match.postMatchConsequences.injuries.length, 0);
+  assert.equal(match.events.some((event) => event.type === "injury"), false);
 });
 
 test("V2定位球执行链包含点球、门将扑救和正式播报", () => {
@@ -595,6 +828,34 @@ test("V2全场体能只按实时球员状态消耗一次且保留后段比赛能
   const averageFitness = activeFitness.reduce((sum, value) => sum + value, 0) / activeFitness.length;
   assert.ok(averageFitness >= 80 && averageFitness <= 92);
   assert.ok(Math.min(...activeFitness) >= 75);
+});
+
+test("V2.1恶劣天气会小幅递增球员体力消耗", () => {
+  const averages = Object.fromEntries(["sunny", "rain", "storm", "snow", "superStorm"].map((weather) => {
+    const match = simulateV2Match(seats("weather-fatigue-v21"), {
+      seed:"weather-fatigue-v21",
+      possessionChains:60,
+      weather,
+      disableSuperStormStop:true,
+      referee:"standard",
+      parameters:parameters({
+        environment:{
+          cardProbability:{ lenient:0, standard:0, strict:0 },
+          directRedProbability:{ lenient:0, standard:0, strict:0 },
+          weatherEventPerChain:{ sunny:0, rain:0, storm:0, snow:0, superStorm:0 },
+        },
+        events:{ brawl:{ basePerEligibleMatch:0 } },
+      }),
+    });
+    const fitness = match.teams.flatMap((team) => team.players.filter((player) => player.startedMatch).map((player) => player.state.fitness));
+    return [weather, fitness.reduce((sum, value) => sum + value, 0) / fitness.length];
+  }));
+
+  assert.ok(averages.sunny > averages.rain);
+  assert.ok(averages.rain > averages.storm);
+  assert.ok(averages.storm > averages.snow);
+  assert.ok(averages.snow > averages.superStorm);
+  assert.ok(averages.sunny - averages.storm < 2, "普通恶劣天气的额外消耗应保持轻微");
 });
 
 test("V2把防守夺回球权区分为抢断、拦截和解围", () => {

@@ -13,7 +13,7 @@ function increment(map, key, amount = 1) {
 }
 
 function emptyGroup() {
-  return { teamSamples:0, v1Points:0, v1Wins:0, v1Draws:0, v1GoalsFor:0, v1GoalsAgainst:0, v1XgFor:0, v2Points:0, v2Wins:0, v2Draws:0, v2GoalsAgainst:0, v2XgAgainst:0, v2Possessions:0, v2OpponentPossessions:0, v2PossessionControl:0, v2OpponentPossessionControl:0, v2Xg:0, v2Goals:0, v2Shots:0, v2ShotsOnTarget:0, v2Fouls:0, v2YellowCards:0, v2RedCards:0, v2Injuries:0, v2InjuryAbsenceRounds:0, v2FoulInjuriesSuffered:0, v2FoulInjuriesCaused:0, v2Substitutions:0, v2NormalPossessions:0, v2TransitionPossessions:0, v2TransitionShots:0, v2BacklineExposure:0, v2Turnovers:0 };
+  return { teamSamples:0, v1Points:0, v1Wins:0, v1Draws:0, v1GoalsFor:0, v1GoalsAgainst:0, v1XgFor:0, v2Points:0, v2Wins:0, v2Draws:0, v2GoalsAgainst:0, v2XgAgainst:0, v2Possessions:0, v2OpponentPossessions:0, v2PossessionControl:0, v2OpponentPossessionControl:0, v2Xg:0, v2Goals:0, v2Shots:0, v2ShotsOnTarget:0, v2Fouls:0, v2YellowCards:0, v2RedCards:0, v2Injuries:0, v2InjuryAbsenceRounds:0, v2FoulInjuriesSuffered:0, v2FoulInjuriesCaused:0, v2Substitutions:0, v2NormalPossessions:0, v2TransitionPossessions:0, v2TransitionShots:0, v2BacklineExposure:0, v2MidfieldIntegrity:0, v2LongShotExposure:0, v2AttackingCommitment:0, v2LongShots:0, v2LongShotGoals:0, v2LongShotXg:0, v2LongShotsAgainst:0, v2LongShotGoalsAgainst:0, v2LongShotXgAgainst:0, v2Turnovers:0 };
 }
 
 function addTeamGroup(map, key, values) {
@@ -21,9 +21,13 @@ function addTeamGroup(map, key, values) {
   for (const [field, value] of Object.entries(values)) group[field] += Number(value ?? 0);
 }
 
-function teamComparisonValues(teamIndex, report, v2Teams) {
+function teamComparisonValues(teamIndex, report, v2Teams, spatialTeams, events = []) {
   const own = v2Teams[teamIndex];
   const opponent = v2Teams[1 - teamIndex];
+  const spatial = spatialTeams?.[teamIndex] ?? {};
+  const shotEvents = events.filter((event) => ["goal", "miss", "save", "block"].includes(event.type) && event.attackType === "longShot" && Number.isFinite(Number(event.xg)));
+  const ownLongShots = shotEvents.filter((event) => Number(event.attackingTeamIndex) === teamIndex);
+  const opponentLongShots = shotEvents.filter((event) => Number(event.attackingTeamIndex) === 1 - teamIndex);
   const goalsFor = report.score[teamIndex];
   const goalsAgainst = report.score[1 - teamIndex];
   return {
@@ -59,6 +63,15 @@ function teamComparisonValues(teamIndex, report, v2Teams) {
     v2TransitionPossessions:own.transitionPossessions,
     v2TransitionShots:own.transitionShots,
     v2BacklineExposure:own.backlineExposure,
+    v2MidfieldIntegrity:Number(spatial.midfieldIntegrity ?? 1),
+    v2LongShotExposure:Number(spatial.longShotExposure ?? 0),
+    v2AttackingCommitment:Number(spatial.attackingCommitment ?? 0.5),
+    v2LongShots:ownLongShots.length,
+    v2LongShotGoals:ownLongShots.filter((event) => event.type === "goal").length,
+    v2LongShotXg:ownLongShots.reduce((sum, event) => sum + Number(event.xg), 0),
+    v2LongShotsAgainst:opponentLongShots.length,
+    v2LongShotGoalsAgainst:opponentLongShots.filter((event) => event.type === "goal").length,
+    v2LongShotXgAgainst:opponentLongShots.reduce((sum, event) => sum + Number(event.xg), 0),
     v2Turnovers:own.turnovers,
   };
 }
@@ -84,6 +97,8 @@ function numericBand(value, bands) {
 function teamAnalysisDimensions(seat, archetype, v2, teamIndex) {
   const snapshot = v2.openingSnapshots[teamIndex];
   const tacticalDimensions = v2.spatial?.teams?.[teamIndex]?.tacticalDimensions ?? {};
+  const spatialTeam = v2.spatial?.teams?.[teamIndex] ?? {};
+  const midfieldBreakdown = spatialTeam.midfieldStructureBreakdown ?? {};
   const analysisSnapshot = v2.match?.analysisTimeline?.[0]?.teams?.[teamIndex] ?? {};
   const inDetails = { attackDirection:"balanced", chanceCreation:"balanced", longShots:"balanced", crossing:"balanced", ...(seat.inPossessionDetails ?? {}) };
   const outDetails = { defensiveWidth:"balanced", defenseDirection:"balanced", marking:"mixed", lineStrategy:"hold", ...(seat.outOfPossessionDetails ?? {}) };
@@ -140,6 +155,24 @@ function teamAnalysisDimensions(seat, archetype, v2, teamIndex) {
     timeWastingBand:numericBand(tacticalDimensions.timeWasting, [{ maximum:20, label:"00-20" }, { maximum:40, label:"21-40" }, { maximum:60, label:"41-60" }, { maximum:80, label:"61-80" }, { maximum:100, label:"81-100" }]),
     backlineExposure:numericBand(v2.spatial?.teams?.[teamIndex]?.backlineExposure ?? 0, [
       { maximum:0.05, label:"none" }, { maximum:0.25, label:"low" }, { maximum:0.5, label:"high" }, { maximum:1, label:"extreme" },
+    ]),
+    midfieldIntegrityBand:numericBand(spatialTeam.midfieldIntegrity ?? 1, [
+      { maximum:0.2, label:"collapsed" }, { maximum:0.45, label:"broken" }, { maximum:0.75, label:"thin" }, { maximum:1, label:"stable" },
+    ]),
+    midfieldPlayerCount:numericBand(midfieldBreakdown.midfieldPlayerCount ?? 0, [
+      { maximum:0, label:"0" }, { maximum:1, label:"1" }, { maximum:2, label:"2" }, { maximum:3, label:"3" }, { maximum:10, label:"4+" },
+    ]),
+    maximumVerticalGapBand:numericBand(midfieldBreakdown.maximumVerticalGap ?? 0, [
+      { maximum:24, label:"00-24" }, { maximum:32, label:"25-32" }, { maximum:44, label:"33-44" }, { maximum:100, label:"45+" },
+    ]),
+    longShotExposureBand:numericBand(spatialTeam.longShotExposure ?? 0, [
+      { maximum:0.1, label:"none" }, { maximum:0.35, label:"low" }, { maximum:0.7, label:"high" }, { maximum:1, label:"extreme" },
+    ]),
+    attackingCommitmentBand:numericBand(spatialTeam.attackingCommitment ?? 0.5, [
+      { maximum:0.28, label:"minimal" }, { maximum:0.42, label:"low" }, { maximum:0.62, label:"balanced" }, { maximum:1, label:"high" },
+    ]),
+    deepDefensiveSeverityBand:numericBand(spatialTeam.deepDefensiveSeverity ?? 0, [
+      { maximum:0.05, label:"none" }, { maximum:0.3, label:"moderate" }, { maximum:0.55, label:"deep" }, { maximum:1, label:"extreme" },
     ]),
     averageUpgrade:numericBand(averageUpgrade, [
       { maximum:1, label:"0-1" }, { maximum:3, label:"1-3" }, { maximum:5, label:"3-5" }, { maximum:8, label:"5-8" },
@@ -371,7 +404,7 @@ function addMatch(aggregate, report, seats, archetypes, v2) {
   const dimensionsByTeam = seats.map((seat, teamIndex) => teamAnalysisDimensions(seat, archetypes[teamIndex], v2, teamIndex));
   const selectedDimensions = new Set(configuredAnalysisDimensions(v2.config));
   seats.forEach((seat, teamIndex) => {
-    const values = teamComparisonValues(teamIndex, report, v2.result.teams);
+    const values = teamComparisonValues(teamIndex, report, v2.result.teams, v2.spatial?.teams, v2.match?.events);
     for (const [dimension, rawValue] of Object.entries(dimensionsByTeam[teamIndex])) {
       if (!selectedDimensions.has(dimension)) continue;
       const valuesForDimension = Array.isArray(rawValue) ? rawValue : [rawValue];
@@ -451,7 +484,7 @@ function rawSample(index, seed, seats, archetypes, report, v2, scenario = null) 
       postMatchConsequences:v2.match.postMatchConsequences,
       independentEvents:v2.result.independentEvents,
       sources:v2.result.sources,
-      spatialTeams:v2.spatial.teams.map((team) => ({ name:team.name, backlineExposure:team.backlineExposure, controlledZoneCount:team.controlledZoneCount, overloadZoneCount:team.overloadZoneCount, centralControl:team.centralControl, flankControl:team.flankControl, finalThirdControl:team.finalThirdControl, boxPresence:team.boxPresence, connectionQuality:team.connectionQuality, exploitableZones:team.exploitableZones })),
+      spatialTeams:v2.spatial.teams.map((team) => ({ name:team.name, backlineExposure:team.backlineExposure, midfieldIntegrity:team.midfieldIntegrity, midfieldStructureBreakdown:team.midfieldStructureBreakdown, longShotExposure:team.longShotExposure, attackingCommitment:team.attackingCommitment, deepDefensiveSeverity:team.deepDefensiveSeverity, controlledZoneCount:team.controlledZoneCount, overloadZoneCount:team.overloadZoneCount, centralControl:team.centralControl, flankControl:team.flankControl, finalThirdControl:team.finalThirdControl, boxPresence:team.boxPresence, connectionQuality:team.connectionQuality, exploitableZones:team.exploitableZones })),
       chains:v2.rawChains,
     },
   };
@@ -473,9 +506,9 @@ try {
       : [pickS4BalanceArchetype(ecosystemRng, config.ecosystemWeights), pickS4BalanceArchetype(ecosystemRng, config.ecosystemWeights)];
     const scenarioBuildSeed = scenario ? `${config.seed}:scenario:${scenario.scenarioIndex}:archetype-cycle:${Math.floor(scenario.repetition / (config.scenarioMatrix.mirrorHomeAway === false ? 1 : 2))}` : seed;
     const seats = archetypes.map((archetype, sideIndex) => {
-      if (!scenario) return buildS4BalanceSeat(seed, sideIndex === 0 ? "home" : "away", archetype);
+      if (!scenario) return buildS4BalanceSeat(seed, sideIndex === 0 ? "home" : "away", archetype, { playerQuality:config.playerQuality });
       const side = scenarioSides[sideIndex];
-      const seat = buildS4BalanceSeat(scenarioBuildSeed, side.sourceSide, archetype, v2ScenarioSeatOptions(config.scenarioMatrix, side));
+      const seat = buildS4BalanceSeat(scenarioBuildSeed, side.sourceSide, archetype, { ...v2ScenarioSeatOptions(config.scenarioMatrix, side), playerQuality:config.playerQuality });
       seat.simulationScenarioId = scenario.id;
       seat.simulationScenarioSuite = scenario.suiteId;
       seat.simulationScenarioCategory = scenario.category;

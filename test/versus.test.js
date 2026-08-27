@@ -1101,3 +1101,16 @@ test("锦标赛保留首回合阵容并完成5轮传奇保底补强", () => {
   assert.equal(internal.match.teams[0].players.length, 11);
   assert.deepEqual(internal.match.aggregateBaseScore, [1, 1]);
 });
+
+test("authenticated API activity refreshes the account online timestamp", () => {
+  let now = 1_000_000;
+  const service = new VersusRoomService({ accountsPath:null, now:() => now });
+  const created = service.bindAccount(null, null, "Activity Heartbeat");
+  const stored = service.accounts.get(created.profile.id.toLowerCase());
+  assert.equal(stored.lastSeenAt, now);
+
+  now += 90_000;
+  const authenticated = service.account(created.profile.id, created.accountToken);
+  assert.equal(authenticated.lastSeenAt, now);
+  assert.equal(stored.lastSeenAt, now);
+});

@@ -26,9 +26,9 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
     eligibleRoleGroups:Object.freeze(["DEF", "MID", "ATT"]),
     tags:Object.freeze(["physical", "finishing", "pace", "dribbling"]),
     polarity:"mixed",
-    summary:"该球员的身高下降10cm，射门、速度、盘带各提升5点。",
+    summary:"该球员的身高下降5cm，射门、速度、盘带各提升5点。",
     rules:Object.freeze([
-      Object.freeze({ hook:"height", addCm:-10 }),
+      Object.freeze({ hook:"height", addCm:-5 }),
       Object.freeze({ hook:"attribute", add:Object.freeze({ finishing:5, pace:5, dribbling:5 }) }),
     ]),
     dropWeight:1,
@@ -51,23 +51,23 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
   versusTrait("set-piece-toolbox", "该球员在场上时，如果遇到黑哨事件，本队视为拥有11名阿根廷球员。", [
     { hook: "argentinaCount", minimum: 11 },
   ], { name: "因凡蒂诺救救我" }),
-  versusTrait("rain-boots", "该球员在雨天、雷暴、雪天比赛时，综合能力值提升10%。", [
-    { hook: "allAttributes", multiply: 1.1, when: { weather: ["rain", "storm", "snow"] } },
+  versusTrait("rain-boots", "该球员在雨天、雷暴、雪天比赛时，综合能力值提升12%。", [
+    { hook: "allAttributes", multiply: 1.12, when: { weather: ["rain", "storm", "snow"] } },
   ], { name: "反向晴天娃娃" }),
-  versusTrait("sweeper-keeper", "该球员在比赛第75分钟后，综合能力值提升10%。", [
-    { hook: "allAttributes", multiply: 1.1, when: { minuteGte: 75 } },
+  versusTrait("sweeper-keeper", "该球员在比赛第60分钟后，综合能力值提升10%。", [
+    { hook: "allAttributes", multiply: 1.1, when: { minuteGte: 60 } },
   ], { name: "本质大心脏" }),
   versusTrait("lone-finisher", "该球员可以适配任何国家队或俱乐部羁绊。", [
     { hook: "affinityWildcard", nationality: true, club: true },
   ], { name: "变色龙" }),
-  versusTrait("big-stage", "该球员造点球的概率提升，但因假摔获得黄牌的概率也提升。", [
-    { hook: "penaltyDraw", foulMultiplier: 1.35, penaltyMultiplier: 1.75, simulationYellowChance: 0.24 },
+  versusTrait("big-stage", "该球员造点球的概率提升。", [
+    { hook: "penaltyDraw", foulMultiplier: 1.35, penaltyMultiplier: 1.75 },
   ], { name: "跳水王子" }),
-  versusTrait("opening-sprint", "该球员所在球队使用伐木战术时，综合能力提升5%。", [
-    { hook: "allAttributes", multiply: 1.05, when: { teamStyle: "roughPlay" } },
+  versusTrait("opening-sprint", "该球员所在球队使用伐木战术时，综合能力提升10%。", [
+    { hook: "allAttributes", multiply: 1.1, when: { teamStyle: "roughPlay" } },
   ], { name: "铁血蓝白" }),
-  versusTrait("stoppage-time-expert", "该球员的体力值固定为90，不会随着比赛消耗变化。", [
-    { hook: "fixedFitness", value: 90 },
+  versusTrait("stoppage-time-expert", "该球员的体力值固定为94，不会随着比赛消耗变化。", [
+    { hook: "fixedFitness", value: 94 },
   ], { name: "996" }),
   versusTrait("double-edged-core", "该球员的边路相关属性获得提升，并解锁LW/RW位置熟练度。", [
     { hook: "attribute", add: { pace: 5, acceleration: 5, dribbling: 4, crossing: 5, offBall: 3 } },
@@ -101,9 +101,8 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
     { hook: "position", minimumFit: 0.65 },
     { hook: "attribute", add: { tackling: -2 }, when: { activeRoleNot: "GK" } },
   ], { name: "紧急手套", tags: ["goalkeeping", "position", "tradeoff"] }),
-  versusTrait("front-runner-essential", "球队领先时整体能力提高8%；落后时整体能力降低8%。", [
+  versusTrait("front-runner-essential", "球队领先时整体能力提高8%；落后时不受减益影响。", [
     { hook: "allAttributes", multiply: 1.08, when: { scoreState: "leading" } },
-    { hook: "allAttributes", multiply: 0.92, when: { scoreState: "trailing" } },
   ]),
   versusTrait("chameleon-role", "出任任何位置时，位置适配最低为70%。", [
     { hook: "position", minimumFit: 0.7 },
@@ -123,10 +122,9 @@ const YDL_CUSTOM_TRAIT_CARDS = Object.freeze([
     eligibleRoleGroups:Object.freeze(["ANY"]),
     tags:Object.freeze(["scoreState", "tradeoff"]),
     polarity:"mixed",
-    summary:"球队领先的时候综合能力提升10%，落后的时候综合能力-15%",
+    summary:"球队领先的时候综合能力提升10%，落后时不受减益影响",
     rules:Object.freeze([
       Object.freeze({ hook:"allAttributes", multiply:1.1, when:Object.freeze({ scoreState:"leading" }) }),
-      Object.freeze({ hook:"allAttributes", multiply:0.85, when:Object.freeze({ scoreState:"trailing" }) }),
     ]),
     dropWeight:1,
     maxLevel:1,

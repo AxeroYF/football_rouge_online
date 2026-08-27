@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import ExcelJS from "exceljs";
-import sharp from "sharp";
 
 test("管理员批量制卡API完成模板、预览、导入、卡画和整批上线", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "ydl-admin-player-batch-"));
@@ -42,18 +41,36 @@ test("管理员批量制卡API完成模板、预览、导入、卡画和整批�
   const imported = await call("/api/admin/content/player-import/commit", { method:"POST", token, body:{ batchId, rows:preview.value.preview.rows } });
   assert.equal(imported.statusCode, 201);
   assert.equal(imported.value.drafts.length, 1);
-  assert.equal(imported.value.studio.playerBatches.find((batch) => batch.id === batchId).issueCount, 1);
+  assert.equal(imported.value.studio.playerBatches.find((batch) => batch.id === batchId).missingProfileCount, 1);
   const draft = imported.value.drafts[0];
 
-  const png = await sharp({ create:{ width:220, height:380, channels:4, background:{ r:50, g:170, b:210, alpha:0.75 } } }).png().toBuffer();
-  const uploaded = await call(`/api/admin/content/player-profiles/${encodeURIComponent(draft.id)}/image`, {
-    method:"POST", token, buffer:png,
-    headers:{ "content-type":"image/png", "x-ydl-file-name":"Example_Player.png", "x-ydl-profile-x":"50", "x-ydl-profile-y":"52", "x-ydl-profile-width":"200" },
-  });
-  assert.equal(uploaded.statusCode, 200);
   const published = await call(`/api/admin/content/player-batches/${encodeURIComponent(batchId)}/publish`, { method:"POST", token, body:{} });
   assert.equal(published.statusCode, 200);
   assert.equal(published.value.batch.status, "published");
   assert.equal(published.value.players.length, 1);
   assert.equal(published.value.studio.playerBatches.find((batch) => batch.id === batchId).publishedCount, 1);
+
+  const exported = await call("/api/admin/content/players/export", { token });
+  assert.equal(exported.statusCode, 200);
+  assert.match(exported.headers["content-type"], /spreadsheetml/);
+  assert.match(exported.headers["content-disposition"], /^attachment; filename=ydl-player-bond-analysis-\d{8}-\d{4}\.xlsx$/);
+  assert.ok(exported.body.length > 20_000);
+  const analysis = new ExcelJS.Workbook();
+  await analysis.xlsx.load(exported.body);
+  assert.deepEqual(analysis.worksheets.map((sheet) => sheet.name), ["球员明细", "国家汇总", "俱乐部汇总", "国家羁绊候选", "导出说明"]);
+  const detail = analysis.getWorksheet("球员明细");
+  const playerNames = [...Array(detail.rowCount - 1)].map((_, index) => detail.getCell(index + 2, 3).text);
+  assert.ok(playerNames.includes("API测试球员"));
+  const nationality = analysis.getWorksheet("国家汇总");
+  const testNationRow = [...Array(nationality.rowCount - 1)].map((_, index) => nationality.getRow(index + 2)).find((row) => row.getCell(1).text === "测试国");
+  assert.ok(testNationRow);
+  assert.equal(testNationRow.getCell(2).value, 1);
+  assert.equal(testNationRow.getCell(13).value.result, "未开放");
+  assert.equal(testNationRow.getCell(14).value.result, 9);
+  const candidate = analysis.getWorksheet("国家羁绊候选");
+  assert.ok([...Array(candidate.rowCount - 1)].some((_, index) => candidate.getCell(index + 2, 2).text === "测试国"));
+
+  const adminSource = await readFile(new URL("../admin/public/app.js", import.meta.url), "utf8");
+  assert.match(adminSource, /id="content-player-export"/);
+  assert.match(adminSource, /\/api\/admin\/content\/players\/export/);
 });

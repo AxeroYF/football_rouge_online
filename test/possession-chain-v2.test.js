@@ -4,6 +4,15 @@ import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
 import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 import { simulateV2PossessionChain } from "../versus/v2/possession-chain-v2.js";
 import { buildV2SpatialMatchup, buildV2StageSpatialCache } from "../versus/v2/spatial-model-v2.js";
+import { v2AttackingCommitmentProfile } from "../versus/v2/tactical-balance-v2.js";
+
+test("纯防守投入度会限制免费状态补偿与进攻推进", () => {
+  const balanced = v2AttackingCommitmentProfile({ mentality:50, tempo:50, defensiveLine:50, pressing:50, timeWasting:15 }, resolveV2MatchParameters());
+  const parkBus = v2AttackingCommitmentProfile({ mentality:20, tempo:26, defensiveLine:8, pressing:14, timeWasting:55 }, resolveV2MatchParameters());
+  assert.ok(parkBus.commitment < balanced.commitment);
+  assert.ok(parkBus.deepDefensiveSeverity > 0.5);
+  assert.ok(parkBus.stateBonusMultiplier < balanced.stateBonusMultiplier);
+});
 
 const ROLE_LAYOUT = Object.freeze([
   ["GK", 50, 90],
@@ -24,11 +33,14 @@ function makePlayer(id, role, value = 80) {
 }
 
 function makeTeam(name, options = {}) {
-  const players = ROLE_LAYOUT.map(([role], index) => makePlayer(`${name}-${index}`, role, options.value ?? 80));
+  const layout = options.layout ?? ROLE_LAYOUT;
+  const players = layout.map(([role], index) => makePlayer(`${name}-${index}`, role, options.value ?? 80));
   return {
     name,
     players,
-    positions:Object.fromEntries(ROLE_LAYOUT.map(([, x, y], index) => [players[index].id, { x, y }])),
+    positions:Object.fromEntries(layout.map(([, x, y], index) => [players[index].id, { x, y }])),
+    spatialRoles:Object.fromEntries(players.map((player) => [player.id, player.role])),
+    structureRoles:Object.fromEntries(players.map((player) => [player.id, player.role])),
     tactic:options.tactic ?? "balanced",
     style:options.style ?? "possession",
     tacticalDimensions:options.tacticalDimensions,
@@ -102,6 +114,25 @@ test("对手高位压迫通过区域控制降低本方初始控球概率", () =>
   assert.ok(highPress.stages[0].probability < balanced.stages[0].probability);
 });
 
+test("少于三后卫的阵型不能由堆叠中前场替代后场出球与回防", () => {
+  const oneBackLayout = [
+    ["GK", 50, 90], ["CB", 50, 72],
+    ["DM", 18, 52], ["DM", 34, 50], ["DM", 50, 48], ["DM", 66, 50], ["DM", 82, 52], ["AM", 38, 34], ["AM", 62, 34],
+    ["ST", 35, 17], ["ST", 65, 17],
+  ];
+  const normal = simulateV2PossessionChain([makeTeam("normal"), makeTeam("opponent")], { rng:() => 0, recordRandomRolls:true });
+  const oneBackTeam = makeTeam("one-back", { layout:oneBackLayout });
+  const oneBackSpatial = buildV2SpatialMatchup([oneBackTeam, makeTeam("one-back-opponent")]);
+  const oneBack = simulateV2PossessionChain([oneBackTeam, makeTeam("opponent")], { rng:() => 0, recordRandomRolls:true });
+  const oneBackBuildUp = oneBack.stages.find((stage) => stage.stage === "buildUp");
+
+  assert.ok(oneBackSpatial.teams[0].underThreeDefenderFailure > 0.6);
+  assert.equal(oneBackSpatial.teams[0].backlineExposureBreakdown.defenderCount, 1);
+  assert.ok(oneBack.stages[0].probability < normal.stages[0].probability);
+  assert.ok(oneBackBuildUp.stateAdjustment.underThreeDefenderPenalty > 0.07);
+  assert.ok(oneBackBuildUp.probability < normal.stages.find((stage) => stage.stage === "buildUp").probability);
+});
+
 test("V2进攻心态和高位压迫提高后段推进收益且摆大巴主动进攻受限", () => {
   const aggressive = simulateV2PossessionChain([
     makeTeam("aggressive", { tactic:"allOutAttack", style:"highPress" }),
@@ -116,6 +147,8 @@ test("V2进攻心态和高位压迫提高后段推进收益且摆大巴主动进
   assert.ok(aggressiveChance.stateAdjustment.tactical > 0);
   assert.ok(conservativeChance.stateAdjustment.tactical < 0);
   assert.ok(aggressiveChance.stateAdjustment.tactical > conservativeChance.stateAdjustment.tactical);
+  assert.ok(aggressiveChance.stateAdjustment.highIntensityPenalty > 0);
+  assert.ok(conservativeChance.stateAdjustment.deepAttackPenalty > aggressiveChance.stateAdjustment.deepAttackPenalty);
 });
 
 test("丢失球权时只允许事件区域内的防守球员完成断球", () => {

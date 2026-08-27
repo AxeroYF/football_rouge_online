@@ -1,19 +1,20 @@
 {
   "engineVersion": "V2.1",
-  "outputVersion": "S4-V2.1-balance-postfix-full-20260812",
-  "seed": "yellowdogs-s4-v2.1-balance-postfix-20260812-seed-001",
+  "outputVersion": "S4-V2.1-defense-midfield-balance-full-20260823",
+  "seed": "yellowdogs-s4-v2.1-defense-midfield-20260814-seed-001",
   "studyDesign": {
-    "expectedMatches": 22920,
-    "scenarioCount": 573,
-    "repetitionsPerScenario": 40,
-    "expectedDurationHours": { "minimum":6, "maximum":8, "baselineEstimate":7.1, "calibratedFromPreviousHours":11 },
-    "controlledComparisons": ["formation", "mentality", "presetStyle", "inPossession", "outOfPossession", "detailInstructions", "tacticalSliders", "playerDuties", "bonds"],
-    "focusMetrics": ["formationWinRates", "mentalityWinRates", "presetStyleWinRates", "attackDefenseInstructionWinRates", "tacticalRegression", "playerDutyGuidance", "bondBalance", "possessionDistribution", "yellowCards", "redCards", "directRedCards", "secondYellowRedCards", "injuries", "injuryCauses", "injuryAbsenceRounds", "foulInjuriesCaused", "stormInjuryIncrement"],
-    "note": "Post-fix full validation for the current V2.1 stable engine. It retains all 561 previous scenarios, expands controlled player-duty and bond coverage by 12 scenarios, and uses 40 repetitions with complete home/away mirrors. Change seed here or pass --seed; keep seed, config and engine revision unchanged for exact reproduction."
+    "expectedMatches": 19552,
+    "scenarioCount": 611,
+    "repetitionsPerScenario": 32,
+    "expectedDurationHours": { "minimum":5.4, "maximum":7, "baselineEstimate":6.1, "calibratedFromPreviousMatches":22920, "calibratedFromPreviousHours":7.1 },
+    "controlledComparisons": ["formation", "extremeFormation", "midfieldIntegrity", "verticalGap", "longShotExposure", "attackingCommitment", "defensiveTransition", "mentality", "presetStyle", "inPossession", "outOfPossession", "detailInstructions", "tacticalSliders", "playerDuties", "bonds"],
+    "focusMetrics": ["formationWinRates", "mentalityWinRates", "presetStyleWinRates", "attackDefenseInstructionWinRates", "tacticalRegression", "playerDutyGuidance", "bondBalance", "possessionDistribution", "midfieldIntegrity", "midfieldPlayerCount", "maximumVerticalGap", "longShotsAgainst", "longShotExpectedGoalsAgainst", "attackingCommitment", "deepDefensiveSeverity", "transitionShots", "yellowCards", "redCards", "directRedCards", "secondYellowRedCards", "injuries", "injuryCauses", "injuryAbsenceRounds", "foulInjuriesCaused", "stormInjuryIncrement"],
+    "note": "Overview-only full balance simulation with the latest engine parameters (high-press pressure/recovery reduced; high-press counter, breakaway and injury risk increased; ability overflow retention 20%). The best-board tactical search step has been removed. Workload keeps all extreme-shape scenarios, 10 workers and 32 mirrored repetitions per scenario."
   },
   "v2Only": true,
   "v2PossessionChainsPerMatch": 180,
   "maximumWorkers": 10,
+  "defaultWorkers": 10,
   "shardMatches": 48,
   "progressIntervalMatches": 4,
   "progress": {
@@ -49,6 +50,12 @@
     "outDefenseDirection",
     "outMarking",
     "outLineStrategy",
+    "midfieldIntegrityBand",
+    "midfieldPlayerCount",
+    "maximumVerticalGapBand",
+    "longShotExposureBand",
+    "attackingCommitmentBand",
+    "deepDefensiveSeverityBand",
     "tempoBand",
     "directnessBand",
     "attackingWidthBand",
@@ -83,15 +90,15 @@
     "nationalityHeavy": 25
   },
   "outputLimits": {
-    "coreBytes": 4000000,
-    "rawSamplesBytes": 1500000,
-    "dimensionShardBytes": 2500000,
+    "coreBytes": 3000000,
+    "rawSamplesBytes": 1000000,
+    "dimensionShardBytes": 1500000,
     "separateDimensions": true
   },
   "realismBenchmarks": {
-    "version": "v2.1-realism-v4-postfix-neutral-venue",
-    "reference": "Post-fix validation envelope for the current V2.1 stable engine after high-press, all-out attack, formation-risk, possession, second-yellow, lightning and natural-injury adjustments. Both sides use symmetric rules with no home advantage.",
-    "minimumMatches": 20000,
+    "version": "v2.1-realism-v6-defense-midfield-candidate",
+    "reference": "Latest engine parameters (2026-08-23): high-press pressure/recovery reduced; high-press counter, breakaway and injury risk increased; ability overflow retention 20%. Both sides use symmetric rules with no home advantage.",
+    "minimumMatches": 19000,
     "minimumPassRatePercent": 80,
     "metrics": {
       "chainGoalsPerMatch": { "label":"Goals per match", "unit":"goals/match", "minimum":2.4, "maximum":3.2, "critical":true, "weight":4 },
@@ -145,6 +152,12 @@
       "goalBodyParts.leftFoot.sharePercent": { "label":"Left-foot goal share", "unit":"percent", "minimum":18, "maximum":35, "critical":false, "weight":1 },
       "goalBodyParts.rightFoot.sharePercent": { "label":"Right-foot goal share", "unit":"percent", "minimum":42, "maximum":62, "critical":false, "weight":1 },
       "goalBodyParts.other.sharePercent": { "label":"Other-body-part goal share", "unit":"percent", "minimum":0.5, "maximum":8, "critical":false, "weight":1 }
+      ,"dimensions.tactic.parkBus.v2.expectedGoalsPerMatch": { "label":"Park-the-bus attacking xG ceiling", "unit":"xG/team-match", "minimum":0.6, "maximum":0.92, "critical":true, "weight":3 }
+      ,"dimensions.tacticalProfile.parkbus-lowblock.v2.expectedGoalsPerMatch": { "label":"Pure park-bus low-block xG ceiling", "unit":"xG/team-match", "minimum":0.5, "maximum":0.86, "critical":true, "weight":3 }
+      ,"dimensions.tacticalProfile.parkbus-counter.v2.transitionShotsPerMatch": { "label":"Park-bus counter transition-shot ceiling", "unit":"shots/team-match", "minimum":2.4, "maximum":4, "critical":false, "weight":2 }
+      ,"dimensions.formation.extreme-8-0-2.v2.possessionSharePercent": { "label":"8-0-2 loses midfield possession", "unit":"percent", "minimum":10, "maximum":36, "critical":true, "weight":3 }
+      ,"dimensions.formation.extreme-8-0-2.v2.longShotsAgainstPerMatch": { "label":"8-0-2 concedes frequent long shots", "unit":"shots/team-match", "minimum":3, "maximum":7, "critical":false, "weight":2 }
+      ,"dimensions.formation.extreme-8-0-2.v2.longShotExpectedGoalsAgainstPerMatch": { "label":"8-0-2 concedes meaningful long-shot xG", "unit":"xG/team-match", "minimum":0.25, "maximum":0.8, "critical":false, "weight":2 }
     },
     "comparisons": [
       { "id":"patient-possession-vs-direct-possession-gap", "label":"Patient possession exceeds direct long-ball possession", "leftPath":"dimensions.tacticalProfile.patient-possession.v2.possessionSharePercent", "rightPath":"dimensions.tacticalProfile.direct-longball.v2.possessionSharePercent", "unit":"percentage points", "minimumDifference":3, "maximumDifference":18, "critical":true, "weight":3 },
@@ -160,10 +173,14 @@
       { "id":"natural-bond-controlled-value", "label":"Natural bonds provide bounded head-to-head value", "leftPath":"headToHead.bondMode.natural vs disabled.v2.pointsPerMatch", "rightPath":"headToHead.bondMode.disabled vs natural.v2.pointsPerMatch", "unit":"points/team-match", "minimumDifference":-0.1, "maximumDifference":0.3, "critical":false, "weight":2 },
       { "id":"roughplay-red-card-risk", "label":"Rough play carries a visible but bounded red-card cost", "leftPath":"dimensions.style.roughPlay.v2.redCardsPerMatch", "rightPath":"dimensions.style.possession.v2.redCardsPerMatch", "unit":"cards/team-match", "minimumDifference":0.05, "maximumDifference":0.3, "critical":false, "weight":1 },
       { "id":"storm-injury-increment", "label":"Storms raise injury risk without overwhelming normal match injuries", "leftPath":"dimensions.weather.storm.v2.injuriesPerMatch", "rightPath":"dimensions.weather.sunny.v2.injuriesPerMatch", "unit":"injuries/team-match", "minimumDifference":0.05, "maximumDifference":0.3, "critical":false, "weight":2 }
+      ,{ "id":"balanced-vs-parkbus-xg-control", "label":"Balanced football creates materially more xG than park-the-bus", "leftPath":"dimensions.tactic.balanced.v2.expectedGoalsPerMatch", "rightPath":"dimensions.tactic.parkBus.v2.expectedGoalsPerMatch", "unit":"xG/team-match", "minimumDifference":0.2, "maximumDifference":0.65, "critical":true, "weight":3 }
+      ,{ "id":"balanced-vs-parkbus-points-control", "label":"Park-the-bus cannot become a dominant default", "leftPath":"dimensions.tactic.balanced.v2.pointsPerMatch", "rightPath":"dimensions.tactic.parkBus.v2.pointsPerMatch", "unit":"points/team-match", "minimumDifference":0.08, "maximumDifference":0.5, "critical":true, "weight":3 }
+      ,{ "id":"empty-midfield-longshot-punishment", "label":"8-0-2 concedes more long shots than a normal 4-3-3", "leftPath":"dimensions.formation.extreme-8-0-2.v2.longShotsAgainstPerMatch", "rightPath":"dimensions.formation.4-3-3.v2.longShotsAgainstPerMatch", "unit":"shots/team-match", "minimumDifference":0.5, "maximumDifference":4, "critical":false, "weight":2 }
+      ,{ "id":"normal-vs-empty-midfield-possession", "label":"Normal 4-3-3 controls substantially more possession than 8-0-2", "leftPath":"dimensions.formation.4-3-3.v2.possessionSharePercent", "rightPath":"dimensions.formation.extreme-8-0-2.v2.possessionSharePercent", "unit":"percentage points", "minimumDifference":12, "maximumDifference":42, "critical":true, "weight":3 }
     ]
   },
   "scenarioMatrix": {
-    "repetitionsPerScenario": 40,
+    "repetitionsPerScenario": 32,
     "mirrorHomeAway": true,
     "archetypePairing": "independentWeighted",
     "environmentSampling": "weighted",
@@ -197,7 +214,9 @@
       "extreme-left-overload": { "risk":"extreme", "tags":["fourBack","leftOverload","horizontalImbalance"], "formationLines":{"attack":18,"midfield":46,"defense":72,"goalkeeper":90}, "slots":[["GK",38,90],["LB",4,72],["CB",18,73],["CB",32,73],["RB",48,72],["LM",5,46],["DM",23,51],["RM",43,46],["LW",4,19],["ST",24,17],["RW",45,19]] },
       "extreme-right-overload": { "risk":"extreme", "tags":["fourBack","rightOverload","horizontalImbalance"], "formationLines":{"attack":18,"midfield":46,"defense":72,"goalkeeper":90}, "slots":[["GK",62,90],["LB",52,72],["CB",68,73],["CB",82,73],["RB",96,72],["LM",57,46],["DM",77,51],["RM",95,46],["LW",55,19],["ST",76,17],["RW",96,19]] },
       "extreme-central-swarm": { "risk":"high", "tags":["fourBack","ultraNarrow","centralSwarm"], "formationLines":{"attack":18,"midfield":45,"defense":71,"goalkeeper":90}, "slots":[["GK",50,90],["LB",39,71],["CB",46,73],["CB",54,73],["RB",61,71],["LM",40,45],["DM",50,52],["RM",60,45],["LW",42,19],["ST",50,17],["RW",58,19]] },
-      "extreme-wide-stretch": { "risk":"high", "tags":["fourBack","ultraWide","looseConnections"], "formationLines":{"attack":18,"midfield":46,"defense":72,"goalkeeper":90}, "slots":[["GK",50,90],["LB",2,71],["CB",32,74],["CB",68,74],["RB",98,71],["LM",2,45],["DM",50,54],["RM",98,45],["LW",2,18],["ST",50,16],["RW",98,18]] }
+      "extreme-wide-stretch": { "risk":"high", "tags":["fourBack","ultraWide","looseConnections"], "formationLines":{"attack":18,"midfield":46,"defense":72,"goalkeeper":90}, "slots":[["GK",50,90],["LB",2,71],["CB",32,74],["CB",68,74],["RB",98,71],["LM",2,45],["DM",50,54],["RM",98,45],["LW",2,18],["ST",50,16],["RW",98,18]] },
+      "extreme-8-0-2": { "risk":"extreme", "tags":["eightBack","noMidfield","deepBlock","disconnected","longShotTarget"], "formationLines":{"attack":18,"midfield":49,"defense":77,"goalkeeper":92}, "slots":[["GK",50,92],["LB",5,75],["CB",19,79],["CB",32,81],["CB",44,82],["CB",56,82],["CB",68,81],["CB",81,79],["RB",95,75],["ST",38,18],["ST",62,18]] },
+      "extreme-7-1-2": { "risk":"extreme", "tags":["sevenBack","oneMidfielder","deepBlock","disconnected","longShotTarget"], "formationLines":{"attack":18,"midfield":55,"defense":78,"goalkeeper":92}, "slots":[["GK",50,92],["LB",5,75],["CB",22,79],["CB",36,81],["CB",50,82],["CB",64,81],["CB",78,79],["RB",95,75],["DM",50,56],["ST",38,18],["ST",62,18]] }
     },
     "profiles": {
       "baseline-balanced": { "detailProfile":"default", "locked":true, "tactic":"balanced", "style":"possession", "inPossession":"balanced", "outOfPossession":"balanced" },
@@ -367,7 +386,7 @@
       ] },
       { "id":"tactics-all-v-all", "type":"profileRoundRobin", "category":"tactics", "includeSelf":true, "formations":["4-3-3","3-5-2","5-3-2","4-2-3-1"], "awayFormationOffset":0, "profiles":["baseline-balanced","patient-possession","positive-possession","positive-wing","positive-highpress","allout-highpress","allout-possession","direct-longball","balanced-wing","balanced-rough","defensive-counter","defensive-lowblock","parkbus-counter","parkbus-lowblock","highpress-possession","rough-lowblock"] },
       { "id":"details-all-v-all", "type":"profileRoundRobin", "category":"details", "includeSelf":true, "formations":["4-3-3","3-4-2-1","5-2-2-1","4-4-2"], "awayFormationOffset":0, "profiles":["detail-short-patient","detail-direct-fast","detail-left-overload","detail-right-overload","detail-center-shoot","detail-cross-heavy","detail-relentless-offside","detail-deep-zonal","detail-loose-manmark","detail-midblock-mixed","detail-defend-left","detail-defend-right"] },
-      { "id":"extreme-shape-challenges", "enabled":false, "type":"explicit", "category":"extreme", "tags":["stressTest"], "matchups":[
+      { "id":"extreme-shape-challenges", "enabled":true, "type":"explicit", "category":"extreme", "tags":["stressTest"], "matchups":[
         { "id":"two-back-vs-balanced", "home":{"formation":"extreme-2-3-5","profile":"allout-highpress"}, "away":{"formation":"4-3-3","profile":"baseline-balanced"} },
         { "id":"two-back-vs-counter", "home":{"formation":"extreme-2-3-5","profile":"allout-possession"}, "away":{"formation":"5-3-2","profile":"defensive-counter"} },
         { "id":"no-midfield-vs-balanced", "home":{"formation":"extreme-4-0-6","profile":"allout-highpress"}, "away":{"formation":"4-2-3-1","profile":"baseline-balanced"} },
@@ -399,7 +418,13 @@
         { "id":"one-midfielder-vs-rough-block", "home":{"formation":"extreme-5-1-4","profile":"positive-possession"}, "away":{"formation":"4-5-1","profile":"rough-lowblock"} },
         { "id":"allout-extreme-vs-turtle", "home":{"formation":"extreme-2-3-5","profile":"allout-highpress"}, "away":{"formation":"extreme-6-3-1","profile":"parkbus-lowblock"} },
         { "id":"disconnected-vs-disconnected", "home":{"formation":"extreme-4-0-6","profile":"allout-possession"}, "away":{"formation":"extreme-5-1-4","profile":"parkbus-counter"} },
-        { "id":"highline-vs-deepblock", "home":{"formation":"extreme-highline-3-4-3","profile":"allout-highpress"}, "away":{"formation":"extreme-deep-5-4-1","profile":"parkbus-lowblock"} }
+        { "id":"highline-vs-deepblock", "home":{"formation":"extreme-highline-3-4-3","profile":"allout-highpress"}, "away":{"formation":"extreme-deep-5-4-1","profile":"parkbus-lowblock"} },
+        { "id":"eight-zero-two-vs-center-shoot", "home":{"formation":"extreme-8-0-2","profile":"parkbus-lowblock"}, "away":{"formation":"4-3-3","profile":"detail-center-shoot"} },
+        { "id":"eight-zero-two-vs-patient-possession", "home":{"formation":"extreme-8-0-2","profile":"parkbus-lowblock"}, "away":{"formation":"4-3-3","profile":"patient-possession"} },
+        { "id":"eight-zero-two-counter-vs-direct", "home":{"formation":"extreme-8-0-2","profile":"parkbus-counter"}, "away":{"formation":"4-3-3","profile":"direct-longball"} },
+        { "id":"seven-one-two-vs-center-shoot", "home":{"formation":"extreme-7-1-2","profile":"parkbus-lowblock"}, "away":{"formation":"4-3-3","profile":"detail-center-shoot"} },
+        { "id":"seven-one-two-vs-patient-possession", "home":{"formation":"extreme-7-1-2","profile":"parkbus-lowblock"}, "away":{"formation":"4-3-3","profile":"patient-possession"} },
+        { "id":"seven-one-two-counter-vs-highpress", "home":{"formation":"extreme-7-1-2","profile":"parkbus-counter"}, "away":{"formation":"4-3-3","profile":"positive-highpress"} }
       ] }
     ]
   }

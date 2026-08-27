@@ -1,0 +1,40 @@
+#!/bin/zsh
+set -euo pipefail
+CONTENTS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
+APP_DIR="$RESOURCES_DIR/app"
+NODE_BIN="$RESOURCES_DIR/runtime/node"
+SUPPORT_ROOT="$HOME/Library/Application Support/YDL S4 Offline"
+PROFILE_DIR="$SUPPORT_ROOT/player_profiles"
+SAVE_ROOT="$SUPPORT_ROOT/saves"
+BASE_URL="http://127.0.0.1:4318"
+mkdir -p "$SUPPORT_ROOT" "$SAVE_ROOT" "$PROFILE_DIR"
+
+choose_save() {
+  local default_name="默认存档"
+  local options=("$default_name")
+  for dir in "$SAVE_ROOT"/*(N/); do options+=("${dir:t}"); done
+  local choice
+  choice=$(printf '%s\n' "${options[@]}" | /usr/bin/osascript -l JavaScript -e 'const app=Application.currentApplication(); app.includeStandardAdditions=true; const lines=ObjC.unwrap($.NSString.stringWithUTF8String(ObjC.unwrap($.NSProcessInfo.processInfo.environment.objectForKey("YDL_SAVE_OPTIONS")))); app.chooseFromList(lines.split("\n"), {withPrompt:"选择 YDL S4 Offline 存档", defaultItems:[lines.split("\n")[0]]})[0]')
+  [[ -n "$choice" ]] || exit 0
+  if [[ "$choice" == "$default_name" ]]; then ACTIVE_SAVE_ID=default; DATA_DIR="$SUPPORT_ROOT/data"; LOG_DIR="$SUPPORT_ROOT/logs"; else ACTIVE_SAVE_ID="$choice"; DATA_DIR="$SAVE_ROOT/$choice/data"; LOG_DIR="$SAVE_ROOT/$choice/logs"; fi
+}
+
+export YDL_SAVE_OPTIONS="默认存档"
+for dir in "$SAVE_ROOT"/*(N/); do export YDL_SAVE_OPTIONS="$YDL_SAVE_OPTIONS\n${dir:t}"; done
+ACTIVE_SAVE_ID=default; DATA_DIR="$SUPPORT_ROOT/data"; LOG_DIR="$SUPPORT_ROOT/logs"
+if [[ "${YDL_SKIP_MENU:-0}" != "1" ]]; then choose_save; fi
+mkdir -p "$LOG_DIR"
+if [[ ! -f "$DATA_DIR/OFFLINE_MIGRATION_REPORT.json" ]]; then mkdir -p "$DATA_DIR"; /usr/bin/ditto "$RESOURCES_DIR/seed-data" "$DATA_DIR"; touch "$DATA_DIR/.ydl-offline-ready"; fi
+
+export YDL_OFFLINE_MODE=1 APP_ENV=production APP_LABEL="YDL S4 Offline" VERSUS_HOST=127.0.0.1 DEVTOOL_PORT=4318 VERSUS_ADMIN_PASSWORD=ydl-offline YDL_MATCH_ENGINE=v2 YDL_LEAGUE_MATCH_ENGINE=v2 YDL_CUP_MATCH_ENGINE=v2
+export YELLOWDOGS_LEAGUE_PATH="$DATA_DIR/yellowdogs-league-shards" VERSUS_ACCOUNTS_PATH="$DATA_DIR/versus-accounts.json" YDL_CONTENT_OVERRIDES_PATH="$DATA_DIR/ydl-content-overrides.json" YDL_PLAYER_CARD_STUDIO_PATH="$DATA_DIR/ydl-player-card-studio.json" YDL_PLAYER_PROFILE_ROOT="$PROFILE_DIR"
+export YDL_OFFLINE_ATTRIBUTE_UNCAP="${YDL_OFFLINE_ATTRIBUTE_UNCAP:-0}" YDL_OFFLINE_OVERCAP_RATE="${YDL_OFFLINE_OVERCAP_RATE:-1.0}"
+cd "$APP_DIR"
+"$NODE_BIN" devtool/public-server.js >>"$LOG_DIR/server.log" 2>&1 &
+SERVER_PID=$!
+echo "$SERVER_PID" > "$LOG_DIR/server.pid"
+trap 'kill "$SERVER_PID" 2>/dev/null || true; wait "$SERVER_PID" 2>/dev/null || true; rm -f "$LOG_DIR/server.pid"' EXIT INT TERM HUP
+for _ in {1..90}; do if /usr/bin/curl --max-time 2 -fsS "$BASE_URL/api/health" 2>/dev/null | /usr/bin/grep -q '"offlineYdl":true'; then /usr/bin/open "$BASE_URL/versus/"; wait "$SERVER_PID"; exit 0; fi; kill -0 "$SERVER_PID" 2>/dev/null || break; sleep 1; done
+/usr/bin/osascript -e 'display alert "YDL S4 Offline 启动失败" message "请查看 ~/Library/Application Support/YDL S4 Offline/logs/server.log" as critical'
+exit 1

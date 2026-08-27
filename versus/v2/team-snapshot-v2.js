@@ -1,8 +1,10 @@
-import { roleGroup } from "../../game/public/schema.js";
+﻿import { roleGroup } from "../../game/public/schema.js";
+import { offlineAttributeMaximum, offlineDisplayAttributeValue } from "../offline-attribute-settings.js";
 import { applyS4BondBonuses, evaluateS4LineupBonds } from "../public/bond-rules.js";
+import { captainStyleModifiers } from "../public/captain-rules.js";
 import { inferElevenBoardRoles } from "../public/formation-rules.js";
 import { YDL_TRAIT_BY_ID } from "../trait-pool.js";
-import { resolveV2MatchParameters, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
+import { resolveV2MatchParameters, v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 
@@ -43,7 +45,7 @@ function applyTraitAttributes(player, assignedRole, context) {
   return {
     ...player,
     heightCm,
-    attributes:Object.fromEntries(Object.entries(attributes).map(([key, value]) => [key, Number(clamp(value, 1, 99).toFixed(2))])),
+    attributes:Object.fromEntries(Object.entries(attributes).map(([key, value]) => [key, Number(offlineDisplayAttributeValue(value).toFixed(2))])),
     state:{ ...player.state, fitness:fixedFitness ?? player.state?.fitness ?? player.fitness ?? 100 },
     v2AppliedTraitIds:traitIds(player),
     v2TraitHooks:eventHooks,
@@ -61,7 +63,7 @@ function applyNearbyChemistry(players, positions) {
     for (const player of output) {
       const position = positions[player.id] ?? { x:50, y:50 };
       if (Math.hypot(Number(position.x ?? 50) - Number(carrierPosition.x ?? 50), Number(position.y ?? 50) - Number(carrierPosition.y ?? 50)) > 28) continue;
-      player.attributes = Object.fromEntries(Object.entries(player.attributes).map(([key, value]) => [key, Number(Math.min(99, Number(value) * (1 + bonus)).toFixed(2))]));
+      player.attributes = Object.fromEntries(Object.entries(player.attributes).map(([key, value]) => [key, Number(offlineDisplayAttributeValue(Number(value) * (1 + bonus)).toFixed(2))]));
       player.v2ChemistryLinkIds = [...new Set([...(player.v2ChemistryLinkIds ?? []), carrier.id])];
     }
   }
@@ -73,18 +75,28 @@ export function buildV2TeamSnapshots(teams, options = {}) {
   const minute = clamp(Number(options.state?.minute ?? 0), 0, parameters.state.regulationMinutes + parameters.state.extraTimeMinutes);
   const score = options.state?.score ?? [0, 0];
   const weather = options.environment?.weather ?? "sunny";
-  const precipitation = Number(options.environment?.precipitation ?? (["rain", "storm"].includes(weather) ? 70 : weather === "snow" ? 45 : 0));
+  const precipitation = Number(options.environment?.precipitation ?? (weather === "superStorm" ? 100 : ["rain", "storm"].includes(weather) ? 70 : weather === "snow" ? 45 : 0));
   return teams.map((team, teamIndex) => {
     const roles = inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:team.positions?.[player.id] })), team.formationLines);
     const scoreState = score[teamIndex] > score[1 - teamIndex] ? "leading" : score[teamIndex] < score[1 - teamIndex] ? "trailing" : "level";
     const context = { minute, weather, precipitation, scoreState, style:team.style, tactic:team.tactic, roleGroup:null };
     const traitPlayers = (team.players ?? []).filter((player) => player.active !== false).map((player) => {
       const assignedRole = roles[player.id] ?? player.assignedRole ?? player.role;
-      return applyTraitAttributes(player, assignedRole, { ...context, roleGroup:roleGroup(assignedRole) });
+      return { ...applyTraitAttributes(player, assignedRole, { ...context, roleGroup:roleGroup(assignedRole) }), assignedRole };
     });
     const chemistryPlayers = applyNearbyChemistry(traitPlayers, team.positions ?? {});
     const bonds = evaluateS4LineupBonds(chemistryPlayers, team.bondCatalog, { roles });
-    const players = applyS4BondBonuses(chemistryPlayers, bonds);
+    const displayPlayers = applyS4BondBonuses(chemistryPlayers, bonds, { maximumAttribute:offlineAttributeMaximum() });
+    const players = displayPlayers.map((player) => {
+      const displayAttributes = Object.fromEntries(Object.entries(player.attributes ?? {}).map(([key, value]) => [key, Number(offlineDisplayAttributeValue(value).toFixed(2))]));
+      return {
+        ...player,
+        displayAttributes,
+        captain:player.id === team.captainId,
+        attributes:Object.fromEntries(Object.entries(displayAttributes).map(([key, value]) => [key, Number(v2EngineAttributeValue(value, parameters).toFixed(2))])),
+      };
+    });
+    const captaincy = captainStyleModifiers({ ...team, players }, scoreState);
     return {
       ...team,
       players,
@@ -92,6 +104,7 @@ export function buildV2TeamSnapshots(teams, options = {}) {
         minute,
         scoreState,
         weather,
+        captaincy,
         activeBonds:bonds.slice(0, 2).map((bond) => ({ id:bond.id, type:bond.type, name:bond.name, bonus:bond.bonus, memberIds:bond.memberIds })),
         sourcePolicy:{
           enhancementAttributes:true,

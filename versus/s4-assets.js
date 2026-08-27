@@ -70,6 +70,7 @@ export function ensureS4Assets(state) {
     cards:{},
     traitOffers:{},
     rosterLimitBonuses:{},
+    cosmetics:{ schemaVersion:1, inventory:{}, equipped:{} },
     transactions:[],
   };
   const assets = state.s4Assets;
@@ -79,6 +80,10 @@ export function ensureS4Assets(state) {
   assets.cards ??= {};
   assets.traitOffers ??= {};
   assets.rosterLimitBonuses ??= {};
+  assets.cosmetics ??= { schemaVersion:1, inventory:{}, equipped:{} };
+  assets.cosmetics.schemaVersion = 1;
+  assets.cosmetics.inventory ??= {};
+  assets.cosmetics.equipped ??= {};
   Object.entries(assets.rosterLimitBonuses).forEach(([ownerId, value]) => {
     assets.rosterLimitBonuses[ownerId] = Math.max(0, Math.min(S4_ROSTER_EXPANSION_LIMIT, Math.floor(Number(value) || 0)));
   });
@@ -154,6 +159,7 @@ export function rosterLimitBonusForOwner(state, ownerId) {
 }
 
 export function rosterLimitForOwner(state, ownerId) {
+  if (state.s4RosterEnforcement?.active) return S4_ROSTER_LIMIT;
   return S4_ROSTER_LIMIT + rosterLimitBonusForOwner(state, ownerId);
 }
 
@@ -266,6 +272,7 @@ export function assertS4AssetInvariants(state, options = {}) {
       const rosterSlots = rosterSlotUsage(state, ownerId);
       const rosterLimit = rosterLimitForOwner(state, ownerId);
       if (rosterSlots > rosterLimit) {
+        if (state.s4RosterEnforcement?.active && team.rosterEnforcement?.overLimit) continue;
         if (options.allowRosterOverflow) continue;
         throw new Error(`球队超过${rosterLimit}人大名单额度：${team.id}（持有人${ownerId}，球员家族${cardFamilies.size}，活动卡${activeCardCount}，实际占用${rosterSlots}）`);
       }
@@ -298,6 +305,9 @@ export function publicS4AssetsForOwner(state, ownerId) {
     rosterLimit:rosterLimitForOwner(state, ownerId),
     rosterLimitBonus:rosterLimitBonusForOwner(state, ownerId),
     rosterSlotsUsed:rosterSlotUsage(state, ownerId),
+    overLimit:Boolean(state.s4RosterEnforcement?.active && (state.teams ?? []).find((team) => team.ownerId === ownerId)?.rosterEnforcement?.overLimit),
+    excessCount:Number((state.teams ?? []).find((team) => team.ownerId === ownerId)?.rosterEnforcement?.excessCount ?? 0),
+    lockedPlayerIds:clone((state.teams ?? []).find((team) => team.ownerId === ownerId)?.rosterEnforcement?.lockedPlayerIds ?? []),
     ownershipPlayerIds,
     cards:cards.map((card) => publicS4Card(state, card)),
   };

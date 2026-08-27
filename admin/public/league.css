@@ -259,6 +259,21 @@
 .league-admin-actions .warning { color: var(--orange); border-color: rgba(255, 155, 85, .55); }
 .league-admin-actions .danger { color: var(--red); border-color: rgba(255, 89, 100, .55); }
 .league-admin-actions .full-reset { color: #fff; background: #7f1d2d; }
+.league-prediction-monitor {
+  margin-top: 12px;
+  padding: 14px 17px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid rgba(113, 217, 208, .5);
+  background: linear-gradient(90deg, rgba(13, 42, 35, .92), rgba(7, 22, 17, .94));
+}
+.league-prediction-monitor > div { display: grid; min-width: 0; }
+.league-prediction-monitor small { color: var(--cyan); font-size: 9px; letter-spacing: .16em; }
+.league-prediction-monitor b { font-size: 15px; }
+.league-prediction-monitor span { color: var(--muted); font-size: 10px; }
+.league-prediction-monitor .primary { color: #061411; border-color: var(--cyan); background: var(--cyan); font-weight: 900; }
 .league-world-cup-control { margin: 14px 0; }
 .league-world-cup-control .world-cup-status { color: var(--orange); text-transform: uppercase; }
 .world-cup-control-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
@@ -280,6 +295,15 @@
 .league-card-grant-panel,
 .league-badge-panel { grid-column: 1 / -1; }
 .league-economy-panel { grid-column: 1 / -1; }
+.league-enforcement-panel { grid-column: 1 / -1; }
+.enforcement-head-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.enforcement-status { padding:5px 9px; border:1px solid var(--line); font-size:10px; font-weight:900; }
+.enforcement-status.active { color:var(--lime); border-color:rgba(167,243,69,.55); }
+.enforcement-status.pending { color:var(--orange); border-color:rgba(255,155,85,.55); }
+.enforcement-summary { padding:14px; display:flex; gap:12px; align-items:baseline; border-bottom:1px solid var(--line); background:#0b1d17; }
+.enforcement-summary b { color:var(--lime); }
+.enforcement-summary span { color:var(--muted); font-size:11px; }
+.enforcement-danger { color:var(--red); font-weight:900; }
 .league-economy-panel .panel-head select { min-width: 260px; min-height: 38px; padding: 0 10px; border: 1px solid var(--line); color: var(--ink); background: #071411; }
 .economy-kpis { padding: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .economy-kpis article, .economy-pack-counts span { padding: 12px; border: 1px solid var(--line); background: #071611; }
@@ -405,6 +429,7 @@
   .league-card-grant-panel,
   .league-badge-panel { grid-column: 1; }
   .league-economy-panel { grid-column: 1; }
+  .league-enforcement-panel { grid-column: 1; }
   .economy-kpis { grid-template-columns: 1fr 1fr; }
   .economy-tables { grid-template-columns: 1fr; }
   .economy-tables .economy-ledger { grid-column: auto; }
@@ -435,9 +460,16 @@
   .league-admin-actions { grid-template-columns: 1fr; }
   .league-admin-actions > div { grid-column: auto; }
   .league-admin-actions button { width: 100%; }
+  .league-prediction-monitor { grid-template-columns: 1fr; }
+  .league-prediction-monitor button { width: 100%; }
   .league-reward-mail-form { grid-template-columns: 1fr; }
   .league-card-grant-form { grid-template-columns: 1fr; }
   .league-badge-form { grid-template-columns: 1fr; }
   .league-economy-panel .panel-head select { width: 100%; min-width: 0; }
+  .enforcement-head-actions { align-items:stretch; }
+  .enforcement-head-actions button { width:100%; }
+  .enforcement-summary { display:grid; gap:4px; }
   .economy-kpis, .economy-pack-counts { grid-template-columns: 1fr; }
 }
+.coach-studio-workspace{display:grid;grid-template-columns:310px minmax(0,1fr);gap:14px}.coach-studio-row{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 13px;color:var(--ink);background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left;cursor:pointer}.coach-studio-row.active{background:rgba(201,240,92,.1);box-shadow:inset 3px 0 var(--lime)}.coach-studio-row>span{min-width:0}.coach-studio-row strong,.coach-studio-row small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.coach-studio-row small{margin-top:3px;color:var(--muted);font-size:10px}.coach-studio-row em{color:var(--muted);font-size:10px;font-style:normal}.coach-grade-s,.coach-grade-a,.coach-grade-b,.coach-grade-c{display:grid;place-items:center;width:28px;height:28px;font-weight:900}.coach-grade-s{color:#241906;background:#f0c75e}.coach-grade-a{color:#071411;background:#71d9d0}.coach-grade-b{color:#071411;background:#c9f05c}.coach-grade-c{color:#fff;background:#708091}.coach-studio-editor-grid{display:grid;grid-template-columns:minmax(280px,380px) minmax(260px,1fr);gap:22px;padding:20px}.coach-studio-stage{display:grid;place-items:center;gap:16px}.coach-studio-card{position:relative;overflow:hidden;width:min(100%,340px);aspect-ratio:2/3;background:#091712;border:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.28)}.coach-studio-card header{position:relative;z-index:2;padding:14px;display:flex;justify-content:space-between;color:#fff}.coach-studio-card header b{font-size:28px}.coach-studio-card header strong{font-size:18px}.coach-studio-card p{position:relative;z-index:2;margin:0 14px;color:var(--muted);font-size:10px}.coach-studio-card img{position:absolute;left:var(--coach-x);top:var(--coach-y);width:var(--coach-width);max-width:none;transform:translate(-50%,-50%);pointer-events:none}.coach-studio-placeholder{position:absolute;inset:30% 10%;display:grid;place-items:center;color:var(--muted);border:1px dashed var(--line)}.coach-studio-card footer{position:absolute;z-index:2;left:0;right:0;bottom:0;padding:12px 14px;color:var(--muted);font-size:10px;background:linear-gradient(transparent,rgba(0,0,0,.85))}.coach-upload{width:min(100%,340px);padding:12px;border:1px dashed var(--line);color:var(--cyan);text-align:center;cursor:pointer}.coach-upload input{display:none}.coach-studio-editor-grid .studio-controls{display:grid;align-content:start;gap:16px}.coach-studio-editor-grid .studio-controls label{display:grid;gap:6px}.coach-studio-editor-grid .studio-controls label span{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.coach-studio-editor-grid .studio-controls label b{color:var(--ink)}
+@media(max-width:820px){.coach-studio-workspace{grid-template-columns:1fr}.coach-studio-editor-grid{grid-template-columns:1fr}.coach-studio-card{width:min(100%,300px)}}

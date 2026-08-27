@@ -3,6 +3,7 @@ import test from "node:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
 import { ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes } from "../game/public/schema.js";
 import { assertS4AssetInvariants, ownershipOwner } from "../versus/s4-assets.js";
@@ -12,10 +13,19 @@ import { A_PLAYER_PROFILE_BY_PLAYER_ID } from "../versus/public/a-player-profile
 import { LEGENDARY_PROFILE_BY_PLAYER_ID } from "../versus/public/legendary-profiles.js";
 import { X_PLAYER_PROFILE_BY_PLAYER_ID } from "../versus/public/x-player-profiles.js";
 import { advanceYdlLeagueV2Match } from "../versus/v2/ydl-league-engine-adapter.js";
+import { CLUB_BADGES, COUNTRY_BADGES } from "../versus/cosmetic-items.js";
 
 const NOW = Date.parse("2026-07-26T12:00:00+08:00");
 const account = (id) => ({ id, nickname:id });
 
+test("主任株式会社赞助商PNG具有真实透明背景", async () => {
+  const image = sharp(readFileSync(new URL("../versus/public/assets/sponsors/zhuren-kabushiki-kaisha.png", import.meta.url)));
+  const { channels } = await image.stats();
+  assert.equal(channels.length, 4);
+  assert.equal(channels[3].min, 0);
+  assert.equal(channels[3].max, 255);
+  assert.ok(channels[3].mean < 160);
+});
 function assertOptimizedProfileAsset(entry, directoryName) {
   assert.match(entry.optimizedFileName, /\.webp$/);
   assert.match(entry.imageUrl, /\/webp\/.+\.webp\?v=[a-f0-9]{12}$/);
@@ -114,18 +124,15 @@ test("全部高能力A级球员均绑定真人卡面且人物位于文字下层"
   assert.match(styles, /\.s4-player-card\.has-player-profile \.s4-player-card-grade\{visibility:hidden\}/);
 });
 
-test("新版球员卡使用圆润双层边框并保留+5与+8强化变色", () => {
+test("新版球员卡使用圆润双层边框并让+8卡回归统一细红金外框", () => {
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   assert.match(styles, /\.s4-player-card\{[^}]*border-radius:29px/);
   assert.match(styles, /\.s4-player-card::before\{[^}]*border-radius:23px/);
   assert.match(styles, /\.s4-player-card\.band-high:not\(\.grade-x\)\{[^}]*#f5cc55/);
   assert.match(styles, /\.s4-player-card\.band-max\{[^}]*#e12438/);
-  assert.match(styles, /\.s4-player-card\.grade-a\.band-max,\.s4-player-card\.grade-b\.band-max\{[^}]*#e62b42[^}]*border-width:4px/);
-  const maxFrame = styles.match(/\.s4-player-card\.grade-a\.band-max::before,\.s4-player-card\.grade-b\.band-max::before\{([^}]*)\}/)?.[1] ?? "";
-  assert.match(maxFrame, /border:2px solid/);
-  assert.match(maxFrame, /border-color:#ffe98d #e1263d #650008 #dc2037/);
-  assert.match(maxFrame, /background:transparent/);
-  assert.doesNotMatch(maxFrame, /conic-gradient/);
+  assert.match(styles, /\.s4-player-card\.band-max:not\(\.grade-x\)\{--stripe-accent:#e62b42;[^}]*linear-gradient\(132deg,#ffe98d 0 7%,#75000b 18%,#e12438 37%,#ffe78a 50%,#650008 59%,#c9182c 79%,#f5cc55\) border-box/);
+  assert.doesNotMatch(styles, /\.s4-player-card\.grade-[sab]\.band-max[^}]*border-width:4px/);
+  assert.doesNotMatch(styles, /\.s4-player-card\.grade-[sab]\.band-max::before/);
   assert.match(styles, /\.s4-player-card\.grade-x\.band-high\{[^}]*#a6e6e1/);
   assert.match(styles, /\.s4-player-card\.grade-x\.band-max\{[^}]*#ff8fc4/);
   assert.match(styles, /\.s4-player-card::after\{[^}]*opacity:0[^}]*animation:none/);
@@ -173,6 +180,9 @@ test("背包球员卡详情复用YOOGLE档案并锁定实际强化等级", () =>
   assert.match(appSource, /cardMode \? card\.upgradeLevel : upgradeLevel/);
   assert.match(appSource, /当前26项能力值/);
   assert.match(appSource, /详情已锁定为这张卡的实际强化效果/);
+  const previewSource = appSource.slice(appSource.indexOf("function overviewPlayerPreviewValues"), appSource.indexOf("function addLeagueOverviewPlayerComparison"));
+  assert.match(previewSource, /Math\.min\(99/);
+  assert.doesNotMatch(appSource, /overflowRetention|overflowThreshold/);
   assert.match(appSource, /"overview-player-dialog s4-card-detail-dialog"/);
   const detailSource = appSource.slice(appSource.indexOf("function openS4CardDetail"), appSource.indexOf("function openS4PackResult"));
   assert.doesNotMatch(detailSource, /\bapi\(|renderLeague\(/);
@@ -231,6 +241,72 @@ test("版本化WebP真人卡面使用一年不可变缓存", () => {
   const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
   assert.match(serverSource, /"\.webp": "image\/webp"/);
   assert.match(serverSource, /public, max-age=31536000, immutable/);
+});
+
+test("版本化国家和俱乐部徽章使用一年不可变缓存", () => {
+  const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
+  assert.match(serverSource, /isVersionedBadgeAsset/);
+  assert.match(serverSource, /country\|club/);
+  for (const badge of [...COUNTRY_BADGES, ...CLUB_BADGES]) {
+    assert.match(badge.imageUrl, /^\/versus\/assets\/(?:country|club)-badges\/[a-z0-9-]+\.webp\?v=[a-f0-9]{12}$/);
+    assert.ok(existsSync(new URL(`../versus/public${badge.imageUrl.split("?")[0].slice("/versus".length)}`, import.meta.url)), badge.imageUrl);
+  }
+});
+
+test("联赛AI球队固定佩戴系统专属徽章", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
+  const badgeUrl = appSource.match(/imageUrl:"(\/versus\/assets\/system-badges\/ai-team-badge\.png\?v=[a-f0-9]{12})"/)?.[1];
+
+  assert.ok(badgeUrl);
+  assert.ok(existsSync(new URL(`../versus/public${badgeUrl.split("?")[0].slice("/versus".length)}`, import.meta.url)));
+
+  assert.match(appSource, /if \(team\?\.isAi\) \{\s*return `<img class="team-cosmetic-badge team-ai-badge/);
+  assert.match(appSource, /AI球队专属徽章 · 永久佩戴/);
+  assert.doesNotMatch(appSource, /team\.isAi \? `<span class="club-type">AI<\/span>`/);
+  assert.match(styles, /\.team-ai-badge\{[^}]*linear-gradient\(145deg,#f5f7f6/);
+  assert.match(serverSource, /system-badges\\\/ai-team-badge/);
+});
+
+test("商店桌面端使用四列并区分两类徽章包视觉", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(appSource, /shop:"商店"/);
+  assert.match(appSource, /data-league-tab="shop">商店<\/button>/);
+  assert.ok(appSource.includes('tone === "country-badge" ? "NAT"'));
+  assert.ok(appSource.includes('tone === "club-badge" ? "CLB"'));
+  assert.match(styles, /league-pack-product-grid\{[^}]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(styles, /s4-pack-visual\.tone-country-badge/);
+  assert.match(styles, /s4-pack-visual\.tone-club-badge/);
+});
+
+test("徽章包背包入口支持批量数量、连续选择进度和统一结果", () => {
+  const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.doesNotMatch(serviceSource, /徽章包需要逐份开启/);
+  assert.doesNotMatch(serviceSource, /徽章包暂不支持批量开启/);
+  assert.match(serviceSource, /mode:"cosmetic-choice", complete:false/);
+  assert.match(serviceSource, /batch\.results\.push\(\{ mode:"cosmetic-choice"/);
+  assert.match(appSource, /batchHint = pack\.kind === "cosmetic"/);
+  assert.match(appSource, /第 \$\{offer\.batchIndex\}\/\$\{offer\.batchTotal\} 份/);
+  assert.match(appSource, /batch\.mode === "cosmetic-choice"/);
+  assert.match(styles, /cosmetic-batch-results\{/);
+});
+
+test("交易市场增加徽章道具市场且积分榜隐藏玩家昵称", () => {
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  assert.match(apiSource, /market\/list-cosmetic/);
+  assert.match(appSource, /data-market-section="cosmetic"/);
+  assert.match(appSource, /function leagueCosmeticMarketMarkup\(\)/);
+  assert.match(appSource, /data-market-list-kind="cosmetic"/);
+  assert.match(appSource, /const owner = badges \? `<small class="league-team-honors">\$\{badges\}<\/small>` : ""/);
+  assert.doesNotMatch(appSource, /const owner = team\.ownerName \? `<small>\$\{escapeHtml\(team\.ownerName\)\}\$\{badges\}<\/small>`/);
+  assert.match(styles, /market-entry-four>div\{[^}]*grid-template-columns:repeat\(4/);
+  assert.match(styles, /cosmetic-market-visual\.category-club/);
 });
 
 test("梅老鼠除独立身份外完整复制梅西的球员信息", () => {
@@ -348,18 +424,19 @@ test("持有所有权的最后一张卡不能静默解约，确认后卡片与�
   assert.ok(!service.accountTeam(user.id).rosterIds.includes(playerId));
 });
 
-test("+4单卡可以系统回收，+5及以上单卡不能回收", () => {
+test("+6单卡可以系统回收，+7及以上单卡不能回收", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("protected-card-owner");
   const team = join(service, user);
   const playerId = nonLegendBench(service, user);
-  const recyclable = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"repeat-pack" });
-  const protectedCard = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:5, acquisitionSource:"repeat-pack" });
+  const recyclable = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:6, acquisitionSource:"repeat-pack" });
+  const protectedCard = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:7, acquisitionSource:"repeat-pack" });
 
   service.releaseCard(user, recyclable.id, false);
   assert.equal(service.state.s4Assets.cards[recyclable.id].status, "recycled");
-  assert.throws(() => service.releaseCard(user, protectedCard.id, false), /\+5及以上/);
+  assert.throws(() => service.releaseCard(user, protectedCard.id, false), /\+7及以上/);
   assert.equal(service.state.s4Assets.cards[protectedCard.id].status, "active");
+  assert.match(readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8"), /\+7及以上不可回收/);
 });
 
 test("球员卡管理公开单卡回收资格和所有权回收明细", () => {
@@ -367,7 +444,7 @@ test("球员卡管理公开单卡回收资格和所有权回收明细", () => {
   const user = account("recovery-preview-owner");
   const team = join(service, user);
   const playerId = nonLegendBench(service, user);
-  const extra = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:4, acquisitionSource:"repeat-pack" });
+  const extra = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:6, acquisitionSource:"repeat-pack" });
 
   const player = service.view(user).ownTeam.roster.find((entry) => entry.id === playerId);
   const base = player.cards.find((card) => card.upgradeLevel === 0);
@@ -405,11 +482,11 @@ test("批量单卡回收包含高强化卡时整批拒绝且不改变资产", ()
   const user = account("atomic-recovery-owner");
   const team = join(service, user);
   const playerId = nonLegendBench(service, user);
-  const valid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:1, acquisitionSource:"repeat-pack" });
-  const invalid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:5, acquisitionSource:"repeat-pack" });
+  const valid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:6, acquisitionSource:"repeat-pack" });
+  const invalid = service.grantS4Card(team, playerId, { grantOwnership:false, upgradeLevel:7, acquisitionSource:"repeat-pack" });
   const balanceBefore = service.wallet(user.id).balance;
 
-  assert.throws(() => service.releaseCards(user, [valid.id, invalid.id]), /\+5及以上/);
+  assert.throws(() => service.releaseCards(user, [valid.id, invalid.id]), /\+7及以上/);
   assert.equal(service.state.s4Assets.cards[valid.id].status, "active");
   assert.equal(service.state.s4Assets.cards[invalid.id].status, "active");
   assert.equal(service.wallet(user.id).balance, balanceBefore);
@@ -1525,6 +1602,17 @@ test("球员职责在电脑磁贴下循环切换并在手机底部面板单独�
   assert.match(dutyOptions, /targetForward:\{ label:"支点中锋"/);
   assert.match(dutyOptions, /v2PlayerDutyOptionsForRole/);
 });
+test("替补席按具体位置及强化后的真实能力值排序", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const comparator = appSource.slice(appSource.indexOf("function compareLeagueBenchPlayers"), appSource.indexOf("function leagueBenchMagnet"));
+  const squadMarkup = appSource.slice(appSource.indexOf("function legacyLeagueSquadMarkup"), appSource.indexOf("function leagueSquadMarkup"));
+
+  assert.match(appSource, /const LEAGUE_BENCH_ROLE_ORDER = Object\.freeze\(\["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"\]\)/);
+  assert.match(comparator, /LEAGUE_BENCH_ROLE_RANK\.get\(leftRole\)/);
+  assert.match(comparator, /right\.effectiveOverall \?\? right\.overall/);
+  assert.match(comparator, /left\.effectiveOverall \?\? left\.overall/);
+  assert.match(squadMarkup, /const bench = roster\.filter\(\(player\) => !startingSet\.has\(player\.id\)\)\.sort\(compareLeagueBenchPlayers\)/);
+});
 test("替补席提供可独立执行的自动替换与职责适配指导", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
@@ -1607,7 +1695,7 @@ test("旧X球员存档重载后以62为基础总评并正确叠加强化", () =>
     assert.equal(view.xGrowth.baseOverall, 62);
     assert.equal(view.xGrowth.effectiveOverall, 69);
     assert.equal(view.xGrowth.upgradeLevel, 5);
-    assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === Math.min(99, attribute.value + 7)));
+    assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === attribute.value + 7));
     assert.equal(view.xGrowth.height.effectiveValue, view.xGrowth.height.value);
   } finally {
     rmSync(directory, { recursive:true, force:true });
@@ -1891,6 +1979,7 @@ test("球员搜索与强化排行榜支持独立切换列表和球员卡展示",
   assert.match(appSource, /leagueEnhancementRankingView === "cards"[\s\S]*enhancement-ranking-card-grid/);
   assert.match(appSource, /s4PlayerCardMarkup\(player, \{ card:playerDirectoryCard\(player, player\.highestUpgradeLevel\)/);
   assert.match(appSource, /s4PlayerCardMarkup\(entry\.player, \{ card:playerDirectoryCard\(entry\.player, entry\.upgradeLevel, entry\.traits\)/);
+  assert.match(appSource, /class="enhancement-ranking-card-item" data-player-directory-detail="\$\{escapeHtml\(entry\.player\.id\)\}" data-player-directory-upgrade="\$\{entry\.upgradeLevel\}"/);
   assert.match(styles, /\.player-directory-card-grid,\.enhancement-ranking-card-grid\{min-height:0;[^}]*overflow:auto/);
   assert.match(styles, /\.enhancement-ranking-page \.enhancement-ranking-card-grid\{min-height:0;overflow:auto\}/);
   assert.match(styles, /\.player-search-page>\.player-directory-card-grid\{overflow:visible;overscroll-behavior:auto;scrollbar-gutter:auto\}/);
@@ -1914,6 +2003,20 @@ test("联赛总览提供YOOGLE常驻搜索和默认球员档案弹窗", () => {
   assert.match(styles, /\.overview-player-search:not\(\.has-query\) \.overview-player-search-home\{min-height:220px;align-content:center/);
   assert.match(styles, /\.overview-player-dialog-overlay\{display:grid;place-items:center\}/);
 });
+
+test("YOOGLE与球员信息搜索统一使用强化及羁绊能力预览", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const sharedPreview = appSource.slice(appSource.indexOf("function openPlayerProfilePreview"), appSource.indexOf("function scheduleTimeText"));
+
+  assert.match(sharedPreview, /overviewPlayerPreviewMarkup\(player, upgradeLevel, bondPercent\)/);
+  assert.match(sharedPreview, /dataset\.overviewPlayerId = player\.id/);
+  assert.match(sharedPreview, /data-overview-preview-upgrade/);
+  assert.match(sharedPreview, /data-overview-preview-bond/);
+  assert.match(sharedPreview, /function openOverviewPlayerDetail\(playerId\) \{\s*openPlayerProfilePreview\(playerId\);/);
+  assert.match(sharedPreview, /function openPlayerDirectoryDetail\(playerId, upgradeLevel = 0\) \{\s*openPlayerProfilePreview\(playerId, \{ directory:true, upgradeLevel \}\);/);
+  assert.doesNotMatch(sharedPreview, /playerDirectoryCard\(player, player\.highestUpgradeLevel\)/);
+  assert.match(appSource, /openPlayerDirectoryDetail\(playerDirectoryDetail\.dataset\.playerDirectoryDetail, playerDirectoryDetail\.dataset\.playerDirectoryUpgrade\)/);
+});
 test("背包所有权回收支持多选且传奇基础卡进入单卡市场", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
@@ -1922,6 +2025,8 @@ test("背包所有权回收支持多选且传奇基础卡进入单卡市场", ()
   assert.match(appSource, /\/ownership\/return-batch/);
   assert.match(appSource, /player\.legendary \|\| player\.grade === "S"/);
   assert.match(apiSource, /ownership\/return-batch/);
+  assert.match(apiSource, /cards\/release"\) result = \{ league:yellowDogsLeague\.releaseCards\(account, body\.cardIds, \{ compact:true \}\) \}/);
+  assert.match(apiSource, /ownership\/return-batch"\) result = \{ league:yellowDogsLeague\.returnOwnerships\(account, body\.leaguePlayerIds, \{ compact:true \}\) \}/);
 });
 test("背包子页面按需计算且开包流程只做局部更新", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
@@ -2207,6 +2312,22 @@ test("mobile tactical controls avoid full-form work during pointer frames", () =
   assert.match(styles, /@media\(hover:none\) and \(pointer:coarse\)/);
 });
 
+test("tactical autosave status is prominent at the bottom of the bench panel", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const squadMarkup = appSource.slice(appSource.indexOf("function legacyLeagueSquadMarkup"), appSource.indexOf("function aiTrainingOptionMarkup"));
+
+  assert.match(squadMarkup, /\$\{matchPlans\}\$\{autosaveFooter\}<\/aside>/);
+  assert.match(squadMarkup, /bench\?\.querySelector\("\[data-league-autosave-status\]"\)/);
+  assert.doesNotMatch(squadMarkup, /league-tactics-detail-footer/);
+  assert.doesNotMatch(squadMarkup, /\.append\(saveStatus\)/);
+  assert.match(appSource, /status\.querySelector\("\[data-league-autosave-label\]"\)/);
+  assert.match(appSource, /if \(label\) label\.textContent = textValue/);
+  assert.match(styles, /\.league-autosave-footer\{[^}]*justify-content:flex-start/);
+  assert.match(styles, /\.league-autosave-status\{[^}]*width:min\(230px,100%\)[^}]*min-height:54px/);
+  assert.match(styles, /\.league-autosave-copy b\{[^}]*font-size:14px/);
+});
+
 test("prediction page refresh uses the compact endpoint and updates only prediction containers", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const refreshSource = appSource.slice(appSource.indexOf("async function refreshPredictionsSilently()"), appSource.indexOf("async function placePrediction"));
@@ -2223,19 +2344,37 @@ test("prediction page refresh uses the compact endpoint and updates only predict
   assert.match(renderSource, /current\.outerHTML !== markup/);
 });
 
-test("prediction page displays the exact handicap while keeping odds private", () => {
+test("prediction page displays the exact handicap and final locked odds", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const displaySource = appSource.slice(appSource.indexOf("function predictionHandicapText"), appSource.indexOf("function predictionLeaderboardMarkup"));
   const dialogSource = appSource.slice(appSource.indexOf("function openPredictionMarket"), appSource.indexOf("function leagueCupOverviewMarkup"));
 
   assert.match(displaySource, /handicap < 0\) return `主队让 \$\{Math\.abs\(handicap\)\} 球`/);
   assert.match(displaySource, /handicap > 0\) return `客队让 \$\{handicap\} 球`/);
-  assert.match(displaySource, /return "均势盘 · 0球"/);
-  assert.doesNotMatch(displaySource, /market\.odds|option\.odds|payoutRate/);
-  assert.match(dialogSource, /赔率、后台模拟概率和收益率仍为内部数据，不对外展示/);
-  assert.doesNotMatch(dialogSource, /market\.odds|option\.odds|payoutRate/);
+  assert.match(displaySource, /return "零球盘 · 0球"/);
+  assert.match(displaySource, /predictionPayoutText\(bet\.payoutRate\)/);
+  assert.match(displaySource, /rate\.toFixed\(2\)/);
+  assert.doesNotMatch(displaySource, /toFixed\(2\)\}倍/);
+  assert.match(dialogSource, /predictionPayoutText\(option\.payoutRate\)/);
+  assert.match(dialogSource, /"result", "goals", "cards", "halfFull"/);
+  assert.doesNotMatch(dialogSource, /"shotsOnTarget"/);
+  assert.match(dialogSource, /45分钟结果和90分钟常规时间结果结算/);
+  assert.match(dialogSource, /显示赔率提交后锁定/);
+  assert.doesNotMatch(dialogSource, /data-prediction-return|updateReturn|命中预计返还/);
 });
 
+test("单卡合成在超时重试时复用requestId并由API传给服务端", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
+  const performEnhancement = appSource.match(/async function performLeagueEnhancement\(\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(appSource, /let leagueEnhancementPendingRequest = null/);
+  assert.match(performEnhancement, /leagueEnhancementPendingRequest\?\.key !== requestKey/);
+  assert.match(performEnhancement, /requestId:leagueEnhancementPendingRequest\.requestId/);
+  assert.match(performEnhancement, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
+  assert.match(performEnhancement, /startsWith\("请求超时"\)/);
+  assert.match(performEnhancement, /leagueEnhancementPendingRequest = null/);
+  assert.match(apiSource, /enhanceS4Card\(account, body\.mainCardId, body\.materialCardId, body\.useProtection === true, \{ compact:true, requestId:body\.requestId \}\)/);
+});
 test("enhancement result never falls back to a stale account trait offer", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   assert.match(appSource, /const traitOffer = result \? result\.traitOffer \?\? null : league\.enhancement\?\.traitOffer \?\? null/);
@@ -2299,4 +2438,80 @@ test("杯赛页面展示9轮联赛阶段、八强奖励和既有淘汰赛结构"
   assert.doesNotMatch(cupSource, /league-cup-reward-note|第1至第4名另获10000金币|第5至第8名另获6000金币/);
   assert.match(cupSource, /八强和半决赛两回合，决赛单场决胜/);
   assert.doesNotMatch(cupSource, /瑞士轮/);
+});
+
+test("新版电视台复用现有转播资源并把双方阵型压缩到各自半场", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+
+  assert.match(appSource, /function broadcastCombinedPosition[\s\S]*?y:50 \+ y \* \.5[\s\S]*?x:100 - x, y:50 - y \* \.5/);
+  assert.match(appSource, /function broadcastCombinedPitchMarkup[\s\S]*?broadcastMagnet[\s\S]*?pitchMarkup/);
+  assert.match(appSource, /function broadcastV2MatchLayoutMarkup[\s\S]*?matchEventMarkup[\s\S]*?matchStatsMarkup/);
+  assert.match(appSource, /legacyLayout\.outerHTML = broadcastV2MatchLayoutMarkup/);
+  assert.match(styles, /\.broadcast-v2-layout\{display:grid;grid-template-columns:/);
+  assert.match(styles, /\.broadcast-overlay \.broadcast-v2-pitch\{[^}]*aspect-ratio:\.64/);
+  assert.match(styles, /\.broadcast-v2-sidebar\{[^}]*grid-template-rows:/);
+  assert.match(styles, /@media\(min-width:821px\)\{\.broadcast-v2-sidebar\{height:auto;max-height:none;min-height:0;align-self:stretch;grid-template-rows:minmax\(0,1\.72fr\) minmax\(0,1fr\);overflow:hidden;contain:size/);
+  assert.match(styles, /\.broadcast-v2-commentary \.event-feed\{[^}]*overflow-y:auto/);
+  assert.match(styles, /@media\(max-width:820px\)\{\.broadcast-v2-sidebar\{height:auto[^}]*\}\.broadcast-overlay \.broadcast-v2-commentary\{height:520px/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet\{box-sizing:border-box;width:80px;min-height:42px;padding:5px 27px 8px 6px\}/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet>i\{right:5px;top:5px;min-width:23px;font-size:14px/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet\{min-height:40px;padding:3px 27px 6px 6px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1px\}/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet \.league-magnet-role\{margin:0;padding:1px 3px;font-size:8px[^}]*\}\.broadcast-v2-pitch \.s4-broadcast-magnet b\{width:100%;font-size:9px/);
+  assert.match(styles, /\.broadcast-overlay \.scoreboard>div:last-child\{grid-template-columns:auto minmax\(0,1fr\)\}/);
+  assert.match(styles, /\.broadcast-overlay \.scoreboard>div:last-child>b\{grid-column:1;grid-row:1\/3;text-align:left\}/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet\{min-height:46px;padding:4px 27px 8px 6px;gap:2px\}/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet \.league-magnet-upgrade\{right:-4px;bottom:-5px;min-width:22px;height:16px[^}]*font-size:8px\}/);
+  assert.match(appSource, /function dockBroadcastTeamStrategies[\s\S]*?heading\.after\(dock\)[\s\S]*?source\.remove\(\)/);
+  assert.match(appSource, /dockBroadcastTeamStrategies\(overlay\);/);
+  assert.match(styles, /\.broadcast-v2-stadium\{width:100%;height:100%;min-height:0;margin:0;display:grid;place-items:center/);
+  assert.match(styles, /\.broadcast-v2-commentary>header\{display:grid;grid-template-columns:auto minmax\(0,1fr\) auto/);
+  assert.match(appSource, /function fieldRoleAbbreviation[\s\S]*?return String\(matchedCode \?\? raw\)\.toUpperCase\(\)/);
+  assert.match(appSource, /function leagueBoardMagnet[\s\S]*?<span class="league-magnet-role">\$\{ROLE_LABELS\[assignedRole\] \?\? assignedRole\}<\/span>/);
+  assert.match(appSource, /function broadcastMagnet[\s\S]*?<span class="league-magnet-role">\$\{escapeHtml\(fieldRoleAbbreviation\(assignedRole\)\)\}<\/span>/);
+  assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet \.league-magnet-role\{margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none/);
+  assert.match(styles, /\.broadcast-v2-team-strategies>div>span\{[^}]*display:flex[^}]*white-space:nowrap\}[\s\S]*?\.broadcast-v2-team-strategies small\{[^}]*font-size:9px[^}]*white-space:nowrap/);
+  assert.match(styles, /@media\(min-width:821px\)\{\.broadcast-v2-sidebar\{grid-template-rows:minmax\(0,1\.45fr\) minmax\(390px,1fr\)\}\}[\s\S]*?\.broadcast-v2-data-panel \.live-stats\{[^}]*overflow-y:auto/);
+  assert.match(styles, /\.broadcast-v2-ad,\.broadcast-v2-half-label\{display:none\}/);
+  assert.match(styles, /\.broadcast-v2-pitch \.pitch-penalty-arc\{width:28%\}/);
+  assert.match(styles, /\.broadcast-v2-pitch \.pitch-penalty-arc-top\{top:2%;clip-path:inset\(78% 0 0 0\)\}/);
+});
+
+test("mirror batch UI exposes the player compute node market and discounted self-hosted pricing", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
+  const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
+  const workerSource = readFileSync(new URL("../devtool/mirror-batch-worker.js", import.meta.url), "utf8");
+  const tacticsToolbarSource = appSource.slice(appSource.indexOf("const aiTrainingButton ="), appSource.indexOf("detail.innerHTML", appSource.indexOf("const aiTrainingButton =")));
+  const aiDialogSource = appSource.slice(appSource.indexOf("function aiTrainingDialogMarkup"), appSource.indexOf("function openAiTrainingDialog"));
+  assert.match(appSource, /function openMirrorBatchCapacityDialog\(entries = \[\]\)/);
+  assert.match(appSource, /name="executionNode" data-ai-training-node-select/);
+  assert.match(appSource, /玩家计算节点市场/);
+  assert.doesNotMatch(tacticsToolbarSource, /data-compute-nodes-open/);
+  assert.match(aiDialogSource, /data-compute-nodes-open>管理计算节点/);
+  assert.match(appSource, /overlay\.querySelector\("\[data-compute-nodes-open\]"\)\?\.addEventListener\("click", openComputeNodeMarketDialog\)/);
+  assert.match(appSource, /compute-node\/save/);
+  assert.match(appSource, /Math\.round\(price \* batchCount \/ batchPriceDivisor\)/);
+  assert.match(appSource, /系统AI与玩家镜像均支持高速节点/);
+  assert.match(appSource, /系统AI批量模拟\$\{batchCount\}场免费/);
+  assert.match(appSource, /本次密钥有效至\$\{escapeHtml\(expiresAt\)\}（12小时）/);
+  assert.match(appSource, /自有节点免服务费/);
+  assert.match(appSource, /batchPriceDivisor/);
+  assert.match(appSource, /data-ai-training-node-status/);
+  assert.match(appSource, /在线待机 · 未接受任务/);
+  assert.match(appSource, /acceptingJobs === false/);
+  assert.match(workerSource, /YDL_MIRROR_WORKER_ACCEPT_JOBS/);
+  assert.match(appSource, /executionNode \}/);
+  assert.match(appSource, /error\.status === 409 && Array\.isArray\(error\.details\)/);
+  assert.match(appSource, /还剩 \$\{Number\(entry\.remainingMatches \?\? 0\)\} 场/);
+  assert.match(styles, /\.ai-training-node-option\{/);
+  assert.match(styles, /\.ai-training-node-option>span\{[^}]*font-size:12px/);
+  assert.match(styles, /\.compute-node-market\{[^}]*font-size:13px/);
+  assert.match(styles, /\.compute-node-market li b\{font-size:14px\}/);
+  assert.match(styles, /\.mirror-batch-capacity-body\{/);
+  assert.match(serverSource, /YDL_MIRROR_WORKER_TOKEN/);
+  assert.match(serverSource, /authenticateMirrorComputeNode/);
+  assert.match(serverSource, /\/api\/worker\/mirror-batches\/complete/);
+  assert.match(workerSource, /MIRROR_BATCH_DIRECTOR_CONCURRENCY/);
+  assert.match(workerSource, /runMirrorBatchWorkerMatch/);
 });

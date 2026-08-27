@@ -1,0 +1,17 @@
+{
+  "status": "asset-only",
+  "integrated": false,
+  "updatedAt": "2026-08-22",
+  "sponsors": [
+    { "id": "microsoft", "nameZh": "微软", "nameEn": "Microsoft", "icon": "microsoft.svg", "source": "https://commons.wikimedia.org/wiki/File:Microsoft_logo_(2012).svg" },
+    { "id": "apple", "nameZh": "苹果", "nameEn": "Apple", "icon": "apple.svg", "source": "https://cdn.simpleicons.org/apple" },
+    { "id": "emirates", "nameZh": "阿联酋航空", "nameEn": "Emirates", "icon": "emirates.svg", "source": "https://cdn.simpleicons.org/emirates" },
+    { "id": "nike", "nameZh": "耐克", "nameEn": "Nike", "icon": "nike.svg", "source": "https://cdn.simpleicons.org/nike" },
+    { "id": "adidas", "nameZh": "阿迪达斯", "nameEn": "Adidas", "icon": "adidas.svg", "source": "https://cdn.simpleicons.org/adidas" },
+    { "id": "jissbon", "nameZh": "杰士邦", "nameEn": "Jissbon", "icon": "jissbon.png", "source": "http://www.jissbon.com/theme/img/logo-black2.png" },
+    { "id": "samsung", "nameZh": "三星", "nameEn": "Samsung", "icon": "samsung.svg", "source": "https://cdn.simpleicons.org/samsung" },
+    { "id": "sony", "nameZh": "索尼", "nameEn": "Sony", "icon": "sony.svg", "source": "https://cdn.simpleicons.org/sony" },
+    { "id": "mizuno", "nameZh": "美津浓", "nameEn": "Mizuno", "icon": "mizuno.svg", "source": "https://commons.wikimedia.org/wiki/File:MIZUNO_logo.svg" },
+    { "id": "zhuren-kabushiki-kaisha", "nameZh": "主任株式会社", "nameEn": "Zhuren Kabushiki Kaisha", "icon": "zhuren-kabushiki-kaisha.png", "original": "zhuren-kabushiki-kaisha.ico", "source": "user-provided" }
+  ]
+}

@@ -123,6 +123,12 @@ function summarizeGroup(group, options = {}) {
       turnoverRatePercent:ratio(group.v2Turnovers, group.v2Possessions, 100, 2),
       transitionPossessionSharePercent:ratio(group.v2TransitionPossessions, group.v2NormalPossessions + group.v2TransitionPossessions, 100, 2),
       transitionShotsPerMatch:ratio(group.v2TransitionShots, group.teamSamples),
+      longShotsPerMatch:ratio(group.v2LongShots, group.teamSamples),
+      longShotGoalsPerMatch:ratio(group.v2LongShotGoals, group.teamSamples),
+      longShotExpectedGoalsPerMatch:ratio(group.v2LongShotXg, group.teamSamples),
+      longShotsAgainstPerMatch:ratio(group.v2LongShotsAgainst, group.teamSamples),
+      longShotGoalsAgainstPerMatch:ratio(group.v2LongShotGoalsAgainst, group.teamSamples),
+      longShotExpectedGoalsAgainstPerMatch:ratio(group.v2LongShotXgAgainst, group.teamSamples),
       foulsPerMatch:ratio(group.v2Fouls, group.teamSamples),
       yellowCardsPerMatch:ratio(group.v2YellowCards, group.teamSamples),
       redCardsPerMatch:ratio(group.v2RedCards, group.teamSamples),
@@ -132,6 +138,9 @@ function summarizeGroup(group, options = {}) {
       foulInjuriesCausedPerMatch:ratio(group.v2FoulInjuriesCaused, group.teamSamples),
       substitutionsPerMatch:ratio(group.v2Substitutions, group.teamSamples),
       averageBacklineExposure:ratio(group.v2BacklineExposure, group.teamSamples),
+      averageMidfieldIntegrity:ratio(group.v2MidfieldIntegrity, group.teamSamples),
+      averageLongShotExposure:ratio(group.v2LongShotExposure, group.teamSamples),
+      averageAttackingCommitment:ratio(group.v2AttackingCommitment, group.teamSamples),
     },
   };
   if (!options.v2Only) summary.v1 = {
@@ -368,6 +377,7 @@ function summarize(config, aggregate) {
 }
 
 async function main() {
+  const startedAt = Date.now();
   const sourceConfig = JSON.parse(await readFile(configPath, "utf8"));
   const outputArgument = argument("output");
   const scenarios = sourceConfig.scenarioMatrix ? expandV2ScenarioMatrix(sourceConfig.scenarioMatrix) : [];
@@ -387,10 +397,25 @@ async function main() {
   };
   const outputPath = path.resolve(outputArgument ?? path.resolve(here, `../../outputs/${config.outputVersion}.json`));
   if (path.extname(outputPath).toLowerCase() !== ".json") throw new Error(`Engine simulation output must use the .json extension: ${outputPath}`);
-  const requestedWorkers = Number(argument("workers") ?? 0);
+  const requestedWorkers = Number(argument("workers") ?? sourceConfig.defaultWorkers ?? 0);
   const workerCount = Math.max(1, Math.min(requestedWorkers || Math.max(1, os.cpus().length - 1), Number(config.maximumWorkers ?? 32)));
   const ranges = shardRanges(Number(config.matches), Number(config.shardMatches ?? 250));
   const tasks = ranges.map((range, index) => ({ taskId:index, ...range, config }));
+  if (String(argument("plan") ?? "false").toLowerCase() === "true") {
+    console.log(JSON.stringify({
+      configPath,
+      outputPath,
+      matches:config.matches,
+      scenarios:config.scenarioCount,
+      repetitionsPerScenario:config.scenarioMatrix?.repetitionsPerScenario ?? null,
+      possessionChainsPerMatch:config.v2PossessionChainsPerMatch,
+      workers:workerCount,
+      shards:tasks.length,
+      expectedDurationHours:config.studyDesign?.expectedDurationHours ?? null,
+      outputLimits:config.outputLimits ?? null,
+    }, null, 2));
+    return;
+  }
   console.log(`${config.v2Only ? "V2 balance smoke" : "V1/V2 full comparison"}: ${config.matches} matches, ${config.v2PossessionChainsPerMatch} V2 chains per match, ${workerCount} workers`);
   const results = (await runPool(tasks, workerCount, config)).sort((left, right) => left.taskId - right.taskId);
   const aggregate = { matches:0, v1:{}, v2:{ stages:{}, discipline:{}, sources:{} }, dimensions:{}, headToHead:{} };
@@ -401,6 +426,12 @@ async function main() {
   }
   rawMatchSamples.sort((left, right) => left.index - right.index);
   const report = summarize(config, aggregate);
+  report.runtime = {
+    workers:workerCount,
+    shards:tasks.length,
+    elapsedSeconds:Number(((Date.now() - startedAt) / 1000).toFixed(2)),
+    matchesPerSecond:Number((Number(config.matches) / Math.max(0.001, (Date.now() - startedAt) / 1000)).toFixed(4)),
+  };
   const rawPath = outputPath.replace(/\.json$/i, "-raw-samples.json");
   await mkdir(path.dirname(outputPath), { recursive:true });
   const maximumCoreBytes = Math.max(100_000, Number(config.outputLimits?.coreBytes ?? 2_000_000));

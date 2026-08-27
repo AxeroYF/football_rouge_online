@@ -1,0 +1,12 @@
+{
+  "name": "黄狗TV",
+  "short_name": "黄狗TV",
+  "description": "黄狗联赛直播与赛事预测",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071411",
+  "theme_color": "#071411",
+  "icons": [
+    { "src":"./icon.png", "sizes":"1254x1254", "type":"image/png", "purpose":"any maskable" }
+  ]
+}

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildS4BalanceSeat } from "../versus/s4-balance-report.js";
 import { hydrateHistoricalMatchDetail } from "../versus/history-detail.js";
-import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, publicYdlLeagueV2Match, v2PenaltyShootout } from "../versus/v2/ydl-league-engine-adapter.js";
+import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, drawYdlV2Weather, publicYdlLeagueV2Match, v2PenaltyShootout } from "../versus/v2/ydl-league-engine-adapter.js";
 import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 
 test("YDL V2直播保持战术板边界站位与位置职责一致", () => {
@@ -274,6 +274,81 @@ test("YDL V2 默认分批推进适合整轮多场并行直播", () => {
   assert.ok(elapsed < 5_000, `5场V2分批推进耗时${elapsed.toFixed(0)}ms`);
 });
 
+test("YDL V2.1超级雷暴低概率出现且指定淘汰赛从天气池排除", () => {
+  const superStorm = drawYdlV2Weather(() => 0.995, { competitionMode:"league", legNumber:1 });
+  const secondLeg = drawYdlV2Weather(() => 0.995, { competitionMode:"cup", legNumber:2 });
+  const knockout = drawYdlV2Weather(() => 0.995, { competitionMode:"cup", legNumber:1, allowSuperStorm:false });
+
+  assert.equal(superStorm.key, "superStorm");
+  assert.equal(superStorm.name, "超级雷暴");
+  assert.equal(secondLeg.key, "snow");
+  assert.notEqual(secondLeg.key, "superStorm");
+  assert.equal(knockout.key, "snow");
+  assert.notEqual(knockout.key, "superStorm");
+});
+
+test("YDL V2.1超级雷暴会在60分钟后按当时比分强制停止结算", () => {
+  const startedAt = 1_800_000_000_000;
+  const match = createYdlLeagueV2Match([
+    buildS4BalanceSeat("super-storm-stop", "home", "traitHeavy"),
+    buildS4BalanceSeat("super-storm-stop", "away", "enhanced"),
+  ], {
+    now:startedAt,
+    seed:"super-storm-stop",
+    weather:"superStorm",
+    competitionMode:"league",
+  });
+  const stopMinute = match.superStormStopMinute;
+  assert.ok(stopMinute >= 61 && stopMinute <= 89);
+
+  advanceYdlLeagueV2Match(match, startedAt + 120_001, { maximumChains:Infinity });
+
+  assert.equal(match.finished, true);
+  assert.equal(match.abandoned, true);
+  assert.equal(match.abandonmentReason, "superStorm");
+  assert.equal(match.minute, stopMinute);
+  assert.equal(match.nextChainIndex, stopMinute * 2);
+  assert.equal(match.report.stoppedAtMinute, stopMinute);
+  assert.equal(match.report.penalties, null);
+  assert.equal(match.report.teams.reduce((sum, team) => sum + team.stats.possessionSeconds, 0), stopMinute * 60);
+  assert.ok(match.report.events.some((event) => event.type === "abandoned" && event.cause === "superStorm" && /强制终止/.test(event.text)));
+  assert.deepEqual(match.report.score, match.score);
+});
+
+test("YDL V2.1杯赛第二回合即使显式传入超级雷暴也会安全降级", () => {
+  const match = createYdlLeagueV2Match([
+    buildS4BalanceSeat("super-storm-cup-leg2", "home", "traitHeavy"),
+    buildS4BalanceSeat("super-storm-cup-leg2", "away", "enhanced"),
+  ], {
+    seed:"super-storm-cup-leg2",
+    weather:"superStorm",
+    competitionMode:"cup",
+    legNumber:2,
+    regulationOnly:false,
+    aggregateBaseScore:[0, 0],
+  });
+
+  assert.equal(match.environment.weather, "storm");
+  assert.equal(match.superStormStopMinute, null);
+});
+
+test("YDL V2.1禁用超级雷暴的淘汰赛即使显式传入也会安全降级", () => {
+  const match = createYdlLeagueV2Match([
+    buildS4BalanceSeat("super-storm-knockout", "home", "traitHeavy"),
+    buildS4BalanceSeat("super-storm-knockout", "away", "enhanced"),
+  ], {
+    seed:"super-storm-knockout",
+    weather:"superStorm",
+    competitionMode:"cup",
+    legNumber:1,
+    allowSuperStorm:false,
+    regulationOnly:false,
+  });
+
+  assert.equal(match.environment.weather, "storm");
+  assert.equal(match.superStormStopMinute, null);
+});
+
 test("YDL V2 杯赛在两回合总比分打平后先踢加时赛再点球决胜", () => {
   const startedAt = 1_800_000_000_000;
   const match = createYdlLeagueV2Match([
@@ -301,6 +376,23 @@ test("YDL V2 杯赛在两回合总比分打平后先踢加时赛再点球决胜"
   match.nextChainIndex = match.possessionChainCount;
   advanceYdlLeagueV2Match(match, startedAt + 180_000, { maximumChains:Infinity });
 
+  assert.equal(match.finished, false);
+  assert.equal(match.segment, "penalties");
+  assert.equal(match.report, null);
+  assert.deepEqual(match.penalties, [0, 0]);
+  const shootoutEventCount = match.pendingPenaltyShootout.events.length;
+  const eventsBeforeShootout = match.events.length;
+  advanceYdlLeagueV2Match(match, startedAt + 180_001, { maximumChains:Infinity });
+  assert.equal(match.events.length, eventsBeforeShootout + 1);
+  assert.equal(match.events.at(-1).type, "penaltyShootoutStart");
+  assert.equal(match.finished, false);
+  advanceYdlLeagueV2Match(match, startedAt + 182_001, { maximumChains:Infinity });
+  assert.equal(match.events.length, eventsBeforeShootout + 2);
+  assert.equal(match.events.at(-1).type, "penaltyShootoutKick");
+  assert.equal(match.finished, false);
+  advanceYdlLeagueV2Match(match, match.pendingPenaltyShootout.startedAt + shootoutEventCount * 2_000, { maximumChains:Infinity });
+
+  assert.equal(match.finished, true);
   assert.deepEqual(match.report.aggregateBaseScore, [1, 0]);
   assert.deepEqual(match.report.aggregateScore, [1, 1]);
   assert.equal(match.report.extraTimePlayed, true);

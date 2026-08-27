@@ -247,6 +247,7 @@ export class VersusRoomService {
     this.now = options.now ?? Date.now;
     this.accountsPath = options.accountsPath === undefined ? DEFAULT_ACCOUNTS_PATH : options.accountsPath;
     this.accounts = new Map();
+    this.lastAccountActivityPersistedAt = 0;
     this.lineups = options.lineups ?? SHARED_LINEUPS;
     if (this.accountsPath && existsSync(this.accountsPath)) {
       try {
@@ -267,6 +268,15 @@ export class VersusRoomService {
   saveAccounts() {
     if (!this.accountsPath) return;
     writeFileSync(this.accountsPath, JSON.stringify({ version: 5, accounts: Object.fromEntries(this.accounts), lineups: Object.fromEntries(this.lineups) }, null, 2));
+  }
+
+  touchAccountActivity(account) {
+    const now = this.now();
+    if (now <= Number(account?.lastSeenAt ?? 0)) return;
+    account.lastSeenAt = now;
+    if (!this.accountsPath || now - this.lastAccountActivityPersistedAt < 60_000) return;
+    this.lastAccountActivityPersistedAt = now;
+    this.saveAccounts();
   }
 
   accountByNickname(nickname) {
@@ -321,6 +331,19 @@ export class VersusRoomService {
     return { accountToken: account.token, profile: this.publicProfile(account) };
   }
 
+  changePassword(playerIdValue, accountToken, currentPasswordValue, nextPasswordValue) {
+    const account = this.account(playerIdValue, accountToken);
+    const currentPassword = cleanCredential(currentPasswordValue, "当前密码");
+    const nextPassword = cleanCredential(nextPasswordValue, "新密码");
+    if (!account.passwordHash || !passwordMatches(currentPassword, account.passwordHash)) throw new Error("当前密码错误");
+    if (nextPassword.length < 6) throw new Error("新密码至少需要6位");
+    if (nextPassword === currentPassword) throw new Error("新密码不能与当前密码相同");
+    account.passwordHash = passwordHash(nextPassword);
+    account.lastSeenAt = this.now();
+    this.saveAccounts();
+    return { accountToken:account.token, profile:this.publicProfile(account) };
+  }
+
   bindAccount(playerIdValue, accountToken = null, nickname = "") {
     if (accountToken) {
       const existing = [...this.accounts.values()].find((candidate) => candidate.token === accountToken);
@@ -357,6 +380,7 @@ export class VersusRoomService {
     const account = this.accounts.get(key);
     if (!account || account.token !== accountToken) throw Object.assign(new Error("玩家ID尚未绑定或绑定凭证无效"), { statusCode:401 });
     this.assertLoginAllowed(account);
+    this.touchAccountActivity(account);
     return account;
   }
 

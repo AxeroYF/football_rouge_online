@@ -3,7 +3,7 @@ import test from "node:test";
 import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
 import { V2_PLAYER_DUTY_OPTIONS, v2PlayerDutyOptionsForRole } from "../versus/public/v2-player-duty-options.js";
 import { buildV21DynamicTeamShape } from "../versus/v2/dynamic-shape-v2.js";
-import { advanceV2Match, createV2Match, publicV2Match } from "../versus/v2/match-engine-v2.js";
+import { advanceV2Match, createV2Match, publicV2Match, v2SelectSetPieceTaker } from "../versus/v2/match-engine-v2.js";
 import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 import {
   resolveV2PlayerDuty,
@@ -75,6 +75,19 @@ test("V2.1职责注册表覆盖首批非门将职责并拒绝跨位置配置", (
   assert.ok(Object.values(V2_PLAYER_DUTIES).every((definition) => !definition.roles.includes("GK")));
 });
 
+test("定位球和点球分别由场上对应能力最高的球员主罚", () => {
+  const team = makeTeam("set-piece-takers");
+  const setPiecePlayer = team.players.find((player) => player.role === "AM");
+  const penaltyPlayer = team.players.find((player) => player.role === "ST");
+  setPiecePlayer.attributes.setPieces = 99;
+  penaltyPlayer.attributes.finishing = 98;
+  team.players.find((player) => player.role === "GK").attributes.setPieces = 100;
+  const match = createV2Match([team, makeTeam("set-piece-opponent")], { possessionChains:1, rng:() => .5 });
+  assert.equal(v2SelectSetPieceTaker(match, 0, "freeKick").id, setPiecePlayer.id);
+  assert.equal(v2SelectSetPieceTaker(match, 0, "corner").id, setPiecePlayer.id);
+  assert.equal(v2SelectSetPieceTaker(match, 0, "penalty").id, penaltyPlayer.id);
+});
+
 test("V2.1边后卫职责产生不同的纵向与横向动态站位", () => {
   const config = quietParameters({ dynamicShape:{ mode:"candidate" } }).dynamicShape;
   const shapeFor = (tacticalDuty) => {
@@ -132,6 +145,30 @@ test("V2.1三阶段战术切换会同步切换球员职责并进入公开比赛�
   assert.equal(match.teams[0].activePlan, "leading");
   assert.equal(match.teams[0].players.find((player) => player.id === strikerId).tacticalDuty, "targetForward");
   assert.equal(publicV2Match(match).teams[0].players.find((player) => player.id === strikerId).tacticalDuty, "targetForward");
+});
+
+test("V2.1切回未配置专项职责的战术时恢复默认职责", () => {
+  const home = makeTeam("default-duty-home");
+  const away = makeTeam("default-duty-away");
+  const strikerId = home.players[8].id;
+  home.players[8].tacticalDuty = "advancedForward";
+  home.tacticalPlans = {
+    opening:{ tactic:"balanced", style:"possession", positionPreset:"position1", playerDuties:{} },
+    leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2", triggerGoalDifference:1, playerDuties:{ [strikerId]:"targetForward" } },
+    trailing:{ tactic:"positive", style:"possession", positionPreset:"position3", triggerGoalDifference:1, playerDuties:{} },
+  };
+  const match = createV2Match([home, away], { possessionChains:4, parameters:quietParameters(), rng:() => .99 });
+  const striker = () => match.teams[0].players.find((player) => player.id === strikerId);
+
+  assert.equal(striker().tacticalDuty, null, "比赛初始化不能继承上一轮残留职责");
+  match.teams[0].score = 1;
+  advanceV2Match(match, 1);
+  assert.equal(striker().tacticalDuty, "targetForward");
+
+  match.teams[1].score = match.teams[0].score + 3;
+  advanceV2Match(match, match.nextChainIndex + 1);
+  assert.equal(match.teams[0].activePlan, "trailing");
+  assert.equal(striker().tacticalDuty, null, "切回默认战术必须清除上一阶段专项职责");
 });
 
 test("高活动职责承担更高体能成本而默认职责保持1倍", () => {

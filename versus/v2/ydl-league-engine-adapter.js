@@ -1,7 +1,9 @@
 import { VERSUS_REFEREES } from "../match-engine.js";
 import { analyzeElevenBoardFormation } from "../public/formation-rules.js";
+import { activeCaptain } from "../public/captain-rules.js";
 import { calculateV2TacticalFit } from "../public/v2-tactical-fit.js";
 import { advanceV2Match, createV2Match, finishV2Match, publicV2Match, v2TurnoverRestartZone } from "./match-engine-v2.js";
+import { v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
 
 const REGULATION_LIVE_DURATION_MS = 120_000;
@@ -9,18 +11,45 @@ const EXTRA_TIME_LIVE_DURATION_MS = 40_000;
 const REGULATION_CHAIN_COUNT = 180;
 const EXTRA_TIME_CHAIN_COUNT = 60;
 const EXTRA_TIME_HALF_CHAIN_COUNT = EXTRA_TIME_CHAIN_COUNT / 2;
-const WEATHER = Object.freeze({
+const PENALTY_SHOOTOUT_EVENT_INTERVAL_MS = 2_000;
+export const YDL_V2_WEATHER = Object.freeze({
   sunny:{ name:"晴朗", precipitation:5, wind:8 },
   rain:{ name:"雨天", precipitation:72, wind:18 },
   storm:{ name:"雷暴", precipitation:88, wind:45 },
   snow:{ name:"雪天", precipitation:58, wind:20 },
+  superStorm:{ name:"超级雷暴", precipitation:100, wind:90 },
 });
 
 const publicMinute = (minute) => Math.max(0, Math.min(120, Math.ceil(Number(minute) || 0)));
 const publicEvents = (events) => events.map((event) => ({ ...event, minute:publicMinute(event.minute) }));
-const publicWeather = (key) => ({ key, ...(WEATHER[key] ?? WEATHER.sunny) });
+const publicWeather = (key) => ({ key, ...(YDL_V2_WEATHER[key] ?? YDL_V2_WEATHER.sunny) });
 const publicReferee = (key) => ({ key, ...(VERSUS_REFEREES[key] ?? VERSUS_REFEREES.standard) });
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, Number(value) || 0));
+
+function superStormAllowed(options = {}) {
+  if (options.allowSuperStorm === false) return false;
+  return !(Number(options.legNumber ?? 1) === 2 && ["cup", "tournament"].includes(options.competitionMode));
+}
+
+export function normalizeYdlV2WeatherKey(weather, options = {}) {
+  const key = Object.hasOwn(YDL_V2_WEATHER, weather) ? weather : "sunny";
+  return key === "superStorm" && !superStormAllowed(options) ? "storm" : key;
+}
+
+export function drawYdlV2Weather(rng = Math.random, options = {}) {
+  const weights = options.weatherWeights ?? V2_MATCH_PARAMETERS.environment.weatherWeights;
+  const entries = Object.keys(YDL_V2_WEATHER)
+    .filter((key) => key !== "superStorm" || superStormAllowed(options))
+    .map((key) => [key, Math.max(0, Number(weights[key] ?? 0))]);
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  if (total <= 0) return publicWeather("sunny");
+  let roll = Math.max(0, Math.min(0.999999999999, Number(rng()) || 0)) * total;
+  for (const [key, weight] of entries) {
+    roll -= weight;
+    if (roll < 0) return publicWeather(key);
+  }
+  return publicWeather(entries.at(-1)?.[0] ?? "sunny");
+}
 
 function possessionPercent(match, teamIndex) {
   const secondsTotal = match.teams.reduce((sum, team) => sum + Number(team.stats.possessionSeconds ?? 0), 0);
@@ -101,7 +130,7 @@ function reportPlayer(team, player) {
     secondaryRole:player.secondaryRole, overall:player.overall, position:structuredClone(team.positions[player.id] ?? player.boardPosition ?? null),
     rating:Number(rating.toFixed(1)), heightCm:player.heightCm, nationality:player.nationality, club:player.club,
     grade:player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0), legendary:Boolean(player.legendary ?? player.grade === "S"),
-    fitness:Number(player.state.fitness.toFixed(1)), active:player.active, sentOff:player.sentOff, injury:player.injury, stats,
+    fitness:Number(player.state.fitness.toFixed(1)), active:player.active, sentOff:player.sentOff, injury:player.injury, captain:player.id === team.captainId, stats,
     startedMatch:Boolean(player.startedMatch), enteredAsSubstitute:Boolean(player.enteredAsSubstitute), substitutedOut:Boolean(player.substitutedOut), substitutedForId:player.substitutedForId ?? null,
     traits:player.traitDefinitions?.map(({ id, name, summary }) => ({ id, name, summary })) ?? [],
   };
@@ -126,7 +155,7 @@ function reportTeam(match, team, teamIndex) {
   const dimensions = resolveV2TacticalDimensions(team.tactic, team.style, team.tacticalDimensions, match.parameters);
   const tacticalFit = calculateV2TacticalFit(activePlayers, roles, team.positions, team.formationLines, plan, dimensions);
   return {
-    name:team.name, importedLineup:Boolean(team.importedLineup), tactic:team.tactic, style:team.style, possessionStyle:team.possessionStyle, defensiveBlock:team.defensiveBlock, transitionStyle:team.transitionStyle, duelIntensity:team.duelIntensity, inPossessionDetails:structuredClone(team.inPossessionDetails ?? null), outOfPossessionDetails:structuredClone(team.outOfPossessionDetails ?? null),
+    name:team.name, importedLineup:Boolean(team.importedLineup), captainId:team.captainId ?? null, activeCaptainId:activeCaptain(team)?.id ?? null, captainStyle:team.captainStyle ?? null, tactic:team.tactic, style:team.style, possessionStyle:team.possessionStyle, defensiveBlock:team.defensiveBlock, transitionStyle:team.transitionStyle, duelIntensity:team.duelIntensity, inPossessionDetails:structuredClone(team.inPossessionDetails ?? null), outOfPossessionDetails:structuredClone(team.outOfPossessionDetails ?? null),
     attackFocus:team.attackFocus ?? "center", defenseFocus:team.defenseFocus ?? "center", styleFit:Number((tacticalFit / 100).toFixed(3)), tacticalFit,
     positionStructure:null, inMatchPositionAdjustment:team.activePlan !== "opening", markingTargetId:null,
     formation:analyzeElevenBoardFormation(activePlayers, team.positions, team.formationLines).name, activeCount:activePlayers.length,
@@ -147,17 +176,23 @@ function adapterEvent(match, type, minute, teamIndex, text, details = {}) {
 const shootoutAbility = (player) => Number(player?.attributes?.finishing ?? player?.overall ?? 60) * 0.62
   + Number(player?.attributes?.composure ?? 60) * 0.38;
 
+const shootoutEnginePlayer = (match, teamIndex, player) => match.snapshotTeams?.[teamIndex]?.players?.find((entry) => entry.id === player?.id) ?? {
+  ...player,
+  attributes:Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [key, v2EngineAttributeValue(value, match.parameters)])),
+};
+
 export function v2PenaltyShootout(match) {
   const scores = [0, 0];
   const active = match.teams.map((team) => team.players.filter((player) => player.active));
   const eligibleCount = Math.min(...active.map((players) => players.length));
-  const excluded = active.map((players) => players.length === eligibleCount ? [] : [...players]
-    .sort((left, right) => Number(left.role === "GK") - Number(right.role === "GK") || shootoutAbility(left) - shootoutAbility(right))
+  const excluded = active.map((players, teamIndex) => players.length === eligibleCount ? [] : [...players]
+    .sort((left, right) => Number(left.role === "GK") - Number(right.role === "GK") || shootoutAbility(shootoutEnginePlayer(match, teamIndex, left)) - shootoutAbility(shootoutEnginePlayer(match, teamIndex, right)))
     .slice(0, players.length - eligibleCount));
   const excludedIds = excluded.map((players) => new Set(players.map((player) => player.id)));
+  const captainIds = match.teams.map((team) => activeCaptain(team)?.id ?? null);
   const takers = active.map((players, teamIndex) => players
     .filter((player) => !excludedIds[teamIndex].has(player.id))
-    .sort((left, right) => shootoutAbility(right) - shootoutAbility(left) || left.id.localeCompare(right.id)));
+    .sort((left, right) => Number(right.id === captainIds[teamIndex]) - Number(left.id === captainIds[teamIndex]) || shootoutAbility(shootoutEnginePlayer(match, teamIndex, right)) - shootoutAbility(shootoutEnginePlayer(match, teamIndex, left)) || left.id.localeCompare(right.id)));
   const keepers = match.teams.map((team) => team.players.find((player) => player.active && player.role === "GK") ?? team.players.find((player) => player.role === "GK"));
   const goalTeamIndex = match.rng() < 0.5 ? 0 : 1;
   const firstTeamIndex = match.rng() < 0.5 ? 0 : 1;
@@ -176,8 +211,9 @@ export function v2PenaltyShootout(match) {
     const kickIndex = attempts[teamIndex];
     const taker = takers[teamIndex][kickIndex % takers[teamIndex].length];
     const keeper = keepers[1 - teamIndex];
-    const finishing = shootoutAbility(taker);
-    const keeping = Number(keeper?.attributes?.goalkeeping ?? keeper?.overall ?? 55) * 0.58 + Number(keeper?.attributes?.reflexes ?? 55) * 0.42;
+    const finishing = shootoutAbility(shootoutEnginePlayer(match, teamIndex, taker));
+    const engineKeeper = shootoutEnginePlayer(match, 1 - teamIndex, keeper);
+    const keeping = Number(engineKeeper?.attributes?.goalkeeping ?? engineKeeper?.overall ?? 55) * 0.58 + Number(engineKeeper?.attributes?.reflexes ?? 55) * 0.42;
     const probability = clamp(0.74 + (finishing - keeping) / 300, 0.58, 0.9);
     const roll = match.rng();
     const scored = roll < probability;
@@ -217,7 +253,7 @@ function finishReport(match) {
   const aggregateScore = aggregateBaseScore ? match.score.map((score, index) => Number(score) + Number(aggregateBaseScore[index] ?? 0)) : null;
   const decisionScore = aggregateScore ?? match.score;
   let winnerIndex = decisionScore[0] === decisionScore[1] ? null : decisionScore[0] > decisionScore[1] ? 0 : 1;
-  const shootout = winnerIndex == null && !match.regulationOnly && !match.abandoned ? v2PenaltyShootout(match) : null;
+  const shootout = match.penaltyShootout ?? (winnerIndex == null && !match.regulationOnly && !match.abandoned ? v2PenaltyShootout(match) : null);
   const penalties = shootout?.scores ?? null;
   if (shootout) winnerIndex = shootout.winnerIndex;
   match.winnerIndex = winnerIndex;
@@ -230,9 +266,11 @@ function finishReport(match) {
     dynamicShapeInfluence:Number(match.parameters?.dynamicShape?.stableInfluence ?? 0),
     dynamicShapePhaseTwo:Boolean(match.parameters?.dynamicShape?.phaseTwo?.enabled),
     score:[...match.score],
+    halfTimeScore:match.halfTimeScore ? [...match.halfTimeScore] : [0, 0],
     aggregateBaseScore:aggregateBaseScore ? [...aggregateBaseScore] : null, aggregateScore:aggregateScore ? [...aggregateScore] : null, competitionMode:match.competitionMode, legNumber:match.legNumber,
     regulationScore:match.regulationScore ? [...match.regulationScore] : [...match.score], extraTimeScore:match.extraTimeScore ? [...match.extraTimeScore] : null,
     extraTimePlayed:Boolean(match.extraTimeStarted), penalties:penalties ? [...penalties] : null, penaltyShootout:shootout ? structuredClone(shootout) : null, winnerIndex, weather:publicWeather(match.environment.weather), referee:publicReferee(match.environment.referee),
+    abandoned:Boolean(match.abandoned), abandonmentReason:match.abandonmentReason ?? null, stoppedAtMinute:match.weatherStopped ? Number(match.minute) : null,
     blackWhistle:match.blackWhistleTriggered, teams:match.teams.map((team, index) => reportTeam(match, team, index)),
     importantEvents:publicEvents(match.events.filter((event) => event.importance !== "normal")),
     events:publicEvents(match.events), analysisTimeline:structuredClone(match.analysisTimeline ?? []),
@@ -246,6 +284,50 @@ function finishReport(match) {
     } : null,
     postMatchConsequences:structuredClone(match.postMatchConsequences),
   };
+}
+
+function preparePenaltyShootout(match, now) {
+  const eventStart = match.events.length;
+  const shootout = v2PenaltyShootout(match);
+  const events = match.events.splice(eventStart);
+  const extraTimeEnd = match.events.at(-1);
+  if (extraTimeEnd?.type === "fulltime") {
+    extraTimeEnd.type = "extraTimeEnd";
+    extraTimeEnd.text = `加时赛结束，总比分仍为${currentDecisionScore(match)[0]}:${currentDecisionScore(match)[1]}，比赛进入点球大战。`;
+  }
+  match.extraTimeScore = match.score.map((score, index) => Number(score) - Number(match.regulationScore?.[index] ?? 0));
+  match.penaltyShootout = shootout;
+  match.pendingPenaltyShootout = {
+    events,
+    revealed:0,
+    startedAt:Number(now),
+  };
+  match.penalties = [0, 0];
+  match.winnerIndex = null;
+  match.finished = false;
+  match.phase = "playing";
+  match.segment = "penalties";
+}
+
+function advancePenaltyShootout(match, now) {
+  const pending = match.pendingPenaltyShootout;
+  if (!pending) return;
+  const elapsed = Math.max(0, Number(now) - Number(pending.startedAt));
+  const target = Math.min(pending.events.length, Math.floor(elapsed / PENALTY_SHOOTOUT_EVENT_INTERVAL_MS) + 1);
+  while (pending.revealed < target) {
+    const event = pending.events[pending.revealed];
+    match.events.push(event);
+    pending.revealed += 1;
+    if (event.type === "penaltyShootoutKick") match.penalties = [...event.score];
+    if (event.type === "penalties") {
+      match.penalties = [...match.penaltyShootout.scores];
+      match.winnerIndex = match.penaltyShootout.winnerIndex;
+      match.finished = true;
+      match.phase = "finished";
+      delete match.pendingPenaltyShootout;
+      finishReport(match);
+    }
+  }
 }
 
 function currentDecisionScore(match) {
@@ -269,6 +351,9 @@ function finishAtRegulation(match) {
 }
 
 export function createYdlLeagueV2Match(seats, options = {}) {
+  const competitionMode = options.competitionMode ?? "league";
+  const legNumber = Number(options.legNumber ?? 1);
+  const weather = normalizeYdlV2WeatherKey(options.weather ?? "sunny", { competitionMode, legNumber, allowSuperStorm:options.allowSuperStorm });
   const teams = seats.map((seat) => ({
     ...seat,
     positionPresets:seat.positionPresets ?? { position1:seat.positions },
@@ -276,23 +361,25 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   }));
   const regulationOnly = options.regulationOnly !== false;
   const match = createV2Match(teams, {
-    seed:options.seed, weather:options.weather, referee:options.referee,
+    seed:options.seed, weather, referee:options.referee,
     possessionChains:regulationOnly ? REGULATION_CHAIN_COUNT : REGULATION_CHAIN_COUNT + EXTRA_TIME_CHAIN_COUNT,
     parameters:options.parameters,
     dotReplayEnabled:Boolean(options.dotReplayEnabled),
+    superStormStopMinute:options.superStormStopMinute,
   });
   match.regulationChainCount = REGULATION_CHAIN_COUNT;
   match.scheduledDurationMinutes = regulationOnly ? 90 : 120;
   match.version = 2;
   match.phase = "playing";
   match.segment = "regular";
-  match.competitionMode = options.competitionMode ?? "league";
+  match.competitionMode = competitionMode;
   match.engineProfile = options.engineProfile ?? "v2.1-stable-dynamic.2";
-  match.legNumber = Number(options.legNumber ?? 1);
+  match.legNumber = legNumber;
   match.regulationOnly = regulationOnly;
   match.aggregateBaseScore = Array.isArray(options.aggregateBaseScore) ? options.aggregateBaseScore.map(Number) : null;
   match.aggregateScore = null;
   match.regulationScore = null;
+  match.halfTimeScore = null;
   match.extraTimeScore = null;
   match.extraTimeStarted = false;
   match.extraTimeHalfTimeRecorded = false;
@@ -307,6 +394,11 @@ export function createYdlLeagueV2Match(seats, options = {}) {
 
 export function advanceYdlLeagueV2Match(match, now = Date.now(), options = {}) {
   if (match.finished) return match;
+  if (match.pendingPenaltyShootout) {
+    advancePenaltyShootout(match, now);
+    match.lastAdvancedAt = Number(now);
+    return match;
+  }
   const elapsed = Math.max(0, Number(now) - Number(match.startedAt ?? now));
   const maximumChains = Number(options.maximumChains ?? 8);
   let remainingChains = Number.isFinite(maximumChains) ? Math.max(0, maximumChains) : Infinity;
@@ -319,6 +411,9 @@ export function advanceYdlLeagueV2Match(match, now = Date.now(), options = {}) {
   };
 
   const regulationTarget = Math.min(REGULATION_CHAIN_COUNT, Math.floor(elapsed / REGULATION_LIVE_DURATION_MS * REGULATION_CHAIN_COUNT));
+  const halfTimeTarget = REGULATION_CHAIN_COUNT / 2;
+  advanceTo(Math.min(regulationTarget, halfTimeTarget));
+  if (!match.halfTimeScore && match.nextChainIndex >= halfTimeTarget) match.halfTimeScore = [...match.score];
   advanceTo(regulationTarget);
   if (!match.finished && match.nextChainIndex >= REGULATION_CHAIN_COUNT && !match.regulationOnly && !match.extraTimeStarted) {
     if (currentDecisionScore(match)[0] === currentDecisionScore(match)[1]) beginExtraTime(match);
@@ -336,7 +431,10 @@ export function advanceYdlLeagueV2Match(match, now = Date.now(), options = {}) {
       adapterEvent(match, "extraTimeHalfTime", 105, null, "加时赛上半场结束，双方短暂休整后交换场地。", { importance:"stage", score:[...match.score], aggregateScore:currentDecisionScore(match) });
     }
     advanceTo(extraTimeTarget);
-    if (!match.finished && match.nextChainIndex >= match.possessionChainCount) finishV2Match(match, { minute:120 });
+    if (!match.finished && match.nextChainIndex >= match.possessionChainCount) {
+      finishV2Match(match, { minute:120 });
+      if (!match.regulationOnly && !match.abandoned && currentDecisionScore(match)[0] === currentDecisionScore(match)[1]) preparePenaltyShootout(match, now);
+    }
   }
   if (match.finished && match.extraTimeStarted && !match.extraTimeScore) {
     match.extraTimeScore = match.score.map((score, index) => Number(score) - Number(match.regulationScore?.[index] ?? 0));
@@ -364,8 +462,11 @@ export function publicYdlLeagueV2Match(match, now = Date.now(), viewerIndex = nu
     engineVersion:match.engineVersion, modelVersion:match.modelVersion, engineProfile:match.engineProfile, phase:match.phase, segment:match.segment,
     minute:publicMinute(snapshot.minute), score:snapshot.score, competitionMode:match.competitionMode, legNumber:match.legNumber,
     aggregateBaseScore:match.aggregateBaseScore ? [...match.aggregateBaseScore] : null, aggregateScore:match.aggregateScore ? [...match.aggregateScore] : null, weather:publicWeather(match.environment.weather), referee:publicReferee(match.environment.referee),
-    blackWhistle:match.blackWhistleTriggered, teams, events:publicEvents(snapshot.events), pauseUsed:[true, true], pause:null,
-    remainingMs:match.finished ? 0 : Math.max(0, (match.extraTimeStarted ? REGULATION_LIVE_DURATION_MS + EXTRA_TIME_LIVE_DURATION_MS : REGULATION_LIVE_DURATION_MS) - (Number(now) - match.startedAt)),
+    abandoned:Boolean(match.abandoned), abandonmentReason:match.abandonmentReason ?? null, stoppedAtMinute:match.weatherStopped ? Number(match.minute) : null,
+    blackWhistle:match.blackWhistleTriggered, stadium:match.stadium ? structuredClone(match.stadium) : null, teams, events:publicEvents(snapshot.events), pauseUsed:[true, true], pause:null,
+    remainingMs:match.finished ? 0 : match.pendingPenaltyShootout
+      ? Math.max(0, (match.pendingPenaltyShootout.events.length - match.pendingPenaltyShootout.revealed) * PENALTY_SHOOTOUT_EVENT_INTERVAL_MS)
+      : Math.max(0, (match.extraTimeStarted ? REGULATION_LIVE_DURATION_MS + EXTRA_TIME_LIVE_DURATION_MS : REGULATION_LIVE_DURATION_MS) - (Number(now) - match.startedAt)),
     penalties:match.penalties ? [...match.penalties] : null, winnerIndex:match.winnerIndex ?? null, report:match.report,
   });
 }

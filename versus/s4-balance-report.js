@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { positionFitScore, roleGroup } from "../game/public/schema.js";
+import { playerOverallFromAttributes, positionFitScore, roleGroup } from "../game/public/schema.js";
 import { advanceVersusMatch, createVersusMatch, HALFTIME_ADJUSTMENT_MS, REGULAR_DURATION_MS } from "./match-engine.js";
 import { isXPlayer, REAL_PLAYERS } from "./player-pool.js";
 import { defaultElevenPositions, inferElevenBoardRoles } from "./rules.js";
@@ -138,6 +138,21 @@ function upgradeFor(archetype, rng) {
   return pick(rng, [2,3,4,5,6,7,8]);
 }
 
+function simulationQualityPlayer(source, role, quality = {}) {
+  const minimumOverall = Number(quality.minimumOverall ?? 0);
+  const targetOverall = Number(quality.targetOverall ?? minimumOverall);
+  if (!Number.isFinite(minimumOverall) || minimumOverall <= 0) return source;
+  const attributes = { ...(source.attributes ?? {}) };
+  const keys = Object.keys(attributes);
+  const sourceOverall = playerOverallFromAttributes(attributes, role);
+  const target = Math.max(minimumOverall, Math.min(99, targetOverall));
+  const delta = Math.max(0, target - sourceOverall);
+  if (delta > 0 && keys.length) {
+    keys.forEach((key) => { attributes[key] = Math.min(99, Number(attributes[key] ?? 50) + delta); });
+  }
+  return { ...source, overall:playerOverallFromAttributes(attributes, role), attributes };
+}
+
 function xPlayer(role, id, upgradeLevel, traitIds) {
   const group = roleGroup(role);
   const emphasis = group === "GK" ? ["goalkeeping","reflexes","positioning","composure"] : group === "DEF" ? ["tackling","marking","positioning","strength","pace"] : group === "MID" ? ["passing","vision","decisions","firstTouch","stamina"] : ["finishing","offBall","pace","dribbling","composure"];
@@ -169,7 +184,7 @@ function buildSeat(seed, side, archetype, options = {}) {
     let player;
     if (xRemaining && index === xIndex) {
       const ids = traitIdsFor({ role:ROLE_FALLBACKS[role] ?? role }, Math.max(1, Math.min(3, traitCount + 1)), seededRandom(`${seed}:${side}:x-traits:${index}`));
-      player = xPlayer(role, `${side}-x-${seed}`, upgradeLevel, ids);
+      player = simulationQualityPlayer(xPlayer(role, `${side}-x-${seed}`, upgradeLevel, ids), role, options.playerQuality);
       xRemaining -= 1;
     } else {
       const assignedLegend = legendAssignments.get(index);
@@ -182,7 +197,7 @@ function buildSeat(seed, side, archetype, options = {}) {
       } else {
         candidates = eligiblePlayers(role, used, exactLegendCount ? "exclude" : "any");
       }
-      const source = candidates[Math.floor(rng() * candidates.length)];
+      const source = simulationQualityPlayer(candidates[Math.floor(rng() * candidates.length)], role, options.playerQuality);
       used.add(source.id);
       const ids = traitIdsFor(source, traitCount, seededRandom(`${seed}:${side}:traits:${index}`));
       player = { ...applyS4Enhancement({ ...source, attributes:{ ...source.attributes } }, upgradeLevel), traits:ids };

@@ -68,10 +68,11 @@ data/ydl-content-overrides.backup.json
 data/s4-test/
 outputs/
 handoff/artifacts/
-handoff/*.zip
+handoff/*.zip*
 .local-s4-server.pid
 Cloud_league_data/
 *.png
+!versus/public/assets/sponsors/zhuren-kabushiki-kaisha.png
 .tmp-browser-*.json
 .tmp-browser-*.json.bak
 .worktrees/
@@ -81,10 +82,17 @@ Cloud_league_data/
 # ==============================
 .tmp-*/
 .tmp-*
-handoff/*.tar.gz
+handoff/*.tar.gz*
 data/sources/kaggle-history-dlc2/
 *.xlsx
 
 # S4 runtime data (never push)
 data/yellowdogs-league.json.live/
 day6-tactical-results.json
+
+# Local release archives and generated offline binaries
+backups/S4_Backup/
+*.tar.gz*
+data/ydl-player-card-studio.json
+data/ydl-player-card-studio.json.backup
+offline/windows/*.exe

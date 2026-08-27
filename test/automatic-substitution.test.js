@@ -6,7 +6,20 @@ test("automatic substitutions rank primary, secondary and same-line roles consis
   assert.equal(automaticSubstitutionRank("DM", { role:"DM", secondaryRole:"CB" }), 3);
   assert.equal(automaticSubstitutionRank("DM", { role:"CB", secondaryRole:"DM" }), 2);
   assert.equal(automaticSubstitutionRank("DM", { role:"ST", secondaryRole:"AM" }), 1);
+  assert.equal(automaticSubstitutionRank("DM", { role:"ST", secondaryRole:"RW", traits:["utility-player"] }), 0.5);
   assert.equal(automaticSubstitutionRank("DM", { role:"ST", secondaryRole:"RW" }), 0);
+  assert.equal(automaticSubstitutionRank("GK", { role:"ST", traits:["utility-player"] }), 0);
+});
+
+test("utility players are a cross-line fallback behind primary, secondary and same-line substitutes", () => {
+  const candidates = [
+    { id:"utility-cross-line", role:"ST", secondaryRole:"RW", overall:99, traits:["utility-player"] },
+    { id:"same-line", role:"AM", overall:70 },
+    { id:"secondary", role:"CB", secondaryRole:"DM", overall:65 },
+    { id:"primary", role:"DM", overall:60 },
+  ];
+  candidates.sort((left, right) => compareAutomaticSubstitutes("DM", left, right));
+  assert.deepEqual(candidates.map((player) => player.id), ["primary", "secondary", "same-line", "utility-cross-line"]);
 });
 
 test("automatic substitutions prefer role fit, then overall, then fitness deterministically", () => {
@@ -25,4 +38,19 @@ test("automatic substitutions prefer role fit, then overall, then fitness determ
     "secondary-low",
     "same-line",
   ]);
+});
+
+test("automatic substitutions can rank by enhanced effective overall", () => {
+  const candidates = [
+    { id:"higher-base", role:"DM", overall:84, upgradeBonus:0, state:{ fitness:100 } },
+    { id:"higher-effective", role:"DM", overall:80, upgradeBonus:7, state:{ fitness:100 } },
+  ];
+  candidates.sort((left, right) => compareAutomaticSubstitutes(
+    "DM",
+    left,
+    right,
+    (player) => player.state.fitness,
+    (player) => player.overall + player.upgradeBonus,
+  ));
+  assert.deepEqual(candidates.map((player) => player.id), ["higher-effective", "higher-base"]);
 });

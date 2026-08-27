@@ -1,4 +1,4 @@
-import http from "node:http";
+﻿import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,9 +14,11 @@ import { loadDatabase, resetDatabase, saveDatabase } from "./store.js";
 import { runSimulation } from "./simulation.js";
 import { handleVersusApi } from "../versus/api.js";
 import { handleAdminApi } from "../versus/admin-api.js";
+import { handleOfflineApi } from "../offline/api.js";
 import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
 import { versusRooms } from "../versus/room-service.js";
 import { yellowDogsLeague } from "../versus/league-service.js";
+import { OFFLINE_ATTRIBUTE_SETTINGS } from "../versus/offline-attribute-settings.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const publicDirectory = path.join(here, "public");
@@ -31,11 +33,13 @@ const adminDirectory = path.resolve(here, "../admin/public");
 const port = Number(process.env.DEVTOOL_PORT ?? 4310);
 const host = process.env.VERSUS_HOST ?? "127.0.0.1";
 const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
+const offlineYdl = process.env.YDL_OFFLINE_MODE === "1";
 const environment = process.env.APP_ENV ?? "production";
 const environmentLabel = process.env.APP_LABEL ?? "正式服";
-const matchEngine = process.env.APP_ENV === "test" && process.env.YDL_MATCH_ENGINE === "v2" ? "v2" : "v1";
+const matchEngine = (offlineYdl || process.env.APP_ENV === "test") && process.env.YDL_MATCH_ENGINE === "v2" ? "v2" : "v1";
 const maximumBodyBytes = 18 * 1024 * 1024;
 const metricsToken = process.env.YDL_METRICS_TOKEN ?? "";
+const mirrorWorkerToken = process.env.YDL_MIRROR_WORKER_TOKEN ?? "";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -95,13 +99,37 @@ async function handleApi(request, response, pathname) {
     if (request.headers.authorization !== `Bearer ${metricsToken}`) return sendJson(response, 401, { ok:false, error:"unauthorized" });
     return sendJson(response, 200, { ok:true, metrics:snapshotRuntimeMetrics() });
   }
+  if (offlineYdl && pathname.startsWith("/api/worker/")) {
+    return sendJson(response, 404, { ok:false, error:"offline mode does not expose worker APIs" });
+  }
+  if (offlineYdl && pathname.startsWith("/api/offline/")) {
+    return handleOfflineApi(request, response, pathname, readJson, sendJson);
+  }
+  if (pathname.startsWith("/api/worker/mirror-batches/")) {
+    if (request.method !== "POST") return sendJson(response, 405, { ok:false, error:"worker API requires POST" });
+    const body = await readJson(request);
+    const authorization = String(request.headers.authorization ?? "");
+    const presentedToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+    const legacyDirector = Boolean(mirrorWorkerToken && presentedToken === mirrorWorkerToken);
+    const registeredNode = legacyDirector ? null : yellowDogsLeague.authenticateMirrorComputeNode(body.workerId, presentedToken);
+    if (!legacyDirector && !registeredNode) return sendJson(response, 401, { ok:false, error:"unauthorized worker node" });
+    body.workerId = legacyDirector ? "director" : registeredNode.id;
+    let result;
+    if (pathname === "/api/worker/mirror-batches/heartbeat") result = { worker:yellowDogsLeague.registerDirectorMirrorWorker(body) };
+    else if (pathname === "/api/worker/mirror-batches/lease") result = { job:yellowDogsLeague.leaseDirectorMirrorBatchJob(body) };
+    else if (pathname === "/api/worker/mirror-batches/progress") result = { job:yellowDogsLeague.updateDirectorMirrorBatchProgress(body) };
+    else if (pathname === "/api/worker/mirror-batches/complete") result = yellowDogsLeague.completeDirectorMirrorBatchJob(body);
+    else if (pathname === "/api/worker/mirror-batches/fail") result = { job:yellowDogsLeague.failDirectorMirrorBatchJob(body) };
+    else return sendJson(response, 404, { ok:false, error:"worker API not found" });
+    return sendJson(response, 200, { ok:true, ...result });
+  }
   if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson, readBuffer);
   if (request.method === "GET" && pathname === "/api/versus/config") {
-    return sendJson(response, 200, { ok: true, publicOnly, environment, environmentLabel, matchEngine });
+    return sendJson(response, 200, { ok: true, publicOnly, offlineYdl, environment, environmentLabel, matchEngine, offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
   }
   if (publicOnly) {
     if (request.method === "GET" && pathname === "/api/health") {
-      return sendJson(response, 200, { ok: true, publicOnly:true, environment, environmentLabel });
+      return sendJson(response, 200, { ok: true, publicOnly:true, offlineYdl, environment, environmentLabel, offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
     }
     if (pathname === "/api/versus/dev-room" || !pathname.startsWith("/api/versus/")) {
       return sendJson(response, 404, { ok: false, error: "API not found" });
@@ -216,19 +244,29 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
     const fileStat = await stat(filePath);
     if (!fileStat.isFile()) throw new Error("not a file");
     const content = await readFile(filePath);
+    const hasImmutableVersion = /^[a-f0-9]{12}$/.test(searchParams.get("v") ?? "");
     const isVersionedPlayerProfile = (
       servesAPlayerProfile
       || servesLegendaryProfile
       || servesXPlayerProfile
       || servesPlayerProfile
     ) && path.extname(filePath).toLowerCase() === ".webp"
-      && /^[a-f0-9]{12}$/.test(searchParams.get("v") ?? "");
+      && hasImmutableVersion;
+    const isVersionedBadgeAsset = servesVersus
+      && (
+        path.extname(filePath).toLowerCase() === ".webp"
+          && /^\/assets\/(?:country|club)-badges\/[a-z0-9-]+\.webp$/.test(versusPath)
+        || path.extname(filePath).toLowerCase() === ".png"
+          && /^\/assets\/system-badges\/ai-team-badge\.png$/.test(versusPath)
+      )
+      && hasImmutableVersion;
+    const isImmutableAsset = isVersionedPlayerProfile || isVersionedBadgeAsset;
     const contentType = mimeTypes[path.extname(filePath)] ?? "application/octet-stream";
     const compressible = /^(text\/|application\/json|application\/javascript)/.test(contentType);
     let body = content;
     const headers = {
       "content-type": contentType,
-      "cache-control":isVersionedPlayerProfile ? "public, max-age=31536000, immutable" : "no-store",
+      "cache-control":isImmutableAsset ? "public, max-age=31536000, immutable" : "no-store",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
     };
@@ -280,11 +318,17 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(port, host, () => {
   console.log("本地足球项目已启动：http://" + host + ":" + port);
-  console.log("游戏 Demo：http://" + host + ":" + port + "/game/");
-  console.log("好友对战：http://" + host + ":" + port + "/versus/");
-  console.log("管理员后台：http://" + host + ":" + port + "/admin/");
-  if (publicOnly) console.log("公网试玩安全模式：开放好友对战及需要密码认证的管理员后台。");
-  else console.log(host === "127.0.0.1" ? "仅允许本机访问，按 Ctrl+C 停止。" : "已开放网络访问，请仅在可信局域网中使用。");
+  if (offlineYdl) {
+    console.log("YDL 单机版：http://" + host + ":" + port + "/versus/");
+    console.log("本地管理员后台：http://" + host + ":" + port + "/admin/");
+    console.log("仅允许本机访问；好友对战、计算节点与线上运营接口均未开放。");
+  } else {
+    console.log("游戏 Demo：http://" + host + ":" + port + "/game/");
+    console.log("好友对战：http://" + host + ":" + port + "/versus/");
+    console.log("管理员后台：http://" + host + ":" + port + "/admin/");
+    if (publicOnly) console.log("公网试玩安全模式：开放好友对战及需要密码认证的管理员后台。");
+    else console.log(host === "127.0.0.1" ? "仅允许本机访问，按 Ctrl+C 停止。" : "已开放网络访问，请仅在可信局域网中使用。");
+  }
 });
 
 const leagueTimer = setInterval(() => {

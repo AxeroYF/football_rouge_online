@@ -14,7 +14,7 @@ import {
   updatePlayerCardBatch,
   updatePlayerCardDraft,
 } from "./player-card-studio-store.js";
-import { buildPlayerImportWorkbook, parsePlayerImportWorkbook } from "./player-card-excel.js";
+import { buildPlayerBondAnalysisWorkbook, buildPlayerImportWorkbook, parsePlayerImportWorkbook } from "./player-card-excel.js";
 
 const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971019";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -221,9 +221,29 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     }
     if (request.method === "GET" && pathname === "/api/admin/dashboard") return sendJson(response, 200, { ok: true, dashboard: buildDashboard() });
     if (request.method === "GET" && pathname === "/api/admin/league") return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
+    if (request.method === "GET" && pathname === "/api/admin/league/season-final") return sendJson(response, 200, { ok:true, seasonFinalTournament:yellowDogsLeague.seasonFinalTournamentView() });
+    if (request.method === "POST" && pathname === "/api/admin/league/season-final/simulate") return sendJson(response, 200, { ok:true, seasonFinalTournament:yellowDogsLeague.simulateNextSeasonFinalMatch() });
+    if (request.method === "GET" && pathname === "/api/admin/league/roster-enforcement/preview") return sendJson(response, 200, { ok:true, enforcement:yellowDogsLeague.rosterEnforcementPreview() });
+    if (request.method === "POST" && pathname === "/api/admin/league/roster-enforcement/apply") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, enforcement:yellowDogsLeague.applyRosterEnforcement(body) });
+    }
+    if (request.method === "GET" && pathname === "/api/admin/league/simulation-baseline") return sendJson(response, 200, { ok:true, baseline:yellowDogsLeague.adminSimulationBaseline() });
+    if (request.method === "GET" && pathname === "/api/admin/league/predictions/today") return sendJson(response, 200, { ok:true, predictions:yellowDogsLeague.adminPredictionBetsToday() });
     if (request.method === "GET" && pathname === "/api/admin/content") return sendJson(response, 200, { ok:true, content:ydlContentView() });
     const contentSectionMatch = pathname.match(/^\/api\/admin\/content\/(summary|players|studio|analytics|traits)$/);
     if (request.method === "GET" && contentSectionMatch) return sendJson(response, 200, { ok:true, content:ydlContentSection(contentSectionMatch[1]) });
+    if (request.method === "GET" && pathname === "/api/admin/content/players/export") {
+      const workbook = await buildPlayerBondAnalysisWorkbook();
+      const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 13).replace("T", "-");
+      response.writeHead(200, {
+        "content-type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "content-disposition":`attachment; filename=ydl-player-bond-analysis-${stamp}.xlsx`,
+        "content-length":workbook.length,
+        "cache-control":"no-store",
+      });
+      return response.end(workbook);
+    }
     if (request.method === "GET" && pathname === "/api/admin/content/player-import/template") {
       const workbook = await buildPlayerImportWorkbook();
       response.writeHead(200, {

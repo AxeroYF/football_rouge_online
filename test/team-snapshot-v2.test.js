@@ -28,6 +28,30 @@ function team(name, players, style = "possession") {
     bondCatalog:createS4BondCatalog(players, 1),
   };
 }
+test("队长风格只在指定队长仍在场时提供加成", () => {
+  const homePlayers = Array.from({ length:11 }, (_, index) => player(`home-${index}`, index === 0 ? "GK" : "DM", { value:80 }));
+  const awayPlayers = Array.from({ length:11 }, (_, index) => player(`away-${index}`, index === 0 ? "GK" : "DM"));
+  const home = {
+    ...team("home", homePlayers),
+    captainId:"home-4",
+    captainStyle:"commanding",
+    bondCatalog:[],
+  };
+  const away = { ...team("away", awayPlayers), bondCatalog:[] };
+
+  const active = buildV2TeamSnapshots([home, away]);
+  assert.equal(active[0].v2Snapshot.captaincy.active, true);
+  assert.equal(active[0].v2Snapshot.captaincy.captainId, "home-4");
+  assert.equal(active[0].players.find((entry) => entry.id === "home-4").captain, true);
+  assert.ok(active[0].v2Snapshot.captaincy.stage.shot > 0);
+
+  home.players.find((entry) => entry.id === "home-4").active = false;
+  const departed = buildV2TeamSnapshots([home, away]);
+  assert.equal(departed[0].v2Snapshot.captaincy.active, false);
+  assert.equal(departed[0].v2Snapshot.captaincy.captainId, null);
+  assert.equal(departed[0].v2Snapshot.captaincy.leadership, 0);
+  assert.deepEqual(departed[0].v2Snapshot.captaincy.stage, { buildUp:0, progression:0, finalThird:0, chance:0, shot:0 });
+});
 
 test("V2球队快照接入属性型和条件型特性", () => {
   const homePlayers = [
@@ -56,6 +80,18 @@ test("V2球队快照复用正式国家与俱乐部羁绊并只叠加前两条", 
   assert.equal(snapshot.v2Snapshot.activeBonds.length, 2);
   assert.ok(snapshot.players.every((entry) => entry.attributes.passing > 70));
   assert.ok(snapshot.players.every((entry) => entry.ydlBondIds.length === 2));
+});
+
+test("V2球队快照对基础值和所有叠加后的单项能力统一封顶99", () => {
+  const homePlayers = Array.from({ length:11 }, (_, index) => player(`home-${index}`, index === 0 ? "GK" : "DM", { value:109 }));
+  const awayPlayers = Array.from({ length:11 }, (_, index) => player(`away-${index}`, index === 0 ? "GK" : "DM", { value:70, nationality:"对手国", club:"对手队" }));
+  const snapshots = buildV2TeamSnapshots([
+    { ...team("home", homePlayers), bondCatalog:[] },
+    { ...team("away", awayPlayers), bondCatalog:[] },
+  ]);
+  assert.equal(snapshots[0].players[0].displayAttributes.passing, 99);
+  assert.equal(snapshots[0].players[0].attributes.passing, 99);
+  assert.ok(snapshots.flatMap((entry) => entry.players).every((entry) => Object.values(entry.attributes).every((value) => Number(value) <= 99)));
 });
 
 test("固定体能和比分条件特性使用当前比赛状态", () => {

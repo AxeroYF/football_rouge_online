@@ -7,6 +7,11 @@ import { isXPlayer, REAL_PLAYERS } from "../versus/player-pool.js";
 import { S4_ECONOMY, S4_PACK_PRICES, S4_PRICING, s4BaseCardReferenceValue, s4EffectiveOverall, s4EnhancementProtectionCost, s4OwnershipReferenceValue } from "../versus/s4-balance.js";
 import { advanceVersusMatch } from "../versus/match-engine.js";
 import { inferElevenBoardRoles as inferFormationBoardRoles } from "../versus/public/formation-rules.js";
+import { inferElevenBoardRoles } from "../versus/rules.js";
+import { automaticSubstitutionRank } from "../versus/automatic-substitution.js";
+import { buildV2TeamSnapshots } from "../versus/v2/team-snapshot-v2.js";
+import { publicYdlLeagueV2Match } from "../versus/v2/ydl-league-engine-adapter.js";
+import { CLUB_BADGES, CLUB_BADGE_GRADE_RATES, COUNTRY_BADGES, COUNTRY_BADGE_GRADE_RATES } from "../versus/cosmetic-items.js";
 
 const NOW = Date.parse("2026-07-23T10:01:00+08:00");
 const account = (id, nickname) => ({ id, nickname });
@@ -208,6 +213,8 @@ test("lineup schemes keep autosaves isolated and support create, rename and swit
   const created = service.updateLineupScheme(user, { action:"create", name:"高压阵容" }, { compact:true });
   assert.equal(created.team.activeLineupSchemeId, "lineup-2");
   assert.equal(created.team.lineupSchemes.length, 2);
+  const lineupTwoCaptainId = team.preferredStarterIds[2];
+  const nonStarterId = team.rosterIds.find((id) => !team.preferredStarterIds.includes(id));
   service.saveTeam(user, {
     lineupSchemeId:"lineup-2",
     starterIds:team.preferredStarterIds,
@@ -215,16 +222,22 @@ test("lineup schemes keep autosaves isolated and support create, rename and swit
     formationLinePresets:team.formationLinePresets,
     attackFocus:"right",
     tacticalPlans:team.tacticalPlans,
+    captainId:lineupTwoCaptainId,
+    captainStyle:"inspiring",
   });
   service.updateLineupScheme(user, { action:"rename", lineupSchemeId:"lineup-2", name:"右路高压" });
   service.updateLineupScheme(user, { action:"select", lineupSchemeId:"lineup-1" });
   assert.notEqual(team.attackFocus, "right");
   service.updateLineupScheme(user, { action:"assign", lineupSchemeId:"lineup-2", competition:"cup" });
+  assert.equal(team.captainId, null);
+  assert.equal(team.captainStyle, "calm");
   assert.equal(team.lineupSchemes.find((scheme) => scheme.id === "lineup-2").competitionScope, "cup");
   service.updateLineupScheme(user, { action:"select", lineupSchemeId:"lineup-2" });
   assert.equal(team.lineupSchemes.find((scheme) => scheme.id === team.activeLineupSchemeId).competitionScope, "cup");
   service.updateLineupScheme(user, { action:"select", lineupSchemeId:"lineup-1" });
   assert.equal(team.lineupSchemes.find((scheme) => scheme.id === team.activeLineupSchemeId).competitionScope, "all");
+  assert.equal(team.captainId, null);
+  assert.equal(team.captainStyle, "calm");
   const fixture = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
   const teamIndex = fixture.homeId === team.id ? 0 : 1;
   const leagueMatch = service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"league" }).match;
@@ -236,6 +249,8 @@ test("lineup schemes keep autosaves isolated and support create, rename and swit
   assert.equal(team.activeLineupSchemeId, "lineup-1");
   service.updateLineupScheme(user, { action:"assign", lineupSchemeId:"lineup-1", competition:"all" });
   assert.deepEqual(team.lineupSchemeAssignments, { league:"lineup-1", cup:"lineup-1", friendly:"lineup-1" });
+  assert.equal(leagueMatch.teams[teamIndex].captainId, null);
+  assert.equal(cupMatch.teams[teamIndex].captainId, lineupTwoCaptainId);
   service.updateLineupScheme(user, { action:"select", lineupSchemeId:"lineup-2" });
   assert.equal(team.attackFocus, "right");
   assert.equal(team.lineupSchemes.find((scheme) => scheme.id === "lineup-2").name, "右路高压");
@@ -245,6 +260,16 @@ test("lineup schemes keep autosaves isolated and support create, rename and swit
     positionPresets:team.positionPresets,
     formationLinePresets:team.formationLinePresets,
   }), /阵容方案已切换/);
+  assert.equal(team.captainId, lineupTwoCaptainId);
+  assert.equal(team.captainStyle, "inspiring");
+  assert.throws(() => service.saveTeam(user, {
+    lineupSchemeId:"lineup-2",
+    starterIds:team.preferredStarterIds,
+    lineupSchemeRevision:team.lineupSchemes.find((scheme) => scheme.id === "lineup-2").revision,
+    positionPresets:team.positionPresets,
+    formationLinePresets:team.formationLinePresets,
+    captainId:nonStarterId,
+  }), /队长必须来自当前方案的默认11人首发/);
   service.updateLineupScheme(user, { action:"create", name:"第三方案" });
   assert.throws(() => service.updateLineupScheme(user, { action:"create", name:"第四方案" }), /最多只能保存3套/);
   service.updateLineupScheme(user, { action:"assign", lineupSchemeId:"lineup-2", competition:"cup" });
@@ -265,6 +290,34 @@ test("lineup schemes keep autosaves isolated and support create, rename and swit
   service.releasePlayer(user, unavailableId);
   assert.equal(team.lineupSchemes.every((scheme) => scheme.preferredStarterIds.length === 11 && !scheme.preferredStarterIds.includes(unavailableId)), true);
   assert.equal(team.lineupSchemes.every((scheme) => Object.values(scheme.positionPresets).every((positions) => !positions[unavailableId])), true);
+});
+
+test("stale tactical saves and stale scheme switches cannot overwrite newer lineup state", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("lineup-concurrency", "Lineup Concurrency");
+  join(service, user, "Concurrency FC");
+  const team = service.accountTeam(user.id);
+  const firstScheme = team.lineupSchemes[0];
+  const staleRevision = firstScheme.revision;
+  const saveBody = {
+    lineupSchemeId:firstScheme.id,
+    lineupSchemeRevision:staleRevision,
+    starterIds:team.preferredStarterIds,
+    positionPresets:team.positionPresets,
+    formationLinePresets:team.formationLinePresets,
+    tacticalPlans:team.tacticalPlans,
+  };
+
+  service.saveTeam(user, { ...structuredClone(saveBody), attackFocus:"left" }, { compact:true });
+  assert.equal(firstScheme.revision, staleRevision + 1);
+  assert.equal(team.attackFocus, "left");
+  assert.throws(() => service.saveTeam(user, { ...structuredClone(saveBody), attackFocus:"right" }, { compact:true }), /其他设备更新/);
+  assert.equal(team.attackFocus, "left");
+
+  service.updateLineupScheme(user, { action:"create", name:"第二方案", expectedActiveLineupSchemeId:firstScheme.id }, { compact:true });
+  assert.equal(team.activeLineupSchemeId, "lineup-2");
+  assert.throws(() => service.updateLineupScheme(user, { action:"select", lineupSchemeId:firstScheme.id, expectedActiveLineupSchemeId:firstScheme.id }, { compact:true }), /其他设备切换/);
+  assert.equal(team.activeLineupSchemeId, "lineup-2");
 });
 
 test("lineup scheme controls live in the tactical-board side toolbar", () => {
@@ -302,7 +355,7 @@ test("lineup scheme controls live in the tactical-board side toolbar", () => {
   assert.ok(styles.includes("#league-squad-form .league-position-tabs{width:300px;min-width:300px;grid-template-columns:repeat(3,minmax(0,1fr))"));
 });
 
-test("lineup share codes export full tactics, overwrite current schemes, and expire after 24 hours", () => {
+test("lineup share codes export full tactics, overwrite current schemes, and expire after 72 hours", () => {
   let now = NOW;
   const service = new YellowDogsLeagueService({ statePath:null, now:() => now, rng:() => .123456789 });
   const owner = account("lineup-share-owner", "Share Owner");
@@ -326,7 +379,7 @@ test("lineup share codes export full tactics, overwrite current schemes, and exp
 
   const exported = service.exportLineupScheme(owner);
   assert.match(exported.code, /^\d{9}$/);
-  assert.equal(exported.expiresAt, now + 24 * 60 * 60 * 1000);
+  assert.equal(exported.expiresAt, now + 72 * 60 * 60 * 1000);
   const savedShare = service.state.lineupShares[exported.code];
   assert.deepEqual(savedShare.scheme.positionPresets.position2[strikerId], sharedPosition);
   assert.equal(savedShare.scheme.tacticalPlans.leading.playerDuties[strikerId], "deepLyingForward");
@@ -395,6 +448,115 @@ test("fitness red line rotates a fresh same-line substitute and reports the chan
   assert.ok(replacement);
   assert.ok(["AM", "DM", "LM", "RM"].includes(replacement.assignedRole));
   assert.equal(team.preferredStarterIds.includes(tiredId), true);
+});
+
+test("fitness rotation inherits the outgoing tactical duty in every match plan", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("rotation-duty-owner", "Rotation Duty Owner");
+  join(service, user, "Rotation Duty FC");
+  const team = service.accountTeam(user.id);
+  const roles = inferElevenBoardRoles(team.preferredStarterIds.map((id) => ({ id, position:team.positions[id] })));
+  const outgoingId = team.preferredStarterIds.find((id) => roles[id] === "DM");
+  const incomingId = team.rosterIds.find((id) => !team.preferredStarterIds.includes(id)
+    && automaticSubstitutionRank("DM", REAL_PLAYERS.find((player) => player.id === id)) > 0);
+  assert.ok(outgoingId);
+  assert.ok(incomingId);
+  team.fitnessThreshold = 80;
+  team.rosterIds.forEach((id) => {
+    team.playerState[id] = { ...team.playerState[id], fitness:team.preferredStarterIds.includes(id) ? 100 : 45, suspension:0, cupSuspension:0, injuryRounds:0 };
+  });
+  team.playerState[outgoingId].fitness = 60;
+  team.playerState[incomingId].fitness = 100;
+  ["opening", "leading", "trailing"].forEach((state) => {
+    team.tacticalPlans[state].playerDuties = { [outgoingId]:"ballWinningMidfielder" };
+  });
+  team.lineupSchemes[0].tacticalPlans = structuredClone(team.tacticalPlans);
+
+  const fixture = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
+  const created = service.createFixtureMatch(fixture, 1, NOW);
+  const teamIndex = fixture.homeId === team.id ? 0 : 1;
+  const rotation = created.match.leagueAutoRotations[teamIndex].find((entry) => entry.outId === outgoingId);
+  assert.equal(rotation?.inId, incomingId);
+  ["opening", "leading", "trailing"].forEach((state) => {
+    assert.equal(created.match.teams[teamIndex].tacticalPlans[state]?.playerDuties?.[incomingId], "ballWinningMidfielder");
+    assert.equal(created.match.teams[teamIndex].tacticalPlans[state]?.playerDuties?.[outgoingId], undefined);
+  });
+});
+
+test("fitness red line prefers enhanced effective overall within the same role-fit tier", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("enhanced-rotation-owner", "Enhanced Rotation Owner");
+  join(service, user, "Enhanced Rotation FC");
+  const team = service.accountTeam(user.id);
+  const assignedRoles = inferElevenBoardRoles(team.preferredStarterIds.map((id) => ({ id, position:team.positions[id] })));
+  const benchPlayers = team.rosterIds
+    .filter((id) => !team.preferredStarterIds.includes(id))
+    .map((id) => REAL_PLAYERS.find((player) => player.id === id))
+    .filter((player) => player && service.representativeCard(user.id, player.id));
+  let scenario = null;
+  for (const starterId of team.preferredStarterIds) {
+    const targetRole = assignedRoles[starterId] ?? REAL_PLAYERS.find((player) => player.id === starterId)?.role;
+    for (const first of benchPlayers) {
+      for (const second of benchPlayers) {
+        if (first.id === second.id) continue;
+        const rank = automaticSubstitutionRank(targetRole, first);
+        if (rank <= 0 || automaticSubstitutionRank(targetRole, second) !== rank) continue;
+        const lower = first.overall < second.overall ? first : second;
+        const higher = lower === first ? second : first;
+        if (higher.overall - lower.overall < 13) {
+          scenario = { starterId, lower, higher };
+          break;
+        }
+      }
+      if (scenario) break;
+    }
+    if (scenario) break;
+  }
+  assert.ok(scenario);
+  team.fitnessThreshold = 80;
+  team.preferredStarterIds.forEach((id) => { team.playerState[id].fitness = 100; });
+  team.rosterIds.filter((id) => !team.preferredStarterIds.includes(id)).forEach((id) => { team.playerState[id].fitness = 40; });
+  team.playerState[scenario.starterId].fitness = 60;
+  team.playerState[scenario.lower.id].fitness = 100;
+  team.playerState[scenario.higher.id].fitness = 100;
+  service.representativeCard(user.id, scenario.lower.id).upgradeLevel = 8;
+  service.representativeCard(user.id, scenario.higher.id).upgradeLevel = 0;
+  assert.ok(s4EffectiveOverall(scenario.lower, 8) > s4EffectiveOverall(scenario.higher, 0));
+
+  const selection = service.selectActualLineup(team, 1, "league");
+  const rotation = selection.rotations.find((entry) => entry.outId === scenario.starterId);
+  assert.equal(rotation?.inId, scenario.lower.id);
+});
+
+test("fitness red line uses an all-round warrior across lines only after same-line options are exhausted", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("utility-rotation-owner", "Utility Rotation Owner");
+  join(service, user, "Utility Rotation FC");
+  const team = service.accountTeam(user.id);
+  const assignedRoles = inferElevenBoardRoles(team.preferredStarterIds.map((id) => ({ id, position:team.positions[id] })));
+  const benchPlayers = team.rosterIds.filter((id) => !team.preferredStarterIds.includes(id)).map((id) => REAL_PLAYERS.find((player) => player.id === id)).filter(Boolean);
+  let scenario = null;
+  for (const starterId of team.preferredStarterIds) {
+    const targetRole = assignedRoles[starterId] ?? REAL_PLAYERS.find((player) => player.id === starterId)?.role;
+    if (targetRole === "GK") continue;
+    const sameLine = benchPlayers.find((player) => automaticSubstitutionRank(targetRole, player) === 1);
+    const utility = benchPlayers.find((player) => player.role !== "GK" && automaticSubstitutionRank(targetRole, player) === 0);
+    if (sameLine && utility) { scenario = { starterId, targetRole, sameLine, utility }; break; }
+  }
+  assert.ok(scenario);
+  team.fitnessThreshold = 80;
+  team.preferredStarterIds.forEach((id) => { team.playerState[id].fitness = 100; });
+  team.rosterIds.filter((id) => !team.preferredStarterIds.includes(id)).forEach((id) => { team.playerState[id].fitness = 40; });
+  team.playerState[scenario.starterId].fitness = 60;
+  team.playerState[scenario.sameLine.id].fitness = 100;
+  team.playerState[scenario.utility.id].fitness = 100;
+  service.representativeCard(user.id, scenario.utility.id).traitIds = ["utility-player"];
+
+  const preferred = service.selectActualLineup(team, 1, "league").rotations.find((entry) => entry.outId === scenario.starterId);
+  assert.equal(preferred?.inId, scenario.sameLine.id);
+  team.playerState[scenario.sameLine.id].fitness = 40;
+  const fallback = service.selectActualLineup(team, 1, "league").rotations.find((entry) => entry.outId === scenario.starterId);
+  assert.equal(fallback?.inId, scenario.utility.id);
 });
 
 test("league match switches opening, leading and trailing tactical plans with the score", () => {
@@ -535,6 +697,30 @@ test("五场V2直播按全局小切片轮转且读取直播列表不会推进比
   assert.deepEqual(matches.map((live) => live.match.nextChainIndex), [2, 2, 2, 2, 2]);
 });
 
+test("直播比赛完成后延后结算且不会阻塞当前推进切片", async () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const round = service.state.rounds[0];
+  const match = service.createFixtureMatch(round.fixtures[0], round.number, NOW, { competitionMode:"league" }).match;
+  match.report = { score:[0, 0], teams:[] };
+  const live = { code:"DEFERRED-SETTLEMENT-1", fixtureIndex:0, spectators:{}, match };
+  service.state.liveRound = { roundNumber:round.number, startedAt:NOW, matches:[live], newUnavailable:[] };
+  let finalized = 0;
+  let roundFinished = 0;
+  service.finalizeFixture = () => { finalized += 1; };
+  service.finishRound = () => { roundFinished += 1; };
+
+  const advanced = service.advanceLiveRound(NOW + 120_000, { maximumMatches:1, maximumChainsPerMatch:1, persist:false });
+  assert.equal(advanced, true);
+  assert.equal(finalized, 0);
+  assert.equal(live.settlementPending, true);
+
+  await service.flushLiveSettlementJobs();
+  assert.equal(finalized, 1);
+  assert.equal(roundFinished, 1);
+  assert.equal(live.completed, true);
+});
+
+
 test("直播切片全局最多推进一个比赛来源且空闲时公平轮转友谊赛与AI训练", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const calls = [];
@@ -591,7 +777,7 @@ test("服务重启后从V2直播检查点继续而不重新模拟已完成控球
   }
 });
 
-test("live V2 matches persist separate checkpoints without rewriting the full league state", () => {
+test("live V2 matches persist separate checkpoints without rewriting the full league state", async () => {
   const directory = mkdtempSync(path.join(process.cwd(), ".tmp-ydl-live-checkpoints-"));
   const statePath = path.join(directory, "league.json");
   try {
@@ -609,6 +795,7 @@ test("live V2 matches persist separate checkpoints without rewriting the full le
 
     service.advanceLiveSlice(NOW + 60_000);
     service.advanceLiveSlice(NOW + 60_000);
+    await service.flushLiveCheckpointIo();
 
     const checkpointDirectory = `${statePath}.live`;
     const checkpointFiles = readdirSync(checkpointDirectory).filter((name) => name.endsWith(".json")).sort();
@@ -617,6 +804,7 @@ test("live V2 matches persist separate checkpoints without rewriting the full le
     assert.ok(checkpointFiles.every((name) => statSync(path.join(checkpointDirectory, name)).size < statSync(statePath).size));
     assert.equal(service.persistLiveMatch(matches[0], NOW + 80_000), false);
     assert.equal(service.persistLiveMatch(matches[0], NOW + 90_000), true);
+    await service.flushLiveCheckpointIo();
 
     const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW + 60_000, rng:() => .37 });
     assert.deepEqual(reloaded.state.liveRound.matches.map((live) => live.match.nextChainIndex), [1, 1, 0, 0, 0]);
@@ -671,6 +859,11 @@ test("inbox delivers reports and matchweeks while nearby same-line starters buil
   assert.ok(boosted);
   assert.ok(boosted.attributes.passing >= REAL_PLAYERS.find((player) => player.id === boosted.id).attributes.passing);
   assert.ok(boosted.leagueChemistryBonus <= .015);
+  const traitCarrierId = team.preferredStarterIds.find((id) => REAL_PLAYERS.find((player) => player.id === id)?.role !== "GK");
+  service.representativeCard(user.id, traitCarrierId).traitIds = ["shadow-marker"];
+  const traitLinks = service.view(user).ownTeam.chemistryLinks.filter((link) => link.source === "trait");
+  assert.ok(traitLinks.length > 0);
+  assert.ok(traitLinks.every((link) => link.value === 100 && link.bonus === .015));
 });
 
 test("inbox preserves pending actions beyond the ordinary cap and marks a category batch read in one mutation", () => {
@@ -727,6 +920,164 @@ test("team can be renamed and private-pool packs support bulk purchase and direc
   assert.equal(service.state.s4Assets.ownerships[opened.packOpening.player.id], user.id);
   assert.deepEqual(team.preferredStarterIds, startersBefore);
   assert.deepEqual(team.positions, positionsBefore);
+});
+
+test("国家徽章包按等级三选一，道具可佩戴并进入公开球队信息", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("badge-owner", "Badge Owner");
+  join(service, user, "Badge FC");
+  const balanceBefore = service.wallet(user.id).balance;
+  const bought = service.buyS4Packs(user, "country-badge-pack", 1);
+  assert.equal(bought.wallet.balance, balanceBefore - 1000);
+  assert.equal(bought.s4Packs.inventory[0].kind, "cosmetic");
+
+  const opened = service.openS4Pack(user, bought.s4Packs.inventory[0].id);
+  assert.equal(opened.s4Packs.offer.kind, "cosmetic");
+  assert.equal(opened.s4Packs.offer.items.length, 3);
+  assert.equal(new Set(opened.s4Packs.offer.items.map((item) => item.id)).size, 3);
+  const choice = opened.s4Packs.offer.items[0];
+  const chosen = service.chooseS4Pack(user, opened.s4Packs.offer.id, choice.id, { compact:true });
+  assert.equal(chosen.packOpening.mode, "cosmetic-choice");
+  assert.equal(chosen.packOpening.item.id, choice.id);
+  assert.equal(chosen.cosmetics.items.find((item) => item.id === choice.id).count, 1);
+  assert.equal(chosen.cosmetics.equipped.teamBadge.id, choice.id);
+  assert.equal(chosen.ownTeam.equippedBadge.id, choice.id);
+  assert.equal(service.view(user).teams.find((team) => team.ownerId === user.id).equippedBadge.id, choice.id);
+
+  const unequipped = service.equipCosmetic(user, "", { compact:true });
+  assert.equal(unequipped.teamBadgeDelta, null);
+  assert.equal(unequipped.cosmetics.equipped.teamBadge, null);
+  assert.throws(() => service.equipCosmetic(user, "country-badge-china"), /尚未拥有/);
+  assert.equal(COUNTRY_BADGES.find((item) => item.countryId === "china").grade, "S");
+  assert.deepEqual(COUNTRY_BADGE_GRADE_RATES, { S:.05, A:.15, B:.30, C:.50 });
+});
+
+test("俱乐部徽章包按知名度与成绩分级，并可与国家徽章同时佩戴", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("dual-badge-owner", "Dual Badge Owner");
+  join(service, user, "Dual Badge FC");
+  const balanceBefore = service.wallet(user.id).balance;
+
+  const countryPack = service.buyS4Packs(user, "country-badge-pack", 1).s4Packs.inventory.find((item) => item.packType === "country-badge-pack");
+  const countryOffer = service.openS4Pack(user, countryPack.id).s4Packs.offer;
+  const countryChoice = countryOffer.items[0];
+  service.chooseS4Pack(user, countryOffer.id, countryChoice.id, { compact:true });
+
+  const clubPack = service.buyS4Packs(user, "club-badge-pack", 1).s4Packs.inventory.find((item) => item.packType === "club-badge-pack");
+  const opened = service.openS4Pack(user, clubPack.id);
+  assert.equal(opened.s4Packs.offer.cosmeticType, "club-badge");
+  assert.equal(opened.s4Packs.offer.items.length, 3);
+  assert.equal(new Set(opened.s4Packs.offer.items.map((item) => item.id)).size, 3);
+  assert.ok(opened.s4Packs.offer.items.every((item) => item.slot === "clubBadge"));
+  const clubChoice = opened.s4Packs.offer.items[0];
+  const chosen = service.chooseS4Pack(user, opened.s4Packs.offer.id, clubChoice.id, { compact:true });
+
+  assert.equal(chosen.wallet.balance, balanceBefore - 2200);
+  assert.equal(chosen.cosmetics.equipped.teamBadge.id, countryChoice.id);
+  assert.equal(chosen.cosmetics.equipped.clubBadge.id, clubChoice.id);
+  assert.equal(chosen.ownTeam.equippedBadge.id, countryChoice.id);
+  assert.equal(chosen.ownTeam.equippedClubBadge.id, clubChoice.id);
+  assert.equal(chosen.cosmetics.collection.country.total, 34);
+  assert.equal(chosen.cosmetics.collection.club.total, 51);
+
+  const publicEntry = service.view(user).teams.find((team) => team.ownerId === user.id);
+  assert.equal(publicEntry.equippedBadge.id, countryChoice.id);
+  assert.equal(publicEntry.equippedClubBadge.id, clubChoice.id);
+  const unequipped = service.equipCosmetic(user, "", "clubBadge", { compact:true });
+  assert.equal(unequipped.clubBadgeDelta, null);
+  assert.equal(unequipped.teamBadgeDelta.id, countryChoice.id);
+
+  assert.equal(CLUB_BADGES.length, 51);
+  assert.deepEqual(Object.fromEntries(["S", "A", "B", "C"].map((grade) => [grade, CLUB_BADGES.filter((item) => item.grade === grade).length])), { S:12, A:12, B:18, C:9 });
+  assert.equal(CLUB_BADGES.find((item) => item.clubId === "real-madrid").grade, "S");
+  assert.equal(CLUB_BADGES.find((item) => item.clubId === "leeds-united").grade, "B");
+  assert.deepEqual(CLUB_BADGE_GRADE_RATES, { S:.05, A:.15, B:.30, C:.50 });
+});
+
+test("国家与俱乐部徽章包支持连续批量三选一并统一返回结果", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("cosmetic-batch-owner", "徽章批量玩家");
+  join(service, user, "徽章批量队");
+  service.wallet(user.id).balance = 100000;
+
+  for (const packType of ["country-badge-pack", "club-badge-pack"]) {
+    const bought = service.buyS4Packs(user, packType, 3);
+    const packIds = bought.s4Packs.inventory.filter((item) => item.packType === packType).map((item) => item.id);
+    let view = service.openS4PacksBatch(user, packIds, { compact:true });
+    assert.equal(view.s4Packs.batchOpening.total, 3);
+    assert.equal(view.s4Packs.offer.kind, "cosmetic");
+    assert.equal(view.s4Packs.offer.batchIndex, 1);
+    assert.equal(view.s4Packs.offer.batchTotal, 3);
+
+    for (let index = 1; index <= 3; index += 1) {
+      const offer = view.s4Packs.offer;
+      view = service.chooseS4Pack(user, offer.id, offer.items[0].id, { compact:true });
+      if (index < 3) {
+        assert.equal(view.packBatchOpening.mode, "cosmetic-choice");
+        assert.equal(view.packBatchOpening.complete, false);
+        assert.equal(view.s4Packs.batchOpening.completed, index);
+        assert.equal(view.s4Packs.offer.batchIndex, index + 1);
+      }
+    }
+
+    assert.equal(view.packBatchOpening.mode, "cosmetic-choice");
+    assert.equal(view.packBatchOpening.complete, true);
+    assert.equal(view.packBatchOpening.results.length, 3);
+    assert.ok(view.packBatchOpening.results.every((result) => result.item?.kind === (packType === "club-badge-pack" ? "club-badge" : "country-badge")));
+    assert.equal(view.s4Packs.batchOpening, null);
+    assert.equal(view.s4Packs.offer, null);
+  }
+
+  const finalView = service.view(user);
+  assert.equal(finalView.s4Packs.inventory.length, 0);
+  assert.equal(finalView.cosmetics.items.reduce((sum, item) => sum + item.count, 0), 6);
+  assert.ok(finalView.cosmetics.equipped.teamBadge);
+  assert.ok(finalView.cosmetics.equipped.clubBadge);
+});
+
+test("国家与俱乐部徽章可以通过道具市场托管挂牌、撤单和成交", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const seller = account("cosmetic-market-seller", "徽章卖家");
+  const buyer = account("cosmetic-market-buyer", "徽章买家");
+  join(service, seller, "徽章卖方队");
+  join(service, buyer, "徽章买方队");
+  const countryBadge = COUNTRY_BADGES.find((item) => item.countryId === "china");
+  const clubBadge = CLUB_BADGES.find((item) => item.clubId === "real-madrid");
+  const sellerInventory = service.cosmeticInventory(seller.id);
+  sellerInventory[countryBadge.id] = 1;
+  sellerInventory[clubBadge.id] = 1;
+  service.equippedCosmeticIds(seller.id).teamBadge = countryBadge.id;
+  service.equippedCosmeticIds(seller.id).clubBadge = clubBadge.id;
+
+  const clubListed = service.listCosmetic(seller, clubBadge.id, 800, { compact:true });
+  assert.equal(clubListed.listing.kind, "cosmetic");
+  assert.equal(clubListed.listing.item.id, clubBadge.id);
+  assert.equal(clubListed.cosmetics.items.some((item) => item.id === clubBadge.id), false);
+  assert.equal(clubListed.clubBadgeDelta, null);
+  assert.throws(() => service.listCosmetic(seller, clubBadge.id, 800), /可交易道具/);
+  const clubCancelled = service.cancelListing(seller, clubListed.listing.id, { compact:true });
+  assert.equal(clubCancelled.cosmetics.items.find((item) => item.id === clubBadge.id).count, 1);
+  assert.equal(clubCancelled.clubBadgeDelta.id, clubBadge.id);
+
+  const sellerBalanceBefore = service.wallet(seller.id).balance;
+  const buyerBalanceBefore = service.wallet(buyer.id).balance;
+  const countryListed = service.listCosmetic(seller, countryBadge.id, 700, { compact:true });
+  assert.equal(countryListed.teamBadgeDelta, null);
+  const publicListing = service.view(buyer).listings.find((item) => item.id === countryListed.listing.id);
+  assert.equal(publicListing.item.id, countryBadge.id);
+  assert.equal(publicListing.sellerTeamName, "徽章卖方队");
+  const purchased = service.buyListing(buyer, countryListed.listing.id, { compact:true });
+  assert.equal(purchased.marketPurchase.listingKind, "cosmetic");
+  assert.equal(purchased.marketPurchase.item.id, countryBadge.id);
+  assert.equal(purchased.cosmetics.items.find((item) => item.id === countryBadge.id).count, 1);
+  assert.equal(purchased.teamBadgeDelta.id, countryBadge.id);
+  assert.equal(service.state.listings.find((item) => item.id === countryListed.listing.id).status, "sold");
+  assert.equal(service.wallet(buyer.id).balance, buyerBalanceBefore - 700);
+  assert.equal(service.wallet(seller.id).balance, sellerBalanceBefore + Math.floor(700 * (1 - S4_ECONOMY.marketFeeRate)));
+  assert.ok(service.state.ledger.some((entry) => entry.type === "cosmetic-buy" && entry.cosmeticItemId === countryBadge.id));
+  assert.ok(service.state.ledger.some((entry) => entry.type === "cosmetic-sale" && entry.cosmeticItemId === countryBadge.id));
+  assert.ok(service.inbox(service.accountTeam(buyer.id)).some((message) => message.id === `cosmetic-buy:${countryListed.listing.id}`));
+  assert.ok(service.inbox(service.accountTeam(seller.id)).some((message) => message.id === `cosmetic-sale:${countryListed.listing.id}`));
 });
 
 test("shop mutations return compact payloads without rebuilding the full league view", () => {
@@ -816,12 +1167,15 @@ test("轻量比赛中心只公开本人赛程、历史与电视台数据", () =>
   assert.ok(Array.isArray(view.schedule));
   assert.ok(Array.isArray(view.history));
   assert.ok(Array.isArray(view.broadcasts));
+  assert.ok(Array.isArray(view.leagueStandings));
+  assert.ok(Array.isArray(view.cup.standings));
+  assert.equal(view.leagueStandings.find((entry) => entry.id === view.team.id).name, "Live FC");
   assert.equal("roster" in view.team, false);
   assert.equal("wallet" in view, false);
   assert.equal("teams" in view, false);
 });
 
-test("比赛预测公开具体让球但隐藏赔率和后台模拟并限制本人比赛、重复类别和单项投资上限", () => {
+test("比赛预测公开压缩让球和最终赔率并隐藏后台模拟，同时限制本人比赛、重复类别和单项投资上限", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("prediction-owner", "Prediction Owner");
   join(service, user, "Prediction FC");
@@ -831,46 +1185,82 @@ test("比赛预测公开具体让球但隐藏赔率和后台模拟并限制本�
   assert.ok(view.matchPredictions.every((market) => !("simulation" in market) && !("payoutRates" in market)));
   assert.ok(view.matchPredictions.every((market) => market.options.cards.some((option) => option.id === "0")));
   assert.ok(view.matchPredictions.every((market) => Number.isInteger(market.resultHandicap)));
-  assert.ok(view.matchPredictions.every((market) => !("odds" in market) && !("payoutRates" in market) && !("simulation" in market)));
-  assert.ok(view.matchPredictions.every((market) => ["主队让球", "客队让球", "均势盘"].includes(market.resultHandicapHint)));
+  assert.ok(view.matchPredictions.every((market) => Math.abs(market.resultHandicap) <= 2));
+  assert.ok(view.matchPredictions.every((market) => Object.values(market.options).flat().every((option) => Number.isFinite(option.payoutRate) && option.payoutRate >= 1.02)));
+  assert.ok(view.matchPredictions.every((market) => ["主队让球", "客队让球", "零球盘"].includes(market.resultHandicapHint)));
   assert.ok(view.matchPredictions.every((market) => market.closesAt === market.startsAt - 2 * 60 * 1000));
-  assert.ok(view.matchPredictions.every((market) => market.options.goals.some((option) => option.label === "11球及以上")));
+  assert.ok(view.matchPredictions.every((market) => market.options.goals.some((option) => option.label === "6球及以上")));
   assert.ok(view.matchPredictions.every((market) => market.options.cards.some((option) => option.label === "4张及以上")));
+  assert.ok(view.matchPredictions.every((market) => !("shotsOnTarget" in market.options)));
+  assert.ok(view.matchPredictions.every((market) => market.options.halfFull.length === 9));
+  assert.ok(view.matchPredictions.every((market) => market.options.halfFull.some((option) => option.id === "away-home" && option.label === "负胜")));
   const ownMarket = view.matchPredictions.find((market) => [market.homeId, market.awayId].includes(service.accountTeam(user.id).id));
   const eligibleMarket = view.matchPredictions.find((market) => market.eligible);
   assert.ok(ownMarket);
   assert.ok(eligibleMarket);
   const compactView = service.predictionView(user);
-  assert.deepEqual(Object.keys(compactView).sort(), ["matchPredictions", "predictionLeaderboard", "serverTime", "updatedAt", "wallet"]);
+  assert.deepEqual(Object.keys(compactView).sort(), ["matchPredictions", "predictionHistory", "predictionLeaderboard", "serverTime", "updatedAt", "wallet"]);
+  assert.deepEqual(compactView.predictionHistory, []);
   assert.equal(compactView.matchPredictions.length, view.matchPredictions.length);
   assert.equal("ownTeam" in compactView, false);
   assert.equal("playerDirectory" in compactView, false);
   assert.throws(() => service.placeMatchPrediction(user, ownMarket.id, "result", "home", 100), /不能预测自己球队/);
   assert.equal(eligibleMarket.maxStake, 10000);
+  assert.equal(eligibleMarket.maxStakes.goals, 5000);
+  assert.equal(eligibleMarket.maxStakes.halfFull, 5000);
   assert.throws(() => service.placeMatchPrediction(user, eligibleMarket.id, "result", "home", 10001), /1至10000/);
+  assert.throws(() => service.placeMatchPrediction(user, eligibleMarket.id, "halfFull", "home-home", 5001), /1至5000/);
+  assert.throws(() => service.placeMatchPrediction(user, eligibleMarket.id, "goals", "0-3", 5001), /1至5000/);
   const balanceBefore = service.wallet(user.id).balance;
   const placed = service.placeMatchPrediction(user, eligibleMarket.id, "result", "home", 10000);
   assert.equal(placed.wallet.balance, balanceBefore - 10000);
+  const compactPlaced = service.predictionView(user);
+  assert.equal(compactPlaced.predictionHistory.length, 1);
+  assert.equal(compactPlaced.predictionHistory[0].selectionLabel, eligibleMarket.options.result.find((option) => option.id === "home").label);
   const publicBet = placed.matchPredictions.find((market) => market.id === eligibleMarket.id).myBets[0];
   assert.equal(publicBet.amount, 10000);
-  assert.equal("payoutRate" in publicBet, false);
+  assert.equal(publicBet.payoutRate, eligibleMarket.options.result.find((option) => option.id === "home").payoutRate);
+  const pendingAdminReport = service.adminPredictionBetsToday();
+  const pendingPlayer = pendingAdminReport.players.find((player) => player.accountId === user.id);
+  assert.equal(pendingAdminReport.timezone, "Asia/Shanghai");
+  assert.equal(pendingPlayer.betCount, 1);
+  assert.equal(pendingPlayer.pendingCount, 1);
+  assert.equal(pendingPlayer.pendingStake, 10000);
+  assert.equal(pendingPlayer.realizedNet, 0);
+  assert.equal(pendingPlayer.bets[0].netProfit, null);
   const placedMail = placed.inbox.find((message) => message.id === `prediction-placed:${publicBet.id}`);
   assert.equal(placedMail.title, "比赛预测已受理");
   assert.match(placedMail.summary, /投资10000金币/);
   assert.equal(placedMail.payload.amount, 10000);
-  assert.equal("payoutRate" in placedMail.payload, false);
+  assert.equal(placedMail.payload.payoutRate, publicBet.payoutRate);
+  assert.equal(placedMail.payload.potentialPayout, Math.floor(10000 * publicBet.payoutRate));
   assert.throws(() => service.placeMatchPrediction(user, eligibleMarket.id, "result", "away", 100), /只能投资一次/);
   const internalMarket = service.state.matchPredictions.markets[eligibleMarket.id];
   assert.equal(internalMarket.simulation.samples, 24);
   assert.ok(internalMarket.simulation.expected.goals.every(Number.isFinite));
+  assert.equal(internalMarket.pricingVersion, 9);
+  assert.equal(Object.values(internalMarket.simulation.counts.halfFull).reduce((sum, value) => sum + value, 0), internalMarket.simulation.samples);
+  assert.ok(Object.keys(internalMarket.simulation.counts.halfFull).includes("away-home"));
   assert.deepEqual(
-    internalMarket.payoutRates.result,
-    service.predictionPayoutRates(internalMarket.simulation.counts.result, internalMarket.simulation.samples, ["home", "draw", "away"]),
+    internalMarket.rawPayoutRates.halfFull,
+    service.predictionHalfFullPayoutRates(internalMarket.simulation.pricingProbabilities.halfFull),
   );
+  assert.deepEqual(internalMarket.payoutRates, service.predictionPublishedPayoutRates(internalMarket.rawPayoutRates, internalMarket.id, internalMarket.resultHandicap));
+  assert.ok(service.predictionMarketRtp(internalMarket.payoutRates.result) <= .72);
+  assert.ok(Math.abs(Object.values(internalMarket.simulation.pricingProbabilities.halfFull).reduce((sum, probability) => sum + probability, 0) - 1) < .00001);
+  assert.deepEqual(
+    internalMarket.rawPayoutRates.cards,
+    service.predictionCardPayoutRates(internalMarket.simulation.counts.cards, internalMarket.simulation.samples),
+  );
+  assert.ok(Object.values(internalMarket.payoutRates.cards).every((rate) => rate >= 1.02));
   assert.ok(internalMarket.payoutRates.result.home > 1);
   service.simulateNextRound();
   const settledBet = service.state.matchPredictions.bets.find((bet) => bet.id === publicBet.id);
   assert.ok(["won", "lost"].includes(settledBet.status));
+  const settledAdminPlayer = service.adminPredictionBetsToday().players.find((player) => player.accountId === user.id);
+  assert.equal(settledAdminPlayer.pendingCount, 0);
+  assert.equal(settledAdminPlayer.settledCount, 1);
+  assert.equal(settledAdminPlayer.realizedNet, settledBet.payout - settledBet.amount);
   const matchReward = service.state.ledger.filter((entry) => entry.accountId === user.id && entry.type === "league-match-reward").reduce((sum, entry) => sum + entry.amount, 0);
   const distribution = service.state.matchPredictions.distributions.find((entry) => entry.competition === "league" && entry.roundKey === "R1");
   assert.ok(distribution);
@@ -887,7 +1277,47 @@ test("比赛预测公开具体让球但隐藏赔率和后台模拟并限制本�
   assert.match(resultMail.body, /实际结果/);
   assert.equal(resultMail.payload.resultHandicap, internalMarket.resultHandicap);
   assert.deepEqual(resultMail.payload.adjustedScore, [resultMail.payload.score[0] + internalMarket.resultHandicap, resultMail.payload.score[1]]);
-  assert.equal("payoutRate" in resultMail.payload, false);
+  assert.equal(resultMail.payload.payout, settledBet.payout);
+});
+
+test("红黄牌预测保留V1场间变化并限制隐藏结算倍率", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const lowCardForecast = service.predictionCardPayoutRates({ "0":12, "1":6, "2":3, "3":2, "4+":1 }, 24);
+  const highCardForecast = service.predictionCardPayoutRates({ "0":1, "1":2, "2":3, "3":6, "4+":12 }, 24);
+
+  assert.ok(lowCardForecast["0"] < highCardForecast["0"]);
+  assert.ok(lowCardForecast["3"] > highCardForecast["3"]);
+  assert.ok(lowCardForecast["4+"] > highCardForecast["4+"]);
+  assert.deepEqual(
+    Object.values(lowCardForecast).map(Number.isFinite),
+    [true, true, true, true, true],
+  );
+  assert.ok(lowCardForecast["4+"] <= 2.7);
+  assert.ok(highCardForecast["4+"] >= 2.4);
+});
+
+test("半全场按主队视角分别使用45分钟和90分钟常规时间结果", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const comeback = service.predictionHalfFullOutcome({
+    score:[2, 1],
+    events:[
+      { minute:20, type:"goal", teamIndex:1, score:[0, 1] },
+      { minute:60, type:"goal", teamIndex:0, score:[1, 1] },
+      { minute:88, type:"goal", teamIndex:0, score:[2, 1] },
+    ],
+  });
+  assert.deepEqual(comeback, { halfTimeScore:[0, 1], regulationScore:[2, 1], outcome:"away-home" });
+  assert.equal(service.predictionSelectionLabel({}, "halfFull", comeback.outcome), "负胜");
+  const extraTimeIgnored = service.predictionHalfFullOutcome({
+    score:[2, 1],
+    regulationScore:[1, 1],
+    events:[
+      { minute:12, type:"goal", teamIndex:0, score:[1, 0] },
+      { minute:72, type:"goal", teamIndex:1, score:[1, 1] },
+      { minute:108, type:"goal", teamIndex:0, score:[2, 1] },
+    ],
+  });
+  assert.deepEqual(extraTimeIgnored, { halfTimeScore:[1, 0], regulationScore:[1, 1], outcome:"home-draw" });
 });
 
 test("比赛预测根据模拟比分选择整数让球以平衡胜平负分布", () => {
@@ -898,8 +1328,33 @@ test("比赛预测根据模拟比分选择整数让球以平衡胜平负分布",
   const spread = (counts) => Math.max(...Object.values(counts)) - Math.min(...Object.values(counts));
   assert.ok(Number.isInteger(balanced.handicap));
   assert.ok(balanced.handicap < 0);
+  assert.ok(balanced.handicap >= -2 && balanced.handicap <= 2);
   assert.ok(spread(balanced.counts) < spread(rawCounts));
   assert.equal(Object.values(balanced.counts).reduce((sum, count) => sum + count, 0), scores.length);
+});
+
+test("prediction goal bands use the new ranges while preserving legacy market settlement", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  assert.equal(service.predictionGoalBand(3), "0-3");
+  assert.equal(service.predictionGoalBand(4), "4-5");
+  assert.equal(service.predictionGoalBand(5), "4-5");
+  assert.equal(service.predictionGoalBand(6), "6+");
+  const legacyMarket = { pricingVersion:8, payoutRates:{ goals:{ "0-5":1.2, "6-10":5, "11+":10 } } };
+  assert.equal(service.predictionGoalBandForMarket(5, legacyMarket), "0-5");
+  assert.equal(service.predictionGoalBandForMarket(6, legacyMarket), "6-10");
+  assert.equal(service.predictionGoalBandForMarket(11, legacyMarket), "11+");
+});
+
+test("预测公开赔率对高赔率折扣更深并使用固定混淆", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const low = service.predictionPublishedPayoutRate(2, "market-a", "result", "home");
+  const high = service.predictionPublishedPayoutRate(10, "market-a", "result", "away");
+  assert.equal(service.predictionPublishedPayoutRate(10, "market-a", "result", "away"), high);
+  assert.ok(low / 2 > high / 10);
+  assert.notEqual(
+    service.predictionPublishedPayoutRate(4, "market-a", "result", "home"),
+    service.predictionPublishedPayoutRate(4, "market-b", "result", "home"),
+  );
 });
 
 test("比赛预测在开赛前两分钟由服务端停止投注", () => {
@@ -1348,6 +1803,46 @@ test("round results, team history and saved match details expose complete public
   assert.ok(renamed.teamLeaderboards.ratings.every((entry) => entry.teamId === renamed.ownTeam.id));
 });
 
+test("team leaderboards combine league and cup player statistics", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("combined-stats-owner", "Combined Stats Owner");
+  join(service, user, "Combined Stats FC");
+  const team = service.accountTeam(user.id);
+  const player = service.view(user).ownTeam.roster[0];
+  const stat = (key, appearances, goals, assists, saves, yellowCards, redCards, averageRating) => ({
+    key,
+    playerId:player.id,
+    playerName:player.name,
+    teamId:team.id,
+    teamName:team.name,
+    appearances,
+    goals,
+    assists,
+    saves,
+    tackles:0,
+    interceptions:0,
+    clearances:0,
+    blocks:0,
+    pressuresWon:0,
+    penaltiesWon:0,
+    yellowCards,
+    redCards,
+    ratingTotal:appearances * averageRating,
+  });
+  service.state.season.currentRound = 4;
+  service.state.playerStats = { league:stat("league", 4, 2, 1, 3, 1, 0, 7) };
+  service.state.cup.playerStats = { cup:stat("cup", 2, 3, 4, 5, 2, 1, 8) };
+
+  const view = service.view(user);
+  const scorer = view.teamLeaderboards.scorers.find((entry) => entry.playerId === player.id);
+  assert.deepEqual({ appearances:scorer.appearances, goals:scorer.goals, assists:scorer.assists, saves:scorer.saves }, { appearances:6, goals:5, assists:5, saves:8 });
+  assert.equal(view.teamLeaderboards.ratings.find((entry) => entry.playerId === player.id).averageRating, 7.33);
+  const discipline = view.teamLeaderboards.cards.find((entry) => entry.playerId === player.id);
+  assert.deepEqual({ yellowCards:discipline.yellowCards, redCards:discipline.redCards }, { yellowCards:3, redCards:1 });
+  assert.equal(view.leaderboards.scorers[0].goals, 2);
+  assert.equal(view.cupLeaderboards.scorers[0].goals, 3);
+});
+
 test("public team history is paged independently from the lightweight profile", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("paged-history-owner", "Paged History");
@@ -1445,7 +1940,15 @@ test("season Ballon d'Or selects one player's specific card without merging the 
   service.state.cup.status = "completed";
   service.state.cup.stage = "completed";
   service.state.cup.championId = ownerTeam.id;
+  service.state.cup.knockout.final = [{ id:"cup-final-1", stage:"final", teams:[ownerTeam.id, observerTeam.id], winnerId:ownerTeam.id, legs:[] }];
   service.state.cup.completedAt = NOW;
+  service.state.seasonFinalTournament = {
+    status:"completed",
+    finalTie:{ winnerBracketChampionId:ownerTeam.id, loserBracketChampionId:observerTeam.id, championId:ownerTeam.id },
+    seedSnapshot:[],
+    bracket:[],
+    matches:[],
+  };
 
   const balanceBefore = service.wallet(owner.id).balance;
   const observerBalanceBefore = service.wallet(observer.id).balance;
@@ -1456,7 +1959,25 @@ test("season Ballon d'Or selects one player's specific card without merging the 
   assert.equal(result.winner.teamId, ownerTeam.id);
   assert.equal(result.winner.cardId, winningCard.id);
   assert.equal(result.winner.appearances, 15);
-  assert.deepEqual(result.winner.champions, { league:true, cup:true });
+  assert.deepEqual(result.winner.champions, { league:true, cup:true, seasonFinal:true });
+  assert.deepEqual(result.winner.runnerUps, { league:false, cup:false, seasonFinal:false });
+  assert.deepEqual(result.winner.breakdown, {
+    goals:57,
+    assists:23.25,
+    rating:32.31,
+    appearances:4.06,
+    leagueChampion:35,
+    leagueRunnerUp:0,
+    cupChampion:30,
+    cupRunnerUp:0,
+    seasonFinalChampion:50,
+    seasonFinalRunnerUp:0,
+  });
+  const runnerUp = result.candidates.find((candidate) => candidate.ownerId === observer.id && candidate.playerId === winnerId);
+  assert.deepEqual(runnerUp.runnerUps, { league:true, cup:true, seasonFinal:true });
+  assert.equal(runnerUp.breakdown.leagueRunnerUp, 15);
+  assert.equal(runnerUp.breakdown.cupRunnerUp, 10);
+  assert.equal(runnerUp.breakdown.seasonFinalRunnerUp, 25);
   assert.equal(result.candidates.some((candidate) => candidate.playerId === ineligibleId), false);
   assert.equal(result.candidates.filter((candidate) => candidate.playerId === winnerId).length, 2);
   assert.deepEqual(result.podium.map((candidate) => candidate.rank), [1, 2, 3]);
@@ -1478,6 +1999,137 @@ test("season Ballon d'Or selects one player's specific card without merging the 
   assert.equal(repeated.id, result.id);
   assert.equal(service.wallet(owner.id).balance, balanceBefore + 10000);
   assert.equal(service.state.ballonDor.results.filter((entry) => entry.seasonId === service.state.season.id).length, 1);
+});
+
+test("Ballon d'Or scoring v3 re-audits archived awards once, keeps old coins, supplements the corrected winner, and announces to every player", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const championOwner = account("ballon-v3-champion", "冠军经理");
+  const runnerOwner = account("ballon-v3-runner", "亚军经理");
+  join(service, championOwner, "冠军球队");
+  join(service, runnerOwner, "亚军球队");
+  const championTeam = service.accountTeam(championOwner.id);
+  const runnerTeam = service.accountTeam(runnerOwner.id);
+  const playerId = REAL_PLAYERS.find((player) => player.grade === "S").id;
+  const championCard = service.grantS4Card(championTeam, playerId, { grantOwnership:false, acquisitionSource:"ballon-v3-test" });
+  const runnerCard = service.grantS4Card(runnerTeam, playerId, { grantOwnership:false, acquisitionSource:"ballon-v3-test" });
+  const playerName = REAL_PLAYERS.find((player) => player.id === playerId).name;
+  const stat = (team, goals, assists, averageRating) => ({
+    key:`${team.id}:${playerId}`,
+    playerId,
+    playerName,
+    teamId:team.id,
+    teamName:team.name,
+    appearances:15,
+    goals,
+    assists,
+    saves:0,
+    tackles:0,
+    penaltiesWon:0,
+    yellowCards:0,
+    redCards:0,
+    ratingTotal:15 * averageRating,
+  });
+  service.state.playerStats = {
+    champion:stat(championTeam, 5, 3, 7.5),
+    runner:stat(runnerTeam, 10, 6, 7.8),
+  };
+  service.state.cup.playerStats = {};
+  championTeam.table = { played:18, won:18, drawn:0, lost:0, goalsFor:60, goalsAgainst:5, points:54 };
+  runnerTeam.table = { played:18, won:12, drawn:2, lost:4, goalsFor:45, goalsAgainst:20, points:38 };
+  service.state.season.status = "completed";
+  service.state.season.currentRound = 18;
+  service.state.season.completedAt = NOW;
+  service.state.cup.status = "completed";
+  service.state.cup.stage = "completed";
+  service.state.cup.championId = championTeam.id;
+  service.state.cup.knockout.final = [{ id:"cup-final-v3", stage:"final", teams:[championTeam.id, runnerTeam.id], winnerId:championTeam.id, legs:[] }];
+  service.state.cup.completedAt = NOW;
+
+  const currentCandidates = service.ballonDorCandidates();
+  const correctedCandidate = currentCandidates.find((candidate) => candidate.ownerId === championOwner.id);
+  const previousWinner = currentCandidates.find((candidate) => candidate.ownerId === runnerOwner.id);
+  assert.equal(currentCandidates[0].ownerId, championOwner.id);
+  runnerCard.ballonDorWins = 1;
+  const previousResult = {
+    id:`ballon-dor:${service.state.season.id}`,
+    seasonId:service.state.season.id,
+    seasonName:service.state.season.name,
+    status:"completed",
+    minimumAppearances:15,
+    cupWeight:1.25,
+    scoring:{ goal:4, assist:3, rating:20, appearance:.25, leagueChampion:12, cupChampion:10 },
+    awardedAt:NOW - 1000,
+    winner:{ ...previousWinner, cardId:runnerCard.id, awardNumber:1 },
+    rewardedOwnerId:runnerOwner.id,
+    ownerReward:10000,
+    podium:[{ rank:1, ...previousWinner }, { rank:2, ...correctedCandidate }],
+    candidates:[previousWinner, correctedCandidate],
+  };
+  service.state.ballonDor.results = [previousResult];
+  service.state.ballonDor.reconciliationVersion = 0;
+  service.wallet(runnerOwner.id).balance += 10000;
+  service.state.ledger.push({ id:"old-ballon-reward", accountId:runnerOwner.id, amount:10000, type:"ballon-dor-owner-reward", grantId:`${previousResult.id}:${runnerOwner.id}`, seasonId:service.state.season.id, playerId, cardId:runnerCard.id, teamId:runnerTeam.id, createdAt:NOW - 1000 });
+  const runnerClub = service.ensureHonorRoomClub(runnerTeam);
+  runnerClub.ballonDor.push({ season:"S11", seasonId:service.state.season.id, playerId, playerName });
+  service.state.honorRoom.processedSeasonIds = [...Array.from({ length:10 }, (_, index) => `previous-season-${index + 1}`), service.state.season.id];
+  service.state.honorRoom.nextSeasonNumber = 12;
+  const archivedStandings = [championTeam, runnerTeam].map((team, index) => ({ id:team.id, rank:index + 1, points:team.table.points, team:{ id:team.id, name:team.name, ownerId:team.ownerId, ownerName:team.ownerName } }));
+  const fullArchive = {
+    archiveKey:"ballon-v3-archive",
+    reason:"ballon-v3-test",
+    archivedAt:NOW,
+    season:structuredClone(service.state.season),
+    standings:archivedStandings,
+    matches:[],
+    playerStats:structuredClone(service.state.playerStats),
+    cup:structuredClone(service.state.cup),
+    ballonDorResult:structuredClone(previousResult),
+  };
+  service.state.archives = [{ archiveKey:fullArchive.archiveKey, reason:fullArchive.reason, archivedAt:fullArchive.archivedAt, season:fullArchive.season, standings:fullArchive.standings }];
+  let fullArchiveReads = 0;
+  service.shardStore = { readFullArchive:(archive) => {
+    fullArchiveReads += 1;
+    assert.equal(archive.archiveKey, fullArchive.archiveKey);
+    return structuredClone(fullArchive);
+  } };
+  const championBalanceBefore = service.wallet(championOwner.id).balance;
+  const runnerBalanceBefore = service.wallet(runnerOwner.id).balance;
+
+  assert.equal(service.reconcileHistoricalBallonDor(), true);
+  assert.equal(fullArchiveReads, 1);
+  const corrected = service.state.ballonDor.results[0];
+  assert.equal(corrected.winner.ownerId, championOwner.id);
+  assert.equal(corrected.winner.cardId, championCard.id);
+  assert.equal(corrected.winner.breakdown.leagueChampion, 35);
+  assert.equal(corrected.winner.breakdown.cupChampion, 30);
+  assert.equal(runnerCard.ballonDorWins, 0);
+  assert.equal(championCard.ballonDorWins, 1);
+  assert.equal(service.wallet(runnerOwner.id).balance, runnerBalanceBefore);
+  assert.equal(service.wallet(championOwner.id).balance, championBalanceBefore + 10000);
+  assert.equal(service.state.ledger.filter((entry) => entry.type === "ballon-dor-owner-reward" && entry.seasonId === service.state.season.id).length, 2);
+  assert.equal(service.state.honorRoom.clubs[runnerOwner.id].ballonDor.some((award) => award.seasonId === service.state.season.id), false);
+  assert.equal(service.state.honorRoom.clubs[championOwner.id].ballonDor.some((award) => award.seasonId === service.state.season.id && award.playerId === playerId), true);
+  [championTeam, runnerTeam].forEach((team) => {
+    const messages = service.state.inbox[team.id].filter((message) => message.id === `ballon-dor-reconciliation-v2:${team.ownerId}`);
+    assert.equal(messages.length, 1);
+    assert.match(messages[0].body, /联赛冠军35分、联赛亚军15分、杯赛冠军30分、杯赛亚军10分/);
+    assert.match(messages[0].body, /1\. S11：/);
+    assert.doesNotMatch(messages[0].body, /1\. S1：/);
+    assert.match(messages[0].body, /原已发金币不追回/);
+  });
+  service.state.ballonDor.reconciliationVersion = 1;
+  assert.equal(service.reconcileHistoricalBallonDor(), true);
+  assert.equal(fullArchiveReads, 2);
+  assert.equal(service.state.ballonDor.results[0].winner.ownerId, championOwner.id);
+  assert.equal(service.state.ballonDor.reconciliation.audits[0].status, "unchanged");
+  assert.equal(runnerCard.ballonDorWins, 0);
+  assert.equal(championCard.ballonDorWins, 1);
+  assert.equal(service.wallet(runnerOwner.id).balance, runnerBalanceBefore);
+  assert.equal(service.wallet(championOwner.id).balance, championBalanceBefore + 10000);
+  assert.equal(service.reconcileHistoricalBallonDor(), false);
+  assert.equal(fullArchiveReads, 2);
+  assert.equal(service.wallet(championOwner.id).balance, championBalanceBefore + 10000);
+  assert.equal(service.state.inbox[championTeam.id].filter((message) => message.id === `ballon-dor-reconciliation-v2:${championOwner.id}`).length, 1);
 });
 
 test("player schedule exposes confirmed league fixtures with stable kickoff times and results", () => {
@@ -1650,6 +2302,15 @@ test("三选一礼包批量开启会逐包生成候选直到全部选择完成",
   assert.equal(view.s4Packs.batchOpening, null);
   assert.equal(view.s4Packs.offer, null);
   assert.equal(view.s4Packs.inventory.length, 0);
+});
+
+test("名单已满时仍可打开传奇三选一礼包", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const user = account("legend-full-roster", "Legend Full Roster");
+  join(service, user, "Legend Full Roster FC");
+  service.rosterSlotsUsed = () => service.rosterLimit(user.id);
+  assert.doesNotThrow(() => service.assertChoicePackRosterCapacity(user.id, { selectionMode:"choice", kind:"legend" }, 10));
+  assert.throws(() => service.assertChoicePackRosterCapacity(user.id, { selectionMode:"choice", kind:"public" }, 1), /名单已满/);
 });
 
 test("admin immediately grants S4 packs to all player teams and sends inbox notices", () => {
@@ -2038,7 +2699,7 @@ test("S4代表卡的多个YDL特性会同时进入联赛首发和默契计算", 
   assert.ok(adjusted.some((player) => player.id !== playerId && Number(player.leagueChemistryBonus) > 0));
 });
 
-test("S4强化等级同步提升比赛综合能力且仅单项属性在99封顶", () => {
+test("S4强化等级同步提升综合能力但26项单项属性封顶99", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
   const user = account("ydl-enhancement-ability", "Ability Owner");
   join(service, user, "Ability FC");
@@ -2057,7 +2718,10 @@ test("S4强化等级同步提升比赛综合能力且仅单项属性在99封顶"
   assert.equal(carrier.overall, expectedOverall);
   assert.equal(carrier.upgradeBonus, 13);
   Object.entries(source.attributes).forEach(([key, value]) => {
-    if (Number.isFinite(value)) assert.ok(carrier.attributes[key] >= Math.min(99, value + 13));
+    if (Number.isFinite(value)) {
+      assert.ok(carrier.attributes[key] >= Math.min(99, value + 13));
+      assert.ok(carrier.attributes[key] <= 99);
+    }
   });
   assert.equal(publicPlayer.effectiveOverall, expectedOverall);
   assert.equal(publicCard.effectiveOverall, expectedOverall);
@@ -2168,7 +2832,61 @@ test("S4强化支持轻量响应且不生成完整联赛视图", () => {
   assert.equal(result.recentMatches, undefined);
 });
 
-test("S4强化在+3以后每级增加2点总评且所有球员均允许超过99", () => {
+test("S4强化按requestId幂等返回首次结果且不会重复消耗副卡", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const user = account("enhancement-idempotent", "Enhancement Idempotent");
+  join(service, user, "Enhancement Idempotent FC");
+  const playerId = service.accountTeam(user.id).rosterIds[0];
+  service.grantS4PlayerCardsFromAdmin({ accountId:user.id, playerId, upgradeLevel:2, quantity:3 });
+  const [main, material, unusedMaterial] = service.playerCards(user.id, playerId).filter((card) => card.upgradeLevel === 2).slice(0, 3);
+  const options = { compact:true, requestId:"enhancement-request-0001" };
+
+  const first = service.enhanceS4Card(user, main.id, material.id, false, options);
+  const repeated = service.enhanceS4Card(user, main.id, material.id, false, options);
+
+  assert.deepEqual(repeated.enhancementResult, first.enhancementResult);
+  assert.equal(repeated.removedCardId, material.id);
+  assert.equal(service.state.s4Assets.cards[material.id].status, "recycled");
+  assert.equal(service.state.s4Assets.cards[unusedMaterial.id].status, "active");
+  assert.equal(service.state.ledger.filter((entry) => entry.type === "s4-card-enhancement" && entry.requestId === options.requestId).length, 1);
+  assert.throws(() => service.enhanceS4Card(user, main.id, unusedMaterial.id, false, options), /请求标识与原请求不一致/);
+  assert.equal(service.state.s4Assets.cards[unusedMaterial.id].status, "active");
+});
+test("S4批量合卡按等级库存计算上限并返回成功失败统计", () => {
+  const successService = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
+  const successUser = account("batch-enhancement-success", "Batch Enhancement Success");
+  join(successService, successUser, "Batch Enhancement FC");
+  const playerId = successService.accountTeam(successUser.id).rosterIds[0];
+  successService.grantS4PlayerCardsFromAdmin({ accountId:successUser.id, playerId, upgradeLevel:2, quantity:3 });
+  const success = successService.batchEnhanceS4Cards(successUser, playerId, 2, 2, 5, { compact:true });
+  assert.equal(success.maximumQuantity, 1);
+  assert.equal(success.quantity, 1);
+  assert.equal(success.chance, 95);
+  assert.equal(success.successCount, 1);
+  assert.equal(success.failureCount, 0);
+  assert.equal(success.finalLevelCounts[3], 1);
+  assert.equal(success.finalCardCount, 3);
+  assert.equal(successService.state.ledger.filter((entry) => entry.accountId === successUser.id && entry.type === "s4-card-enhancement").length, 0);
+  assert.equal(successService.state.ledger.filter((entry) => entry.accountId === successUser.id && entry.type === "s4-card-enhancement-batch").length, 1);
+  assert.equal(successService.state.s4Assets.transactions.filter((entry) => entry.fromOwnerId === successUser.id && entry.type === "card-enhancement").length, 0);
+  assert.equal(successService.state.s4Assets.transactions.filter((entry) => entry.fromOwnerId === successUser.id && entry.type === "card-enhancement-batch").length, 1);
+
+  const failureService = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .999 });
+  const failureUser = account("batch-enhancement-failure", "Batch Enhancement Failure");
+  join(failureService, failureUser, "Batch Failure FC");
+  const failurePlayerId = failureService.accountTeam(failureUser.id).rosterIds[0];
+  failureService.grantS4PlayerCardsFromAdmin({ accountId:failureUser.id, playerId:failurePlayerId, upgradeLevel:2, quantity:4 });
+  const failure = failureService.batchEnhanceS4Cards(failureUser, failurePlayerId, 2, 2, 2, { compact:true });
+  assert.equal(failure.maximumQuantity, 2);
+  assert.equal(failure.quantity, 2);
+  assert.equal(failure.successCount, 0);
+  assert.equal(failure.failureCount, 2);
+  assert.equal(failure.finalLevelCounts[2], 2);
+  assert.equal(failure.finalCardCount, 3);
+  assert.throws(() => failureService.batchEnhanceS4Cards(failureUser, failurePlayerId, 3, 3, 1, { compact:true }), /预期达到\+4及以上/);
+});
+
+test("S4强化在+3以后每级增加2点总评且单项属性仍受99上限约束", () => {
   const ordinary = { overall:98 };
   const legend = { overall:70, grade:"S", legendary:true };
   const bonuses = Array.from({ length:9 }, (_, level) => s4EffectiveOverall(legend, level) - legend.overall);
@@ -2358,11 +3076,33 @@ test("杯赛八强和半决赛保持两回合，决赛保持单场决胜", () =>
   assert.equal(final[0].legs.length, 1);
 });
 
-test("杯赛淘汰赛晋级继续发两个公共池卡包且冠军由后台另行发奖", () => {
+test("杯赛淘汰赛和决赛全程排除超级雷暴", () => {
+  for (const stage of ["quarterfinals", "semifinals", "final"]) {
+    const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+    const user = account(`cup-weather-${stage}`, `Cup Weather ${stage}`);
+    join(service, user, `Cup Weather ${stage} FC`);
+    const team = service.accountTeam(user.id);
+    const opponent = service.state.teams.find((entry) => entry.id !== team.id);
+    service.startCup();
+    service.state.cup.events = [];
+    service.state.cup.knockout = { quarterfinals:[], semifinals:[], final:[] };
+    service.createKnockoutStage(stage, [team.id, opponent.id]);
+    service.fixtureConditions = () => ({ weather:{ key:"superStorm" }, referee:{ key:"standard" } });
+
+    assert.equal(service.startScheduledCupEvent(), true);
+    assert.equal(service.state.liveCupRound.matches[0].match.environment.weather, "storm");
+    assert.equal(service.state.liveCupRound.matches[0].match.superStormStopMinute, null);
+  }
+});
+
+test("杯赛淘汰赛晋级发公共池礼包且冠亚军自动获得传奇自选强化礼包", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("cup-reward-owner", "Cup Reward Manager");
   join(service, user, "Cup Reward FC");
+  const runnerUser = account("cup-runner-reward-owner", "Cup Runner Reward Manager");
+  join(service, runnerUser, "Cup Runner Reward FC");
   const team = service.accountTeam(user.id);
+  const runnerTeam = service.accountTeam(runnerUser.id);
   service.startCup();
   const leagueEvent = service.state.cup.events[0];
   assert.equal(service.view(user).s4Packs.inventory.some((item) => item.source === "cup"), false);
@@ -2389,13 +3129,62 @@ test("杯赛淘汰赛晋级继续发两个公共池卡包且冠军由后台另�
   assert.equal(service.view(user).s4Packs.inventory.filter((item) => item.source === "cup").length, 2);
   const semifinalAdvance = service.grantCupReward(team.id, { id:"cup-semifinals-leg2", stage:"semifinals", round:6, leg:2 }, "advance");
   assert.equal(semifinalAdvance.quantity, 2);
-  const champion = service.grantCupReward(team.id, { id:"cup-final-leg2", stage:"final", round:7, leg:2 }, "champion");
-  assert.equal(champion, null);
+  const finalEvent = { id:"cup-final-leg1", stage:"final", round:7, leg:1 };
+  const champion = service.grantCupReward(team.id, finalEvent, "champion");
+  const runnerUp = service.grantCupReward(runnerTeam.id, finalEvent, "runnerUp");
+  assert.equal(champion.packType, "admin-legend-choice-plus2");
+  assert.equal(champion.quantity, 1);
+  assert.equal(runnerUp.packType, "admin-legend-choice-plus1");
+  assert.equal(runnerUp.quantity, 1);
   assert.equal(service.wallet(user.id).balance, balanceBeforeRewards);
   assert.equal(service.view(user).s4Packs.inventory.filter((item) => item.source === "cup").length, 4);
-  assert.equal(service.grantCupReward(team.id, { id:"cup-final-leg2", stage:"final", round:7, leg:2 }, "champion"), null);
+  assert.equal(service.view(user).s4Packs.inventory.filter((item) => item.packType === "admin-legend-choice-plus2").length, 1);
+  assert.equal(service.view(runnerUser).s4Packs.inventory.filter((item) => item.packType === "admin-legend-choice-plus1").length, 1);
+  assert.equal(service.grantCupReward(team.id, finalEvent, "champion"), null);
+  assert.equal(service.grantCupReward(runnerTeam.id, finalEvent, "runnerUp"), null);
   assert.equal(service.wallet(user.id).balance, balanceBeforeRewards);
-  assert.equal(service.view(user).inbox.filter((message) => message.id.startsWith("cup-reward:")).length, 2);
+  assert.equal(service.view(user).inbox.filter((message) => message.id.startsWith("cup-reward:")).length, 3);
+  assert.equal(service.view(runnerUser).inbox.filter((message) => message.id.startsWith("cup-reward:")).length, 1);
+});
+
+test("杯赛决赛完成时把冠军和另一支决赛队分别送入冠亚军奖励结算", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const championUser = account("cup-final-champion", "Cup Final Champion");
+  const runnerUser = account("cup-final-runner", "Cup Final Runner");
+  join(service, championUser, "Cup Final Champion FC");
+  join(service, runnerUser, "Cup Final Runner FC");
+  const champion = service.accountTeam(championUser.id);
+  const runner = service.accountTeam(runnerUser.id);
+  const event = { id:"cup-final-leg1", stage:"final", round:12, leg:1, status:"running", fixtureIds:[] };
+  const tie = {
+    id:"cup-final-1",
+    stage:"final",
+    teams:[champion.id, runner.id],
+    winnerId:null,
+    legs:[{ id:"cup-final-1-leg1", number:1, winnerId:champion.id, score:[2, 1], status:"complete" }],
+  };
+  service.state.cup = {
+    ...service.state.cup,
+    status:"active",
+    stage:"final",
+    events:[event],
+    knockout:{ quarterfinals:[], semifinals:[], final:[tie] },
+  };
+  service.advanceCupAvailability = () => {};
+  service.distributePredictionProfit = () => {};
+  service.settleBallonDor = () => null;
+  service.ensureSeasonFinalTournament = () => null;
+  const rewards = [];
+  service.grantCupReward = (teamId, rewardEvent, kind) => rewards.push({ teamId, eventId:rewardEvent.id, kind });
+
+  service.completeCupEvent(event);
+
+  assert.deepEqual(rewards, [
+    { teamId:champion.id, eventId:event.id, kind:"champion" },
+    { teamId:runner.id, eventId:event.id, kind:"runnerUp" },
+  ]);
+  assert.equal(service.state.cup.status, "completed");
+  assert.equal(service.state.cup.championId, champion.id);
 });
 
 test("television lists every fixture in the next scheduled league round", () => {
@@ -2556,7 +3345,7 @@ test("友谊赛邀请两小时后自动过期且无法再接受", () => {
   assert.equal(service.state.friendlyFixtures.length, 0);
 });
 
-test("友谊赛以100体力直播且结算不消耗体力或累计停赛，只保留伤病", () => {
+test("友谊赛以100体力直播且结算不消耗体力或累计停赛，只保留伤病", async () => {
   let now = Date.parse("2026-07-23T10:01:00+08:00");
   const service = new YellowDogsLeagueService({ statePath:null, now:() => now, rng:() => .37 });
   const inviter = account("friendly-state-a", "友谊甲");
@@ -2586,6 +3375,7 @@ test("友谊赛以100体力直播且结算不消耗体力或累计停赛，只�
   liveStarter.injury = { type:"test", injuryRounds:2 };
   live.match.report = { score:[1, 0], teams:live.match.teams.map((team) => ({ ...team, players:team.players.map((player) => ({ ...player, fitness:player.state.fitness, stats:{ ...player.matchStats } })) })) };
   service.advanceLiveFriendlies(now);
+  await service.flushLiveSettlementJobs();
 
   assert.equal(home.playerState[starterId].fitness, 48);
   assert.equal(home.playerState[starterId].suspension ?? 0, 0);
@@ -2596,6 +3386,41 @@ test("友谊赛以100体力直播且结算不消耗体力或累计停赛，只�
   assert.equal(service.wallet(inviter.id).balance, homeBalance);
   assert.equal(service.wallet(receiver.id).balance, awayBalance);
   assert.equal(service.state.ledger.some((entry) => entry.type === "league-match-reward" && entry.matchId === fixture.matchId), false);
+});
+
+test("休赛期友谊赛保留比赛内伤退但不形成正式伤停", async () => {
+  let now = Date.parse("2026-07-23T10:01:00+08:00");
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => now, rng:() => .37 });
+  const inviter = account("offseason-friendly-a", "休赛期友谊甲");
+  const receiver = account("offseason-friendly-b", "休赛期友谊乙");
+  join(service, inviter, "休赛期友谊甲队");
+  join(service, receiver, "休赛期友谊乙队");
+  const home = service.accountTeam(inviter.id);
+  const away = service.accountTeam(receiver.id);
+  const starterId = home.preferredStarterIds[0];
+  service.state.season.status = "completed";
+
+  service.createFriendlyInvitation(inviter, away.id);
+  service.resolveFriendlyInvitation(receiver, service.state.friendlyInvitations.at(-1).id, "accept");
+  const fixture = service.state.friendlyFixtures.at(-1);
+  now = fixture.startsAt;
+  service.tick();
+  const live = service.state.liveFriendlies[0];
+  const liveStarter = live.match.teams[0].players.find((player) => player.id === starterId);
+  assert.equal(fixture.offseason, true);
+  liveStarter.injury = { type:"test", injuryRounds:2 };
+  live.match.report = { score:[1, 0], teams:live.match.teams.map((team) => ({ ...team, players:team.players.map((player) => ({ ...player, fitness:player.state.fitness, stats:{ ...player.matchStats } })) })) };
+  service.state.season.status = "active";
+
+  service.advanceLiveFriendlies(now);
+  await service.flushLiveSettlementJobs();
+
+  const record = service.state.matches.at(-1);
+  const reportedStarter = record.report.teams[0].players.find((player) => player.id === starterId);
+  assert.deepEqual(reportedStarter.injury, { type:"test", injuryRounds:2 });
+  assert.equal(home.playerState[starterId].injuryRounds ?? 0, 0);
+  assert.equal(fixture.status, "complete");
+  assert.equal(record.competition, "friendly");
 });
 
 test("league and cup suspensions are isolated while injuries remain shared", () => {
@@ -2702,13 +3527,22 @@ test("daily season settlement is idempotent and daily reset preserves player ass
   assert.equal(first.id, `${service.state.season.id}+daily-settlement`);
   assert.equal(service.wallet(user.id).balance, 133456);
   assert.equal(service.s4PackInventory(user.id).filter((item) => item.grantId === first.id).length, 2);
+  assert.equal(service.s4PackInventory(user.id).filter((item) => item.grantId === `${service.state.season.id}+league-ranking-gifts:${user.id}`).length, 4);
   assert.equal(service.settleDailySeason().id, first.id);
   assert.equal(service.wallet(user.id).balance, 133456);
+  assert.equal(service.s4PackInventory(user.id).filter((item) => item.grantId === `${service.state.season.id}+league-ranking-gifts:${user.id}`).length, 4);
 
   const friendlyOpponent = service.state.teams.find((entry) => entry.id !== team.id);
   service.state.friendlyInvitations.push({ id:"previous-day-invitation", fromTeamId:team.id, toTeamId:friendlyOpponent.id, status:"accepted" });
   service.state.friendlyFixtures.push({ id:"previous-day-friendly", homeId:team.id, awayId:friendlyOpponent.id, startsAt:currentTime - 60_000, status:"complete", score:[2, 1] });
   service.state.liveFriendlies.push({ code:"YDL-FRIENDLY-PREVIOUS-DAY", fixtureId:"previous-day-friendly", completed:true });
+  service.state.completedBroadcasts.push({ code:"YDL-PREVIOUS-DAY", completedAt:currentTime - 60_000 });
+  service.state.matchPredictions = {
+    schemaVersion:1,
+    markets:{ previous:{ id:"previous", status:"settled" } },
+    bets:[{ id:"previous-bet", accountId:user.id, marketId:"previous", status:"lost", amount:100 }],
+    distributions:[{ id:"previous-distribution" }],
+  };
   assert.equal(service.teamSchedule(team.id).some((fixture) => fixture.competition === "friendly"), true);
 
   currentTime = Date.parse("2026-07-30T09:51:01+08:00");
@@ -2724,6 +3558,9 @@ test("daily season settlement is idempotent and daily reset preserves player ass
   assert.deepEqual(service.state.friendlyInvitations, []);
   assert.deepEqual(service.state.friendlyFixtures, []);
   assert.deepEqual(service.state.liveFriendlies, []);
+  assert.deepEqual(service.state.matches, []);
+  assert.deepEqual(service.state.completedBroadcasts, []);
+  assert.deepEqual(service.state.matchPredictions, { schemaVersion:1, markets:{}, bets:[], distributions:[] });
   assert.equal(service.teamSchedule(team.id).some((fixture) => fixture.competition === "friendly"), false);
   service.state.dailyAutomation.enabled = true;
 
@@ -2734,4 +3571,98 @@ test("daily season settlement is idempotent and daily reset preserves player ass
   service.tick();
   assert.equal(service.state.cup.status, "active");
   assert.equal(service.state.cup.nextRoundAt, Date.parse("2026-07-30T10:10:00+08:00"));
+});
+
+test("completed league ranking grants issue the configured private plus-three quantities", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const users = Array.from({ length:8 }, (_, index) => account(`ranking-gift-${index + 1}`, `Ranking Gift ${index + 1}`));
+  users.forEach((user, index) => {
+    join(service, user, `Ranking Gift FC ${index + 1}`);
+    const team = service.accountTeam(user.id);
+    team.table = { played:18, won:18 - index, drawn:0, lost:index, goalsFor:40 - index, goalsAgainst:index, points:80 - index };
+  });
+  service.state.season.status = "completed";
+  service.state.season.completedAt = NOW - 11 * 60 * 1000;
+  service.state.season.currentRound = 18;
+  service.state.cup.status = "completed";
+  service.state.cup.stage = "completed";
+  service.settleDailySeason();
+  const expected = [4, 3, 2, 2, 1, 1, 1, 1];
+  users.forEach((user, index) => {
+    const team = service.accountTeam(user.id);
+    const rank = service.standings().find((entry) => entry.id === team.id).rank;
+    const gifts = service.s4PackInventory(user.id).filter((item) => item.source === "league-ranking-settlement");
+    assert.equal(rank, index + 1);
+    assert.equal(gifts.length, expected[index]);
+    assert.ok(gifts.every((item) => item.packType === "admin-private-choice-plus3"));
+  });
+  service.settleDailySeason();
+  assert.equal(service.state.ledger.filter((entry) => entry.type === "league-ranking-gift-settlement").length, 8);
+});
+
+test("delayed startup reschedules league and cup without immediately starting matches", () => {
+  let currentTime = Date.parse("2026-08-12T22:00:00+08:00");
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => currentTime, rng:() => .37 });
+  service.state.dailyAutomation.enabled = true;
+  service.state.dailyAutomation.initializedDate = "2026-08-12";
+  service.state.season.status = "completed";
+  service.state.season.completedAt = currentTime - 20 * 60_000;
+  service.state.cup.status = "completed";
+  service.state.cup.stage = "completed";
+  const settlement = service.settleDailySeason();
+
+  currentTime = Date.parse("2026-08-13T10:23:00+08:00");
+  assert.equal(service.tick(), true);
+  assert.equal(service.state.dailyAutomation.lastRewardedSeasonId, settlement.seasonId);
+  assert.equal(service.state.dailyAutomation.lastResetDate, "2026-08-13");
+  assert.equal(service.state.season.firstRoundAt, Date.parse("2026-08-13T10:40:00+08:00"));
+  assert.equal(service.state.season.nextRoundAt, Date.parse("2026-08-13T10:40:00+08:00"));
+  assert.equal(service.state.cup.status, "active");
+  assert.equal(service.state.cup.nextRoundAt, Date.parse("2026-08-13T10:50:00+08:00"));
+  assert.equal(service.state.liveRound, null);
+  assert.equal(service.state.liveCupRound, null);
+
+  currentTime = Date.parse("2026-08-13T10:39:59+08:00");
+  assert.equal(service.tick(), false);
+  assert.equal(service.state.liveRound, null);
+  assert.equal(service.state.liveCupRound, null);
+  currentTime = Date.parse("2026-08-13T10:40:00+08:00");
+  assert.equal(service.tick(), true);
+  assert.equal(service.state.liveRound.startedAt, currentTime);
+  assert.equal(service.state.liveCupRound, null);
+});
+
+test("官方比赛不再按经理在线状态削弱球员能力", () => {
+  const service = new YellowDogsLeagueService({
+    statePath:null,
+    now:() => NOW,
+    rng:() => .37,
+    accountLastSeenAt:() => NOW - 30 * 24 * 60 * 60 * 1000,
+  });
+  const user = account("activity-neutral-owner", "Activity Neutral Owner");
+  join(service, user, "Activity Neutral FC");
+  const team = service.accountTeam(user.id);
+  const fixture = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
+  const ownIndex = fixture.homeId === team.id ? 0 : 1;
+  const snapshots = (match) => buildV2TeamSnapshots(match.teams, {
+    parameters:match.parameters,
+    state:{ minute:0, score:[0, 0] },
+    environment:match.environment,
+  });
+
+  const league = service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"league" }).match;
+  const cup = service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"cup" }).match;
+  const friendly = service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"friendly" }).match;
+  [league, cup, friendly].forEach((match) => {
+    assert.equal(Object.hasOwn(match.teams[ownIndex], "managerActivityMultiplier"), false);
+  });
+
+  const neutralPlayer = snapshots(friendly)[ownIndex].players[0];
+  const leaguePlayer = snapshots(league)[ownIndex].players.find((player) => player.id === neutralPlayer.id);
+  const cupPlayer = snapshots(cup)[ownIndex].players.find((player) => player.id === neutralPlayer.id);
+  assert.deepEqual(leaguePlayer.attributes, neutralPlayer.attributes);
+  assert.deepEqual(cupPlayer.attributes, neutralPlayer.attributes);
+
+  const publicMatch = publicYdlLeagueV2Match(league, NOW, ownIndex, true);
+  assert.equal(JSON.stringify(publicMatch).includes("managerActivity"), false);
 });

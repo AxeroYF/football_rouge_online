@@ -56,17 +56,20 @@ test("V2.1 full matrix carries a versioned realism contract", () => {
 
 test("V2.1全量平衡配置覆盖战术、职责与羁绊并限制结果分片大小", () => {
   const scenarios = expandV2ScenarioMatrix(fullBalanceConfig.scenarioMatrix);
-  assert.equal(scenarios.length, 561);
-  assert.equal(scenarios.length * fullBalanceConfig.scenarioMatrix.repetitionsPerScenario, 22440);
-  assert.equal(fullBalanceConfig.studyDesign.expectedMatches, 22440);
+  assert.equal(scenarios.length, 611);
+  assert.equal(scenarios.length * fullBalanceConfig.scenarioMatrix.repetitionsPerScenario, 19552);
+  assert.equal(fullBalanceConfig.studyDesign.expectedMatches, 19552);
   assert.equal(fullBalanceConfig.scenarioMatrix.repetitionsPerScenario % 2, 0);
-  assert.deepEqual(fullBalanceConfig.studyDesign.expectedDurationHours, { minimum:6, maximum:8, baselineEstimate:6.9, calibratedFromPreviousHours:11 });
+  assert.deepEqual(fullBalanceConfig.studyDesign.expectedDurationHours, { minimum:5.4, maximum:7, baselineEstimate:6.1, calibratedFromPreviousMatches:22920, calibratedFromPreviousHours:7.1 });
+  assert.equal(fullBalanceConfig.defaultWorkers, 10);
+  assert.equal(fullBalanceConfig.scenarioMatrix.suites.find((suite) => suite.id === "extreme-shape-challenges").enabled, true);
+  assert.ok(fullBalanceConfig.scenarioMatrix.formations["extreme-8-0-2"]);
   assert.ok(fullBalanceConfig.studyDesign.focusMetrics.includes("yellowCards"));
   assert.ok(fullBalanceConfig.studyDesign.focusMetrics.includes("foulInjuriesCaused"));
   assert.ok(fullBalanceConfig.realismBenchmarks.metrics["injuries.injuriesPerMatch"]);
   assert.equal(fullBalanceConfig.outputLimits.separateDimensions, true);
   assert.ok(fullBalanceConfig.outputLimits.coreBytes <= 4_000_000);
-  for (const dimension of ["formation", "tactic", "style", "playerDutyMode", "activeBondType", "tempoBand", "outLineStrategy"]) {
+  for (const dimension of ["formation", "tactic", "style", "playerDutyMode", "activeBondType", "tempoBand", "outLineStrategy", "midfieldIntegrityBand", "longShotExposureBand", "attackingCommitmentBand"]) {
     assert.ok(fullBalanceConfig.analysisDimensions.includes(dimension), dimension);
   }
   assert.equal(fullBalanceConfig.scenarioMatrix.profiles["duties-recommended"].playerDutyMode, "recommended");

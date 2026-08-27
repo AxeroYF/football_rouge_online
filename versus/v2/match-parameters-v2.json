@@ -57,11 +57,40 @@
       "buildUp": { "mentality": -0.004, "tempo": -0.006, "directness": -0.012, "pressing": 0.004, "timeWasting": 0.004 },
       "progression": { "mentality": 0.01, "tempo": 0.008, "directness": 0.006, "pressing": 0.008, "timeWasting": -0.012 },
       "finalThird": { "mentality": 0.02, "tempo": 0.01, "directness": 0.004, "pressing": 0.01, "timeWasting": -0.018 },
-      "chance": { "mentality": 0.028, "tempo": 0.012, "directness": 0, "pressing": 0.012, "timeWasting": -0.024 },
+      "chance": { "mentality": 0.022, "tempo": 0.009, "directness": 0, "pressing": 0.009, "timeWasting": -0.02 },
       "shot": { "mentality": 0.01, "tempo": 0.004, "directness": 0, "pressing": 0.004, "timeWasting": -0.008 }
     },
     "stageProbabilityStyleAdjustments": {
-      "highPress": { "progression": 0.003, "finalThird": 0.005, "chance": 0.006, "shot": 0.002 }
+      "highPress": { "progression": 0, "finalThird": 0, "chance": 0, "shot": 0 }
+    },
+    "highIntensityOverlap": {
+      "threshold": 0.56,
+      "weights": { "mentality": 0.42, "tempo": 0.22, "pressing": 0.36 },
+      "stagePenaltyMaximum": { "progression": 0.006, "finalThird": 0.016, "chance": 0.024, "shot": 0.008 }
+    },
+    "attackingCommitment": {
+      "weights": { "mentality": 0.38, "tempo": 0.16, "defensiveLine": 0.18, "pressing": 0.08, "availableTime": 0.2 },
+      "minimumCommitment": 0.05,
+      "deepDefensiveThreshold": 0.52,
+      "stateBonusMinimumMultiplier": 0.18,
+      "stateBonusExponent": 1.2,
+      "stagePenaltyMaximum": { "buildUp": 0.008, "progression": 0.035, "finalThird": 0.06, "chance": 0.075, "shot": 0.012 },
+      "transitionStagePenaltyMultiplier": 1.28,
+      "counterOpportunityMinimumMultiplier": 0.48,
+      "counterRouteMinimumMultiplier": 0.5,
+      "counterConnectionBonusMinimumMultiplier": 0.1,
+      "counterConnectionPenaltyMaximum": 0.09
+    },
+    "styleIdentity": {
+      "minimumFit": 0.82,
+      "maximumFit": 1.18,
+      "wingPlay": { "attackMaximum": 0.12, "crossingMaximum": 0.16 },
+      "possession": { "controlMaximum": 0.1, "defenseMaximum": 0.075 },
+      "longBall": { "progressionMaximum": 0.1, "headerXgMaximum": 0.18 },
+      "roughPlay": { "defenseMaximum": 0.16, "pressureMaximum": 0.12 },
+      "counterAttack": { "transitionMaximum": 0.16, "outletMaximum": 0.14 },
+      "highPress": { "pressureMaximum": 0.06, "recoveryMaximum": 0.04, "riskPressingThreshold": 62, "riskDefensiveLineThreshold": 56, "counterOpportunityMaximum": 0.26, "breakawayXgMaximum": 0.15, "injuryMultiplierMaximum": 1.8, "injuryMinimumMultiplier": 1.12 },
+      "lowBlock": { "defenseMaximum": 0.16, "outletMaximum": 0.065, "outletMinimumMultiplier": 0.45, "outletMinimumAttackers": 2, "outletScoreFloor": 55, "outletScoreCeiling": 86 }
     },
     "focuses": ["balanced", "left", "center", "right"]
   },
@@ -89,6 +118,13 @@
     "controlTemperature": 18,
     "overloadPlayerAdvantage": 0.35,
     "maximumLocalAdvantage": 3,
+    "occupancyDiminishing": { "softCap": 0.72, "excessMultiplier": 0.38 },
+    "laneCoverage": {
+      "minimumDefensiveCoverage": 0.48,
+      "flankMinimumDefensiveCoverage": 0.58,
+      "deficitResistancePenaltyMaximum": 0.34,
+      "deficitSpaceBonusMaximum": 0.3
+    },
     "backlineExposure": {
       "minimumDefenders": 3,
       "minimumMidfielders": 2,
@@ -111,7 +147,12 @@
       "advancedMidfielderExcessWeight": 0.1,
       "threeBackAdvancedMidfielderWeight": 0.12,
       "resistancePenaltyMaximum": 0.48,
-      "spaceBonusMaximum": 0.35
+      "spaceBonusMaximum": 0.35,
+      "severeDefenderDeficitExponent": 0.58,
+      "severeDefenderDeficitWeight": 0.42,
+      "zoneCoverageDeficitWeight": 0.55,
+      "underThreeDefenderPossessionMultiplierMinimum": 0.4,
+      "underThreeDefenderStagePenaltyMaximum": { "buildUp": 0.12, "progression": 0.075, "finalThird": 0.025, "chance": 0.01, "shot": 0 }
     },
     "roleBalance": {
       "advancedMidfielderPenaltyPerExtra": 0.08,
@@ -121,12 +162,36 @@
       "singleStrikerAttackMultiplier": 1.04,
       "singleStrikerSupportMultiplier": 1.1,
       "wideMidfielderAttackMultiplier": 1.04,
-      "wideMidfielderSupportMultiplier": 1.06
+      "wideMidfielderSupportMultiplier": 1.06,
+      "doublePivot451PivotControlMultiplier": 1.03,
+      "doublePivot451PivotDefenseMultiplier": 1.04,
+      "doublePivot451AttackUnitControlMultiplier": 1.03,
+      "doublePivot451AttackUnitAttackMultiplier": 1.04,
+      "doublePivot451AttackUnitSupportMultiplier": 1.06
+    },
+    "midfieldStructure": {
+      "minimumPlayers": 3,
+      "bandMinimumY": 32,
+      "bandMaximumY": 60,
+      "centralMinimumX": 20,
+      "centralMaximumX": 80,
+      "safeMaximumGap": 29,
+      "criticalMaximumGap": 52,
+      "countRiskWeight": 0.58,
+      "gapRiskWeight": 0.34,
+      "centralVacancyWeight": 0.2,
+      "minimumIntegrity": 0.08,
+      "possessionMinimumMultiplier": 0.16,
+      "possessionIntegrityExponent": 1.15,
+      "stagePenaltyMaximum": { "buildUp": 0.055, "progression": 0.08, "finalThird": 0.045, "chance": 0.02, "shot": 0 },
+      "longShotCountRiskWeight": 0.5,
+      "longShotGapRiskWeight": 0.35,
+      "longShotCentralVacancyWeight": 0.25
     }
   },
   "dynamicShape": {
     "mode": "stable",
-    "modelVersion": "dynamic-shape-v2.1-stable.2",
+    "modelVersion": "dynamic-shape-v2.1-stable.9",
     "restrictionsEnabled": true,
     "stableInfluence": 0.15,
     "diagnostics": { "sampleEveryChains": 10 },
@@ -186,18 +251,20 @@
     "leadingShotXgMinimumMultiplier": 0.82
   },
   "environment": {
-    "weatherWeights": { "sunny": 65, "rain": 15, "storm": 10, "snow": 10 },
-    "weatherExecution": { "sunny": 1, "rain": 0.97, "storm": 0.93, "snow": 0.92 },
+    "weatherWeights": { "sunny": 64, "rain": 15, "storm": 10, "snow": 10, "superStorm": 1 },
+    "weatherExecution": { "sunny": 1, "rain": 0.97, "storm": 0.93, "snow": 0.92, "superStorm": 0.82 },
+    "weatherFatigueMultiplier": { "sunny": 1, "rain": 1.04, "storm": 1.08, "snow": 1.1, "superStorm": 1.18 },
+    "superStormStopMinuteRange": { "minimum": 61, "maximum": 89 },
     "weatherStageImpact": { "buildUp":0.15, "progression":0.25, "finalThird":0.35, "chance":0.4, "shot":0.25 },
     "refereeWeights": { "lenient": 28, "standard": 50, "strict": 22 },
     "refereeDiscipline": { "lenient": 0.86, "standard": 1, "strict": 1.14 },
     "cardProbability": { "lenient": 0.11, "standard": 0.18, "strict": 0.22 },
     "directRedProbability": { "lenient": 0.001, "standard": 0.0018, "strict": 0.003 },
-    "weatherEventPerChain": { "sunny": 0.00003, "rain": 0.00015, "storm": 0.0038, "snow": 0.00024 }
+    "weatherEventPerChain": { "sunny": 0.00003, "rain": 0.00015, "storm": 0.0038, "snow": 0.00024, "superStorm": 0.006 }
   },
   "chain": {
     "stages": ["possession", "buildUp", "progression", "finalThird", "chance", "shot"],
-    "openPlayXgScale": 0.68,
+    "openPlayXgScale": 0.82,
     "possessionDuration": {
       "selectionExponent": 1.18,
       "controlProbabilityWeight": 1.35,
@@ -214,11 +281,11 @@
       "aerialDifferenceDivisor": 165,
       "minimumDuelProbability": 0.22,
       "maximumDuelProbability": 0.82,
-      "cornerShotCreationBase": 0.54,
-      "freeKickShotCreationBase": 0.48,
+      "cornerShotCreationBase": 0.48,
+      "freeKickShotCreationBase": 0.43,
       "cornerBaseXg": 0.075,
       "freeKickHeaderBaseXg": 0.09,
-      "directFreeKickBaseChance": 0.075,
+      "directFreeKickBaseChance": 0.058,
       "directFreeKickSkillWeight": 0.0028,
       "minimumDirectFreeKickChance": 0.04,
       "maximumDirectFreeKickChance": 0.22,
@@ -237,20 +304,27 @@
       "longBallBonus": 0.07,
       "lowBlockBonus": 0.05,
       "attackingMentalityBonus": 0.02,
+      "structureExposureDecisionBonus": 0.16,
+      "midfieldVacuumMinimumExposure": 0.55,
+      "midfieldVacuumBaseChance": 0.04,
+      "midfieldVacuumMaximumChance": 0.26,
+      "midfieldVacuumWideLaneMultiplier": 0.55,
       "minimumDecisionChance": 0.04,
       "maximumDecisionChance": 0.34,
       "baseXg": 0.075,
       "skillXgWeight": 0.001,
       "spaceXgWeight": 0.02,
+      "structureExposureXgBonus": 0.04,
       "minimumXg": 0.025,
-      "maximumXg": 0.12
+      "maximumXg": 0.16
     },
     "breakaway": {
       "minimumHighLineRisk": 0.08,
       "maximumXgBonus": 0.22,
       "maximumXg": 0.5,
       "transitionMultiplier": 1,
-      "directRouteMultiplier": 0.9
+      "directRouteMultiplier": 0.9,
+      "highPressCounterRiskWeight": 1
     },
     "offside": {
       "baseProbability": 0.022,
@@ -264,7 +338,7 @@
       "buildUp": 0.68,
       "progression": 0.58,
       "finalThird": 0.5,
-      "chance": 0.27,
+      "chance": 0.24,
       "shot": 0.115
     },
     "factorWeights": {
@@ -318,16 +392,24 @@
     }
   },
   "events": {
-    "independentEvents": ["weatherInjury", "lightning", "blackWhistle", "ownGoal"],
+    "independentEvents": ["weatherInjury", "lightning", "blackWhistle", "ownGoal", "brawl"],
     "maximumIndependentGoalEventsPerMatch": 1,
     "ownGoalPerMatch": 0.009,
     "weatherImpactPerMatch": 0.32,
     "injuryPerChain": 0.00015,
+    "highPressInjury": {
+      "pressingThreshold": 62,
+      "defensiveLineThreshold": 56,
+      "minimumMultiplier": 1.12,
+      "maximumMultiplier": 1.8,
+      "pressingWeight": 0.65,
+      "defensiveLineWeight": 0.35
+    },
     "roughPlay": {
       "foulMultiplier": 1.45,
       "cardMultiplier": 1,
       "directRedMultiplier": 1,
-      "foulInjuryMultiplier": 1.35
+      "foulInjuryMultiplier": 2.2
     },
     "baseFoulProbability": 0.09,
     "secondYellowCardMultiplier": 0.42,
@@ -338,6 +420,19 @@
     "defensiveActionCreditProbability": { "tackle":0.38, "interception":0.28, "clearance":0.9 },
     "pressureWinCreditProbability": 0.55,
     "blackWhistlePerMatch": 0.02,
+    "brawl": {
+      "basePerEligibleMatch": 0.0063,
+      "minimumMinute": 20,
+      "maximumMinute": 80,
+      "maximumGoalDifference": 1,
+      "aggressionBaseline": 65,
+      "aggressionMultiplierMaximum": 1.5,
+      "oneSideRoughPlayMultiplier": 5,
+      "bothSidesRoughPlayMultiplier": 7,
+      "refereeMultiplier": { "lenient": 1.8, "standard": 1, "strict": 0.45 },
+      "dismissalsPerTeamMinimum": 1,
+      "dismissalsPerTeamMaximum": 3
+    },
     "recordParameterTrace": true,
     "recordRandomRolls": false
   }

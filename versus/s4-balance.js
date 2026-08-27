@@ -1,3 +1,5 @@
+﻿import { offlineDisplayAttributeValue } from "./offline-attribute-settings.js";
+
 export const S4_ECONOMY = Object.freeze({
   initialWalletBalance:100000,
   leagueMatchRewards:Object.freeze({ loss:1200, draw:1400, win:1600 }),
@@ -69,12 +71,12 @@ export function s4EffectiveOverall(player, levelValue) {
   return overall;
 }
 
-export function applyS4Enhancement(player, levelValue) {
+export function applyS4Enhancement(player, levelValue, options = {}) {
   const upgradeLevel = Math.max(0, Math.min(S4_ENHANCEMENT.maxLevel, Math.floor(Number(levelValue) || 0)));
   const upgradeBonus = s4EnhancementAbilityBonus(upgradeLevel);
   const attributes = Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [
     key,
-    Number.isFinite(value) ? Math.min(99, Number(value) + upgradeBonus) : value,
+    Number.isFinite(value) ? offlineDisplayAttributeValue(Number(value) + upgradeBonus, options.attributeSettings) : value,
   ]));
   return {
     ...player,

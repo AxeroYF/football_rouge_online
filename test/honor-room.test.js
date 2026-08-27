@@ -35,10 +35,10 @@ test("每日完赛快照合并联赛杯赛且按赛季ID幂等更新荣誉室", 
   team.table.goalsFor = 30;
   service.state.season.status = "completed";
   service.state.season.completedAt = NOW - 60_000;
-  service.state.playerStats[`${team.id}:legend-messi`] = { playerId:"legend-messi", playerName:"梅西", teamId:team.id, teamName:team.name, appearances:18, goals:12, assists:7, ratingTotal:129.6 };
+  service.state.playerStats[`${team.id}:legend-messi`] = { playerId:"legend-messi", playerName:"梅西", teamId:team.id, teamName:team.name, appearances:18, goals:12, assists:7, redCards:1, ratingTotal:129.6 };
   service.state.cup.status = "completed";
   service.state.cup.championId = team.id;
-  service.state.cup.playerStats[`${team.id}:legend-messi`] = { playerId:"legend-messi", playerName:"梅西", teamId:team.id, teamName:team.name, appearances:6, goals:5, assists:3, ratingTotal:45.6 };
+  service.state.cup.playerStats[`${team.id}:legend-messi`] = { playerId:"legend-messi", playerName:"梅西", teamId:team.id, teamName:team.name, appearances:6, goals:5, assists:3, redCards:2, ratingTotal:45.6 };
   service.state.ballonDor.results.push({ seasonId:service.state.season.id, status:"completed", winner:{ ownerId:account.id, playerId:"legend-messi", playerName:"梅西" } });
 
   const completedSeasonId = service.state.season.id;
@@ -47,21 +47,65 @@ test("每日完赛快照合并联赛杯赛且按赛季ID幂等更新荣誉室", 
   assert.deepEqual(honorRoom.honors.league, ["S14"]);
   assert.deepEqual(honorRoom.honors.cup, ["S14"]);
   assert.deepEqual([honorRoom.scorer.appearances, honorRoom.scorer.goals, honorRoom.scorer.assists], [24,17,10]);
+  assert.equal(honorRoom.assister.player.id, "legend-messi");
+  assert.deepEqual([honorRoom.redCardLeader.player.id, honorRoom.redCardLeader.redCards], ["legend-messi", 3]);
   assert.equal(honorRoom.ballonDor.season, "S14");
   assert.equal(service.state.honorRoom.processedSeasonIds.filter((id) => id === completedSeasonId).length, 1);
   assert.equal(service.updateHonorRoomForCompletedSeason(), false);
 });
 
-test("正式导航包含荣誉室且奖杯铭牌仅显示放大的赛季", () => {
+test("荣誉室展示助攻王、红牌王和全部金球奖得主", () => {
+  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
+  const account = { id:"honor-multiple-ballon-owner", nickname:"Multiple Winners" };
+  const team = ownTeam(service, account.id, account.nickname, "Multiple Winners FC");
+  const club = service.ensureHonorRoomClub(team);
+  club.players = {
+    "legend-messi":{ playerId:"legend-messi", playerName:"梅西", appearances:80, goals:50, assists:60, redCards:1, ratingTotal:600 },
+    "legend-cristiano-ronaldo":{ playerId:"legend-cristiano-ronaldo", playerName:"C罗", appearances:90, goals:70, assists:20, redCards:4, ratingTotal:675 },
+    "legend-pele":{ playerId:"legend-pele", playerName:"贝利", appearances:75, goals:60, assists:35, redCards:2, ratingTotal:555 },
+    "legend-maradona":{ playerId:"legend-maradona", playerName:"马拉多纳", appearances:70, goals:40, assists:50, redCards:3, ratingTotal:532 },
+  };
+  club.ballonDor = [
+    { season:"S1", seasonId:"season-1", playerId:"legend-messi", playerName:"梅西" },
+    { season:"S2", seasonId:"season-2", playerId:"legend-cristiano-ronaldo", playerName:"C罗" },
+    { season:"S3", seasonId:"season-3", playerId:"legend-messi", playerName:"梅西" },
+  ];
+
+  const honorRoom = service.honorRoomView(account);
+  assert.equal(honorRoom.scorer.player.id, "legend-cristiano-ronaldo");
+  assert.equal(honorRoom.assister.player.id, "legend-messi");
+  assert.deepEqual([honorRoom.redCardLeader.player.id, honorRoom.redCardLeader.redCards], ["legend-cristiano-ronaldo", 4]);
+  assert.deepEqual(honorRoom.scorers.map((record) => record.player.id), ["legend-cristiano-ronaldo", "legend-pele", "legend-messi"]);
+  assert.deepEqual(honorRoom.assisters.map((record) => record.player.id), ["legend-messi", "legend-maradona", "legend-pele"]);
+  assert.deepEqual(honorRoom.redCardLeaders.map((record) => record.player.id), ["legend-cristiano-ronaldo", "legend-maradona", "legend-pele"]);
+  assert.deepEqual(honorRoom.ballonDorWinners.map((winner) => [winner.playerId, winner.awardCount, winner.seasons]), [
+    ["legend-messi", 2, ["S1", "S3"]],
+    ["legend-cristiano-ronaldo", 1, ["S2"]],
+  ]);
+  assert.equal(honorRoom.ballonDor.playerId, "legend-messi");
+});
+
+test("荣誉室位于俱乐部子页且奖杯铭牌仅显示放大的赛季", () => {
   const app = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const index = readFileSync(new URL("../versus/public/index.html", import.meta.url), "utf8");
   const demo = readFileSync(new URL("../versus/public/honor-room-demo.html", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/honor-room.css", import.meta.url), "utf8");
-  assert.match(app, /data-league-tab="honorRoom">荣誉室/);
+  assert.match(app, /data-league-tab="club">俱乐部/);
+  assert.match(app, /data-club-page="honorRoom">荣誉室/);
+  assert.doesNotMatch(app, /data-league-tab="honorRoom">荣誉室/);
   assert.match(index, /\/versus\/honor-room\.css/);
   assert.doesNotMatch(`${app}\n${demo}`, /每一座奖杯对应一次冠军|俱乐部正式比赛出场纪录前三名/);
   assert.doesNotMatch(app, /<figcaption><b>\$\{escapeHtml\(season\)\}<\/b><small>/);
   assert.match(styles, /\.honor-trophy figcaption b \{[^}]*font:700 18px/);
+  assert.match(app, /<h2>队史射手榜<\/h2>/);
+  assert.match(app, /<h2>队史助攻榜<\/h2>/);
+  assert.match(app, /<h2>队史红牌榜<\/h2>/);
+  assert.doesNotMatch(app, /队史(?:射手|助攻|红牌)榜前三名/);
+  assert.match(app, /honorMetricPodium/);
+  assert.doesNotMatch(app, /record-feature-grid club-record-grid/);
+  assert.match(app, /ballonDorWinners/);
+  assert.match(app, /winner\.seasons\.join/);
+  assert.match(styles, /\.ballon-winners-grid/);
 });
 
 test("荣誉室按每日版本按需加载并延迟高清资源解码", () => {

@@ -4,6 +4,7 @@ import { inferElevenBoardRoles } from "../public/formation-rules.js";
 import { buildV21DynamicShapeSnapshot } from "./dynamic-shape-v2.js";
 import { resolveV2MatchParameters, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
 import { v2DutyMovement, v2DutySpatialMultipliers } from "./player-duties-v2.js";
+import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const round = (value, digits = 4) => Number(Number(value).toFixed(digits));
@@ -115,6 +116,73 @@ function influenceAt(profile, zone, parameters) {
   return influence >= parameters.spatial.minimumInfluence ? influence : 0;
 }
 
+function effectiveOccupancy(occupancy, parameters) {
+  const config = parameters.spatial.occupancyDiminishing ?? {};
+  const softCap = Math.max(0.01, Number(config.softCap ?? 0.72));
+  const excessMultiplier = clamp(Number(config.excessMultiplier ?? 0.38), 0, 1);
+  const value = Math.max(0, Number(occupancy) || 0);
+  return value <= softCap ? value : softCap + (value - softCap) * excessMultiplier;
+}
+
+function styleKey(team) {
+  return team.splitTacticsExplicit ? team.possessionStyle : team.style;
+}
+
+function averageMetric(players, metric, fallback = 55) {
+  return players.length ? players.reduce((sum, player) => sum + Number(player.metrics?.[metric] ?? fallback), 0) / players.length : fallback;
+}
+
+function styleFitMultiplier(score, parameters) {
+  const config = parameters.tactics?.styleIdentity ?? {};
+  const normalized = clamp((score - 55) / 40, 0, 1);
+  return clamp(Number(config.minimumFit ?? 0.82) + (Number(config.maximumFit ?? 1.18) - Number(config.minimumFit ?? 0.82)) * normalized, Number(config.minimumFit ?? 0.82), Number(config.maximumFit ?? 1.18));
+}
+
+export function v2StyleIdentityProfile(team, players, parameters = V2_MATCH_PARAMETERS) {
+  const style = styleKey(team);
+  const byRole = (roles) => players.filter((player) => roles.includes(player.assignedRole));
+  const wide = byRole(["LW", "RW", "LM", "RM", "LB", "RB", "LWB", "RWB"]);
+  const wingAttackers = byRole(["LW", "RW", "LM", "RM"]);
+  const wingbacks = byRole(["LB", "RB", "LWB", "RWB"]);
+  const rear = byRole(["CB", "LB", "RB", "LWB", "RWB", "DM", "CM"]);
+  const midfieldBack = byRole(["CB", "LB", "RB", "LWB", "RWB", "DM", "CM", "AM"]);
+  const attackers = byRole(["ST", "LW", "RW", "LM", "RM", "AM"]);
+  const defensiveUnit = byRole(["CB", "LB", "RB", "LWB", "RWB", "DM", "CM"]);
+  const goalkeeper = byRole(["GK"]);
+  const score = style === "wingPlay"
+    ? averageMetric(wingAttackers, "chanceCreation") * 0.42 + averageMetric(wingAttackers, "movement") * 0.2 + averageMetric(wingbacks, "chanceCreation") * 0.25 + averageMetric(wide, "progression") * 0.13
+    : style === "possession"
+      ? averageMetric(midfieldBack, "buildUp") * 0.48 + averageMetric(midfieldBack, "pressResistance") * 0.27 + averageMetric(defensiveUnit, "defensiveDuel") * 0.25
+      : style === "longBall"
+        ? averageMetric(rear, "buildUp") * 0.42 + averageMetric(attackers, "aerialFinishing") * 0.46 + averageMetric(attackers, "movement") * 0.12
+        : style === "roughPlay"
+          ? averageMetric(defensiveUnit, "defensiveDuel") * 0.56 + averageMetric(defensiveUnit, "pressing") * 0.44
+          : style === "counterAttack"
+            ? averageMetric(rear, "defensiveDuel") * 0.28 + averageMetric(rear, "buildUp") * 0.25 + averageMetric(attackers, "movement") * 0.2 + averageMetric(attackers, "pressResistance") * 0.15 + averageMetric(attackers, "finishing") * 0.12
+            : style === "highPress"
+              ? averageMetric(attackers, "pressing") * 0.42 + averageMetric(defensiveUnit, "pressing") * 0.25 + averageMetric(defensiveUnit, "shotPrevention") * 0.18 + averageMetric(defensiveUnit, "defensiveDuel") * 0.15
+              : style === "lowBlock"
+                ? averageMetric(defensiveUnit, "shotPrevention") * 0.44 + averageMetric(defensiveUnit, "defensiveDuel") * 0.3 + averageMetric(goalkeeper, "goalkeeping") * 0.14 + averageMetric(attackers, "pressResistance") * 0.12
+          : 70;
+  const fit = styleFitMultiplier(score, parameters);
+  const config = parameters.tactics?.styleIdentity?.[style] ?? {};
+  return Object.freeze({
+    style,
+    score:round(score),
+    fit:round(fit),
+    attackMultiplier:round(style === "wingPlay" ? 1 + (fit - 1) * Number(config.attackMaximum ?? 0) / 0.18 : 1),
+    crossingMultiplier:round(style === "wingPlay" ? 1 + (fit - 1) * Number(config.crossingMaximum ?? 0) / 0.18 : 1),
+    controlMultiplier:round(style === "possession" ? 1 + (fit - 1) * Number(config.controlMaximum ?? 0) / 0.18 : 1),
+    progressionMultiplier:round(style === "longBall" ? 1 + (fit - 1) * Number(config.progressionMaximum ?? 0) / 0.18 : 1),
+    headerXgMultiplier:round(style === "longBall" ? 1 + (fit - 1) * Number(config.headerXgMaximum ?? 0) / 0.18 : 1),
+    defenseMultiplier:round(["possession", "roughPlay", "lowBlock"].includes(style) ? 1 + (fit - 1) * Number(config.defenseMaximum ?? 0) / 0.18 : 1),
+    pressureMultiplier:round(["roughPlay", "highPress"].includes(style) ? 1 + (fit - 1) * Number(config.pressureMaximum ?? 0) / 0.18 : 1),
+    transitionMultiplier:round(style === "counterAttack" ? 1 + (fit - 1) * Number(config.transitionMaximum ?? 0) / 0.18 : 1),
+    outletMultiplier:round(["counterAttack", "lowBlock"].includes(style) ? 1 + (fit - 1) * Number(config.outletMaximum ?? 0) / 0.18 : 1),
+    recoveryMultiplier:round(style === "highPress" ? 1 + (fit - 1) * Number(config.recoveryMaximum ?? 0) / 0.18 : 1),
+  });
+}
+
 function influenceValues(profile) {
   const group = profile.group;
   const role = profile.assignedRole;
@@ -149,6 +217,54 @@ function normalizedRisk(value, safeValue, maximumValue) {
   return clamp((Number(value) - Number(safeValue)) / Math.max(1, Number(maximumValue) - Number(safeValue)), 0, 1);
 }
 
+export function v2MidfieldStructureProfile(players = [], parameters = V2_MATCH_PARAMETERS) {
+  const config = parameters.spatial?.midfieldStructure ?? {};
+  const outfield = players.filter((player) => player.group !== "GK");
+  const minimumY = Number(config.bandMinimumY ?? 32);
+  const maximumY = Number(config.bandMaximumY ?? 60);
+  const midfielders = outfield.filter((player) => {
+    const y = Number(player.localPosition?.y ?? 50);
+    return y >= minimumY && y <= maximumY;
+  });
+  const centralMidfielders = midfielders.filter((player) => {
+    const x = Number(player.localPosition?.x ?? 50);
+    return x >= Number(config.centralMinimumX ?? 20) && x <= Number(config.centralMaximumX ?? 80);
+  });
+  const sortedY = outfield.map((player) => Number(player.localPosition?.y ?? 50)).sort((left, right) => left - right);
+  const maximumVerticalGap = sortedY.slice(1).reduce((maximum, value, index) => Math.max(maximum, value - sortedY[index]), 0);
+  const minimumPlayers = Math.max(1, Number(config.minimumPlayers ?? 3));
+  const countRisk = clamp((minimumPlayers - midfielders.length) / minimumPlayers, 0, 1);
+  const verticalGapRisk = normalizedRisk(maximumVerticalGap, Number(config.safeMaximumGap ?? 29), Number(config.criticalMaximumGap ?? 52));
+  const centralVacancyRisk = centralMidfielders.length ? 0 : 1;
+  const integrity = clamp(
+    1
+      - countRisk * Number(config.countRiskWeight ?? 0.58)
+      - verticalGapRisk * Number(config.gapRiskWeight ?? 0.34)
+      - centralVacancyRisk * Number(config.centralVacancyWeight ?? 0.2),
+    Number(config.minimumIntegrity ?? 0.08),
+    1,
+  );
+  const longShotExposure = clamp(
+    countRisk * Number(config.longShotCountRiskWeight ?? 0.5)
+      + verticalGapRisk * Number(config.longShotGapRiskWeight ?? 0.35)
+      + centralVacancyRisk * Number(config.longShotCentralVacancyWeight ?? 0.25),
+    0,
+    1,
+  );
+  return Object.freeze({
+    integrity:round(integrity),
+    longShotExposure:round(longShotExposure),
+    breakdown:Object.freeze({
+      midfieldPlayerCount:midfielders.length,
+      centralMidfieldPlayerCount:centralMidfielders.length,
+      maximumVerticalGap:round(maximumVerticalGap),
+      countRisk:round(countRisk),
+      verticalGapRisk:round(verticalGapRisk),
+      centralVacancyRisk,
+    }),
+  });
+}
+
 function backlineExposureProfile(players, dimensions, parameters) {
   const config = parameters.spatial.backlineExposure;
   const counts = players.reduce((result, player) => {
@@ -156,11 +272,19 @@ function backlineExposureProfile(players, dimensions, parameters) {
     return result;
   }, { GK:0, DEF:0, MID:0, ATT:0 });
   const defenderDeficit = Math.max(0, Number(config.minimumDefenders) - counts.DEF) / Math.max(1, Number(config.minimumDefenders));
+  const severeDefenderDeficit = defenderDeficit > 0
+    ? Math.pow(defenderDeficit, Number(config.severeDefenderDeficitExponent ?? 0.58))
+    : 0;
   const midfielderDeficit = Math.max(0, Number(config.minimumMidfielders) - counts.MID) / Math.max(1, Number(config.minimumMidfielders));
   const attackerExcess = Math.max(0, counts.ATT - Number(config.maximumAttackers)) / Math.max(1, Number(config.maximumAttackers));
   const advancedMidfielderCount = players.filter((player) => player.assignedRole === "AM").length;
   const advancedMidfielderExcess = Math.max(0, advancedMidfielderCount - 1) / 2;
   const threeBackAdvancedMidfieldRisk = counts.DEF === 3 ? advancedMidfielderExcess : 0;
+  // A midfield screen can supplement a back line, but cannot replace it.
+  // Three defenders are the minimum stable rest-defense unit.
+  const underThreeDefenderFailure = counts.DEF < Number(config.minimumDefenders)
+    ? clamp((Number(config.minimumDefenders) - counts.DEF) / Math.max(1, Number(config.minimumDefenders)), 0, 1)
+    : 0;
   const averageY = (group) => {
     const groupPlayers = players.filter((player) => player.group === group);
     return groupPlayers.length ? groupPlayers.reduce((sum, player) => sum + Number(player.localPosition?.y ?? 50), 0) / groupPlayers.length : null;
@@ -171,7 +295,8 @@ function backlineExposureProfile(players, dimensions, parameters) {
   const attackerY = averageY("ATT");
   const structuralRisk = defenderDeficit * Number(config.defenderDeficitWeight)
       + midfielderDeficit * Number(config.midfielderDeficitWeight)
-      + attackerExcess * Number(config.attackerExcessWeight);
+      + attackerExcess * Number(config.attackerExcessWeight)
+      + severeDefenderDeficit * Number(config.severeDefenderDeficitWeight ?? 0);
   const highLineRisk = defenderY == null
     ? 0
     : normalizedRisk(Number(config.highLineSafeY) - defenderY, 0, Number(config.highLineSafeY) - Number(config.highLineMaximumRiskY));
@@ -200,17 +325,34 @@ function backlineExposureProfile(players, dimensions, parameters) {
     exposure,
     breakdown:{
       structuralRisk:round(structuralRisk),
+      defenderDeficit:round(defenderDeficit),
+      severeDefenderDeficit:round(severeDefenderDeficit),
       highLineRisk:round(highLineRisk),
       verticalGapRisk:round(verticalGapRisk),
       goalkeeperGapRisk:round(goalkeeperGapRisk),
       pressingCommitmentRisk:round(pressingCommitmentRisk),
       advancedMidfielderExcess:round(advancedMidfielderExcess),
       threeBackAdvancedMidfieldRisk:round(threeBackAdvancedMidfieldRisk),
+      underThreeDefenderFailure:round(underThreeDefenderFailure),
+      defenderCount:counts.DEF,
       defenderAverageY:defenderY == null ? null : round(defenderY),
       maximumVerticalGap:round(maximumVerticalGap),
       goalkeeperGap:round(goalkeeperGap),
     },
   };
+}
+
+export function v2DoublePivot451Profile(players = []) {
+  const counts = players.reduce((result, player) => {
+    const role = player.assignedRole ?? player.role;
+    result[role] = Number(result[role] ?? 0) + 1;
+    return result;
+  }, {});
+  const expected = { GK:1, LB:1, CB:2, RB:1, DM:2, LM:1, AM:1, RM:1, ST:1 };
+  const active = players.length === 11
+    && Object.entries(expected).every(([role, count]) => counts[role] === count)
+    && Object.keys(counts).every((role) => Object.hasOwn(expected, role));
+  return Object.freeze({ active, counts:Object.freeze({ ...counts }) });
 }
 
 function projectTeam(team, teamIndex, zones, parameters, options = {}) {
@@ -230,6 +372,7 @@ function projectTeam(team, teamIndex, zones, parameters, options = {}) {
   const roleBalance = parameters.spatial.roleBalance ?? {};
   const advancedMidfielderCount = basePlayers.filter((player) => player.assignedRole === "AM").length;
   const strikerCount = basePlayers.filter((player) => player.assignedRole === "ST").length;
+  const doublePivot451 = v2DoublePivot451Profile(basePlayers);
   const advancedMidfielderMultiplier = Math.max(
     Number(roleBalance.advancedMidfielderMinimumMultiplier ?? 1),
     1 - Math.max(0, advancedMidfielderCount - 1) * Number(roleBalance.advancedMidfielderPenaltyPerExtra ?? 0),
@@ -252,18 +395,31 @@ function projectTeam(team, teamIndex, zones, parameters, options = {}) {
       formationInfluence.attack = Number(roleBalance.wideMidfielderAttackMultiplier ?? 1);
       formationInfluence.support = Number(roleBalance.wideMidfielderSupportMultiplier ?? 1);
     }
+    if (doublePivot451.active && player.assignedRole === "DM") {
+      formationInfluence.control = Number(formationInfluence.control ?? 1) * Number(roleBalance.doublePivot451PivotControlMultiplier ?? 1);
+      formationInfluence.defense = Number(formationInfluence.defense ?? 1) * Number(roleBalance.doublePivot451PivotDefenseMultiplier ?? 1);
+    }
+    if (doublePivot451.active && ["LM", "AM", "RM", "ST"].includes(player.assignedRole)) {
+      formationInfluence.control = Number(formationInfluence.control ?? 1) * Number(roleBalance.doublePivot451AttackUnitControlMultiplier ?? 1);
+      formationInfluence.attack = Number(formationInfluence.attack ?? 1) * Number(roleBalance.doublePivot451AttackUnitAttackMultiplier ?? 1);
+      formationInfluence.support = Number(formationInfluence.support ?? 1) * Number(roleBalance.doublePivot451AttackUnitSupportMultiplier ?? 1);
+    }
     return Object.keys(formationInfluence).length ? { ...player, formationInfluence } : player;
   });
   const exposureProfile = backlineExposureProfile(players, dimensions, parameters);
+  const midfieldProfile = v2MidfieldStructureProfile(players, parameters);
+  const attackingCommitment = v2AttackingCommitmentProfile(dimensions, parameters);
+  const styleIdentity = v2StyleIdentityProfile(team, players, parameters);
   const zoneValues = Object.fromEntries(zones.map((zone) => {
     const contributions = players.map((player) => {
       const influence = influenceAt(player, zone, parameters);
       const values = influenceValues(player);
       return { player, influence, values };
     }).filter((entry) => entry.influence > 0);
-    const totals = { occupancy:0, control:0, attack:0, defense:0, pressure:0, pressResistance:0, support:0 };
+    const totals = { occupancy:0, defensiveCoverage:0, control:0, attack:0, defense:0, pressure:0, pressResistance:0, support:0 };
     contributions.forEach(({ influence, values }) => {
       totals.occupancy += influence;
+      totals.defensiveCoverage += influence * (values.defense / 100) * (values.pressure / 100) * (values.support / 100);
       for (const key of ["control", "attack", "defense", "pressure", "pressResistance", "support"]) totals[key] += values[key] * influence;
     });
     return [zone.id, {
@@ -271,7 +427,27 @@ function projectTeam(team, teamIndex, zones, parameters, options = {}) {
       contributors:contributions.sort((left, right) => right.influence - left.influence).slice(0, 4).map(({ player, influence }) => ({ id:player.id, role:player.assignedRole, influence:round(influence) })),
     }];
   }));
-  return { teamIndex, name:team.name, tactic:team.tactic ?? "balanced", style:team.style ?? "possession", inPossessionDetails:team.inPossessionDetails ?? null, outOfPossessionDetails:team.outOfPossessionDetails ?? null, v2Snapshot:team.v2Snapshot ?? null, dimensions, players, zones:zoneValues, backlineExposure:exposureProfile.exposure, backlineExposureBreakdown:exposureProfile.breakdown };
+  return {
+    teamIndex,
+    name:team.name,
+    tactic:team.tactic ?? "balanced",
+    style:team.style ?? "possession",
+    inPossessionDetails:team.inPossessionDetails ?? null,
+    outOfPossessionDetails:team.outOfPossessionDetails ?? null,
+    v2Snapshot:team.v2Snapshot ?? null,
+    dimensions,
+    players,
+    zones:zoneValues,
+    backlineExposure:exposureProfile.exposure,
+    backlineExposureBreakdown:exposureProfile.breakdown,
+    underThreeDefenderFailure:exposureProfile.breakdown.underThreeDefenderFailure,
+    midfieldIntegrity:midfieldProfile.integrity,
+    midfieldStructureBreakdown:midfieldProfile.breakdown,
+    longShotExposure:midfieldProfile.longShotExposure,
+    attackingCommitment:attackingCommitment.commitment,
+    deepDefensiveSeverity:attackingCommitment.deepDefensiveSeverity,
+    styleIdentity,
+  };
 }
 
 function zoneForWorldPosition(position, zones) {
@@ -330,14 +506,27 @@ function teamZoneView(teamProjection, opponentProjection, teamIndex, zones, para
     const localZone = perspectiveZone(worldZone, teamIndex, zones);
     const own = teamProjection.zones[worldZone.id];
     const opponent = opponentProjection.zones[worldZone.id];
-    const ownControl = own.control + own.support * 0.24 + own.occupancy * 12;
-    const opponentControl = opponent.control + opponent.pressure * 0.22 + opponent.occupancy * 12;
+    const ownOccupancy = effectiveOccupancy(own.occupancy, parameters);
+    const opponentOccupancy = effectiveOccupancy(opponent.occupancy, parameters);
+    const ownStyle = teamProjection.styleIdentity ?? {};
+    const ownControl = (own.control + own.support * 0.24 + ownOccupancy * 12) * Number(ownStyle.controlMultiplier ?? 1);
+    const opponentControl = opponent.control + opponent.pressure * Number(opponentProjection.styleIdentity?.pressureMultiplier ?? 1) * 0.22 + opponentOccupancy * 12;
     const temperature = parameters.spatial.controlTemperature;
     const controlShare = 1 / (1 + Math.exp(-(ownControl - opponentControl) / temperature));
-    const numericalAdvantage = clamp(own.occupancy - opponent.occupancy, -parameters.spatial.maximumLocalAdvantage, parameters.spatial.maximumLocalAdvantage);
-    const attackingValue = own.attack * 0.4 + own.control * 0.25 + own.support * 0.2 + Math.max(0, numericalAdvantage) * 10;
+    const numericalAdvantage = clamp(ownOccupancy - opponentOccupancy, -parameters.spatial.maximumLocalAdvantage, parameters.spatial.maximumLocalAdvantage);
+    const laneCoverageConfig = parameters.spatial.laneCoverage ?? {};
+    const requiresFlankCoverage = ["farLeft", "farRight"].includes(localZone.lane) && ["finalThird", "box"].includes(localZone.band);
+    const coverageMinimum = Number(requiresFlankCoverage
+      ? laneCoverageConfig.flankMinimumDefensiveCoverage
+      : laneCoverageConfig.minimumDefensiveCoverage ?? 0.48);
+    const localCoverageDeficit = clamp((coverageMinimum - Number(opponent.defensiveCoverage ?? 0)) / Math.max(0.01, coverageMinimum), 0, 1);
+    const defenderDeficit = Number(opponentProjection.backlineExposureBreakdown?.severeDefenderDeficit ?? 0);
+    const coverageDeficit = clamp(localCoverageDeficit + defenderDeficit * Number(exposureConfig.zoneCoverageDeficitWeight ?? 0.55), 0, 1);
+    const attackingValue = (own.attack * 0.4 + own.control * 0.25 + own.support * 0.2 + Math.max(0, numericalAdvantage) * 10) * Number(ownStyle.attackMultiplier ?? 1);
     const resistance = (opponent.defense * 0.48 + opponent.pressure * 0.32 + opponent.support * 0.2)
-      * (1 - exposure * Number(exposureConfig.resistancePenaltyMaximum));
+      * Number(opponentProjection.styleIdentity?.defenseMultiplier ?? 1)
+      * (1 - exposure * Number(exposureConfig.resistancePenaltyMaximum))
+      * (1 - coverageDeficit * Number(laneCoverageConfig.deficitResistancePenaltyMaximum ?? 0));
     view[localZone.id] = {
       zone:localZone.id,
       lane:localZone.lane,
@@ -347,9 +536,10 @@ function teamZoneView(teamProjection, opponentProjection, teamIndex, zones, para
       opponent,
       controlShare:round(controlShare),
       numericalAdvantage:round(numericalAdvantage),
+      coverageDeficit:round(coverageDeficit),
       overload:numericalAdvantage >= parameters.spatial.overloadPlayerAdvantage,
       pressureDelta:round(own.pressure - opponent.pressResistance),
-      exploitableSpace:round(clamp(1 - opponent.occupancy / 1.6 + exposure * Number(exposureConfig.spaceBonusMaximum), 0, 1)),
+      exploitableSpace:round(clamp(1 - opponentOccupancy / 1.6 + exposure * Number(exposureConfig.spaceBonusMaximum) + coverageDeficit * Number(laneCoverageConfig.deficitSpaceBonusMaximum ?? 0), 0, 1)),
       progressionEdge:round(clamp((attackingValue - resistance) / 100, -1, 1)),
     };
   }
@@ -372,9 +562,17 @@ function summarizeTeam(teamProjection, zoneView, connections, parameters) {
     inPossessionDetails:teamProjection.inPossessionDetails,
     outOfPossessionDetails:teamProjection.outOfPossessionDetails,
     v2Snapshot:teamProjection.v2Snapshot,
+    players:teamProjection.players,
     tacticalDimensions:teamProjection.dimensions,
     backlineExposure:teamProjection.backlineExposure,
     backlineExposureBreakdown:teamProjection.backlineExposureBreakdown,
+    underThreeDefenderFailure:teamProjection.underThreeDefenderFailure,
+    midfieldIntegrity:teamProjection.midfieldIntegrity,
+    midfieldStructureBreakdown:teamProjection.midfieldStructureBreakdown,
+    longShotExposure:teamProjection.longShotExposure,
+    attackingCommitment:teamProjection.attackingCommitment,
+    deepDefensiveSeverity:teamProjection.deepDefensiveSeverity,
+    styleIdentity:teamProjection.styleIdentity,
     controlledZoneCount:controlled.length,
     overloadZoneCount:entries.filter((entry) => entry.overload).length,
     centralControl:round(weightedAverage(center.map((entry) => entry.controlShare))),
@@ -444,7 +642,7 @@ function resolveStageParameters(options) {
 function buildV2StageContexts(teams, parameters) {
   return teams.map((team) => {
     const positions = team.positions ?? {};
-    const roles = inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:positions[player.id] })), team.formationLines);
+    const roles = team.structureRoles ?? inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:positions[player.id] })), team.formationLines);
     const dimensions = resolveV2TacticalDimensions(team.tactic, team.style, team.tacticalDimensions, parameters);
     return { roles, dimensions };
   });
