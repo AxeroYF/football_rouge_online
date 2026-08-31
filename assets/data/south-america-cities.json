@@ -1,0 +1,10 @@
+[
+  {"id":"brasilia","name":"巴西利亚","country":"巴西","lat":-15.7939,"lng":-47.8828,"tier":1,"region":"south-america"},
+  {"id":"sao-paulo","name":"圣保罗","country":"巴西","lat":-23.5505,"lng":-46.6333,"tier":1,"region":"south-america"},
+  {"id":"rio-de-janeiro","name":"里约热内卢","country":"巴西","lat":-22.9068,"lng":-43.1729,"tier":1,"region":"south-america"},
+  {"id":"belo-horizonte","name":"贝洛奥里藏特","country":"巴西","lat":-19.9167,"lng":-43.9345,"tier":2,"region":"south-america"},
+  {"id":"porto-alegre","name":"阿雷格里港","country":"巴西","lat":-30.0346,"lng":-51.2177,"tier":2,"region":"south-america"},
+  {"id":"buenos-aires","name":"布宜诺斯艾利斯","country":"阿根廷","lat":-34.6037,"lng":-58.3816,"tier":1,"region":"south-america"},
+  {"id":"cordoba-ar","name":"科尔多瓦","country":"阿根廷","lat":-31.4201,"lng":-64.1888,"tier":2,"region":"south-america"},
+  {"id":"rosario","name":"罗萨里奥","country":"阿根廷","lat":-32.9442,"lng":-60.6505,"tier":2,"region":"south-america"}
+]

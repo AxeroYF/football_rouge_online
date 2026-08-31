@@ -1,0 +1,3491 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-30T03:58:23.537Z",
+  "profiles": {
+    "legend-courtois": {
+      "profileKey": "Courtois",
+      "fileName": "Courtois.webp",
+      "x": 47.2,
+      "y": 52.8,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-167495": {
+      "profileKey": "Neuer",
+      "fileName": "Neuer.webp",
+      "x": 51.8,
+      "y": 46.4,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-gianluigi-buffon": {
+      "profileKey": "Buffon",
+      "fileName": "Buffon.webp",
+      "x": 63.4,
+      "y": 54,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-iker-casillas": {
+      "profileKey": "Casillas",
+      "fileName": "Casillas.webp",
+      "x": 60.3,
+      "y": 68.9,
+      "width": 136,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-oliver-kahn": {
+      "profileKey": "Kahn",
+      "fileName": "Kahn.webp",
+      "x": 2.2,
+      "y": 52.3,
+      "width": 220,
+      "sourceGroup": "YDL"
+    },
+    "legend-beckenbauer": {
+      "profileKey": "Beckenbauer",
+      "fileName": "Beckenbauer.webp",
+      "x": 55.6,
+      "y": 60.5,
+      "width": 96,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-paolo-maldini": {
+      "profileKey": "Maldini",
+      "fileName": "Maldini.webp",
+      "x": 40.1,
+      "y": 53.7,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-franco-baresi": {
+      "profileKey": "Baresi",
+      "fileName": "Baresi.webp",
+      "x": 61.4,
+      "y": 55.7,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-alessandro-nesta": {
+      "profileKey": "Nesta",
+      "fileName": "Nesta.webp",
+      "x": 51.1,
+      "y": 54.5,
+      "width": 96,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-fabio-cannavaro": {
+      "profileKey": "Cannavaro",
+      "fileName": "Cannavaro.webp",
+      "x": 52.8,
+      "y": 59,
+      "width": 104,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-carles-puyol": {
+      "profileKey": "Puyol",
+      "fileName": "Puyol.webp",
+      "x": 100.7,
+      "y": 58.8,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-rio-ferdinand": {
+      "profileKey": "Ferdinand",
+      "fileName": "Ferdinand.webp",
+      "x": 45,
+      "y": 52,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-philipp-lahm": {
+      "profileKey": "Lahm",
+      "fileName": "Lahm.webp",
+      "x": 41,
+      "y": 83,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-cafu": {
+      "profileKey": "Cafu",
+      "fileName": "Cafu.webp",
+      "x": 48.9,
+      "y": 51.7,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-javier-zanetti": {
+      "profileKey": "Zanetti",
+      "fileName": "Zanetti.webp",
+      "x": 70.9,
+      "y": 55.4,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-marcelo": {
+      "profileKey": "Marcelo",
+      "fileName": "Marcelo.webp",
+      "x": 34.5,
+      "y": 49.5,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-roberto-carlos": {
+      "profileKey": "Roberto_Carlos",
+      "fileName": "Roberto_Carlos.webp",
+      "x": 59.3,
+      "y": 51.9,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "legend-zidane": {
+      "profileKey": "Zidane",
+      "fileName": "Zidane.webp",
+      "x": 44.3,
+      "y": 52.6,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "legend-ronaldinho": {
+      "profileKey": "Ronaldinho",
+      "fileName": "Ronaldinho.webp",
+      "x": 44.7,
+      "y": 55.4,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "legend-kroos": {
+      "profileKey": "Kroos",
+      "fileName": "Kroos.webp",
+      "x": 30.9,
+      "y": 50.9,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "legend-beckham": {
+      "profileKey": "Beckham",
+      "fileName": "Beckham.webp",
+      "x": 53.5,
+      "y": 55.1,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "legend-modric": {
+      "profileKey": "Modric",
+      "fileName": "Modric.webp",
+      "x": 54.6,
+      "y": 51.7,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-231866": {
+      "profileKey": "Rodri",
+      "fileName": "Rodri.webp",
+      "x": 56,
+      "y": 49.2,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-paul-scholes": {
+      "profileKey": "Scholes",
+      "fileName": "Scholes.webp",
+      "x": 51.4,
+      "y": 50.3,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-frank-lampard": {
+      "profileKey": "Lampard",
+      "fileName": "Lampard.webp",
+      "x": 37.2,
+      "y": 56.2,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-patrick-vieira": {
+      "profileKey": "Vieira",
+      "fileName": "Vieira.webp",
+      "x": 50,
+      "y": 54.8,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-claude-makelele": {
+      "profileKey": "Makélélé",
+      "fileName": "Makélélé.webp",
+      "x": 46.4,
+      "y": 50.5,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-yaya-toure": {
+      "profileKey": "Touré",
+      "fileName": "Touré.webp",
+      "x": 46.1,
+      "y": 57.7,
+      "width": 116,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-kaka": {
+      "profileKey": "Kaká",
+      "fileName": "Kaká.webp",
+      "x": 29.7,
+      "y": 54.6,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-luis-figo": {
+      "profileKey": "Figo",
+      "fileName": "Figo.webp",
+      "x": 14.2,
+      "y": 55.4,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-pavel-nedved": {
+      "profileKey": "Nedvěd",
+      "fileName": "Nedvěd.webp",
+      "x": 64.9,
+      "y": 55.4,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-clarence-seedorf": {
+      "profileKey": "Seedorf",
+      "fileName": "Seedorf.webp",
+      "x": 50,
+      "y": 54.5,
+      "width": 100,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-juan-roman-riquelme": {
+      "profileKey": "Riquelme",
+      "fileName": "Riquelme.webp",
+      "x": 52.5,
+      "y": 56.5,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-gennaro-gattuso": {
+      "profileKey": "Gattuso",
+      "fileName": "Gattuso.webp",
+      "x": 51.4,
+      "y": 55.1,
+      "width": 160,
+      "sourceGroup": "YDL"
+    },
+    "legend-pele": {
+      "profileKey": "Pelé",
+      "fileName": "Pelé.webp",
+      "x": 54.2,
+      "y": 51.1,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "legend-maradona": {
+      "profileKey": "Maradona",
+      "fileName": "Maradona.webp",
+      "x": 45,
+      "y": 52.3,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "legend-ronaldo-nazario": {
+      "profileKey": "Ronaldo_Nazário",
+      "fileName": "Ronaldo_Nazário.webp",
+      "x": 44.3,
+      "y": 57.4,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "legend-messi": {
+      "profileKey": "Messi",
+      "fileName": "Messi.webp",
+      "x": 52.5,
+      "y": 54,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "legend-messi-rat": {
+      "profileKey": "MessiRat",
+      "fileName": "MessiRat.webp",
+      "x": 57,
+      "y": 50.6,
+      "width": 76,
+      "sourceGroup": "YDL"
+    },
+    "legend-cristiano-ronaldo": {
+      "profileKey": "Cristiano_Ronaldo",
+      "fileName": "Cristiano_Ronaldo.webp",
+      "x": 58.1,
+      "y": 52.9,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "legend-mbappe": {
+      "profileKey": "Mbappé",
+      "fileName": "Mbappé.webp",
+      "x": 84.7,
+      "y": 50.9,
+      "width": 232,
+      "sourceGroup": "YDL"
+    },
+    "legend-haaland": {
+      "profileKey": "Haaland",
+      "fileName": "Haaland.webp",
+      "x": 51.7,
+      "y": 58.4,
+      "width": 112,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-165153": {
+      "profileKey": "Benzema",
+      "fileName": "Benzema.webp",
+      "x": 50,
+      "y": 58.7,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-thierry-henry": {
+      "profileKey": "Henry",
+      "fileName": "Henry.webp",
+      "x": 39.7,
+      "y": 48.4,
+      "width": 220,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-wayne-rooney": {
+      "profileKey": "Rooney",
+      "fileName": "Rooney.webp",
+      "x": 57.8,
+      "y": 56.5,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-didier-drogba": {
+      "profileKey": "Drogba",
+      "fileName": "Drogba.webp",
+      "x": 37.6,
+      "y": 50.9,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-samuel-eto-o": {
+      "profileKey": "Etoo",
+      "fileName": "Etoo.webp",
+      "x": 45.4,
+      "y": 54,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-andriy-shevchenko": {
+      "profileKey": "Shevchenko",
+      "fileName": "Shevchenko.webp",
+      "x": 75.9,
+      "y": 55.4,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-gabriel-batistuta": {
+      "profileKey": "Batistuta",
+      "fileName": "Batistuta.webp",
+      "x": 44.7,
+      "y": 53,
+      "width": 112,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-dennis-bergkamp": {
+      "profileKey": "Bergkamp",
+      "fileName": "Bergkamp.webp",
+      "x": 63.8,
+      "y": 52.1,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-eusebio": {
+      "profileKey": "Eusébio",
+      "fileName": "Eusébio.webp",
+      "x": 45,
+      "y": 54,
+      "width": 116,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-marco-van-basten": {
+      "profileKey": "Marco_van_Basten",
+      "fileName": "Marco_van_Basten.webp",
+      "x": 40.1,
+      "y": 64.2,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-johan-cruyff": {
+      "profileKey": "Cruyff",
+      "fileName": "Cruyff.webp",
+      "x": 48.9,
+      "y": 58.5,
+      "width": 108,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-george-best": {
+      "profileKey": "George_Best",
+      "fileName": "George_Best.webp",
+      "x": 56,
+      "y": 57.6,
+      "width": 124,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-romario": {
+      "profileKey": "Romário",
+      "fileName": "Romário.webp",
+      "x": 51.5,
+      "y": 56.2,
+      "width": 100,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-016": {
+      "profileKey": "Neymar Jr",
+      "fileName": "Neymar Jr.webp",
+      "x": 46.5,
+      "y": 53.1,
+      "width": 100,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-017": {
+      "profileKey": "Júlio César",
+      "fileName": "Júlio César.webp",
+      "x": 28.1,
+      "y": 63.6,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-022": {
+      "profileKey": "Marco Materazzi",
+      "fileName": "Marco Materazzi.webp",
+      "x": 69.1,
+      "y": 59.9,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-029": {
+      "profileKey": "Gerd Müller",
+      "fileName": "Gerd Müller.webp",
+      "x": 50.4,
+      "y": 70.6,
+      "width": 128,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-030": {
+      "profileKey": "Frank Rijkaard",
+      "fileName": "Frank Rijkaard.webp",
+      "x": 36.2,
+      "y": 59.9,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-031": {
+      "profileKey": "Ruud Gullit",
+      "fileName": "Ruud Gullit.webp",
+      "x": 47.2,
+      "y": 58.4,
+      "width": 108,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-040": {
+      "profileKey": "Rivaldo",
+      "fileName": "Rivaldo.webp",
+      "x": 53.9,
+      "y": 56.5,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-043": {
+      "profileKey": "Craig Goodwin",
+      "fileName": "Craig Goodwin.webp",
+      "x": 56.3,
+      "y": 39,
+      "width": 124,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-048": {
+      "profileKey": "Didi",
+      "fileName": "Didi.webp",
+      "x": 73.3,
+      "y": 52.9,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-231281": {
+      "profileKey": "Alexander-Arnold",
+      "fileName": "Alexander-Arnold.webp",
+      "x": 56.3,
+      "y": 53.2,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-212831": {
+      "profileKey": "Alisson",
+      "fileName": "Alisson.webp",
+      "x": 26.9,
+      "y": 71.7,
+      "width": 244,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-246191": {
+      "profileKey": "Alvarez",
+      "fileName": "Alvarez.webp",
+      "x": 50,
+      "y": 60.5,
+      "width": 240,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-224232": {
+      "profileKey": "Barella",
+      "fileName": "Barella.webp",
+      "x": 46.8,
+      "y": 90.1,
+      "width": 160,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-237383": {
+      "profileKey": "Bastoni",
+      "fileName": "Bastoni.webp",
+      "x": 36.2,
+      "y": 62.1,
+      "width": 220,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-252371": {
+      "profileKey": "Bellingham",
+      "fileName": "Bellingham.webp",
+      "x": 45.2,
+      "y": 84.5,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-239580": {
+      "profileKey": "Bremer",
+      "fileName": "Bremer.webp",
+      "x": 67.7,
+      "y": 85.7,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-212198": {
+      "profileKey": "Bruno_Fernandes",
+      "fileName": "Bruno_Fernandes.webp",
+      "x": 44.4,
+      "y": 71,
+      "width": 116,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-256079": {
+      "profileKey": "Caicedo",
+      "fileName": "Caicedo.webp",
+      "x": 59.3,
+      "y": 74.1,
+      "width": 156,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-258966": {
+      "profileKey": "Cambiaso",
+      "fileName": "Cambiaso.webp",
+      "x": 44.3,
+      "y": 63.8,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-210514": {
+      "profileKey": "Cancelo",
+      "fileName": "Cancelo.webp",
+      "x": 53.9,
+      "y": 57.7,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-204963": {
+      "profileKey": "Carvajal",
+      "fileName": "Carvajal.webp",
+      "x": 59.2,
+      "y": 61.9,
+      "width": 220,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-220901": {
+      "profileKey": "David_Raya",
+      "fileName": "David_Raya.webp",
+      "x": 47.5,
+      "y": 52.8,
+      "width": 100,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-192985": {
+      "profileKey": "De_Bruyne",
+      "fileName": "De_Bruyne.webp",
+      "x": 59.3,
+      "y": 64.8,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-228702": {
+      "profileKey": "de_Jong",
+      "fileName": "de_Jong.webp",
+      "x": 34,
+      "y": 55.4,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-231443": {
+      "profileKey": "Dembélé",
+      "fileName": "Dembélé.webp",
+      "x": 39.7,
+      "y": 59.1,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-226268": {
+      "profileKey": "Dimarco",
+      "fileName": "Dimarco.webp",
+      "x": 39,
+      "y": 56.6,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-230621": {
+      "profileKey": "Donnarumma",
+      "fileName": "Donnarumma.webp",
+      "x": 38.7,
+      "y": 45.1,
+      "width": 216,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-271421": {
+      "profileKey": "Doué",
+      "fileName": "Doué.webp",
+      "x": 43.6,
+      "y": 60.5,
+      "width": 128,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-211110": {
+      "profileKey": "Dybala",
+      "fileName": "Dybala.webp",
+      "x": 51.4,
+      "y": 56.5,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-237692": {
+      "profileKey": "Foden",
+      "fileName": "Foden.webp",
+      "x": 45,
+      "y": 57.4,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-232580": {
+      "profileKey": "Gabriel",
+      "fileName": "Gabriel.webp",
+      "x": 43.3,
+      "y": 57.4,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-steven-gerrard": {
+      "profileKey": "Gerrard",
+      "fileName": "Gerrard.webp",
+      "x": 45,
+      "y": 53.1,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-194765": {
+      "profileKey": "Griezmann",
+      "fileName": "Griezmann.webp",
+      "x": 55.3,
+      "y": 55.7,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-247851": {
+      "profileKey": "Guimarães",
+      "fileName": "Guimarães.webp",
+      "x": 24.5,
+      "y": 56.5,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-215441": {
+      "profileKey": "Guirassy",
+      "fileName": "Guirassy.webp",
+      "x": 61.7,
+      "y": 55.9,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-241651": {
+      "profileKey": "Gyökeres",
+      "fileName": "Gyökeres.webp",
+      "x": 62.1,
+      "y": 51.7,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-235212": {
+      "profileKey": "Hakimi",
+      "fileName": "Hakimi.webp",
+      "x": 41.9,
+      "y": 53.7,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-200104": {
+      "profileKey": "Heung_Min_Son",
+      "fileName": "Heung_Min_Son.webp",
+      "x": 44.7,
+      "y": 57.1,
+      "width": 148,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-zlatan-ibrahimovic": {
+      "profileKey": "Ibrahimović",
+      "fileName": "Ibrahimović.webp",
+      "x": 54.2,
+      "y": 54.8,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-andres-iniesta": {
+      "profileKey": "Iniesta",
+      "fileName": "Iniesta.webp",
+      "x": 23.4,
+      "y": 71.8,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-204525": {
+      "profileKey": "Iñigo_Martínez",
+      "fileName": "Iñigo_Martínez.webp",
+      "x": 53.9,
+      "y": 72.9,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-233731": {
+      "profileKey": "Isak",
+      "fileName": "Isak.webp",
+      "x": 69.1,
+      "y": 54.5,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-202126": {
+      "profileKey": "Kane",
+      "fileName": "Kane.webp",
+      "x": 51.1,
+      "y": 54.3,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-212622": {
+      "profileKey": "Kimmich",
+      "fileName": "Kimmich.webp",
+      "x": 51.1,
+      "y": 68.4,
+      "width": 228,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-235073": {
+      "profileKey": "Kobel",
+      "fileName": "Kobel.webp",
+      "x": 52.5,
+      "y": 56.2,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-237678": {
+      "profileKey": "Konaté",
+      "fileName": "Konaté.webp",
+      "x": 29.4,
+      "y": 54.8,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-241486": {
+      "profileKey": "Koundé",
+      "fileName": "Koundé.webp",
+      "x": 45.4,
+      "y": 57.9,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-247635": {
+      "profileKey": "Kvaratskhelia",
+      "fileName": "Kvaratskhelia.webp",
+      "x": 42.6,
+      "y": 54.3,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-231478": {
+      "profileKey": "Lautaro_Martínez",
+      "fileName": "Lautaro_Martínez.webp",
+      "x": 41.2,
+      "y": 49.7,
+      "width": 112,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-188545": {
+      "profileKey": "Lewandowski",
+      "fileName": "Lewandowski.webp",
+      "x": 47.6,
+      "y": 59.6,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-239837": {
+      "profileKey": "Mac_Allister",
+      "fileName": "Mac_Allister.webp",
+      "x": 66.3,
+      "y": 53.1,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-215698": {
+      "profileKey": "Maignan",
+      "fileName": "Maignan.webp",
+      "x": 45,
+      "y": 56.3,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-226161": {
+      "profileKey": "Marcos_Llorente",
+      "fileName": "Marcos_Llorente.webp",
+      "x": 51.1,
+      "y": 56.8,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-228093": {
+      "profileKey": "Marcus_Thuram",
+      "fileName": "Marcus_Thuram.webp",
+      "x": 45.8,
+      "y": 54,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-207865": {
+      "profileKey": "Marquinhos",
+      "fileName": "Marquinhos.webp",
+      "x": 45.7,
+      "y": 52.8,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-243014": {
+      "profileKey": "Mbeumo",
+      "fileName": "Mbeumo.webp",
+      "x": 28.8,
+      "y": 55.4,
+      "width": 216,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-256790": {
+      "profileKey": "Musiala",
+      "fileName": "Musiala.webp",
+      "x": 50.4,
+      "y": 48.6,
+      "width": 176,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-252145": {
+      "profileKey": "Nuno_Mendes",
+      "fileName": "Nuno_Mendes.webp",
+      "x": 50,
+      "y": 52,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-200389": {
+      "profileKey": "Oblak",
+      "fileName": "Oblak.webp",
+      "x": 74.1,
+      "y": 52,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-222665": {
+      "profileKey": "Ødegaard",
+      "fileName": "Ødegaard.webp",
+      "x": 49.3,
+      "y": 52,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-247827": {
+      "profileKey": "Olise",
+      "fileName": "Olise.webp",
+      "x": 39.3,
+      "y": 57.9,
+      "width": 136,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-232293": {
+      "profileKey": "Osimhen",
+      "fileName": "Osimhen.webp",
+      "x": 46.1,
+      "y": 54.3,
+      "width": 132,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-256196": {
+      "profileKey": "Pacho",
+      "fileName": "Pacho.webp",
+      "x": 53.5,
+      "y": 52.3,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-257534": {
+      "profileKey": "Palmer",
+      "fileName": "Palmer.webp",
+      "x": 51.4,
+      "y": 57.6,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-251854": {
+      "profileKey": "Pedri",
+      "fileName": "Pedri.webp",
+      "x": 56,
+      "y": 56,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-andrea-pirlo": {
+      "profileKey": "Pirlo",
+      "fileName": "Pirlo.webp",
+      "x": 47.9,
+      "y": 53.4,
+      "width": 104,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-227796": {
+      "profileKey": "Pulisic",
+      "fileName": "Pulisic.webp",
+      "x": 53.2,
+      "y": 70.3,
+      "width": 176,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-233419": {
+      "profileKey": "Raphinha",
+      "fileName": "Raphinha.webp",
+      "x": 56,
+      "y": 58.8,
+      "width": 176,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-234378": {
+      "profileKey": "Rice",
+      "fileName": "Rice.webp",
+      "x": 46.1,
+      "y": 50.3,
+      "width": 144,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-243812": {
+      "profileKey": "Rodrygo",
+      "fileName": "Rodrygo.webp",
+      "x": 69.2,
+      "y": 52.8,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-239818": {
+      "profileKey": "Rúben_Dias",
+      "fileName": "Rúben_Dias.webp",
+      "x": 50.4,
+      "y": 61.6,
+      "width": 128,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-205452": {
+      "profileKey": "Rüdiger",
+      "fileName": "Rüdiger.webp",
+      "x": 63.8,
+      "y": 52.3,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-246669": {
+      "profileKey": "Saka",
+      "fileName": "Saka.webp",
+      "x": 49,
+      "y": 57,
+      "width": 240,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-209331": {
+      "profileKey": "Salah",
+      "fileName": "Salah.webp",
+      "x": 45,
+      "y": 54.3,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-243715": {
+      "profileKey": "Saliba",
+      "fileName": "Saliba.webp",
+      "x": 46.5,
+      "y": 54,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-234236": {
+      "profileKey": "Schick",
+      "fileName": "Schick.webp",
+      "x": 41.1,
+      "y": 55.1,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-247819": {
+      "profileKey": "Schlotterbeck",
+      "fileName": "Schlotterbeck.webp",
+      "x": 45.7,
+      "y": 53.1,
+      "width": 236,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-177683": {
+      "profileKey": "Sommer",
+      "fileName": "Sommer.webp",
+      "x": 46.1,
+      "y": 49.5,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-213331": {
+      "profileKey": "Tah",
+      "fileName": "Tah.webp",
+      "x": 50.4,
+      "y": 49.1,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-192448": {
+      "profileKey": "ter_Stegen",
+      "fileName": "ter_Stegen.webp",
+      "x": 62.4,
+      "y": 53.4,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-john-terry": {
+      "profileKey": "Terry",
+      "fileName": "Terry.webp",
+      "x": 34.5,
+      "y": 53.5,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-232656": {
+      "profileKey": "Theo_Hernández",
+      "fileName": "Theo_Hernández.webp",
+      "x": 43.6,
+      "y": 49.2,
+      "width": 156,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-fernando-torres": {
+      "profileKey": "Torres",
+      "fileName": "Torres.webp",
+      "x": 49.3,
+      "y": 54.3,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-229558": {
+      "profileKey": "Upamecano",
+      "fileName": "Upamecano.webp",
+      "x": 42.9,
+      "y": 60.8,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-239053": {
+      "profileKey": "Valverde",
+      "fileName": "Valverde.webp",
+      "x": 52.5,
+      "y": 53.1,
+      "width": 116,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-203376": {
+      "profileKey": "van_Dijk",
+      "fileName": "van_Dijk.webp",
+      "x": 45.8,
+      "y": 56.8,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-nemanja-vidic": {
+      "profileKey": "Vidić",
+      "fileName": "Vidić.webp",
+      "x": 42.2,
+      "y": 50.3,
+      "width": 176,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-238794": {
+      "profileKey": "Vini_Jr",
+      "fileName": "Vini_Jr.webp",
+      "x": 48.2,
+      "y": 78.2,
+      "width": 296,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-255253": {
+      "profileKey": "Vitinha",
+      "fileName": "Vitinha.webp",
+      "x": 42.8,
+      "y": 41.6,
+      "width": 144,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-221697": {
+      "profileKey": "Watkins",
+      "fileName": "Watkins.webp",
+      "x": 45,
+      "y": 55.7,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-256630": {
+      "profileKey": "Wirtz",
+      "fileName": "Wirtz.webp",
+      "x": 44,
+      "y": 54.8,
+      "width": 216,
+      "sourceGroup": "YDL"
+    },
+    "s4-retired-xavi": {
+      "profileKey": "Xavi",
+      "fileName": "Xavi.webp",
+      "x": 47.2,
+      "y": 79.1,
+      "width": 296,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-277643": {
+      "profileKey": "Yamal",
+      "fileName": "Yamal.webp",
+      "x": 84.1,
+      "y": 51.2,
+      "width": 244,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-001": {
+      "profileKey": "Sergio Ramos",
+      "fileName": "Sergio Ramos.webp",
+      "x": 44.7,
+      "y": 54,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-002": {
+      "profileKey": "Gareth Bale",
+      "fileName": "Gareth Bale.webp",
+      "x": 49.3,
+      "y": 57.1,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-003": {
+      "profileKey": "Casemiro",
+      "fileName": "Casemiro.webp",
+      "x": 55.3,
+      "y": 50.9,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-008": {
+      "profileKey": "Diego Milito",
+      "fileName": "Diego Milito.webp",
+      "x": 6,
+      "y": 59.7,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-011": {
+      "profileKey": "Maicon",
+      "fileName": "Maicon.webp",
+      "x": 22.6,
+      "y": 52.8,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-012": {
+      "profileKey": "Raphaël Varane",
+      "fileName": "Raphaël Varane.webp",
+      "x": 73,
+      "y": 61.3,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-015": {
+      "profileKey": "Thiago Silva",
+      "fileName": "Thiago Silva.webp",
+      "x": 47.2,
+      "y": 56,
+      "width": 108,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-021": {
+      "profileKey": "Francesco Totti",
+      "fileName": "Francesco Totti.webp",
+      "x": 49.6,
+      "y": 56.8,
+      "width": 160,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-028": {
+      "profileKey": "Mario Kempes",
+      "fileName": "Mario Kempes.webp",
+      "x": 45.4,
+      "y": 54,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-032": {
+      "profileKey": "Eden Hazard",
+      "fileName": "Eden Hazard.webp",
+      "x": 42.2,
+      "y": 60.5,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-033": {
+      "profileKey": "Radamel Falcao",
+      "fileName": "Radamel Falcao.webp",
+      "x": 55.3,
+      "y": 59.6,
+      "width": 216,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-034": {
+      "profileKey": "Xabi Alonso",
+      "fileName": "Xabi Alonso.webp",
+      "x": 28.4,
+      "y": 63.3,
+      "width": 236,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-035": {
+      "profileKey": "Thomas Müller",
+      "fileName": "Thomas Müller.webp",
+      "x": 53.2,
+      "y": 55.4,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-036": {
+      "profileKey": "Paul Pogba",
+      "fileName": "Paul Pogba.webp",
+      "x": 42.2,
+      "y": 93.2,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-039": {
+      "profileKey": "Robin van Persie",
+      "fileName": "Robin van Persie.webp",
+      "x": 59.9,
+      "y": 55.7,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-045": {
+      "profileKey": "Lúcio",
+      "fileName": "Lúcio.webp",
+      "x": 59.2,
+      "y": 69.6,
+      "width": 124,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-047": {
+      "profileKey": "Jérôme Boateng",
+      "fileName": "Jérôme Boateng.webp",
+      "x": 42.6,
+      "y": 65.6,
+      "width": 224,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-049": {
+      "profileKey": "Robinho",
+      "fileName": "Robinho.webp",
+      "x": 47.9,
+      "y": 53.5,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-051": {
+      "profileKey": "Sávio Bortolini",
+      "fileName": "Sávio Bortolini.webp",
+      "x": 46.1,
+      "y": 54.8,
+      "width": 108,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-052": {
+      "profileKey": "Zé Roberto",
+      "fileName": "Zé Roberto.webp",
+      "x": 54.6,
+      "y": 73.2,
+      "width": 120,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-053": {
+      "profileKey": "Miroslav Klose",
+      "fileName": "Miroslav Klose.webp",
+      "x": 40.4,
+      "y": 105.2,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-054": {
+      "profileKey": "Raúl González",
+      "fileName": "Raúl González.webp",
+      "x": 51.1,
+      "y": 56.5,
+      "width": 100,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-002": {
+      "profileKey": "Daniel Passarella",
+      "fileName": "Passarella.webp",
+      "x": 52.8,
+      "y": 103.7,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-003": {
+      "profileKey": "Fernando Redondo",
+      "fileName": "Redondo.webp",
+      "x": 55.3,
+      "y": 54.3,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-004": {
+      "profileKey": "Omar Sívori",
+      "fileName": "Omar Sívori.webp",
+      "x": 50,
+      "y": 52,
+      "width": 156,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-008": {
+      "profileKey": "Oscar Ruggeri",
+      "fileName": "Oscar Ruggeri.webp",
+      "x": 53.2,
+      "y": 90.4,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-010": {
+      "profileKey": "Hernán Crespo",
+      "fileName": "Crespo.webp",
+      "x": 9.5,
+      "y": 56,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-011": {
+      "profileKey": "Juan Sebastián Verón",
+      "fileName": "Verón.webp",
+      "x": 55.3,
+      "y": 56.8,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-012": {
+      "profileKey": "Osvaldo Ardiles",
+      "fileName": "Osvaldo Ardiles.webp",
+      "x": 50.7,
+      "y": 93.2,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-013": {
+      "profileKey": "Claudio Caniggia",
+      "fileName": "Caniggia.webp",
+      "x": 46.5,
+      "y": 57.4,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-014": {
+      "profileKey": "Jorge Burruchaga",
+      "fileName": "Burruchaga.webp",
+      "x": 38.7,
+      "y": 70.4,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-015": {
+      "profileKey": "Diego Simeone",
+      "fileName": "Diego Simeone.webp",
+      "x": 49.6,
+      "y": 57.9,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-016": {
+      "profileKey": "Gonzalo Higuaín",
+      "fileName": "Higuaín.webp",
+      "x": 50,
+      "y": 52.3,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-021": {
+      "profileKey": "Gabriel Heinze",
+      "fileName": "Heinze.webp",
+      "x": 52.8,
+      "y": 58.5,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-022": {
+      "profileKey": "Arjen Robben",
+      "fileName": "Robben.webp",
+      "x": 63.1,
+      "y": 62.5,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-023": {
+      "profileKey": "Ronald Koeman",
+      "fileName": "Koeman.webp",
+      "x": 51.1,
+      "y": 57.4,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-024": {
+      "profileKey": "Johan Neeskens",
+      "fileName": "Neeskens.webp",
+      "x": 50,
+      "y": 55.1,
+      "width": 156,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-026": {
+      "profileKey": "Wesley Sneijder",
+      "fileName": "Sneijder.webp",
+      "x": 24.4,
+      "y": 49.2,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-027": {
+      "profileKey": "Ruud van Nistelrooy",
+      "fileName": "Nistelrooy.webp",
+      "x": 50,
+      "y": 57.1,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-029": {
+      "profileKey": "Edgar Davids",
+      "fileName": "Davids.webp",
+      "x": 36.9,
+      "y": 54,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-030": {
+      "profileKey": "Jaap Stam",
+      "fileName": "Stam.webp",
+      "x": 51.4,
+      "y": 65.9,
+      "width": 100,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-031": {
+      "profileKey": "Patrick Kluivert",
+      "fileName": "Kluivert.webp",
+      "x": 76.6,
+      "y": 53.7,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-041": {
+      "profileKey": "Mark van Bommel",
+      "fileName": "van Bommel.webp",
+      "x": 57.1,
+      "y": 53.4,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-044": {
+      "profileKey": "Pepe",
+      "fileName": "Pepe.webp",
+      "x": 37.6,
+      "y": 54.8,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-045": {
+      "profileKey": "Deco",
+      "fileName": "Deco.webp",
+      "x": 63.8,
+      "y": 54.5,
+      "width": 200,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-050": {
+      "profileKey": "Fernando Gomes",
+      "fileName": "Gomes.webp",
+      "x": 19.8,
+      "y": 56.8,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-051": {
+      "profileKey": "Rui Patrício",
+      "fileName": "Patrício.webp",
+      "x": 44,
+      "y": 56.5,
+      "width": 192,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-052": {
+      "profileKey": "João Moutinho",
+      "fileName": "Moutinho.webp",
+      "x": 47.5,
+      "y": 59.6,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-053": {
+      "profileKey": "Humberto Coelho",
+      "fileName": "Coelho.webp",
+      "x": 52.1,
+      "y": 57.4,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-054": {
+      "profileKey": "Chalana",
+      "fileName": "Chalana.webp",
+      "x": 46.4,
+      "y": 97.4,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-055": {
+      "profileKey": "Pauleta",
+      "fileName": "Pauleta.webp",
+      "x": 55.4,
+      "y": 61.1,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-056": {
+      "profileKey": "Manuel Bento",
+      "fileName": "Bento.webp",
+      "x": 58.9,
+      "y": 58.5,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-061": {
+      "profileKey": "Paulo Sousa",
+      "fileName": "Sousa.webp",
+      "x": 42.3,
+      "y": 87.5,
+      "width": 160,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-064": {
+      "profileKey": "Roberto Baggio",
+      "fileName": "Baggio.webp",
+      "x": 46.4,
+      "y": 55,
+      "width": 176,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-065": {
+      "profileKey": "Gaetano Scirea",
+      "fileName": "Gaetano Scirea.webp",
+      "x": 52.4,
+      "y": 81.1,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-066": {
+      "profileKey": "Dino Zoff",
+      "fileName": "Zoff.webp",
+      "x": 51,
+      "y": 60.2,
+      "width": 108,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-067": {
+      "profileKey": "Gianni Rivera",
+      "fileName": "Rivera.webp",
+      "x": 33,
+      "y": 63,
+      "width": 156,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-069": {
+      "profileKey": "Giacinto Facchetti",
+      "fileName": "Giacinto Facchetti.webp",
+      "x": 55.3,
+      "y": 93.2,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-071": {
+      "profileKey": "Alessandro Del Piero",
+      "fileName": "Del pierro.webp",
+      "x": 40.8,
+      "y": 74.7,
+      "width": 144,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-072": {
+      "profileKey": "Keylor Navas",
+      "fileName": "Navas.webp",
+      "x": 57,
+      "y": 55.9,
+      "width": 232,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-073": {
+      "profileKey": "James Rodríguez",
+      "fileName": "Rodríguez.webp",
+      "x": 62.8,
+      "y": 52.6,
+      "width": 160,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-074": {
+      "profileKey": "Guti",
+      "fileName": "Guti.webp",
+      "x": 58.5,
+      "y": 54,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-239231": {
+      "profileKey": "Marc Cucurella",
+      "fileName": "Ccurelia.webp",
+      "x": 50,
+      "y": 59.1,
+      "width": 128,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-246104": {
+      "profileKey": "Ryan Gravenberch",
+      "fileName": "Gravenberch.webp",
+      "x": 32.9,
+      "y": 54.3,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-001": {
+      "profileKey": "Patrice Evra",
+      "fileName": "Evra.webp",
+      "x": 53.9,
+      "y": 67.5,
+      "width": 220,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-003": {
+      "profileKey": "Bixente Lizarazu",
+      "fileName": "Lizarazu.webp",
+      "x": 49.6,
+      "y": 57.7,
+      "width": 152,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-004": {
+      "profileKey": "Lilian Thuram",
+      "fileName": "Lilian_Thuram.webp",
+      "x": 50.4,
+      "y": 57.1,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-005": {
+      "profileKey": "Adriano",
+      "fileName": "Adriano.webp",
+      "x": 47.1,
+      "y": 59.4,
+      "width": 232,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-006": {
+      "profileKey": "Pablo Aimar",
+      "fileName": "Aimar.webp",
+      "x": 61.3,
+      "y": 79.2,
+      "width": 280,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-007": {
+      "profileKey": "Walter Samuel",
+      "fileName": "Samuel.webp",
+      "x": 46.4,
+      "y": 62.2,
+      "width": 256,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-008": {
+      "profileKey": "Roberto Ayala",
+      "fileName": "Ayala.webp",
+      "x": 50.3,
+      "y": 78.5,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-012": {
+      "profileKey": "Fernando Hierro",
+      "fileName": "Hierro.webp",
+      "x": 50.7,
+      "y": 64.7,
+      "width": 116,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-014": {
+      "profileKey": "Michael Ballack",
+      "fileName": "Ballack.webp",
+      "x": 33,
+      "y": 57.7,
+      "width": 176,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-017": {
+      "profileKey": "Roy Keane",
+      "fileName": "Keane.webp",
+      "x": 52.8,
+      "y": 50.6,
+      "width": 180,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-018": {
+      "profileKey": "Fabio Grosso",
+      "fileName": "Grosso.webp",
+      "x": 47.2,
+      "y": 49.5,
+      "width": 164,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-019": {
+      "profileKey": "Davor Šuker",
+      "fileName": "Šuker.webp",
+      "x": 41.1,
+      "y": 52,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-021": {
+      "profileKey": "Diego Forlán",
+      "fileName": "Forlán.webp",
+      "x": 22.8,
+      "y": 59.6,
+      "width": 204,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-022": {
+      "profileKey": "Diego Costa",
+      "fileName": "Diego_Costa.webp",
+      "x": 35.1,
+      "y": 50.9,
+      "width": 236,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-023": {
+      "profileKey": "Nicolas Anelka",
+      "fileName": "Anelka.webp",
+      "x": 73.1,
+      "y": 61.9,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-024": {
+      "profileKey": "Gianluca Zambrotta",
+      "fileName": "Zambrotta.webp",
+      "x": 55,
+      "y": 53.1,
+      "width": 208,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-025": {
+      "profileKey": "Filippo Inzaghi",
+      "fileName": "Inzaghi.webp",
+      "x": 50,
+      "y": 61.3,
+      "width": 108,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-026": {
+      "profileKey": "Philippe Coutinho",
+      "fileName": "Coutinho.webp",
+      "x": 51.8,
+      "y": 57.4,
+      "width": 136,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-027": {
+      "profileKey": "Júnior",
+      "fileName": "Júnior.webp",
+      "x": 69.8,
+      "y": 58.2,
+      "width": 184,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-028": {
+      "profileKey": "Gilberto Silva",
+      "fileName": "Gilberto.webp",
+      "x": 50,
+      "y": 57.9,
+      "width": 224,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-029": {
+      "profileKey": "David Trezeguet",
+      "fileName": "Trezeguet.webp",
+      "x": 41.1,
+      "y": 63.8,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-031": {
+      "profileKey": "Luca Toni",
+      "fileName": "Luca_Toni.webp",
+      "x": 53.2,
+      "y": 58.8,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-033": {
+      "profileKey": "Fabien Barthez",
+      "fileName": "Barthez.webp",
+      "x": 73.1,
+      "y": 52.6,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-035": {
+      "profileKey": "Jens Lehmann",
+      "fileName": "Lehmann.webp",
+      "x": 57.1,
+      "y": 67.8,
+      "width": 136,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-037": {
+      "profileKey": "Bastian Schweinsteiger",
+      "fileName": "Schweinsteiger.webp",
+      "x": 47.9,
+      "y": 57.9,
+      "width": 216,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-039": {
+      "profileKey": "Nuno Gomes",
+      "fileName": "Nuno_Gomes.webp",
+      "x": 40.8,
+      "y": 55.1,
+      "width": 172,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-040": {
+      "profileKey": "Leonardo Bonucci",
+      "fileName": "Bonucci.webp",
+      "x": 50.7,
+      "y": 57,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-042": {
+      "profileKey": "Víctor Valdés",
+      "fileName": "Valdés.webp",
+      "x": 45.1,
+      "y": 63.9,
+      "width": 236,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-043": {
+      "profileKey": "David Silva",
+      "fileName": "David_Silva.webp",
+      "x": 48.6,
+      "y": 59.3,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-044": {
+      "profileKey": "Jesús Navas",
+      "fileName": "Jesús_Navas.webp",
+      "x": 38.3,
+      "y": 51.4,
+      "width": 188,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-045": {
+      "profileKey": "Juan Mata",
+      "fileName": "Mata.webp",
+      "x": 39.4,
+      "y": 57.6,
+      "width": 212,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-047": {
+      "profileKey": "Klaas-Jan Huntelaar",
+      "fileName": "Huntelaar.webp",
+      "x": 58.4,
+      "y": 61.9,
+      "width": 168,
+      "sourceGroup": "YDL"
+    },
+    "s4-fc26-183898": {
+      "profileKey": "Ángel Di María",
+      "fileName": "Di_Maria.webp",
+      "x": 49.6,
+      "y": 71.2,
+      "width": 244,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc-20260731-004": {
+      "profileKey": "s4-dlc-20260731-004",
+      "fileName": "s4-imported/8e8364d9a51b820b9e1bd076.webp",
+      "x": 61.9,
+      "y": 51.4,
+      "width": 172,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:17:29.108Z",
+      "sourceFileName": "Gerard_Piqué.png",
+      "contentHash": "1abdedfa9b99"
+    },
+    "s4-fc26-210257": {
+      "profileKey": "s4-fc26-210257",
+      "fileName": "s4-imported/eedf4db3480df22df2dd09e4.webp",
+      "x": 46.5,
+      "y": 54.5,
+      "width": 200,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:19:35.045Z",
+      "sourceFileName": "Ederson.png",
+      "contentHash": "3dcb8595e50e"
+    },
+    "s4-fc26-240130": {
+      "profileKey": "s4-fc26-240130",
+      "fileName": "s4-imported/b31f28a691be6cf316c0b4f7.webp",
+      "x": 50,
+      "y": 51.2,
+      "width": 206,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:22:40.359Z",
+      "sourceFileName": "Militão.png",
+      "contentHash": "63185a6db345"
+    },
+    "s4-fc26-202811": {
+      "profileKey": "s4-fc26-202811",
+      "fileName": "s4-imported/ae569510ed6e211335dc0c31.webp",
+      "x": 43,
+      "y": 47,
+      "width": 234,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:22:59.410Z",
+      "sourceFileName": "Emiliano_Martínez.png",
+      "contentHash": "6ea166fe0c28"
+    },
+    "s4-fc26-241637": {
+      "profileKey": "s4-fc26-241637",
+      "fileName": "s4-imported/074b16f2d2e2ea164459a59d.webp",
+      "x": 39.2,
+      "y": 62.4,
+      "width": 198,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:25:31.532Z",
+      "sourceFileName": "Tchouaméni.png",
+      "contentHash": "e284abc72a6a"
+    },
+    "s4-fc26-264309": {
+      "profileKey": "s4-fc26-264309",
+      "fileName": "s4-imported/29c4ba318d00059075c12018.webp",
+      "x": 37.1,
+      "y": 97.3,
+      "width": 180,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:29:45.211Z",
+      "sourceFileName": "Guler.png",
+      "contentHash": "2ab5f128e564"
+    },
+    "s4-dlc3-20260808-013": {
+      "profileKey": "s4-dlc3-20260808-013",
+      "fileName": "s4-imported/bcd968833184676a68a45bc4.webp",
+      "x": 47.9,
+      "y": 57.9,
+      "width": 106,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:30:04.579Z",
+      "sourceFileName": "paco.png",
+      "contentHash": "b9e52d5f44b9"
+    },
+    "s4-dlc-20260731-005": {
+      "profileKey": "s4-dlc-20260731-005",
+      "fileName": "s4-imported/cb62051df37a2cea39688801.webp",
+      "x": 33.2,
+      "y": 62.7,
+      "width": 242,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:30:35.487Z",
+      "sourceFileName": "Alves.png",
+      "contentHash": "d46ec1d74f53"
+    },
+    "s4-fc26-234577": {
+      "profileKey": "s4-fc26-234577",
+      "fileName": "s4-imported/e35489d146b4e18805c8c9be.webp",
+      "x": 48.6,
+      "y": 61.5,
+      "width": 210,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:32:39.146Z",
+      "sourceFileName": "Costa.png",
+      "contentHash": "514bba9c8950"
+    },
+    "s4-fc26-215914": {
+      "profileKey": "s4-fc26-215914",
+      "fileName": "s4-imported/bd1110fc878ec7c401f0e60a.webp",
+      "x": 47.6,
+      "y": 72.5,
+      "width": 128,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:35:42.904Z",
+      "sourceFileName": "Kante.png",
+      "contentHash": "36372f70cb18"
+    },
+    "s4-fc26-197781": {
+      "profileKey": "s4-fc26-197781",
+      "fileName": "s4-imported/72f6b7bdfd405a8c599b4b76.webp",
+      "x": 56.6,
+      "y": 40.2,
+      "width": 118,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:36:01.741Z",
+      "sourceFileName": "isco.png",
+      "contentHash": "5365c71b0594"
+    },
+    "s4-fc26-218667": {
+      "profileKey": "s4-fc26-218667",
+      "fileName": "s4-imported/8de329e1b7662ec59240faef.webp",
+      "x": 74.1,
+      "y": 70.2,
+      "width": 230,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:37:39.389Z",
+      "sourceFileName": "silva.png",
+      "contentHash": "be74bbe3dbb1"
+    },
+    "s4-fc26-192505": {
+      "profileKey": "s4-fc26-192505",
+      "fileName": "s4-imported/a285c68d8936225f17c3630d.webp",
+      "x": 52.4,
+      "y": 58.5,
+      "width": 196,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:39:19.869Z",
+      "sourceFileName": "Lukaku.png",
+      "contentHash": "e4259792ff22"
+    },
+    "s4-dlc-20260731-013": {
+      "profileKey": "s4-dlc-20260731-013",
+      "fileName": "s4-imported/49819113f54cb6c93f9f866f.webp",
+      "x": 32.5,
+      "y": 76.6,
+      "width": 234,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-10T12:41:06.215Z",
+      "sourceFileName": "busikeci.png",
+      "contentHash": "4f390c042180"
+    },
+    "s4-fc26-241721": {
+      "profileKey": "s4-fc26-241721",
+      "fileName": "s4-imported/d4c7af858f09dffa628ea371.webp",
+      "x": 47.6,
+      "y": 54.2,
+      "width": 186,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:18:17.072Z",
+      "sourceFileName": "Leao.png",
+      "contentHash": "7c099f0c80d3"
+    },
+    "s4-fc26-203263": {
+      "profileKey": "s4-fc26-203263",
+      "fileName": "s4-imported/adbbf6dd5927e948c627db8f.webp",
+      "x": 32.5,
+      "y": 59.9,
+      "width": 238,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:18:41.198Z",
+      "sourceFileName": "Maguire.png",
+      "contentHash": "f6d3671476f1"
+    },
+    "s4-fc26-229391": {
+      "profileKey": "s4-fc26-229391",
+      "fileName": "s4-imported/483222ad9510bb92fed24b81.webp",
+      "x": 43,
+      "y": 62.3,
+      "width": 226,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:19:02.170Z",
+      "sourceFileName": "Palihna.png",
+      "contentHash": "35ab10e08fb2"
+    },
+    "s4-fc26-231936": {
+      "profileKey": "s4-fc26-231936",
+      "fileName": "s4-imported/e32a41e079034e3916414884.webp",
+      "x": 53.1,
+      "y": 92.5,
+      "width": 320,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:19:26.017Z",
+      "sourceFileName": "White.png",
+      "contentHash": "6701575d2cba"
+    },
+    "s4-fc26-178509": {
+      "profileKey": "s4-fc26-178509",
+      "fileName": "s4-imported/18c84f74cea262bbed97df77.webp",
+      "x": 86.4,
+      "y": 69.7,
+      "width": 312,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:19:57.244Z",
+      "sourceFileName": "Giroud.png",
+      "contentHash": "da8c37b6fda4"
+    },
+    "s4-fc26-264652": {
+      "profileKey": "s4-fc26-264652",
+      "fileName": "s4-imported/266e7a6e32f8382630c629da.webp",
+      "x": 53.1,
+      "y": 85.3,
+      "width": 294,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:20:20.230Z",
+      "sourceFileName": "Barcela.png",
+      "contentHash": "f8dd6fbb381b"
+    },
+    "s4-retired-sergio-aguero": {
+      "profileKey": "s4-retired-sergio-aguero",
+      "fileName": "s4-imported/11995a68db8d747ee6ce8ae2.webp",
+      "x": 42.6,
+      "y": 75.2,
+      "width": 324,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:32:12.149Z",
+      "sourceFileName": "Aguero.png",
+      "contentHash": "90376811a3c1"
+    },
+    "s4-dlc2-20260803-060": {
+      "profileKey": "s4-dlc2-20260803-060",
+      "fileName": "s4-imported/0f3792f5974c7d9ebee26c9e.webp",
+      "x": 45.1,
+      "y": 77.7,
+      "width": 122,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:32:29.727Z",
+      "sourceFileName": "Nani.png",
+      "contentHash": "f0b0ec0ba509"
+    },
+    "s4-fc26-278046": {
+      "profileKey": "s4-fc26-278046",
+      "fileName": "s4-imported/881eb22189b4b1263bad5605.webp",
+      "x": 60.8,
+      "y": 75.5,
+      "width": 240,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:32:45.375Z",
+      "sourceFileName": "Cubassy.png",
+      "contentHash": "3dd06083adf7"
+    },
+    "s4-dlc-20260731-020": {
+      "profileKey": "s4-dlc-20260731-020",
+      "fileName": "s4-imported/426c4c83013b7714657646f4.webp",
+      "x": 46.2,
+      "y": 58.4,
+      "width": 208,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:33:00.073Z",
+      "sourceFileName": "Rossi.png",
+      "contentHash": "391e6699fb74"
+    },
+    "s4-dlc2-20260803-062": {
+      "profileKey": "s4-dlc2-20260803-062",
+      "fileName": "s4-imported/8d53c666f36e7a3ddde6fd5c.webp",
+      "x": 49.6,
+      "y": 48.1,
+      "width": 228,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:33:28.887Z",
+      "sourceFileName": "Quaresma.png",
+      "contentHash": "a22663cb0f41"
+    },
+    "s4-dlc2-20260803-047": {
+      "profileKey": "s4-dlc2-20260803-047",
+      "fileName": "s4-imported/48e272f3cb8092888f12f2f7.webp",
+      "x": 53.8,
+      "y": 59.6,
+      "width": 228,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:33:42.225Z",
+      "sourceFileName": "Paul.png",
+      "contentHash": "e86e3fa6be6b"
+    },
+    "s4-dlc-20260731-007": {
+      "profileKey": "s4-dlc-20260731-007",
+      "fileName": "s4-imported/c273dd7cabdd5c48e8e37aa2.webp",
+      "x": 58.3,
+      "y": 26.6,
+      "width": 142,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:34:01.743Z",
+      "sourceFileName": "Pedro.png",
+      "contentHash": "6195d3df95ab"
+    },
+    "s4-fc26-212218": {
+      "profileKey": "s4-fc26-212218",
+      "fileName": "s4-imported/97e6946d8a50149efde5c7b7.webp",
+      "x": 44.1,
+      "y": 65.1,
+      "width": 136,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:42:12.644Z",
+      "sourceFileName": "Laporte.png",
+      "contentHash": "9d585b9276c0"
+    },
+    "s4-fc26-272834": {
+      "profileKey": "s4-fc26-272834",
+      "fileName": "s4-imported/166dfffc30d0ed36faf3ee1e.webp",
+      "x": 80.4,
+      "y": 71,
+      "width": 268,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:42:32.664Z",
+      "sourceFileName": "neves.png",
+      "contentHash": "dc8d3d9d04e4"
+    },
+    "s4-fc26-192366": {
+      "profileKey": "s4-fc26-192366",
+      "fileName": "s4-imported/6571df7191cc53c93faf075a.webp",
+      "x": 45.8,
+      "y": 73.5,
+      "width": 316,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:42:48.514Z",
+      "sourceFileName": "Otamendi.png",
+      "contentHash": "75d2fa3dc057"
+    },
+    "s4-dlc-20260731-024": {
+      "profileKey": "s4-dlc-20260731-024",
+      "fileName": "s4-imported/18a39069395b83663948a071.webp",
+      "x": 65.3,
+      "y": 56.2,
+      "width": 220,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:43:10.626Z",
+      "sourceFileName": "Coentrao.png",
+      "contentHash": "b68c6ddadefb"
+    },
+    "s4-fc26-233096": {
+      "profileKey": "s4-fc26-233096",
+      "fileName": "s4-imported/a8a7aafd92f79f4350c325a4.webp",
+      "x": 47.3,
+      "y": 60.4,
+      "width": 186,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-11T00:43:36.902Z",
+      "sourceFileName": "dengfu.png",
+      "contentHash": "53f2ae8c7cca"
+    },
+    "s4-fc26-234574": {
+      "profileKey": "s4-fc26-234574",
+      "fileName": "s4-imported/9926067a496d800277e22bcc.webp",
+      "x": 38.9,
+      "y": 53.2,
+      "width": 208,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-13T11:57:23.311Z",
+      "sourceFileName": "Dalot.png",
+      "contentHash": "4a9d5ac095b4"
+    },
+    "s4-dlc-20260731-023": {
+      "profileKey": "s4-dlc-20260731-023",
+      "fileName": "s4-imported/8ad3935368b69e6c10d29a56.webp",
+      "x": 62.3,
+      "y": 55.3,
+      "width": 228,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-13T13:04:26.499Z",
+      "sourceFileName": "Rui.png",
+      "contentHash": "5283a23d0c3b"
+    },
+    "s4-fc26-200888": {
+      "profileKey": "s4-fc26-200888",
+      "fileName": "s4-imported/576cb79690a65f58786f5949.webp",
+      "x": 34.3,
+      "y": 51.7,
+      "width": 246,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-13T13:04:54.667Z",
+      "sourceFileName": "Danilo.png",
+      "contentHash": "e9a91df4b36b"
+    },
+    "s4-fc26-253124": {
+      "profileKey": "s4-fc26-253124",
+      "fileName": "s4-imported/5f8acca2c60ae57be47bff11.webp",
+      "x": 93,
+      "y": 63.2,
+      "width": 276,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-13T13:05:17.472Z",
+      "sourceFileName": "Nunez.png",
+      "contentHash": "c1c1dd1e962c"
+    },
+    "s4-fc26-224293": {
+      "profileKey": "s4-fc26-224293",
+      "fileName": "s4-imported/0816c3a23244444e736b2e74.webp",
+      "x": 50.3,
+      "y": 60.7,
+      "width": 188,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-13T13:07:28.111Z",
+      "sourceFileName": "Ruben.png",
+      "contentHash": "d5b44d844bc2"
+    },
+    "s4-fc26-209889": {
+      "profileKey": "s4-fc26-209889",
+      "fileName": "s4-imported/3a69a2ee78d2cf4739265bda.webp",
+      "x": 47.3,
+      "y": 64,
+      "width": 224,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-13T13:07:59.803Z",
+      "sourceFileName": "Geraro.png",
+      "contentHash": "5a0c584265f8"
+    },
+    "s4-fc26-226851": {
+      "profileKey": "s4-fc26-226851",
+      "fileName": "s4-imported/212fa9062ffe2428067b9ea1.webp",
+      "x": 49.6,
+      "y": 86.4,
+      "width": 144,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-14T11:22:30.070Z",
+      "sourceFileName": "Pavard.png",
+      "contentHash": "b14dd170b6d8"
+    },
+    "s4-dlc-20260731-025": {
+      "profileKey": "s4-dlc-20260731-025",
+      "fileName": "s4-imported/4dc8101e87f74b99e0cd2ed4.webp",
+      "x": 43.3,
+      "y": 52.2,
+      "width": 228,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-14T11:22:46.951Z",
+      "sourceFileName": "Carvano.png",
+      "contentHash": "47c5e34917fb"
+    },
+    "s4-fc26-188377": {
+      "profileKey": "s4-fc26-188377",
+      "fileName": "s4-imported/724286502dfe7173aee12e4e.webp",
+      "x": -4.2,
+      "y": 36.4,
+      "width": 286,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-14T11:23:01.041Z",
+      "sourceFileName": "Walker.png",
+      "contentHash": "130167d6590e"
+    },
+    "ydl-custom-1623a741-d51f-422b-9601-d90b3b8e9b54": {
+      "profileKey": "ydl-custom-1623a741-d51f-422b-9601-d90b3b8e9b54",
+      "fileName": "s4-imported/66a190f2df9b942748cd34f8.webp",
+      "x": 55.9,
+      "y": 55.3,
+      "width": 260,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:47:51.846Z",
+      "sourceFileName": "Vidal.png",
+      "contentHash": "c93a61cb60a5"
+    },
+    "ydl-custom-bd2ffdbe-0fbd-4355-810b-7ed497d9f6cb": {
+      "profileKey": "ydl-custom-bd2ffdbe-0fbd-4355-810b-7ed497d9f6cb",
+      "fileName": "s4-imported/6e32ce86934320d3a25675fe.webp",
+      "x": 49.3,
+      "y": 55.4,
+      "width": 108,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:48:13.417Z",
+      "sourceFileName": "Salas.png",
+      "contentHash": "ddf45a0fc2f3"
+    },
+    "ydl-custom-18bb8269-6e65-400e-b818-da7bc202fa13": {
+      "profileKey": "ydl-custom-18bb8269-6e65-400e-b818-da7bc202fa13",
+      "fileName": "s4-imported/2fbc4e895fa4a824a33a412f.webp",
+      "x": 30.1,
+      "y": 55.4,
+      "width": 186,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:48:51.997Z",
+      "sourceFileName": "Bravo.png",
+      "contentHash": "045a6feb64ad"
+    },
+    "ydl-custom-b1d12633-7d58-4e7f-b6af-33e7231f2bb4": {
+      "profileKey": "ydl-custom-b1d12633-7d58-4e7f-b6af-33e7231f2bb4",
+      "fileName": "s4-imported/0c79d77154451320c36d914a.webp",
+      "x": 41.3,
+      "y": 56.5,
+      "width": 216,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:49:12.418Z",
+      "sourceFileName": "Crouch.png",
+      "contentHash": "6b40ac8aad00"
+    },
+    "ydl-custom-057d8b95-e450-4e00-a567-d7b369b2d908": {
+      "profileKey": "ydl-custom-057d8b95-e450-4e00-a567-d7b369b2d908",
+      "fileName": "s4-imported/e9d6d4ef05e2e64fdb009f01.webp",
+      "x": 92.7,
+      "y": 58.7,
+      "width": 200,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:49:28.553Z",
+      "sourceFileName": "Seaman.png",
+      "contentHash": "0108a51de0ad"
+    },
+    "ydl-custom-8178da9c-789f-4715-abfc-13c4bf1acdfc": {
+      "profileKey": "ydl-custom-8178da9c-789f-4715-abfc-13c4bf1acdfc",
+      "fileName": "s4-imported/7076471e61e11d3bb9796271.webp",
+      "x": 55.9,
+      "y": 75.5,
+      "width": 244,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:50:18.653Z",
+      "sourceFileName": "Alexis.png",
+      "contentHash": "7bdb482790df"
+    },
+    "ydl-custom-20d636f5-fa20-429d-9b46-de08b065cd4d": {
+      "profileKey": "ydl-custom-20d636f5-fa20-429d-9b46-de08b065cd4d",
+      "fileName": "s4-imported/b8eef7d786dbdb8955071edb.webp",
+      "x": 32.5,
+      "y": 42.5,
+      "width": 190,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:50:57.471Z",
+      "sourceFileName": "shearer.png",
+      "contentHash": "d65b6a29579c"
+    },
+    "ydl-custom-96a3629f-2e03-4365-af54-6fd0ba895001": {
+      "profileKey": "ydl-custom-96a3629f-2e03-4365-af54-6fd0ba895001",
+      "fileName": "s4-imported/e8d141096213b3e96bfb7d50.webp",
+      "x": 68.1,
+      "y": 76.9,
+      "width": 148,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:51:28.268Z",
+      "sourceFileName": "Campbell.png",
+      "contentHash": "6166adbc87c2"
+    },
+    "ydl-custom-301d0f76-5180-4c5a-aee5-ec000a0ee027": {
+      "profileKey": "ydl-custom-301d0f76-5180-4c5a-aee5-ec000a0ee027",
+      "fileName": "s4-imported/742899da99360d02184a181f.webp",
+      "x": 50,
+      "y": 57,
+      "width": 126,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:52:01.303Z",
+      "sourceFileName": "Andy_Cole.png",
+      "contentHash": "3aa9cc6e3faf"
+    },
+    "ydl-custom-11296a2d-a23d-4a97-874f-cba15d5f9eed": {
+      "profileKey": "ydl-custom-11296a2d-a23d-4a97-874f-cba15d5f9eed",
+      "fileName": "s4-imported/7a172a01715f0b72e5d63951.webp",
+      "x": 21.4,
+      "y": 51.2,
+      "width": 280,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:52:32.453Z",
+      "sourceFileName": "Fowler.png",
+      "contentHash": "7521ca9beb1c"
+    },
+    "ydl-custom-e5646403-af14-4945-85cb-cac20c99ca4d": {
+      "profileKey": "ydl-custom-e5646403-af14-4945-85cb-cac20c99ca4d",
+      "fileName": "s4-imported/20a73b1c9433a26ab4d6b4a6.webp",
+      "x": 48.6,
+      "y": 55.4,
+      "width": 202,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:52:48.800Z",
+      "sourceFileName": "carragher.png",
+      "contentHash": "aa558d148085"
+    },
+    "ydl-custom-f13ba911-8bd9-460c-8337-1224d1c674cb": {
+      "profileKey": "ydl-custom-f13ba911-8bd9-460c-8337-1224d1c674cb",
+      "fileName": "s4-imported/4cfacf43636c2b36abd0b5a5.webp",
+      "x": 51.1,
+      "y": 85.3,
+      "width": 312,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:53:15.599Z",
+      "sourceFileName": "Owen.png",
+      "contentHash": "98de883a0696"
+    },
+    "ydl-custom-5221e70f-b23d-4acf-a892-fbce96102435": {
+      "profileKey": "ydl-custom-5221e70f-b23d-4acf-a892-fbce96102435",
+      "fileName": "s4-imported/7a1cdb4bf4b02ba1436065cb.webp",
+      "x": 50.7,
+      "y": 57,
+      "width": 152,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:53:36.742Z",
+      "sourceFileName": "Charlton.png",
+      "contentHash": "fbbee99582e0"
+    },
+    "ydl-custom-d0675037-a590-4d0d-b1a5-45acb71b2ba7": {
+      "profileKey": "ydl-custom-d0675037-a590-4d0d-b1a5-45acb71b2ba7",
+      "fileName": "s4-imported/1696b93cdcd6e9f2d70b9274.webp",
+      "x": 49.3,
+      "y": 54.5,
+      "width": 120,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:54:16.318Z",
+      "sourceFileName": "Moore.png",
+      "contentHash": "8195cd6fdc14"
+    },
+    "ydl-custom-ff48146f-4540-4ebf-9368-812cf6e9a492": {
+      "profileKey": "ydl-custom-ff48146f-4540-4ebf-9368-812cf6e9a492",
+      "fileName": "s4-imported/77d9cdc735c902ffdffb4ec8.webp",
+      "x": 86,
+      "y": 62.1,
+      "width": 244,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:54:48.920Z",
+      "sourceFileName": "Rashford.png",
+      "contentHash": "eb8fc3b870c6"
+    },
+    "ydl-custom-28b3c1ae-484a-4746-b998-63e1ebcae863": {
+      "profileKey": "ydl-custom-28b3c1ae-484a-4746-b998-63e1ebcae863",
+      "fileName": "s4-imported/3eeb52e11f735bba3934f410.webp",
+      "x": 51.7,
+      "y": 53.4,
+      "width": 226,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:55:02.883Z",
+      "sourceFileName": "Di_Natale.png",
+      "contentHash": "35770d1a8e3d"
+    },
+    "ydl-custom-e16f1874-1e99-480c-9864-2e5793304531": {
+      "profileKey": "ydl-custom-e16f1874-1e99-480c-9864-2e5793304531",
+      "fileName": "s4-imported/6bc4b4c9610f50a20a964d58.webp",
+      "x": 19.6,
+      "y": 53.4,
+      "width": 220,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:55:18.053Z",
+      "sourceFileName": "Toldo.png",
+      "contentHash": "4f620f4f85cc"
+    },
+    "ydl-custom-400715fe-8aae-409f-b484-5f85ee25d385": {
+      "profileKey": "ydl-custom-400715fe-8aae-409f-b484-5f85ee25d385",
+      "fileName": "s4-imported/cbb9d32651b968326ac9713c.webp",
+      "x": 52.1,
+      "y": 66.8,
+      "width": 214,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:55:41.539Z",
+      "sourceFileName": "Barzagli.png",
+      "contentHash": "2bb154ec49af"
+    },
+    "ydl-custom-015108ba-24a2-435f-96ec-2f1483d6c150": {
+      "profileKey": "ydl-custom-015108ba-24a2-435f-96ec-2f1483d6c150",
+      "fileName": "s4-imported/f560cf2daf49ee30a11df174.webp",
+      "x": 41.3,
+      "y": 59,
+      "width": 182,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:56:32.965Z",
+      "sourceFileName": "Panucci.png",
+      "contentHash": "f672ae250790"
+    },
+    "ydl-custom-5092cbb5-589f-4cc5-aa02-0e71aff8d2c7": {
+      "profileKey": "ydl-custom-5092cbb5-589f-4cc5-aa02-0e71aff8d2c7",
+      "fileName": "s4-imported/a8c12029a5002b7b56fbd735.webp",
+      "x": 51,
+      "y": 95.4,
+      "width": 164,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:57:10.339Z",
+      "sourceFileName": "mendieta.png",
+      "contentHash": "faad9f012bd7"
+    },
+    "ydl-custom-53637c77-8034-47b3-9c7d-e2278196f49f": {
+      "profileKey": "ydl-custom-53637c77-8034-47b3-9c7d-e2278196f49f",
+      "fileName": "s4-imported/7cdbd5b916fd2b0e45eee4cd.webp",
+      "x": 51.7,
+      "y": 61.5,
+      "width": 194,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:57:28.558Z",
+      "sourceFileName": "Morientes.png",
+      "contentHash": "ac020d8145af"
+    },
+    "ydl-custom-8000ab67-9bed-46ef-8294-204782790a77": {
+      "profileKey": "ydl-custom-8000ab67-9bed-46ef-8294-204782790a77",
+      "fileName": "s4-imported/850177fb381f6360cb1c69a0.webp",
+      "x": 28,
+      "y": 57.3,
+      "width": 178,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:58:04.937Z",
+      "sourceFileName": "Salgado.png",
+      "contentHash": "4fb97ea55255"
+    },
+    "ydl-custom-368f16b1-e801-4ee2-9a55-a04268009764": {
+      "profileKey": "ydl-custom-368f16b1-e801-4ee2-9a55-a04268009764",
+      "fileName": "s4-imported/c37ae509adf16ad84764cbd0.webp",
+      "x": 46.8,
+      "y": 55.7,
+      "width": 180,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:58:28.667Z",
+      "sourceFileName": "Valerón.png",
+      "contentHash": "e1d667b9d91a"
+    },
+    "ydl-custom-2bd68760-012f-4987-b89e-b44cb1e09e7f": {
+      "profileKey": "ydl-custom-2bd68760-012f-4987-b89e-b44cb1e09e7f",
+      "fileName": "s4-imported/8d913bec60e473cb69080c4b.webp",
+      "x": 5,
+      "y": 71,
+      "width": 244,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:59:11.597Z",
+      "sourceFileName": "Vieri.png",
+      "contentHash": "37230e573c6f"
+    },
+    "ydl-custom-1742885a-9835-49f5-820a-d746a5460d31": {
+      "profileKey": "ydl-custom-1742885a-9835-49f5-820a-d746a5460d31",
+      "fileName": "s4-imported/cbad95ef63fccc5ff2bdd46c.webp",
+      "x": 39.8,
+      "y": 67.1,
+      "width": 252,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:59:34.983Z",
+      "sourceFileName": "recoba.png",
+      "contentHash": "4955d7e24761"
+    },
+    "ydl-custom-963b8b01-19eb-4ef3-9d26-b9466bb778f8": {
+      "profileKey": "ydl-custom-963b8b01-19eb-4ef3-9d26-b9466bb778f8",
+      "fileName": "s4-imported/081ef8e7c3e8aa2472392977.webp",
+      "x": 42,
+      "y": 52.3,
+      "width": 196,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T13:59:48.402Z",
+      "sourceFileName": "Alba.png",
+      "contentHash": "2b2f329fa0cd"
+    },
+    "ydl-custom-be4f2de2-ce2d-467b-9656-3f04c876b83e": {
+      "profileKey": "ydl-custom-be4f2de2-ce2d-467b-9656-3f04c876b83e",
+      "fileName": "s4-imported/e3f2726a26100a9a8fd00c39.webp",
+      "x": 62.6,
+      "y": 53.1,
+      "width": 196,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:00:14.307Z",
+      "sourceFileName": "Thiago.png",
+      "contentHash": "1cdbd7d1d0b5"
+    },
+    "ydl-custom-e82b07b4-fdfb-495c-b434-7b48e209fc5b": {
+      "profileKey": "ydl-custom-e82b07b4-fdfb-495c-b434-7b48e209fc5b",
+      "fileName": "s4-imported/e869716e92d6b00ed56613f0.webp",
+      "x": 26.5,
+      "y": 57.9,
+      "width": 240,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:00:49.183Z",
+      "sourceFileName": "Pep.png",
+      "contentHash": "a30a97f42a06"
+    },
+    "ydl-custom-536ba6c0-6ce4-4a5e-b477-c5745d6eb8dc": {
+      "profileKey": "ydl-custom-536ba6c0-6ce4-4a5e-b477-c5745d6eb8dc",
+      "fileName": "s4-imported/f6e444ddea0e239ca00420a4.webp",
+      "x": 53.2,
+      "y": 78.9,
+      "width": 236,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:01:06.417Z",
+      "sourceFileName": "enrique.png",
+      "contentHash": "841e58e51858"
+    },
+    "ydl-custom-8b0ffd39-160b-45b7-b36f-d93d71411045": {
+      "profileKey": "ydl-custom-8b0ffd39-160b-45b7-b36f-d93d71411045",
+      "fileName": "s4-imported/47cb9e8dc0b44179a494e721.webp",
+      "x": 60.8,
+      "y": 56.8,
+      "width": 258,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:01:29.367Z",
+      "sourceFileName": "reina.png",
+      "contentHash": "43436a39551f"
+    },
+    "ydl-custom-e5c3cfed-e50c-435b-a47c-37034161884b": {
+      "profileKey": "ydl-custom-e5c3cfed-e50c-435b-a47c-37034161884b",
+      "fileName": "s4-imported/b9dc2064bf6b75ff78dc25df.webp",
+      "x": 45.5,
+      "y": 61.5,
+      "width": 242,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:01:46.427Z",
+      "sourceFileName": "Cavani.png",
+      "contentHash": "2c6fd3fc1de3"
+    },
+    "ydl-custom-18c793f2-08ac-43f6-864a-63b112da36ac": {
+      "profileKey": "ydl-custom-18c793f2-08ac-43f6-864a-63b112da36ac",
+      "fileName": "s4-imported/918860b4271f8e189b1778cc.webp",
+      "x": 39.9,
+      "y": 70.7,
+      "width": 272,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:02:00.989Z",
+      "sourceFileName": "ljungberg.png",
+      "contentHash": "6273d2d1509c"
+    },
+    "ydl-custom-fe02129f-ce7f-4320-9b66-2f91e0eb433f": {
+      "profileKey": "ydl-custom-fe02129f-ce7f-4320-9b66-2f91e0eb433f",
+      "fileName": "s4-imported/bf445b2a2bf2f6700b256c63.webp",
+      "x": 59.4,
+      "y": 56.8,
+      "width": 192,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:02:18.242Z",
+      "sourceFileName": "Ivanović.png",
+      "contentHash": "eda632df6213"
+    },
+    "ydl-custom-972e8f81-2489-427c-8ad9-22a0fe5cd55d": {
+      "profileKey": "ydl-custom-972e8f81-2489-427c-8ad9-22a0fe5cd55d",
+      "fileName": "s4-imported/72b16a84aa09722419c73a59.webp",
+      "x": 49.7,
+      "y": 79.1,
+      "width": 232,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:02:41.768Z",
+      "sourceFileName": "Yorke.png",
+      "contentHash": "ef8bc9df89a7"
+    },
+    "ydl-custom-61a2b1e6-0f21-4890-a9a1-32687d21838e": {
+      "profileKey": "ydl-custom-61a2b1e6-0f21-4890-a9a1-32687d21838e",
+      "fileName": "s4-imported/5a6b591a30215ee79e03e800.webp",
+      "x": 8.4,
+      "y": 59.2,
+      "width": 264,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:03:01.825Z",
+      "sourceFileName": "giggs.png",
+      "contentHash": "c20ab983c2a8"
+    },
+    "ydl-custom-584166e8-285c-4d5e-bdd8-a879d564f308": {
+      "profileKey": "ydl-custom-584166e8-285c-4d5e-bdd8-a879d564f308",
+      "fileName": "s4-imported/695b9634af395e640f9313c7.webp",
+      "x": 16.1,
+      "y": 56.2,
+      "width": 246,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:03:20.193Z",
+      "sourceFileName": "godin.png",
+      "contentHash": "fca410ffc6dd"
+    },
+    "ydl-custom-e314f55c-7b35-4e5e-b9d0-4a4b27636e4e": {
+      "profileKey": "ydl-custom-e314f55c-7b35-4e5e-b9d0-4a4b27636e4e",
+      "fileName": "s4-imported/eb6483a6756dd74ffe3344a5.webp",
+      "x": 51,
+      "y": 65.2,
+      "width": 190,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:03:59.586Z",
+      "sourceFileName": "Nakata.png",
+      "contentHash": "529832fd44a3"
+    },
+    "ydl-custom-b7e9b31d-4cd8-4c03-8fa3-22e96836c5d4": {
+      "profileKey": "ydl-custom-b7e9b31d-4cd8-4c03-8fa3-22e96836c5d4",
+      "fileName": "s4-imported/f2d35c6071df88e062d6cc8e.webp",
+      "x": 48.3,
+      "y": 82.8,
+      "width": 244,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:08:07.898Z",
+      "sourceFileName": "ortega.png",
+      "contentHash": "145bf0d0e778"
+    },
+    "ydl-custom-c4e88e32-4427-4a0c-afae-74489fc75ba7": {
+      "profileKey": "ydl-custom-c4e88e32-4427-4a0c-afae-74489fc75ba7",
+      "fileName": "s4-imported/2bcff724e73de079cb4a7874.webp",
+      "x": 41.6,
+      "y": 67.6,
+      "width": 144,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:23:58.739Z",
+      "sourceFileName": "pires.png",
+      "contentHash": "bfb20cb0cf49"
+    },
+    "ydl-custom-1ad98ab6-9001-40bc-b2e7-283c68d2beab": {
+      "profileKey": "ydl-custom-1ad98ab6-9001-40bc-b2e7-283c68d2beab",
+      "fileName": "s4-imported/42f7bbea0e398c6b14b38197.webp",
+      "x": 58,
+      "y": 58.2,
+      "width": 212,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:24:21.149Z",
+      "sourceFileName": "Honda.png",
+      "contentHash": "0fd4e4160a10"
+    },
+    "ydl-custom-0a013050-d9cb-485f-b50b-c5e94dbf01a5": {
+      "profileKey": "ydl-custom-0a013050-d9cb-485f-b50b-c5e94dbf01a5",
+      "fileName": "s4-imported/7d15f118d36bd3db87ed80ac.webp",
+      "x": 25.2,
+      "y": 68,
+      "width": 310,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:24:46.453Z",
+      "sourceFileName": "kagawa.png",
+      "contentHash": "16c2fa4053fe"
+    },
+    "ydl-custom-a479ac3e-de77-4a58-8ec7-9eec2b438dd5": {
+      "profileKey": "ydl-custom-a479ac3e-de77-4a58-8ec7-9eec2b438dd5",
+      "fileName": "s4-imported/a17af5a8354270d22c5f6ecc.webp",
+      "x": 56.3,
+      "y": 57.6,
+      "width": 170,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:25:04.174Z",
+      "sourceFileName": "Éder.png",
+      "contentHash": "e38be7c5cc4c"
+    },
+    "ydl-custom-10c722cc-97f3-4f15-a0aa-a78bb518670d": {
+      "profileKey": "ydl-custom-10c722cc-97f3-4f15-a0aa-a78bb518670d",
+      "fileName": "s4-imported/9ba6c98563a7ea0dcc5d0cab.webp",
+      "x": 46.9,
+      "y": 60.1,
+      "width": 124,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:25:46.862Z",
+      "sourceFileName": "Gomes.png",
+      "contentHash": "12a5bd9b05fc"
+    },
+    "ydl-custom-a8ba04a7-7ed7-4a1d-9dff-85d6faacc72b": {
+      "profileKey": "ydl-custom-a8ba04a7-7ed7-4a1d-9dff-85d6faacc72b",
+      "fileName": "s4-imported/d245f972cc3c48d32ddbe136.webp",
+      "x": 50,
+      "y": 52.6,
+      "width": 190,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:26:08.865Z",
+      "sourceFileName": "Amorim.png",
+      "contentHash": "d4a333aec1c7"
+    },
+    "ydl-custom-e7299ab0-55aa-486f-8fd2-cbdec672e971": {
+      "profileKey": "ydl-custom-e7299ab0-55aa-486f-8fd2-cbdec672e971",
+      "fileName": "s4-imported/e4db19f53b7e77969d9f9823.webp",
+      "x": 48.6,
+      "y": 56.5,
+      "width": 168,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:26:31.433Z",
+      "sourceFileName": "postiga.png",
+      "contentHash": "defa67597e32"
+    },
+    "ydl-custom-a72c95e7-27b2-4cb5-8db5-425ac3e41bd7": {
+      "profileKey": "ydl-custom-a72c95e7-27b2-4cb5-8db5-425ac3e41bd7",
+      "fileName": "s4-imported/88e7ef54544b29da153480ff.webp",
+      "x": 62.2,
+      "y": 56.2,
+      "width": 166,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:26:55.563Z",
+      "sourceFileName": "Ricardo.png",
+      "contentHash": "f728886bd48c"
+    },
+    "ydl-custom-bc2e14b8-4950-435c-ac44-4fdef557d68f": {
+      "profileKey": "ydl-custom-bc2e14b8-4950-435c-ac44-4fdef557d68f",
+      "fileName": "s4-imported/210b9436ac3b09a37281dddb.webp",
+      "x": 40.2,
+      "y": 58.7,
+      "width": 190,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:27:10.969Z",
+      "sourceFileName": "fonte.png",
+      "contentHash": "b9186047a542"
+    },
+    "ydl-custom-b859c092-34e7-4473-b907-35f96f5bb7c0": {
+      "profileKey": "ydl-custom-b859c092-34e7-4473-b907-35f96f5bb7c0",
+      "fileName": "s4-imported/cb764b3fd356da58c4ec3ca2.webp",
+      "x": 31.1,
+      "y": 55.6,
+      "width": 158,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:28:08.354Z",
+      "sourceFileName": "Renato.png",
+      "contentHash": "601dc07d0f25"
+    },
+    "ydl-custom-f0fcbbd9-9cf3-431c-b90f-6821d702120f": {
+      "profileKey": "ydl-custom-f0fcbbd9-9cf3-431c-b90f-6821d702120f",
+      "fileName": "s4-imported/c4378e31628f58c017f3a9c6.webp",
+      "x": 35.4,
+      "y": 65.5,
+      "width": 216,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:28:23.171Z",
+      "sourceFileName": "André_Silva.png",
+      "contentHash": "94d731e66f3e"
+    },
+    "ydl-custom-413f349b-f99c-41d8-978a-122cfd39e02a": {
+      "profileKey": "ydl-custom-413f349b-f99c-41d8-978a-122cfd39e02a",
+      "fileName": "s4-imported/d37e1600bd0ed20e00f66714.webp",
+      "x": 58,
+      "y": 67.7,
+      "width": 276,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:28:53.010Z",
+      "sourceFileName": "Guedes.png",
+      "contentHash": "92caa7a0f692"
+    },
+    "ydl-custom-96dabe0f-23b3-425f-a29d-ea56f78b98f6": {
+      "profileKey": "ydl-custom-96dabe0f-23b3-425f-a29d-ea56f78b98f6",
+      "fileName": "s4-imported/ee20e931f65d7b6998d7d5eb.webp",
+      "x": 95.1,
+      "y": 50.9,
+      "width": 200,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:29:08.684Z",
+      "sourceFileName": "neto.png",
+      "contentHash": "6026aed57ec9"
+    },
+    "ydl-custom-1157a7f7-d124-4cc0-a2a2-c97100e5979e": {
+      "profileKey": "ydl-custom-1157a7f7-d124-4cc0-a2a2-c97100e5979e",
+      "fileName": "s4-imported/ec5b9348efeb1781c763bf56.webp",
+      "x": 50.3,
+      "y": 60.7,
+      "width": 106,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:29:28.906Z",
+      "sourceFileName": "Conceição.png",
+      "contentHash": "9ad0280c1de2"
+    },
+    "ydl-custom-32ad2017-9f40-4d48-ba30-454d01f95b30": {
+      "profileKey": "ydl-custom-32ad2017-9f40-4d48-ba30-454d01f95b30",
+      "fileName": "s4-imported/46debe8df8a202e040071dde.webp",
+      "x": 54.8,
+      "y": 60.1,
+      "width": 232,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:29:42.866Z",
+      "sourceFileName": "Mário.png",
+      "contentHash": "42e083bee66d"
+    },
+    "ydl-custom-f764a5de-a1f7-483f-86bd-dfec9520d573": {
+      "profileKey": "ydl-custom-f764a5de-a1f7-483f-86bd-dfec9520d573",
+      "fileName": "s4-imported/52f597e0837af42c44cbd92b.webp",
+      "x": 55.3,
+      "y": 69.9,
+      "width": 202,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:30:38.850Z",
+      "sourceFileName": "Almeida.png",
+      "contentHash": "55879401d1df"
+    },
+    "ydl-custom-fa9ab577-1c3e-4a44-a94a-9f36dc8b82e4": {
+      "profileKey": "ydl-custom-fa9ab577-1c3e-4a44-a94a-9f36dc8b82e4",
+      "fileName": "s4-imported/dc5ce920a2ca23bfc1e1b615.webp",
+      "x": 55.3,
+      "y": 58.4,
+      "width": 208,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:31:07.920Z",
+      "sourceFileName": "bosingwa.png",
+      "contentHash": "f5d6223e0b0c"
+    },
+    "ydl-custom-c6b73f73-004e-4f21-be61-722f59795256": {
+      "profileKey": "ydl-custom-c6b73f73-004e-4f21-be61-722f59795256",
+      "fileName": "s4-imported/6dfd5368553d99f3bb7a7e18.webp",
+      "x": 43.4,
+      "y": 61.2,
+      "width": 282,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:31:36.029Z",
+      "sourceFileName": "jota.png",
+      "contentHash": "c634c72c27d6"
+    },
+    "ydl-custom-e922ea7d-2b4e-4be4-a4a8-a428bc66d0db": {
+      "profileKey": "ydl-custom-e922ea7d-2b4e-4be4-a4a8-a428bc66d0db",
+      "fileName": "s4-imported/6644ff6f43c0c205e3d364bf.webp",
+      "x": 47.9,
+      "y": 101.5,
+      "width": 186,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:32:10.350Z",
+      "sourceFileName": "Javier_Hernández.png",
+      "contentHash": "903b8cf85917"
+    },
+    "ydl-custom-3483c98f-b433-4df6-be26-12b89c9ca415": {
+      "profileKey": "ydl-custom-3483c98f-b433-4df6-be26-12b89c9ca415",
+      "fileName": "s4-imported/0851effa1db5e1b3b8d92567.webp",
+      "x": 40.9,
+      "y": 54.6,
+      "width": 222,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:32:30.574Z",
+      "sourceFileName": "Okocha.png",
+      "contentHash": "ef4424e84499"
+    },
+    "ydl-custom-bd33b41d-f647-4012-831b-fdcea384cc19": {
+      "profileKey": "ydl-custom-bd33b41d-f647-4012-831b-fdcea384cc19",
+      "fileName": "s4-imported/856011a7419440e777fd4151.webp",
+      "x": 56.3,
+      "y": 69.3,
+      "width": 274,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:32:47.308Z",
+      "sourceFileName": "Félix.png",
+      "contentHash": "952180990394"
+    },
+    "ydl-custom-3a9f3a06-69b6-4576-a8e8-376a3099050d": {
+      "profileKey": "ydl-custom-3a9f3a06-69b6-4576-a8e8-376a3099050d",
+      "fileName": "s4-imported/006274fdd769d72066da36dc.webp",
+      "x": 50.7,
+      "y": 57.6,
+      "width": 210,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:33:00.596Z",
+      "sourceFileName": "Rosický.png",
+      "contentHash": "6d2013f6f30c"
+    },
+    "ydl-custom-ada6ef58-fca2-4f2d-a120-848ae54c88dc": {
+      "profileKey": "ydl-custom-ada6ef58-fca2-4f2d-a120-848ae54c88dc",
+      "fileName": "s4-imported/2ccb05106110be93e5cdc571.webp",
+      "x": 51.4,
+      "y": 55.9,
+      "width": 182,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:33:34.179Z",
+      "sourceFileName": "essien.png",
+      "contentHash": "36becca4d1fa"
+    },
+    "ydl-custom-50f36e4f-28cf-4d07-b38a-a0ec0dde431e": {
+      "profileKey": "ydl-custom-50f36e4f-28cf-4d07-b38a-a0ec0dde431e",
+      "fileName": "s4-imported/61e7a84c5971027d52ee739f.webp",
+      "x": 50.4,
+      "y": 59,
+      "width": 196,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:33:51.679Z",
+      "sourceFileName": "Litmanen.png",
+      "contentHash": "2fd2ebb48c89"
+    },
+    "ydl-custom-4ed5b648-3a04-44ff-9679-a9377469c0a4": {
+      "profileKey": "ydl-custom-4ed5b648-3a04-44ff-9679-a9377469c0a4",
+      "fileName": "s4-imported/e60c3a1836da3031fd53663d.webp",
+      "x": 43.8,
+      "y": 72.4,
+      "width": 216,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:34:12.306Z",
+      "sourceFileName": "Hyypiä.png",
+      "contentHash": "44b2e484afc7"
+    },
+    "ydl-custom-33a821ad-3d6b-409d-a81b-387c6cdb9f7a": {
+      "profileKey": "ydl-custom-33a821ad-3d6b-409d-a81b-387c6cdb9f7a",
+      "fileName": "s4-imported/5aef2a592694cb1ccb7c9853.webp",
+      "x": 56.6,
+      "y": 63.8,
+      "width": 170,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:34:50.315Z",
+      "sourceFileName": "Higuita.png",
+      "contentHash": "1a850ee17fef"
+    },
+    "ydl-custom-6fef7ed0-44a2-4127-a608-bf36f935d548": {
+      "profileKey": "ydl-custom-6fef7ed0-44a2-4127-a608-bf36f935d548",
+      "fileName": "s4-imported/4a2c4b26dbdfecb9343dcfc9.webp",
+      "x": 42.7,
+      "y": 54.5,
+      "width": 210,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:35:07.676Z",
+      "sourceFileName": "Park.png",
+      "contentHash": "60c3229c52ec"
+    },
+    "ydl-custom-aa8e6124-8c1d-46ff-8f86-dc919f7bd065": {
+      "profileKey": "ydl-custom-aa8e6124-8c1d-46ff-8f86-dc919f7bd065",
+      "fileName": "s4-imported/44263cb3d8617f204f7af42c.webp",
+      "x": 33.6,
+      "y": 50.6,
+      "width": 216,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:35:31.735Z",
+      "sourceFileName": "giuly.png",
+      "contentHash": "cc25193c1ff7"
+    },
+    "ydl-custom-3f29b3cd-1c28-4fd4-86d8-a9826db97d24": {
+      "profileKey": "ydl-custom-3f29b3cd-1c28-4fd4-86d8-a9826db97d24",
+      "fileName": "s4-imported/28d7fcec9544b7c6e1d50398.webp",
+      "x": 44.8,
+      "y": 66,
+      "width": 202,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:35:57.026Z",
+      "sourceFileName": "Wiltord.png",
+      "contentHash": "a9325e1640ff"
+    },
+    "ydl-custom-c1db35f3-5726-40a3-acbc-4569b5effb73": {
+      "profileKey": "ydl-custom-c1db35f3-5726-40a3-acbc-4569b5effb73",
+      "fileName": "s4-imported/1bd66370736810bf6b6a9113.webp",
+      "x": 47.2,
+      "y": 59.8,
+      "width": 100,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:36:26.010Z",
+      "sourceFileName": "saviola.png",
+      "contentHash": "3cf4c0e05b7b"
+    },
+    "ydl-custom-dd3beae0-d48a-410d-a13a-4aff5d71d806": {
+      "profileKey": "ydl-custom-dd3beae0-d48a-410d-a13a-4aff5d71d806",
+      "fileName": "s4-imported/6957c54a7f00292f5ba09366.webp",
+      "x": 65,
+      "y": 54.2,
+      "width": 188,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:36:52.900Z",
+      "sourceFileName": "chilavert.png",
+      "contentHash": "15616653de03"
+    },
+    "ydl-custom-3f94be44-6dc4-43e4-9e1a-6a709982f474": {
+      "profileKey": "ydl-custom-3f94be44-6dc4-43e4-9e1a-6a709982f474",
+      "fileName": "s4-imported/baf0e98fe0d246a618ce9ce5.webp",
+      "x": 64.3,
+      "y": 50.4,
+      "width": 196,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:37:12.839Z",
+      "sourceFileName": "tim_cahill.png",
+      "contentHash": "77fde936d7e7"
+    },
+    "ydl-custom-bd1ae415-be34-4150-afa2-6d14cc975136": {
+      "profileKey": "ydl-custom-bd1ae415-be34-4150-afa2-6d14cc975136",
+      "fileName": "s4-imported/d9568a5d050543d850b45630.webp",
+      "x": 47.6,
+      "y": 55.1,
+      "width": 110,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:37:27.058Z",
+      "sourceFileName": "garrincha.png",
+      "contentHash": "a2fbf9cdbde6"
+    },
+    "ydl-custom-5485e645-21b7-4f8e-b449-3ba5924c6ee6": {
+      "profileKey": "ydl-custom-5485e645-21b7-4f8e-b449-3ba5924c6ee6",
+      "fileName": "s4-imported/69f53818bdbfc87d7cb62b0f.webp",
+      "x": 52.1,
+      "y": 57.9,
+      "width": 114,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:37:45.393Z",
+      "sourceFileName": "zico.png",
+      "contentHash": "ff82c5465a6c"
+    },
+    "ydl-custom-7b7f69de-b90a-42ca-b3de-d61559d109d2": {
+      "profileKey": "ydl-custom-7b7f69de-b90a-42ca-b3de-d61559d109d2",
+      "fileName": "s4-imported/0c1eecf5b5f5122d1ae23a4c.webp",
+      "x": 33.8,
+      "y": 55,
+      "width": 178,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:38:04.391Z",
+      "sourceFileName": "dida.png",
+      "contentHash": "85f37ed6efa1"
+    },
+    "ydl-custom-43b0bbd3-e432-4783-ba32-ebeff528d84c": {
+      "profileKey": "ydl-custom-43b0bbd3-e432-4783-ba32-ebeff528d84c",
+      "fileName": "s4-imported/1355df66ee8c4526963878f1.webp",
+      "x": 45.8,
+      "y": 63.4,
+      "width": 104,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:38:27.376Z",
+      "sourceFileName": "Élber.png",
+      "contentHash": "7bc82e0248fd"
+    },
+    "ydl-custom-45d357c5-6808-4a35-a247-f2b29622ebef": {
+      "profileKey": "ydl-custom-45d357c5-6808-4a35-a247-f2b29622ebef",
+      "fileName": "s4-imported/7b04c874a5f9d4e03f463a55.webp",
+      "x": 42.4,
+      "y": 54.8,
+      "width": 206,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:38:41.709Z",
+      "sourceFileName": "firmino.png",
+      "contentHash": "74288445777a"
+    },
+    "ydl-custom-3b48af14-08a3-45a3-ad46-36a591ae5e7e": {
+      "profileKey": "ydl-custom-3b48af14-08a3-45a3-ad46-36a591ae5e7e",
+      "fileName": "s4-imported/55c278b6f80f4d5cd6472e28.webp",
+      "x": 52.4,
+      "y": 57.9,
+      "width": 246,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:38:58.080Z",
+      "sourceFileName": "berbatov.png",
+      "contentHash": "eeb6c3e2c1aa"
+    },
+    "ydl-custom-23145c1c-f513-4119-86bc-a536dbb4f4e8": {
+      "profileKey": "ydl-custom-23145c1c-f513-4119-86bc-a536dbb4f4e8",
+      "fileName": "s4-imported/6059e033ca228ac8f067fa0e.webp",
+      "x": 48.6,
+      "y": 59.6,
+      "width": 208,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:40:54.170Z",
+      "sourceFileName": "edmilson.png",
+      "contentHash": "aa97046bb918"
+    },
+    "ydl-custom-082004f9-10d0-49bb-8b10-77b35155868f": {
+      "profileKey": "ydl-custom-082004f9-10d0-49bb-8b10-77b35155868f",
+      "fileName": "s4-imported/7055285e37d5db0f7b9ef06e.webp",
+      "x": 45.5,
+      "y": 56.5,
+      "width": 146,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:41:14.485Z",
+      "sourceFileName": "Guðjohnsen.png",
+      "contentHash": "8328d4c80f31"
+    },
+    "ydl-custom-bc837b5f-3547-4999-a709-edc575ad2d7b": {
+      "profileKey": "ydl-custom-bc837b5f-3547-4999-a709-edc575ad2d7b",
+      "fileName": "s4-imported/1b90a47c1d0cf2ea9c4a334a.webp",
+      "x": 44.4,
+      "y": 56.2,
+      "width": 172,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:41:39.718Z",
+      "sourceFileName": "kompany.png",
+      "contentHash": "96110817271f"
+    },
+    "ydl-custom-60b549f5-9f96-450d-a2d1-240aab5ccac0": {
+      "profileKey": "ydl-custom-60b549f5-9f96-450d-a2d1-240aab5ccac0",
+      "fileName": "s4-imported/61c783b230fee9e4422d2d1f.webp",
+      "x": 31.4,
+      "y": 77,
+      "width": 168,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:42:14.284Z",
+      "sourceFileName": "Rummenigge.png",
+      "contentHash": "2dbb68e7e521"
+    },
+    "ydl-custom-50137f36-ca5f-434b-b2f5-91fdeb9ff9b6": {
+      "profileKey": "ydl-custom-50137f36-ca5f-434b-b2f5-91fdeb9ff9b6",
+      "fileName": "s4-imported/ed7524ef1f8f03c5f3561732.webp",
+      "x": 36.3,
+      "y": 48.9,
+      "width": 244,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:42:39.589Z",
+      "sourceFileName": "Matthäus.png",
+      "contentHash": "5e5a476f3c51"
+    },
+    "ydl-custom-4815fb98-90cb-4a1a-8d6d-0fe49438008a": {
+      "profileKey": "ydl-custom-4815fb98-90cb-4a1a-8d6d-0fe49438008a",
+      "fileName": "s4-imported/b0828578e0cfe6558aba9132.webp",
+      "x": 51,
+      "y": 58.7,
+      "width": 218,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:42:53.894Z",
+      "sourceFileName": "Schmeichel.png",
+      "contentHash": "e0bd17a372cf"
+    },
+    "ydl-custom-173326ec-00e3-4fe7-b8e3-0041b76033cc": {
+      "profileKey": "ydl-custom-173326ec-00e3-4fe7-b8e3-0041b76033cc",
+      "fileName": "s4-imported/28a6fd33a76a2d013db38b1c.webp",
+      "x": 45.5,
+      "y": 66,
+      "width": 196,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:43:03.610Z",
+      "sourceFileName": "Emmanuel_Petit.png",
+      "contentHash": "233d992b2a98"
+    },
+    "ydl-custom-7a3161c7-da5a-4671-bf30-38c90adcff8f": {
+      "profileKey": "ydl-custom-7a3161c7-da5a-4671-bf30-38c90adcff8f",
+      "fileName": "s4-imported/e227ff14a275d96541cf1639.webp",
+      "x": 64,
+      "y": 50.6,
+      "width": 240,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:43:17.696Z",
+      "sourceFileName": "platini.png",
+      "contentHash": "7b30e658c2de"
+    },
+    "ydl-custom-e713a94d-f13e-4e96-a0a5-ae36d289e452": {
+      "profileKey": "ydl-custom-e713a94d-f13e-4e96-a0a5-ae36d289e452",
+      "fileName": "s4-imported/1615c1e0cc5e9c05e961b064.webp",
+      "x": 28.3,
+      "y": 49.7,
+      "width": 218,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:43:34.565Z",
+      "sourceFileName": "Özil.png",
+      "contentHash": "1a03dd8814be"
+    },
+    "ydl-custom-ed32b163-83e0-46c8-8dea-47ffe8905863": {
+      "profileKey": "ydl-custom-ed32b163-83e0-46c8-8dea-47ffe8905863",
+      "fileName": "s4-imported/76700f0f9409357e6cbe43b6.webp",
+      "x": 29.1,
+      "y": 58.7,
+      "width": 228,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:43:48.376Z",
+      "sourceFileName": "hummels.png",
+      "contentHash": "a3f15186b5b4"
+    },
+    "ydl-custom-eae464c1-428a-404f-8d7c-33de1bb34c03": {
+      "profileKey": "ydl-custom-eae464c1-428a-404f-8d7c-33de1bb34c03",
+      "fileName": "s4-imported/a5a7aaf425ca697d3a60876d.webp",
+      "x": 50,
+      "y": 59.3,
+      "width": 106,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:44:25.814Z",
+      "sourceFileName": "Blanc.png",
+      "contentHash": "1b91e1283ee3"
+    },
+    "ydl-custom-333b64f2-0fb8-4b9d-bb09-b43e7ec70a4c": {
+      "profileKey": "ydl-custom-333b64f2-0fb8-4b9d-bb09-b43e7ec70a4c",
+      "fileName": "s4-imported/b0ecf154543189424a5a321b.webp",
+      "x": 54.5,
+      "y": 56.8,
+      "width": 192,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:44:41.913Z",
+      "sourceFileName": "Desailly.png",
+      "contentHash": "3bad17f6e122"
+    },
+    "ydl-custom-f7d60f31-2575-4c8c-acc8-bd4df539a8f0": {
+      "profileKey": "ydl-custom-f7d60f31-2575-4c8c-acc8-bd4df539a8f0",
+      "fileName": "s4-imported/a664225a4258684f5264383b.webp",
+      "x": 77.6,
+      "y": 55.7,
+      "width": 154,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:53:53.715Z",
+      "sourceFileName": "Meireles.png",
+      "contentHash": "28aff541f43b"
+    },
+    "ydl-custom-82edaf36-27dd-4a12-8890-18a5d99ee471": {
+      "profileKey": "ydl-custom-82edaf36-27dd-4a12-8890-18a5d99ee471",
+      "fileName": "s4-imported/ce7018c476d8a908f9146c67.webp",
+      "x": 43.7,
+      "y": 57.6,
+      "width": 194,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-17T14:54:15.850Z",
+      "sourceFileName": "william.png",
+      "contentHash": "a5fe69521618"
+    },
+    "s4-dlc3-20260808-030": {
+      "profileKey": "s4-dlc3-20260808-030",
+      "fileName": "s4-imported/942ef1b34c23d3244a9b1f22.webp",
+      "x": 32.9,
+      "y": 55.4,
+      "width": 184,
+      "sourceGroup": "YDL",
+      "updatedAt": "2026-08-21T10:35:15.018Z",
+      "sourceFileName": "kamo.png",
+      "contentHash": "8645d3a248e5"
+    },
+    "s4-dlc2-20260803-001": {
+      "profileKey": "Alfredo Di Stéfano",
+      "fileName": "Di Stéfano.webp",
+      "x": 52.5,
+      "y": 54.3,
+      "width": 220,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-059": {
+      "profileKey": "Vítor Baía",
+      "fileName": "Vítor Baía.webp",
+      "x": 49.4,
+      "y": 73.2,
+      "width": 216,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc2-20260803-063": {
+      "profileKey": "Giuseppe Meazza",
+      "fileName": "Meazza.webp",
+      "x": 50,
+      "y": 52.8,
+      "width": 104,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-010": {
+      "profileKey": "Ferenc Puskás",
+      "fileName": "Puskás.webp",
+      "x": 60.6,
+      "y": 68.1,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-011": {
+      "profileKey": "Hugo Sánchez",
+      "fileName": "Sánchez.webp",
+      "x": 51.8,
+      "y": 79.7,
+      "width": 160,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-015": {
+      "profileKey": "Eric Cantona",
+      "fileName": "Cantona.webp",
+      "x": 34.4,
+      "y": 51.2,
+      "width": 196,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-016": {
+      "profileKey": "Lev Yashin",
+      "fileName": "Yashin.webp",
+      "x": 53.6,
+      "y": 60.4,
+      "width": 140,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-020": {
+      "profileKey": "George Weah",
+      "fileName": "Weah.webp",
+      "x": 51.8,
+      "y": 70.8,
+      "width": 132,
+      "sourceGroup": "YDL"
+    },
+    "s4-dlc3-20260808-034": {
+      "profileKey": "Franck Ribéry",
+      "fileName": "Ribéry.webp",
+      "x": 54.3,
+      "y": 74.5,
+      "width": 140,
+      "sourceGroup": "YDL"
+    }
+  },
+  "librarySource": "YDL"
+}
