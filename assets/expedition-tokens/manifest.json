@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "defaultTokenId": "default",
+  "display": {
+    "recommendedMinPx": 56,
+    "recommendedMaxPx": 80,
+    "objectFit": "contain"
+  },
+  "tokens": [
+    { "id": "default", "label": "黄狗风云默认战棋", "file": "default.png", "countryCode": null, "number": null, "isDefault": true, "width": 1179, "height": 1334 },
+    { "id": "england-7", "label": "英格兰 7号", "file": "england-7.png", "countryCode": "GBR", "number": 7, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "spain-6", "label": "西班牙 6号", "file": "spain-6.png", "countryCode": "ESP", "number": 6, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "germany-5", "label": "德国 5号", "file": "germany-5.png", "countryCode": "DEU", "number": 5, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "italy-10", "label": "意大利 10号", "file": "italy-10.png", "countryCode": "ITA", "number": 10, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "france-10", "label": "法国 10号", "file": "france-10.png", "countryCode": "FRA", "number": 10, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "portugal-7", "label": "葡萄牙 7号", "file": "portugal-7.png", "countryCode": "PRT", "number": 7, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "netherlands-14", "label": "荷兰 14号", "file": "netherlands-14.png", "countryCode": "NLD", "number": 14, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "brazil-9", "label": "巴西 9号", "file": "brazil-9.png", "countryCode": "BRA", "number": 9, "isDefault": false, "width": 1254, "height": 1254 },
+    { "id": "argentina-10", "label": "阿根廷 10号", "file": "argentina-10.png", "countryCode": "ARG", "number": 10, "isDefault": false, "width": 1254, "height": 1254 }
+  ]
+}
