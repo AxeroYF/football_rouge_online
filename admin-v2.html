@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>黄狗风云 · 内容运营后台</title>
+  <link rel="stylesheet" href="./styles/player-card.css?v=20260830-card-library-v1">
+  <link rel="stylesheet" href="admin-v2.css?v=20260830-admin-login-v2">
+</head>
+<body>
+  <div id="login-view" class="login-shell">
+    <form id="login-form" class="login-card">
+      <div class="login-identity">
+        <img src="./assets/yellowdog-logo-transparent.png" alt="黄狗风云">
+        <small>YELLOWDOGS CHRONICLES</small>
+        <h1>黄狗风云</h1>
+        <p>内容运营后台</p>
+      </div>
+      <h2>管理员登录</h2><p class="login-copy">输入后台账号与密码进入工作台。</p>
+      <label>管理员账号<input name="username" value="admin" autocomplete="username" required></label>
+      <label>登录密码<input name="password" type="password" autocomplete="current-password" placeholder="请输入登录密码" required></label>
+      <button type="submit" class="primary">进入工作台</button>
+      <p class="login-hint">默认账号 <b>admin</b> · 默认密码 <b>19971019</b></p>
+      <output id="login-error" role="alert"></output>
+    </form>
+  </div>
+
+  <div id="admin-view" hidden>
+    <header class="topbar"><a href="/game" class="brand-square">YD</a><div><small>YELLOWDOGS CHRONICLES</small><b>内容运营后台</b></div><span id="admin-role"></span><button id="logout">退出</button></header>
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <p>内容工作室</p>
+        <button class="nav active" data-page="players"><span>01</span>球员库管理</button>
+        <button class="nav" data-page="studio"><span>02</span>球员卡工作室</button>
+        <p>系统基础</p>
+        <button class="nav" data-page="audit"><span>03</span>数据审计</button>
+        <button class="nav" data-page="operations"><span>04</span>任务与操作记录</button>
+      </aside>
+      <main id="app"><div class="loading">正在读取生产球员目录…</div></main>
+    </div>
+  </div>
+  <div id="modal" class="modal" hidden></div>
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="admin-v2.js?v=20260830-card-library-v1"></script>
+</body>
+</html>

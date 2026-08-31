@@ -1,0 +1,13 @@
+export const MARITIME_MAX_RANGE_KM = 900;
+export const MARITIME_ANGULAR_SECTOR_DEGREES = 12;
+export const MARITIME_ROUTE_SAMPLE_KM = 25;
+export const MARITIME_MIN_ROUTE_KM = 8;
+export const MARITIME_MAX_COAST_SNAP_KM = 40;
+
+export const MARITIME_CONFIG = Object.freeze({
+  maxRangeKm: MARITIME_MAX_RANGE_KM,
+  angularSectorDegrees: MARITIME_ANGULAR_SECTOR_DEGREES,
+  routeSampleKm: MARITIME_ROUTE_SAMPLE_KM,
+  minRouteKm: MARITIME_MIN_ROUTE_KM,
+  maxCoastSnapKm: MARITIME_MAX_COAST_SNAP_KM,
+});

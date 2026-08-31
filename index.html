@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101914" />
+    <title>黄狗风云 · 联机足球战略</title>
+    <link rel="preload" href="./assets/data/natural-earth-countries-50m.geojson" as="fetch" type="application/geo+json" crossorigin />
+    <link rel="preload" href="./assets/data/europe-cities.json" as="fetch" type="application/json" crossorigin />
+    <link rel="preload" href="./assets/data/south-america-cities.json" as="fetch" type="application/json" crossorigin />
+    <link rel="preload" href="./assets/data/europe-clubs.json" as="fetch" type="application/json" crossorigin />
+    <link rel="preload" href="./assets/data/campaign-territories.geojson" as="fetch" type="application/geo+json" crossorigin />
+    <link rel="preload" href="./assets/data/territory-index.json" as="fetch" type="application/json" crossorigin />
+    <link rel="preload" href="./assets/data/campaign-coastlines.json" as="fetch" type="application/json" crossorigin />
+    <link rel="stylesheet" href="./assets/vendor/leaflet.css" />
+    <link rel="stylesheet" href="./styles/player-card.css?v=20260828-local" />
+    <link rel="stylesheet" href="./styles/team-player-detail.css?v=20260830-ydl-player-detail-v1" />
+    <link rel="stylesheet" href="./styles.css?v=20260831-weather-layer-v3" />
+    <link rel="stylesheet" href="./styles/yoogle.css?v=20260831-yoogle-window-v12" />
+    <link rel="stylesheet" href="./s4-tactics-original.css?v=20260828-drag-swap-fix" />
+    <link rel="stylesheet" href="./styles/campaign-broadcast.css?v=20260830-broadcast-map-fill" />
+    <link rel="stylesheet" href="./styles/standard-window.css?v=20260831-window-standards-v1" />
+    <link rel="stylesheet" href="./styles/wide-window.css?v=20260831-window-standards-v1" />
+    <link rel="stylesheet" href="./styles/small-window.css?v=20260831-window-standards-v1" />
+  </head>
+  <body>
+    <div class="campaign-shell">
+      <header class="topbar">
+        <div class="topbar-identity">
+          <a class="brand" href="./" aria-label="黄狗风云大厅">
+            <img class="brand-logo" src="./assets/yellowdog-logo-transparent.png" alt="" aria-hidden="true" />
+            <strong>黄狗风云</strong>
+          </a>
+          <div class="account-menu" id="account-menu" hidden>
+            <button class="account-menu-trigger" id="account-menu-trigger" type="button" aria-expanded="false">
+              <span class="account-avatar" aria-hidden="true">●</span><span id="account-nickname">账号</span><span class="account-chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="account-menu-popover" id="account-menu-popover" hidden>
+              <small>当前账号</small><strong id="account-menu-name">—</strong>
+              <button id="account-logout" type="button">退出登录</button>
+            </div>
+          </div>
+        </div>
+
+        <nav class="primary-nav" aria-label="主要功能">
+          <button class="nav-item is-active" type="button" aria-current="page">征程地图</button>
+          <button class="nav-item" type="button">球队</button>
+          <button class="nav-item" type="button">战术</button>
+          <button class="nav-item" type="button">球探</button>
+        </nav>
+
+        <section class="topbar-yoogle" id="yoogle-search" aria-label="YOOGLE 球员搜索" hidden>
+          <div class="yoogle-searchbar">
+            <button class="yoogle-logo" id="yoogle-window-trigger" type="button" aria-label="打开 YOOGLE 搜索"><i>Y</i>OOGLE</button>
+            <div class="yoogle-searchbox">
+              <label class="yoogle-input-shell">
+                <span aria-hidden="true">⌕</span>
+                <input id="yoogle-search-input" type="search" placeholder="搜索球员" autocomplete="off" aria-controls="yoogle-search-panel" aria-expanded="false" />
+              </label>
+              <div class="yoogle-dropdown" id="yoogle-search-panel" hidden></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="topbar-wallet" id="topbar-wallet" aria-label="金币余额" hidden>
+          <span>金币</span><strong id="gold-balance">0</strong>
+        </div>
+      </header>
+
+      <main class="map-stage">
+        <div id="campaign-entry"></div>
+        <div id="campaign-map" class="campaign-map is-loading" aria-label="欧洲与南美俱乐部征程地图"></div>
+        <section id="yoogle-window" class="yoogle-window standard-window" data-standard-window="yoogle" hidden aria-label="YOOGLE 球员搜索窗口">
+          <div class="yoogle-window-shell standard-window__surface" role="dialog" aria-modal="true" aria-labelledby="yoogle-window-title">
+            <button class="yoogle-window-close" type="button" data-stage-window-close aria-label="关闭 YOOGLE">×</button>
+            <main class="yoogle-window-main">
+              <div class="yoogle-window-search">
+                <strong class="yoogle-window-logo" id="yoogle-window-title" aria-label="YOOGLE"><i>Y</i>OOGLE</strong>
+                <label class="yoogle-window-input-shell">
+                  <span aria-hidden="true">⌕</span>
+                  <input id="yoogle-window-input" data-stage-window-initial-focus type="search" placeholder="搜索 YDL 球员" autocomplete="off" aria-controls="yoogle-window-panel" />
+                </label>
+              </div>
+              <div class="yoogle-window-panel" id="yoogle-window-panel" aria-live="polite"></div>
+            </main>
+            <div id="yoogle-window-detail-layer"></div>
+          </div>
+        </section>
+        <section id="campaign-team" class="campaign-team standard-window" data-standard-window="team" hidden aria-label="球队管理"></section>
+        <section id="campaign-tactics" class="campaign-tactics wide-window" data-wide-window="tactics" hidden aria-label="球队战术管理">
+          <header class="tactics-header"><div><span>YELLOWDOGS CHRONICLES · SQUAD MANAGEMENT</span><h2>战术管理</h2></div><button id="tactics-save" type="button">保存战术</button></header>
+          <div class="tactics-layout">
+            <aside class="tactics-sidebar league-plan-controls"><div class="tactics-control-heading"><span>TACTICAL PLAN</span><h3>比赛方案</h3></div><label>阵型<select id="tactics-formation"><option>4-3-3</option><option>4-2-3-1</option><option>3-4-3</option><option>4-4-2</option></select></label><label>比赛思路<select id="tactics-attack"><option value="balanced">攻守平衡</option><option value="positive">积极进攻</option><option value="defensive">防守反击</option><option value="parkBus">全力防守</option></select></label><label>比赛战术<select id="tactics-defense"><option value="possession">密集短传</option><option value="highPress">高位压迫</option><option value="counterAttack">防守反击</option><option value="lowBlock">摆大巴</option></select></label><div class="tactical-bars"><label><span>节奏</span><input data-tactic-bar="tempo" type="range" min="0" max="100" value="50"><b>50</b></label><label><span>进攻宽度</span><input data-tactic-bar="width" type="range" min="0" max="100" value="50"><b>50</b></label><label><span>压迫强度</span><input data-tactic-bar="pressing" type="range" min="0" max="100" value="50"><b>50</b></label><label><span>防线高度</span><input data-tactic-bar="line" type="range" min="0" max="100" value="50"><b>50</b></label></div><div class="tactics-focus-row"><label>主攻方向<select><option>均衡</option><option>左路</option><option>中路</option><option>右路</option></select></label><label>主守方向<select><option>均衡</option><option>左路</option><option>中路</option><option>右路</option></select></label></div><p>拖动 S4 磁贴调整站位；从替补席拖到场上磁贴完成换人。</p></aside>
+            <div class="tactics-pitch league-board-panel league-squad-form"><div class="pitch-marking"></div><div id="tactics-starters" class="tactics-starters"></div></div>
+            <aside class="tactics-bench league-bench"><header><div><small>FULL SQUAD</small><b>替补席 · 11人</b></div><span>主力与替补磁贴可双向拖动交换</span></header><div id="tactics-bench-list" class="bench-magnet-list"></div></aside><aside id="tactics-detail" class="league-tactics-detail"><header><div class="league-tactics-detail-title"><span><small>V2 TACTICAL CONTROL</small><b>细节战术</b></span></div></header><div class="league-tactics-detail-scroll"><div class="tactics-detail-content"></div></div></aside>
+          </div>
+        </section>
+        <div id="map-loader" class="map-loader" role="status" aria-live="polite">
+          <span class="map-loader-mark" aria-hidden="true"></span>
+          <strong>正在绘制欧洲征程</strong>
+          <small>载入欧洲与南美洲的国家、省州、城市与俱乐部资料</small>
+        </div>
+
+        <aside id="territory-inspector" class="territory-inspector" aria-live="polite" hidden>
+          <div class="territory-inspector-heading">
+            <span>PROVINCE INTELLIGENCE</span>
+            <strong id="territory-name">选择一个省级区块</strong>
+            <small id="territory-country">查看归属与相邻进攻通路</small>
+          </div>
+          <dl>
+            <div><dt>归属</dt><dd id="territory-owner">未选择</dd></div>
+            <div class="territory-weather-row"><dt>当前天气</dt><dd id="territory-weather">—</dd></div>
+            <div><dt>通路</dt><dd id="territory-links">—</dd></div>
+            <div><dt>据点</dt><dd id="territory-assets">—</dd></div>
+            <div><dt>区块 ID</dt><dd id="territory-id">—</dd></div>
+            <div><dt>AI 难度</dt><dd id="territory-ai-difficulty">—</dd></div>
+            <div><dt>平均能力</dt><dd id="territory-ai-overall">—</dd></div>
+            <div><dt>阵型 / 心态</dt><dd id="territory-ai-formation">—</dd></div>
+            <div><dt>主要打法</dt><dd id="territory-ai-style">—</dd></div>
+          </dl>
+          <div class="territory-building-actions">
+            <button id="territory-building-button" type="button" hidden>查看地块建筑</button>
+          </div>
+          <div class="territory-challenge-actions" id="territory-challenge-actions" hidden>
+            <small id="territory-challenge-status">选择相邻地块发起比赛</small>
+            <button id="territory-challenge-button" type="button" disabled>挑战（两回合）</button>
+            <button id="territory-maritime-cancel-button" class="is-secondary" type="button" hidden>取消测绘</button>
+          </div>
+        </aside>
+
+        <aside id="building-panel" class="building-panel" aria-label="地块建筑管理" hidden>
+          <header>
+            <div><span>CLUB CONSTRUCTION</span><strong>地块建筑</strong></div>
+            <button id="building-panel-close" type="button" aria-label="关闭建筑面板">×</button>
+          </header>
+          <div id="building-panel-content" class="building-panel-content"></div>
+        </aside>
+
+        <section id="battle-result-panel" class="battle-result-panel" aria-live="assertive" hidden>
+          <header><span>S4 V2.1 MATCH RESULT</span><button id="battle-result-close" type="button" aria-label="关闭赛果">×</button></header>
+          <div class="battle-result-title"><small id="battle-result-territory">地块争夺赛</small><strong id="battle-result-outcome">比赛结束</strong></div>
+          <div class="battle-result-score"><span id="battle-home-name">我方球队</span><b id="battle-score">0 : 0</b><span id="battle-away-name">地块守军</span></div>
+        </section>
+
+        <div id="campaign-broadcast" class="broadcast-overlay standard-window" data-standard-window="broadcast" hidden aria-label="黄狗风云比赛电视台"></div>
+        <aside id="campaign-live-widget" class="campaign-live-widget" hidden aria-label="后台进行中的比赛"></aside>
+
+        <aside id="home-selection-panel" class="home-selection-panel" aria-live="polite" hidden>
+          <header><span>FOUND YOUR CLUB</span><h2>选择永久主场</h2></header>
+          <div class="home-selection-target">
+            <strong id="home-selection-name">尚未选择区域</strong>
+            <small id="home-selection-status">请在地图上选择一个省级地块</small>
+          </div>
+          <button id="confirm-home-selection" type="button" disabled>确认建立主场</button>
+          <p>确认后不可更改；黄色豪门区域及其陆地相邻省份不可选择。</p>
+        </aside>
+
+        <aside class="campaign-minimap-panel" aria-label="战役地图导航">
+          <div class="map-layer-toggles" aria-label="地图显示设置">
+            <label class="map-layer-toggle">
+              <span>天气</span>
+              <input id="weather-layer-toggle" type="checkbox" />
+              <i aria-hidden="true"></i>
+            </label>
+            <label class="map-layer-toggle">
+              <span>国境线</span>
+              <input id="country-borders-toggle" type="checkbox" />
+              <i aria-hidden="true"></i>
+            </label>
+            <label class="map-layer-toggle">
+              <span>主要城市</span>
+              <input id="major-cities-toggle" type="checkbox" checked />
+              <i aria-hidden="true"></i>
+            </label>
+          </div>
+          <div id="campaign-minimap" class="campaign-minimap" aria-label="拖动白色视口框移动主地图"></div>
+          <div class="map-attribution">Natural Earth · S4 club assets</div>
+        </aside>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </main>
+    </div>
+
+    <script src="./assets/vendor/leaflet.js"></script>
+    <script type="module" src="./campaign-entry.js?v=20260827-map-bootstrap-fix"></script>
+    <script type="module" src="./app.js?v=20260831-weather-layer-v3"></script>
+  </body>
+</html>

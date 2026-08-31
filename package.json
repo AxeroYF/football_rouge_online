@@ -1,27 +1,20 @@
 {
-  "name": "football-roguelite-simulator",
-  "version": "0.2.0",
+  "name": "football-roguelite-europe-hub",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node devtool/build.js",
-    "demo": "node devtool/server.js",
-    "public-demo": "node devtool/public-server.js",
-    "tunnel": "node devtool/tunnel.js",
-    "test-server": "node devtool/test-server.js",
-    "test-tunnel": "node devtool/test-tunnel.js",
-    "devtool": "node devtool/server.js",
-    "simulate": "node src/cli.js --matches 10000 --seed demo",
-    "balance:versus": "node versus/balance-report.js",
-    "balance:versus:seeded": "node versus/balance-report.js --config=balance-config-seeded.json",
-    "balance:versus:fast": "node versus/balance-report.js --config=balance-config-fast.json",
-    "balance:versus:quick": "node versus/balance-report.js --quick",
-    "balance:versus:render": "node versus/balance-report.js --render-only --quick",
-    "balance:ydl:s2": "node versus/balance-report.js --config=balance-config-ydl-s2.json",
-    "balance:ydl:s2:legends": "node versus/balance-report.js --config=balance-config-ydl-s2-legends.json",
-    "simulate:economy": "node versus/economy-simulation.js --config=economy-simulation-config.json",
-    "simulate:season:s3": "node versus/season-simulation.js --config=season-simulation-config-s3.json",
-    "traits": "node src/trait-cli.js --seed demo --role ST",
-    "test": "node --test"
+    "dev": "node server.mjs",
+    "pretest": "node --check client/player-card/player-card.js && node --check client/player-card/player-detail-window.js && node --check client/yoogle/yoogle-controller.js && node --check client/ui/stage-window-manager.js && node --check client/ui/standard-window.js && node --check client/ui/wide-window.js && node --check client/ui/small-window.js && node --check shared/player-card/player-card-contract.js && node --check client/buildings/building-panel-controller.js && node --check client/map/inertial-wheel-zoom.js && node --check client/map/campaign-minimap-controller.js && node --check client/map/territory-weather-layer-controller.js && node --test test/player-card.test.js test/team-player-detail.test.js test/yoogle-controller.test.js test/window-standards.test.js test/building-panel-controller.test.js test/inertial-wheel-zoom.test.js test/campaign-minimap-controller.test.js test/territory-weather-layer-controller.test.js",
+    "check": "node --check client/player-card/player-detail-window.js && node --check admin-v2.js && node --check app.js && node --check campaign-entry.js && node --check campaign-broadcast.js && node --check tactics-page.js && node --check tactics-lineup-rules.js && node --check maritime-routes.mjs && node --check campaign-service.mjs && node --check client/yoogle/yoogle-controller.js && node --check client/ui/stage-window-manager.js && node --check client/ui/standard-window.js && node --check client/ui/wide-window.js && node --check client/ui/small-window.js && node --check client/buildings/building-marker-controller.js && node --check client/challenge/challenge-controller.js && node --check client/core/campaign-api-client.js && node --check client/core/campaign-store.js && node --check client/map/campaign-map-data.js && node --check client/map/campaign-map-geometry.js && node --check client/map/campaign-minimap-controller.js && node --check client/map/inertial-wheel-zoom.js && node --check client/map/territory-presentation.js && node --check client/map/territory-weather-layer-controller.js && node --check client/maritime/maritime-controller.js && node --check client/territory/territory-controller.js && node --check client/team/team-controller.js && node --check server/application/admin-service.mjs && node --check server/application/player-library-service.mjs && node --check server/application/building-service.mjs && node --check server/application/challenge-service.mjs && node --check server/application/economy-service.mjs && node --check server/domain/player-map-colors.mjs && node --check server/http/admin-api-handler.mjs && node --check server/http/campaign-api-handler.mjs && node --check server/infrastructure/campaign-save-migrations.mjs && node --check server/infrastructure/json-campaign-repository.mjs && node --check server/scheduler/challenge-scheduler.mjs && node --check shared/config/buildings.mjs && node --check shared/config/challenge.mjs && node --check shared/config/draft.mjs && node --check shared/config/economy.mjs && node --check shared/config/map.mjs && node --check shared/config/maritime.mjs && node --check shared/football/labels.js && node --check engine/campaign-weather.mjs && node --check engine/campaign-match-engine.mjs && node --check engine/territory-ai.mjs && node --check server.mjs && node --check territory-model.js && node --check scripts/build-s4-catalog.mjs && node --check scripts/sync-player-profiles.mjs && node --check scripts/import-s4-player-profiles.mjs && node --check scripts/build-territory-data.mjs && node --check scripts/build-maritime-data.mjs && npm test",
+    "build:territories": "node scripts/build-territory-data.mjs && node scripts/build-maritime-data.mjs",
+    "test": "node --test test/territory-model.test.js test/territory-controller.test.js test/maritime-controller.test.js test/challenge-controller.test.js test/building-marker-controller.test.js test/building-service.test.js test/campaign-service.test.js test/campaign-weather.test.js test/campaign-match-engine.test.js test/campaign-broadcast.test.js test/campaign-api-handler.test.js test/tactics-lineup-rules.test.js test/maritime-routes.test.js test/app-map-regression.test.js test/campaign-map-view.test.js test/campaign-minimap-controller.test.js test/territory-weather-layer-controller.test.js test/inertial-wheel-zoom.test.js test/yoogle-controller.test.js test/window-standards.test.js test/refactor-foundation.test.js test/refactor-services.test.js test/admin-service.test.js test/player-library-service.test.js",
+    "sync:player-profiles": "node scripts/sync-player-profiles.mjs"
+  },
+  "devDependencies": {
+    "@turf/boolean-point-in-polygon": "^7.4.0",
+    "@turf/helpers": "^7.4.0",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1"
   }
 }

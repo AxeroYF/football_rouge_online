@@ -1,0 +1,29 @@
+:root{
+  --wide-window-max-width:2180px;
+  --wide-window-edge:16px;
+}
+.wide-window{
+  position:absolute!important;
+  z-index:1100!important;
+  inset:0!important;
+  min-width:0;
+  min-height:0;
+  padding:var(--wide-window-edge)!important;
+  overflow:hidden;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.wide-window[hidden]{display:none!important}
+.wide-window>.league-squad-page{
+  width:min(var(--wide-window-max-width),100%)!important;
+  max-width:var(--wide-window-max-width)!important;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  margin:0 auto;
+}
+.map-stage.has-stage-window>#campaign-map{filter:brightness(.76)}
+@media(max-width:1050px){
+  .wide-window{overflow-y:auto;overflow-x:hidden}
+}

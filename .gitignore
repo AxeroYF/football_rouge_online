@@ -1,72 +1,45 @@
-# ==============================
-# Node.js dependencies
-# ==============================
+# Dependencies
 node_modules/
 
-# ==============================
-# Environment variables / secrets
-# ==============================
+# Environment and secrets
 .env
 .env.*
 !.env.example
 
-# ==============================
-# Build output
-# ==============================
+# Build, test, and runtime output
 dist/
 build/
 out/
-.next/
 coverage/
-
-# ==============================
-# Tool caches
-# ==============================
-.cache/
-.vite/
-.npm/
-.eslintcache
-
-# ==============================
-# Logs
-# ==============================
+outputs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
-# ==============================
-# Temporary files
-# ==============================
+# Local campaign and Admin state
+data/campaign-accounts.json
+data/admin-state.json
+data/player-library-admin.json
+data/backups/
+
+# Imported source snapshots and large local backups
+S4_source_snapshot/
+YDL_backup/
+
+# Local player portrait/card-art library
+assets/player-profiles/
+
+# Temporary working directories and files
+.tmp-*/
 tmp/
 temp/
 *.tmp
 *.temp
 
-# ==============================
-# Editor settings
-# ==============================
+# Local handoff archives (the Markdown manifests remain tracked)
+handoff/*.zip
+
+# Editor and OS metadata
 .vscode/
 .idea/
-
-# ==============================
-# Operating system files
-# ==============================
 .DS_Store
 Thumbs.db
 Desktop.ini
-
-# ==============================
-# Local runtime data / generated QA artifacts
-# ==============================
-data/versus-accounts.json
-data/yellowdogs-league.json
-data/yellowdogs-league.json.bak
-data/s4-test/
-outputs/
-handoff/artifacts/
-handoff/*.zip
-.tmp-browser-*.json
-.tmp-browser-*.json.bak
-.worktrees/

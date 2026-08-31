@@ -1,0 +1,37 @@
+:root{
+  --standard-window-max-width:1600px;
+  --standard-window-edge:12px;
+  --standard-window-edge-mobile:8px;
+  --stage-window-z:1400;
+}
+.standard-window{
+  position:absolute!important;
+  z-index:var(--stage-window-z)!important;
+  inset:0!important;
+  min-width:0;
+  min-height:0;
+  padding:var(--standard-window-edge)!important;
+  display:flex!important;
+  align-items:stretch;
+  justify-content:center;
+  overflow:auto;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  pointer-events:none!important;
+}
+.standard-window[hidden]{display:none!important}
+.standard-window>.team-management-shell,
+.standard-window .broadcast-screen,
+.standard-window>.standard-window__surface{
+  position:relative;
+  width:min(var(--standard-window-max-width),100%)!important;
+  height:100%;
+  min-width:0;
+  min-height:0;
+  margin:0 auto;
+  pointer-events:auto;
+}
+@media(max-width:560px){
+  .standard-window{padding:var(--standard-window-edge-mobile)!important}
+}

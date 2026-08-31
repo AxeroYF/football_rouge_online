@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>黄狗风云 · 管理后台</title><link rel="stylesheet" href="admin.css"></head>
+<body class="admin-login-page">
+  <div class="login-shell">
+    <section class="login-brand"><div class="brand-mark">YD</div><p class="eyebrow">YELLOWDOGS CHRONICLES</p><h1>黄狗风云</h1><p class="brand-copy">持续世界运营控制中心</p><div class="brand-meta"><span>ADMIN CONSOLE</span><span>v0.1</span></div></section>
+    <section class="login-panel" id="login"><div class="panel-kicker">安全登录</div><h2>管理员账号登录</h2><p class="panel-copy">使用管理员账号进入世界运营后台</p><form id="login-form"><label>管理员账号<input name="username" value="admin" autocomplete="username" placeholder="请输入管理员账号" required></label><label>登录密码<input name="password" type="password" autocomplete="current-password" placeholder="请输入登录密码" required></label><button class="primary-button" type="submit"><span>进入后台</span><span aria-hidden="true">→</span></button></form><p class="login-hint">默认管理员账号：<strong>admin</strong><br>首次部署默认密码：<strong>19971019</strong></p><p class="login-error" id="login-error" role="alert"></p></section>
+    <section id="dashboard" hidden><header class="dashboard-header"><div><p class="eyebrow">WORLD OPERATIONS</p><h1>运营控制台</h1></div><span id="role"></span></header><div class="grid"><article><h2>系统任务</h2><form id="task-form"><input name="type" value="generic" placeholder="任务类型"><input name="payload" placeholder='JSON 参数，例如 {"accountId":"YF-..."}'><button>创建任务</button></form><ul id="tasks"></ul></article><article><h2>最近审计</h2><ul id="audit"></ul></article></div><article><h2>玩家金币调整</h2><form id="gold-form"><input name="accountId" placeholder="玩家 ID" required><input name="delta" type="number" placeholder="变更数量" required><input name="reason" placeholder="原因" required><button>提交调整</button></form><output id="notice"></output></article></section>
+  </div><script src="admin.js"></script>
+</body></html>
