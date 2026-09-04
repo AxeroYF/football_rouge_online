@@ -65,8 +65,26 @@ export function createCampaignApiHandler({ campaign } = {}) {
     if (request.method === "POST" && pathname === "/api/campaign/draft/choose") {
       return sendJson(response, 200, { state: campaign.choose(account, body.playerId) });
     }
+    if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/open") {
+      return sendJson(response, 200, campaign.openPlayerPack(account, body.packType));
+    }
+    if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/choose") {
+      return sendJson(response, 200, campaign.choosePlayerPackCard(account, body.openingId, body.playerId));
+    }
+    if (request.method === "POST" && pathname === "/api/campaign/squads/assign") {
+      return sendJson(response, 200, { state:campaign.assignPlayerSquad(account, body.playerId, body.squadId) });
+    }
     if (request.method === "POST" && pathname === "/api/campaign/home/claim") {
       return sendJson(response, 200, { state: campaign.chooseHome(account, body.territoryId) });
+    }
+    if (request.method === "POST" && pathname === "/api/campaign/expedition/move") {
+      return sendJson(response, 200, campaign.moveExpedition(account, body.territoryId));
+    }
+    if (request.method === "POST" && pathname === "/api/campaign/expedition/estimate") {
+      return sendJson(response, 200, campaign.estimateExpedition(account, body.territoryId));
+    }
+    if (request.method === "POST" && pathname === "/api/campaign/expedition/cancel") {
+      return sendJson(response, 200, campaign.cancelExpedition(account));
     }
     if (request.method === "POST" && pathname === "/api/campaign/tactics") {
       return sendJson(response, 200, { state: campaign.saveTactics(account, body) });

@@ -11,13 +11,15 @@ import {
 
 const players = [
   { id:"one", name:"阿利松", club:"利物浦", nationality:"巴西", role:"GK", secondaryRole:null, overall:89, grade:"A", pool:"GK", attributes:{ goalkeeping:89 } },
-  { id:"two", name:"萨拉赫", club:"利物浦", nationality:"埃及", role:"RW", secondaryRole:"ST", overall:91, grade:"S", pool:"ATT", attributes:{ finishing:92 }, inRoster:true },
+  { id:"two", name:"萨拉赫", sourceName:"Mohamed Salah", club:"利物浦", nationality:"埃及", role:"RW", secondaryRole:"ST", overall:91, grade:"S", pool:"ATT", attributes:{ finishing:92 }, inRoster:true },
   { id:"three", name:"托尼·克罗斯", club:"皇家马德里", nationality:"德国", role:"CM", secondaryRole:"DM", overall:93, grade:"S", pool:"MID", attributes:{ passing:96 } },
 ];
 
 test("YOOGLE keeps the mature S4 name, club, country and exact role searches", () => {
   assert.equal(YOOGLE_RESULT_LIMIT, 10);
   assert.deepEqual(filterYooglePlayers(players, "萨拉赫").map((player) => player.id), ["two"]);
+  assert.deepEqual(filterYooglePlayers(players, "Mohamed Salah").map((player) => player.id), ["two"]);
+  assert.deepEqual(filterYooglePlayers(players, "salah").map((player) => player.id), ["two"]);
   assert.deepEqual(filterYooglePlayers(players, "利物浦").map((player) => player.id), ["two", "one"]);
   assert.deepEqual(filterYooglePlayers(players, "德国").map((player) => player.id), ["three"]);
   assert.deepEqual(filterYooglePlayers(players, "st").map((player) => player.id), ["two"]);

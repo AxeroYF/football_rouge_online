@@ -7,9 +7,6 @@ export function createTerritoryController({
   attackableTerritoryIds,
   getTerritoryWorld,
   getCampaignState,
-  getCityData,
-  getClubData,
-  getBuildingCatalog = () => [],
   getCampaignRequest,
   getMaritimeMode,
   getMaritimeTargetIds,
@@ -131,6 +128,7 @@ export function createTerritoryController({
     const inspector = documentRef.querySelector("#territory-inspector");
     const actions = documentRef.querySelector("#territory-challenge-actions");
     const challengeButton = documentRef.querySelector("#territory-challenge-button");
+    const buildingActions = documentRef.querySelector("#territory-building-actions");
     const buildingButton = documentRef.querySelector("#territory-building-button");
     const cancelButton = documentRef.querySelector("#territory-maritime-cancel-button");
     const challengeStatus = documentRef.querySelector("#territory-challenge-status");
@@ -142,61 +140,36 @@ export function createTerritoryController({
       inspector.hidden = true;
       inspector.classList.remove("has-selection");
       documentRef.querySelector("#territory-name").textContent = "选择一个省级区块";
-      documentRef.querySelector("#territory-country").textContent = "查看归属与相邻进攻通路";
       documentRef.querySelector("#territory-owner").textContent = "未选择";
       const weatherElement = documentRef.querySelector("#territory-weather");
       weatherElement.textContent = "—";
       weatherElement.removeAttribute("title");
-      documentRef.querySelector("#territory-links").textContent = "—";
-      documentRef.querySelector("#territory-assets").textContent = "—";
-      documentRef.querySelector("#territory-id").textContent = "—";
       for (const id of ["territory-ai-difficulty", "territory-ai-overall", "territory-ai-formation", "territory-ai-style"]) {
         documentRef.querySelector(`#${id}`).textContent = "—";
       }
       actions.hidden = true;
+      buildingActions.hidden = true;
       buildingButton.hidden = true;
       cancelButton.hidden = true;
       return;
     }
 
-    const cityData = getCityData();
-    const clubData = getClubData();
-    const cityNames = metadata.cityIds
-      .map((id) => cityData.find((city) => city.id === id)?.name)
-      .filter(Boolean);
-    const garrisonClubIds = metadata.garrisonClubIds ?? metadata.clubIds;
-    const clubNames = garrisonClubIds
-      .map((id) => clubData.find((club) => club.id === id)?.name)
-      .filter(Boolean);
-    const buildingDefinitions = new Map(getBuildingCatalog().map((entry) => [entry.type, entry]));
-    const buildingNames = (Array.isArray(state.buildings) ? state.buildings : [])
-      .map((building) => {
-        const definition = buildingDefinitions.get(building.type);
-        return building.status === "constructing"
-          ? `${building.name || definition?.label || building.type}（施工中）`
-          : `${building.name || definition?.label || building.type} LV.${Number(building.level ?? 1)}`;
-      });
-    const assets = [
-      cityNames.length ? "城市 " + cityNames.join("、") : null,
-      clubNames.length ? "豪门 " + clubNames.join("、") : null,
-      buildingNames.length ? "设施 " + buildingNames.join("、") : null,
-    ].filter(Boolean).join(" · ") || "暂无城市、豪门或设施";
-
     inspector.hidden = false;
     inspector.classList.add("has-selection");
     documentRef.querySelector("#territory-name").textContent = `${metadata.country} - ${metadata.name}`;
-    documentRef.querySelector("#territory-country").textContent = metadata.type || "省级地块";
     documentRef.querySelector("#territory-owner").textContent = territoryOwnerLabel(metadata, state);
     const weather = campaignState?.world?.weather?.territories?.[territoryId] ?? null;
     const weatherElement = documentRef.querySelector("#territory-weather");
     weatherElement.textContent = weather ? `${weather.icon} ${weather.label}` : "—";
     if (weather) weatherElement.title = `降水强度 ${weather.precipitation}% · 每个整点刷新`;
     else weatherElement.removeAttribute("title");
-    documentRef.querySelector("#territory-links").textContent = metadata.landNeighbors.length + " 个陆地相邻区块";
-    documentRef.querySelector("#territory-assets").textContent = assets;
-    documentRef.querySelector("#territory-id").textContent = metadata.territoryId;
     const ownTerritory = state.ownerType === ownerTypes.PLAYER && state.ownerId === campaignState.playerId;
-    buildingButton.hidden = homeSelectionMode || !campaignState?.setupComplete;
+    const expeditionPiece = campaignState?.expeditionPiece;
+    const buildingEntryVisible = !homeSelectionMode
+      && Boolean(campaignState?.setupComplete)
+      && state.ownerType !== ownerTypes.NEUTRAL;
+    buildingActions.hidden = !buildingEntryVisible;
+    buildingButton.hidden = !buildingEntryVisible;
     buildingButton.textContent = ownTerritory ? "管理地块建筑" : "查看地块建筑";
     const ai = territoryIntelCache.get(territoryId)?.ai;
     const aiLoading = !territoryIntelCache.has(territoryId) && state.ownerType !== ownerTypes.PLAYER;
@@ -237,7 +210,8 @@ export function createTerritoryController({
       const coastal = campaignState?.coastalTerritoryIds?.includes(territoryId);
       const maritimeTarget = maritimeTargetIds.has(territoryId);
       if (ownTerritory) {
-        actions.hidden = !coastal;
+        const expeditionReadyHere = !expeditionPiece?.moving && expeditionPiece?.territoryId === territoryId;
+        actions.hidden = !coastal || !expeditionReadyHere;
         if (!actions.hidden) {
           challengeButton.disabled = getTerritoryChallengePending();
           challengeButton.dataset.action = "maritime";

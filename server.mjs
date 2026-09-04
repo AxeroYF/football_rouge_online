@@ -82,7 +82,7 @@ const server = http.createServer(async (request, response) => {
     const extension = path.extname(filePath).toLowerCase();
     response.writeHead(200, {
       "content-type": mimeTypes.get(extension) ?? "application/octet-stream",
-      "cache-control": [".html", ".js", ".mjs", ".css"].includes(extension) ? "no-cache" : "public, max-age=3600",
+      "cache-control": [".html", ".js", ".mjs", ".css"].includes(extension) ? "no-cache" : "public, max-age=604800, immutable",
     });
     response.end(request.method === "HEAD" ? undefined : body);
   } catch (error) {

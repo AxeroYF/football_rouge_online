@@ -8,7 +8,7 @@ import { playerCardMarkup } from "../client/player-card/player-card.js";
 
 test("player card contract normalizes game portraits and Admin profiles", () => {
   const game = createPlayerCardViewModel({
-    id:"p1", name:"一号", overall:80, effectiveOverall:83, grade:"A", role:"AM", club:"黄狗", nationality:"中国",
+    id:"p1", name:"一号", sourceName:"Player One", overall:80, effectiveOverall:83, grade:"A", role:"AM", secondaryRole:"RW", club:"黄狗", nationality:"中国",
     portrait:"./assets/player-profiles/a b.webp", portraitPosition:{ x:48, y:51, width:188 },
   });
   const admin = createPlayerCardViewModel({
@@ -17,6 +17,8 @@ test("player card contract normalizes game portraits and Admin profiles", () => 
   });
   assert.equal(game.art.url, "/assets/player-profiles/a b.webp");
   assert.equal(game.overall, 83);
+  assert.equal(game.sourceName, "Player One");
+  assert.equal(game.secondaryRole, "RW");
   assert.deepEqual(admin.art, { url:"/assets/player-profiles/admin/hash.webp", x:50, y:52, width:200 });
   assert.ok(isPlayerCardViewModel(game));
 });
@@ -95,6 +97,16 @@ test("all nine late S4 legendary profiles stay bound to real card art", () => {
     assert.deepEqual(player?.portraitPosition, { x:profile.x, y:profile.y, width:profile.width }, `${playerId} catalog position`);
     assert.ok(positions.profiles[profileKey], `${profileKey} position preset`);
   }
+});
+
+test("production catalog keeps an English name for every player and shares Messi's source name", () => {
+  const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+  const catalog = JSON.parse(fs.readFileSync(path.join(root, "assets/data/s4-player-catalog.json"), "utf8"));
+  assert.equal(catalog.length, 842);
+  assert.equal(catalog.filter((player) => String(player.sourceName ?? "").trim()).length, catalog.length);
+  assert.equal(catalog.filter((player) => /\p{Script=Han}/u.test(String(player.sourceName))).length, 0);
+  assert.equal(catalog.find((player) => player.id === "legend-messi")?.sourceName, "Lionel Messi");
+  assert.equal(catalog.find((player) => player.id === "legend-messi-rat")?.sourceName, "Lionel Messi");
 });
 
 test("S4 profile importer accepts public legendary maps and preserves recovered registry entries", () => {

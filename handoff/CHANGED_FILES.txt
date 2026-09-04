@@ -1,140 +1,101 @@
-handoff/ROADMAP_2026-08-31.md
-handoff/UPDATE_2026-08-31.md
-handoff/PACKAGE_CONTENTS_2026-08-31.md
-handoff/README.md
-handoff/CURRENT_STATE.md
-handoff/NEW_CHAT_PROMPT.md
-handoff/MANIFEST.md
-assets/expedition-tokens/README.md
-assets/expedition-tokens/manifest.json
-assets/expedition-tokens/default.png
-assets/expedition-tokens/argentina-10.png
-assets/expedition-tokens/brazil-9.png
-assets/expedition-tokens/england-7.png
-assets/expedition-tokens/france-10.png
-assets/expedition-tokens/germany-5.png
-assets/expedition-tokens/italy-10.png
-assets/expedition-tokens/netherlands-14.png
-assets/expedition-tokens/portugal-7.png
-assets/expedition-tokens/spain-6.png
-engine/campaign-weather.mjs
-client/map/territory-weather-layer-controller.js
-client/player-card/player-card.js
-client/player-card/player-detail-window.js
-client/yoogle/yoogle-controller.js
-client/ui/WINDOW_STANDARDS.md
-client/ui/standard-window.js
-client/ui/wide-window.js
-client/ui/small-window.js
-shared/player-card/player-card-contract.js
-styles/player-card.css
-styles/team-player-detail.css
-styles/yoogle.css
-admin-v2.html
+Rougelite working tree changes as of 2026-09-02
+Branch: codex/rougelite
+HEAD: ef67992 data: add remaining campaign datasets
+
+IMPORTANT
+- This is an intentionally dirty worktree.
+- Preserve all listed tracked and untracked changes.
+- Do not reset, clean, or overwrite them.
+- Player/card/pack image assets are not included in the handoff zip.
+
+TRACKED MODIFIED
 admin-v2.css
+admin-v2.html
 admin-v2.js
-server/application/admin-service.mjs
-server/application/player-library-service.mjs
-server/application/challenge-service.mjs
-engine/campaign-match-engine.mjs
-test/player-card.test.js
-test/team-player-detail.test.js
-test/yoogle-controller.test.js
-test/window-standards.test.js
-test/campaign-weather.test.js
-test/territory-weather-layer-controller.test.js
 app.js
-campaign-broadcast.js
-campaign-entry.js
+assets/data/s4-player-base-catalog.json
+assets/data/s4-player-catalog.json
 campaign-service.mjs
-client/core/campaign-api-client.js
-client/core/campaign-store.js
 client/challenge/challenge-controller.js
-client/maritime/maritime-controller.js
-client/map/campaign-map-data.js
-client/map/campaign-map-geometry.js
-client/map/campaign-minimap-controller.js
-client/map/inertial-wheel-zoom.js
 client/map/territory-presentation.js
+client/maritime/maritime-controller.js
+client/team/team-controller-ydl.js
+client/team/team-controller.js
 client/territory/territory-controller.js
-formation-rules.js
+client/ui/SMALL_WINDOW.md
+client/ui/WINDOW_STANDARDS.md
+client/ui/small-window.js
+client/yoogle/yoogle-controller.js
+engine/campaign-match-engine.mjs
+engine/territory-ai.mjs
 index.html
 package.json
 s4-tactics-original.css
-server.mjs
-server/infrastructure/json-campaign-repository.mjs
-server/application/economy-service.mjs
+server/application/admin-service.mjs
 server/application/challenge-service.mjs
-server/domain/player-map-colors.mjs
+server/http/admin-api-handler.mjs
 server/http/campaign-api-handler.mjs
 server/infrastructure/campaign-save-migrations.mjs
-server/scheduler/challenge-scheduler.mjs
-shared/config/challenge.mjs
-shared/config/draft.mjs
-shared/config/economy.mjs
-shared/config/maritime.mjs
-shared/config/map.mjs
-shared/config/buildings.mjs
-shared/football/labels.js
+shared/player-card/player-card-contract.js
 styles.css
+styles/small-window.css
+styles/standard-window.css
 tactics-page.js
 territory-model.js
-engine/campaign-match-engine.mjs
-engine/territory-ai.mjs
-engine/s4-v2.1/
-styles/campaign-broadcast.css
-styles/player-card.css
-assets/data/s4-player-base-catalog.json
-assets/data/s4-player-catalog.json
-assets/data/s4-production-content-overrides.json
-test/campaign-match-engine.test.js
-test/campaign-broadcast.test.js
-test/campaign-service.test.js
+test/admin-service.test.js
+test/app-map-regression.test.js
+test/building-marker-controller.test.js
+test/building-panel-controller.test.js
 test/campaign-api-handler.test.js
-test/building-service.test.js
-test/campaign-map-view.test.js
-test/campaign-minimap-controller.test.js
-test/inertial-wheel-zoom.test.js
+test/campaign-match-engine.test.js
+test/campaign-service.test.js
 test/challenge-controller.test.js
 test/maritime-controller.test.js
-test/refactor-foundation.test.js
+test/player-card.test.js
 test/refactor-services.test.js
-test/territory-controller.test.js
-test/territory-model.test.js
-handoff/README.md
-handoff/CURRENT_STATE.md
-handoff/NEW_CHAT_PROMPT.md
-handoff/MANIFEST.md
-handoff/CHANGED_FILES.txt
-handoff/REFACTOR_2026-08-29.md
-handoff/ROADMAP_ADMIN_2026-08-29.md
-2026-08-28: app.js / campaign-broadcast.js / index.html / styles.css — 后台比赛比分卡、点击进入电视台、首回合后三分钟冷却、移除地图红色攻击边界
-2026-08-28: tactics-page.js / campaign-service.mjs / test/campaign-service.test.js / app.js — 补齐 S4 战术坐标、门将、三线、11 人、队长及服务端保存边界
-2026-08-28: tactics-page.js / tactics-lineup-rules.js / test/tactics-lineup-rules.test.js / package.json / app.js — 完整迁移 S4 三站位独立坐标与自动排阵边界
-2026-08-28: app.js / server.mjs / campaign-service.mjs / territory-model.js / maritime-routes.mjs / scripts/build-maritime-data.mjs / assets/data/campaign-coastlines.json / test/maritime-routes.test.js / index.html / styles.css / package.json — 新增海岸选点、直线航线与服务器校验的跨海征战机制
+test/tactics-lineup-rules.test.js
+test/team-player-detail.test.js
+test/window-standards.test.js
+test/yoogle-controller.test.js
 
-2026-08-28: engine/campaign-match-engine.mjs / engine/s4-v2.1/versus/v2/match-engine-v2.js / campaign-service.mjs / server.mjs / campaign-broadcast.js / app.js / test/campaign-service.test.js / test/campaign-broadcast.test.js / test/app-map-regression.test.js — 地块挑战改为服务器单链实时推进，S4 固定快照播报节奏，终场后才生成赛果，并支持随机数游标持久化与刷新/重启续赛
-2026-08-29: campaign-service.mjs / campaign-broadcast.js / app.js / index.html / test/campaign-service.test.js / test/app-map-regression.test.js — 修复第二回合沿用首回合数据、限制单玩家同时只能一场挑战、精简结算弹窗
-2026-08-29: campaign-service.mjs / app.js / index.html / styles.css / test/campaign-service.test.js / test/app-map-regression.test.js — 新增账号金币、100万测试初始余额、收支流水与顶部栏右侧余额显示
-2026-08-29: shared/config/*.mjs / shared/football/labels.js / client/core/campaign-api-client.js / server/infrastructure/json-campaign-repository.mjs / campaign-entry.js / campaign-service.mjs / campaign-broadcast.js / tactics-page.js / maritime-routes.mjs / engine/campaign-match-engine.mjs / scripts/build-maritime-data.mjs / test/refactor-foundation.test.js / package.json — 第一阶段模块化重构：参数、显示字典、API 会话和 JSON 存档边界拆分，保留旧接口与存档兼容
-2026-08-29: server/application/economy-service.mjs / server/domain/player-map-colors.mjs / server/infrastructure/campaign-save-migrations.mjs / server/scheduler/challenge-scheduler.mjs / shared/config/map.mjs / campaign-service.mjs / server.mjs / test/refactor-services.test.js / test/app-map-regression.test.js / package.json — 第二阶段模块化重构：显式迁移、独立经济服务、地图颜色领域逻辑和低压力挑战调度器
-2026-08-29: server/http/campaign-api-handler.mjs / server.mjs / test/campaign-api-handler.test.js / package.json — 拆分 campaign API 请求解析、鉴权、路由和 JSON 响应，保持 HTTP 契约兼容
-2026-08-29: server/application/challenge-service.mjs / client/core/campaign-store.js / campaign-service.mjs / app.js / test/refactor-services.test.js / test/refactor-foundation.test.js / package.json — 第三阶段模块化重构：挑战生命周期服务化、前端状态写入统一发布，保留 CampaignService 与 campaignState 兼容边界
-2026-08-29: client/map/campaign-map-data.js / client/map/campaign-map-geometry.js / client/map/territory-presentation.js / app.js / test/campaign-map-view.test.js / test/app-map-regression.test.js / package.json — 第四阶段 app.js 拆分：地图数据读取、南美坐标和地块展示模型独立，Leaflet 图层与事件行为保持兼容
-2026-08-29: client/territory/territory-controller.js / client/maritime/maritime-controller.js / client/challenge/challenge-controller.js / app.js / test/territory-controller.test.js / test/maritime-controller.test.js / test/challenge-controller.test.js / test/app-map-regression.test.js / package.json — 第五阶段 app.js 拆分：领地、跨海和挑战直播状态迁入独立控制器，app.js 降至 694 行
-2026-08-29: shared/config/buildings.mjs / server/application/building-service.mjs / campaign-service.mjs / territory-model.js / server/http/campaign-api-handler.mjs / server/infrastructure/campaign-save-migrations.mjs / server/infrastructure/json-campaign-repository.mjs / test/building-service.test.js / test/campaign-api-handler.test.js / test/refactor-foundation.test.js / package.json — 七类设施后端落地、schema 4 存档、首都自动体育场、槽位/海岸/金币校验及设施 API
-2026-08-29: client/buildings/building-marker-controller.js / client/territory/territory-controller.js / app.js / index.html / styles.css / test/building-marker-controller.test.js / package.json — 建筑按地块聚合展示、点击旋转展开、图片按需加载及地块情报设施摘要
-2026-08-29: shared/config/buildings.mjs / server/application/building-service.mjs / campaign-service.mjs / data/campaign-accounts.json / client/buildings/building-panel-controller.js / client/buildings/building-marker-controller.js / client/territory/territory-controller.js / app.js / index.html / styles.css / test/building-panel-controller.test.js / test/building-service.test.js / package.json — 5000 金币与一分钟施工规则、test/test2 主场补建、升级关闭及地块建筑预览/建造抽屉
-2026-08-29: client/buildings/building-marker-controller.js / styles.css / app.js / index.html / test/building-marker-controller.test.js — 展开设施图标放大至俱乐部徽标量级，并通过内容签名避免状态轮询重复播放展开动画
-2026-08-29: app.js / client/buildings/building-marker-controller.js / styles.css / index.html / test/building-marker-controller.test.js / test/app-map-regression.test.js — 建筑与中立豪门跨地图缩放保持展开、建筑固定 96px、关闭标记缩放拉伸动画
-2026-08-29: client/buildings/building-panel-controller.js / client/buildings/building-marker-controller.js / client/territory/territory-controller.js / styles.css / app.js / index.html / test/building-panel-controller.test.js / test/building-marker-controller.test.js — 建筑字体整体放大、名称与右侧 LV/状态分栏、等级统一为 LV.n 并移除最大等级分母
-2026-08-29: app.js / index.html / test/app-map-regression.test.js — 恢复 Leaflet 地图与标记平滑缩放动画，修复滚轮跳变卡顿并保留建筑/豪门展开态
-2026-08-29: styles.css / index.html / test/building-marker-controller.test.js — 地图设施标记改为蓝紫专属配色，区分金色/橙色中立豪门与青色航海路线
-2026-08-29: client/map/inertial-wheel-zoom.js / app.js / index.html / package.json / test/inertial-wheel-zoom.test.js / test/app-map-regression.test.js — 以鼠标锚定、逐帧推进和指数减速替代 Leaflet 原生滚轮跳级，并加入速度与边界约束
-2026-08-29: client/map/inertial-wheel-zoom.js / app.js / index.html / test/inertial-wheel-zoom.test.js / test/app-map-regression.test.js — 移除惯性结束后的二次缩放动画和刻度吸附，修复画面闪烁及缩放回滚
-2026-08-29: client/map/campaign-minimap-controller.js / app.js / index.html / styles.css / package.json / test/campaign-minimap-controller.test.js — 左下角新增领土缩略地图、实时视口框及拖框平移，地图开关移至缩略地图上沿
-2026-08-29: handoff/ROADMAP_ADMIN_2026-08-29.md / handoff/README.md / handoff/CURRENT_STATE.md / handoff/UPDATE_2026-08-29.md / handoff/NEW_CHAT_PROMPT.md / handoff/MANIFEST.md / handoff/CHANGED_FILES.txt — 归档后续项目路线、S4 Admin 功能取舍、新后台信息架构与推荐服务边界
+UNTRACKED SOURCE / TESTS / DOCS
+client/inventory/inventory-controller.js
+client/map/expedition-piece-controller.js
+server/application/player-pack-service.mjs
+server/domain/expedition-piece.mjs
+shared/config/player-packs.mjs
+shared/config/player-squads.mjs
+styles/inventory.css
+test/admin-api-handler.test.js
+test/admin-ui.test.js
+test/expedition-piece.test.js
+test/inventory-controller.test.js
+test/player-pack-service.test.js
+handoff/UPDATE_2026-09-02.md
+handoff/PACKAGE_CONTENTS_2026-09-02.md
 
-2026-08-30: scripts/sync-player-profiles.mjs / scripts/import-s4-player-profiles.mjs / scripts/build-s4-catalog.mjs / package.json / assets/data/s4-player-profile-registry.json / assets/data/s4-player-base-catalog.json / assets/data/s4-player-catalog.json / assets/player-profiles/ — S4 球员卡画改为按球员 ID 注册表自动导入、匹配和定位，支持后续新增卡画资源重建。
-2026-08-30: admin-v2.html / admin-v2.css / admin-v2.js / server/application/player-library-service.mjs / server/http/admin-api-handler.mjs / server.mjs / package.json / test/player-library-service.test.js — 以 S4 内容工作台为底座重做黄狗风云 Admin 球员库、批量制卡、卡画管理和数据审计。
-2026-08-30: handoff/PLAYER_LIBRARY_ADMIN_2026-08-30.md — 记录 723 名球员、245 条映射、539 个本地卡画文件及 294 个未绑定候选资产的完整审计。
+UNTRACKED USER-PROVIDED PACK ASSETS
+assets/player-packs/player-pack-icon-black-v4-cutout.png
+assets/player-packs/player-pack-icon-black-v4.png
+assets/player-packs/player-pack-icon-purple-green-v5-cutout.png
+assets/player-packs/player-pack-icon-purple-green-v5.png
+assets/player-packs/player-pack-icon-red-gold-v4-cutout.png
+assets/player-packs/player-pack-icon-red-gold-v4.png
+assets/player-packs/player-pack-icon-white-blue-v4-cutout.png
+assets/player-packs/player-pack-icon-white-blue-v4.png
+
+FEATURE AREAS COVERED
+- four-tier player packs, legacy save migration, neutral conquest rewards
+- inventory small window and fullscreen three-card pack opening
+- admin targeted/all-player pack grants
+- team list view, English search, expedition/garrison assignment and filtering
+- fixed expedition/garrison tactics schemes and autosave
+- expedition map token movement, estimate, progress and cancel
+- neutral territory panel simplification
+- rollback from rejected light theme to original dark UI
+
+LATEST VERIFICATION
+npm run check: PASS
+pretest: 47 passed
+main test suite: 122 passed
+browser testing: user-owned

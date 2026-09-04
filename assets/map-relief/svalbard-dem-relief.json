@@ -1,0 +1,36 @@
+{
+  "region": "svalbard",
+  "source": "AWS Terrain Tiles / Mapzen Terrarium elevation encoding",
+  "nativeZoom": 8,
+  "maxNativeZoom": 9,
+  "detailZooms": [
+    8,
+    9
+  ],
+  "bounds": {
+    "west": 7.0,
+    "south": 74.0,
+    "east": 36.0,
+    "north": 82.0
+  },
+  "transform": {
+    "type": "identity"
+  },
+  "render": {
+    "elevationScaleMeters": 1800.0,
+    "hillshadeContrast": 1.32,
+    "detailBrightness": 1.02,
+    "detailContrast": 1.04,
+    "overviewBrightness": 1.0,
+    "overviewContrast": 1.0
+  },
+  "detailTiles": 2494,
+  "landDetailTiles": 438,
+  "renderedLandDetailTiles": 438,
+  "transparentDetailTiles": 2056,
+  "sourceTilesRequired": 661,
+  "overviewTiles": 258,
+  "detailPath": "assets/map-relief/svalbard-dem-z8/{z}/{x}/{y}.webp",
+  "overviewPath": "assets/map-relief/svalbard-dem-overview/{z}/{x}/{y}.webp",
+  "processing": "inverse-mapped native z9 DEM hillshade with campaign territory mask and derived z3-z7 overview pyramid"
+}

@@ -36,6 +36,16 @@ export function createChallengeController({
       `${battle.aggregateScore?.[0] ?? battle.score?.[0] ?? 0} : `
       + `${battle.aggregateScore?.[1] ?? battle.score?.[1] ?? 0}`
     );
+    const rewards = documentRef.querySelector("#battle-result-rewards");
+    const goldReward = Number(battle.rewards?.gold ?? 0);
+    const packReward = battle.rewards?.packs?.[0];
+    if (rewards) {
+      rewards.hidden = !(battle.captured && goldReward > 0 && packReward);
+      if (!rewards.hidden) {
+        documentRef.querySelector("#battle-result-gold-reward").textContent = `+${goldReward.toLocaleString("zh-CN")} 金币`;
+        documentRef.querySelector("#battle-result-pack-reward").textContent = `+${Number(packReward.count)} ${packReward.name}`;
+      }
+    }
     panel.hidden = false;
   }
 

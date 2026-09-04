@@ -1,0 +1,44 @@
+{
+  "region": "south-america",
+  "source": "AWS Terrain Tiles / Mapzen Terrarium elevation encoding",
+  "nativeZoom": 8,
+  "maxNativeZoom": 9,
+  "detailZooms": [
+    8,
+    9
+  ],
+  "bounds": {
+    "west": -15.0,
+    "south": -20.0,
+    "east": 58.0,
+    "north": 36.0
+  },
+  "transform": {
+    "type": "south-america-axis-swap",
+    "sourceCenter": {
+      "lat": -21.5,
+      "lng": -57.5
+    },
+    "displayCenter": {
+      "lat": 7.0,
+      "lng": 20.0
+    }
+  },
+  "render": {
+    "elevationScaleMeters": 5200.0,
+    "hillshadeContrast": 1.32,
+    "detailBrightness": 1.08,
+    "detailContrast": 1.08,
+    "overviewBrightness": 1.0,
+    "overviewContrast": 1.0
+  },
+  "detailTiles": 8925,
+  "landDetailTiles": 3462,
+  "renderedLandDetailTiles": 3462,
+  "transparentDetailTiles": 5463,
+  "sourceTilesRequired": 3999,
+  "overviewTiles": 814,
+  "detailPath": "assets/map-relief/south-america-dem-z8/{z}/{x}/{y}.webp",
+  "overviewPath": "assets/map-relief/south-america-dem-overview/{z}/{x}/{y}.webp",
+  "processing": "inverse-mapped native z9 DEM hillshade with campaign territory mask and derived z3-z7 overview pyramid"
+}

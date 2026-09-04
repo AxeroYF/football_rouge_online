@@ -98,7 +98,7 @@ test("territory presentation derives player ownership, selection and challenge s
   assert.match(presentation.territoryTooltipMarkup(metadata, state), /⛈.*雷暴.*本小时天气/);
 });
 
-test("campaign map data loader fetches and combines the seven versioned assets", async () => {
+test("campaign map data loader fetches and combines the eight versioned assets", async () => {
   const requests = [];
   const payloads = [
     { features: ["countries"] },
@@ -108,6 +108,7 @@ test("campaign map data loader fetches and combines the seven versioned assets",
     { features: ["territories"] },
     { territories: ["index"] },
     { coastlines: ["coast"] },
+    { regions: { svalbard: {} } },
   ];
   const data = await loadCampaignMapData({
     version: "test-version",
@@ -118,12 +119,13 @@ test("campaign map data loader fetches and combines the seven versioned assets",
     },
   });
 
-  assert.equal(requests.length, 7);
+  assert.equal(requests.length, 8);
   assert.ok(requests.every(({ url }) => url.endsWith("?v=test-version")));
   assert.ok(requests.every(({ options }) => options.cache === "no-cache"));
   assert.deepEqual(data.cities.map((city) => city.id), ["europe-city", "south-america-city"]);
   assert.equal(data.clubs[0].id, "club");
   assert.deepEqual(data.territoryIndex.territories, ["index"]);
+  assert.deepEqual(data.reliefRegions.regions, { svalbard: {} });
 });
 
 test("campaign map data loader rejects the whole map when an asset is unavailable", async () => {

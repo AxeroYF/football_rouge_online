@@ -1,77 +1,31 @@
-# 下一次对话提示
+# 下一对话启动提示
 
-## 2026-08-31 当前提示（优先使用）
+请在 `D:\Project\game_test\.worktrees\Rougelite` 继续开发黄狗风云 Rougelite。
 
-请继续维护黄狗风云项目，工作树是：
+开始前请完整阅读：
 
-D:\Project\game_test\.worktrees\Rougelite
+1. `handoff/UPDATE_2026-09-02.md`
+2. `handoff/CURRENT_STATE.md`
+3. `handoff/CHANGED_FILES.txt`
 
-先完整阅读：
+当前分支是 `codex/rougelite`，HEAD 为 `ef67992`，但工作区包含大量尚未提交的本轮功能，不能把 HEAD 当成当前产品状态，也不要执行重置、清理或覆盖用户改动。
 
-- handoff/ROADMAP_2026-08-31.md
-- handoff/UPDATE_2026-08-31.md
-- handoff/CURRENT_STATE.md 顶部“当前权威摘要”
-- handoff/MANIFEST.md 顶部“2026-08-31 当前清单”
+必须保持以下产品决策：
 
-当前最重要的结论：
+- 使用原来的深色主题；浅色主题实验已被用户明确否决并完整回退。
+- 地图本体和领土颜色保持原方案。
+- 所有玩家都可以获得所有球员，没有私有池/公共池所有权。
+- 卡包只有传奇、珍奇、稀有、普通四种；中立征服奖励发珍奇包，旧征服包存档迁移为珍奇包。
+- 背包使用与 26 项球员数值详情一致的小型窗口；卡包逐个显示，点击即开。
+- 开包三选一直接在全屏深色流星雨舞台上展示，不套额外窗口；结果直到点击卡外区域才关闭。
+- 编队只有远征和留守；所有非远征球员自动属于留守，没有未编队。
+- 战术板只有两套固定不可删除方案：远征、留守；首发和替补均不能共用球员。
+- 防守统一使用留守阵容；远征战棋所在位置决定进攻起点。
+- 远征队可在己方领土耗时移动，移动中不可进攻，但地图地块仍可正常点击。
+- 新功能 UI 不要加入无意义英文、小字说明或冗余操作按钮。
+- 浏览器测试由用户自己执行；不要长期占用用户测试端口。
 
-- 游戏定位是大地图远征经营 + 异步战略推进 + S4 V2.1 自动比赛模拟。
-- 下一主线是远征队领域模型、真实时间移动、地图战棋、抵达挑战和休整闭环。
-- 球员库为 842 人，卡画注册 386 条；29 名 DLC4 计划无卡画球员不是异常。
-- Admin、统一球员卡、26 项详情、YOOGLE、三套窗口规范和动态天气基础已经完成。
-- 10 个远征战棋素材已经入库，尚未接入运行时。
-- 天气每真实小时刷新，目前只影响比赛；地图天气层默认关闭且为静态地块覆盖。
-- 最近 npm run check：预检 31/31、主测试 89/89 通过。
-- 浏览器测试由用户执行。
+目前自动化基线：`npm run check` 通过，预检 47 项、主测试 122 项。
 
-硬性约束：
-
-1. 运行时不得引用 .worktrees\s4、S4_source_snapshot 或服务器备份目录。
-2. 球员卡必须走 shared/player-card 契约与 client/player-card 渲染器。
-3. 不重新设计 S4 成熟战术板与电视台。
-4. 标准窗口、加宽窗口、小型窗口不得混用。
-5. 天气层不要恢复成小图标或动画。
-6. 前端修改后更新 cache-bust，代码修改后运行 npm run check。
-
-以下为 2026-08-30 的历史提示，仅供追溯：
-
-请继续维护黄狗风云项目，工作树是：
-
-`D:\Project\game_test\.worktrees\Rougelite`
-
-先完整阅读：
-
-- `handoff/README.md`
-- `handoff/CURRENT_STATE.md`
-- `handoff/CHANGED_FILES.txt`
-- `handoff/MANIFEST.md`
-- `handoff/ROADMAP_ADMIN_2026-08-29.md`
-
-当前状态：
-
-- S4 成熟阵容战术页已迁入。
-- S4 V2.1 引擎及依赖已完全放在 Rougelite 工作树内。
-- 地块 AI 驻军、11 套阵型、主位置选人、核心国家能力加成已接入。
-- 地块挑战已改为两回合总比分、加时和点球。
-- S4 成熟电视台组件和最终 UI 已直接迁入本地，包含联合球场、S4 磁贴、事件栏、数据栏、战术摘要停靠和滚动保持。
-- 比赛由服务器按墙钟时间和单链切片实时推进，客户端按固定节奏读取快照，赛果只在终场生成。
-- 地图主界面浮层、弹窗、按钮、开关和建队入口已统一为 S4 式圆角。`n- S4 球员卡画已改为注册表驱动，支持通过导入脚本批量接入新卡画和头像。
-- 地块情报卡默认隐藏，点击显示，重复点击同一地块或点击空白处关闭；卡片位于地图左上角。
-- CampaignService 已拆出 repository、migration、EconomyService、ChallengeService、HTTP handler 和 scheduler。
-- app.js 已拆出 campaign-store、地图数据/几何/展示、TerritoryController、MaritimeController 和 ChallengeController。
-- app.js 当前 718 行；地图滚轮惯性和缩略地图已独立拆到 `client/map/inertial-wheel-zoom.js`、`client/map/campaign-minimap-controller.js`，下一步仍可拆 Leaflet 图层/城市 controller 和顶栏/键盘 application shell。
-- 地图滚轮已使用鼠标锚定、逐帧推进和指数减速，Leaflet 原生定时聚合跳级已关闭；结束时不再播放二次动画或吸附刻度，设施和豪门缩放时保持展开。
-- 左下角缩略地图显示领土颜色和主地图白色视口框，拖动框可平移主地图；国境线和主要城市开关位于缩略图上沿。
-- 最近 `npm run check` 为 73/73 通过。
-- 浏览器验收由用户执行。
-- 后续路线已明确：先完成 Admin/RBAC/审计/资源流水/统一任务等数据基础，再完成三套阵容、共享体力、次数限制、失败惩罚、PvP 金币托管和并发锁组成的征服闭环；详细取舍见 `handoff/ROADMAP_ADMIN_2026-08-29.md`。
-
-硬性要求：
-
-1. 不得让黄狗风云运行时引用 `.worktrees\s4`、`S4_source_snapshot` 或其他 S4 文件夹。
-2. 若需要 S4 源码，可以读取并迁移，但最终代码、样式与资源必须复制到 Rougelite 工作树。
-3. 不要重新设计或简化已经成熟的 S4 阵容战术 UI 和电视台 UI。
-4. 电视台代码必须继续维护在 `campaign-broadcast.js` 与 `styles/campaign-broadcast.css`，不得回退到临时自定义直播界面。
-5. 修改后运行 `npm run check`。
-6. 修改前端后更新资源 cache-bust 版本。`n7. 球员卡画变更优先更新注册表和导入流程，不要再针对单个球员硬编码。
+收到新的开发要求后，先定位相关实现和测试，再在现有未提交改动上增量修改。完成后报告改动内容、验证结果和仍需用户浏览器确认的项目。
 

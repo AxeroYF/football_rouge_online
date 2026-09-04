@@ -22,6 +22,7 @@
 }
 .standard-window[hidden]{display:none!important}
 .standard-window>.team-management-shell,
+.standard-window>.broadcast-v2-content,
 .standard-window .broadcast-screen,
 .standard-window>.standard-window__surface{
   position:relative;
@@ -32,6 +33,7 @@
   margin:0 auto;
   pointer-events:auto;
 }
+.standard-window>.broadcast-v2-content{width:100%!important;max-width:none!important}
 @media(max-width:560px){
   .standard-window{padding:var(--standard-window-edge-mobile)!important}
 }

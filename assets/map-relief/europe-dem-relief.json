@@ -1,0 +1,19 @@
+{
+  "source": "AWS Terrain Tiles / Mapzen Terrarium elevation encoding",
+  "zoom": 9,
+  "bounds": {
+    "west": -25.0,
+    "south": 25.0,
+    "east": 100.0,
+    "north": 75.0
+  },
+  "tilePath": "assets/map-relief/europe-dem-z8/{z}/{x}/{y}.webp",
+  "maxNativeZoom": 9,
+  "detailZooms": [
+    8,
+    9
+  ],
+  "tiles": 3680,
+  "z8Tiles": 1067,
+  "processing": "Native z9 DEM hillshade with deep olive elevation tint, softer ridge detail and Natural Earth Europe mask excluding Russia"
+}

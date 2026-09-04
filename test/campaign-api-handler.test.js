@@ -119,6 +119,29 @@ test("campaign API handler keeps registration and authenticated state contracts"
   });
 });
 
+test("campaign API estimates, starts and cancels expedition movement", async () => {
+  const account={id:"account",nickname:"经理"};
+  const calls=[];
+  const campaign={
+    authenticate:()=>account,
+    estimateExpedition:(value,territoryId)=>{calls.push(["estimate",value.id,territoryId]);return {estimate:{durationMs:60_000}};},
+    moveExpedition:(value,territoryId)=>{calls.push(["move",value.id,territoryId]);return {expeditionPiece:{moving:true}};},
+    cancelExpedition:(value)=>{calls.push(["cancel",value.id]);return {expeditionPiece:{moving:false}};},
+  };
+  const handler=createCampaignApiHandler({campaign});
+  const auth={authorization:"Bearer session-token"};
+  for(const [pathname,body] of [
+    ["/api/campaign/expedition/estimate",{territoryId:"target"}],
+    ["/api/campaign/expedition/move",{territoryId:"target"}],
+    ["/api/campaign/expedition/cancel",{}],
+  ]) {
+    const response=responseRecorder();
+    await handler(postRequest(body,auth),response,pathname,pathname);
+    assert.equal(response.statusCode,200);
+  }
+  assert.deepEqual(calls,[["estimate","account","target"],["move","account","target"],["cancel","account"]]);
+});
+
 test("campaign API handler exposes the authenticated YOOGLE player directory", async () => {
   const account = { id: "account", nickname: "经理" };
   const campaign = {
@@ -140,6 +163,52 @@ test("campaign API handler exposes the authenticated YOOGLE player directory", a
   assert.deepEqual(JSON.parse(response.body), {
     playerDirectory: { total: 1, players: [{ id: "player-1", name: "测试球员" }] },
   });
+});
+
+test("campaign API handler opens inventory packs and commits one chosen player", async () => {
+  const account = { id:"account", nickname:"经理" };
+  const calls = [];
+  const campaign = {
+    authenticate:() => account,
+    openPlayerPack:(value,packType) => {
+      calls.push(["open",value.id,packType]);
+      return { opening:{ id:"opening-1" } };
+    },
+    choosePlayerPackCard:(value,openingId,playerId) => {
+      calls.push(["choose",value.id,openingId,playerId]);
+      return { player:{ playerId } };
+    },
+  };
+  const handler = createCampaignApiHandler({campaign});
+  const auth = { authorization:"Bearer session-token" };
+  const openResponse = responseRecorder();
+  await handler(postRequest({packType:"exotic-player-pack"},auth),openResponse,"/api/campaign/inventory/packs/open","/api/campaign/inventory/packs/open");
+  assert.deepEqual(JSON.parse(openResponse.body),{opening:{id:"opening-1"}});
+  const chooseResponse = responseRecorder();
+  await handler(postRequest({openingId:"opening-1",playerId:"player-1"},auth),chooseResponse,"/api/campaign/inventory/packs/choose","/api/campaign/inventory/packs/choose");
+  assert.deepEqual(JSON.parse(chooseResponse.body),{player:{playerId:"player-1"}});
+  assert.deepEqual(calls,[
+    ["open","account","exotic-player-pack"],
+    ["choose","account","opening-1","player-1"],
+  ]);
+});
+
+test("campaign API assigns one player to expedition or garrison", async () => {
+  const account = { id:"account", nickname:"经理" };
+  const calls = [];
+  const campaign = {
+    authenticate:() => account,
+    assignPlayerSquad:(value,playerId,squadId) => {
+      calls.push([value.id,playerId,squadId]);
+      return { playerSquads:{ assignments:{ [playerId]:squadId } } };
+    },
+  };
+  const handler = createCampaignApiHandler({campaign});
+  const response = responseRecorder();
+  await handler(postRequest({playerId:"player-1",squadId:"garrison"},{authorization:"Bearer session-token"}),response,"/api/campaign/squads/assign","/api/campaign/squads/assign");
+  assert.equal(response.statusCode,200);
+  assert.deepEqual(JSON.parse(response.body),{state:{playerSquads:{assignments:{"player-1":"garrison"}}}});
+  assert.deepEqual(calls,[["account","player-1","garrison"]]);
 });
 
 test("campaign API request parsing keeps payload limits and invalid JSON errors", async () => {

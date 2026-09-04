@@ -123,6 +123,43 @@ export class AdminService {
     this.audit(admin, "player.gold.adjust", { accountId, delta: amount, reason: clean(reason) });
     return { accountId, ...result };
   }
+
+  playerPackManagement(admin) {
+    this.requireRole(admin);
+    return this.campaign.adminPlayerPackManagement();
+  }
+
+  grantPlayerPacks(admin, input = {}) {
+    this.requireRole(admin,["operator","superadmin"]);
+    const count = Number(input.count);
+    if (!Number.isSafeInteger(count) || count < 1 || count > 999) throw new Error("单次卡包数量必须是 1 至 999 的整数");
+    const reason = clean(input.reason,"后台运营发放").slice(0,120);
+    const scope = clean(input.scope,"player");
+    if (scope === "all") {
+      const result = this.campaign.grantPlayerPacksToAllAccounts(input.packType,count);
+      this.audit(admin,"player.pack.grant-all",{
+        packType:result.grant.type,
+        packName:result.grant.name,
+        countPerPlayer:result.grant.count,
+        recipientCount:result.recipientCount,
+        totalPacksGranted:result.totalPacksGranted,
+        reason,
+      });
+      return { ...result,scope,reason };
+    }
+    if (scope !== "player") throw new Error("卡包发放范围无效");
+    const result = this.campaign.grantPlayerPacksToAccount(input.accountId,input.packType,count);
+    this.audit(admin,"player.pack.grant",{
+      accountId:result.player.id,
+      nickname:result.player.nickname,
+      packType:result.grant.type,
+      packName:result.grant.name,
+      count:result.grant.count,
+      balance:result.player.packs.find((pack) => pack.type === result.grant.type)?.count ?? null,
+      reason,
+    });
+    return { ...result,scope,reason };
+  }
 }
 
 export { DEFAULT_ADMIN_PASSWORD, ROLES };

@@ -92,7 +92,7 @@ export function filterYooglePlayers(players, search) {
   const roleQuery = ROLE_CODES.has(query.toUpperCase()) ? query.toUpperCase() : null;
   const matches = (Array.isArray(players) ? players : []).filter((player) => {
     if (roleQuery) return [player.role, player.secondaryRole].map((value) => String(value ?? "").toUpperCase()).includes(roleQuery);
-    return [player.name, player.club, player.nationality]
+    return [player.name, player.sourceName ?? player.card?.sourceName, player.club, player.nationality]
       .some((value) => normalizedQuery(value).includes(query));
   });
   return sortYooglePlayers(matches);

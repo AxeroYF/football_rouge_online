@@ -1,4 +1,4 @@
-const MAP_ASSET_VERSION = "20260828-country-internal-merge";
+const MAP_ASSET_VERSION = "20260903-physical-slope-detail-v6";
 
 const MAP_ASSETS = Object.freeze({
   countries: "./assets/data/natural-earth-countries-50m.geojson",
@@ -8,6 +8,7 @@ const MAP_ASSETS = Object.freeze({
   territories: "./assets/data/campaign-territories.geojson",
   territoryIndex: "./assets/data/territory-index.json",
   coastlines: "./assets/data/campaign-coastlines.json",
+  reliefRegions: "./shared/config/map-relief-regions.json",
 });
 
 function assetUrl(path, version) {
@@ -34,5 +35,6 @@ export async function loadCampaignMapData({
     territories: data.territories,
     territoryIndex: data.territoryIndex,
     coastlines: data.coastlines,
+    reliefRegions: data.reliefRegions,
   });
 }

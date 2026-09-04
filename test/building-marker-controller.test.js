@@ -52,14 +52,14 @@ test("expanded building hubs lazily load icons and distribute them around the te
   assert.ok(layout.every((entry) => Number.isFinite(entry.x) && Number.isFinite(entry.y)));
 });
 
-test("app wires building hubs to world refresh, map close events and territory summaries", async () => {
+test("app wires building hubs to world refresh and omits the removed territory summary", async () => {
   const appSource = await readFile(new URL("../app.js", import.meta.url), "utf8");
   const territorySource = await readFile(new URL("../client/territory/territory-controller.js", import.meta.url), "utf8");
   const stylesSource = await readFile(new URL("../styles.css", import.meta.url), "utf8");
   assert.match(appSource, /createBuildingMarkerController/);
   assert.match(appSource, /buildingMarkerController\?\.refresh\(\)/);
   assert.match(appSource, /buildingMarkerController\.closeExpanded\(\)/);
-  assert.match(territorySource, /buildingNames\.length \? "设施 "/);
+  assert.doesNotMatch(territorySource, /buildingNames\.length \? "设施 "/);
   assert.match(stylesSource, /@keyframes building-orbit-in/);
   assert.match(stylesSource, /width: 96px/);
   assert.match(stylesSource, /--building-accent: #a18cff/);

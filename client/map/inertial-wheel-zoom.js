@@ -98,7 +98,13 @@ export function createInertialWheelZoom({
     // `_move` has already committed every continuous frame. Starting another
     // `_animateZoom` here replays the final fraction as a CSS transition,
     // causing a visible flash and backwards snap. Only close the move lifecycle.
-    map._moveEnd(map.getZoom() !== startZoom);
+    const zoomChanged = map.getZoom() !== startZoom;
+    map._moveEnd(zoomChanged);
+    // GridLayer defers tile-zoom changes while our continuous pinch-style
+    // motion is active. Leaflet's normal reset lifecycle fires `viewreset`
+    // after moveend; mirror that step so idle-only tile layers request the
+    // final native zoom instead of stretching their initial overview tiles.
+    if (zoomChanged) map.fire?.("viewreset");
   }
 
   function scheduleFrame() {

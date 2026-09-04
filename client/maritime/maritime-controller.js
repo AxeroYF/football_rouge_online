@@ -181,9 +181,14 @@ export function createMaritimeController({
     const territoryId = getSelectedTerritoryId();
     const state = getTerritoryWorld()?.territories?.[territoryId];
     const campaignState = getCampaignState();
+    if (campaignState?.expeditionPiece?.moving) {
+      showToast("远征队正在行军，抵达后才能出海");
+      return;
+    }
     if (
       !territoryId
       || state?.ownerId !== campaignState?.playerId
+      || campaignState?.expeditionPiece?.territoryId !== territoryId
       || !campaignState?.coastalTerritoryIds?.includes(territoryId)
     ) return;
     clearMaritimeMode({ keepSelection: true });

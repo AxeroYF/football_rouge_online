@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
-import { canAttack, captureTerritory, OWNER_TYPES } from "../../territory-model.js";
+import { canAttackFromTerritory, captureTerritory, OWNER_TYPES } from "../../territory-model.js";
+import { expeditionAttackSource, placeExpeditionPiece } from "../domain/expedition-piece.mjs";
 import {
   advanceCampaignLiveLeg,
   buildAccountMatchSeat,
@@ -51,6 +52,7 @@ export class ChallengeService {
     maritimePlanner = null,
     playerDatabase = [],
     ensureAiGarrison,
+    awardNeutralCapture = () => null,
     getTerritoryWeather = () => ({ type:"sunny", label:"晴朗", icon:"☀", precipitation:0 }),
     save = () => {},
     now = Date.now,
@@ -62,6 +64,7 @@ export class ChallengeService {
     this.maritimePlanner = maritimePlanner;
     this.playerDatabase = playerDatabase;
     this.ensureAiGarrison = ensureAiGarrison;
+    this.awardNeutralCapture = awardNeutralCapture;
     this.getTerritoryWeather = getTerritoryWeather;
     this.save = save;
     this.now = now;
@@ -114,15 +117,20 @@ export class ChallengeService {
     const ownerUnchanged = targetState.ownerType === challenge.previousOwner.type
       && (targetState.ownerId ?? null) === (challenge.previousOwner.id ?? null);
     const battle = { ...computed, captured: false, settledAt: this.now() };
+    const attacker = this.accounts.get(challenge.attackerId);
     if (battle.outcome === "win" && ownerUnchanged) {
       captureTerritory(this.territoryIndex, this.world, challenge.attackerId, challenge.territoryId, {
         permission: { allowed: true, reason: null, fromTerritoryIds: challenge.fromTerritoryIds ?? [] },
       });
+      placeExpeditionPiece(attacker, challenge.territoryId);
       battle.captured = true;
+      if (attacker && challenge.previousOwner.type === OWNER_TYPES.NEUTRAL) {
+        const rewards = this.awardNeutralCapture({ account:attacker, challenge, battle });
+        if (rewards) battle.rewards = rewards;
+      }
     } else {
       this.world.revision += 1;
     }
-    const attacker = this.accounts.get(challenge.attackerId);
     if (attacker) {
       attacker.battleHistory ??= [];
       attacker.battleHistory.push(compactBattleRecord(battle));
@@ -249,6 +257,10 @@ export class ChallengeService {
       throw new Error("请选择有效的海岸出发点");
     }
     this.settleDueChallenges();
+    const expeditionTerritoryId = expeditionAttackSource(account, this.world, this.now());
+    if (String(sourceTerritoryIdValue ?? "") !== expeditionTerritoryId) {
+      throw new Error("只能从远征战棋当前所在的地块出海");
+    }
     const result = this.maritimePlanner.routesFrom(
       this.world,
       account.id,
@@ -276,7 +288,15 @@ export class ChallengeService {
       throw Object.assign(new Error("该板块正在被其他球队挑战，请等待本场争夺结束"), { statusCode: 409 });
     }
     const territory = this.territoryMetadata(territoryId);
-    let permission = canAttack(this.territoryIndex, this.world, account.id, territoryId);
+    const expeditionTerritoryId = expeditionAttackSource(account, this.world, this.now());
+    let permission = canAttackFromTerritory(
+      this.territoryIndex,
+      this.world,
+      account.id,
+      expeditionTerritoryId,
+      territoryId,
+      this.now(),
+    );
     let maritimeRoute = null;
     if (!permission.allowed && permission.reason === "not-adjacent" && options.maritimeRoute) {
       const routeResult = this.maritimeRoutes(
@@ -304,7 +324,7 @@ export class ChallengeService {
     }
 
     const targetState = this.world.territories[territoryId];
-    const attacker = buildAccountMatchSeat(account);
+    const attacker = buildAccountMatchSeat(account,"expedition");
     const defendingAccount = targetState.ownerType === OWNER_TYPES.PLAYER
       ? this.accounts.get(targetState.ownerId)
       : null;
@@ -312,7 +332,7 @@ export class ChallengeService {
     const seed = `${this.world.seasonId}:${this.world.revision + 1}:${account.id}:${territoryId}:${now}`;
     const garrison = defendingAccount ? null : this.ensureAiGarrison(territoryId);
     const defender = defendingAccount?.draft?.roster?.length >= 11
-      ? buildAccountMatchSeat(defendingAccount)
+      ? buildAccountMatchSeat(defendingAccount,"garrison")
       : buildTerritoryDefenderSeat({
         catalog: this.playerDatabase,
         territory,
@@ -347,6 +367,7 @@ export class ChallengeService {
       fromTerritoryIds: permission.fromTerritoryIds,
       maritimeRoute,
       previousOwner,
+      aiDifficulty: garrison?.difficulty ?? null,
       live: { attacker, defender, firstLeg, secondLeg: null },
     };
     this.world.activeChallenges ??= {};

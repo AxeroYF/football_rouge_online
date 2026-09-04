@@ -8,6 +8,7 @@ import {
 } from "./formation-rules.js";
 import { optimalLineupAssignment, remapLineupPresetSlots } from "./tactics-lineup-rules.js";
 import { PLAY_STYLE_LABELS as STYLES, ROLE_LABELS, TACTIC_LABELS as TACTICS } from "./shared/football/labels.js";
+import { autoCompletePlayerSquads, PLAYER_SQUAD_DEFINITIONS, PLAYER_SQUAD_IDS } from "./shared/config/player-squads.mjs";
 import {
   activateWideWindow,
   deactivateWideWindow,
@@ -106,11 +107,24 @@ function normalizePlan(value, fallback) {
   const style = STYLES[value?.style] ? value.style : fallback.style;
   return { ...fallback,...value,tactic,style,inPossessionDetails:{...DEFAULT_IN,...value?.inPossessionDetails},outOfPossessionDetails:{...DEFAULT_OUT,...value?.outOfPossessionDetails},tacticalDimensions:{...defaultDimensions(tactic,style),...value?.tacticalDimensions},playerDuties:{...value?.playerDuties} };
 }
-function normalizeState(saved, roster) {
+function defaultStarterIds(roster) {
+  const available=[...roster].sort((left,right)=>Number(right.effectiveOverall??right.overall??0)-Number(left.effectiveOverall??left.overall??0));
+  const selected=[];
+  const take=(pool,count)=>available.filter((player)=>player.pool===pool&&!selected.includes(player)).slice(0,count).forEach((player)=>selected.push(player));
+  take("GK",1); take("DEF",4); take("MID",3); take("ATT",3);
+  available.filter((player)=>player.pool!=="GK"&&!selected.includes(player)).forEach((player)=>{if(selected.length<11)selected.push(player);});
+  return selected.slice(0,11).map((player)=>player.id);
+}
+function validStarterIds(ids,roster) {
+  if(ids.length!==11)return false;
+  const players=ids.map((id)=>roster.find((player)=>player.id===id)).filter(Boolean);
+  return players.length===11&&players.filter((player)=>player.pool==="GK").length===1;
+}
+function normalizeSquadState(saved, roster) {
   const embedded = saved?.planSnapshots?.__s4V2 ?? {};
   const ids = new Set(roster.map((player) => player.id));
-  const starters = [...new Set((embedded.starters ?? saved?.starters ?? roster.slice(0,11).map((player) => player.id)).filter((id) => ids.has(id)))].slice(0,11);
-  roster.forEach((player) => { if (starters.length < 11 && !starters.includes(player.id)) starters.push(player.id); });
+  const savedStarters = [...new Set((embedded.starters ?? saved?.starters ?? []).filter((id) => ids.has(id)))].slice(0,11);
+  const starters = validStarterIds(savedStarters,roster) ? savedStarters : defaultStarterIds(roster);
   const basePositions = { ...defaultPositions(roster),...(saved?.positions ?? {}),...(embedded.positionPresets?.position1 ?? {}) };
   const state = {
     starters, activePositionPreset:embedded.activePositionPreset ?? "position1", activePlan:embedded.activePlan ?? saved?.activePlan ?? "opening",
@@ -121,9 +135,27 @@ function normalizeState(saved, roster) {
       leading:normalizePlan(embedded.tacticalPlans?.leading ?? saved?.planSnapshots?.leading,defaultPlan("defensive","counterAttack","position2",1)),
       trailing:normalizePlan(embedded.tacticalPlans?.trailing ?? saved?.planSnapshots?.trailing,defaultPlan("positive","possession","position3",1)),
     },
-    captainId:ids.has(embedded.captainId) ? embedded.captainId : starters[0] ?? null, fitnessThreshold:clamp(Number(embedded.fitnessThreshold ?? 65),45,100), showRoleZones:Boolean(embedded.showRoleZones), showReferenceLines:embedded.showReferenceLines !== false,
+    captainId:starters.includes(embedded.captainId) ? embedded.captainId : starters[0] ?? null, fitnessThreshold:clamp(Number(embedded.fitnessThreshold ?? 65),45,100), showRoleZones:Boolean(embedded.showRoleZones), showReferenceLines:embedded.showReferenceLines !== false,
   };
   return state;
+}
+export function normalizeTacticsSquads(saved, roster, playerSquads) {
+  const completed=autoCompletePlayerSquads(playerSquads,roster);
+  const assignments=completed.playerSquads.assignments;
+  const squadRoster=(squadId)=>roster.filter((player)=>assignments[String(player.id)]===squadId);
+  const activeSquadId=PLAYER_SQUAD_DEFINITIONS.some((squad)=>squad.id===saved?.activeSquadId)?saved.activeSquadId:PLAYER_SQUAD_IDS.EXPEDITION;
+  const hasFixedSquads=Boolean(saved?.squads&&typeof saved.squads==="object");
+  return {
+    activeSquadId,
+    assignments,
+    ready:completed.ready,
+    autoAssignedPlayerIds:completed.autoAssignedPlayerIds,
+    hasFixedSquads,
+    squads:{
+      [PLAYER_SQUAD_IDS.EXPEDITION]:normalizeSquadState(hasFixedSquads?saved.squads?.[PLAYER_SQUAD_IDS.EXPEDITION]:saved,squadRoster(PLAYER_SQUAD_IDS.EXPEDITION)),
+      [PLAYER_SQUAD_IDS.GARRISON]:normalizeSquadState(saved?.squads?.[PLAYER_SQUAD_IDS.GARRISON],squadRoster(PLAYER_SQUAD_IDS.GARRISON)),
+    },
+  };
 }
 function roleFit(player, role) {
   if (player.role === role) return "primary";
@@ -147,16 +179,20 @@ function playerTooltip(player, assignedRole=player.role) {
 
 export function createTacticsController({ panel, mapElement, getCampaignState, setCampaignState, request, showToast }) {
   let state = null;
+  let squadStates = null;
+  let activeSquadId = PLAYER_SQUAD_IDS.EXPEDITION;
+  let squadAssignments = {};
   let saveTimer = null;
   let saving = false;
   let previewTimer = null;
   let mobileDutyPlayerId = null;
   const roster = () => getCampaignState()?.draft?.roster ?? [];
+  const squadRoster = (squadId=activeSquadId) => roster().filter((player) => squadAssignments[String(player.id)] === squadId);
   const positions = () => state.positionPresets[state.activePositionPreset];
   const formationLines = () => state.formationLinePresets[state.activePositionPreset];
   const planState = () => ({ position1:"opening",position2:"leading",position3:"trailing" })[state.activePositionPreset];
   const activePlan = () => state.tacticalPlans[state.activePlan];
-  const starters = () => state.starters.map((id) => roster().find((player) => player.id === id)).filter(Boolean);
+  const starters = () => state.starters.map((id) => squadRoster().find((player) => player.id === id)).filter(Boolean);
   const analysis = () => analyzeElevenBoardFormation(starters(),positions(),formationLines());
   const presetAnalysis = (key) => analyzeElevenBoardFormation(starters(),state.positionPresets[key],state.formationLinePresets[key]);
   function formationValidity(key=state.activePositionPreset) {
@@ -168,18 +204,28 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
   }
   const markDirty = (delay=650) => { setSaveStatus("dirty","有未保存修改"); clearTimeout(saveTimer); saveTimer=setTimeout(() => persist(true),delay); };
   function setSaveStatus(kind,text) { const node=panel.querySelector("[data-league-autosave-status]"); if(node){ node.dataset.state=kind === "dirty" ? "pending" : kind; const label=node.querySelector("[data-league-autosave-label]"); if(label) label.textContent=text; } }
+  function serializeSquad(squadId,squadState) {
+    const eligible=squadRoster(squadId);
+    const starterPlayers=squadState.starters.map((id)=>eligible.find((player)=>player.id===id)).filter(Boolean);
+    const current=squadState.tacticalPlans.opening;
+    const currentPositions=squadState.positionPresets.position1;
+    return { formation:analyzeElevenBoardFormation(starterPlayers,currentPositions,squadState.formationLinePresets.position1).name,attackStyle:current.tactic,defenseStyle:current.style,starters:[...squadState.starters],bench:eligible.map((player)=>player.id).filter((id)=>!squadState.starters.includes(id)),positions:clone(currentPositions),formationLines:clone(squadState.formationLinePresets.position1),tacticalBars:clone(current.tacticalDimensions),activePlan:squadState.activePlan,planSnapshots:{ opening:clone(squadState.tacticalPlans.opening),leading:clone(squadState.tacticalPlans.leading),trailing:clone(squadState.tacticalPlans.trailing),__s4V2:clone(squadState) } };
+  }
   function serialize() {
-    const current = state.tacticalPlans.opening;
-    const currentPositions = state.positionPresets.position1;
-    return { formation:analyzeElevenBoardFormation(starters(),currentPositions,state.formationLinePresets.position1).name,attackStyle:current.tactic,defenseStyle:current.style,starters:[...state.starters],bench:roster().map((p)=>p.id).filter((id)=>!state.starters.includes(id)),positions:clone(currentPositions),formationLines:clone(state.formationLinePresets.position1),tacticalBars:clone(current.tacticalDimensions),activePlan:state.activePlan,planSnapshots:{ opening:clone(state.tacticalPlans.opening),leading:clone(state.tacticalPlans.leading),trailing:clone(state.tacticalPlans.trailing),__s4V2:clone(state) } };
+    return {
+      schemaVersion:2,
+      activeSquadId,
+      playerSquads:{schemaVersion:2,assignments:{...squadAssignments}},
+      squads:Object.fromEntries(PLAYER_SQUAD_DEFINITIONS.map((squad)=>[squad.id,serializeSquad(squad.id,squadStates[squad.id])])),
+    };
   }
   async function persist(silent=false) {
     const invalidKey=Object.keys(POSITION_META).find((key)=>!formationValidity(key).valid);
     if(invalidKey){ const validity=formationValidity(invalidKey); const label=POSITION_META[invalidKey][1]; setSaveStatus("error",`${label}站位未保存`); if(!silent)showToast(`${label}站位：${validity.message}`); return; }
     if (saving) return markDirty(800);
     saving=true; setSaveStatus("saving","正在自动保存…");
-    try { const value=await request("/api/campaign/tactics",{method:"POST",body:serialize()}); setCampaignState(value.state); setSaveStatus("saved","已自动保存"); if(!silent) showToast("战术方案已保存"); }
-    catch(error){ setSaveStatus("error","保存失败"); if(!silent) showToast(error.message||"战术保存失败"); }
+    try { const value=await request("/api/campaign/tactics",{method:"POST",body:serialize()}); setCampaignState(value.state); squadAssignments={...(value.state?.playerSquads?.assignments??squadAssignments)}; setSaveStatus("saved","已自动保存"); if(!silent) showToast("战术方案已保存"); }
+    catch(error){ const message=error.message||"战术保存失败"; setSaveStatus("error",message); if(!silent) showToast(message); }
     finally { saving=false; }
   }
   function roleZonesMarkup() {
@@ -220,11 +266,11 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     return `<div class="league-mobile-duty-backdrop"><section class="league-mobile-duty-sheet"><header><div><small>${ROLE_LABELS[role]??role} · ${esc(player.name)}</small><b>选择球员职责</b></div><button type="button" data-mobile-duty-close>×</button></header><div class="league-mobile-duty-selector"><button type="button" data-mobile-duty-step="-1">‹</button><div><small>当前职责</small><b>${esc(label)}</b><p>左右切换当前比赛阶段的球员职责。</p></div><button type="button" data-mobile-duty-step="1">›</button></div><footer>职责按默认、领先、落后三个战术阶段独立保存</footer></section></div>`;
   }
   function render() {
-    stopPreview(); const rosterValue=roster(); const starterPlayers=starters(); const shape=analysis(); const bench=rosterValue.filter((player)=>!state.starters.includes(player.id)).sort(compareBenchPlayers);
+    stopPreview(); const rosterValue=squadRoster(); const starterPlayers=starters(); const shape=analysis(); const bench=rosterValue.filter((player)=>!state.starters.includes(player.id)).sort(compareBenchPlayers);
     const fitCounts={primary:0,secondary:0,unfamiliar:0}; starterPlayers.forEach((player)=>{fitCounts[roleFit(player,shape.roles[player.id])]++}); const fitScore=Math.round((fitCounts.primary*100+fitCounts.secondary*90+fitCounts.unfamiliar*66)/Math.max(1,starterPlayers.length)); const activeFit=tacticalFit(planState()); const validity=formationValidity(); const allPresetsValid=Object.keys(POSITION_META).every((key)=>formationValidity(key).valid);
     const positionTabs=`<nav class="league-position-tabs" aria-label="保存站位">${Object.entries(POSITION_META).map(([key,[,label]])=>`<button type="button" data-league-position-preset="${key}" class="${state.activePositionPreset===key?"active":""} ${formationValidity(key).valid?"valid":"invalid"}" aria-pressed="${state.activePositionPreset===key}">${label}站位</button>`).join("")}</nav>`;
     const relationshipControls=`<label class="league-board-chemistry"><input type="checkbox" data-league-chemistry-toggle><span>默契连线</span></label><label class="league-board-chemistry"><input type="checkbox" data-league-bond-bonus-toggle><span>羁绊增益</span></label><label class="league-board-chemistry league-board-role-zones-toggle"><input type="checkbox" data-league-role-zones-toggle ${state.showRoleZones?"checked":""}><span>位置阴影</span></label><label class="league-board-fitness"><span>体力红线</span><input type="number" inputmode="numeric" min="45" max="100" value="${state.fitnessThreshold}" data-fitness-threshold><em>%</em></label>`;
-    const schemeSwitcher=`<div class="league-lineup-scheme-switcher"><label><span>阵容方案</span><select aria-label="切换阵容方案"><option>方案 1</option></select></label><button type="button" title="重命名当前方案">✎</button><button type="button" title="新增阵容方案">＋</button><button type="button" class="danger" disabled>×</button><label class="league-lineup-assignment"><span>适配赛事</span><select><option>所有比赛</option><option>联赛</option><option>杯赛</option><option>友谊赛</option></select></label></div>`;
+    const schemeSwitcher=`<div class="league-lineup-scheme-switcher"><span>阵容方案</span><div class="league-lineup-squad-tabs" role="group" aria-label="切换阵容方案">${PLAYER_SQUAD_DEFINITIONS.map((squad)=>`<button type="button" data-lineup-squad="${squad.id}" class="${activeSquadId===squad.id?"active":""}" aria-pressed="${activeSquadId===squad.id}">${squad.name}</button>`).join("")}</div></div>`;
     const boardToolbar=`<div class="league-board-controls"><div class="league-board-tool-stack"><div class="league-relationship-controls">${relationshipControls}</div><div class="league-board-toolbar">${positionTabs}</div></div><div class="league-board-side">${schemeSwitcher}</div></div>`;
     const guidanceButtons=`<div class="league-bench-guidance"><button type="button" data-recommend-lineup title="默认站位可从全队选择首发；领先和落后站位只重排默认首发">自动替换球员</button><button type="button" data-recommend-duties>适配职责</button></div>`;
     const benchSummary=`<section class="league-bench-summary"><div class="league-bench-summary-title"><small>AUTO FORMATION</small><b>自动识别阵型</b></div><div class="league-bench-shape"><strong>${shape.name}</strong><span class="${validity.valid?"valid":"invalid"}">${validity.valid?"阵型有效":"需要调整"}</span></div><div class="league-fit-row"><div class="league-fit-block"><div class="league-fit-heading"><span>阵容适配度</span><b>${fitScore}<small>/100</small></b></div><div class="league-fit-bar"><span style="width:${fitScore}%"></span></div></div><div class="league-fit-block tactical"><div class="league-fit-heading"><span>战术适配度</span><b>${activeFit}<small>/100</small></b></div><div class="league-fit-bar"><span style="width:${activeFit}%"></span></div></div></div><div class="league-fit-counts"><span>主位置<b>${fitCounts.primary}</b></span><span>副位置<b>${fitCounts.secondary}</b></span><span>不适配<b>${fitCounts.unfamiliar}</b></span></div>${validity.valid?"":`<p>${validity.message}</p>`}</section>`;
@@ -246,7 +292,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     if(state.captainId===starterId)state.captainId=benchId; render(); markDirty(180);
   }
   function recommendLineup() {
-    const rosterValue=roster();
+    const rosterValue=squadRoster();
     const sourceStarterIds=[...state.starters];
     const canUseBench=state.activePositionPreset==="position1";
     const activePositions=state.positionPresets[state.activePositionPreset];
@@ -559,6 +605,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
   function bind() {
     panel.querySelector("[data-save-tactics]")?.addEventListener("click",()=>persist(false));
     panel.querySelectorAll("[data-league-position-preset]").forEach((button)=>button.addEventListener("click",()=>setPreset(button.dataset.leaguePositionPreset)));
+    panel.querySelectorAll("[data-lineup-squad]").forEach((button)=>button.addEventListener("click",()=>{if(activeSquadId===button.dataset.lineupSquad)return;activeSquadId=button.dataset.lineupSquad;state=squadStates[activeSquadId];mobileDutyPlayerId=null;render();markDirty();}));
     panel.querySelectorAll("[data-select-plan]").forEach((button)=>button.addEventListener("click",()=>{state.activePlan=button.dataset.selectPlan;state.activePositionPreset=PLAN_META[state.activePlan][2];render();markDirty();}));
     panel.querySelector("[data-league-role-zones-toggle]")?.addEventListener("change",(event)=>{state.showRoleZones=event.target.checked;render();markDirty();});
     panel.querySelector("[data-league-chemistry-toggle]")?.addEventListener("change",()=>showToast("当前名单后端尚未提供默契关系数据"));
@@ -575,7 +622,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     bindReliableDrag();
     bindTooltips();
   }
-  function open() { if(!getCampaignState()?.setupComplete)return showToast("完成 22 名球员选择后才能设置战术");state=normalizeState(getCampaignState().tactics,roster());activateWideWindow(panel);mapElement.classList.add("is-tactics-open");render(); }
+  function open() { if(!getCampaignState()?.setupComplete)return showToast("完成 22 名球员选择后才能设置战术");const normalized=normalizeTacticsSquads(getCampaignState().tactics,roster(),getCampaignState().playerSquads);activeSquadId=normalized.activeSquadId;squadAssignments=normalized.assignments;squadStates=normalized.squads;state=squadStates[activeSquadId];activateWideWindow(panel);mapElement.classList.add("is-tactics-open");render();if(!normalized.ready)showToast("远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋");else if(!normalized.hasFixedSquads||normalized.autoAssignedPlayerIds.length)markDirty(120); }
   function close() { stopPreview();document.querySelector(".league-magnet-tooltip")?.remove();panel.hidden=true;deactivateWideWindow(panel);mapElement.classList.remove("is-tactics-open"); }
   registerWideWindow(panel,{onRequestClose:close});
   return { open,close,save:()=>persist(false) };

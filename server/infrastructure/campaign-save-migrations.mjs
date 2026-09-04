@@ -1,5 +1,7 @@
 import { createTerritoryWorld, OWNER_TYPES } from "../../territory-model.js";
+import { normalizePlayerSquads } from "../../shared/config/player-squads.mjs";
 import { nextAvailablePlayerMapColor } from "../domain/player-map-colors.mjs";
+import { normalizeExpeditionPiece } from "../domain/expedition-piece.mjs";
 
 export function canonicalTerritoryId(index, territoryId) {
   return index?.territoryIdAliases?.[territoryId] ?? territoryId;
@@ -74,6 +76,7 @@ function migrateAccountDefaults(context) {
       account.mapColor = nextAvailablePlayerMapColor(context.accounts);
       changed = true;
     }
+    changed = normalizeExpeditionPiece(account, context.world).changed || changed;
   }
   return changed;
 }
@@ -98,6 +101,22 @@ function migrateTerritoryAliases(context) {
       if (canonicalBattle !== battle.territoryId) {
         battle.territoryId = canonicalBattle;
         changed = true;
+      }
+    }
+    if (account.expeditionPiece) {
+      const canonicalPosition = canonicalTerritoryId(context.territoryIndex, account.expeditionPiece.territoryId);
+      if (canonicalPosition !== account.expeditionPiece.territoryId) {
+        account.expeditionPiece.territoryId = canonicalPosition;
+        changed = true;
+      }
+      if (account.expeditionPiece.movement) {
+        for (const key of ["fromTerritoryId", "toTerritoryId"]) {
+          const canonicalMovement = canonicalTerritoryId(context.territoryIndex, account.expeditionPiece.movement[key]);
+          if (canonicalMovement !== account.expeditionPiece.movement[key]) {
+            account.expeditionPiece.movement[key] = canonicalMovement;
+            changed = true;
+          }
+        }
       }
     }
   }
@@ -133,11 +152,24 @@ function migratePlayerCatalog(context) {
   return changed;
 }
 
+function migratePlayerSquads(context) {
+  let changed = false;
+  for (const account of context.accounts.values()) {
+    const normalized = normalizePlayerSquads(account.playerSquads, account.draft?.roster ?? []);
+    if (JSON.stringify(account.playerSquads ?? null) !== JSON.stringify(normalized)) {
+      account.playerSquads = normalized;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 export const CAMPAIGN_SAVE_MIGRATIONS = Object.freeze([
   Object.freeze({ id: "account-defaults", apply: migrateAccountDefaults }),
   Object.freeze({ id: "account-economy", apply: migrateAccountEconomy }),
   Object.freeze({ id: "territory-aliases", apply: migrateTerritoryAliases }),
   Object.freeze({ id: "player-catalog", apply: migratePlayerCatalog }),
+  Object.freeze({ id: "player-squads", apply: migratePlayerSquads }),
 ]);
 
 export function migrateCampaignSave({

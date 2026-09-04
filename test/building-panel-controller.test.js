@@ -64,9 +64,13 @@ test("app statically wires building drawer, polling and build endpoint", () => {
   const appSource = fs.readFileSync(new URL("../app.js", import.meta.url), "utf8");
   const indexSource = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const stylesSource = fs.readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+  const territoryControllerSource = fs.readFileSync(new URL("../client/territory/territory-controller.js", import.meta.url), "utf8");
   assert.match(appSource, /createBuildingPanelController/);
   assert.match(appSource, /buildingPanelController\?\.refreshFromState\(\)/);
   assert.match(indexSource, /id="building-panel"/);
   assert.match(indexSource, /id="territory-building-button"/);
+  assert.doesNotMatch(indexSource, /PROVINCE INTELLIGENCE|territory-links|territory-assets|territory-id/);
+  assert.match(territoryControllerSource, /state\.ownerType !== ownerTypes\.NEUTRAL/);
+  assert.match(territoryControllerSource, /buildingActions\.hidden = !buildingEntryVisible/);
   assert.match(stylesSource, /\.building-build-option/);
 });

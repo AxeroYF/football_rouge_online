@@ -1,8 +1,7 @@
-import { playerCardMarkup } from "./client/player-card/player-card.js";
-
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const state = { token:localStorage.getItem("ydl-admin-token") || "", profile:null, page:"players", overview:null, players:[], selectedId:null, selectedPublish:new Set(), audit:[], tasks:[], studioFile:null };
+const state = { token:localStorage.getItem("ydl-admin-token") || "", profile:null, page:"players", overview:null, players:[], selectedId:null, selectedPublish:new Set(), audit:[], tasks:[], studioFile:null, packManagement:null, selectedAccountId:null, grantAllPlayers:false };
+let playerCardMarkup = (player) => `<div class="s4-player-card admin-card-preview"><div class="s4-player-card-name"><h3>${escapeHtml(player?.name ?? "球员")}</h3></div></div>`;
 
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[character]);
 async function api(url, options = {}) {
@@ -19,17 +18,40 @@ function selectedPlayer() { return state.players.find((player) => player.id === 
 function distributionMarkup(title, values = []) { const maximum = Math.max(1, ...values.map((item) => item.count)); return `<section class="panel"><header class="panel-head"><h3>${escapeHtml(title)}</h3></header><div class="distribution">${values.slice(0, 18).map((item) => `<div><span>${escapeHtml(item.label)}</span><i><span style="width:${item.count / maximum * 100}%"></span></i><b>${item.count}</b></div>`).join("") || '<p class="empty">暂无数据</p>'}</div></section>`; }
 
 async function loadAll() {
-  const [overview, players, audit, tasks] = await Promise.all([
-    api("/api/admin/player-library"), api("/api/admin/player-library/players"), api("/api/admin/audit?limit=100"), api("/api/admin/tasks"),
+  const [overview, players, audit, tasks, packManagement] = await Promise.all([
+    api("/api/admin/player-library"), api("/api/admin/player-library/players"), api("/api/admin/audit?limit=100"), api("/api/admin/tasks"), api("/api/admin/player-packs"),
   ]);
-  state.overview = overview; state.players = players.players; state.audit = audit.entries; state.tasks = tasks.tasks;
+  state.overview = overview; state.players = players.players; state.audit = audit.entries; state.tasks = tasks.tasks; state.packManagement = packManagement;
   if (!state.players.some((player) => player.id === state.selectedId)) state.selectedId = state.players[0]?.id ?? null;
+  if (!state.packManagement.players.some((player) => player.id === state.selectedAccountId)) state.selectedAccountId = state.packManagement.players[0]?.id ?? null;
   render();
 }
 async function login(event) {
-  event.preventDefault(); const error = $("#login-error"); error.textContent = "";
-  try { const value = await api("/api/admin/login", { method:"POST", body:Object.fromEntries(new FormData(event.currentTarget)) }); state.token = value.token; state.profile = value.profile; localStorage.setItem("ydl-admin-token", state.token); showAdmin(); await loadAll(); }
-  catch (failure) { error.textContent = failure.message; }
+  event.preventDefault();
+  const form = event.currentTarget;
+  const error = $("#login-error");
+  const button = $("#login-submit");
+  error.textContent = "正在验证管理员身份…";
+  button.disabled = true;
+  button.textContent = "正在登录…";
+  try {
+    const value = await api("/api/admin/login", { method:"POST", body:Object.fromEntries(new FormData(form)) });
+    state.token = value.token;
+    state.profile = value.profile;
+    localStorage.setItem("ydl-admin-token", state.token);
+    showAdmin();
+    try {
+      await loadAll();
+    } catch (loadFailure) {
+      $("#app").innerHTML = `<div class="loading">工作台数据加载失败：${escapeHtml(loadFailure.message)}</div>`;
+      toast(loadFailure.message || "工作台数据加载失败",true);
+    }
+  } catch (failure) {
+    error.textContent = failure.message || "管理员登录失败";
+  } finally {
+    button.disabled = false;
+    button.textContent = "进入工作台";
+  }
 }
 function showAdmin() { $("#login-view").hidden = true; $("#admin-view").hidden = false; $("#admin-role").textContent = `${state.profile?.username ?? "admin"} · ${state.profile?.role ?? ""}`; }
 function logout() { state.token = ""; state.profile = null; localStorage.removeItem("ydl-admin-token"); location.reload(); }
@@ -80,8 +102,27 @@ async function refreshOverview(){state.overview=await api("/api/admin/player-lib
 
 function issueList(title, items, mapper=(item)=>String(item)){return `<section class="panel"><header class="panel-head"><h3>${title}</h3><small>${items.length} 项</small></header><div class="audit-list">${items.map((item)=>`<article><b>${escapeHtml(mapper(item))}</b></article>`).join("")||'<p class="empty">无异常</p>'}</div></section>`;}
 function renderAudit(){const a=state.overview.audit;$("#app").innerHTML=`${pageHead("DATA INTEGRITY","球员与卡画审计","直接检查生产目录、基础目录、注册表和本地卡画文件。",'<button id="refresh-audit">重新审计</button>')}${kpisMarkup()}<section class="audit-grid">${distributionMarkup("评级分布",a.grade)}${distributionMarkup("位置分布",a.role)}${distributionMarkup("卡画来源",a.sourceGroup)}${issueList("缺失卡画文件",a.missingAssets,(item)=>`${item.id} · ${item.fileName}`)}${issueList("孤立卡画注册",a.orphanProfiles)}${issueList("目录总评不一致",a.overallMismatchPlayers)}${issueList("重复球员 ID",a.duplicateIds,(item)=>`${item.label} × ${item.count}`)}${issueList("同名球员（人工复核）",a.duplicateNames,(item)=>`${item.label} × ${item.count}`)}</section>`;$("#refresh-audit").onclick=async()=>{await refreshOverview();renderAudit();toast("审计已刷新");};}
+function selectedPackAccount(){return state.packManagement?.players.find((player)=>player.id===state.selectedAccountId)??null;}
+function packAccountRows(query=""){const keyword=String(query).trim().toLowerCase();const players=(state.packManagement?.players??[]).filter((player)=>!keyword||`${player.nickname} ${player.id} ${player.teamName}`.toLowerCase().includes(keyword));return players.map((player)=>`<button type="button" class="pack-account-row ${!state.grantAllPlayers&&player.id===state.selectedAccountId?"active":""}" data-pack-account="${escapeHtml(player.id)}"><span><strong>${escapeHtml(player.nickname)}</strong><small>${escapeHtml(player.teamName)} · ${escapeHtml(player.id)}</small></span><b>${player.totalPacks} 包</b></button>`).join("")||'<p class="empty">没有匹配的服务器玩家</p>';}
+function bindPackAccountRows(){$("#pack-account-all")?.addEventListener("click",()=>{state.grantAllPlayers=true;renderPlayerPackManagement();});$$('[data-pack-account]').forEach((button)=>button.onclick=()=>{state.grantAllPlayers=false;state.selectedAccountId=button.dataset.packAccount;renderPlayerPackManagement();});}
+function renderPlayerPackManagement(){
+  const management=state.packManagement;
+  if(!management){$("#app").innerHTML='<div class="loading">正在读取玩家卡包数据…</div>';return;}
+  const selected=selectedPackAccount();
+  const allPlayers=state.grantAllPlayers&&management.players.length>0;
+  const balances=allPlayers?[`<article class="pack-balance-card"><small>接收玩家</small><b>${management.players.length}</b><span>全部注册账户</span></article>`,`<article class="pack-balance-card"><small>现有卡包</small><b>${management.players.reduce((sum,player)=>sum+player.totalPacks,0)}</b><span>全服当前库存</span></article>`].join(""):selected?.packs.map((pack)=>`<article class="pack-balance-card"><small>${escapeHtml(pack.name)}</small><b>${pack.count}</b><span>当前库存</span></article>`).join("")??"";
+  const target=allPlayers?`<div class="pack-selected-player batch"><small>当前发放对象</small><h2>所有玩家</h2><p>当前服务器全部 ${management.players.length} 个注册账户</p><span>批量发放 · 每名玩家获得相同数量</span></div>`:selected?`<div class="pack-selected-player"><small>当前发放对象</small><h2>${escapeHtml(selected.nickname)}</h2><p>${escapeHtml(selected.teamName)} · ${escapeHtml(selected.id)}</p><span>${selected.setupComplete?"已完成建队":"尚未完成建队"}</span></div>`:"";
+  const canGrant=allPlayers||selected;
+  const form=canGrant?`<form id="pack-grant-form" class="pack-grant-form"><input type="hidden" name="scope" value="${allPlayers?"all":"player"}">${allPlayers?"":`<input type="hidden" name="accountId" value="${escapeHtml(selected.id)}">`}${target}<div class="pack-balance-grid">${balances}</div><label>卡包类型<select name="packType" required>${management.packTypes.map((pack)=>`<option value="${escapeHtml(pack.type)}">${escapeHtml(pack.name)}</option>`).join("")}</select></label><label>${allPlayers?"每名玩家发放数量":"发放数量"}<input name="count" type="number" min="1" max="${management.maxGrantCount}" step="1" value="1" required></label><label>发放原因<input name="reason" maxlength="120" value="后台运营发放" required></label><output id="pack-grant-status"></output><button id="pack-grant-submit" class="primary" type="submit">${allPlayers?"确认向所有玩家发放":"确认发放卡包"}</button></form>`:'<div class="empty">服务器中还没有可发放的玩家账户</div>';
+  const allTarget=`<div class="pack-all-target"><button type="button" id="pack-account-all" class="pack-account-row all-players ${allPlayers?"active":""}"><span><strong>所有玩家</strong><small>向当前全部注册账户统一发放</small></span><b>${management.players.length} 人</b></button></div>`;
+  $("#app").innerHTML=`${pageHead("PLAYER OPERATIONS","卡包发放","向指定玩家或所有玩家发放球员卡包；每次操作都会写入管理员审计记录。")}<section class="pack-admin-layout"><aside class="panel"><header class="panel-head"><div><h2>服务器玩家</h2><small>${management.players.length} 个账户</small></div></header>${allTarget}<div class="pack-account-filter"><input id="pack-account-search" placeholder="搜索昵称、球队或玩家 ID"></div><div class="pack-account-list" id="pack-account-list">${packAccountRows()}</div></aside><section class="panel pack-grant-panel">${form}</section></section>`;
+  const search=$("#pack-account-search");if(search)search.oninput=()=>{$("#pack-account-list").innerHTML=packAccountRows(search.value);bindPackAccountRows();};
+  bindPackAccountRows();$("#pack-grant-form")?.addEventListener("submit",grantPlayerPacks);
+}
+async function grantPlayerPacks(event){event.preventDefault();const form=event.currentTarget;const data=Object.fromEntries(new FormData(form));data.count=Number(data.count);const allPlayers=data.scope==="all";const player=selectedPackAccount();const pack=state.packManagement.packTypes.find((item)=>item.type===data.packType);if((!allPlayers&&!player)||!pack)return;const recipientCount=state.packManagement.players.length;const confirmation=allPlayers?`确认向所有 ${recipientCount} 名玩家每人发放 ${data.count} 个${pack.name}？总计 ${recipientCount*data.count} 个卡包。`:`确认向 ${player.nickname} 发放 ${data.count} 个${pack.name}？`;if(!window.confirm(confirmation))return;const button=$("#pack-grant-submit");const status=$("#pack-grant-status");button.disabled=true;button.textContent="正在发放…";status.textContent=allPlayers?"正在批量写入所有玩家背包…":"正在写入玩家背包…";try{const value=await api("/api/admin/player-packs",{method:"POST",body:data});state.packManagement=await api("/api/admin/player-packs");state.audit=(await api("/api/admin/audit?limit=100")).entries;toast(allPlayers?`已向 ${value.recipientCount} 名玩家每人发放 ${value.grant.count} 个${value.grant.name}`:`已向 ${value.player.nickname} 发放 ${value.grant.count} 个${value.grant.name}`);renderPlayerPackManagement();}catch(error){status.textContent=error.message||"卡包发放失败";button.disabled=false;button.textContent=allPlayers?"确认向所有玩家发放":"确认发放卡包";}}
 function renderOperations(){const audits=state.audit.map((entry)=>`<article><b>${escapeHtml(entry.action)}</b><small>${escapeHtml(entry.username)} · ${new Date(entry.createdAt).toLocaleString()} · ${escapeHtml(entry.adminActionId)}</small></article>`).join("");const tasks=state.tasks.map((task)=>`<article><b>${escapeHtml(task.type)} · ${escapeHtml(task.status)}</b><small>${escapeHtml(task.id)} · ${new Date(task.createdAt).toLocaleString()}</small></article>`).join("");$("#app").innerHTML=`${pageHead("SYSTEM FOUNDATION","任务与操作记录","保留现有 RBAC、幂等任务和管理员审计能力。")}<section class="audit-grid"><section class="panel"><header class="panel-head"><h2>系统任务</h2></header><div class="audit-list">${tasks||'<p class="empty">暂无任务</p>'}</div></section><section class="panel"><header class="panel-head"><h2>最近操作</h2></header><div class="audit-list">${audits||'<p class="empty">暂无记录</p>'}</div></section></section>`;}
-function render(){if(!state.overview)return;$$('.nav').forEach((button)=>button.classList.toggle("active",button.dataset.page===state.page));if(state.page==="players")renderPlayers();else if(state.page==="studio")renderStudio();else if(state.page==="audit")renderAudit();else renderOperations();}
+function render(){if(!state.overview)return;$$('.nav').forEach((button)=>button.classList.toggle("active",button.dataset.page===state.page));if(state.page==="players")renderPlayers();else if(state.page==="studio")renderStudio();else if(state.page==="packs")renderPlayerPackManagement();else if(state.page==="audit")renderAudit();else renderOperations();}
 
 $("#login-form").addEventListener("submit",login);$("#logout").onclick=logout;$$('.nav').forEach((button)=>button.onclick=()=>{state.page=button.dataset.page;render();});
+import("./client/player-card/player-card.js").then((module)=>{playerCardMarkup=module.playerCardMarkup;if(state.page==="studio"&&state.overview)renderStudio();}).catch((error)=>{console.error("球员卡组件加载失败，后台登录与基础管理仍可使用",error);});
 if(state.token)api("/api/admin/me").then(async(value)=>{state.profile=value.profile;showAdmin();await loadAll();}).catch(()=>{state.token="";localStorage.removeItem("ydl-admin-token");});

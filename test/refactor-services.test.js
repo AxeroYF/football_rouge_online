@@ -69,6 +69,7 @@ test("campaign save migrations report applied steps and hydrate account data", (
     "account-defaults",
     "account-economy",
     "player-catalog",
+    "player-squads",
   ]);
   assert.equal(account.homeTerritoryId, null);
   assert.ok(account.mapColor);
@@ -76,6 +77,7 @@ test("campaign save migrations report applied steps and hydrate account data", (
   assert.equal(account.playerCatalogVersion, "catalog-v2");
   assert.equal(account.draft.roster[0].overall, 88);
   assert.equal(account.draft.roster[0].state.fitness, 70);
+  assert.deepEqual(account.playerSquads,{schemaVersion:2,assignments:{"player-1":"garrison"}});
 });
 
 test("ChallengeScheduler advances cheaply and persists only dirty progress", () => {
@@ -149,10 +151,56 @@ test("ChallengeService independently settles due legacy battles", () => {
   assert.equal(saves, 1);
 });
 
+test("ChallengeService awards a captured AI neutral territory exactly once", () => {
+  let rewards = 0;
+  const account = { id:"player", battleHistory:[] };
+  const challenge = {
+    id:"challenge-win",
+    territoryId:"target",
+    attackerId:"player",
+    previousOwner:{ type:"neutral", id:null },
+    fromTerritoryIds:["home"],
+    aiDifficulty:4,
+    battle:{ id:"battle-win", outcome:"win", events:[] },
+    settleAt:100,
+  };
+  const world = {
+    revision:0,
+    territories:{
+      home:{ territoryId:"home", ownerType:"player", ownerId:"player", buildings:[] },
+      target:{ territoryId:"target", ownerType:"neutral", ownerId:null, buildings:[], version:0 },
+    },
+    players:{ player:{ playerId:"player", territoryIds:["home"], capitalTerritoryId:"home", exiled:false } },
+    activeChallenges:{ target:challenge },
+  };
+  const service = new ChallengeService({
+    world,
+    accounts:new Map([[account.id,account]]),
+    territoryIndex:{ territories:[] },
+    now:() => 100,
+    awardNeutralCapture:({account:rewardAccount,challenge:rewardChallenge}) => {
+      rewards += 1;
+      assert.equal(rewardAccount,account);
+      assert.equal(rewardChallenge.aiDifficulty,4);
+      return { gold:8_000, packs:[{ type:"exotic-player-pack", name:"珍奇球员卡包", count:4 }] };
+    },
+  });
+
+  const battle = service.settleChallenge(challenge);
+  assert.equal(battle.captured,true);
+  assert.equal(battle.rewards.gold,8_000);
+  assert.equal(account.battleHistory[0].rewards.packs[0].count,4);
+  assert.equal(world.territories.target.ownerId,"player");
+  assert.equal(rewards,1);
+  assert.equal(service.settleChallenge(challenge),null);
+  assert.equal(rewards,1);
+});
+
 test("ChallengeService filters occupied maritime targets", () => {
   const world = {
     territories: {},
     activeChallenges: { occupied: { id: "active" } },
+    players: { player: { territoryIds: ["source"], capitalTerritoryId: "source" } },
   };
   const maritimePlanner = {
     routesFrom: () => ({
@@ -171,6 +219,10 @@ test("ChallengeService filters occupied maritime targets", () => {
     maritimePlanner,
   });
 
-  const result = service.maritimeRoutes({ id: "player" }, "source", [0, 0]);
+  const result = service.maritimeRoutes({
+    id: "player",
+    homeTerritoryId: "source",
+    expeditionPiece: { schemaVersion: 1, tokenId: "default", territoryId: "source", movement: null },
+  }, "source", [0, 0]);
   assert.deepEqual(result.routes.map((route) => route.targetTerritoryId), ["open"]);
 });

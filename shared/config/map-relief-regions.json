@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "nativeZoom": 8,
+  "maxNativeZoom": 9,
+  "overviewZooms": [3, 4, 5, 6, 7],
+  "futureCampaignBounds": {
+    "west": -25.0,
+    "south": -20.0,
+    "east": 100.0,
+    "north": 82.0
+  },
+  "regions": {
+    "south-america": {
+      "label": "南美洲",
+      "geometryFilter": {
+        "region": "south-america"
+      },
+      "displayBounds": {
+        "west": -15.0,
+        "south": -20.0,
+        "east": 58.0,
+        "north": 36.0
+      },
+      "transform": {
+        "type": "south-america-axis-swap",
+        "sourceCenter": {
+          "lat": -21.5,
+          "lng": -57.5
+        },
+        "displayCenter": {
+          "lat": 7.0,
+          "lng": 20.0
+        }
+      },
+      "render": {
+        "elevationScaleMeters": 5200.0,
+        "hillshadeContrast": 1.32,
+        "detailBrightness": 1.08,
+        "detailContrast": 1.08,
+        "overviewBrightness": 1.0,
+        "overviewContrast": 1.0
+      },
+      "output": {
+        "overview": "assets/map-relief/south-america-dem-overview/{z}/{x}/{y}.webp",
+        "detail": "assets/map-relief/south-america-dem-z8/{z}/{x}/{y}.webp"
+      }
+    },
+    "svalbard": {
+      "label": "挪威斯瓦尔巴",
+      "geometryFilter": {
+        "territoryIds": ["adm1:nor-901"]
+      },
+      "displayBounds": {
+        "west": 7.0,
+        "south": 74.0,
+        "east": 36.0,
+        "north": 82.0
+      },
+      "transform": {
+        "type": "identity"
+      },
+      "render": {
+        "elevationScaleMeters": 1800.0,
+        "hillshadeContrast": 1.32,
+        "detailBrightness": 1.02,
+        "detailContrast": 1.04,
+        "overviewBrightness": 1.0,
+        "overviewContrast": 1.0
+      },
+      "output": {
+        "overview": "assets/map-relief/svalbard-dem-overview/{z}/{x}/{y}.webp",
+        "detail": "assets/map-relief/svalbard-dem-z8/{z}/{x}/{y}.webp"
+      }
+    }
+  }
+}

@@ -15,13 +15,14 @@
     <link rel="stylesheet" href="./assets/vendor/leaflet.css" />
     <link rel="stylesheet" href="./styles/player-card.css?v=20260828-local" />
     <link rel="stylesheet" href="./styles/team-player-detail.css?v=20260830-ydl-player-detail-v1" />
-    <link rel="stylesheet" href="./styles.css?v=20260831-weather-layer-v3" />
+    <link rel="stylesheet" href="./styles.css?v=20260904-land-shelf-v9" />
     <link rel="stylesheet" href="./styles/yoogle.css?v=20260831-yoogle-window-v12" />
-    <link rel="stylesheet" href="./s4-tactics-original.css?v=20260828-drag-swap-fix" />
-    <link rel="stylesheet" href="./styles/campaign-broadcast.css?v=20260830-broadcast-map-fill" />
-    <link rel="stylesheet" href="./styles/standard-window.css?v=20260831-window-standards-v1" />
+    <link rel="stylesheet" href="./s4-tactics-original.css?v=20260901-two-state-squads-v14" />
+    <link rel="stylesheet" href="./styles/campaign-broadcast.css?v=20260901-broadcast-width-v2" />
+    <link rel="stylesheet" href="./styles/standard-window.css?v=20260901-broadcast-width-v2" />
     <link rel="stylesheet" href="./styles/wide-window.css?v=20260831-window-standards-v1" />
-    <link rel="stylesheet" href="./styles/small-window.css?v=20260831-window-standards-v1" />
+    <link rel="stylesheet" href="./styles/small-window.css?v=20260902-small-window-height-v3" />
+    <link rel="stylesheet" href="./styles/inventory.css?v=20260902-inventory-natural-v1" />
   </head>
   <body>
     <div class="campaign-shell">
@@ -47,6 +48,9 @@
           <button class="nav-item" type="button">球队</button>
           <button class="nav-item" type="button">战术</button>
           <button class="nav-item" type="button">球探</button>
+          <button class="nav-item nav-inventory" id="topbar-inventory" type="button" hidden aria-label="打开背包">
+            <span>背包</span><strong data-inventory-count>0</strong>
+          </button>
         </nav>
 
         <section class="topbar-yoogle" id="yoogle-search" aria-label="YOOGLE 球员搜索" hidden>
@@ -70,6 +74,11 @@
       <main class="map-stage">
         <div id="campaign-entry"></div>
         <div id="campaign-map" class="campaign-map is-loading" aria-label="欧洲与南美俱乐部征程地图"></div>
+        <aside id="map-zoom-indicator" class="map-zoom-indicator" aria-label="地图缩放级别">
+          <span>地图缩放</span>
+          <strong id="map-zoom-value">×1.0</strong>
+          <small id="map-zoom-detail">Z 3.00 · 挡位 1/5 · 全景</small>
+        </aside>
         <section id="yoogle-window" class="yoogle-window standard-window" data-standard-window="yoogle" hidden aria-label="YOOGLE 球员搜索窗口">
           <div class="yoogle-window-shell standard-window__surface" role="dialog" aria-modal="true" aria-labelledby="yoogle-window-title">
             <button class="yoogle-window-close" type="button" data-stage-window-close aria-label="关闭 YOOGLE">×</button>
@@ -87,6 +96,7 @@
           </div>
         </section>
         <section id="campaign-team" class="campaign-team standard-window" data-standard-window="team" hidden aria-label="球队管理"></section>
+        <section id="inventory-window" class="inventory-window small-window" data-small-window="inventory" hidden aria-label="球员卡包背包"></section>
         <section id="campaign-tactics" class="campaign-tactics wide-window" data-wide-window="tactics" hidden aria-label="球队战术管理">
           <header class="tactics-header"><div><span>YELLOWDOGS CHRONICLES · SQUAD MANAGEMENT</span><h2>战术管理</h2></div><button id="tactics-save" type="button">保存战术</button></header>
           <div class="tactics-layout">
@@ -103,22 +113,17 @@
 
         <aside id="territory-inspector" class="territory-inspector" aria-live="polite" hidden>
           <div class="territory-inspector-heading">
-            <span>PROVINCE INTELLIGENCE</span>
             <strong id="territory-name">选择一个省级区块</strong>
-            <small id="territory-country">查看归属与相邻进攻通路</small>
           </div>
           <dl>
             <div><dt>归属</dt><dd id="territory-owner">未选择</dd></div>
             <div class="territory-weather-row"><dt>当前天气</dt><dd id="territory-weather">—</dd></div>
-            <div><dt>通路</dt><dd id="territory-links">—</dd></div>
-            <div><dt>据点</dt><dd id="territory-assets">—</dd></div>
-            <div><dt>区块 ID</dt><dd id="territory-id">—</dd></div>
             <div><dt>AI 难度</dt><dd id="territory-ai-difficulty">—</dd></div>
             <div><dt>平均能力</dt><dd id="territory-ai-overall">—</dd></div>
             <div><dt>阵型 / 心态</dt><dd id="territory-ai-formation">—</dd></div>
             <div><dt>主要打法</dt><dd id="territory-ai-style">—</dd></div>
           </dl>
-          <div class="territory-building-actions">
+          <div id="territory-building-actions" class="territory-building-actions" hidden>
             <button id="territory-building-button" type="button" hidden>查看地块建筑</button>
           </div>
           <div class="territory-challenge-actions" id="territory-challenge-actions" hidden>
@@ -140,10 +145,22 @@
           <header><span>S4 V2.1 MATCH RESULT</span><button id="battle-result-close" type="button" aria-label="关闭赛果">×</button></header>
           <div class="battle-result-title"><small id="battle-result-territory">地块争夺赛</small><strong id="battle-result-outcome">比赛结束</strong></div>
           <div class="battle-result-score"><span id="battle-home-name">我方球队</span><b id="battle-score">0 : 0</b><span id="battle-away-name">地块守军</span></div>
+          <div class="battle-result-rewards" id="battle-result-rewards" hidden>
+            <small>新地块征服奖励</small>
+            <div><strong id="battle-result-gold-reward">+0 金币</strong><strong id="battle-result-pack-reward">+0 珍奇球员卡包</strong></div>
+          </div>
         </section>
 
         <div id="campaign-broadcast" class="broadcast-overlay standard-window" data-standard-window="broadcast" hidden aria-label="黄狗风云比赛电视台"></div>
         <aside id="campaign-live-widget" class="campaign-live-widget" hidden aria-label="后台进行中的比赛"></aside>
+        <aside id="expedition-movement-widget" class="campaign-expedition-widget" hidden aria-label="远征队移动进程"></aside>
+
+        <section id="expedition-move-confirm" class="expedition-move-confirm" role="dialog" aria-modal="true" aria-labelledby="expedition-move-title" hidden>
+          <header id="expedition-move-title">调动远征队</header>
+          <div class="expedition-move-route"><strong data-expedition-from>出发地</strong><span>→</span><strong data-expedition-to>目的地</strong></div>
+          <b data-expedition-duration>预计 1 分钟</b>
+          <footer><button type="button" data-expedition-move-back>返回选点</button><button type="button" data-expedition-move-confirm>确定移动</button></footer>
+        </section>
 
         <aside id="home-selection-panel" class="home-selection-panel" aria-live="polite" hidden>
           <header><span>FOUND YOUR CLUB</span><h2>选择永久主场</h2></header>
@@ -169,7 +186,7 @@
             </label>
             <label class="map-layer-toggle">
               <span>主要城市</span>
-              <input id="major-cities-toggle" type="checkbox" checked />
+              <input id="major-cities-toggle" type="checkbox" />
               <i aria-hidden="true"></i>
             </label>
           </div>
@@ -182,6 +199,6 @@
 
     <script src="./assets/vendor/leaflet.js"></script>
     <script type="module" src="./campaign-entry.js?v=20260827-map-bootstrap-fix"></script>
-    <script type="module" src="./app.js?v=20260831-weather-layer-v3"></script>
+    <script type="module" src="./app.js?v=20260904-pan-outlines-v20"></script>
   </body>
 </html>

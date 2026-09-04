@@ -49,6 +49,7 @@ test("maritime controller owns surveying state and clears all overlays on cancel
     getCampaignState: () => ({
       playerId: "player-1",
       coastalTerritoryIds: ["coast"],
+      expeditionPiece: { territoryId: "coast", moving: false },
     }),
     getCampaignRequest: () => null,
     getSelectedTerritoryId: () => "coast",

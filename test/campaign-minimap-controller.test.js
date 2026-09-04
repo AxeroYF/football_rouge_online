@@ -81,7 +81,7 @@ function createHarness() {
     Leaflet,
     container,
     mainMap,
-    campaignBounds: [[-20, -25], [75, 100]],
+    campaignBounds: [[-20, -25], [82, 100]],
     displayTerritories: { type: "FeatureCollection", features: [] },
     ownerTypes: OWNER_TYPES,
     getWorld: () => state.world,

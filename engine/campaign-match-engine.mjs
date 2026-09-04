@@ -6,6 +6,7 @@ import {
   CAMPAIGN_REGULATION_CHAINS,
   CAMPAIGN_REGULATION_LIVE_MS,
 } from "../shared/config/challenge.mjs";
+import { autoCompletePlayerSquads, PLAYER_SQUAD_IDS } from "../shared/config/player-squads.mjs";
 
 export {
   CAMPAIGN_EXTRA_TIME_CHAINS,
@@ -100,10 +101,13 @@ function validSavedStarters(roster, ids) {
   return players.length === 11 && players.filter((player) => player.pool === "GK").length === 1 ? players : null;
 }
 
-export function buildAccountMatchSeat(account) {
-  const roster = account?.draft?.roster ?? [];
+export function buildAccountMatchSeat(account, squadId = PLAYER_SQUAD_IDS.EXPEDITION) {
+  const fullRoster = account?.draft?.roster ?? [];
+  const completed = autoCompletePlayerSquads(account?.playerSquads,fullRoster);
+  const roster = fullRoster.filter((player) => completed.playerSquads.assignments[String(player.id)] === squadId);
   if (roster.length < 11) throw new Error("球队阵容不足，无法参加地块比赛");
-  const tactics = account.tactics ?? {};
+  const tacticsRoot = account.tactics ?? {};
+  const tactics = tacticsRoot.squads?.[squadId] ?? tacticsRoot;
   const embedded = tactics.planSnapshots?.__s4V2 ?? {};
   const sourcePlayers = validSavedStarters(roster, embedded.starters ?? tactics.starters) ?? defaultStartingEleven(roster);
   if (sourcePlayers.length !== 11 || sourcePlayers.filter((player) => player.pool === "GK").length !== 1) {

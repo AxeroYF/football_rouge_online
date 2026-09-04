@@ -99,8 +99,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Courtois",
+    "legendary": true
   },
   {
     "id": "s4-fc26-212831",
@@ -202,7 +203,8 @@
       "width": 244
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alisson"
   },
   {
     "id": "s4-fc26-230621",
@@ -304,7 +306,8 @@
       "width": 216
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gianluigi Donnarumma"
   },
   {
     "id": "s4-fc26-200389",
@@ -406,7 +409,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jan Oblak"
   },
   {
     "id": "s4-fc26-215698",
@@ -508,7 +512,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mike Maignan"
   },
   {
     "id": "s4-fc26-177683",
@@ -610,7 +615,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yann Sommer"
   },
   {
     "id": "s4-fc26-220901",
@@ -712,7 +718,8 @@
       "width": 100
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Raya"
   },
   {
     "id": "s4-fc26-235073",
@@ -814,7 +821,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gregor Kobel"
   },
   {
     "id": "s4-fc26-192448",
@@ -916,7 +924,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marc-André ter Stegen"
   },
   {
     "id": "s4-fc26-210257",
@@ -1018,8 +1027,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ederson",
+    "legendary": false
   },
   {
     "id": "s4-fc26-202811",
@@ -1121,7 +1131,8 @@
       "width": 234
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Emiliano Martínez"
   },
   {
     "id": "s4-fc26-193080",
@@ -1219,7 +1230,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "De Gea"
   },
   {
     "id": "s4-fc26-185122",
@@ -1317,7 +1329,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Péter Gulácsi"
   },
   {
     "id": "s4-fc26-230869",
@@ -1415,7 +1428,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Unai Simón"
   },
   {
     "id": "s4-fc26-204935",
@@ -1513,7 +1527,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jordan Pickford"
   },
   {
     "id": "s4-fc26-262621",
@@ -1611,7 +1626,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giorgi Mamardashvili"
   },
   {
     "id": "s4-fc26-167495",
@@ -1713,8 +1729,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Manuel Neuer",
+    "legendary": true
   },
   {
     "id": "s4-fc26-186153",
@@ -1812,7 +1829,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Wojciech Szczęsny"
   },
   {
     "id": "s4-fc26-234577",
@@ -1914,8 +1932,9 @@
       "width": 210
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diogo Costa",
+    "legendary": false
   },
   {
     "id": "s4-fc26-252154",
@@ -2013,7 +2032,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marco Carnesecchi"
   },
   {
     "id": "s4-fc26-259532",
@@ -2111,7 +2131,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Joan García"
   },
   {
     "id": "s4-fc26-227127",
@@ -2209,7 +2230,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Álex Remiro"
   },
   {
     "id": "s4-fc26-251752",
@@ -2307,7 +2329,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lucas Chevalier"
   },
   {
     "id": "s4-fc26-199641",
@@ -2405,7 +2428,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matz Sels"
   },
   {
     "id": "s4-fc26-193698",
@@ -2503,7 +2527,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Oliver Baumann"
   },
   {
     "id": "s4-fc26-215316",
@@ -2601,7 +2626,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gerónimo Rulli"
   },
   {
     "id": "s4-fc26-240091",
@@ -2699,7 +2725,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Guglielmo Vicario"
   },
   {
     "id": "s4-fc26-230872",
@@ -2797,7 +2824,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mile Svilar"
   },
   {
     "id": "s4-fc26-225116",
@@ -2895,7 +2923,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alex Meret"
   },
   {
     "id": "s4-fc26-224987",
@@ -2993,7 +3022,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ivan Provedel"
   },
   {
     "id": "s4-fc26-192984",
@@ -3091,7 +3121,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Koen Casteels"
   },
   {
     "id": "s4-fc26-209981",
@@ -3189,7 +3220,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yassine Bounou"
   },
   {
     "id": "s4-fc26-223885",
@@ -3287,7 +3319,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alexander Nübel"
   },
   {
     "id": "s4-fc26-233306",
@@ -3385,7 +3418,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dean Henderson"
   },
   {
     "id": "s4-fc26-235840",
@@ -3483,7 +3517,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Michele Di Gregorio"
   },
   {
     "id": "s4-fc26-243952",
@@ -3581,7 +3616,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andriy Lunin"
   },
   {
     "id": "s4-fc26-223952",
@@ -3679,7 +3715,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Soria"
   },
   {
     "id": "s4-fc26-188943",
@@ -3777,7 +3814,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kevin Trapp"
   },
   {
     "id": "s4-fc26-203841",
@@ -3875,7 +3913,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nick Pope"
   },
   {
     "id": "s4-fc26-230670",
@@ -3973,7 +4012,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lucas Perri"
   },
   {
     "id": "s4-fc26-190941",
@@ -4071,7 +4111,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lukáš Hrádecký"
   },
   {
     "id": "s4-fc26-210385",
@@ -4169,7 +4210,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rui Silva"
   },
   {
     "id": "s4-fc26-210676",
@@ -4267,7 +4309,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Wladimiro Falcone"
   },
   {
     "id": "s4-fc26-226753",
@@ -4365,7 +4408,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "André Onana"
   },
   {
     "id": "s4-fc26-192563",
@@ -4463,7 +4507,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bernd Leno"
   },
   {
     "id": "s4-fc26-204883",
@@ -4561,7 +4606,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Brice Samba"
   },
   {
     "id": "s4-fc26-241671",
@@ -4659,7 +4705,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dominik Livaković"
   },
   {
     "id": "s4-fc26-250753",
@@ -4757,7 +4804,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Anatoliy Trubin"
   },
   {
     "id": "s4-fc26-201269",
@@ -4855,7 +4903,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Frederik Rønnow"
   },
   {
     "id": "s4-fc26-226300",
@@ -4953,7 +5002,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Uğurcan Çakır"
   },
   {
     "id": "s4-retired-gianluigi-buffon",
@@ -5055,8 +5105,9 @@
       "width": 208
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gianluigi Buffon",
+    "legendary": true
   },
   {
     "id": "s4-retired-iker-casillas",
@@ -5158,8 +5209,9 @@
       "width": 136
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Iker Casillas",
+    "legendary": true
   },
   {
     "id": "s4-retired-petr-cech",
@@ -5257,8 +5309,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Petr Čech",
+    "legendary": false
   },
   {
     "id": "s4-retired-edwin-van-der-sar",
@@ -5356,8 +5409,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Edwin van der Sar",
+    "legendary": false
   },
   {
     "id": "s4-retired-oliver-kahn",
@@ -5459,8 +5513,9 @@
       "width": 220
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Oliver Kahn",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-017",
@@ -5562,8 +5617,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Júlio César",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-044",
@@ -5661,7 +5717,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Aaron Ramsdale"
   },
   {
     "id": "s4-dlc2-20260803-007",
@@ -5759,7 +5816,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ubaldo Fillol"
   },
   {
     "id": "s4-dlc2-20260803-040",
@@ -5857,7 +5915,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hans van Breukelen"
   },
   {
     "id": "s4-dlc2-20260803-051",
@@ -5959,7 +6018,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rui Patrício"
   },
   {
     "id": "s4-dlc2-20260803-056",
@@ -6061,7 +6121,8 @@
       "width": 164
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Manuel Bento"
   },
   {
     "id": "s4-dlc2-20260803-059",
@@ -6163,8 +6224,9 @@
       "width": 216
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vítor Baía",
+    "legendary": true
   },
   {
     "id": "s4-dlc2-20260803-066",
@@ -6266,7 +6328,8 @@
       "width": 108
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dino Zoff"
   },
   {
     "id": "s4-dlc2-20260803-072",
@@ -6368,7 +6431,8 @@
       "width": 232
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Keylor Navas"
   },
   {
     "id": "s4-dlc3-20260808-013",
@@ -6470,8 +6534,9 @@
       "width": 106
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paco Buyo",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-016",
@@ -6573,7 +6638,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lev Yashin"
   },
   {
     "id": "s4-dlc3-20260808-033",
@@ -6675,7 +6741,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fabien Barthez"
   },
   {
     "id": "s4-dlc3-20260808-035",
@@ -6777,7 +6844,8 @@
       "width": 136
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jens Lehmann"
   },
   {
     "id": "s4-dlc3-20260808-042",
@@ -6879,7 +6947,8 @@
       "width": 236
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Víctor Valdés"
   },
   {
     "id": "legend-beckenbauer",
@@ -6981,7 +7050,8 @@
       "width": 96
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Beckenbauer"
   },
   {
     "id": "s4-fc26-203376",
@@ -7083,7 +7153,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Virgil van Dijk"
   },
   {
     "id": "s4-fc26-235212",
@@ -7185,7 +7256,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Achraf Hakimi"
   },
   {
     "id": "s4-fc26-232580",
@@ -7287,7 +7359,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gabriel"
   },
   {
     "id": "s4-fc26-237383",
@@ -7389,7 +7462,8 @@
       "width": 220
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alessandro Bastoni"
   },
   {
     "id": "s4-fc26-213331",
@@ -7491,7 +7565,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jonathan Tah"
   },
   {
     "id": "s4-fc26-241486",
@@ -7593,7 +7668,8 @@
       "width": 184
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jules Koundé"
   },
   {
     "id": "s4-fc26-207865",
@@ -7695,7 +7771,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marquinhos"
   },
   {
     "id": "s4-fc26-243715",
@@ -7797,7 +7874,8 @@
       "width": 172
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "William Saliba"
   },
   {
     "id": "s4-fc26-205452",
@@ -7899,7 +7977,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Antonio Rüdiger"
   },
   {
     "id": "s4-fc26-237678",
@@ -8001,7 +8080,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ibrahima Konaté"
   },
   {
     "id": "s4-fc26-252145",
@@ -8103,7 +8183,8 @@
       "width": 196
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nuno Mendes"
   },
   {
     "id": "s4-fc26-239818",
@@ -8205,7 +8286,8 @@
       "width": 128
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rúben Dias"
   },
   {
     "id": "s4-fc26-231281",
@@ -8307,7 +8389,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Trent Alexander-Arnold"
   },
   {
     "id": "s4-fc26-256196",
@@ -8409,7 +8492,8 @@
       "width": 196
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Willian Pacho"
   },
   {
     "id": "s4-fc26-226268",
@@ -8511,7 +8595,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Federico Dimarco"
   },
   {
     "id": "s4-fc26-239580",
@@ -8613,7 +8698,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bremer"
   },
   {
     "id": "s4-fc26-204963",
@@ -8715,8 +8801,9 @@
       "width": 220
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Carvajal",
+    "legendary": false
   },
   {
     "id": "s4-fc26-229558",
@@ -8818,7 +8905,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dayot Upamecano"
   },
   {
     "id": "s4-fc26-204525",
@@ -8920,7 +9008,8 @@
       "width": 164
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Iñigo Martínez"
   },
   {
     "id": "s4-fc26-247819",
@@ -9022,7 +9111,8 @@
       "width": 236
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nico Schlotterbeck"
   },
   {
     "id": "s4-fc26-210514",
@@ -9124,7 +9214,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "João Cancelo"
   },
   {
     "id": "s4-fc26-226161",
@@ -9226,8 +9317,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marcos Llorente",
+    "legendary": false
   },
   {
     "id": "s4-fc26-232656",
@@ -9329,7 +9421,8 @@
       "width": 156
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Theo Hernández"
   },
   {
     "id": "s4-fc26-234396",
@@ -9427,7 +9520,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alphonso Davies"
   },
   {
     "id": "s4-fc26-226851",
@@ -9529,7 +9623,8 @@
       "width": 144
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Benjamin Pavard"
   },
   {
     "id": "s4-fc26-233096",
@@ -9631,7 +9726,8 @@
       "width": 186
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Denzel Dumfries"
   },
   {
     "id": "s4-fc26-240130",
@@ -9733,8 +9829,9 @@
       "width": 206
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Éder Militão",
+    "legendary": false
   },
   {
     "id": "s4-fc26-251517",
@@ -9832,7 +9929,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Joško Gvardiol"
   },
   {
     "id": "s4-fc26-239231",
@@ -9934,8 +10032,9 @@
       "width": 128
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marc Cucurella",
+    "legendary": false
   },
   {
     "id": "s4-fc26-248550",
@@ -10033,7 +10132,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vivian"
   },
   {
     "id": "s4-fc26-199845",
@@ -10131,7 +10231,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Francesco Acerbi"
   },
   {
     "id": "s4-fc26-198176",
@@ -10229,7 +10330,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Stefan de Vrij"
   },
   {
     "id": "s4-fc26-204638",
@@ -10327,7 +10429,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Willi Orban"
   },
   {
     "id": "s4-fc26-263578",
@@ -10425,7 +10528,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Balde"
   },
   {
     "id": "s4-fc26-247103",
@@ -10523,7 +10627,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dávid Hancko"
   },
   {
     "id": "s4-fc26-217870",
@@ -10621,7 +10726,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giovanni Di Lorenzo"
   },
   {
     "id": "s4-fc26-253149",
@@ -10719,7 +10825,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jeremie Frimpong"
   },
   {
     "id": "s4-fc26-278016",
@@ -10817,7 +10924,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Murillo"
   },
   {
     "id": "s4-fc26-208920",
@@ -10915,7 +11023,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nathan Aké"
   },
   {
     "id": "s4-fc26-256197",
@@ -11013,7 +11122,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Piero Hincapié"
   },
   {
     "id": "s4-fc26-244263",
@@ -11111,7 +11221,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Amir Rrahmani"
   },
   {
     "id": "s4-fc26-231936",
@@ -11213,8 +11324,9 @@
       "width": 320
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Benjamin White",
+    "legendary": false
   },
   {
     "id": "s4-fc26-229582",
@@ -11312,7 +11424,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gianluca Mancini"
   },
   {
     "id": "s4-fc26-216460",
@@ -11410,7 +11523,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "José María Giménez"
   },
   {
     "id": "s4-fc26-238095",
@@ -11508,7 +11622,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nikola Milenković"
   },
   {
     "id": "s4-fc26-233486",
@@ -11606,7 +11721,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robin Le Normand"
   },
   {
     "id": "s4-fc26-253163",
@@ -11704,7 +11820,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ronald Araujo"
   },
   {
     "id": "s4-fc26-208333",
@@ -11802,7 +11919,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Emre Can"
   },
   {
     "id": "s4-fc26-225375",
@@ -11900,7 +12018,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Konrad Laimer"
   },
   {
     "id": "s4-fc26-243576",
@@ -11998,7 +12117,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pedro Porro"
   },
   {
     "id": "s4-fc26-216267",
@@ -12096,7 +12216,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andrew Robertson"
   },
   {
     "id": "s4-fc26-229348",
@@ -12194,7 +12315,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Antonee Robinson"
   },
   {
     "id": "s4-fc26-197445",
@@ -12292,7 +12414,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Alaba"
   },
   {
     "id": "s4-fc26-236703",
@@ -12390,7 +12513,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Raum"
   },
   {
     "id": "s4-fc26-220793",
@@ -12488,7 +12612,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Davinson Sánchez"
   },
   {
     "id": "s4-fc26-227678",
@@ -12586,7 +12711,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ezri Konsa"
   },
   {
     "id": "s4-fc26-251805",
@@ -12684,7 +12810,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jurriën Timber"
   },
   {
     "id": "s4-fc26-227647",
@@ -12782,7 +12909,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Maximilian Mittelstädt"
   },
   {
     "id": "s4-fc26-264453",
@@ -12880,7 +13008,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Micky van de Ven"
   },
   {
     "id": "s4-fc26-260908",
@@ -12978,7 +13107,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Milos Kerkez"
   },
   {
     "id": "s4-fc26-278349",
@@ -13076,7 +13206,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dean Huijsen"
   },
   {
     "id": "s4-fc26-210047",
@@ -13174,7 +13305,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fabian Schär"
   },
   {
     "id": "s4-fc26-203574",
@@ -13272,7 +13404,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "John Stones"
   },
   {
     "id": "s4-fc26-201024",
@@ -13370,7 +13503,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kalidou Koulibaly"
   },
   {
     "id": "s4-fc26-229237",
@@ -13468,7 +13602,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Manuel Akanji"
   },
   {
     "id": "s4-fc26-241159",
@@ -13566,7 +13701,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marc Guéhi"
   },
   {
     "id": "s4-fc26-235243",
@@ -13664,7 +13800,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matthijs de Ligt"
   },
   {
     "id": "s4-fc26-192366",
@@ -13766,8 +13903,9 @@
       "width": 316
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nicolás Otamendi",
+    "legendary": false
   },
   {
     "id": "s4-fc26-278046",
@@ -13869,8 +14007,9 @@
       "width": 240
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pau Cubarsí",
+    "legendary": false
   },
   {
     "id": "s4-fc26-229476",
@@ -13968,7 +14107,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Waldemar Anton"
   },
   {
     "id": "s4-fc26-243241",
@@ -14066,7 +14206,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alessandro Buongiorno"
   },
   {
     "id": "s4-fc26-210413",
@@ -14164,7 +14305,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alessio Romagnoli"
   },
   {
     "id": "s4-fc26-212218",
@@ -14266,8 +14408,9 @@
       "width": 136
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Aymeric Laporte",
+    "legendary": false
   },
   {
     "id": "s4-fc26-232488",
@@ -14365,7 +14508,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cristian Romero"
   },
   {
     "id": "s4-fc26-247257",
@@ -14463,7 +14607,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ibañez"
   },
   {
     "id": "s4-fc26-237086",
@@ -14561,7 +14706,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kim Min Jae"
   },
   {
     "id": "s4-fc26-207862",
@@ -14659,7 +14805,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matthias Ginter"
   },
   {
     "id": "s4-fc26-200724",
@@ -14757,8 +14904,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nacho Fernández",
+    "legendary": false
   },
   {
     "id": "s4-fc26-236532",
@@ -14856,7 +15004,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robin Koch"
   },
   {
     "id": "s4-fc26-251809",
@@ -14954,7 +15103,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sven Botman"
   },
   {
     "id": "s4-fc26-258648",
@@ -15052,7 +15202,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Carlos Augusto"
   },
   {
     "id": "s4-fc26-237646",
@@ -15150,7 +15301,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Daniel Muñoz"
   },
   {
     "id": "s4-fc26-247263",
@@ -15248,7 +15400,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Edmond Tapsoba"
   },
   {
     "id": "s4-fc26-228618",
@@ -15346,7 +15499,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ferland Mendy"
   },
   {
     "id": "s4-fc26-211688",
@@ -15444,7 +15598,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gayà"
   },
   {
     "id": "s4-fc26-239301",
@@ -15542,8 +15697,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lisandro Martínez",
+    "legendary": false
   },
   {
     "id": "s4-fc26-184392",
@@ -15641,7 +15797,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matteo Darmian"
   },
   {
     "id": "s4-fc26-261865",
@@ -15739,7 +15896,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Miguel Gutiérrez"
   },
   {
     "id": "s4-fc26-242641",
@@ -15837,7 +15995,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rayan Aït-Nouri"
   },
   {
     "id": "s4-fc26-238074",
@@ -15935,7 +16094,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Reece James"
   },
   {
     "id": "s4-fc26-200888",
@@ -16037,8 +16197,9 @@
       "width": 246
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Danilo Pereira",
+    "legendary": false
   },
   {
     "id": "s4-fc26-236403",
@@ -16136,7 +16297,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Evan Ndicka"
   },
   {
     "id": "s4-fc26-232756",
@@ -16234,7 +16396,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fikayo Tomori"
   },
   {
     "id": "s4-fc26-257179",
@@ -16332,7 +16495,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gonçalo Inácio"
   },
   {
     "id": "s4-fc26-242835",
@@ -16430,7 +16594,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Leonardo Balerdi"
   },
   {
     "id": "s4-fc26-220814",
@@ -16528,7 +16693,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lucas Hernández"
   },
   {
     "id": "s4-fc26-232363",
@@ -16626,7 +16792,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Milan Škriniar"
   },
   {
     "id": "s4-fc26-243854",
@@ -16724,7 +16891,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mohamed Simakan"
   },
   {
     "id": "s4-fc26-244749",
@@ -16822,7 +16990,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nayef Aguerd"
   },
   {
     "id": "s4-fc26-212190",
@@ -16920,7 +17089,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Niklas Süle"
   },
   {
     "id": "s4-fc26-228805",
@@ -17018,7 +17188,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Raíllo"
   },
   {
     "id": "s4-fc26-251479",
@@ -17116,7 +17287,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Maxim De Cuyper"
   },
   {
     "id": "s4-fc26-268889",
@@ -17214,8 +17386,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Álvaro Carreras",
+    "legendary": false
   },
   {
     "id": "s4-fc26-259583",
@@ -17313,7 +17486,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Destiny Udogie"
   },
   {
     "id": "s4-fc26-231591",
@@ -17411,7 +17585,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Javi Galán"
   },
   {
     "id": "s4-fc26-239093",
@@ -17509,7 +17684,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jonathan Clauss"
   },
   {
     "id": "s4-fc26-186345",
@@ -17607,7 +17783,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kieran Trippier"
   },
   {
     "id": "s4-fc26-200458",
@@ -17705,8 +17882,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lucas Digne",
+    "legendary": false
   },
   {
     "id": "s4-fc26-259694",
@@ -17804,7 +17982,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mingueza"
   },
   {
     "id": "s4-fc26-236401",
@@ -17902,7 +18081,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Noussair Mazraoui"
   },
   {
     "id": "s4-fc26-224656",
@@ -18000,7 +18180,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ola Aina"
   },
   {
     "id": "s4-fc26-209889",
@@ -18102,8 +18283,9 @@
       "width": 224
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Raphaël Guerreiro",
+    "legendary": false
   },
   {
     "id": "s4-fc26-223697",
@@ -18201,7 +18383,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robin Gosens"
   },
   {
     "id": "s4-fc26-252802",
@@ -18299,7 +18482,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Wilfried Singo"
   },
   {
     "id": "s4-fc26-229880",
@@ -18397,7 +18581,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Aaron Wan-Bissaka"
   },
   {
     "id": "s4-fc26-229905",
@@ -18495,7 +18680,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Abdülkerim Bardakcı"
   },
   {
     "id": "s4-fc26-257278",
@@ -18593,7 +18779,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Arthur Theate"
   },
   {
     "id": "s4-fc26-228579",
@@ -18691,7 +18878,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Benjamin Henrichs"
   },
   {
     "id": "s4-fc26-262138",
@@ -18789,7 +18977,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Castello Lukeba"
   },
   {
     "id": "s4-fc26-258908",
@@ -18887,7 +19076,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jan Paul van Hecke"
   },
   {
     "id": "s4-fc26-262859",
@@ -18985,7 +19175,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Levi Colwill"
   },
   {
     "id": "s4-fc26-266127",
@@ -19083,7 +19274,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lewis Hall"
   },
   {
     "id": "s4-fc26-229668",
@@ -19181,7 +19373,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mario Hermoso"
   },
   {
     "id": "s4-fc26-241464",
@@ -19279,7 +19472,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pau Torres"
   },
   {
     "id": "s4-fc26-255654",
@@ -19377,7 +19571,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pierre Kalulu"
   },
   {
     "id": "s4-fc26-262118",
@@ -19475,7 +19670,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Tino Livramento"
   },
   {
     "id": "s4-fc26-269493",
@@ -19573,8 +19769,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alexsandro",
+    "legendary": false
   },
   {
     "id": "s4-fc26-213661",
@@ -19672,7 +19869,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andreas Christensen"
   },
   {
     "id": "s4-fc26-189881",
@@ -19770,7 +19968,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Chris Smalling"
   },
   {
     "id": "s4-fc26-220440",
@@ -19868,7 +20067,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Clément Lenglet"
   },
   {
     "id": "s4-fc26-212602",
@@ -19966,7 +20166,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diego Llorente"
   },
   {
     "id": "s4-fc26-266872",
@@ -20064,7 +20265,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Federico Gatti"
   },
   {
     "id": "s4-fc26-203263",
@@ -20166,8 +20368,9 @@
       "width": 238
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Harry Maguire",
+    "legendary": false
   },
   {
     "id": "s4-fc26-202695",
@@ -20265,7 +20468,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "James Tarkowski"
   },
   {
     "id": "s4-fc26-246875",
@@ -20363,7 +20567,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Odilon Kossounou"
   },
   {
     "id": "s4-fc26-270531",
@@ -20461,7 +20666,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ousmane Diomande"
   },
   {
     "id": "s4-fc26-253124",
@@ -20563,8 +20769,9 @@
       "width": 276
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matheus Nunes",
+    "legendary": false
   },
   {
     "id": "s4-fc26-183512",
@@ -20662,7 +20869,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yuri Berchiche"
   },
   {
     "id": "s4-fc26-258966",
@@ -20764,8 +20972,9 @@
       "width": 172
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andrea Cambiaso",
+    "legendary": false
   },
   {
     "id": "s4-fc26-248165",
@@ -20863,7 +21072,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andrei Rațiu"
   },
   {
     "id": "s4-fc26-220651",
@@ -20961,7 +21171,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Angeliño"
   },
   {
     "id": "s4-fc26-234574",
@@ -21063,8 +21274,9 @@
       "width": 208
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diogo Dalot",
+    "legendary": false
   },
   {
     "id": "s4-fc26-235152",
@@ -21162,7 +21374,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ferdi Kadıoğlu"
   },
   {
     "id": "s4-fc26-248465",
@@ -21260,7 +21473,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ian Maatsen"
   },
   {
     "id": "s4-fc26-188377",
@@ -21362,8 +21576,9 @@
       "width": 286
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kyle Walker",
+    "legendary": false
   },
   {
     "id": "s4-fc26-233084",
@@ -21461,7 +21676,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nahuel Molina"
   },
   {
     "id": "s4-fc26-224196",
@@ -21559,7 +21775,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ramy Bensebaini"
   },
   {
     "id": "s4-fc26-212091",
@@ -21657,7 +21874,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rodinei"
   },
   {
     "id": "s4-fc26-251804",
@@ -21755,7 +21973,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sergiño Dest"
   },
   {
     "id": "s4-retired-paolo-maldini",
@@ -21857,8 +22076,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paolo Maldini",
+    "legendary": true
   },
   {
     "id": "s4-retired-franco-baresi",
@@ -21960,8 +22180,9 @@
       "width": 168
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Franco Baresi",
+    "legendary": true
   },
   {
     "id": "s4-retired-alessandro-nesta",
@@ -22063,8 +22284,9 @@
       "width": 96
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alessandro Nesta",
+    "legendary": true
   },
   {
     "id": "s4-retired-fabio-cannavaro",
@@ -22166,8 +22388,9 @@
       "width": 104
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fabio Cannavaro",
+    "legendary": true
   },
   {
     "id": "s4-retired-carles-puyol",
@@ -22269,8 +22492,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Carles Puyol",
+    "legendary": true
   },
   {
     "id": "s4-retired-rio-ferdinand",
@@ -22372,8 +22596,9 @@
       "width": 204
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rio Ferdinand",
+    "legendary": true
   },
   {
     "id": "s4-retired-john-terry",
@@ -22475,8 +22700,9 @@
       "width": 172
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "John Terry",
+    "legendary": false
   },
   {
     "id": "s4-retired-nemanja-vidic",
@@ -22578,8 +22804,9 @@
       "width": 176
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nemanja Vidić",
+    "legendary": false
   },
   {
     "id": "s4-retired-philipp-lahm",
@@ -22681,8 +22908,9 @@
       "width": 164
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Philipp Lahm",
+    "legendary": true
   },
   {
     "id": "s4-retired-cafu",
@@ -22784,8 +23012,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cafu",
+    "legendary": true
   },
   {
     "id": "s4-retired-javier-zanetti",
@@ -22887,8 +23116,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Javier Zanetti",
+    "legendary": true
   },
   {
     "id": "s4-retired-marcelo",
@@ -22990,8 +23220,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marcelo",
+    "legendary": true
   },
   {
     "id": "s4-retired-roberto-carlos",
@@ -23093,8 +23324,9 @@
       "width": 140
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Roberto Carlos",
+    "legendary": true
   },
   {
     "id": "s4-retired-ashley-cole",
@@ -23192,7 +23424,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ashley Cole"
   },
   {
     "id": "s4-retired-giorgio-chiellini",
@@ -23290,8 +23523,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giorgio Chiellini",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-001",
@@ -23393,8 +23627,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sergio Ramos",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-004",
@@ -23496,8 +23731,9 @@
       "width": 172
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gerard Piqué",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-005",
@@ -23599,8 +23835,9 @@
       "width": 242
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dani Alves",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-006",
@@ -23698,8 +23935,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Martín Demichelis",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-009",
@@ -23797,7 +24035,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gary Neville"
   },
   {
     "id": "s4-dlc-20260731-011",
@@ -23899,7 +24138,8 @@
       "width": 164
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Maicon"
   },
   {
     "id": "s4-dlc-20260731-012",
@@ -24001,8 +24241,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Raphaël Varane",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-015",
@@ -24104,7 +24345,8 @@
       "width": 108
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Thiago Silva"
   },
   {
     "id": "s4-dlc-20260731-020",
@@ -24206,8 +24448,9 @@
       "width": 208
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Daniele De Rossi",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-022",
@@ -24309,8 +24552,9 @@
       "width": 168
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marco Materazzi",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-025",
@@ -24412,8 +24656,9 @@
       "width": 228
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ricardo Carvalho",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-045",
@@ -24515,8 +24760,9 @@
       "width": 124
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lúcio",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-047",
@@ -24618,7 +24864,8 @@
       "width": 224
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jérôme Boateng"
   },
   {
     "id": "s4-dlc2-20260803-002",
@@ -24720,8 +24967,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Daniel Passarella",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-008",
@@ -24823,7 +25071,8 @@
       "width": 164
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Oscar Ruggeri"
   },
   {
     "id": "s4-dlc2-20260803-019",
@@ -24921,8 +25170,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nicolás Tagliafico",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-020",
@@ -25020,8 +25270,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gonzalo Montiel",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-021",
@@ -25123,8 +25374,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gabriel Heinze",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-023",
@@ -25226,7 +25478,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ronald Koeman"
   },
   {
     "id": "s4-dlc2-20260803-025",
@@ -25324,7 +25577,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ruud Krol"
   },
   {
     "id": "s4-dlc2-20260803-030",
@@ -25426,7 +25680,8 @@
       "width": 100
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jaap Stam"
   },
   {
     "id": "s4-dlc2-20260803-033",
@@ -25524,7 +25779,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Frank de Boer"
   },
   {
     "id": "s4-dlc2-20260803-044",
@@ -25626,7 +25882,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pepe"
   },
   {
     "id": "s4-dlc2-20260803-053",
@@ -25728,7 +25985,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Humberto Coelho"
   },
   {
     "id": "s4-dlc2-20260803-058",
@@ -25826,7 +26084,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fernando Couto"
   },
   {
     "id": "s4-dlc2-20260803-065",
@@ -25928,8 +26187,9 @@
       "width": 140
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gaetano Scirea",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-069",
@@ -26031,8 +26291,9 @@
       "width": 168
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giacinto Facchetti",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-001",
@@ -26134,7 +26395,8 @@
       "width": 220
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Patrice Evra"
   },
   {
     "id": "s4-dlc3-20260808-002",
@@ -26232,7 +26494,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Eric Abidal"
   },
   {
     "id": "s4-dlc3-20260808-003",
@@ -26334,8 +26597,9 @@
       "width": 152
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bixente Lizarazu",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-004",
@@ -26437,7 +26701,8 @@
       "width": 164
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lilian Thuram"
   },
   {
     "id": "s4-dlc3-20260808-007",
@@ -26539,7 +26804,8 @@
       "width": 256
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Walter Samuel"
   },
   {
     "id": "s4-dlc3-20260808-008",
@@ -26641,7 +26907,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Roberto Ayala"
   },
   {
     "id": "s4-dlc3-20260808-009",
@@ -26739,7 +27006,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pablo Zabaleta"
   },
   {
     "id": "s4-dlc3-20260808-012",
@@ -26841,8 +27109,9 @@
       "width": 116
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fernando Hierro",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-018",
@@ -26944,7 +27213,8 @@
       "width": 164
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fabio Grosso"
   },
   {
     "id": "s4-dlc3-20260808-024",
@@ -27046,7 +27316,8 @@
       "width": 208
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gianluca Zambrotta"
   },
   {
     "id": "s4-dlc3-20260808-027",
@@ -27148,7 +27419,8 @@
       "width": 184
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Júnior"
   },
   {
     "id": "s4-dlc3-20260808-036",
@@ -27246,7 +27518,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Christoph Metzelder"
   },
   {
     "id": "s4-dlc3-20260808-040",
@@ -27348,7 +27621,8 @@
       "width": 196
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Leonardo Bonucci"
   },
   {
     "id": "s4-dlc3-20260808-041",
@@ -27446,7 +27720,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Joan Capdevila"
   },
   {
     "id": "s4-dlc3-20260808-046",
@@ -27544,7 +27819,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gregory van der Wiel"
   },
   {
     "id": "legend-zidane",
@@ -27646,7 +27922,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Zidane"
   },
   {
     "id": "legend-ronaldinho",
@@ -27748,7 +28025,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ronaldinho"
   },
   {
     "id": "legend-kroos",
@@ -27850,8 +28128,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kroos",
+    "legendary": true
   },
   {
     "id": "legend-beckham",
@@ -27953,8 +28232,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Beckham",
+    "legendary": true
   },
   {
     "id": "legend-modric",
@@ -28056,8 +28336,9 @@
       "width": 208
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Modric",
+    "legendary": true
   },
   {
     "id": "s4-fc26-209331",
@@ -28159,8 +28440,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mohamed Salah",
+    "legendary": false
   },
   {
     "id": "s4-fc26-252371",
@@ -28262,7 +28544,8 @@
       "width": 172
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jude Bellingham"
   },
   {
     "id": "s4-fc26-231866",
@@ -28364,8 +28647,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rodri",
+    "legendary": true
   },
   {
     "id": "s4-fc26-212622",
@@ -28467,7 +28751,8 @@
       "width": 228
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Joshua Kimmich"
   },
   {
     "id": "s4-fc26-277643",
@@ -28569,8 +28854,9 @@
       "width": 244
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lamine Yamal",
+    "legendary": false
   },
   {
     "id": "s4-fc26-251854",
@@ -28672,7 +28958,8 @@
       "width": 184
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pedri"
   },
   {
     "id": "s4-fc26-233419",
@@ -28774,7 +29061,8 @@
       "width": 176
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Raphinha"
   },
   {
     "id": "s4-fc26-255253",
@@ -28876,7 +29164,8 @@
       "width": 144
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vitinha"
   },
   {
     "id": "s4-fc26-239053",
@@ -28978,7 +29267,8 @@
       "width": 116
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Federico Valverde"
   },
   {
     "id": "s4-fc26-256630",
@@ -29080,7 +29370,8 @@
       "width": 216
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Florian Wirtz"
   },
   {
     "id": "s4-fc26-256790",
@@ -29182,7 +29473,8 @@
       "width": 176
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jamal Musiala"
   },
   {
     "id": "s4-fc26-257534",
@@ -29284,7 +29576,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cole Palmer"
   },
   {
     "id": "s4-fc26-228702",
@@ -29386,7 +29679,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Frenkie de Jong"
   },
   {
     "id": "s4-fc26-192985",
@@ -29488,8 +29782,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kevin De Bruyne",
+    "legendary": false
   },
   {
     "id": "s4-fc26-256079",
@@ -29591,7 +29886,8 @@
       "width": 156
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Moisés Caicedo"
   },
   {
     "id": "s4-fc26-239837",
@@ -29693,7 +29989,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alexis Mac Allister"
   },
   {
     "id": "s4-fc26-212198",
@@ -29795,8 +30092,9 @@
       "width": 116
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bruno Fernandes",
+    "legendary": false
   },
   {
     "id": "s4-fc26-234378",
@@ -29898,8 +30196,9 @@
       "width": 144
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Declan Rice",
+    "legendary": false
   },
   {
     "id": "s4-fc26-222665",
@@ -30001,7 +30300,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Martin Ødegaard"
   },
   {
     "id": "s4-fc26-224232",
@@ -30103,7 +30403,8 @@
       "width": 160
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nicolò Barella"
   },
   {
     "id": "s4-fc26-247851",
@@ -30205,8 +30506,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bruno Guimarães",
+    "legendary": false
   },
   {
     "id": "s4-fc26-247827",
@@ -30308,7 +30610,8 @@
       "width": 136
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Michael Olise"
   },
   {
     "id": "s4-fc26-211110",
@@ -30410,7 +30713,8 @@
       "width": 208
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paulo Dybala"
   },
   {
     "id": "s4-fc26-208128",
@@ -30508,7 +30812,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hakan Çalhanoğlu"
   },
   {
     "id": "s4-fc26-256516",
@@ -30606,7 +30911,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nico Williams"
   },
   {
     "id": "s4-fc26-241096",
@@ -30704,7 +31010,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sandro Tonali"
   },
   {
     "id": "s4-fc26-240638",
@@ -30802,7 +31109,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Tijjani Reijnders"
   },
   {
     "id": "s4-fc26-272834",
@@ -30904,8 +31212,9 @@
       "width": 268
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "João Neves",
+    "legendary": false
   },
   {
     "id": "s4-fc26-246104",
@@ -31007,8 +31316,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ryan Gravenberch",
+    "legendary": false
   },
   {
     "id": "s4-fc26-237238",
@@ -31106,7 +31416,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Scott McTominay"
   },
   {
     "id": "s4-fc26-244260",
@@ -31204,8 +31515,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dani Olmo",
+    "legendary": false
   },
   {
     "id": "s4-fc26-226271",
@@ -31303,7 +31615,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fabián Ruiz"
   },
   {
     "id": "s4-fc26-199503",
@@ -31401,7 +31714,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Granit Xhaka"
   },
   {
     "id": "s4-fc26-241084",
@@ -31499,7 +31813,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Luis Díaz"
   },
   {
     "id": "s4-fc26-215914",
@@ -31601,8 +31916,9 @@
       "width": 128
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "N'Golo Kanté",
+    "legendary": false
   },
   {
     "id": "s4-fc26-216393",
@@ -31700,7 +32016,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Youri Tielemans"
   },
   {
     "id": "s4-fc26-241637",
@@ -31802,8 +32119,9 @@
       "width": 198
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Aurélien Tchouaméni",
+    "legendary": false
   },
   {
     "id": "s4-fc26-212616",
@@ -31901,7 +32219,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rodrigo De Paul"
   },
   {
     "id": "s4-fc26-244675",
@@ -31999,7 +32318,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sancet"
   },
   {
     "id": "s4-fc26-223848",
@@ -32097,7 +32417,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sergej Milinković-Savić"
   },
   {
     "id": "s4-fc26-257279",
@@ -32195,7 +32516,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Álex Baena"
   },
   {
     "id": "s4-fc26-218667",
@@ -32297,8 +32619,9 @@
       "width": 230
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bernardo Silva",
+    "legendary": false
   },
   {
     "id": "s4-fc26-242516",
@@ -32396,7 +32719,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cody Gakpo"
   },
   {
     "id": "s4-fc26-247090",
@@ -32494,8 +32818,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Enzo Fernández",
+    "legendary": false
   },
   {
     "id": "s4-fc26-231521",
@@ -32593,7 +32918,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Exequiel Palacios"
   },
   {
     "id": "s4-fc26-210035",
@@ -32691,7 +33017,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Grimaldo"
   },
   {
     "id": "s4-fc26-222077",
@@ -32789,7 +33116,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Manuel Locatelli"
   },
   {
     "id": "s4-fc26-220502",
@@ -32887,7 +33215,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mattia Zaccagni"
   },
   {
     "id": "s4-fc26-224293",
@@ -32989,8 +33318,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rúben Neves",
+    "legendary": false
   },
   {
     "id": "s4-fc26-245367",
@@ -33088,7 +33418,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Xavi Simons"
   },
   {
     "id": "s4-fc26-197781",
@@ -33190,8 +33521,9 @@
       "width": 118
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Isco",
+    "legendary": false
   },
   {
     "id": "s4-fc26-220697",
@@ -33289,7 +33621,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "James Maddison"
   },
   {
     "id": "s4-fc26-241852",
@@ -33387,7 +33720,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Moussa Diaby"
   },
   {
     "id": "s4-fc26-204485",
@@ -33485,7 +33819,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Riyad Mahrez"
   },
   {
     "id": "s4-fc26-210008",
@@ -33583,8 +33918,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Adrien Rabiot",
+    "legendary": false
   },
   {
     "id": "s4-fc26-236772",
@@ -33682,7 +34018,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dominik Szoboszlai"
   },
   {
     "id": "s4-fc26-248243",
@@ -33780,7 +34117,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Eduardo Camavinga"
   },
   {
     "id": "s4-fc26-192883",
@@ -33878,7 +34216,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Henrikh Mkhitaryan"
   },
   {
     "id": "s4-fc26-223959",
@@ -33976,7 +34315,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lucas Torreira"
   },
   {
     "id": "s4-fc26-244669",
@@ -34074,7 +34414,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Morten Hjulmand"
   },
   {
     "id": "s4-fc26-228813",
@@ -34172,7 +34513,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Aleix García"
   },
   {
     "id": "s4-fc26-247394",
@@ -34270,7 +34612,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dejan Kulusevski"
   },
   {
     "id": "s4-fc26-216201",
@@ -34368,7 +34711,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Iñaki Williams"
   },
   {
     "id": "s4-fc26-240243",
@@ -34466,8 +34810,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matheus Cunha",
+    "legendary": false
   },
   {
     "id": "s4-fc26-225193",
@@ -34565,8 +34910,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mikel Merino",
+    "legendary": false
   },
   {
     "id": "s4-fc26-240950",
@@ -34664,7 +35010,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pedro Gonçalves"
   },
   {
     "id": "s4-fc26-208722",
@@ -34762,7 +35109,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sadio Mané"
   },
   {
     "id": "s4-fc26-216435",
@@ -34860,7 +35208,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Stanislav Lobotka"
   },
   {
     "id": "s4-fc26-209989",
@@ -34958,7 +35307,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Thomas Partey"
   },
   {
     "id": "s4-fc26-250959",
@@ -35056,7 +35406,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Angelo Stiller"
   },
   {
     "id": "s4-fc26-236987",
@@ -35154,7 +35505,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Boubacar Kamara"
   },
   {
     "id": "s4-fc26-235794",
@@ -35252,7 +35604,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Eberechi Eze"
   },
   {
     "id": "s4-fc26-264240",
@@ -35350,7 +35703,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gavi"
   },
   {
     "id": "s4-fc26-186942",
@@ -35448,8 +35802,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "İlkay Gündoğan",
+    "legendary": false
   },
   {
     "id": "s4-fc26-224371",
@@ -35547,7 +35902,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jarrod Bowen"
   },
   {
     "id": "s4-fc26-212194",
@@ -35645,7 +36001,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Julian Brandt"
   },
   {
     "id": "s4-fc26-213345",
@@ -35743,8 +36100,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kingsley Coman",
+    "legendary": false
   },
   {
     "id": "s4-fc26-229391",
@@ -35846,8 +36204,9 @@
       "width": 226
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Palhinha",
+    "legendary": false
   },
   {
     "id": "s4-fc26-248148",
@@ -35945,7 +36304,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Zubimendi"
   },
   {
     "id": "s4-fc26-227236",
@@ -36043,7 +36403,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "André-Franck Zambo Anguissa"
   },
   {
     "id": "s4-fc26-229261",
@@ -36141,7 +36502,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Denis Zakaria"
   },
   {
     "id": "s4-fc26-266866",
@@ -36239,7 +36601,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Éderson"
   },
   {
     "id": "s4-fc26-246863",
@@ -36337,7 +36700,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Felix Nmecha"
   },
   {
     "id": "s4-fc26-223334",
@@ -36435,7 +36799,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Joelinton"
   },
   {
     "id": "s4-fc26-209658",
@@ -36533,7 +36898,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Leon Goretzka"
   },
   {
     "id": "s4-fc26-256853",
@@ -36631,7 +36997,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Malik Tillman"
   },
   {
     "id": "s4-fc26-243245",
@@ -36729,7 +37096,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Orkun Kökçü"
   },
   {
     "id": "s4-fc26-210411",
@@ -36827,7 +37195,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Otávio"
   },
   {
     "id": "s4-fc26-225201",
@@ -36925,7 +37294,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Álex Berenguer"
   },
   {
     "id": "s4-fc26-209499",
@@ -37023,8 +37393,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fabinho",
+    "legendary": false
   },
   {
     "id": "s4-fc26-226226",
@@ -37122,7 +37493,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giovani Lo Celso"
   },
   {
     "id": "s4-fc26-255565",
@@ -37220,7 +37592,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kaoru Mitoma"
   },
   {
     "id": "s4-fc26-222492",
@@ -37318,7 +37691,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Leroy Sané"
   },
   {
     "id": "s4-fc26-222737",
@@ -37416,7 +37790,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Malcom"
   },
   {
     "id": "s4-fc26-236496",
@@ -37514,7 +37889,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mattéo Guendouzi"
   },
   {
     "id": "s4-fc26-236015",
@@ -37612,7 +37988,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Morgan Gibbs-White"
   },
   {
     "id": "s4-fc26-272449",
@@ -37710,7 +38087,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pablo Barrios"
   },
   {
     "id": "s4-fc26-233556",
@@ -37808,7 +38186,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Riccardo Orsolini"
   },
   {
     "id": "s4-fc26-210602",
@@ -37906,7 +38285,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Salem Al Dawsari"
   },
   {
     "id": "s4-fc26-251470",
@@ -38004,7 +38384,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Charles De Ketelaere"
   },
   {
     "id": "s4-fc26-231416",
@@ -38102,7 +38483,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dodi Lukébakio"
   },
   {
     "id": "s4-fc26-192318",
@@ -38200,8 +38582,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mario Götze",
+    "legendary": false
   },
   {
     "id": "s4-fc26-246147",
@@ -38299,7 +38682,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mason Greenwood"
   },
   {
     "id": "s4-fc26-189513",
@@ -38397,7 +38781,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Parejo"
   },
   {
     "id": "s4-fc26-213648",
@@ -38495,7 +38880,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pierre-Emile Højbjerg"
   },
   {
     "id": "s4-fc26-216547",
@@ -38593,7 +38979,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rafa"
   },
   {
     "id": "s4-fc26-232639",
@@ -38691,7 +39078,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ritsu Doan"
   },
   {
     "id": "s4-fc26-206113",
@@ -38789,7 +39177,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Serge Gnabry"
   },
   {
     "id": "s4-fc26-237681",
@@ -38887,7 +39276,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Takefusa Kubo"
   },
   {
     "id": "s4-fc26-244778",
@@ -38985,7 +39375,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Trincão"
   },
   {
     "id": "s4-fc26-231410",
@@ -39083,7 +39474,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Brahim"
   },
   {
     "id": "s4-fc26-272500",
@@ -39181,7 +39573,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Carlos Baleba"
   },
   {
     "id": "s4-fc26-238216",
@@ -39279,7 +39672,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Conor Gallagher"
   },
   {
     "id": "s4-fc26-219683",
@@ -39377,7 +39771,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Corentin Tolisso"
   },
   {
     "id": "s4-fc26-239807",
@@ -39475,7 +39870,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Davide Frattesi"
   },
   {
     "id": "s4-fc26-208574",
@@ -39573,7 +39969,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Filip Kostić"
   },
   {
     "id": "s4-fc26-210881",
@@ -39671,7 +40068,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "John McGinn"
   },
   {
     "id": "s4-fc26-247246",
@@ -39769,7 +40167,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Khéphren Thuram"
   },
   {
     "id": "s4-fc26-202648",
@@ -39867,7 +40266,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sergi Darder"
   },
   {
     "id": "s4-fc26-240679",
@@ -39965,7 +40365,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Teun Koopmeiners"
   },
   {
     "id": "s4-fc26-234060",
@@ -40063,7 +40464,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yangel Herrera"
   },
   {
     "id": "s4-fc26-212523",
@@ -40161,7 +40563,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Anderson Talisca"
   },
   {
     "id": "s4-fc26-235944",
@@ -40259,7 +40662,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Brais Méndez"
   },
   {
     "id": "s4-fc26-235805",
@@ -40357,7 +40761,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Federico Chiesa"
   },
   {
     "id": "s4-fc26-253396",
@@ -40455,7 +40860,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giuliano Simeone"
   },
   {
     "id": "s4-fc26-259516",
@@ -40553,7 +40959,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Johnny Cardoso"
   },
   {
     "id": "s4-fc26-193747",
@@ -40651,7 +41058,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Koke"
   },
   {
     "id": "s4-fc26-216352",
@@ -40749,7 +41157,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marcelo Brozović"
   },
   {
     "id": "s4-fc26-208461",
@@ -40847,7 +41256,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marten de Roon"
   },
   {
     "id": "s4-fc26-225309",
@@ -40945,7 +41355,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nadiem Amiri"
   },
   {
     "id": "s4-fc26-212242",
@@ -41043,7 +41454,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robert Andrich"
   },
   {
     "id": "s4-fc26-245630",
@@ -41141,7 +41553,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Youssouf Fofana"
   },
   {
     "id": "s4-fc26-216354",
@@ -41239,7 +41652,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andrej Kramarić"
   },
   {
     "id": "s4-fc26-264309",
@@ -41341,8 +41755,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Arda Güler",
+    "legendary": false
   },
   {
     "id": "s4-fc26-232411",
@@ -41440,7 +41855,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Christopher Nkunku"
   },
   {
     "id": "s4-fc26-222509",
@@ -41538,8 +41954,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dani Ceballos",
+    "legendary": false
   },
   {
     "id": "s4-fc26-239482",
@@ -41637,7 +42054,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Galeno"
   },
   {
     "id": "s4-fc26-232498",
@@ -41735,7 +42153,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Isi"
   },
   {
     "id": "s4-fc26-251852",
@@ -41833,8 +42252,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Karim Adeyemi",
+    "legendary": false
   },
   {
     "id": "s4-fc26-202024",
@@ -41932,7 +42352,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Remo Freuler"
   },
   {
     "id": "s4-fc26-213516",
@@ -42030,7 +42451,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ricardo Horta"
   },
   {
     "id": "s4-fc26-263205",
@@ -42128,7 +42550,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Barış Alper Yılmaz"
   },
   {
     "id": "s4-fc26-213666",
@@ -42226,7 +42649,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ruben Loftus-Cheek"
   },
   {
     "id": "s4-retired-xavi",
@@ -42328,8 +42752,9 @@
       "width": 296
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Xavi",
+    "legendary": false
   },
   {
     "id": "s4-retired-andres-iniesta",
@@ -42431,7 +42856,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andrés Iniesta"
   },
   {
     "id": "s4-retired-andrea-pirlo",
@@ -42533,7 +42959,8 @@
       "width": 104
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andrea Pirlo"
   },
   {
     "id": "s4-retired-paul-scholes",
@@ -42635,8 +43062,9 @@
       "width": 204
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paul Scholes",
+    "legendary": true
   },
   {
     "id": "s4-retired-steven-gerrard",
@@ -42738,8 +43166,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Steven Gerrard",
+    "legendary": false
   },
   {
     "id": "s4-retired-frank-lampard",
@@ -42841,8 +43270,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Frank Lampard",
+    "legendary": true
   },
   {
     "id": "s4-retired-patrick-vieira",
@@ -42944,8 +43374,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Patrick Vieira",
+    "legendary": true
   },
   {
     "id": "s4-retired-claude-makelele",
@@ -43047,8 +43478,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Claude Makélélé",
+    "legendary": true
   },
   {
     "id": "s4-retired-yaya-toure",
@@ -43150,8 +43582,9 @@
       "width": 116
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yaya Touré",
+    "legendary": true
   },
   {
     "id": "s4-retired-kaka",
@@ -43253,8 +43686,9 @@
       "width": 172
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kaká",
+    "legendary": true
   },
   {
     "id": "s4-retired-luis-figo",
@@ -43356,8 +43790,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Luís Figo",
+    "legendary": true
   },
   {
     "id": "s4-retired-pavel-nedved",
@@ -43459,8 +43894,9 @@
       "width": 208
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pavel Nedvěd",
+    "legendary": true
   },
   {
     "id": "s4-retired-clarence-seedorf",
@@ -43562,8 +43998,9 @@
       "width": 100
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Clarence Seedorf",
+    "legendary": true
   },
   {
     "id": "s4-retired-juan-roman-riquelme",
@@ -43665,8 +44102,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Juan Román Riquelme",
+    "legendary": true
   },
   {
     "id": "s4-retired-gennaro-gattuso",
@@ -43768,8 +44206,9 @@
       "width": 160
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gennaro Gattuso",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-003",
@@ -43871,8 +44310,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Casemiro",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-007",
@@ -43974,8 +44414,9 @@
       "width": 142
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pedro",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-013",
@@ -44077,8 +44518,9 @@
       "width": 234
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sergio Busquets",
+    "legendary": false
   },
   {
     "id": "s4-fc26-260247",
@@ -44176,8 +44618,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Morgan Rogers",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-018",
@@ -44275,7 +44718,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dejan Stanković"
   },
   {
     "id": "s4-dlc-20260731-019",
@@ -44373,8 +44817,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hatem Ben Arfa",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-023",
@@ -44476,8 +44921,9 @@
       "width": 228
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rui Costa",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-024",
@@ -44579,8 +45025,9 @@
       "width": 220
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fábio Coentrão",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-027",
@@ -44678,7 +45125,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Joaquín"
   },
   {
     "id": "s4-dlc-20260731-030",
@@ -44780,8 +45228,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Frank Rijkaard",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-031",
@@ -44883,8 +45332,9 @@
       "width": 108
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ruud Gullit",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-034",
@@ -44986,8 +45436,9 @@
       "width": 236
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Xabi Alonso",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-035",
@@ -45089,7 +45540,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Thomas Müller"
   },
   {
     "id": "s4-dlc-20260731-036",
@@ -45191,7 +45643,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paul Pogba"
   },
   {
     "id": "s4-dlc-20260731-037",
@@ -45289,8 +45742,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Javier Mascherano",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-038",
@@ -45388,7 +45842,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cesc Fàbregas"
   },
   {
     "id": "s4-dlc-20260731-040",
@@ -45490,8 +45945,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rivaldo",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-041",
@@ -45589,7 +46045,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ivan Rakitić"
   },
   {
     "id": "s4-fc26-207410",
@@ -45687,7 +46144,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mateo Kovačić"
   },
   {
     "id": "s4-dlc-20260731-048",
@@ -45789,8 +46247,9 @@
       "width": 204
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Didi",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-052",
@@ -45892,8 +46351,9 @@
       "width": 120
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Zé Roberto",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-003",
@@ -45995,8 +46455,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fernando Redondo",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-009",
@@ -46094,7 +46555,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ricardo Bochini"
   },
   {
     "id": "s4-dlc2-20260803-011",
@@ -46196,8 +46658,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Juan Sebastián Verón",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-012",
@@ -46299,8 +46762,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Osvaldo Ardiles",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-014",
@@ -46402,8 +46866,9 @@
       "width": 140
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jorge Burruchaga",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-015",
@@ -46505,7 +46970,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diego Simeone"
   },
   {
     "id": "s4-dlc2-20260803-018",
@@ -46603,8 +47069,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Leandro Paredes",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-024",
@@ -46706,7 +47173,8 @@
       "width": 156
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Johan Neeskens"
   },
   {
     "id": "s4-dlc2-20260803-026",
@@ -46808,8 +47276,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Wesley Sneijder",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-028",
@@ -46907,7 +47376,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Wim van Hanegem"
   },
   {
     "id": "s4-dlc2-20260803-029",
@@ -47009,8 +47479,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Edgar Davids",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-035",
@@ -47108,7 +47579,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rafael van der Vaart"
   },
   {
     "id": "s4-dlc2-20260803-036",
@@ -47206,7 +47678,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marc Overmars"
   },
   {
     "id": "s4-dlc2-20260803-037",
@@ -47304,8 +47777,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giovanni van Bronckhorst",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-038",
@@ -47403,7 +47877,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Phillip Cocu"
   },
   {
     "id": "s4-dlc2-20260803-041",
@@ -47505,8 +47980,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mark van Bommel",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-043",
@@ -47604,8 +48080,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Georginio Wijnaldum",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-045",
@@ -47707,8 +48184,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Deco",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-046",
@@ -47806,7 +48284,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mário Coluna"
   },
   {
     "id": "s4-dlc2-20260803-052",
@@ -47908,8 +48387,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "João Moutinho",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-054",
@@ -48011,7 +48491,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Chalana"
   },
   {
     "id": "s4-dlc2-20260803-060",
@@ -48113,8 +48594,9 @@
       "width": 122
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nani",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-061",
@@ -48216,7 +48698,8 @@
       "width": 160
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paulo Sousa"
   },
   {
     "id": "s4-dlc2-20260803-067",
@@ -48318,8 +48801,9 @@
       "width": 156
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gianni Rivera",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-073",
@@ -48421,7 +48905,8 @@
       "width": 160
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "James Rodríguez"
   },
   {
     "id": "s4-dlc2-20260803-074",
@@ -48523,7 +49008,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Guti"
   },
   {
     "id": "s4-dlc3-20260808-006",
@@ -48625,7 +49111,8 @@
       "width": 280
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pablo Aimar"
   },
   {
     "id": "s4-dlc3-20260808-014",
@@ -48727,7 +49214,8 @@
       "width": 176
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Michael Ballack"
   },
   {
     "id": "s4-dlc3-20260808-017",
@@ -48829,7 +49317,8 @@
       "width": 180
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Roy Keane"
   },
   {
     "id": "s4-dlc3-20260808-026",
@@ -48931,7 +49420,8 @@
       "width": 136
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Philippe Coutinho"
   },
   {
     "id": "s4-dlc3-20260808-028",
@@ -49033,8 +49523,9 @@
       "width": 224
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gilberto Silva",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-030",
@@ -49136,8 +49627,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mauro Camoranesi",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-034",
@@ -49239,8 +49731,9 @@
       "width": 140
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Franck Ribéry",
+    "legendary": true
   },
   {
     "id": "s4-dlc3-20260808-037",
@@ -49342,7 +49835,8 @@
       "width": 216
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bastian Schweinsteiger"
   },
   {
     "id": "s4-dlc3-20260808-043",
@@ -49444,8 +49938,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Silva",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-044",
@@ -49547,7 +50042,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jesús Navas"
   },
   {
     "id": "s4-dlc3-20260808-045",
@@ -49649,7 +50145,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Juan Mata"
   },
   {
     "id": "legend-pele",
@@ -49751,7 +50248,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pelé"
   },
   {
     "id": "legend-maradona",
@@ -49853,8 +50351,9 @@
       "width": 172
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Maradona",
+    "legendary": true
   },
   {
     "id": "legend-ronaldo-nazario",
@@ -49956,8 +50455,9 @@
       "width": 192
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ronaldo Nazário",
+    "legendary": true
   },
   {
     "id": "legend-messi",
@@ -50059,8 +50559,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lionel Messi",
+    "legendary": true
   },
   {
     "id": "legend-cristiano-ronaldo",
@@ -50162,8 +50663,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cristiano Ronaldo",
+    "legendary": true
   },
   {
     "id": "legend-mbappe",
@@ -50265,7 +50767,8 @@
       "width": 232
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mbappé"
   },
   {
     "id": "legend-haaland",
@@ -50367,7 +50870,8 @@
       "width": 112
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Haaland"
   },
   {
     "id": "s4-fc26-231443",
@@ -50469,8 +50973,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ousmane Dembélé",
+    "legendary": false
   },
   {
     "id": "s4-fc26-202126",
@@ -50572,7 +51077,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Harry Kane"
   },
   {
     "id": "s4-fc26-238794",
@@ -50674,7 +51180,8 @@
       "width": 296
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vini Jr."
   },
   {
     "id": "s4-fc26-233731",
@@ -50776,7 +51283,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alexander Isak"
   },
   {
     "id": "s4-fc26-246669",
@@ -50878,7 +51386,8 @@
       "width": 240
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bukayo Saka"
   },
   {
     "id": "s4-fc26-231478",
@@ -50980,7 +51489,8 @@
       "width": 112
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lautaro Martínez"
   },
   {
     "id": "s4-fc26-188545",
@@ -51082,7 +51592,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robert Lewandowski"
   },
   {
     "id": "s4-fc26-247635",
@@ -51184,7 +51695,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Khvicha Kvaratskhelia"
   },
   {
     "id": "s4-fc26-246191",
@@ -51286,7 +51798,8 @@
       "width": 240
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Julián Alvarez"
   },
   {
     "id": "s4-fc26-215441",
@@ -51388,7 +51901,8 @@
       "width": 168
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Serhou Guirassy"
   },
   {
     "id": "s4-fc26-232293",
@@ -51490,7 +52004,8 @@
       "width": 132
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Victor Osimhen"
   },
   {
     "id": "s4-fc26-241651",
@@ -51592,7 +52107,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Viktor Gyökeres"
   },
   {
     "id": "s4-fc26-194765",
@@ -51694,7 +52210,8 @@
       "width": 208
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Antoine Griezmann"
   },
   {
     "id": "s4-fc26-243014",
@@ -51796,7 +52313,8 @@
       "width": 216
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bryan Mbeumo"
   },
   {
     "id": "s4-fc26-271421",
@@ -51898,7 +52416,8 @@
       "width": 128
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Désiré Doué"
   },
   {
     "id": "s4-fc26-200104",
@@ -52000,7 +52519,8 @@
       "width": 148
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Heung Min Son"
   },
   {
     "id": "s4-fc26-165153",
@@ -52102,8 +52622,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Karim Benzema",
+    "legendary": true
   },
   {
     "id": "s4-fc26-228093",
@@ -52205,7 +52726,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marcus Thuram"
   },
   {
     "id": "s4-fc26-234236",
@@ -52307,7 +52829,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Patrik Schick"
   },
   {
     "id": "s4-fc26-237692",
@@ -52409,7 +52932,8 @@
       "width": 172
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Phil Foden"
   },
   {
     "id": "s4-fc26-243812",
@@ -52511,7 +53035,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rodrygo"
   },
   {
     "id": "s4-fc26-227796",
@@ -52613,7 +53138,8 @@
       "width": 176
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Christian Pulisic"
   },
   {
     "id": "s4-fc26-221697",
@@ -52715,7 +53241,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ollie Watkins"
   },
   {
     "id": "s4-fc26-230899",
@@ -52813,7 +53340,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ademola Lookman"
   },
   {
     "id": "s4-fc26-216549",
@@ -52911,7 +53439,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alexander Sørloth"
   },
   {
     "id": "s4-fc26-264652",
@@ -53013,7 +53542,8 @@
       "width": 294
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bradley Barcola"
   },
   {
     "id": "s4-fc26-256675",
@@ -53111,7 +53641,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Omar Marmoush"
   },
   {
     "id": "s4-fc26-241721",
@@ -53213,8 +53744,9 @@
       "width": 186
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rafael Leão",
+    "legendary": false
   },
   {
     "id": "s4-fc26-192505",
@@ -53316,7 +53848,8 @@
       "width": 196
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Romelu Lukaku"
   },
   {
     "id": "s4-fc26-215590",
@@ -53414,7 +53947,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ayoze"
   },
   {
     "id": "s4-fc26-242964",
@@ -53512,7 +54046,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Anthony Gordon"
   },
   {
     "id": "s4-fc26-242458",
@@ -53610,7 +54145,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Artem Dovbyk"
   },
   {
     "id": "s4-fc26-241461",
@@ -53708,7 +54244,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ferran Torres"
   },
   {
     "id": "s4-fc26-257289",
@@ -53806,7 +54343,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hugo Ekitiké"
   },
   {
     "id": "s4-fc26-192629",
@@ -53904,7 +54442,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Iago Aspas"
   },
   {
     "id": "s4-fc26-207421",
@@ -54002,7 +54541,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Leandro Trossard"
   },
   {
     "id": "s4-fc26-243580",
@@ -54100,7 +54640,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Loïs Openda"
   },
   {
     "id": "s4-fc26-241850",
@@ -54198,7 +54739,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mateo Retegui"
   },
   {
     "id": "s4-fc26-236610",
@@ -54296,7 +54838,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Moise Kean"
   },
   {
     "id": "s4-fc26-229188",
@@ -54394,7 +54937,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vangelis Pavlidis"
   },
   {
     "id": "s4-fc26-183898",
@@ -54496,8 +55040,9 @@
       "width": 244
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ángel Di María",
+    "legendary": false
   },
   {
     "id": "s4-fc26-210935",
@@ -54595,7 +55140,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Domenico Berardi"
   },
   {
     "id": "s4-fc26-246430",
@@ -54693,7 +55239,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dušan Vlahović"
   },
   {
     "id": "s4-fc26-236461",
@@ -54791,7 +55338,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jean-Philippe Mateta"
   },
   {
     "id": "s4-fc26-244257",
@@ -54889,8 +55437,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jonathan Burkardt",
+    "legendary": false
   },
   {
     "id": "s4-fc26-243630",
@@ -54988,7 +55537,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jonathan David"
   },
   {
     "id": "s4-fc26-235790",
@@ -55086,7 +55636,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kai Havertz"
   },
   {
     "id": "s4-fc26-230142",
@@ -55184,7 +55735,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Oyarzabal"
   },
   {
     "id": "s4-fc26-234824",
@@ -55282,8 +55834,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yoane Wissa",
+    "legendary": false
   },
   {
     "id": "s4-fc26-235410",
@@ -55381,7 +55934,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Youssef En-Nesyri"
   },
   {
     "id": "s4-fc26-188335",
@@ -55479,7 +56033,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ante Budimir"
   },
   {
     "id": "s4-fc26-192123",
@@ -55577,7 +56132,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Chris Wood"
   },
   {
     "id": "s4-fc26-215333",
@@ -55675,7 +56231,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Duván Zapata"
   },
   {
     "id": "s4-fc26-270409",
@@ -55773,7 +56330,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Savinho"
   },
   {
     "id": "s4-fc26-255475",
@@ -55871,8 +56429,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Antony",
+    "legendary": false
   },
   {
     "id": "s4-fc26-251566",
@@ -55970,7 +56529,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gabriel Martinelli"
   },
   {
     "id": "s4-fc26-181458",
@@ -56068,7 +56628,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ivan Perišić"
   },
   {
     "id": "s4-fc26-212228",
@@ -56166,7 +56727,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ivan Toney"
   },
   {
     "id": "s4-fc26-206085",
@@ -56264,7 +56826,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jacob Murphy"
   },
   {
     "id": "s4-fc26-208418",
@@ -56362,7 +56925,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Yannick Carrasco"
   },
   {
     "id": "s4-fc26-257470",
@@ -56460,7 +57024,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Anthony Elanga"
   },
   {
     "id": "s4-fc26-236632",
@@ -56558,7 +57123,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Neres"
   },
   {
     "id": "s4-fc26-208093",
@@ -56656,7 +57222,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gerard Moreno"
   },
   {
     "id": "s4-fc26-216409",
@@ -56754,7 +57321,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Matteo Politano"
   },
   {
     "id": "s4-fc26-188567",
@@ -56852,7 +57420,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pierre-Emerick Aubameyang"
   },
   {
     "id": "s4-fc26-237679",
@@ -56950,7 +57519,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Randal Kolo Muani"
   },
   {
     "id": "s4-fc26-231652",
@@ -57048,7 +57618,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Simon Banza"
   },
   {
     "id": "s4-fc26-214096",
@@ -57146,7 +57717,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Tim Kleindienst"
   },
   {
     "id": "s4-fc26-247679",
@@ -57244,7 +57816,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Victor Boniface"
   },
   {
     "id": "s4-fc26-180930",
@@ -57342,8 +57915,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Edin Džeko",
+    "legendary": false
   },
   {
     "id": "s4-fc26-201399",
@@ -57441,7 +58015,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mauro Icardi"
   },
   {
     "id": "s4-fc26-251570",
@@ -57539,7 +58114,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rayan Cherki"
   },
   {
     "id": "s4-fc26-260592",
@@ -57637,8 +58213,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Benjamin Šeško",
+    "legendary": false
   },
   {
     "id": "s4-fc26-206517",
@@ -57736,7 +58313,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jack Grealish"
   },
   {
     "id": "s4-fc26-234579",
@@ -57834,7 +58412,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Julian Quiñones"
   },
   {
     "id": "s4-fc26-264697",
@@ -57932,7 +58511,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mohamed Amoura"
   },
   {
     "id": "s4-fc26-245155",
@@ -58030,7 +58610,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mohammed Kudus"
   },
   {
     "id": "s4-fc26-239380",
@@ -58128,7 +58709,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Noa Lang"
   },
   {
     "id": "s4-fc26-254796",
@@ -58226,7 +58808,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Noni Madueke"
   },
   {
     "id": "s4-fc26-243586",
@@ -58324,7 +58907,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ayoub El Kaabi"
   },
   {
     "id": "s4-fc26-246242",
@@ -58422,7 +59006,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Boulaye Dia"
   },
   {
     "id": "s4-fc26-225539",
@@ -58520,7 +59105,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dominic Solanke"
   },
   {
     "id": "s4-fc26-238900",
@@ -58618,7 +59204,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ermedin Demirović"
   },
   {
     "id": "s4-fc26-230666",
@@ -58716,8 +59303,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gabriel Jesus",
+    "legendary": false
   },
   {
     "id": "s4-fc26-256903",
@@ -58815,7 +59403,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gonçalo Ramos"
   },
   {
     "id": "s4-fc26-234742",
@@ -58913,7 +59502,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Harvey Barnes"
   },
   {
     "id": "s4-fc26-246420",
@@ -59011,7 +59601,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jérémy Doku"
   },
   {
     "id": "s4-fc26-259197",
@@ -59109,7 +59700,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nicolas Jackson"
   },
   {
     "id": "s4-fc26-237712",
@@ -59207,7 +59799,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Valentin Castellanos"
   },
   {
     "id": "s4-fc26-243593",
@@ -59305,7 +59898,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Armand Laurienté"
   },
   {
     "id": "s4-fc26-224179",
@@ -59403,7 +59997,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Borja Iglesias"
   },
   {
     "id": "s4-fc26-244176",
@@ -59501,7 +60096,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Deniz Undav"
   },
   {
     "id": "s4-fc26-256612",
@@ -59599,7 +60195,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Evanilson"
   },
   {
     "id": "s4-fc26-233049",
@@ -59697,7 +60294,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jadon Sancho"
   },
   {
     "id": "s4-fc26-258580",
@@ -59795,7 +60393,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Kerem Aktürkoğlu"
   },
   {
     "id": "s4-fc26-220834",
@@ -59893,8 +60492,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marco Asensio",
+    "legendary": false
   },
   {
     "id": "s4-fc26-246172",
@@ -59992,7 +60592,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Samuel Chukwueze"
   },
   {
     "id": "s4-fc26-246321",
@@ -60090,7 +60691,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Daizen Maeda"
   },
   {
     "id": "s4-fc26-253072",
@@ -60188,7 +60790,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Darwin Núñez"
   },
   {
     "id": "s4-fc26-225951",
@@ -60286,7 +60889,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Denis Bouanga"
   },
   {
     "id": "s4-fc26-238004",
@@ -60384,7 +60988,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Albert Guðmundsson"
   },
   {
     "id": "s4-fc26-193301",
@@ -60482,7 +61087,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alexandre Lacazette"
   },
   {
     "id": "s4-fc26-240753",
@@ -60580,7 +61186,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Amine Gouiri"
   },
   {
     "id": "s4-fc26-258444",
@@ -60678,7 +61285,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Evann Guessand"
   },
   {
     "id": "s4-fc26-231184",
@@ -60776,7 +61384,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Guruzeta"
   },
   {
     "id": "s4-fc26-252042",
@@ -60874,7 +61483,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "João Pedro"
   },
   {
     "id": "s4-fc26-243780",
@@ -60972,7 +61582,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lee Kang In"
   },
   {
     "id": "s4-fc26-205855",
@@ -61070,7 +61681,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marko Livaja"
   },
   {
     "id": "s4-fc26-236786",
@@ -61168,7 +61780,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Martin Terrier"
   },
   {
     "id": "s4-fc26-254117",
@@ -61266,7 +61879,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Maximilian Beier"
   },
   {
     "id": "s4-fc26-245152",
@@ -61364,7 +61978,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Santiago Giménez"
   },
   {
     "id": "s4-fc26-213761",
@@ -61462,7 +62077,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Abderrazak Hamdallah"
   },
   {
     "id": "s4-fc26-251421",
@@ -61560,7 +62176,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Brennan Johnson"
   },
   {
     "id": "s4-fc26-252037",
@@ -61658,7 +62275,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fábio Silva"
   },
   {
     "id": "s4-fc26-226710",
@@ -61756,7 +62374,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gianluca Scamacca"
   },
   {
     "id": "s4-fc26-247172",
@@ -61854,7 +62473,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jhon Durán"
   },
   {
     "id": "s4-fc26-176580",
@@ -61952,8 +62572,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Luis Suárez",
+    "legendary": false
   },
   {
     "id": "s4-fc26-254022",
@@ -62051,7 +62672,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nick Woltemade"
   },
   {
     "id": "s4-fc26-205431",
@@ -62149,7 +62771,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Niclas Füllkrug"
   },
   {
     "id": "s4-fc26-277581",
@@ -62247,7 +62870,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Samu"
   },
   {
     "id": "s4-fc26-258911",
@@ -62345,7 +62969,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Toluwalase Arokodare"
   },
   {
     "id": "s4-fc26-205175",
@@ -62443,7 +63068,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Arkadiusz Milik"
   },
   {
     "id": "s4-fc26-277797",
@@ -62541,7 +63167,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marcos Leonardo"
   },
   {
     "id": "s4-fc26-178509",
@@ -62643,8 +63270,9 @@
       "width": 312
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Olivier Giroud",
+    "legendary": false
   },
   {
     "id": "s4-fc26-223710",
@@ -62742,7 +63370,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vedat Muriqi"
   },
   {
     "id": "s4-fc26-255223",
@@ -62840,7 +63469,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Amine Adli"
   },
   {
     "id": "s4-fc26-237034",
@@ -62938,7 +63568,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cucho"
   },
   {
     "id": "s4-fc26-225403",
@@ -63036,7 +63667,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "İrfan Can Kahveci"
   },
   {
     "id": "s4-fc26-241602",
@@ -63134,7 +63766,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Jhon Arias"
   },
   {
     "id": "s4-fc26-239977",
@@ -63232,7 +63865,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nicolas Kühn"
   },
   {
     "id": "s4-fc26-244622",
@@ -63330,7 +63964,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Puado"
   },
   {
     "id": "s4-fc26-231943",
@@ -63428,7 +64063,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Richarlison"
   },
   {
     "id": "s4-fc26-206467",
@@ -63526,7 +64162,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alassane Pléa"
   },
   {
     "id": "s4-fc26-211368",
@@ -63624,7 +64261,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Bruma"
   },
   {
     "id": "s4-fc26-217998",
@@ -63722,7 +64360,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Cristian Arango"
   },
   {
     "id": "s4-fc26-186146",
@@ -63820,7 +64459,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Danny Welbeck"
   },
   {
     "id": "s4-fc26-221992",
@@ -63918,7 +64558,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hirving Lozano"
   },
   {
     "id": "s4-fc26-243032",
@@ -64016,7 +64657,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hugo Duro"
   },
   {
     "id": "s4-fc26-241788",
@@ -64114,7 +64756,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mehdi Taremi"
   },
   {
     "id": "s4-fc26-242374",
@@ -64212,7 +64855,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Musa Barrow"
   },
   {
     "id": "s4-fc26-208919",
@@ -64310,7 +64954,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ryan Gauld"
   },
   {
     "id": "s4-fc26-200260",
@@ -64408,7 +65053,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Steven Berghuis"
   },
   {
     "id": "s4-retired-thierry-henry",
@@ -64510,8 +65156,9 @@
       "width": 220
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Thierry Henry",
+    "legendary": true
   },
   {
     "id": "s4-retired-wayne-rooney",
@@ -64613,8 +65260,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Wayne Rooney",
+    "legendary": true
   },
   {
     "id": "s4-retired-didier-drogba",
@@ -64716,8 +65364,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Didier Drogba",
+    "legendary": true
   },
   {
     "id": "s4-retired-samuel-eto-o",
@@ -64819,8 +65468,9 @@
       "width": 204
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Samuel Eto'o",
+    "legendary": true
   },
   {
     "id": "s4-retired-andriy-shevchenko",
@@ -64922,8 +65572,9 @@
       "width": 204
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Andriy Shevchenko",
+    "legendary": true
   },
   {
     "id": "s4-retired-zlatan-ibrahimovic",
@@ -65025,8 +65676,9 @@
       "width": 212
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Zlatan Ibrahimović",
+    "legendary": false
   },
   {
     "id": "s4-retired-sergio-aguero",
@@ -65128,8 +65780,9 @@
       "width": 324
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sergio Agüero",
+    "legendary": false
   },
   {
     "id": "s4-retired-fernando-torres",
@@ -65231,8 +65884,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fernando Torres",
+    "legendary": false
   },
   {
     "id": "s4-retired-gabriel-batistuta",
@@ -65334,8 +65988,9 @@
       "width": 112
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gabriel Batistuta",
+    "legendary": true
   },
   {
     "id": "s4-retired-dennis-bergkamp",
@@ -65437,8 +66092,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dennis Bergkamp",
+    "legendary": true
   },
   {
     "id": "s4-retired-eusebio",
@@ -65540,8 +66196,9 @@
       "width": 116
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Eusébio",
+    "legendary": true
   },
   {
     "id": "s4-retired-marco-van-basten",
@@ -65643,8 +66300,9 @@
       "width": 172
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Marco van Basten",
+    "legendary": true
   },
   {
     "id": "s4-retired-johan-cruyff",
@@ -65746,8 +66404,9 @@
       "width": 108
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Johan Cruyff",
+    "legendary": true
   },
   {
     "id": "s4-retired-george-best",
@@ -65849,8 +66508,9 @@
       "width": 124
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "George Best",
+    "legendary": true
   },
   {
     "id": "s4-retired-romario",
@@ -65952,8 +66612,9 @@
       "width": 100
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Romário",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-002",
@@ -66055,7 +66716,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gareth Bale"
   },
   {
     "id": "s4-dlc-20260731-008",
@@ -66157,7 +66819,8 @@
       "width": 192
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diego Milito"
   },
   {
     "id": "s4-fc26-201153",
@@ -66255,7 +66918,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Morata"
   },
   {
     "id": "s4-dlc-20260731-016",
@@ -66357,8 +67021,9 @@
       "width": 100
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Neymar Jr",
+    "legendary": true
   },
   {
     "id": "s4-dlc-20260731-021",
@@ -66460,8 +67125,9 @@
       "width": 160
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Francesco Totti",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-026",
@@ -66559,7 +67225,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Villa"
   },
   {
     "id": "s4-dlc-20260731-028",
@@ -66661,7 +67328,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mario Kempes"
   },
   {
     "id": "s4-dlc-20260731-029",
@@ -66763,7 +67431,8 @@
       "width": 128
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gerd Müller"
   },
   {
     "id": "s4-dlc-20260731-032",
@@ -66865,7 +67534,8 @@
       "width": 200
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Eden Hazard"
   },
   {
     "id": "s4-dlc-20260731-033",
@@ -66967,8 +67637,9 @@
       "width": 216
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Radamel Falcao",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-039",
@@ -67070,8 +67741,9 @@
       "width": 204
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robin van Persie",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-042",
@@ -67169,7 +67841,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Mario Mandžukić"
   },
   {
     "id": "s4-dlc-20260731-043",
@@ -67271,7 +67944,8 @@
       "width": 124
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Craig Goodwin"
   },
   {
     "id": "s4-dlc-20260731-049",
@@ -67373,7 +68047,8 @@
       "width": 208
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Robinho"
   },
   {
     "id": "s4-dlc-20260731-050",
@@ -67471,8 +68146,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Canário",
+    "legendary": false
   },
   {
     "id": "s4-dlc-20260731-051",
@@ -67574,7 +68250,8 @@
       "width": 108
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Sávio Bortolini"
   },
   {
     "id": "s4-dlc-20260731-053",
@@ -67676,7 +68353,8 @@
       "width": 184
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Miroslav Klose"
   },
   {
     "id": "s4-dlc-20260731-054",
@@ -67778,7 +68456,8 @@
       "width": 100
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Raúl González"
   },
   {
     "id": "s4-dlc2-20260803-001",
@@ -67880,8 +68559,9 @@
       "width": 220
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alfredo Di Stéfano",
+    "legendary": true
   },
   {
     "id": "s4-dlc2-20260803-004",
@@ -67983,7 +68663,8 @@
       "width": 156
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Omar Sívori"
   },
   {
     "id": "s4-dlc2-20260803-005",
@@ -68081,7 +68762,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "José Manuel Moreno"
   },
   {
     "id": "s4-dlc2-20260803-006",
@@ -68179,7 +68861,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Adolfo Pedernera"
   },
   {
     "id": "s4-dlc2-20260803-010",
@@ -68281,8 +68964,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hernán Crespo",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-013",
@@ -68384,8 +69068,9 @@
       "width": 188
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Claudio Caniggia",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-016",
@@ -68487,8 +69172,9 @@
       "width": 184
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Gonzalo Higuaín",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-017",
@@ -68586,8 +69272,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Carlos Tévez",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-022",
@@ -68689,8 +69376,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Arjen Robben",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-027",
@@ -68792,8 +69480,9 @@
       "width": 200
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ruud van Nistelrooy",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-031",
@@ -68895,8 +69584,9 @@
       "width": 180
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Patrick Kluivert",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-032",
@@ -68994,7 +69684,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Rob Rensenbrink"
   },
   {
     "id": "s4-dlc2-20260803-034",
@@ -69092,7 +69783,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Memphis Depay"
   },
   {
     "id": "s4-dlc2-20260803-039",
@@ -69190,8 +69882,9 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Dirk Kuyt",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-042",
@@ -69289,7 +69982,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Johnny Rep"
   },
   {
     "id": "s4-dlc2-20260803-047",
@@ -69391,7 +70085,8 @@
       "width": 228
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paulo Futre"
   },
   {
     "id": "s4-dlc2-20260803-048",
@@ -69489,7 +70184,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fernando Peyroteo"
   },
   {
     "id": "s4-dlc2-20260803-049",
@@ -69587,7 +70283,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "José Águas"
   },
   {
     "id": "s4-dlc2-20260803-050",
@@ -69689,7 +70386,8 @@
       "width": 168
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Fernando Gomes"
   },
   {
     "id": "s4-dlc2-20260803-055",
@@ -69791,7 +70489,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Pauleta"
   },
   {
     "id": "s4-dlc2-20260803-057",
@@ -69889,7 +70588,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "João Vieira Pinto"
   },
   {
     "id": "s4-dlc2-20260803-062",
@@ -69991,8 +70691,9 @@
       "width": 228
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ricardo Quaresma",
+    "legendary": false
   },
   {
     "id": "s4-dlc2-20260803-063",
@@ -70094,7 +70795,8 @@
       "width": 104
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Giuseppe Meazza"
   },
   {
     "id": "s4-dlc2-20260803-064",
@@ -70196,7 +70898,8 @@
       "width": 176
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Roberto Baggio"
   },
   {
     "id": "s4-dlc2-20260803-068",
@@ -70294,7 +70997,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Paolo Rossi"
   },
   {
     "id": "s4-dlc2-20260803-070",
@@ -70392,7 +71096,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Luigi Riva"
   },
   {
     "id": "s4-dlc2-20260803-071",
@@ -70494,8 +71199,9 @@
       "width": 144
     },
     "isX": false,
-    "legendary": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Alessandro Del Piero",
+    "legendary": false
   },
   {
     "id": "s4-dlc3-20260808-005",
@@ -70597,7 +71303,8 @@
       "width": 232
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Adriano"
   },
   {
     "id": "s4-dlc3-20260808-010",
@@ -70699,7 +71406,8 @@
       "width": 140
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Ferenc Puskás"
   },
   {
     "id": "s4-dlc3-20260808-011",
@@ -70801,8 +71509,9 @@
       "width": 160
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Hugo Sánchez",
+    "legendary": true
   },
   {
     "id": "s4-dlc3-20260808-015",
@@ -70904,8 +71613,9 @@
       "width": 196
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Eric Cantona",
+    "legendary": true
   },
   {
     "id": "s4-dlc3-20260808-019",
@@ -71007,7 +71717,8 @@
       "width": 188
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Davor Šuker"
   },
   {
     "id": "s4-dlc3-20260808-020",
@@ -71109,7 +71820,8 @@
       "width": 132
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "George Weah"
   },
   {
     "id": "s4-dlc3-20260808-021",
@@ -71211,7 +71923,8 @@
       "width": 204
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diego Forlán"
   },
   {
     "id": "s4-dlc3-20260808-022",
@@ -71313,7 +72026,8 @@
       "width": 236
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Diego Costa"
   },
   {
     "id": "s4-dlc3-20260808-023",
@@ -71415,7 +72129,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nicolas Anelka"
   },
   {
     "id": "s4-dlc3-20260808-025",
@@ -71517,7 +72232,8 @@
       "width": 108
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Filippo Inzaghi"
   },
   {
     "id": "s4-dlc3-20260808-029",
@@ -71619,7 +72335,8 @@
       "width": 212
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "David Trezeguet"
   },
   {
     "id": "s4-dlc3-20260808-031",
@@ -71721,7 +72438,8 @@
       "width": 168
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Luca Toni"
   },
   {
     "id": "s4-dlc3-20260808-032",
@@ -71819,7 +72537,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Vincenzo Iaquinta"
   },
   {
     "id": "s4-dlc3-20260808-038",
@@ -71917,7 +72636,8 @@
     "portrait": null,
     "portraitPosition": null,
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lukas Podolski"
   },
   {
     "id": "s4-dlc3-20260808-039",
@@ -72019,7 +72739,8 @@
       "width": 172
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Nuno Gomes"
   },
   {
     "id": "s4-dlc3-20260808-047",
@@ -72121,7 +72842,8 @@
       "width": 168
     },
     "isX": false,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Klaas-Jan Huntelaar"
   },
   {
     "id": "legend-messi-rat",
@@ -72223,8 +72945,9 @@
       "width": 76
     },
     "isX": false,
-    "legendary": true,
-    "librarySource": "YDL"
+    "librarySource": "YDL",
+    "sourceName": "Lionel Messi",
+    "legendary": true
   },
   {
     "id": "ydl-custom-b7e9b31d-4cd8-4c03-8fa3-22e96836c5d4",

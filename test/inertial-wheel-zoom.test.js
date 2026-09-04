@@ -30,6 +30,7 @@ function createHarness() {
     moves: [],
     animated: null,
     moveEnded: null,
+    firedEvents: [],
     nativeWheelDisabled: false,
     scrollWheelZoom: { disable() { map.nativeWheelDisabled = true; } },
     getSize: () => size,
@@ -61,6 +62,7 @@ function createHarness() {
       this.moves.push({ center, zoom });
     },
     _moveEnd(zoomChanged) { this.moveEnded = zoomChanged; },
+    fire(type) { this.firedEvents.push(type); },
     _limitZoom(zoom) { return Math.round(Math.max(3, Math.min(9, zoom)) * 10) / 10; },
     _animateZoom(center, zoom) {
       this.center = center;
@@ -142,6 +144,7 @@ test("controller disables stepped wheel zoom and keeps the cursor anchor stable"
   for (let index = 0; index < 100 && harness.pendingFrames(); index += 1) harness.runFrame();
   assert.equal(harness.controller.isActive(), false);
   assert.equal(harness.map.moveEnded, true);
+  assert.deepEqual(harness.map.firedEvents, ["viewreset"]);
   assert.equal(harness.map.animated, null);
   assert.equal(harness.map.zoom, harness.map.moves.at(-1).zoom);
 });

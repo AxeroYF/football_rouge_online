@@ -12,6 +12,7 @@ export function createAdminApiHandler({ admin, campaign, players } = {}) {
     if (request.method === "GET" && pathname === "/api/admin/me") return sendJson(response, 200, { profile: admin.publicAdmin(actor) });
     if (request.method === "GET" && pathname === "/api/admin/audit") return sendJson(response, 200, { entries: admin.listAudit(requestUrl.searchParams.get("limit")) });
     if (request.method === "GET" && pathname === "/api/admin/tasks") return sendJson(response, 200, { tasks: admin.listTasks() });
+    if (request.method === "GET" && pathname === "/api/admin/player-packs") return sendJson(response, 200, admin.playerPackManagement(actor));
     if (request.method === "GET" && pathname === "/api/admin/player-library") return sendJson(response, 200, players.overview());
     if (request.method === "GET" && pathname === "/api/admin/player-library/players") return sendJson(response, 200, { players: players.listPlayers(Object.fromEntries(requestUrl.searchParams)) });
     if (request.method === "GET" && pathname === "/api/admin/player-library/audit") return sendJson(response, 200, { audit: players.audit() });
@@ -23,6 +24,7 @@ export function createAdminApiHandler({ admin, campaign, players } = {}) {
     if (request.method === "POST" && pathname === "/api/admin/tasks") return sendJson(response, 200, { task: admin.createTask(actor, body) });
     if (request.method === "POST" && pathname === "/api/admin/tasks/complete") return sendJson(response, 200, { task: admin.completeTask(actor, body.taskId) });
     if (request.method === "POST" && pathname === "/api/admin/players/gold") return sendJson(response, 200, { wallet: admin.adjustPlayerGold(actor, body.accountId, body.delta, body.reason) });
+    if (request.method === "POST" && pathname === "/api/admin/player-packs") return sendJson(response, 200, admin.grantPlayerPacks(actor, body));
     if (request.method === "POST" && playerMatch) {
       admin.requireRole(actor, ["content", "superadmin"]); const id = decodeURIComponent(playerMatch[1]); const before = players.getPlayer(id);
       const player = before.status === "draft" ? players.updateDraft(id, body) : players.updatePlayer(id, body);

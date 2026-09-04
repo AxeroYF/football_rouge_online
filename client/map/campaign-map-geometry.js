@@ -1,6 +1,6 @@
 export const CAMPAIGN_BOUNDS = Object.freeze([
   Object.freeze([-20, -25]),
-  Object.freeze([75, 100]),
+  Object.freeze([82, 100]),
 ]);
 
 const SOUTH_AMERICA_DISPLAY_CENTER = Object.freeze({ lat: 7, lng: 20 });

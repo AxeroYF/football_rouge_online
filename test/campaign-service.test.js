@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { CampaignService, LINE_KEYS, PLAYER_CATALOG_VERSION, STARTING_GOLD } from "../campaign-service.mjs";
+import { PLAYER_PACK_TYPES } from "../shared/config/player-packs.mjs";
 
 test("generated player catalog retains all 26 S4 attributes", () => {
   const catalog = JSON.parse(readFileSync(new URL("../assets/data/s4-player-catalog.json", import.meta.url), "utf8"));
@@ -67,11 +68,20 @@ function makeCatalog() {
   })));
 }
 
+function makeDualSquadRoster() {
+  const catalog=makeCatalog();
+  const roster=[...catalog.filter((player)=>player.pool==="GK").slice(0,2),...catalog.filter((player)=>player.pool==="DEF").slice(0,8),...catalog.filter((player)=>player.pool==="MID").slice(0,6),...catalog.filter((player)=>player.pool==="ATT").slice(0,6)];
+  const assignments={};
+  for(const pool of LINE_KEYS) roster.filter((player)=>player.pool===pool).forEach((player,index)=>{assignments[player.id]=index%2===0?"expedition":"garrison";});
+  return {roster,playerSquads:{schemaVersion:1,assignments}};
+}
+
 test("YOOGLE directory includes the full YDL library and marks the current roster", () => {
   const catalog = makeCatalog();
   catalog.push({
     id: "x-library-player",
     name: "X Library Player",
+    sourceName: "English X Player",
     pool: "ATT",
     role: "ST",
     secondaryRole: "RW",
@@ -91,6 +101,7 @@ test("YOOGLE directory includes the full YDL library and marks the current roste
   assert.equal(owned.inRoster, true);
   assert.equal(owned.schemaVersion, 1);
   assert.equal(xPlayer.grade, "X");
+  assert.equal(xPlayer.sourceName, "English X Player");
   assert.equal(xPlayer.secondaryRole, "RW");
   assert.equal(service.playerDatabase.some((player) => player.id === xPlayer.id), false);
 });
@@ -135,25 +146,96 @@ test("gold transactions are integer-only, persistent account resources", () => {
   assert.throws(()=>service.adjustGold(account,0,"无效变动"),/非零整数/);
 });
 
+test("admin pack management targets one server player without exposing credentials", () => {
+  const service=new CampaignService({catalog:makeCatalog(),random:()=>0});
+  const first=service.authenticate(service.register("卡包玩家一","secret12").token);
+  const second=service.authenticate(service.register("卡包玩家二","secret12").token);
+  const before=service.adminPlayerPackManagement();
+  assert.equal(before.players.length,2);
+  assert.deepEqual(before.packTypes.map(({type})=>type),[
+    PLAYER_PACK_TYPES.LEGENDARY,
+    PLAYER_PACK_TYPES.EXOTIC,
+    PLAYER_PACK_TYPES.RARE,
+    PLAYER_PACK_TYPES.COMMON,
+  ]);
+  assert.doesNotMatch(JSON.stringify(before),/passwordHash|passwordSalt|token/);
+
+  const result=service.grantPlayerPacksToAccount(first.id,PLAYER_PACK_TYPES.EXOTIC,4);
+  assert.equal(result.grant.name,"珍奇球员卡包");
+  assert.equal(result.player.totalPacks,4);
+  assert.equal(service.state(first).inventory.totalPacks,4);
+  assert.equal(service.state(second).inventory.totalPacks,0);
+  const batch=service.grantPlayerPacksToAllAccounts(PLAYER_PACK_TYPES.COMMON,2);
+  assert.equal(batch.recipientCount,2);
+  assert.equal(batch.totalPacksGranted,4);
+  assert.equal(service.state(first).inventory.totalPacks,6);
+  assert.equal(service.state(second).inventory.totalPacks,2);
+  assert.throws(()=>service.grantPlayerPacksToAccount("missing",PLAYER_PACK_TYPES.LEGENDARY,1),/玩家不存在/);
+});
+
+test("player squad assignments persist one exclusive expedition or garrison membership", () => {
+  const service = new CampaignService({ catalog:makeCatalog(), random:() => 0 });
+  const account = service.authenticate(service.register("编队测试经理", "secret12").token);
+  account.setupComplete = true;
+  account.draft = { teamName:"编队测试队", roster:makeCatalog().slice(0,3), offer:[] };
+  const playerId = account.draft.roster[0].id;
+
+  let state = service.assignPlayerSquad(account,playerId,"expedition");
+  assert.deepEqual(state.playerSquads.squads,[{id:"expedition",name:"远征"},{id:"garrison",name:"留守"}]);
+  assert.equal(state.playerSquads.assignments[playerId],"expedition");
+  assert.equal(Object.values(state.playerSquads.assignments).filter((squadId)=>squadId==="garrison").length,2);
+
+  state = service.assignPlayerSquad(account,playerId,"garrison");
+  assert.equal(state.playerSquads.assignments[playerId],"garrison");
+  assert.equal(Object.keys(state.playerSquads.assignments).length,3);
+
+  state = service.assignPlayerSquad(account,playerId,null);
+  assert.equal(state.playerSquads.assignments[playerId],"garrison");
+  assert.throws(() => service.assignPlayerSquad(account,playerId,"unknown"),/编队不存在/);
+  assert.throws(() => service.assignPlayerSquad(account,"missing","expedition"),/球员不在你的球队中/);
+});
+
 test("completed teams can persist and reload their tactical workspace", () => {
   const service = new CampaignService({ catalog: makeCatalog(), random: () => 0 });
   const account = service.authenticate(service.register("战术测试经理", "secret12").token);
   account.setupComplete = true;
-  account.draft = { teamName:"战术测试队", roster:makeCatalog().slice(0,22), offer:[] };
-  const starters = account.draft.roster.slice(0,11).map((player) => player.id);
+  const setup=makeDualSquadRoster();
+  account.draft = { teamName:"战术测试队", roster:setup.roster, offer:[] };
+  account.playerSquads=setup.playerSquads;
+  const starters = account.draft.roster.filter((player)=>account.playerSquads.assignments[player.id]==="expedition").map((player) => player.id);
   const positions = Object.fromEntries(starters.map((id,index) => [id,{ x:12+index*7,y:index===0?90:index<=4?68:index<=7?44:20 }]));
   const state = service.saveTactics(account, { formation:"4-3-3",attackStyle:"balanced",defenseStyle:"possession",starters,positions,planSnapshots:{ __s4V2:{ activePositionPreset:"position1" } } });
   assert.deepEqual(state.tactics.starters, starters);
   assert.deepEqual(state.tactics.positions, positions);
   assert.equal(service.state(account).tactics.planSnapshots.__s4V2.activePositionPreset, "position1");
+  assert.deepEqual(Object.keys(state.tactics.squads).sort(),["expedition","garrison"]);
+  const expeditionPlayers=new Set([...state.tactics.squads.expedition.starters,...state.tactics.squads.expedition.bench]);
+  const garrisonPlayers=new Set([...state.tactics.squads.garrison.starters,...state.tactics.squads.garrison.bench]);
+  assert.deepEqual([...expeditionPlayers].filter((id)=>garrisonPlayers.has(id)),[]);
+});
+
+test("tactical saves atomically synchronize the browser's completed squad assignments", () => {
+  const service = new CampaignService({ catalog:makeCatalog(), random:() => 0 });
+  const account = service.authenticate(service.register("战术编队同步经理","secret12").token);
+  account.setupComplete = true;
+  const setup=makeDualSquadRoster();
+  account.draft={teamName:"战术编队同步队",roster:setup.roster,offer:[]};
+  account.playerSquads={schemaVersion:1,assignments:{}};
+  const state=service.saveTactics(account,{playerSquads:setup.playerSquads});
+  assert.deepEqual(state.playerSquads.assignments,setup.playerSquads.assignments);
+  assert.equal(state.playerSquads.schemaVersion,2);
+  assert.equal(state.tactics.squads.expedition.starters.length,11);
+  assert.equal(state.tactics.squads.garrison.starters.length,11);
 });
 
 test("tactical saves enforce S4 formation boundaries for every position preset", () => {
   const service = new CampaignService({ catalog: makeCatalog(), random: () => 0 });
   const account = service.authenticate(service.register("阵型边界经理", "secret12").token);
   account.setupComplete = true;
-  account.draft = { teamName:"阵型边界队", roster:makeCatalog().slice(0,22), offer:[] };
-  const starters = account.draft.roster.slice(0,11).map((player) => player.id);
+  const setup=makeDualSquadRoster();
+  account.draft = { teamName:"阵型边界队", roster:setup.roster, offer:[] };
+  account.playerSquads=setup.playerSquads;
+  const starters = account.draft.roster.filter((player)=>account.playerSquads.assignments[player.id]==="expedition").map((player) => player.id);
   const valid = Object.fromEntries(starters.map((id,index) => [id,{ x:12+index*7,y:index===0?90:index<=4?68:index<=7?44:20 }]));
   const multipleGoalkeepers = structuredClone(valid);
   multipleGoalkeepers[starters[1]].y = 90;
@@ -167,7 +249,7 @@ test("tactical saves enforce S4 formation boundaries for every position preset",
   outOfBounds[starters[2]] = { x:-40,y:68 };
   const state = service.saveTactics(account, { starters,positions:outOfBounds });
   assert.equal(state.tactics.positions[starters[2]].x, 8);
-  assert.equal(state.tactics.bench.length, 11);
+  assert.equal(state.tactics.bench.length, 0);
 });
 function territory(territoryId, neighbors, initialOwner = { type: "neutral", id: null, name: "中立地区" }) {
   return { territoryId, neighbors, landNeighbors: neighbors, maritimeNeighbors: [], playable: true, spawnAllowed: initialOwner.type === "neutral", initialOwner, cityIds: [], clubIds: [] };

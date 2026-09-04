@@ -1,4 +1,6 @@
 export const CORE_COUNTRY_CODES = Object.freeze(["GBR", "ESP", "DEU", "ITA", "FRA", "PRT", "NLD", "BRA", "ARG"]);
+export const TERRITORY_AI_SCHEMA_VERSION = 3;
+export const NEUTRAL_DIFFICULTY_WEIGHTS = Object.freeze([10, 15, 20, 25, 30]);
 
 export const AI_FORMATIONS = Object.freeze({
   "4-3-3": [["GK",50,91],["LB",18,70],["CB",39,72],["CB",61,72],["RB",82,70],["DM",50,53],["AM",34,39],["AM",66,39],["LW",20,20],["ST",50,15],["RW",80,20]],
@@ -25,6 +27,17 @@ const AI_PROFILES = Object.freeze([
 function hash(value) { let result=2166136261; for (const character of String(value)) { result^=character.charCodeAt(0); result=Math.imul(result,16777619); } return result>>>0; }
 const overall = (player) => Number(player.effectiveOverall ?? player.overall ?? 0);
 
+export function createTerritoryDifficulty({ territoryId, seasonId="season-01", generationSeed="yellowdogs", clubOwned=false }) {
+  const seed=`${generationSeed}:${seasonId}:${territoryId}`;
+  const roll=hash(`${seed}:difficulty`)%100;
+  let cumulativeWeight=0;
+  const neutralDifficulty=NEUTRAL_DIFFICULTY_WEIGHTS.findIndex((weight)=>{
+    cumulativeWeight+=weight;
+    return roll<cumulativeWeight;
+  })+1;
+  return Math.min(5,neutralDifficulty+(clubOwned?1:0));
+}
+
 function selectPlayer(catalog, role, target, seed, used) {
   const exact = catalog.filter((player) => player.role === role && player.isX !== true && !used.has(player.id));
   if (!exact.length) throw new Error(`球员库缺少主位置 ${role}，无法生成地块守军`);
@@ -38,14 +51,14 @@ export function createTerritoryAiGarrison({ catalog, territory, territoryState, 
   const seed=`${generationSeed}:${seasonId}:${territory.territoryId}`;
   const clubOwned=territoryState.ownerType === "club";
   const coreCountry=CORE_COUNTRY_CODES.includes(territory.countryCode);
-  const difficulty=Math.min(5, 1+hash(`${seed}:difficulty`)%5+(clubOwned?1:0));
+  const difficulty=createTerritoryDifficulty({territoryId:territory.territoryId,seasonId,generationSeed,clubOwned});
   const targetAverageOverall=Math.min(92,69+difficulty*3+(coreCountry?4:0)+(clubOwned?3:0));
   const profile=AI_PROFILES[hash(`${seed}:profile`)%AI_PROFILES.length];
   const formation=profile.formations[hash(`${seed}:formation`)%profile.formations.length];
   const used=new Set();
   const lineup=AI_FORMATIONS[formation].map(([role,x,y],index)=>{ const source=selectPlayer(catalog,role,targetAverageOverall,`${seed}:${index}`,used); return {playerId:source.id,role,x,y,overall:overall(source)}; });
   const averageOverall=Number((lineup.reduce((sum,player)=>sum+player.overall,0)/lineup.length).toFixed(1));
-  return { schemaVersion:2,territoryId:territory.territoryId,generatedForSeason:seasonId,coreCountry,difficulty,targetAverageOverall,averageOverall,formation,mentality:profile.mentality,playStyle:profile.style,tactic:profile.tactic,engineStyle:profile.engineStyle,tacticalDimensions:{...profile.bars},lineup,generatedAt:Date.now() };
+  return { schemaVersion:TERRITORY_AI_SCHEMA_VERSION,territoryId:territory.territoryId,generatedForSeason:seasonId,coreCountry,difficulty,targetAverageOverall,averageOverall,formation,mentality:profile.mentality,playStyle:profile.style,tactic:profile.tactic,engineStyle:profile.engineStyle,tacticalDimensions:{...profile.bars},lineup,generatedAt:Date.now() };
 }
 
 export function publicTerritoryAiIntel(garrison, catalog) {

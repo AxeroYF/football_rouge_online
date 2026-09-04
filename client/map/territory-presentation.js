@@ -42,6 +42,7 @@ export function createTerritoryPresentation({
       homeSelectionMode,
       homeSelectionPermission,
       maritimeTargetIds = new Set(),
+      expeditionMoveTargetIds = new Set(),
     } = context();
     const territoryId = feature.properties.territoryId;
     const state = territoryWorld?.territories[territoryId];
@@ -60,7 +61,7 @@ export function createTerritoryPresentation({
     } else if (state?.ownerType === ownerTypes.PLAYER) {
       const player = campaignWorldPlayers[state.ownerId];
       fillColor = player?.color ?? "#41694d";
-      fillOpacity = 0.92;
+      fillOpacity = 0.96;
       color = state.capitalOf ? "#f1eddf" : "rgba(241, 237, 223, 0.62)";
       weight = state.capitalOf ? 2.2 : 1.1;
     }
@@ -78,6 +79,11 @@ export function createTerritoryPresentation({
     if (maritimeTargetIds.has(territoryId) && !selected) {
       color = "#71d9d0";
       weight = 1.8;
+    }
+    if (expeditionMoveTargetIds.has(territoryId) && !selected) {
+      color = "#f1cb62";
+      weight = Math.max(weight,2.4);
+      fillOpacity = Math.max(fillOpacity,.96);
     }
     if (activeChallenge) {
       color = "#f0c75e";

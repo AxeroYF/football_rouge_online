@@ -141,6 +141,36 @@ export function canAttack(index, world, playerId, targetTerritoryId, now = Date.
   return { allowed: true, reason: null, fromTerritoryIds };
 }
 
+export function canAttackFromTerritory(index, world, playerId, sourceTerritoryId, targetTerritoryId, now = Date.now()) {
+  const player = playerState(world, playerId);
+  if (!player.territoryIds.includes(sourceTerritoryId)) {
+    return { allowed: false, reason: "invalid-source", fromTerritoryIds: [] };
+  }
+  territoryMetadata(index, targetTerritoryId);
+  const target = world.territories[targetTerritoryId];
+  if (target.ownerType === OWNER_TYPES.PLAYER && target.ownerId === playerId) {
+    return { allowed: false, reason: "already-owned", fromTerritoryIds: [] };
+  }
+  if (target.protectedUntil && Number(target.protectedUntil) > now) {
+    return { allowed: false, reason: "territory-protected", fromTerritoryIds: [] };
+  }
+  const targetMetadata = territoryMetadata(index, targetTerritoryId);
+  const landNeighbors = targetMetadata.landNeighbors ?? targetMetadata.neighbors;
+  if (!landNeighbors.includes(sourceTerritoryId)) {
+    return { allowed: false, reason: "not-adjacent", fromTerritoryIds: [] };
+  }
+  return { allowed: true, reason: null, fromTerritoryIds: [sourceTerritoryId] };
+}
+
+export function listAttackableTerritoriesFrom(index, world, playerId, sourceTerritoryId, now = Date.now()) {
+  const player = playerState(world, playerId);
+  if (!player.territoryIds.includes(sourceTerritoryId)) return [];
+  const source = territoryMetadata(index, sourceTerritoryId);
+  return [...(source.landNeighbors ?? source.neighbors)]
+    .filter((territoryId) => canAttackFromTerritory(index, world, playerId, sourceTerritoryId, territoryId, now).allowed)
+    .sort();
+}
+
 export function listAttackableTerritories(index, world, playerId, now = Date.now()) {
   const player = playerState(world, playerId);
   const candidates = new Set();

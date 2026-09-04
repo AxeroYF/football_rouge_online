@@ -1,7 +1,7 @@
 import { createTerritoryWorld, OWNER_TYPES } from "./territory-model.js";
-import { createTacticsController } from "./tactics-page.js?v=20260828-s4-three-preset-lineup-rules";
-import { createTeamController } from "./client/team/team-controller-ydl.js?v=20260830-ydl-player-detail-v1";
-import { createYoogleController } from "./client/yoogle/yoogle-controller.js?v=20260831-yoogle-window-v14";
+import { createTacticsController } from "./tactics-page.js?v=20260901-tactics-autosave-v16";
+import { createTeamController } from "./client/team/team-controller-ydl.js?v=20260901-two-state-squads-v14";
+import { createYoogleController } from "./client/yoogle/yoogle-controller.js?v=20260901-english-search-v15";
 import { showCampaignBroadcast, startCampaignBroadcastBackground } from "./campaign-broadcast.js?v=20260830-broadcast-map-fill";
 import { createCampaignStore } from "./client/core/campaign-store.js";
 import {
@@ -15,16 +15,23 @@ import {
 } from "./client/map/campaign-map-geometry.js";
 import { createTerritoryPresentation } from "./client/map/territory-presentation.js";
 import { loadCampaignMapData } from "./client/map/campaign-map-data.js";
-import { createInertialWheelZoom } from "./client/map/inertial-wheel-zoom.js?v=20260829-inertial-wheel-stable";
+import { createInertialWheelZoom } from "./client/map/inertial-wheel-zoom.js?v=20260903-tile-viewreset-v2";
 import { createCampaignMinimap } from "./client/map/campaign-minimap-controller.js?v=20260829-minimap";
 import { createTerritoryWeatherLayerController } from "./client/map/territory-weather-layer-controller.js?v=20260831-weather-layer-v3";
-import { createTerritoryController } from "./client/territory/territory-controller.js";
+import { buildCoastlineLods, coastlineLodKeyForZoom } from "./client/map/coastline-lod.js?v=20260903-coastline-lod-v1";
+import { createExpeditionPieceController } from "./client/map/expedition-piece-controller.js?v=20260901-expedition-zoom-scale-v19";
+import { createTerritoryController } from "./client/territory/territory-controller.js?v=20260901-territory-card-v20";
 import { createMaritimeController } from "./client/maritime/maritime-controller.js";
 import { createChallengeController } from "./client/challenge/challenge-controller.js";
 import { createBuildingMarkerController } from "./client/buildings/building-marker-controller.js?v=20260829-building-type-scale";
 import { createBuildingPanelController } from "./client/buildings/building-panel-controller.js?v=20260829-building-type-scale";
+import { createInventoryController } from "./client/inventory/inventory-controller.js?v=20260902-inventory-natural-v1";
 const mapElement = document.querySelector("#campaign-map");
 const mapLoader = document.querySelector("#map-loader");
+const mapZoomIndicator = document.querySelector("#map-zoom-indicator");
+const mapZoomValue = document.querySelector("#map-zoom-value");
+const mapZoomDetail = document.querySelector("#map-zoom-detail");
+const ZOOM_STAGE_LABELS = Object.freeze(["全景", "洲际", "国家", "地区", "最大细节"]);
 const countryLabelMarkers = [];
 const cityMarkers = new Map();
 const clubsByCity = new Map();
@@ -33,11 +40,22 @@ let toastTimer = null;
 let cityData = [];
 let clubData = [];
 let territoryLayer = null;
+let provinceOutlineLayer = null;
+
 let countryBorderLayer = null;
+let reliefLayers = [];
+let oceanDepthLayer = null;
+let oceanDepthBands = [];
+let landDepthLayer = null;
+let landDepthStrokes = [];
+let coastlineLayer = null;
+let coastlineStrokes = [];
+let campaignCoastlineLods = null;
+let activeCoastlineLodKey = null;
 let territoryIndex = null;
 let territoryWorld = null;
 let countryBordersVisible = false;
-let majorCitiesVisible = true;
+let majorCitiesVisible = false;
 let weatherLayerVisible = false;
 const campaignStore = createCampaignStore();
 let campaignState = campaignStore.getState();
@@ -59,16 +77,18 @@ let buildingMarkerController = null;
 let buildingPanelController = null;
 let campaignMinimapController = null;
 let weatherLayerController = null;
+let expeditionPieceController = null;
 const EMPTY_TERRITORY_IDS = new Set();
 
 const map = L.map(mapElement, {
   preferCanvas: true,
   zoomAnimation: true,
+  fadeAnimation: false,
   markerZoomAnimation: true,
   zoomControl: false,
   attributionControl: false,
   minZoom: 3,
-  maxZoom: 9,
+  maxZoom: 7,
   zoomSnap: 0,
   zoomDelta: 0.5,
   scrollWheelZoom: false,
@@ -84,6 +104,25 @@ createInertialWheelZoom({
   maxVelocity: 6.25,
 });
 
+
+map.createPane("reliefPane");
+map.getPane("reliefPane").style.zIndex = "218";
+map.getPane("reliefPane").style.pointerEvents = "none";
+map.createPane("provinceOutlinePane");
+map.getPane("provinceOutlinePane").style.zIndex = "219";
+map.getPane("provinceOutlinePane").style.pointerEvents = "none";
+map.createPane("oceanPane");
+map.getPane("oceanPane").style.zIndex = "212";
+map.getPane("oceanPane").style.pointerEvents = "none";
+map.createPane("landShadowPane");
+map.getPane("landShadowPane").style.zIndex = "213";
+map.getPane("landShadowPane").style.pointerEvents = "none";
+map.createPane("landShelfPane");
+map.getPane("landShelfPane").style.zIndex = "214";
+map.getPane("landShelfPane").style.pointerEvents = "none";
+map.createPane("coastPane");
+map.getPane("coastPane").style.zIndex = "222";
+map.getPane("coastPane").style.pointerEvents = "none";
 map.createPane("countryPane");
 map.getPane("countryPane").style.zIndex = "225";
 map.getPane("countryPane").style.pointerEvents = "none";
@@ -98,15 +137,24 @@ map.createPane("cityPane");
 map.getPane("cityPane").style.zIndex = "640";
 map.createPane("buildingPane");
 map.getPane("buildingPane").style.zIndex = "645";
+map.createPane("expeditionPane");
+map.getPane("expeditionPane").style.zIndex = "655";
+map.getPane("expeditionPane").style.pointerEvents = "none";
 
 const countryRenderer = L.svg({ pane: "countryPane", padding: 0.5 });
+const coastRenderer = L.canvas({ pane: "coastPane", padding: 0.5 });
+const oceanRenderer = L.canvas({ pane: "oceanPane", padding: 0.5 });
+const landShadowRenderer = L.canvas({ pane: "landShadowPane", padding: 0.5 });
+const landShelfRenderer = L.canvas({ pane: "landShelfPane", padding: 0.5 });
 const territoryRenderer = L.canvas({ pane: "territoryPane", padding: 0.5, tolerance: 2 });
+const provinceOutlineRenderer = L.canvas({ pane: "provinceOutlinePane", padding: 0.5 });
 const maritimeRenderer = L.svg({ pane: "maritimePane", padding: 0.5 });
 const weatherRenderer = L.svg({ pane: "weatherPane", padding: 0.5 });
 
 const countryLabelLayer = L.layerGroup().addTo(map);
-const cityLayer = L.layerGroup().addTo(map);
+const cityLayer = L.layerGroup();
 const buildingLayer = L.layerGroup().addTo(map);
+const expeditionLayer = L.layerGroup().addTo(map);
 
 function escapeHtml(value) {
   return String(value)
@@ -134,6 +182,7 @@ const {
     homeSelectionMode: territoryController?.isHomeSelectionMode() ?? false,
     homeSelectionPermission: territoryController?.homeSelectionPermission,
     maritimeTargetIds: maritimeController?.getTargetIds() ?? EMPTY_TERRITORY_IDS,
+    expeditionMoveTargetIds: expeditionPieceController?.getTargetIds() ?? EMPTY_TERRITORY_IDS,
   }),
 });
 
@@ -161,6 +210,7 @@ function applyCampaignWorldSnapshot(snapshot) {
   buildingMarkerController?.refresh();
   campaignMinimapController?.refresh();
   weatherLayerController?.refresh();
+  expeditionPieceController?.refresh();
 }
 
 territoryController = createTerritoryController({
@@ -172,9 +222,6 @@ territoryController = createTerritoryController({
   attackableTerritoryIds,
   getTerritoryWorld: () => territoryWorld,
   getCampaignState: () => campaignState,
-  getCityData: () => cityData,
-  getClubData: () => clubData,
-  getBuildingCatalog: () => campaignState?.buildings?.catalog ?? [],
   getCampaignRequest: () => campaignRequest,
   getMaritimeMode: () => maritimeController?.getMode() ?? null,
   getMaritimeTargetIds: () => maritimeController?.getTargetIds() ?? EMPTY_TERRITORY_IDS,
@@ -280,6 +327,210 @@ const {
   resumeOwnActiveChallenge,
 } = challengeController;
 
+function addReliefTileSet({ tiles, bounds }, version) {
+  const leafletBounds = [[bounds.south, bounds.west], [bounds.north, bounds.east]];
+  return L.tileLayer(`./${tiles}?v=${version}`, {
+    pane: "reliefPane",
+    opacity: 0.46,
+    minZoom: 3,
+    maxZoom: 7,
+    maxNativeZoom: 7,
+    bounds: leafletBounds,
+    noWrap: true,
+    keepBuffer: 2,
+    // Request entering tiles during dragging, not only after mouse release.
+    updateWhenIdle: false,
+    updateWhenZooming: true,
+    updateInterval: 120,
+  }).addTo(map);
+}
+
+function addCampaignReliefLayers(reliefConfig) {
+  for (const layer of reliefLayers) {
+    if (map.hasLayer(layer)) layer.removeFrom(map);
+  }
+  reliefLayers = [];
+
+  const tileSets = [
+    {
+      tiles: "assets/map-relief/europe-dem-overview/{z}/{x}/{y}.webp",
+      bounds: { west: -25, south: 25, east: 100, north: 74 },
+    },
+    ...Object.values(reliefConfig?.regions ?? {}).map((region) => ({
+      tiles: region.output.overview,
+      bounds: region.displayBounds,
+    })),
+  ];
+  for (const tileSet of tileSets) {
+    reliefLayers.push(addReliefTileSet(tileSet, "20260904-deep-olive-relief-v3"));
+  }
+}
+
+function oceanDepthWeights(zoom = map.getZoom()) {
+  const progress = Math.max(0, Math.min(1, (zoom - 3) / 6));
+  return [
+    20 + progress * 44,
+    11 + progress * 27,
+    5 + progress * 13,
+  ];
+}
+
+function collectCampaignCoastlineSegments(territories) {
+  const segments = [];
+  for (const feature of territories.features ?? []) {
+    const region = feature.properties?.region;
+    if (!["europe", "south-america"].includes(region)) continue;
+    for (const segment of coastlineData?.territories?.[feature.properties.territoryId]?.coastlines ?? []) {
+      const points = segment.map((point) => territoryPointToDisplay(point, region));
+      if (points.length >= 2) segments.push(points);
+    }
+  }
+  return segments;
+}
+
+function coastlineSegmentsForZoom(zoom = map.getZoom()) {
+  const key = coastlineLodKeyForZoom(zoom);
+  return campaignCoastlineLods?.[key] ?? [];
+}
+
+function updateCoastlineLod(zoom = map.getZoom()) {
+  const key = coastlineLodKeyForZoom(zoom);
+  if (key === activeCoastlineLodKey) return;
+  const segments = campaignCoastlineLods?.[key] ?? [];
+  oceanDepthBands.forEach((band) => band.setLatLngs(segments));
+  landDepthStrokes.forEach((stroke) => stroke.setLatLngs(segments));
+  coastlineStrokes.forEach((stroke) => stroke.setLatLngs(segments));
+  activeCoastlineLodKey = key;
+}
+
+function updateOceanDepthStyle(zoom = map.getZoom()) {
+  const weights = oceanDepthWeights(zoom);
+  oceanDepthBands.forEach((band, index) => band.setStyle({ weight: weights[index] }));
+}
+
+function addCampaignOceanDepthLayer() {
+  if (oceanDepthLayer && map.hasLayer(oceanDepthLayer)) oceanDepthLayer.removeFrom(map);
+  const segments = coastlineSegmentsForZoom();
+  oceanDepthLayer = L.layerGroup().addTo(map);
+  const weights = oceanDepthWeights();
+  oceanDepthBands = [
+    L.polyline(segments, {
+      pane: "oceanPane",
+      renderer: oceanRenderer,
+      color: "#173f50",
+      weight: weights[0],
+      opacity: 0.42,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(oceanDepthLayer),
+    L.polyline(segments, {
+      pane: "oceanPane",
+      renderer: oceanRenderer,
+      color: "#24606b",
+      weight: weights[1],
+      opacity: 0.32,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(oceanDepthLayer),
+    L.polyline(segments, {
+      pane: "oceanPane",
+      renderer: oceanRenderer,
+      color: "#438783",
+      weight: weights[2],
+      opacity: 0.22,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(oceanDepthLayer),
+  ];
+}
+
+function updateLandDepthPerspective(zoom = map.getZoom()) {
+  const progress = Math.max(0, Math.min(1, (zoom - map.getMinZoom()) / (map.getMaxZoom() - map.getMinZoom())));
+  const depth = 4.5 + progress * 3.5;
+  const shadowPane = map.getPane("landShadowPane");
+  const shelfPane = map.getPane("landShelfPane");
+  shadowPane.style.transform = `translate3d(${(depth * 0.48).toFixed(2)}px, ${depth.toFixed(2)}px, 0)`;
+  shelfPane.style.transform = `translate3d(${(depth * 0.22).toFixed(2)}px, ${(depth * 0.54).toFixed(2)}px, 0)`;
+}
+
+function addCampaignLandDepthLayer() {
+  if (landDepthLayer && map.hasLayer(landDepthLayer)) landDepthLayer.removeFrom(map);
+  const segments = coastlineSegmentsForZoom();
+  landDepthLayer = L.layerGroup().addTo(map);
+  landDepthStrokes = [
+    L.polyline(segments, {
+      pane: "landShadowPane",
+      renderer: landShadowRenderer,
+      color: "rgba(1,12,19,.94)",
+      weight: 22,
+      opacity: 0.52,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(landDepthLayer),
+    L.polyline(segments, {
+      pane: "landShelfPane",
+      renderer: landShelfRenderer,
+      color: "rgba(119,103,62,.88)",
+      weight: 11,
+      opacity: 0.46,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(landDepthLayer),
+  ];
+  updateLandDepthPerspective();
+}
+
+const COASTLINE_STROKE_STYLES = Object.freeze([
+  Object.freeze({ color: "rgba(2,20,29,.55)", weight: 24, opacity: 0.28 }),
+  Object.freeze({ color: "rgba(8,37,43,.78)", weight: 12, opacity: 0.48 }),
+  Object.freeze({ color: "rgba(18,48,39,.72)", weight: 5.4, opacity: 0.68 }),
+  Object.freeze({ color: "rgba(218,223,179,.42)", weight: 1.45, opacity: 0.78 }),
+]);
+
+function addCampaignCoastlineLayer() {
+  if (coastlineLayer && map.hasLayer(coastlineLayer)) coastlineLayer.removeFrom(map);
+  const segments = coastlineSegmentsForZoom();
+  coastlineLayer = L.layerGroup().addTo(map);
+  coastlineStrokes = COASTLINE_STROKE_STYLES.map((style) => L.polyline(segments, {
+    pane: "coastPane",
+    renderer: coastRenderer,
+    ...style,
+    lineCap: "round",
+    lineJoin: "round",
+    interactive: false,
+  }).addTo(coastlineLayer));
+}
+
+function addProvinceOutlineLayer(displayTerritories) {
+  if (provinceOutlineLayer) provinceOutlineLayer.removeFrom(map);
+  // One non-interactive Canvas path, not another interactive layer per province.
+  // Geometry is already in display coordinates, including relocated South America.
+  const boundaries = displayTerritories.features.flatMap(({ geometry }) => {
+    const polygons = geometry?.type === "Polygon" ? [geometry.coordinates]
+      : geometry?.type === "MultiPolygon" ? geometry.coordinates : [];
+    return polygons.flatMap((polygon) => polygon.map((ring) => (
+      ring.map(([lng, lat]) => [lat, lng])
+    )));
+  });
+  provinceOutlineLayer = L.polyline(boundaries, {
+    pane: "provinceOutlinePane",
+    renderer: provinceOutlineRenderer,
+    interactive: false,
+    bubblingMouseEvents: false,
+    fill: false,
+    color: "#d2cdb0",
+    opacity: 0.22,
+    weight: 0.7,
+    lineCap: "round",
+    lineJoin: "round",
+  }).addTo(map);
+}
+
 function addTerritoryLayer(territories) {
   const displayTerritories = {
     type: "FeatureCollection",
@@ -319,6 +570,7 @@ function addTerritoryLayer(territories) {
           closeExpandedCity();
           buildingMarkerController.closeExpanded();
           if(maritimeController.isSelectingPoint()){confirmMaritimePoint(event.latlng);return;}
+          if(expeditionPieceController?.handleTerritoryClick(territoryId))return;
           selectTerritory(territoryId);
         },
       });
@@ -406,7 +658,7 @@ function orbitMarkup(city, clubs) {
     const stars = "★".repeat(club.reputation) + "☆".repeat(5 - club.reputation);
     return `<span class="orbit-ray" style="--ray-angle:${angle}deg;--ray-length:${radius - 26}px"></span>
       <button class="orbit-club" type="button" data-orbit-club="${escapeHtml(club.id)}" style="--orbit-x:${x.toFixed(1)}px;--orbit-y:${y.toFixed(1)}px;--orbit-delay:${index * 35}ms" aria-label="${escapeHtml(club.name)}，${escapeHtml(club.style)}">
-        <img src="./assets/club-badges/${escapeHtml(club.id)}.webp" alt="" />
+        <img src="./assets/club-badges/${escapeHtml(club.id)}.webp" alt="" loading="lazy" decoding="async" />
         <span class="orbit-tooltip"><strong>${escapeHtml(club.name)}</strong><small>${escapeHtml(city.country)} · ${escapeHtml(city.name)}</small><small>${escapeHtml(club.stadium)}</small><b>${stars} · ${escapeHtml(club.style)}</b></span>
       </button>`;
   }).join("");
@@ -513,25 +765,43 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
 }
 
+function updateReliefVisibility(zoom = map.getZoom()) {
+  const progress = Math.max(0, Math.min(1, (zoom - map.getMinZoom()) / (map.getMaxZoom() - map.getMinZoom())));
+  const opacity = 0.46 + progress * 0.22;
+  reliefLayers.forEach((layer) => layer.setOpacity(opacity));
+}
+
+function updateZoomIndicator() {
+  if (!mapZoomIndicator || !mapZoomValue || !mapZoomDetail) return;
+  const minimumZoom = map.getMinZoom();
+  const maximumZoom = map.getMaxZoom();
+  const zoom = Math.max(minimumZoom, Math.min(maximumZoom, map.getZoom()));
+  const maximumStageIndex = Math.max(0, Math.round(maximumZoom - minimumZoom));
+  const stageIndex = Math.max(0, Math.min(maximumStageIndex, Math.round(zoom - minimumZoom)));
+  const relativeScale = 2 ** (zoom - minimumZoom);
+  const scaleText = relativeScale < 10 ? relativeScale.toFixed(1) : relativeScale.toFixed(0);
+  const stageLabel = ZOOM_STAGE_LABELS[stageIndex] ?? `Z${Math.round(zoom)}`;
+  mapZoomValue.textContent = `×${scaleText}`;
+  mapZoomDetail.textContent = `Z ${zoom.toFixed(2)} · 挡位 ${stageIndex + 1}/${maximumStageIndex + 1} · ${stageLabel}`;
+  mapZoomIndicator.dataset.zoomStage = String(stageIndex + 1);
+}
+
+function updateLiveZoomState() {
+  updateZoomIndicator();
+  updateReliefVisibility();
+  updateLandDepthPerspective();
+}
+
 function updateZoomState() {
   const zoom = map.getZoom();
+  updateLiveZoomState();
+  updateCoastlineLod(zoom);
+  updateOceanDepthStyle(zoom);
   updateCountryLabels();
   updateCityVisibility();
   buildingMarkerController?.updateVisibility();
+  expeditionPieceController?.updateZoom();
   mapElement.classList.toggle("zoom-detailed", zoom >= 5.8);
-}
-
-async function preloadClubBadge(club) {
-  const image = new Image();
-  image.src = `./assets/club-badges/${club.id}.webp`;
-  if (typeof image.decode === "function") {
-    await image.decode();
-    return;
-  }
-  await new Promise((resolve, reject) => {
-    image.addEventListener("load", resolve, { once: true });
-    image.addEventListener("error", reject, { once: true });
-  });
 }
 
 async function syncCampaignWorldState() {
@@ -579,7 +849,6 @@ async function loadMap() {
   territoryIndex.territories.forEach((metadata) => territoryMetadataById.set(metadata.territoryId, metadata));
   cityData = data.cities;
   clubData = data.clubs;
-  await Promise.allSettled(clubData.map(preloadClubBadge));
   clubData.forEach((club) => {
     const list = clubsByCity.get(club.city) ?? [];
     list.push(club);
@@ -595,9 +864,16 @@ async function loadMap() {
   };
 
   campaignCountries.features.forEach(makeCountryLabel);
+  campaignCoastlineLods = buildCoastlineLods(collectCampaignCoastlineSegments(territories));
+  activeCoastlineLodKey = coastlineLodKeyForZoom(map.getZoom());
+  addCampaignOceanDepthLayer();
+  addCampaignLandDepthLayer();
+  addCampaignCoastlineLayer();
   addCountryBorders(campaignCountries);
 
+  addCampaignReliefLayers(data.reliefRegions);
   const displayTerritories = addTerritoryLayer(territories);
+  addProvinceOutlineLayer(displayTerritories);
   weatherLayerController = createTerritoryWeatherLayerController({
     Leaflet:L,
     map,
@@ -607,8 +883,30 @@ async function loadMap() {
   });
   weatherLayerController.setEnabled(weatherLayerVisible);
   buildingMarkerController.refresh();
+  expeditionPieceController = createExpeditionPieceController({
+    documentRef:document,
+    Leaflet: L,
+    map,
+    mapElement,
+    layer: expeditionLayer,
+    territoryMetadataById,
+    getCampaignState: () => campaignState,
+    getCampaignRequest:()=>campaignRequest,
+    sourcePointToDisplay,
+    campaignStore,
+    applyCampaignWorldSnapshot,
+    refreshTerritoryDisplay,
+    beforeBegin:()=>{
+      if(maritimeController?.getMode())maritimeController.clearMaritimeMode({keepSelection:true});
+      buildingPanelController?.close();
+    },
+    showToast,
+    escapeHtml,
+  });
+  expeditionPieceController.refresh();
 
   addCityMarkers();
+  setMajorCitiesVisible(majorCitiesVisible);
   updateZoomState();
   fitCampaign(false);
   campaignMinimapController = createCampaignMinimap({
@@ -649,6 +947,15 @@ const yoogleController = createYoogleController({
   mount: document.querySelector("#yoogle-search"),
   windowRoot: document.querySelector("#yoogle-window"),
   getRequest: () => campaignRequest,
+});
+const inventoryController = createInventoryController({
+  trigger:document.querySelector("#topbar-inventory"),
+  windowRoot:document.querySelector("#inventory-window"),
+  getCampaignRequest:()=>campaignRequest,
+  getCampaignState:()=>campaignState,
+  campaignStore,
+  showToast,
+  documentRef:document,
 });
 function updateTopbarWallet(stateValue=campaignState) {
   const gold=Number(stateValue?.wallet?.gold);
@@ -723,6 +1030,10 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     return;
   }
+  if (event.key === "Escape" && expeditionPieceController?.cancelMoveMode()) {
+    event.preventDefault();
+    return;
+  }
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const target = event.target;
   if (target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))) return;
@@ -747,10 +1058,12 @@ window.addEventListener("blur", clearPressedPanKeys);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) clearPressedPanKeys();
 });
+map.on("zoom", updateLiveZoomState);
 map.on("zoomend", updateZoomState);
 map.on("mousemove", (event) => { if(maritimeController.isSelectingPoint())updateMaritimeSnap(event.latlng); });
 map.on("click", (event) => {
   if(maritimeController.isSelectingPoint()){confirmMaritimePoint(event.latlng);return;}
+  if(expeditionPieceController?.isSelectingDestination()){showToast("请选择本方领土地块");return;}
   const maritimeMode=maritimeController.getMode();
   if(maritimeMode?.routes){
     closeExpandedCity();
@@ -786,7 +1099,7 @@ window.addEventListener("campaign-ready", startMapLoading, { once: true });
 if (window.campaignBootstrap) startMapLoading({ detail: window.campaignBootstrap });
 
 const teamPanel = document.querySelector("#campaign-team");
-const teamController = createTeamController({ panel: teamPanel, getCampaignState: () => campaignState, mapElement });
+const teamController = createTeamController({ panel:teamPanel, getCampaignState:() => campaignState, mapElement, getCampaignRequest:() => campaignRequest, campaignStore, showToast });
 const tacticsPanel = document.querySelector("#campaign-tactics");
 const fullTacticsController = createTacticsController({
   panel:tacticsPanel,
@@ -797,9 +1110,10 @@ const fullTacticsController = createTacticsController({
   showToast,
 });
 const navItems = [...document.querySelectorAll(".nav-item")];
-navItems[0]?.addEventListener("click", () => { fullTacticsController.close(); teamController.close(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[0].classList.add("is-active"); });
+navItems[0]?.addEventListener("click", () => { inventoryController.close(); fullTacticsController.close(); teamController.close(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[0].classList.add("is-active"); });
 navItems[1]?.addEventListener("click", () => { fullTacticsController.close(); teamController.open(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[1].classList.add("is-active"); });
 navItems[2]?.addEventListener("click", () => { fullTacticsController.open(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[2].classList.add("is-active"); });
+navItems[4]?.addEventListener("click", () => { fullTacticsController.close(); teamController.close(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[4].classList.add("is-active"); });
 document.querySelector("#tactics-save")?.addEventListener("click", saveTactics);
 document.querySelector("#tactics-formation")?.addEventListener("change", (e) => { tacticsState.formation = e.target.value; });
 document.querySelector("#tactics-attack")?.addEventListener("change", (e) => { tacticsState.attackStyle = e.target.value; });

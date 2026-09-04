@@ -2,12 +2,12 @@ import crypto from "node:crypto";
 import {
   canChooseHome,
   claimHome,
-  listAttackableTerritories,
+  listAttackableTerritoriesFrom,
   OWNER_TYPES,
 } from "./territory-model.js";
 import { CAMPAIGN_ENGINE } from "./engine/campaign-match-engine.mjs";
 import { campaignWeatherHour, createCampaignWeatherSnapshot } from "./engine/campaign-weather.mjs";
-import { createTerritoryAiGarrison, publicTerritoryAiIntel } from "./engine/territory-ai.mjs";
+import { createTerritoryAiGarrison, publicTerritoryAiIntel, TERRITORY_AI_SCHEMA_VERSION } from "./engine/territory-ai.mjs";
 import { analyzeElevenBoardFormation, sanitizeFormationLines } from "./formation-rules.js";
 import {
   CAMPAIGN_EXTRA_TIME_LIVE_MS,
@@ -19,16 +19,37 @@ import {
 } from "./shared/config/challenge.mjs";
 import { DRAFT_SIZE, GRADE_WEIGHTS, LINE_KEYS, LINE_WEIGHTS, MINIMUM_PLAYERS_PER_LINE } from "./shared/config/draft.mjs";
 import { STARTING_GOLD } from "./shared/config/economy.mjs";
+import {
+  neutralConquestRewardForDifficulty,
+  PLAYER_PACK_DEFINITIONS,
+} from "./shared/config/player-packs.mjs";
 import { LINE_LABELS } from "./shared/football/labels.js";
+import {
+  autoCompletePlayerSquads,
+  isPlayerSquadId,
+  normalizePlayerSquads,
+  PLAYER_SQUAD_DEFINITIONS,
+  PLAYER_SQUAD_IDS,
+} from "./shared/config/player-squads.mjs";
 import { createPlayerCardViewModel } from "./shared/player-card/player-card-contract.js";
 import { ChallengeService, publicChallengeView } from "./server/application/challenge-service.mjs";
 import { BuildingService } from "./server/application/building-service.mjs";
 import { EconomyService } from "./server/application/economy-service.mjs";
+import { PlayerPackService } from "./server/application/player-pack-service.mjs";
 import { nextAvailablePlayerMapColor } from "./server/domain/player-map-colors.mjs";
+import {
+  cancelExpeditionMovement,
+  estimateExpeditionMove,
+  expeditionAttackSource,
+  moveExpeditionPiece,
+  normalizeExpeditionPiece,
+  placeExpeditionPiece,
+  publicExpeditionPiece,
+} from "./server/domain/expedition-piece.mjs";
 import { migrateCampaignSave } from "./server/infrastructure/campaign-save-migrations.mjs";
 import { JsonCampaignRepository } from "./server/infrastructure/json-campaign-repository.mjs";
 
-export const PLAYER_CATALOG_VERSION = "s4-production-2026-08-24";
+export const PLAYER_CATALOG_VERSION = "s4-production-2026-09-01-player-names";
 export {
   CHALLENGE_FIRST_LEG_MS,
   CHALLENGE_SECOND_LEG_COOLDOWN_MS,
@@ -65,6 +86,15 @@ function sanitizeTacticsPositions(players, positions = {}) {
       y:Math.round(Math.max(6, Math.min(94, Number(value?.y) || 50))),
     }];
   }));
+}
+
+function defaultTacticsStarters(roster = []) {
+  const available = [...roster].sort((left,right) => Number(right.effectiveOverall ?? right.overall ?? 0) - Number(left.effectiveOverall ?? left.overall ?? 0));
+  const selected = [];
+  const take = (pool,count) => available.filter((player) => player.pool === pool && !selected.includes(player)).slice(0,count).forEach((player) => selected.push(player));
+  take("GK",1); take("DEF",4); take("MID",3); take("ATT",3);
+  available.filter((player) => player.pool !== "GK" && !selected.includes(player)).forEach((player) => { if (selected.length < 11) selected.push(player); });
+  return selected.slice(0,11).map((player) => player.id);
 }
 
 function safeAccount(account) {
@@ -110,7 +140,7 @@ function publicDraft(account) {
 }
 
 export class CampaignService {
-  constructor({ dataPath, repository = null, economy = null, buildings = null, challenges = null, catalog, territoryIndex = null, maritimePlanner = null, random = Math.random, now = Date.now } = {}) {
+  constructor({ dataPath, repository = null, economy = null, playerPacks = null, buildings = null, challenges = null, catalog, territoryIndex = null, maritimePlanner = null, random = Math.random, now = Date.now } = {}) {
     this.repository = repository ?? new JsonCampaignRepository({ dataPath });
     this.dataPath = this.repository.dataPath ?? dataPath ?? null;
     this.random = random;
@@ -121,6 +151,11 @@ export class CampaignService {
     this.playerLibrary = Array.isArray(catalog) ? catalog : [];
     this.playerDatabase = this.playerLibrary.filter((player) => LINE_KEYS.includes(player.pool) && player.isX !== true);
     this.catalog = this.playerDatabase.filter((player) => ["A", "B", "C"].includes(player.grade));
+    this.playerPacks = playerPacks ?? new PlayerPackService({
+      playerDatabase: this.playerDatabase,
+      random: this.random,
+      now: this.now,
+    });
     const saved = this.repository.load();
     const migration = migrateCampaignSave({
       saved,
@@ -131,6 +166,10 @@ export class CampaignService {
     });
     this.accounts = migration.accounts;
     this.world = migration.world;
+    let inventoriesChanged = false;
+    for (const account of this.accounts.values()) {
+      inventoriesChanged = this.playerPacks.migrateAccount(account) || inventoriesChanged;
+    }
     this.weatherSnapshots = new Map();
     this.buildings = buildings ?? new BuildingService({
       economy: this.economy,
@@ -146,12 +185,13 @@ export class CampaignService {
       maritimePlanner: this.maritimePlanner,
       playerDatabase: this.playerDatabase,
       ensureAiGarrison: (territoryId) => this.ensureAiGarrison(territoryId),
+      awardNeutralCapture: (context) => this.awardNeutralCapture(context),
       getTerritoryWeather: (territoryId, timestamp) => this.territoryWeather(territoryId, timestamp),
       save: () => this.save(),
       now: this.now,
     });
     this.challenges.restoreActiveChallenges();
-    if (migration.changed || buildingsChanged) this.save();
+    if (migration.changed || inventoriesChanged || buildingsChanged) this.save();
   }
 
   nextMapColor() {
@@ -196,8 +236,11 @@ export class CampaignService {
       homeTerritoryId: null,
       mapColor: this.nextMapColor(),
       draft: null,
+      playerSquads: normalizePlayerSquads(null, []),
+      expeditionPiece: null,
     };
     this.economy.migrateAccount(account);
+    this.playerPacks.migrateAccount(account);
     this.accounts.set(id, account);
     this.save();
     return this.session(account);
@@ -256,6 +299,88 @@ export class CampaignService {
     };
   }
 
+  awardNeutralCapture({ account, challenge }) {
+    const difficulty = challenge.aiDifficulty
+      ?? this.world?.aiGarrisons?.[challenge.territoryId]?.difficulty
+      ?? 1;
+    const reward = neutralConquestRewardForDifficulty(difficulty);
+    this.economy.adjust(account, reward.gold, `neutral-conquest:${challenge.territoryId}`);
+    const pack = this.playerPacks.addPacks(
+      account,
+      reward.packType,
+      reward.packCount,
+    );
+    return {
+      type: "neutral-territory-conquest",
+      difficulty: reward.difficulty,
+      gold: reward.gold,
+      packs: [pack],
+    };
+  }
+
+  openPlayerPack(account, packTypeValue) {
+    const opening = this.playerPacks.open(account, packTypeValue);
+    this.save();
+    return { state:this.state(account), opening };
+  }
+
+  choosePlayerPackCard(account, openingIdValue, playerIdValue) {
+    const player = this.playerPacks.choose(account, openingIdValue, playerIdValue);
+    this.save();
+    return { state:this.state(account), player };
+  }
+
+  adminPlayerPackAccount(account) {
+    const inventory = this.playerPacks.publicInventory(account);
+    return {
+      id:account.id,
+      nickname:account.nickname,
+      teamName:account.draft?.teamName ?? "尚未建队",
+      setupComplete:account.setupComplete === true,
+      createdAt:account.createdAt ?? null,
+      lastSeenAt:account.lastSeenAt ?? null,
+      totalPacks:inventory.totalPacks,
+      packs:inventory.packs.map(({ type,name,count }) => ({ type,name,count })),
+    };
+  }
+
+  adminPlayerPackManagement() {
+    const players = [...this.accounts.values()]
+      .map((account) => this.adminPlayerPackAccount(account))
+      .sort((left,right) => (Number(right.lastSeenAt) || 0) - (Number(left.lastSeenAt) || 0)
+        || left.nickname.localeCompare(right.nickname,"zh-CN"));
+    const packTypes = Object.values(PLAYER_PACK_DEFINITIONS).map((definition) => ({
+      type:definition.type,
+      name:definition.name,
+      description:definition.description,
+    }));
+    return { players,packTypes,maxGrantCount:999 };
+  }
+
+  grantPlayerPacksToAccount(accountIdValue, packTypeValue, countValue) {
+    const accountId = String(accountIdValue ?? "");
+    const account = this.accounts.get(accountId);
+    if (!account) throw Object.assign(new Error("玩家不存在"),{ statusCode:404 });
+    const grant = this.playerPacks.addPacks(account,String(packTypeValue ?? ""),countValue);
+    this.save();
+    return { player:this.adminPlayerPackAccount(account),grant };
+  }
+
+  grantPlayerPacksToAllAccounts(packTypeValue, countValue) {
+    const accounts = [...this.accounts.values()];
+    if (!accounts.length) throw new Error("服务器暂无可发放的玩家账户");
+    const packType = String(packTypeValue ?? "");
+    if (!PLAYER_PACK_DEFINITIONS[packType]) throw new Error("未知球员卡包");
+    let grant = null;
+    for (const account of accounts) grant = this.playerPacks.addPacks(account,packType,countValue);
+    this.save();
+    return {
+      grant,
+      recipientCount:accounts.length,
+      totalPacksGranted:accounts.length * grant.count,
+    };
+  }
+
   campaignWeather(timestamp = this.now()) {
     const clock = campaignWeatherHour(timestamp);
     const cached = this.weatherSnapshots.get(clock.hourKey);
@@ -307,7 +432,7 @@ export class CampaignService {
     if (!territoryState) throw new Error("目标地块不存在");
     if (territoryState.ownerType === OWNER_TYPES.PLAYER) return null;
     const current = this.world.aiGarrisons?.[territoryId];
-    if (current?.schemaVersion === 2 && current.generatedForSeason === this.world.seasonId) return current;
+    if (current?.schemaVersion === TERRITORY_AI_SCHEMA_VERSION && current.generatedForSeason === this.world.seasonId) return current;
     this.world.aiGarrisons ??= {};
     this.world.aiGarrisons[territoryId] = createTerritoryAiGarrison({ catalog:this.playerDatabase,territory,territoryState,seasonId:this.world.seasonId,generationSeed:this.world.aiGenerationSeed });
     this.save();
@@ -350,6 +475,21 @@ export class CampaignService {
     return { catalogVersion: PLAYER_CATALOG_VERSION, total: players.length, players };
   }
 
+  assignPlayerSquad(account, playerIdValue, squadIdValue) {
+    if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
+    const playerId = String(playerIdValue ?? "");
+    if (!account.draft.roster.some((player) => String(player.id) === playerId)) throw new Error("球员不在你的球队中");
+    const squadId = squadIdValue === null || squadIdValue === undefined
+      ? PLAYER_SQUAD_IDS.GARRISON
+      : String(squadIdValue);
+    if (!isPlayerSquadId(squadId)) throw new Error("编队不存在");
+    const playerSquads = normalizePlayerSquads(account.playerSquads, account.draft.roster);
+    playerSquads.assignments[playerId] = squadId;
+    account.playerSquads = playerSquads;
+    this.save();
+    return this.state(account);
+  }
+
   territoryBuildings(account, territoryIdValue) {
     this.buildings.settleConstructions(this.world);
     return this.buildings.territoryView(account, this.world, territoryIdValue);
@@ -373,26 +513,42 @@ export class CampaignService {
   state(account) {
     this.settleDueChallenges();
     this.buildings.settleConstructions(this.world);
+    const now = this.now();
+    const expeditionNormalization = normalizeExpeditionPiece(account, this.world, now);
+    if (expeditionNormalization.changed) this.save();
     const setupComplete = account.setupComplete === true;
+    const normalizedPlayerSquads = normalizePlayerSquads(account.playerSquads, account.draft?.roster ?? []);
+    if (JSON.stringify(account.playerSquads ?? null) !== JSON.stringify(normalizedPlayerSquads)) {
+      account.playerSquads = normalizedPlayerSquads;
+      this.save();
+    }
     const activeChallenge=Object.values(this.world?.activeChallenges ?? {}).find((challenge)=>challenge.attackerId===account.id) ?? null;
-    const canExpand = Boolean(this.world && setupComplete && account.homeTerritoryId && this.world.players[account.id] && !activeChallenge);
+    const expeditionPiece = setupComplete ? publicExpeditionPiece(account, this.world, now) : null;
+    const canExpand = Boolean(this.world && setupComplete && account.homeTerritoryId && this.world.players[account.id] && !activeChallenge && !expeditionPiece?.moving);
+    const expeditionTerritoryId = canExpand ? expeditionAttackSource(account, this.world, now) : null;
     return {
       modeName: "黄狗风云",
       playerId: account.id,
       nickname: account.nickname,
       playerColor: account.mapColor,
       wallet:{ gold:Number(account.gold ?? 0) },
+      inventory: this.playerPacks.publicInventory(account),
       buildings: setupComplete && this.world
         ? this.buildings.accountView(account, this.world)
         : { rules:null, catalog:this.buildings.catalog(), territories:{} },
       setupComplete,
       homeSelectionRequired: Boolean(this.world && setupComplete && !account.homeTerritoryId),
       homeTerritoryId: account.homeTerritoryId ?? null,
+      expeditionPiece,
       draft: publicDraft(account),
+      playerSquads: {
+        ...normalizedPlayerSquads,
+        squads:PLAYER_SQUAD_DEFINITIONS.map((squad) => ({ ...squad })),
+      },
       tactics: account.tactics ?? null,
       world: setupComplete ? this.publicWorld() : null,
       activeChallengeId:activeChallenge?.id ?? null,
-      attackableTerritoryIds: canExpand ? listAttackableTerritories(this.territoryIndex, this.world, account.id).filter((territoryId) => !this.world.activeChallenges?.[territoryId]) : [],
+      attackableTerritoryIds: canExpand ? listAttackableTerritoriesFrom(this.territoryIndex, this.world, account.id, expeditionTerritoryId, now).filter((territoryId) => !this.world.activeChallenges?.[territoryId]) : [],
       coastalTerritoryIds: this.maritimePlanner?.coastalTerritoryIds ?? [],
       battleHistory: (account.battleHistory ?? []).slice(-20).reverse(),
       primaryMatchEngine: CAMPAIGN_ENGINE,
@@ -401,32 +557,48 @@ export class CampaignService {
 
   saveTactics(account, value = {}) {
     if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
-    const rosterIds = new Set(account.draft.roster.map((player) => player.id));
-    const normalizeIds = (items) => [...new Set((Array.isArray(items) ? items : []).map(String).filter((id) => rosterIds.has(id)))];
-    const starters = normalizeIds(value.starters);
-    if (starters.length !== 11) throw new Error("必须从当前球员名单中选择恰好11名首发球员");
-    const players = starters.map((id) => account.draft.roster.find((player) => player.id === id));
-    const planSnapshots = value.planSnapshots && typeof value.planSnapshots === "object" ? structuredClone(value.planSnapshots) : {};
-    const embedded = planSnapshots.__s4V2 && typeof planSnapshots.__s4V2 === "object" ? planSnapshots.__s4V2 : {};
-    const presetKeys = ["position1","position2","position3"];
-    const formationLinePresets = Object.fromEntries(presetKeys.map((key) => [key, sanitizeFormationLines(embedded.formationLinePresets?.[key] ?? value.formationLines)]));
-    const positionPresets = Object.fromEntries(presetKeys.map((key) => {
-      const source = embedded.positionPresets?.[key] ?? value.positions;
-      const sanitized = sanitizeTacticsPositions(players, source);
-      const formation = analyzeElevenBoardFormation(players, sanitized, formationLinePresets[key]);
-      const validOutfieldLines = [formation.counts.DEF,formation.counts.MID,formation.counts.ATT].every((count) => count >= 1);
-      if (formation.counts.GK !== 1 || (key === "position1" && !validOutfieldLines)) {
-        const label = key === "position1" ? "默认站位" : key === "position2" ? "领先站位" : "落后站位";
-        throw new Error(`${label}：门将必须且只能有一人${key === "position1" ? "，并保留前场、中场、后场三条外场线" : ""}`);
-      }
-      return [key,sanitized];
+    const submittedPlayerSquads = value.playerSquads && typeof value.playerSquads === "object" ? value.playerSquads : account.playerSquads;
+    const completed = autoCompletePlayerSquads(submittedPlayerSquads,account.draft.roster);
+    if (!completed.ready) throw new Error("远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋");
+    account.playerSquads = completed.playerSquads;
+    const providedSquads = value.squads && typeof value.squads === "object" ? value.squads : null;
+    const existingSquads = account.tactics?.squads && typeof account.tactics.squads === "object" ? account.tactics.squads : {};
+    const sanitizeSquad = (squadId,sourceValue = {}) => {
+      const eligible = account.draft.roster.filter((player) => account.playerSquads.assignments[player.id] === squadId);
+      const eligibleIds = new Set(eligible.map((player) => player.id));
+      const requested = [...new Set((Array.isArray(sourceValue.starters) ? sourceValue.starters : []).map(String).filter((id) => eligibleIds.has(id)))];
+      const starters = requested.length ? requested : defaultTacticsStarters(eligible);
+      if (starters.length !== 11) throw new Error(`${squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : "留守"}编队必须选择恰好11名首发球员`);
+      const players = starters.map((id) => eligible.find((player) => player.id === id));
+      const planSnapshots = sourceValue.planSnapshots && typeof sourceValue.planSnapshots === "object" ? structuredClone(sourceValue.planSnapshots) : {};
+      const embedded = planSnapshots.__s4V2 && typeof planSnapshots.__s4V2 === "object" ? planSnapshots.__s4V2 : {};
+      const presetKeys = ["position1","position2","position3"];
+      const formationLinePresets = Object.fromEntries(presetKeys.map((key) => [key,sanitizeFormationLines(embedded.formationLinePresets?.[key] ?? sourceValue.formationLines)]));
+      const positionPresets = Object.fromEntries(presetKeys.map((key) => {
+        const source = embedded.positionPresets?.[key] ?? sourceValue.positions;
+        const sanitized = sanitizeTacticsPositions(players,source);
+        const formation = analyzeElevenBoardFormation(players,sanitized,formationLinePresets[key]);
+        const validOutfieldLines = [formation.counts.DEF,formation.counts.MID,formation.counts.ATT].every((count) => count >= 1);
+        if (formation.counts.GK !== 1 || (key === "position1" && !validOutfieldLines)) {
+          const planLabel = key === "position1" ? "默认站位" : key === "position2" ? "领先站位" : "落后站位";
+          const squadLabel = squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : "留守";
+          throw new Error(`${squadLabel}${planLabel}：门将必须且只能有一人${key === "position1" ? "，并保留前场、中场、后场三条外场线" : ""}`);
+        }
+        return [key,sanitized];
+      }));
+      const captainId = String(embedded.captainId ?? "");
+      if (captainId && !starters.includes(captainId)) throw new Error("队长必须来自当前11人首发阵容");
+      planSnapshots.__s4V2 = { ...embedded,starters:[...starters],positionPresets,formationLinePresets,captainId:captainId || starters[0] };
+      const bench = eligible.map((player) => player.id).filter((id) => !starters.includes(id));
+      const openingFormation = analyzeElevenBoardFormation(players,positionPresets.position1,formationLinePresets.position1);
+      return { formation:openingFormation.name,attackStyle:String(sourceValue.attackStyle || "balanced"),defenseStyle:String(sourceValue.defenseStyle || "possession"),starters,bench,positions:positionPresets.position1,formationLines:formationLinePresets.position1,tacticalBars:sourceValue.tacticalBars && typeof sourceValue.tacticalBars === "object" ? sourceValue.tacticalBars : {},planSnapshots,activePlan:String(sourceValue.activePlan || "opening"),updatedAt:Date.now() };
+    };
+    const squads = Object.fromEntries(PLAYER_SQUAD_DEFINITIONS.map((squad) => {
+      const fallback = squad.id === PLAYER_SQUAD_IDS.EXPEDITION ? value : {};
+      return [squad.id,sanitizeSquad(squad.id,providedSquads?.[squad.id] ?? existingSquads[squad.id] ?? fallback)];
     }));
-    const captainId = String(embedded.captainId ?? "");
-    if (captainId && !starters.includes(captainId)) throw new Error("队长必须来自当前11人首发阵容");
-    planSnapshots.__s4V2 = { ...embedded, starters:[...starters], positionPresets, formationLinePresets, captainId:captainId || starters[0] };
-    const bench = account.draft.roster.map((player) => player.id).filter((id) => !starters.includes(id));
-    const openingFormation = analyzeElevenBoardFormation(players, positionPresets.position1, formationLinePresets.position1);
-    account.tactics = { formation:openingFormation.name, attackStyle: String(value.attackStyle || "balanced"), defenseStyle: String(value.defenseStyle || "possession"), starters, bench, positions:positionPresets.position1, formationLines:formationLinePresets.position1, tacticalBars: value.tacticalBars && typeof value.tacticalBars === "object" ? value.tacticalBars : {}, planSnapshots, activePlan: String(value.activePlan || "opening"), updatedAt: Date.now() };
+    const activeSquadId = isPlayerSquadId(value.activeSquadId) ? String(value.activeSquadId) : PLAYER_SQUAD_IDS.EXPEDITION;
+    account.tactics = { schemaVersion:2,activeSquadId,squads,...squads[PLAYER_SQUAD_IDS.EXPEDITION],updatedAt:Date.now() };
     this.save();
     return this.state(account);
   }
@@ -499,6 +671,7 @@ export class CampaignService {
     }
     claimHome(this.territoryIndex, this.world, account.id, territoryId);
     account.homeTerritoryId = territoryId;
+    placeExpeditionPiece(account, territoryId);
     this.buildings.ensureCapitalStadium(account, this.world, territoryId);
     this.save();
     return this.state(account);
@@ -506,6 +679,41 @@ export class CampaignService {
 
   maritimeRoutes(account, sourceTerritoryIdValue, pointValue) {
     return this.challenges.maritimeRoutes(account, sourceTerritoryIdValue, pointValue);
+  }
+
+  ensureExpeditionCanMove(account) {
+    if (!this.world || !this.territoryIndex) throw new Error("共享世界尚未初始化");
+    if (!account.setupComplete || !account.homeTerritoryId) throw new Error("请先完成建队并选择主场");
+    const activeChallenge = Object.values(this.world.activeChallenges ?? {})
+      .find((challenge) => challenge.attackerId === account.id);
+    if (activeChallenge) {
+      throw Object.assign(new Error("板块挑战进行中，远征队暂时不能调动"), { statusCode: 409 });
+    }
+  }
+
+  estimateExpedition(account, territoryIdValue) {
+    this.ensureExpeditionCanMove(account);
+    return { estimate:estimateExpeditionMove({account,world:this.world,territoryIndex:this.territoryIndex,targetTerritoryId:territoryIdValue,now:this.now()}) };
+  }
+
+  moveExpedition(account, territoryIdValue) {
+    this.ensureExpeditionCanMove(account);
+    const expeditionPiece = moveExpeditionPiece({
+      account,
+      world: this.world,
+      territoryIndex: this.territoryIndex,
+      targetTerritoryId: territoryIdValue,
+      now: this.now(),
+    });
+    this.save();
+    return { state: this.state(account), expeditionPiece };
+  }
+
+  cancelExpedition(account) {
+    if (!this.world) throw new Error("共享世界尚未初始化");
+    const result=cancelExpeditionMovement(account,this.world,this.now());
+    this.save();
+    return {state:this.state(account),expeditionPiece:result.piece,canceledMovement:result.canceledMovement};
   }
 
   challengeTerritory(account, territoryIdValue, options = {}) {

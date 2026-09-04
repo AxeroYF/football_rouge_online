@@ -1,6 +1,7 @@
 export const SMALL_WINDOW_STANDARD = Object.freeze({
   name: "小型窗口",
   maxWidth: 1180,
+  desktopHeight: 820,
   desktopEdgeGap: 24,
   compactEdgeGap: 10,
   mobileEdgeGap: 0,

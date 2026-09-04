@@ -10,6 +10,9 @@ function createElements() {
     ["#battle-home-name", { textContent: "" }],
     ["#battle-away-name", { textContent: "" }],
     ["#battle-score", { textContent: "" }],
+    ["#battle-result-rewards", { hidden: true }],
+    ["#battle-result-gold-reward", { textContent: "" }],
+    ["#battle-result-pack-reward", { textContent: "" }],
   ]);
 }
 
@@ -51,9 +54,13 @@ test("challenge controller blocks concurrent attacks and renders compact aggrega
     captured: true,
     teams: [{ name: "我方" }, { name: "守军" }],
     aggregateScore: [3, 2],
+    rewards:{ gold:8_000, packs:[{ name:"珍奇球员卡包", count:4 }] },
   });
   assert.equal(elements.get("#battle-result-panel").hidden, false);
   assert.equal(elements.get("#battle-result-territory").textContent, "测试板块");
   assert.equal(elements.get("#battle-result-outcome").textContent, "两回合胜利 · 地块已占领");
   assert.equal(elements.get("#battle-score").textContent, "3 : 2");
+  assert.equal(elements.get("#battle-result-rewards").hidden, false);
+  assert.equal(elements.get("#battle-result-gold-reward").textContent, "+8,000 金币");
+  assert.equal(elements.get("#battle-result-pack-reward").textContent, "+4 珍奇球员卡包");
 });

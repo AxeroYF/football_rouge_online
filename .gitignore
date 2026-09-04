@@ -26,8 +26,18 @@ YDL_backup/
 
 # Local player portrait/card-art library
 assets/player-profiles/
+assets/player-packs/
+
+# Local terrain textures (keep generation scripts and metadata in Git)
+assets/map-relief/**/*.webp
+assets/map-relief/**/*.png
+
+# Python build cache
+__pycache__/
+*.py[cod]
 
 # Temporary working directories and files
+.cache/
 .tmp-*/
 tmp/
 temp/
