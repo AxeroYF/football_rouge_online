@@ -25,3 +25,13 @@
 - 公开源码扫描未发现真实回收账号 ID、旧开发密码、令牌/私钥模式、运行数据路径或超50MiB文件。
 
 验证日志及干净源码副本位于本机 outputs/repository-sync/，不上传 Git。历史热更新包 QA 保持原样。
+
+## 最终合并结果
+
+2026-09-19 已完成：整理提交 `8cc795b`，包含主分支历史的合并提交 `1511faddb61f39b7d5d62070c204dbfdedec62b7`，已推送到 GitHub `main` 和 `codex/rougelite` 并 fetch 确认。仓库地址：https://github.com/AxeroYF/football_rouge_online 。
+
+GitHub 连接器创建 PR 时返回 Resource not accessible by integration（403），因此没有创建 PR。使用已有 Git 凭据执行正常 Git 推送，保留完整历史，没有强推。主分支只产生 README 历史冲突，保留本次当前项目说明；合并没有引入额外运行代码改动。
+
+干净检出时发现旧忽略规则漏掉18张已发布活动封面，已修正；旧 Git 索引的换行字节也已重新同步。最终干净检出1202个 R11 基线输入全部存在，与已发布包的运行文件差异只有 admin-v2.html、admin.html、server/application/admin-service.mjs、server/application/downtime-recovery-plan.mjs，均属于上述公开源码整理。
+
+代码合并结束时工作树干净；本条记录及其他交接入口属于随后补充的纯文档更新。后续文档提交不改变代码基线、已发布包和服务器部署状态。用户最后确认部署仍为 R10，R11 部署未确认。

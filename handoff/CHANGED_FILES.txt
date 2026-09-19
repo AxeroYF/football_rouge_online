@@ -1,4 +1,15 @@
-本次整理范围：截至 R11 的 client、server、shared、engine、styles、assets、test、scripts 及部署文档。
-新增 releases/ 管理原始发布记录和有效基线，归档重写 handoff 入口。
-真实运行数据、备份、账号种子、运维排查原件不入 Git；R10 真实扣除清单提取到私有运行配置。
-精确文件清单请使用 git show --stat 和 git diff；历史未提交列表保存在 archive/pre-github-r11-20260918/CHANGED_FILES.txt。
+代码基线：1511fad（GitHub main 已合并），整理提交：8cc795b。
+截至 R11 的 client、server、shared、engine、styles、assets、test、scripts 及部署文档已纳入主线。
+releases/ 保存原始发布记录与有效基线；真实存档、账号种子、审计原件和扣除名单不入 Git。
+
+本轮交接追加文件：
+handoff/README.md
+handoff/CURRENT_STATE.md
+handoff/NEW_CHAT_PROMPT.md
+handoff/README_UPDATE.md
+handoff/CHANGED_FILES.txt
+handoff/GITHUB_BASELINE_2026-09-19.md
+handoff/MANIFEST.md
+
+本轮只更新文档，不修改玩法、不生成热更新包、不部署服务器。
+精确文件清单使用 git show --stat 和 git diff；历史未提交列表保存在 archive/pre-github-r11-20260918/CHANGED_FILES.txt。
