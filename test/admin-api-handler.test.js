@@ -37,3 +37,14 @@ test("admin API lists server players and grants packs to the selected account",a
   assert.equal(JSON.parse(batchResponse.body).totalPacksGranted,2);
   assert.deepEqual(calls,[body,batchBody]);
 });
+
+
+test('admin player grant routes authenticate and forward explicit team, player, quantity and enhancement level',async()=>{
+ const actor={id:'operator',role:'operator'},calls=[];
+ const admin={authenticate(token){if(token!=='admin-token')throw Object.assign(new Error('auth'),{statusCode:401});return actor;},playerGrantManagement(value){assert.equal(value,actor);return {teams:[],players:[],maxUpgradeLevel:8};},grantPlayers(value,body){assert.equal(value,actor);calls.push(body);return {count:body.count,upgradeLevel:body.upgradeLevel};}};
+ const handler=createAdminApiHandler({admin,players:{}}),listing=responseRecorder();
+ await handler({method:'GET',headers:{authorization:'Bearer admin-token'}},listing,'/api/admin/player-grants','/api/admin/player-grants');assert.equal(JSON.parse(listing.body).maxUpgradeLevel,8);
+ const body={accountId:'team',playerId:'player',count:3,upgradeLevel:8,requestId:'grant-123456'},response=responseRecorder();
+ await handler(postRequest(body),response,'/api/admin/player-grants','/api/admin/player-grants');assert.deepEqual(calls,[body]);assert.equal(JSON.parse(response.body).count,3);
+ await assert.rejects(handler({method:'GET',headers:{}},responseRecorder(),'/api/admin/player-grants','/api/admin/player-grants'),error=>error.statusCode===401);
+});

@@ -1,3 +1,4 @@
+import { canUseTerritory } from '../../shared/config/diplomacy.mjs';
 export function createMaritimeController({
   Leaflet,
   map,
@@ -16,14 +17,18 @@ export function createMaritimeController({
   refreshTerritoryDisplay,
   renderTerritoryInspector,
   showToast,
+  onSurveyState = () => {}, onSurveyClose = () => {}, beforeBegin = () => {}, timer = globalThis,
 }) {
-  let maritimeMode = null;
+  let maritimeMode = null, heartbeat = null;
   let maritimeRouteLayer = null;
   let maritimeSnapMarker = null;
   const maritimeTargetIds = new Set();
 
   function clearMaritimeMode({ keepSelection = false } = {}) {
+    const previous = maritimeMode;
     maritimeMode = null;
+    if (heartbeat !== null) timer.clearInterval(heartbeat);
+    heartbeat = null;
     maritimeTargetIds.clear();
     maritimeRouteLayer?.remove();
     maritimeRouteLayer = null;
@@ -31,6 +36,12 @@ export function createMaritimeController({
     maritimeSnapMarker = null;
     mapElement.classList.remove("is-selecting-coast");
     if (!keepSelection) refreshTerritoryDisplay();
+    if (previous?.previewId) {
+      onSurveyClose(previous.previewId);
+      const request = getCampaignRequest();
+      if (request) Promise.resolve(request("/api/campaign/maritime/preview", { method:"POST", body:{action:"close",previewId:previous.previewId} }))
+        .then(result => { if (!maritimeMode && result.state) onSurveyState(result.state, {fit:false}); }).catch(() => {});
+    }
   }
 
   function cancelMaritimeCampaign() {
@@ -150,23 +161,38 @@ export function createMaritimeController({
       return;
     }
     const activeMode = maritimeMode;
+    const request = getCampaignRequest();
     try {
-      const result = await getCampaignRequest()("/api/campaign/maritime/routes", {
+      const result = await request("/api/campaign/maritime/routes", {
         method: "POST",
         body: {
           sourceTerritoryId: activeMode.sourceTerritoryId,
           sourcePoint: selected.sourcePoint,
         },
       });
-      if (maritimeMode !== activeMode) return;
-      maritimeMode = { ...maritimeMode, sourcePoint: result.sourcePoint, routes: result.routes };
+      if (maritimeMode !== activeMode) {
+        if(result.previewId)void request("/api/campaign/maritime/preview",{method:"POST",body:{action:"close",previewId:result.previewId}}).catch(()=>{});
+        return;
+      }
+      maritimeMode = { ...maritimeMode, sourcePoint: result.sourcePoint, routes: result.routes, maxRangeKm: result.maxRangeKm, previewId:result.previewId };
+      if (result.state) onSurveyState(result.state, {fit:true});
+      if (!maritimeMode || maritimeMode.sourceTerritoryId !== activeMode.sourceTerritoryId) return;
+      if (result.previewId) {
+        if (heartbeat !== null) timer.clearInterval(heartbeat);
+        heartbeat = timer.setInterval(() => {
+          if (!maritimeMode || maritimeMode.previewId !== result.previewId) return;
+          Promise.resolve(getCampaignRequest()("/api/campaign/maritime/preview", { method:"POST", body:{action:"keepalive",previewId:result.previewId} }))
+            .catch(() => { if (maritimeMode?.previewId === result.previewId) clearMaritimeMode(); });
+        }, 30000);
+        heartbeat?.unref?.();
+      }
       maritimeSnapMarker?.setStyle({ color: "#c9f05c", fillColor: "#c9f05c" });
       drawMaritimeRoutes(result);
       renderTerritoryInspector(maritimeMode.sourceTerritoryId);
       showToast(
         result.routes.length
-          ? `已发现 ${result.routes.length} 个直线可登陆地块，请点击目标发起挑战`
-          : "该出发点没有可直线到达的登陆地块",
+          ? `航程 ${result.maxRangeKm} 公里 · 可登陆 ${result.routes.length} 处`
+          : `航程 ${result.maxRangeKm} 公里内无可达目标，可更换出发点或建设、升级港口`,
       );
     } catch (error) {
       showToast(error.message || "航线计算失败");
@@ -174,6 +200,7 @@ export function createMaritimeController({
   }
 
   function beginMaritimeCampaign() {
+    beforeBegin();
     if (ownActiveChallenge()) {
       showToast("已有一场板块挑战正在进行，比赛结束前不能再次出海");
       return;
@@ -187,7 +214,7 @@ export function createMaritimeController({
     }
     if (
       !territoryId
-      || state?.ownerId !== campaignState?.playerId
+      || !canUseTerritory(campaignState?.world??getTerritoryWorld(),campaignState?.playerId,territoryId)
       || campaignState?.expeditionPiece?.territoryId !== territoryId
       || !campaignState?.coastalTerritoryIds?.includes(territoryId)
     ) return;

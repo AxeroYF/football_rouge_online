@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>远征交通工具图鉴 · 黄狗风云</title><link rel="icon" href="./assets/icon-yf-v2.png"><link rel="stylesheet" href="./styles/wonder-preview.css">
+<script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js","three/addons/controls/OrbitControls.js":"./assets/vendor/three/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"./assets/vendor/three/GLTFLoader.js","three/addons/environments/RoomEnvironment.js":"./assets/vendor/three/RoomEnvironment.js"}}</script>
+<link rel="stylesheet" href="./styles/facility-preview.css?v=20260907-facilities-v2"><link rel="stylesheet" href="./styles/expedition-preview.css?v=20260908-expedition-vehicles-v1"></head><body>
+<header><a class="brand" href="./facility-preview.html">黄狗风云<span>EXPEDITION VEHICLES</span></a><div class="edition">远征交通工具图鉴 <i>01 / 05</i></div><span class="count">5 款载具 · 立体模型</span></header>
+<main><section class="collection"><div class="collection-heading"><div><p class="eyebrow">VEHICLE COLLECTION · STRATEGY UNITS</p><h1>出发，驶向新的征程。</h1></div><span class="collection-total">05</span></div>
+<nav class="filters" aria-label="单位筛选"><button class="selected" data-kind="all">全部单位 <span>5</span></button><a class="wonder-link" href="./facility-preview.html">设施图鉴 ↗</a><a class="wonder-link" href="./wonder-preview.html">奇观图鉴 ↗</a></nav>
+<div id="model-grid" class="model-grid"></div></section>
+<aside class="inspector"><div class="viewer-top"><span id="selected-id">W16</span><span class="status"><b></b>彩色模型</span></div>
+<div id="viewer"><canvas id="wonder-canvas" aria-label="拖动旋转三维模型，滚轮缩放"></canvas><div id="loading" role="status">读取模型…</div><div class="view-presets"><button data-view="iso" class="selected">立体</button><button data-view="front">正面</button><button data-view="side">侧面</button><button data-view="top">俯视</button></div></div>
+<div class="model-info"><p id="location" class="eyebrow"></p><h2 id="model-name">飞机</h2><p id="signature"></p>
+<div class="level-strip" id="level-strip" aria-label="设施等级"></div><p id="level-change"></p><div class="swatches" id="swatches"></div>
+<div class="tools"><label>精度 <select id="lod"><option value="0">近景</option><option value="1">中景</option><option value="2">远景</option></select></label><label class="wire"><input id="wireframe" type="checkbox">线框</label><button id="reset">重置视角</button></div>
+<div class="asset-meta"><span id="triangle-count"></span><a id="download" download>下载 GLB ↗</a><a href="./wonder-preview.html">奇观风格参考 ↗</a></div>
+<p class="gesture">统一比例展示 · 拖动旋转 · 滚轮缩放</p></div></aside></main>
+<footer>交通工具远征单位 · 游戏内打开“远征外观”即可选择</footer>
+<script type="module" src="./client/expedition-models/expedition-preview.js?v=20260908-expedition-vehicles-v1"></script></body></html>
+

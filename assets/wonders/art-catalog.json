@@ -1,0 +1,812 @@
+{
+  "title": "首批世界奇观名单与美术资源规划",
+  "date": "2026-09-07",
+  "status": "approved-art-source",
+  "confirmed": {
+    "total": 24,
+    "europe": 16,
+    "southAmerica": 8,
+    "requiredName": "伯纳乌球场",
+    "scope": "名单与美术资源；不设计具体玩法效果"
+  },
+  "style": {
+    "direction": "适配现有 atlas 地图的风格化三维微缩建筑",
+    "dimensions": "归一化示意包围盒，不是真实米制比例",
+    "palette": "候选色板，待对照正式参考图调色",
+    "lod": "LOD0 2000–6000 triangles; LOD1 1000–2500; LOD2 200–600; distant icon",
+    "orientation": "+Y up; consistent front direction",
+    "material": "优先少量共享材质；玻璃用不透明近似"
+  },
+  "items": [
+    {
+      "id": "W01",
+      "assetId": "eiffel-tower",
+      "name": "埃菲尔铁塔",
+      "region": "欧洲",
+      "prototypeLocation": "法国·巴黎",
+      "reference": {
+        "url": "https://www.toureiffel.paris/en/the-monument/universal-exhibition",
+        "verifiedFact": "为 1889 年巴黎世界博览会建造的地标。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "四条外展塔腿、下部大拱、两层平台、收尖塔身；用粗桁架和镂空剪影，不逐根建钢梁。",
+        "signature": "拱形负空间与细长塔尖",
+        "parts": [
+          "塔腿",
+          "第一平台",
+          "第二平台",
+          "塔尖"
+        ],
+        "palette": [
+          "#6B5544",
+          "#B29171"
+        ],
+        "dimensions": {
+          "width": 0.5,
+          "depth": 0.5,
+          "height": 1.8
+        },
+        "complexity": "中",
+        "caution": "不要做成普通通信塔；远景保留四脚开张和中部留空。"
+      }
+    },
+    {
+      "id": "W02",
+      "assetId": "colosseum",
+      "name": "罗马斗兽场",
+      "region": "欧洲",
+      "prototypeLocation": "意大利·罗马",
+      "reference": {
+        "url": "https://colosseo.it/en/area/the-colosseum/",
+        "verifiedFact": "位于罗马的古代圆形竞技场，现为参观和展览场所。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "椭圆环形、层叠拱廊、保留一侧残缺外墙；内部用阶梯环带，不做密集座椅。",
+        "signature": "椭圆与一侧高墙残口",
+        "parts": [
+          "残墙外环",
+          "内部阶梯",
+          "竞技场底面"
+        ],
+        "palette": [
+          "#CCB995",
+          "#8E7A5D"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.8,
+          "height": 0.35
+        },
+        "complexity": "中",
+        "caution": "不要建成完好封闭圆筒；缺口是主要识别点。"
+      }
+    },
+    {
+      "id": "W03",
+      "assetId": "sagrada-familia",
+      "name": "圣家堂",
+      "region": "欧洲",
+      "prototypeLocation": "西班牙·巴塞罗那",
+      "reference": {
+        "url": "https://sagradafamilia.org/documents/20142/1693659/SF_Booklet_01_20260227_digital_AF.pdf/a44dfe77-d5af-412f-0657-e203984acd73",
+        "verifiedFact": "高迪设计的圣家堂以多座具有象征意义的塔楼形成独特轮廓。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "高低错落的尖塔群、中央高塔、厚实基座；以轮廓和暖石色表达雕刻，固定采用同一设计版本。",
+        "signature": "密集但高低有别的尖塔",
+        "parts": [
+          "基座",
+          "两组立面塔群",
+          "中央塔群"
+        ],
+        "palette": [
+          "#D3B787",
+          "#F0DFC0"
+        ],
+        "dimensions": {
+          "width": 0.85,
+          "depth": 0.7,
+          "height": 1.2
+        },
+        "complexity": "高",
+        "caution": "采用固定外观设定稿；不要随着现实施工新闻自动改模型。"
+      }
+    },
+    {
+      "id": "W04",
+      "assetId": "elizabeth-tower",
+      "name": "大本钟／伊丽莎白塔",
+      "region": "欧洲",
+      "prototypeLocation": "英国·伦敦",
+      "reference": {
+        "url": "https://www.parliament.uk/about/living-heritage/building/palace/architecture/palacestructure/towers-of-parliament/",
+        "verifiedFact": "伊丽莎白塔是英国议会建筑的一部分；Big Ben 严格说是塔内大钟的名称。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "方形高塔、四面大钟盘、逐级收尖塔冠；钟盘可用单张贴图。",
+        "signature": "钟盘尺寸、方塔和尖顶",
+        "parts": [
+          "方塔体",
+          "四面钟盘",
+          "塔冠"
+        ],
+        "palette": [
+          "#CAB98E",
+          "#4A554F",
+          "#F3EBD9"
+        ],
+        "dimensions": {
+          "width": 0.35,
+          "depth": 0.35,
+          "height": 1.5
+        },
+        "complexity": "低",
+        "caution": "钟盘在中景可读；不制作复杂齿轮和可走入的内部。"
+      }
+    },
+    {
+      "id": "W05",
+      "assetId": "brandenburg-gate",
+      "name": "勃兰登堡门",
+      "region": "欧洲",
+      "prototypeLocation": "德国·柏林",
+      "reference": {
+        "url": "https://www.berlin.de/en/attractions-and-sights/3560266-3104052-brandenburg-gate.en.html",
+        "verifiedFact": "柏林的砂岩城门地标，顶部有四马战车雕塑。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "横向柱廊、顶部檐部与四马战车剪影；战车用整体简模。",
+        "signature": "宽门洞与顶部战车",
+        "parts": [
+          "柱廊",
+          "水平檐部",
+          "战车剪影"
+        ],
+        "palette": [
+          "#D2C49F",
+          "#556C5B"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.3,
+          "height": 0.6
+        },
+        "complexity": "低",
+        "caution": "不要误用波茨坦同名城门；原型是柏林勃兰登堡门。"
+      }
+    },
+    {
+      "id": "W06",
+      "assetId": "versailles-palace",
+      "name": "凡尔赛宫",
+      "region": "欧洲",
+      "prototypeLocation": "法国·凡尔赛",
+      "reference": {
+        "url": "https://en.chateauversailles.fr/discover/estate/palace/hall-mirrors",
+        "verifiedFact": "凡尔赛宫的镜厅与面向花园的宫殿空间是其代表性部分。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "长轴对称宫殿、中央前庭、两翼与几何花园；花园作为贴地底座。",
+        "signature": "宽长对称轴与宫殿花园",
+        "parts": [
+          "主楼",
+          "左右翼",
+          "前庭",
+          "花园底板"
+        ],
+        "palette": [
+          "#D6C2A0",
+          "#4E5759",
+          "#6D8A55"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.75,
+          "height": 0.28
+        },
+        "complexity": "高",
+        "caution": "不做镜厅内部；小尺度花坛使用贴图或浅浮雕。"
+      }
+    },
+    {
+      "id": "W07",
+      "assetId": "louvre",
+      "name": "卢浮宫",
+      "region": "欧洲",
+      "prototypeLocation": "法国·巴黎",
+      "reference": {
+        "url": "https://www.louvre.fr/en/explore/the-palace",
+        "verifiedFact": "卢浮宫由宫殿发展为博物馆，金字塔是其标志之一。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "玻璃金字塔与 U 形宫殿院落；金字塔用不透明蓝灰材质保留格线。",
+        "signature": "金字塔与宫殿形成的组合",
+        "parts": [
+          "宫殿 U 形体",
+          "中央金字塔",
+          "院落"
+        ],
+        "palette": [
+          "#D4C8B2",
+          "#80A6B3",
+          "#535B5D"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.8,
+          "height": 0.35
+        },
+        "complexity": "中",
+        "caution": "只用金字塔会丢失宫殿语境；玻璃建议不透明近似。"
+      }
+    },
+    {
+      "id": "W08",
+      "assetId": "british-museum",
+      "name": "大英博物馆",
+      "region": "欧洲",
+      "prototypeLocation": "英国·伦敦",
+      "reference": {
+        "url": "https://www.britishmuseum.org/about-us/british-museum-story/architecture/reading-room",
+        "verifiedFact": "博物馆大中庭中央的圆形阅览室曾是重要的学习场所。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "正面古典柱廊、内院与中央圆形阅览室；玻璃顶表现为浅色网格屋盖。",
+        "signature": "柱廊入口与中庭圆形核心",
+        "parts": [
+          "正面柱廊",
+          "四翼外墙",
+          "大中庭",
+          "圆顶"
+        ],
+        "palette": [
+          "#D5D1C3",
+          "#97B1B5"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.8,
+          "height": 0.35
+        },
+        "complexity": "中",
+        "caution": "俯视要看见中庭；不能只留下与其他古典建筑相似的正门。"
+      }
+    },
+    {
+      "id": "W09",
+      "assetId": "alhambra",
+      "name": "阿尔罕布拉宫",
+      "region": "欧洲",
+      "prototypeLocation": "西班牙·格拉纳达",
+      "reference": {
+        "url": "https://www.alhambra-patronato.es/en/edificios-lugares/the-palace-of-the-generalife",
+        "verifiedFact": "其相关的赫内拉利费宫具有院落、花园与多层次空间。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "赭红色城墙与方塔、层叠院落、细长水庭；庭园可复用凡尔赛的底座工具。",
+        "signature": "赭红墙体、方塔与院落",
+        "parts": [
+          "城墙方塔",
+          "院落",
+          "水庭",
+          "坡台"
+        ],
+        "palette": [
+          "#B47853",
+          "#775A3C",
+          "#758A55"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.7,
+          "height": 0.45
+        },
+        "complexity": "中",
+        "caution": "不要做成欧洲尖顶城堡；保留低矮密集的水平体量。"
+      }
+    },
+    {
+      "id": "W10",
+      "assetId": "acropolis",
+      "name": "雅典卫城",
+      "region": "欧洲",
+      "prototypeLocation": "希腊·雅典",
+      "reference": {
+        "url": "https://whc.unesco.org/en/list/404/",
+        "verifiedFact": "雅典卫城位于岩丘上，帕特农神庙等建筑组成其遗产群。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "岩台、柱列神庙、少量附属遗迹；以帕特农神庙形成主剪影。",
+        "signature": "岩丘上的浅色柱列神庙",
+        "parts": [
+          "岩台",
+          "帕特农神庙",
+          "附属遗迹"
+        ],
+        "palette": [
+          "#D8C9AA",
+          "#8F8F7D"
+        ],
+        "dimensions": {
+          "width": 0.95,
+          "depth": 0.7,
+          "height": 0.6
+        },
+        "complexity": "中",
+        "caution": "按遗址状态做残缺；不恢复为与其他古典殿堂雷同的完整宫殿。"
+      }
+    },
+    {
+      "id": "W11",
+      "assetId": "belem-tower",
+      "name": "贝伦塔",
+      "region": "欧洲",
+      "prototypeLocation": "葡萄牙·里斯本",
+      "reference": {
+        "url": "https://whc.unesco.org/en/list/263",
+        "verifiedFact": "贝伦塔位于塔霍河畔、里斯本港口入口一带。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "临水方塔、角部小塔与前伸堡台；配置可旋转的岸边底座。",
+        "signature": "上塔下堡的临水结构",
+        "parts": [
+          "方塔",
+          "角塔",
+          "前堡台",
+          "岸边垫片"
+        ],
+        "palette": [
+          "#DECFB1",
+          "#4F8C9C"
+        ],
+        "dimensions": {
+          "width": 0.55,
+          "depth": 0.7,
+          "height": 0.8
+        },
+        "complexity": "低",
+        "caution": "只表现一小块贴岸底座；不烘焙大面积海水。"
+      }
+    },
+    {
+      "id": "W12",
+      "assetId": "neuschwanstein",
+      "name": "新天鹅堡",
+      "region": "欧洲",
+      "prototypeLocation": "德国·施旺高",
+      "reference": {
+        "url": "https://www.neuschwanstein.de/englisch/idea/histor.htm",
+        "verifiedFact": "新天鹅堡是结合历史建筑母题的历史主义建筑，并非真正的中世纪城堡。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "白色主楼、细高圆塔、深色尖顶、台阶式山岩底座。",
+        "signature": "白墙深顶与塔楼高低关系",
+        "parts": [
+          "主殿",
+          "细圆塔",
+          "门楼",
+          "山岩台座"
+        ],
+        "palette": [
+          "#E4DED2",
+          "#435561",
+          "#7A8072"
+        ],
+        "dimensions": {
+          "width": 0.7,
+          "depth": 0.65,
+          "height": 1
+        },
+        "complexity": "高",
+        "caution": "保持轻盈尖顶；不要用同一批粗方塔替代所有塔楼。"
+      }
+    },
+    {
+      "id": "W13",
+      "assetId": "atomium",
+      "name": "布鲁塞尔原子球塔",
+      "region": "欧洲",
+      "prototypeLocation": "比利时·布鲁塞尔",
+      "reference": {
+        "url": "https://atomium.be/the_atomium_in_figures",
+        "verifiedFact": "原子球塔以九个球体对应铁晶体单元结构。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "九个球体与连接杆；球体和杆件实例复用，是低成本高辨识度模型。",
+        "signature": "九球结构和几何连接关系",
+        "parts": [
+          "球体实例",
+          "连接杆实例",
+          "底部支撑"
+        ],
+        "palette": [
+          "#B8C5CA",
+          "#6D838D"
+        ],
+        "dimensions": {
+          "width": 0.9,
+          "depth": 0.9,
+          "height": 1.2
+        },
+        "complexity": "低",
+        "caution": "连接关系先对照原型确认；不能随机摆成分子球棍模型。"
+      }
+    },
+    {
+      "id": "W14",
+      "assetId": "pont-du-gard",
+      "name": "加尔桥",
+      "region": "欧洲",
+      "prototypeLocation": "法国·加尔省",
+      "reference": {
+        "url": "https://whc.unesco.org/en/list/344/",
+        "verifiedFact": "加尔桥是跨越加尔东河的古罗马三层输水桥。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "横向三层石拱桥、下部河槽；拱门采用重复模块并按地块朝向摆放。",
+        "signature": "三层拱的比例节奏",
+        "parts": [
+          "底层大拱",
+          "中层拱",
+          "上层小拱",
+          "河槽底座"
+        ],
+        "palette": [
+          "#C9AF7B",
+          "#598FA0"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.28,
+          "height": 0.6
+        },
+        "complexity": "中",
+        "caution": "地块朝向可旋转；不能把真实河道改成模型贴图里的河。"
+      }
+    },
+    {
+      "id": "W15",
+      "assetId": "leaning-tower-pisa",
+      "name": "比萨斜塔",
+      "region": "欧洲",
+      "prototypeLocation": "意大利·比萨",
+      "reference": {
+        "url": "https://whc.unesco.org/en/list/395/",
+        "verifiedFact": "比萨主教座堂广场建筑群包含以倾斜闻名的钟楼。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "明显倾斜的圆柱塔身、层叠柱廊、浅色石材；圆环实例复用，强调倾斜角而非每个雕花。",
+        "signature": "整体倾斜和层层环廊",
+        "parts": [
+          "塔基",
+          "重复柱廊层",
+          "塔顶"
+        ],
+        "palette": [
+          "#DED5BC",
+          "#B7A98D"
+        ],
+        "dimensions": {
+          "width": 0.45,
+          "depth": 0.45,
+          "height": 1.2
+        },
+        "complexity": "低",
+        "caution": "倾斜由主体变换统一控制；不要画成弯曲或逐层错位的塔。"
+      }
+    },
+    {
+      "id": "W16",
+      "assetId": "santiago-bernabeu",
+      "name": "伯纳乌球场",
+      "region": "欧洲",
+      "prototypeLocation": "西班牙·马德里",
+      "reference": {
+        "url": "https://bernabeu.realmadrid.com/en-US/corporate-events/terreno-de-juego",
+        "verifiedFact": "伯纳乌官方场地介绍明确说明可伸缩屋顶、草坪以及承接企业活动的用途。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "连续银灰色金属包覆外壳、圆角矩形体量、可开合屋顶和内部草坪开口；近景用局部伸缩草坪演示，远景仅保留外壳。",
+        "signature": "银灰色圆角矩形与横向包覆纹理",
+        "parts": [
+          "金属外壳",
+          "屋顶",
+          "内碗",
+          "草坪模块"
+        ],
+        "palette": [
+          "#B8BCC0",
+          "#89949C",
+          "#508244"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.8,
+          "height": 0.4
+        },
+        "complexity": "中",
+        "caution": "必须区别马拉卡纳的扁椭圆；不依赖皇家马德里队徽才能辨认。"
+      }
+    },
+    {
+      "id": "W17",
+      "assetId": "christ-the-redeemer",
+      "name": "里约基督像",
+      "region": "南美洲",
+      "prototypeLocation": "巴西·里约热内卢",
+      "reference": {
+        "url": "https://www.en.santuariocristoredentor.com.br/localizacao",
+        "verifiedFact": "基督像位于里约科尔科瓦多山顶。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "张开双臂的主雕像、短基座、山峰底座；正背面优先保持十字形轮廓。",
+        "signature": "张开双臂、袍身与头部比例",
+        "parts": [
+          "雕像",
+          "小基座",
+          "可拆山岩底座"
+        ],
+        "palette": [
+          "#CBCDC6",
+          "#657066"
+        ],
+        "dimensions": {
+          "width": 0.85,
+          "depth": 0.55,
+          "height": 1.3
+        },
+        "complexity": "中",
+        "caution": "先验证正面与斜俯视剪影；手指和面部不逐个雕刻。"
+      }
+    },
+    {
+      "id": "W18",
+      "assetId": "machu-picchu",
+      "name": "马丘比丘",
+      "region": "南美洲",
+      "prototypeLocation": "秘鲁·库斯科大区",
+      "reference": {
+        "url": "https://whc.unesco.org/en/list/274/",
+        "verifiedFact": "马丘比丘位于安第斯山地，石墙、梯田和坡道与山体相连。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "山脊、层层梯田、低矮石屋群；梯田大形比单座石屋细节更重要。",
+        "signature": "山形与梯田层次",
+        "parts": [
+          "山脊",
+          "梯田条带",
+          "石屋群",
+          "步道"
+        ],
+        "palette": [
+          "#9C9A7A",
+          "#648051",
+          "#AFAB8D"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.85,
+          "height": 0.7
+        },
+        "complexity": "高",
+        "caution": "只做石屋会像普通村庄；不要把巨大完整山峰塞满邻接地块。"
+      }
+    },
+    {
+      "id": "W19",
+      "assetId": "la-moneda",
+      "name": "拉莫内达宫",
+      "region": "南美洲",
+      "prototypeLocation": "智利·圣地亚哥",
+      "reference": {
+        "url": "https://www.monumentos.gob.cl/patrimonio-mundial/tentativa/palacio-la-moneda",
+        "verifiedFact": "拉莫内达宫源于铸币建筑，采用横向新古典主义体量和多个庭院。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "低矮横向白色宫殿、中央入口、对称院落；避免与国会大厦共用穹顶剪影。",
+        "signature": "白色低矮宫殿与规则院落",
+        "parts": [
+          "横向外墙",
+          "中央门部",
+          "两处庭院",
+          "屋顶"
+        ],
+        "palette": [
+          "#E5DED0",
+          "#876D55"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.7,
+          "height": 0.25
+        },
+        "complexity": "低",
+        "caution": "不要添加现实没有的巨大中央穹顶；用院落区分宽平建筑。"
+      }
+    },
+    {
+      "id": "W20",
+      "assetId": "teatro-colon",
+      "name": "科隆剧院",
+      "region": "南美洲",
+      "prototypeLocation": "阿根廷·布宜诺斯艾利斯",
+      "reference": {
+        "url": "https://teatrocolon.org.ar/el-teatro/",
+        "verifiedFact": "科隆剧院位于布宜诺斯艾利斯，主厅采用马蹄形布局。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "宽阔剧院主体、节奏清楚的正面柱廊、屋顶大体块；不建内部观众席。",
+        "signature": "宽阔剧院体量与立面层次",
+        "parts": [
+          "主立面",
+          "侧翼",
+          "屋顶大体块"
+        ],
+        "palette": [
+          "#D7C4A2",
+          "#718278"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.8,
+          "height": 0.4
+        },
+        "complexity": "中",
+        "caution": "正式建模前补齐屋顶俯视参考；内部马蹄形厅仅作为背景资料。"
+      }
+    },
+    {
+      "id": "W21",
+      "assetId": "palacio-salvo",
+      "name": "萨尔沃宫",
+      "region": "南美洲",
+      "prototypeLocation": "乌拉圭·蒙得维的亚",
+      "reference": {
+        "url": "https://montevideo.gub.uy/sites/default/files/biblioteca/guiadescubrimontevideoespanol2018.pdf",
+        "verifiedFact": "萨尔沃宫是蒙得维的亚独立广场一带的重要城市建筑。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "裙楼之上的高塔、层层收分的顶部；用一高一低的体量区别钟楼和尖塔。",
+        "signature": "宽底座上的层叠城市高塔",
+        "parts": [
+          "裙楼",
+          "主塔",
+          "逐级收分的顶部"
+        ],
+        "palette": [
+          "#CABC9E",
+          "#777B68"
+        ],
+        "dimensions": {
+          "width": 0.65,
+          "depth": 0.6,
+          "height": 1
+        },
+        "complexity": "中",
+        "caution": "不要简化成大本钟式细方塔；应保留不等宽的中上部体量。"
+      }
+    },
+    {
+      "id": "W22",
+      "assetId": "las-lajas-sanctuary",
+      "name": "拉斯拉哈斯圣殿",
+      "region": "南美洲",
+      "prototypeLocation": "哥伦比亚·伊皮亚莱斯",
+      "reference": {
+        "url": "https://colombia.travel/es/blog/revista-colombia-co/turismo-religioso",
+        "verifiedFact": "圣殿建于瓜伊塔拉河峡谷上方的桥体之上。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "跨河谷桥台、桥上教堂、双尖塔；桥与教堂作为一组地块底座模型。",
+        "signature": "教堂高于桥面的组合",
+        "parts": [
+          "桥体",
+          "桥上教堂",
+          "双尖塔",
+          "小峡谷垫片"
+        ],
+        "palette": [
+          "#B9BBB3",
+          "#666B64",
+          "#546759"
+        ],
+        "dimensions": {
+          "width": 0.9,
+          "depth": 0.6,
+          "height": 1.1
+        },
+        "complexity": "高",
+        "caution": "底座只暗示峡谷；教堂与桥不能分离成两座无关建筑。"
+      }
+    },
+    {
+      "id": "W23",
+      "assetId": "museum-of-tomorrow",
+      "name": "明日博物馆",
+      "region": "南美洲",
+      "prototypeLocation": "巴西·里约热内卢",
+      "reference": {
+        "url": "https://museudoamanha.org.br/info/mais/duvidas",
+        "verifiedFact": "博物馆位于里约港区，建筑采用当地水资源、自然通风和太阳能设计。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "贴水的白色长条主体、向外伸出的羽翼式屋盖、浅色水池底座。",
+        "signature": "长、白、低与羽翼式屋盖",
+        "parts": [
+          "白色长条主体",
+          "羽翼屋盖",
+          "支撑肋",
+          "码头底座"
+        ],
+        "palette": [
+          "#E8ECE5",
+          "#508FA2",
+          "#688F99"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.45,
+          "height": 0.4
+        },
+        "complexity": "高",
+        "caution": "屋盖细杆需适当加粗；远景保留完整大形，不逐根抖动闪烁。"
+      }
+    },
+    {
+      "id": "W24",
+      "assetId": "maracana",
+      "name": "马拉卡纳球场",
+      "region": "南美洲",
+      "prototypeLocation": "巴西·里约热内卢",
+      "reference": {
+        "url": "https://www.tourmaracana.com.br/",
+        "verifiedFact": "里约的知名足球场，也提供球场内部参观。",
+        "visualReferenceStatus": "官方出处已定位；完整正面／侧面／俯视参考板待制作"
+      },
+      "art": {
+        "description": "宽扁椭圆体、连续环形屋顶、中央绿色草坪开口；不做内部看台椅子。",
+        "signature": "宽扁椭圆和绿色中央开口",
+        "parts": [
+          "椭圆外碗",
+          "连续环顶",
+          "内部场地"
+        ],
+        "palette": [
+          "#C9CCBB",
+          "#DCE1D8",
+          "#4D8548"
+        ],
+        "dimensions": {
+          "width": 1,
+          "depth": 0.8,
+          "height": 0.25
+        },
+        "complexity": "低",
+        "caution": "不要套伯纳乌金属外壳；远景看轮廓就应能区分两座球场。"
+      }
+    }
+  ]
+}

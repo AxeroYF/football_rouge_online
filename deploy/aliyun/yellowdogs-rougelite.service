@@ -1,0 +1,27 @@
+[Unit]
+Description=YellowDogs Chronicles Rougelite
+After=network.target
+
+[Service]
+Type=simple
+User=ydl-rougelite
+Group=ydl-rougelite
+WorkingDirectory=/opt/yellowdogs-rougelite/app
+EnvironmentFile=/etc/yellowdogs-rougelite.env
+ExecStart=/opt/yellowdogs-rougelite/node/bin/node --max-old-space-size=768 server.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+KillSignal=SIGTERM
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/yellowdogs-rougelite /opt/yellowdogs-rougelite/app/assets
+MemoryHigh=1100M
+MemoryMax=1400M
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

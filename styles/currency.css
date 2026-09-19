@@ -1,0 +1,28 @@
+/* Currency is an inline unit, never a second panel or a separate text row. */
+.gold-amount {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.3em;
+  vertical-align:middle;
+  white-space:nowrap;
+  color:inherit;
+  font:inherit;
+  font-variant-numeric:tabular-nums;
+  line-height:1.2;
+}
+.gold-amount > .gold-amount-value { color:inherit; font:inherit; }
+.gold-icon {
+  display:inline-block;
+  flex:0 0 auto;
+  width:var(--gold-icon-size,1.3em);
+  height:var(--gold-icon-size,1.3em);
+  vertical-align:middle;
+  object-fit:contain;
+  user-select:none;
+}
+.topbar-wallet { align-items:center; }
+.topbar-wallet > .gold-icon { --gold-icon-size:22px; }
+.building-build-option > button { justify-items:center; align-content:center; gap:3px; }
+.building-build-option > button .gold-amount { --gold-icon-size:18px; }
+.enhancement-action > label .gold-amount { --gold-icon-size:14px; gap:3px; }

@@ -1,0 +1,27 @@
+[Unit]
+Description=YellowDogs Chronicles V0.1
+After=network.target
+
+[Service]
+Type=simple
+User=yellowdogs
+Group=yellowdogs
+WorkingDirectory=/opt/yellowdogs/app
+EnvironmentFile=/etc/yellowdogs.env
+ExecStart=/opt/yellowdogs/node/bin/node --max-old-space-size=768 server.mjs
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+KillSignal=SIGTERM
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/yellowdogs /opt/yellowdogs/app/assets
+MemoryHigh=1100M
+MemoryMax=1400M
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

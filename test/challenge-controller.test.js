@@ -61,6 +61,7 @@ test("challenge controller blocks concurrent attacks and renders compact aggrega
   assert.equal(elements.get("#battle-result-outcome").textContent, "两回合胜利 · 地块已占领");
   assert.equal(elements.get("#battle-score").textContent, "3 : 2");
   assert.equal(elements.get("#battle-result-rewards").hidden, false);
-  assert.equal(elements.get("#battle-result-gold-reward").textContent, "+8,000 金币");
+  assert.match(elements.get("#battle-result-gold-reward").innerHTML, /aria-label="\+8,000 金币"/);
+  assert.match(elements.get("#battle-result-gold-reward").innerHTML, /class="gold-icon"/);
   assert.equal(elements.get("#battle-result-pack-reward").textContent, "+4 珍奇球员卡包");
 });

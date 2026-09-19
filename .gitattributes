@@ -1,0 +1,4 @@
+# Release manifests hash exact bytes; disable platform-dependent newline conversion.
+* -text
+# Deployment scripts must execute on Linux.
+*.sh text eol=lf

@@ -1,0 +1,2725 @@
+{
+  "version": "20260907-color-v2",
+  "format": "glTF 2.0 / GLB",
+  "status": "colored-models-generated",
+  "total": 24,
+  "europe": 16,
+  "southAmerica": 8,
+  "totalBytes": 5314280,
+  "items": [
+    {
+      "id": "W01",
+      "assetId": "eiffel-tower",
+      "name": "埃菲尔铁塔",
+      "region": "欧洲",
+      "location": "法国·巴黎",
+      "reference": "https://www.toureiffel.paris/en/the-monument/universal-exhibition",
+      "signature": "拱形负空间与细长塔尖",
+      "palette": [
+        "#669746",
+        "#C8AB82",
+        "#75482A",
+        "#AC7542"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/eiffel-tower.glb",
+          "bytes": 85628,
+          "sha256": "665c13d5ae0da92e2d1f6d46b5a9b5c48291bad717da8db136184c64db680ce3"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/eiffel-tower.glb",
+          "bytes": 62880,
+          "sha256": "36d3701a57e89ef97d62ed082f8bae3e05234f10776e5ba5c07f59cc0411a953"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/eiffel-tower.glb",
+          "bytes": 40828,
+          "sha256": "30d2f4e9d5df9f57895a6cf30f0afd055a67bfa910da3303f979f6550e488e23"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2172,
+          "meshes": 7,
+          "vertices": 2724,
+          "materials": 4,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              2.32083331199156,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            2.32083331199156,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1516,
+          "meshes": 7,
+          "vertices": 1940,
+          "materials": 4,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              2.32083331199156,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            2.32083331199156,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 900,
+          "meshes": 6,
+          "vertices": 1212,
+          "materials": 4,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              2.32083331199156,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            2.32083331199156,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/eiffel-tower.webp"
+    },
+    {
+      "id": "W02",
+      "assetId": "colosseum",
+      "name": "罗马斗兽场",
+      "region": "欧洲",
+      "location": "意大利·罗马",
+      "reference": "https://colosseo.it/en/area/the-colosseum/",
+      "signature": "椭圆与一侧高墙残口",
+      "palette": [
+        "#AD9776",
+        "#E5BC79",
+        "#AD7845",
+        "#CCA064",
+        "#997146",
+        "#B18D59",
+        "#CDA153"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/colosseum.glb",
+          "bytes": 333268,
+          "sha256": "6adcd01ef282c8da67677d7889c9dd84ff71205352fa34711d3cd7cf934b51a0"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/colosseum.glb",
+          "bytes": 200636,
+          "sha256": "4555d45712a034480aaaebd8c3695c38a11b956033b1708a45b1f41fb51eb804"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/colosseum.glb",
+          "bytes": 97388,
+          "sha256": "2c7e419e6faabdca6012608fc47f75a23c2c68aa84f95a82f94a97d499224f33"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 7568,
+          "meshes": 7,
+          "vertices": 11656,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3883495311371201
+            ],
+            "max": [
+              0.5,
+              0.3373786471099385,
+              0.3883495311371201
+            ]
+          },
+          "size": [
+            1,
+            0.3373786471099385,
+            0.7766990622742402
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 4472,
+          "meshes": 7,
+          "vertices": 6904,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3883495311371201
+            ],
+            "max": [
+              0.5,
+              0.3373786471099385,
+              0.3883495311371201
+            ]
+          },
+          "size": [
+            1,
+            0.3373786471099385,
+            0.7766990622742402
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 2128,
+          "meshes": 6,
+          "vertices": 3232,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3883495311371201
+            ],
+            "max": [
+              0.5,
+              0.3373786471099385,
+              0.3883495311371201
+            ]
+          },
+          "size": [
+            1,
+            0.3373786471099385,
+            0.7766990622742402
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/colosseum.webp"
+    },
+    {
+      "id": "W03",
+      "assetId": "sagrada-familia",
+      "name": "圣家堂",
+      "region": "欧洲",
+      "location": "西班牙·巴塞罗那",
+      "reference": "https://sagradafamilia.org/documents/20142/1693659/SF_Booklet_01_20260227_digital_AF.pdf/a44dfe77-d5af-412f-0657-e203984acd73",
+      "signature": "密集但高低有别的尖塔",
+      "palette": [
+        "#AF987A",
+        "#D3A361",
+        "#D4AC46",
+        "#B86E24",
+        "#945D38",
+        "#BA8047",
+        "#EDCB87",
+        "#CA9552"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/sagrada-familia.glb",
+          "bytes": 213600,
+          "sha256": "199f5f2cd34952ee72ca821466ae7ef75635627cb8948ea484061d3e0a7ab7f2"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/sagrada-familia.glb",
+          "bytes": 148792,
+          "sha256": "96ce767e440fe745d81f84e2dc472de87276287256a3074f6d5711703af7211f"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/sagrada-familia.glb",
+          "bytes": 40788,
+          "sha256": "63b4ceb3d14399e1dc4601421bd0de5e6c60f38207972232f543e0e24efc493a"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 5504,
+          "meshes": 13,
+          "vertices": 6967,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.43749998603016155,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.43749998603016155,
+              1.3124999203532945,
+              0.5
+            ]
+          },
+          "size": [
+            0.8749999720603231,
+            1.3124999203532945,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3536,
+          "meshes": 13,
+          "vertices": 4759,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.43749998603016155,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.43749998603016155,
+              1.3124999203532945,
+              0.5
+            ]
+          },
+          "size": [
+            0.8749999720603231,
+            1.3124999203532945,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 896,
+          "meshes": 11,
+          "vertices": 1005,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.43749998603016155,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.43749998603016155,
+              1.3124999203532945,
+              0.5
+            ]
+          },
+          "size": [
+            0.8749999720603231,
+            1.3124999203532945,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/sagrada-familia.webp"
+    },
+    {
+      "id": "W04",
+      "assetId": "elizabeth-tower",
+      "name": "大本钟／伊丽莎白塔",
+      "region": "欧洲",
+      "location": "英国·伦敦",
+      "reference": "https://www.parliament.uk/about/living-heritage/building/palace/architecture/palacestructure/towers-of-parliament/",
+      "signature": "钟盘尺寸、方塔和尖顶",
+      "palette": [
+        "#CDA263",
+        "#153D59",
+        "#BB8A32",
+        "#264D65",
+        "#253F55",
+        "#EED59E",
+        "#FFF2D5",
+        "#173953"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/elizabeth-tower.glb",
+          "bytes": 120048,
+          "sha256": "af59a43727f77346a8d47ca60686d013e7c4d0e37c554108f4d4bb0b8c15b592"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/elizabeth-tower.glb",
+          "bytes": 73332,
+          "sha256": "9dbcdb8047e8976bc9dea1d8ed211f8432cfe7042cc9fe112d91d3c4933508e7"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/elizabeth-tower.glb",
+          "bytes": 55376,
+          "sha256": "258b31f40835a07b0a4871f65183f7ff282e939d1d94190d4fc908b109eb31e8"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2580,
+          "meshes": 11,
+          "vertices": 3863,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              3.2152777284107845,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            3.2152777284107845,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1364,
+          "meshes": 10,
+          "vertices": 2263,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              3.2152777284107845,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            3.2152777284107845,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 996,
+          "meshes": 10,
+          "vertices": 1607,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              3.2152777284107845,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            3.2152777284107845,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/elizabeth-tower.webp"
+    },
+    {
+      "id": "W05",
+      "assetId": "brandenburg-gate",
+      "name": "勃兰登堡门",
+      "region": "欧洲",
+      "location": "德国·柏林",
+      "reference": "https://www.berlin.de/en/attractions-and-sights/3560266-3104052-brandenburg-gate.en.html",
+      "signature": "宽门洞与顶部战车",
+      "palette": [
+        "#ABAC99",
+        "#DCC18D",
+        "#31836F",
+        "#BA9760",
+        "#BFA26F",
+        "#205B4D"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/brandenburg-gate.glb",
+          "bytes": 86756,
+          "sha256": "c8de09bc81fdc04df3943413b7c21675fc80373b2768e725dc2d1ac2d688f532"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/brandenburg-gate.glb",
+          "bytes": 62992,
+          "sha256": "a8e0e25360f6a10cfb5f37ef2e6bc572ebcd40025fc527b177ea54b10defc2f4"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/brandenburg-gate.glb",
+          "bytes": 34360,
+          "sha256": "f13911c5d7079774cf7adbe0f90c1c6e053dc44bf7afb4b2546f23ba375543d7"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2696,
+          "meshes": 7,
+          "vertices": 2622,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.22051281878855733
+            ],
+            "max": [
+              0.5,
+              0.692806409956702,
+              0.22051281878855733
+            ]
+          },
+          "size": [
+            1,
+            0.692806409956702,
+            0.44102563757711466
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1760,
+          "meshes": 7,
+          "vertices": 1866,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.22051281878855733
+            ],
+            "max": [
+              0.5,
+              0.692806409956702,
+              0.22051281878855733
+            ]
+          },
+          "size": [
+            1,
+            0.692806409956702,
+            0.44102563757711466
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 776,
+          "meshes": 7,
+          "vertices": 918,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.22051281878855733
+            ],
+            "max": [
+              0.5,
+              0.692806409956702,
+              0.22051281878855733
+            ]
+          },
+          "size": [
+            1,
+            0.692806409956702,
+            0.44102563757711466
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/brandenburg-gate.webp"
+    },
+    {
+      "id": "W06",
+      "assetId": "versailles-palace",
+      "name": "凡尔赛宫",
+      "region": "欧洲",
+      "location": "法国·凡尔赛",
+      "reference": "https://en.chateauversailles.fr/discover/estate/palace/hall-mirrors",
+      "signature": "宽长对称轴与宫殿花园",
+      "palette": [
+        "#D3B077",
+        "#2A435C",
+        "#DFB239",
+        "#34576A",
+        "#3B853A",
+        "#24663C",
+        "#DFCD9E",
+        "#E5C695"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/versailles-palace.glb",
+          "bytes": 79920,
+          "sha256": "1cb6b1931ca9101c272e391c5ba49283f9210bb65984b65b4b0cdfa1ff977297"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/versailles-palace.glb",
+          "bytes": 59828,
+          "sha256": "eb4e22bd5d9cb79a1072d450b6a88aa4511676f16cbcc634b2a850b04aef76da"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/versailles-palace.glb",
+          "bytes": 37916,
+          "sha256": "38539ef8c0ed38c47b959bbbbbcf3f2216a891f1fac354d344137e5d6e676193"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1176,
+          "meshes": 15,
+          "vertices": 2364,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.433333312637277
+            ],
+            "max": [
+              0.5,
+              0.2833333249152124,
+              0.4333333126372769
+            ]
+          },
+          "size": [
+            1,
+            0.2833333249152124,
+            0.8666666252745538
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 804,
+          "meshes": 15,
+          "vertices": 1620,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.433333312637277
+            ],
+            "max": [
+              0.5,
+              0.2833333249152124,
+              0.4333333126372769
+            ]
+          },
+          "size": [
+            1,
+            0.2833333249152124,
+            0.8666666252745538
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 444,
+          "meshes": 13,
+          "vertices": 888,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.433333312637277
+            ],
+            "max": [
+              0.5,
+              0.2833333249152124,
+              0.4333333126372769
+            ]
+          },
+          "size": [
+            1,
+            0.2833333249152124,
+            0.8666666252745538
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/versailles-palace.webp"
+    },
+    {
+      "id": "W07",
+      "assetId": "louvre",
+      "name": "卢浮宫",
+      "region": "欧洲",
+      "location": "法国·巴黎",
+      "reference": "https://www.louvre.fr/en/explore/the-palace",
+      "signature": "金字塔与宫殿形成的组合",
+      "palette": [
+        "#D7BC8C",
+        "#304860",
+        "#378EA8",
+        "#B1D3D6",
+        "#C5A36C"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/louvre.glb",
+          "bytes": 51384,
+          "sha256": "6803b5511073c4d5147f91bf77272f1011e91469f333542f19afb2b0c683b486"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/louvre.glb",
+          "bytes": 30044,
+          "sha256": "5975ae54c8f52a1de10b8f0d5926e7c61a477440afad3141945c74f7d56de629"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/louvre.glb",
+          "bytes": 21312,
+          "sha256": "3050960f18f2e8a2c170cfd97adea75cbdbb5262b2b9d79d0644dbe1df28859a"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 924,
+          "meshes": 7,
+          "vertices": 1580,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3877314688338915
+            ],
+            "max": [
+              0.5,
+              0.3055555551968239,
+              0.3877314688338915
+            ]
+          },
+          "size": [
+            1,
+            0.3055555551968239,
+            0.775462937667783
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 472,
+          "meshes": 7,
+          "vertices": 804,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3877314688338915
+            ],
+            "max": [
+              0.5,
+              0.3055555551968239,
+              0.3877314688338915
+            ]
+          },
+          "size": [
+            1,
+            0.3055555551968239,
+            0.775462937667783
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 272,
+          "meshes": 6,
+          "vertices": 532,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3877314688338915
+            ],
+            "max": [
+              0.5,
+              0.3055555551968239,
+              0.3877314688338915
+            ]
+          },
+          "size": [
+            1,
+            0.3055555551968239,
+            0.775462937667783
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/louvre.webp"
+    },
+    {
+      "id": "W08",
+      "assetId": "british-museum",
+      "name": "大英博物馆",
+      "region": "欧洲",
+      "location": "英国·伦敦",
+      "reference": "https://www.britishmuseum.org/about-us/british-museum-story/architecture/reading-room",
+      "signature": "柱廊入口与中庭圆形核心",
+      "palette": [
+        "#BFAF93",
+        "#D9C69D",
+        "#58766F",
+        "#66A9BD",
+        "#D7E4DD",
+        "#EDDBB3",
+        "#C2AA7C",
+        "#C7B082"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/british-museum.glb",
+          "bytes": 103448,
+          "sha256": "8de59859556eb3a234abe628d04d3ceaedae79663a7bb188d408c1cfe1fe49a8"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/british-museum.glb",
+          "bytes": 57332,
+          "sha256": "3a643072989d54872312b037a0d65abaae1b2f15e1a20cd547d8d6013f21ba20"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/british-museum.glb",
+          "bytes": 32608,
+          "sha256": "917ff083557ab5ed593930db28fec38faf23ea0ae23339b95332cc0f13345bda"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2468,
+          "meshes": 12,
+          "vertices": 3152,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.457524282238533
+            ],
+            "max": [
+              0.5,
+              0.32524273520630037,
+              0.4575242822385329
+            ]
+          },
+          "size": [
+            1,
+            0.32524273520630037,
+            0.9150485644770658
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1232,
+          "meshes": 11,
+          "vertices": 1582,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.457524282238533
+            ],
+            "max": [
+              0.5,
+              0.32524273520630037,
+              0.4575242822385329
+            ]
+          },
+          "size": [
+            1,
+            0.32524273520630037,
+            0.9150485644770658
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 476,
+          "meshes": 11,
+          "vertices": 734,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.457524282238533
+            ],
+            "max": [
+              0.5,
+              0.32524273520630037,
+              0.4575242822385329
+            ]
+          },
+          "size": [
+            1,
+            0.32524273520630037,
+            0.9150485644770658
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/british-museum.webp"
+    },
+    {
+      "id": "W09",
+      "assetId": "alhambra",
+      "name": "阿尔罕布拉宫",
+      "region": "欧洲",
+      "location": "西班牙·格拉纳达",
+      "reference": "https://www.alhambra-patronato.es/en/edificios-lugares/the-palace-of-the-generalife",
+      "signature": "赭红墙体、方塔与院落",
+      "palette": [
+        "#547B3E",
+        "#C5A16B",
+        "#BB603D",
+        "#D28D56",
+        "#199EAA",
+        "#F0D59C",
+        "#8D3F2E",
+        "#E4B57A"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/alhambra.glb",
+          "bytes": 85928,
+          "sha256": "16198313eeba4dd062fedf4a7bdb7859d4cf86e65849bf5d284b1aa201067e55"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/alhambra.glb",
+          "bytes": 71856,
+          "sha256": "1cf90ed85d77750eb5cf916aa3dad8277dedcc5893d7873a2051e96013d639c4"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/alhambra.glb",
+          "bytes": 37636,
+          "sha256": "198afafeed9356f061e4bc83e4af4a8e5b328efb3e42812b0d42cc866eed2c42"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1536,
+          "meshes": 11,
+          "vertices": 2693,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.38078497130011757
+            ],
+            "max": [
+              0.5,
+              0.41501421427307594,
+              0.38078497130011757
+            ]
+          },
+          "size": [
+            1,
+            0.41501421427307594,
+            0.7615699426002351
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1208,
+          "meshes": 11,
+          "vertices": 2189,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.38078497130011757
+            ],
+            "max": [
+              0.5,
+              0.41501421427307594,
+              0.38078497130011757
+            ]
+          },
+          "size": [
+            1,
+            0.41501421427307594,
+            0.7615699426002351
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 584,
+          "meshes": 8,
+          "vertices": 1045,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.38078497130011757
+            ],
+            "max": [
+              0.5,
+              0.41501421427307594,
+              0.38078497130011757
+            ]
+          },
+          "size": [
+            1,
+            0.41501421427307594,
+            0.7615699426002351
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/alhambra.webp"
+    },
+    {
+      "id": "W10",
+      "assetId": "acropolis",
+      "name": "雅典卫城",
+      "region": "欧洲",
+      "location": "希腊·雅典",
+      "reference": "https://whc.unesco.org/en/list/404/",
+      "signature": "岩丘上的浅色柱列神庙",
+      "palette": [
+        "#A18C61",
+        "#EFDAAC",
+        "#BC9F6D",
+        "#DEBF86",
+        "#B49663",
+        "#D7B77D",
+        "#AC8857",
+        "#E6CDA0"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/acropolis.glb",
+          "bytes": 130964,
+          "sha256": "19666fac40e9ecc68d0bed42d80e47345be7e60c7e9a567f1456b6f42a0c58dd"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/acropolis.glb",
+          "bytes": 83996,
+          "sha256": "140b3da649a9861dc56cc53b5a7d840d0af22fe8abf5c5147ed2cd34b281b64e"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/acropolis.glb",
+          "bytes": 32068,
+          "sha256": "38d3966ee086bf8b7d6344683f9b3fce5f91f5efc3633db9b2fceb7f27676f1e"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3728,
+          "meshes": 11,
+          "vertices": 4029,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.35149381595606505
+            ],
+            "max": [
+              0.5,
+              0.5922164893802769,
+              0.35149381595606505
+            ]
+          },
+          "size": [
+            1,
+            0.5922164893802769,
+            0.7029876319121301
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2176,
+          "meshes": 11,
+          "vertices": 2461,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.35149381595606505
+            ],
+            "max": [
+              0.5,
+              0.5922164893802769,
+              0.35149381595606505
+            ]
+          },
+          "size": [
+            1,
+            0.5922164893802769,
+            0.7029876319121301
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 564,
+          "meshes": 10,
+          "vertices": 741,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.35149381595606505
+            ],
+            "max": [
+              0.5,
+              0.5922164893802769,
+              0.35149381595606505
+            ]
+          },
+          "size": [
+            1,
+            0.5922164893802769,
+            0.7029876319121301
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/acropolis.webp"
+    },
+    {
+      "id": "W11",
+      "assetId": "belem-tower",
+      "name": "贝伦塔",
+      "region": "欧洲",
+      "location": "葡萄牙·里斯本",
+      "reference": "https://whc.unesco.org/en/list/263",
+      "signature": "上塔下堡的临水结构",
+      "palette": [
+        "#BFA87C",
+        "#E6CFA0",
+        "#3D5E60",
+        "#238DAB",
+        "#BDA16D",
+        "#F1DEB5",
+        "#D5B785",
+        "#DBC194"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/belem-tower.glb",
+          "bytes": 61904,
+          "sha256": "af7fe2b974fcfb0430ad58584fedb18a72332abfdaf9cf2563ad7ce1feb3fded"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/belem-tower.glb",
+          "bytes": 50236,
+          "sha256": "c803c4c90c477d26950f9e4152ef192df2baac22f3e84df0a004c637808b9591"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/belem-tower.glb",
+          "bytes": 32252,
+          "sha256": "a67c74b1de47be75f0d4d5325b02039ae1bb9f0ebb067da79442d331c3ea5063"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1248,
+          "meshes": 9,
+          "vertices": 1864,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.3160919591416328,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.3160919591416328,
+              0.7586207151968137,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.6321839182832656,
+            0.7586207151968137,
+            0.9999999999999999
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 936,
+          "meshes": 9,
+          "vertices": 1456,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.3160919591416328,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.3160919591416328,
+              0.7586207151968137,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.6321839182832656,
+            0.7586207151968137,
+            0.9999999999999999
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 568,
+          "meshes": 8,
+          "vertices": 832,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.3160919591416328,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.3160919591416328,
+              0.7586207151968137,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.6321839182832656,
+            0.7586207151968137,
+            0.9999999999999999
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/belem-tower.webp"
+    },
+    {
+      "id": "W12",
+      "assetId": "neuschwanstein",
+      "name": "新天鹅堡",
+      "region": "欧洲",
+      "location": "德国·施旺高",
+      "reference": "https://www.neuschwanstein.de/englisch/idea/histor.htm",
+      "signature": "白墙深顶与塔楼高低关系",
+      "palette": [
+        "#60834A",
+        "#EFE1C5",
+        "#D5B889",
+        "#315678",
+        "#254753",
+        "#B77F51"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/neuschwanstein.glb",
+          "bytes": 64312,
+          "sha256": "dc23ee81750bf718822096ab707881f71eaf4b21b420399ac950c0a39783f77b"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/neuschwanstein.glb",
+          "bytes": 51392,
+          "sha256": "39a97365c2210821ec276b2d9d91fcd1077eedeb096399fc17269e7ccafd40fd"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/neuschwanstein.glb",
+          "bytes": 30868,
+          "sha256": "187a81d8ec598f55da7e75b6783a212cbe667fb9e7b896af038a821564f53ce7"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1256,
+          "meshes": 9,
+          "vertices": 1953,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.46155753495274077
+            ],
+            "max": [
+              0.49999999999999994,
+              1.324796034517694,
+              0.46155753495274077
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.324796034517694,
+            0.9231150699054815
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 928,
+          "meshes": 9,
+          "vertices": 1497,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.46155753495274077
+            ],
+            "max": [
+              0.49999999999999994,
+              1.324796034517694,
+              0.46155753495274077
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.324796034517694,
+            0.9231150699054815
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 544,
+          "meshes": 7,
+          "vertices": 829,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.46155753495274077
+            ],
+            "max": [
+              0.49999999999999994,
+              1.324796034517694,
+              0.46155753495274077
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.324796034517694,
+            0.9231150699054815
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/neuschwanstein.webp"
+    },
+    {
+      "id": "W13",
+      "assetId": "atomium",
+      "name": "布鲁塞尔原子球塔",
+      "region": "欧洲",
+      "location": "比利时·布鲁塞尔",
+      "reference": "https://atomium.be/the_atomium_in_figures",
+      "signature": "九球结构和几何连接关系",
+      "palette": [
+        "#4C883A",
+        "#CCD9E5",
+        "#8FA8C2",
+        "#627F97"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/atomium.glb",
+          "bytes": 50360,
+          "sha256": "9472a22bfc416c301b9a1bf34542efc56dc8ec9ac85098a89293a0c26d91adf9"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/atomium.glb",
+          "bytes": 34552,
+          "sha256": "93579a10af14b7a9c0c54c92d8f69618282a458975db96806692e606ae94ac4e"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/atomium.glb",
+          "bytes": 25820,
+          "sha256": "8550d1750128ef2e9bd5b3c235e799fcf9341fdc9535d35e7d95499d04ae6ecb"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1920,
+          "meshes": 4,
+          "vertices": 1414,
+          "materials": 4,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.49999999999999994,
+              1.0983077609338698,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.0983077609338698,
+            0.9999999999999999
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1112,
+          "meshes": 4,
+          "vertices": 956,
+          "materials": 4,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.49999999999999994,
+              1.0983077609338698,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.0983077609338698,
+            0.9999999999999999
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 736,
+          "meshes": 4,
+          "vertices": 686,
+          "materials": 4,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4890665621313489
+            ],
+            "max": [
+              0.5,
+              1.1260398370281692,
+              0.4890665621313489
+            ]
+          },
+          "size": [
+            1,
+            1.1260398370281692,
+            0.9781331242626978
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/atomium.webp"
+    },
+    {
+      "id": "W14",
+      "assetId": "pont-du-gard",
+      "name": "加尔桥",
+      "region": "欧洲",
+      "location": "法国·加尔省",
+      "reference": "https://whc.unesco.org/en/list/344/",
+      "signature": "三层拱的比例节奏",
+      "palette": [
+        "#658749",
+        "#268CA3",
+        "#CBA161",
+        "#E5C58A",
+        "#AD8046"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/pont-du-gard.glb",
+          "bytes": 119816,
+          "sha256": "d0458add73b4f3c90800107d7033dd707be4b35385358252019f6321619c1074"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/pont-du-gard.glb",
+          "bytes": 99648,
+          "sha256": "a70e4cde8ef78a37472d1f7f4d6d24bb4adccaa43448170cac8dde8269630a28"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/pont-du-gard.glb",
+          "bytes": 79488,
+          "sha256": "ed56f830e6b2f04b6d844ce1c1efb40c6db96437216f5d4b7bbacbca519db579"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2592,
+          "meshes": 5,
+          "vertices": 4104,
+          "materials": 5,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.10958903578303518
+            ],
+            "max": [
+              0.5,
+              0.4257990778576534,
+              0.10958903578303518
+            ]
+          },
+          "size": [
+            1,
+            0.4257990778576534,
+            0.21917807156607036
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2112,
+          "meshes": 5,
+          "vertices": 3384,
+          "materials": 5,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.10958903578303518
+            ],
+            "max": [
+              0.5,
+              0.4257990778576534,
+              0.10958903578303518
+            ]
+          },
+          "size": [
+            1,
+            0.4257990778576534,
+            0.21917807156607036
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1632,
+          "meshes": 5,
+          "vertices": 2664,
+          "materials": 5,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.10958903578303518
+            ],
+            "max": [
+              0.5,
+              0.4257990778576534,
+              0.10958903578303518
+            ]
+          },
+          "size": [
+            1,
+            0.4257990778576534,
+            0.21917807156607036
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/pont-du-gard.webp"
+    },
+    {
+      "id": "W15",
+      "assetId": "leaning-tower-pisa",
+      "name": "比萨斜塔",
+      "region": "欧洲",
+      "location": "意大利·比萨",
+      "reference": "https://whc.unesco.org/en/list/395/",
+      "signature": "整体倾斜和层层环廊",
+      "palette": [
+        "#62A046",
+        "#EEE0BD",
+        "#BCA57C",
+        "#F8EDD1",
+        "#CFB78C",
+        "#91764E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/leaning-tower-pisa.glb",
+          "bytes": 142552,
+          "sha256": "249de460af7d164df4de759c3f7cb343e024a52db06c282c2349cb79b27b5a92"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/leaning-tower-pisa.glb",
+          "bytes": 94008,
+          "sha256": "9c205871dbe4b3412971ef056caf326dd93ce85e11982043dac36bfd787323ca"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/leaning-tower-pisa.glb",
+          "bytes": 59164,
+          "sha256": "af7c5ab523e098aae8b99b75720f323006e67530d71f595be5b64c25fec65c39"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3996,
+          "meshes": 7,
+          "vertices": 4626,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.49999999999999994,
+              1.6974213317360471,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.6974213317360471,
+            0.9999999999999999
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2532,
+          "meshes": 7,
+          "vertices": 2970,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.49999999999999994,
+              1.6974213317360471,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.6974213317360471,
+            0.9999999999999999
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1492,
+          "meshes": 7,
+          "vertices": 1770,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.49999999999999994
+            ],
+            "max": [
+              0.49999999999999994,
+              1.6940332924847732,
+              0.49999999999999994
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.6940332924847732,
+            0.9999999999999999
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/leaning-tower-pisa.webp"
+    },
+    {
+      "id": "W16",
+      "assetId": "santiago-bernabeu",
+      "name": "伯纳乌球场",
+      "region": "欧洲",
+      "location": "西班牙·马德里",
+      "reference": "https://bernabeu.realmadrid.com/en-US/corporate-events/terreno-de-juego",
+      "signature": "银灰色圆角矩形与横向包覆纹理",
+      "palette": [
+        "#83938E",
+        "#7F96AE",
+        "#287CC2",
+        "#267D35",
+        "#AFBECD",
+        "#344E6B",
+        "#174987",
+        "#CBD6E2"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/santiago-bernabeu.glb",
+          "bytes": 229572,
+          "sha256": "fd7f29481ba1c2ffa32348427304aa15a6f74208a8c904a5a2a04aa97c2d48e3"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/santiago-bernabeu.glb",
+          "bytes": 135920,
+          "sha256": "d7d729e7cff67e831bc409aa17a639372c8bd66490434d2922f210fad7d1d9b4"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/santiago-bernabeu.glb",
+          "bytes": 88028,
+          "sha256": "10b81be89b7000ff9120326eef7bb0c3e53d9df7198a2bbe7cf0d8a5279153d0"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 5176,
+          "meshes": 17,
+          "vertices": 7544,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4022727142188178
+            ],
+            "max": [
+              0.5,
+              0.29545452786132365,
+              0.4022727142188178
+            ]
+          },
+          "size": [
+            1,
+            0.29545452786132365,
+            0.8045454284376355
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2864,
+          "meshes": 16,
+          "vertices": 4264,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4022727142188178
+            ],
+            "max": [
+              0.5,
+              0.29545452786132365,
+              0.4022727142188178
+            ]
+          },
+          "size": [
+            1,
+            0.29545452786132365,
+            0.8045454284376355
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1720,
+          "meshes": 16,
+          "vertices": 2556,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4022727142188178
+            ],
+            "max": [
+              0.5,
+              0.29545452786132365,
+              0.4022727142188178
+            ]
+          },
+          "size": [
+            1,
+            0.29545452786132365,
+            0.8045454284376355
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/santiago-bernabeu.webp"
+    },
+    {
+      "id": "W17",
+      "assetId": "christ-the-redeemer",
+      "name": "里约基督像",
+      "region": "南美洲",
+      "location": "巴西·里约热内卢",
+      "reference": "https://www.en.santuariocristoredentor.com.br/localizacao",
+      "signature": "张开双臂、袍身与头部比例",
+      "palette": [
+        "#36723B",
+        "#A39374",
+        "#C9BEA5",
+        "#D4DAD3",
+        "#DDE3D7",
+        "#E7E9DB",
+        "#A1B3A8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/christ-the-redeemer.glb",
+          "bytes": 20568,
+          "sha256": "e1da3681484d81eea996c4973f5fb765c2ab8b59ebe83f3b18f8797d0c40fef7"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/christ-the-redeemer.glb",
+          "bytes": 19268,
+          "sha256": "01ab456f3d2db3f5c1f6a2611310fc2d4cc5c551d355097efc595a6ce563b3c1"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/christ-the-redeemer.glb",
+          "bytes": 14560,
+          "sha256": "70b49c51cd1ff981937799b898027a3010742fe1383525e658e632c3104c866f"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 344,
+          "meshes": 7,
+          "vertices": 443,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39526296352341783
+            ],
+            "max": [
+              0.5,
+              1.117659809780903,
+              0.39526296352341783
+            ]
+          },
+          "size": [
+            1,
+            1.117659809780903,
+            0.7905259270468357
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 272,
+          "meshes": 7,
+          "vertices": 407,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39526296352341783
+            ],
+            "max": [
+              0.5,
+              1.117659809780903,
+              0.39526296352341783
+            ]
+          },
+          "size": [
+            1,
+            1.117659809780903,
+            0.7905259270468357
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 188,
+          "meshes": 5,
+          "vertices": 317,
+          "materials": 5,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39526296352341783
+            ],
+            "max": [
+              0.5,
+              1.117659809780903,
+              0.39526296352341783
+            ]
+          },
+          "size": [
+            1,
+            1.117659809780903,
+            0.7905259270468357
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/christ-the-redeemer.webp"
+    },
+    {
+      "id": "W18",
+      "assetId": "machu-picchu",
+      "name": "马丘比丘",
+      "region": "南美洲",
+      "location": "秘鲁·库斯科大区",
+      "reference": "https://whc.unesco.org/en/list/274/",
+      "signature": "山形与梯田层次",
+      "palette": [
+        "#356936",
+        "#998663",
+        "#81B349",
+        "#3E4831",
+        "#3A793F",
+        "#58904B",
+        "#55983C",
+        "#738A45"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/machu-picchu.glb",
+          "bytes": 52176,
+          "sha256": "272b75dd7a22d7221a55a96e1c7480c26d8b41ab626bc2f11c35d008a94bae48"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/machu-picchu.glb",
+          "bytes": 38544,
+          "sha256": "0d375ea5c0ebc972c42356d6cd74136ae45b55243fcf6ba86feb466db4287688"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/machu-picchu.glb",
+          "bytes": 30940,
+          "sha256": "0861ec2b626d2fb4c971cef922529a4ccd89af66dce32185ad47fad4b2074dfb"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 680,
+          "meshes": 13,
+          "vertices": 1418,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4155997334091082
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5204081470546302,
+              0.4155997334091082
+            ]
+          },
+          "size": [
+            1,
+            0.5204081470546302,
+            0.8311994668182164
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 448,
+          "meshes": 12,
+          "vertices": 950,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4155997334091082
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5204081470546302,
+              0.4155997334091082
+            ]
+          },
+          "size": [
+            1,
+            0.5204081470546302,
+            0.8311994668182164
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 312,
+          "meshes": 12,
+          "vertices": 668,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4155997334091082
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5204081450779457,
+              0.4155997334091082
+            ]
+          },
+          "size": [
+            1,
+            0.5204081450779457,
+            0.8311994668182164
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/machu-picchu.webp"
+    },
+    {
+      "id": "W19",
+      "assetId": "la-moneda",
+      "name": "拉莫内达宫",
+      "region": "南美洲",
+      "location": "智利·圣地亚哥",
+      "reference": "https://www.monumentos.gob.cl/patrimonio-mundial/tentativa/palacio-la-moneda",
+      "signature": "白色低矮宫殿与规则院落",
+      "palette": [
+        "#E8DBC0",
+        "#CABA99",
+        "#94513A",
+        "#5A9A42",
+        "#2B713E",
+        "#6E859B",
+        "#F1E6CF",
+        "#B49C75"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/la-moneda.glb",
+          "bytes": 65956,
+          "sha256": "1bba8a041ef91a12215e8fbe97fd5f8416c07fca21b44d4d82ba8b0022844648"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/la-moneda.glb",
+          "bytes": 45180,
+          "sha256": "c928b56de307a76cb748d75198479659dfb91e93cd69fe4a8dba0a3a32504436"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/la-moneda.glb",
+          "bytes": 31668,
+          "sha256": "9f46109c94bcc205003a083d1f7ec627f15638c77a0d0769d1edff7d3d699674"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1152,
+          "meshes": 13,
+          "vertices": 1882,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3349514644572285
+            ],
+            "max": [
+              0.5,
+              0.36407767963972404,
+              0.3349514644572285
+            ]
+          },
+          "size": [
+            1,
+            0.36407767963972404,
+            0.669902928914457
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 668,
+          "meshes": 13,
+          "vertices": 1138,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3349514644572285
+            ],
+            "max": [
+              0.5,
+              0.36407767963972404,
+              0.3349514644572285
+            ]
+          },
+          "size": [
+            1,
+            0.36407767963972404,
+            0.669902928914457
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 400,
+          "meshes": 12,
+          "vertices": 682,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3349514644572285
+            ],
+            "max": [
+              0.5,
+              0.36407767963972404,
+              0.3349514644572285
+            ]
+          },
+          "size": [
+            1,
+            0.36407767963972404,
+            0.669902928914457
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/la-moneda.webp"
+    },
+    {
+      "id": "W20",
+      "assetId": "teatro-colon",
+      "name": "科隆剧院",
+      "region": "南美洲",
+      "location": "阿根廷·布宜诺斯艾利斯",
+      "reference": "https://teatrocolon.org.ar/el-teatro/",
+      "signature": "宽阔剧院体量与立面层次",
+      "palette": [
+        "#B5A17B",
+        "#CFA569",
+        "#39766D",
+        "#234855",
+        "#B88A52",
+        "#EDCF96",
+        "#DCB980",
+        "#AE7D47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/teatro-colon.glb",
+          "bytes": 81232,
+          "sha256": "3462795347e8271b58e9ccbc3421a9b64b6fc30c13161fba43c4d0f8a7bc32ce"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/teatro-colon.glb",
+          "bytes": 61396,
+          "sha256": "ba1682b9bb0e3b9a6564904e5041e8ce2994151864fb6583bf53cfce2aa3d8d8"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/teatro-colon.glb",
+          "bytes": 44900,
+          "sha256": "c29d4e3eb1b1c361a1f317035d2cef62614a88b4282af68ec997ee2c975739db"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1408,
+          "meshes": 12,
+          "vertices": 2496,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.47857143197740826
+            ],
+            "max": [
+              0.5,
+              0.599999972309385,
+              0.47857143197740826
+            ]
+          },
+          "size": [
+            1,
+            0.599999972309385,
+            0.9571428639548165
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 984,
+          "meshes": 12,
+          "vertices": 1776,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.47857143197740826
+            ],
+            "max": [
+              0.5,
+              0.599999972309385,
+              0.47857143197740826
+            ]
+          },
+          "size": [
+            1,
+            0.599999972309385,
+            0.9571428639548165
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 636,
+          "meshes": 12,
+          "vertices": 1176,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.47857143197740826
+            ],
+            "max": [
+              0.5,
+              0.599999972309385,
+              0.47857143197740826
+            ]
+          },
+          "size": [
+            1,
+            0.599999972309385,
+            0.9571428639548165
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/teatro-colon.webp"
+    },
+    {
+      "id": "W21",
+      "assetId": "palacio-salvo",
+      "name": "萨尔沃宫",
+      "region": "南美洲",
+      "location": "乌拉圭·蒙得维的亚",
+      "reference": "https://montevideo.gub.uy/sites/default/files/biblioteca/guiadescubrimontevideoespanol2018.pdf",
+      "signature": "宽底座上的层叠城市高塔",
+      "palette": [
+        "#CEAA74",
+        "#39766B",
+        "#345359",
+        "#EAD09D",
+        "#B9915A",
+        "#E0BF89",
+        "#529885",
+        "#2C4952"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/palacio-salvo.glb",
+          "bytes": 80480,
+          "sha256": "546d4451ededdf0d2de03747dd542b1a7d7e5b3f283cb793ede07f4f9f5cffe6"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/palacio-salvo.glb",
+          "bytes": 59304,
+          "sha256": "9b786b15cb779a3f2f1f31676b9704b21b993ec63b6cf1dd6d19f97ca8e6bd07"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/palacio-salvo.glb",
+          "bytes": 42756,
+          "sha256": "e71fc25e9472273a44d575877e21165b1764d2ed9e7fc8a76726b7001b14ffee"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1836,
+          "meshes": 13,
+          "vertices": 2346,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3877550896283541
+            ],
+            "max": [
+              0.5,
+              1.499999918378131,
+              0.3877550896283541
+            ]
+          },
+          "size": [
+            1,
+            1.499999918378131,
+            0.7755101792567082
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1140,
+          "meshes": 13,
+          "vertices": 1638,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3877550896283541
+            ],
+            "max": [
+              0.5,
+              1.499999918378131,
+              0.3877550896283541
+            ]
+          },
+          "size": [
+            1,
+            1.499999918378131,
+            0.7755101792567082
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 732,
+          "meshes": 12,
+          "vertices": 1074,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3877550896283541
+            ],
+            "max": [
+              0.5,
+              1.499999918378131,
+              0.3877550896283541
+            ]
+          },
+          "size": [
+            1,
+            1.499999918378131,
+            0.7755101792567082
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/palacio-salvo.webp"
+    },
+    {
+      "id": "W22",
+      "assetId": "las-lajas-sanctuary",
+      "name": "拉斯拉哈斯圣殿",
+      "region": "南美洲",
+      "location": "哥伦比亚·伊皮亚莱斯",
+      "reference": "https://colombia.travel/es/blog/revista-colombia-co/turismo-religioso",
+      "signature": "教堂高于桥面的组合",
+      "palette": [
+        "#3A7D42",
+        "#238B9D",
+        "#879992",
+        "#334B60",
+        "#B9C7C0",
+        "#3C6FB0",
+        "#4F724B",
+        "#6D8055"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/las-lajas-sanctuary.glb",
+          "bytes": 51088,
+          "sha256": "1dbd6b979aa59920a06e917e19984ef6415e43c6ffceb89de19afd4cb23e22e8"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/las-lajas-sanctuary.glb",
+          "bytes": 46932,
+          "sha256": "cd20b3f464b679c1dbd08f53ab7c9cf74f4b2d538dc1dc2424a28606fbf09d38"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/las-lajas-sanctuary.glb",
+          "bytes": 37160,
+          "sha256": "8eb36556cf46cafddaaad4a2c1b22ee4852f4e29eb22ff488e2f88ac7c8cfa49"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 732,
+          "meshes": 15,
+          "vertices": 1271,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.2911031071601286
+            ],
+            "max": [
+              0.5,
+              1.0240591554830583,
+              0.2911031071601286
+            ]
+          },
+          "size": [
+            1,
+            1.0240591554830583,
+            0.5822062143202572
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 632,
+          "meshes": 15,
+          "vertices": 1123,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.2911031071601286
+            ],
+            "max": [
+              0.5,
+              1.0240591554830583,
+              0.2911031071601286
+            ]
+          },
+          "size": [
+            1,
+            1.0240591554830583,
+            0.5822062143202572
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 430,
+          "meshes": 14,
+          "vertices": 809,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.2911031071601286
+            ],
+            "max": [
+              0.5,
+              1.0240591554830583,
+              0.2911031071601286
+            ]
+          },
+          "size": [
+            1,
+            1.0240591554830583,
+            0.5822062143202572
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/las-lajas-sanctuary.webp"
+    },
+    {
+      "id": "W23",
+      "assetId": "museum-of-tomorrow",
+      "name": "明日博物馆",
+      "region": "南美洲",
+      "location": "巴西·里约热内卢",
+      "reference": "https://museudoamanha.org.br/info/mais/duvidas",
+      "signature": "长、白、低与羽翼式屋盖",
+      "palette": [
+        "#4EAEAA",
+        "#1B9CB7",
+        "#226A87",
+        "#E5EAE3",
+        "#C5D6CE",
+        "#F2F1E4",
+        "#BBCFCD",
+        "#E6EDE7"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/museum-of-tomorrow.glb",
+          "bytes": 78640,
+          "sha256": "6b67dabc22db156bda5cde5d8beb911ea2904695e287f01a23427a0a39526cb6"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/museum-of-tomorrow.glb",
+          "bytes": 60400,
+          "sha256": "84a6774066cbd360de46c45ad029b4ba32833ff78e8c9bb6aef4dca72fe259fc"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/museum-of-tomorrow.glb",
+          "bytes": 45804,
+          "sha256": "ee4345c0eb3dafdb98f17e1e407fb65555fe6b20a0d9d86439dd1de667dc1e6e"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2060,
+          "meshes": 9,
+          "vertices": 2334,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.21256468320276084
+            ],
+            "max": [
+              0.5,
+              0.21556458493838312,
+              0.21256468320276084
+            ]
+          },
+          "size": [
+            1,
+            0.21556458493838312,
+            0.4251293664055217
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1500,
+          "meshes": 9,
+          "vertices": 1714,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.21256468320276084
+            ],
+            "max": [
+              0.5,
+              0.2155541566830741,
+              0.21256468320276084
+            ]
+          },
+          "size": [
+            1,
+            0.2155541566830741,
+            0.4251293664055217
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1052,
+          "meshes": 9,
+          "vertices": 1218,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.21256468320276084
+            ],
+            "max": [
+              0.5,
+              0.21553883104618304,
+              0.21256468320276084
+            ]
+          },
+          "size": [
+            1,
+            0.21553883104618304,
+            0.4251293664055217
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/museum-of-tomorrow.webp"
+    },
+    {
+      "id": "W24",
+      "assetId": "maracana",
+      "name": "马拉卡纳球场",
+      "region": "南美洲",
+      "location": "巴西·里约热内卢",
+      "reference": "https://www.tourmaracana.com.br/",
+      "signature": "宽扁椭圆和绿色中央开口",
+      "palette": [
+        "#738B6A",
+        "#B3C7C5",
+        "#2793C5",
+        "#F1EEDD",
+        "#ACBEBF",
+        "#267A35",
+        "#D0DAD2",
+        "#E6BD36"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/wonders/models/maracana.glb",
+          "bytes": 138356,
+          "sha256": "85d801cc8476327d48adc7635fb4ceb9ea6f45203b0bc8767581a8a3c1ae465b"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/wonders/models/lod1/maracana.glb",
+          "bytes": 91864,
+          "sha256": "008fb1e9c912bce405ec45008200cffbfac4de0aa09d543ef0c65bdb242253cc"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/wonders/models/lod2/maracana.glb",
+          "bytes": 52304,
+          "sha256": "61428dff0acbac56304d1a393712f99741f60f7072c9163e56b68d87b88078e9"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3044,
+          "meshes": 11,
+          "vertices": 4490,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.40454543927484343
+            ],
+            "max": [
+              0.5,
+              0.1618181815349366,
+              0.40454543927484343
+            ]
+          },
+          "size": [
+            1,
+            0.1618181815349366,
+            0.8090908785496869
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1892,
+          "meshes": 11,
+          "vertices": 2842,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.40454543927484343
+            ],
+            "max": [
+              0.5,
+              0.1618181815349366,
+              0.40454543927484343
+            ]
+          },
+          "size": [
+            1,
+            0.1618181815349366,
+            0.8090908785496869
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 996,
+          "meshes": 10,
+          "vertices": 1462,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.40454543927484343
+            ],
+            "max": [
+              0.5,
+              0.1618181815349366,
+              0.40454543927484343
+            ]
+          },
+          "size": [
+            1,
+            0.1618181815349366,
+            0.8090908785496869
+          ]
+        }
+      ],
+      "thumbnail": "./assets/wonders/thumbnails/maracana.webp"
+    }
+  ]
+}

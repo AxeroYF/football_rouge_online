@@ -365,3 +365,7 @@ html[data-league-theme="light"] #league-squad-form .league-bench-guidance>button
   #campaign-tactics .league-squad-page,
   #campaign-tactics .league-tactics-layout{height:auto;overflow:visible}
 }
+
+/* Preview markers use S4 role/duty labels, with no training badge over the dot. */
+#league-tactics-pitch.is-tactical-shape-previewing .league-training-badge{display:none}
+.league-tactical-shape-preview-trails polyline{stroke-dasharray:3 2;marker-end:url(#league-tactical-shape-arrow)}

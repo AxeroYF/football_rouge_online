@@ -1,0 +1,15 @@
+{
+  "provider": "aliyun",
+  "publicIp": "8.210.0.104",
+  "privateIp": "172.17.12.224",
+  "gameUrl": "https://yellowdogsleague.online/versus/",
+  "adminUrl": "https://yellowdogsleague.online/admin",
+  "host": "127.0.0.1",
+  "port": 4380,
+  "service": "yellowdogs-rougelite",
+  "appDirectory": "/opt/yellowdogs-rougelite/app",
+  "dataDirectory": "/var/lib/yellowdogs-rougelite",
+  "environmentFile": "/etc/yellowdogs-rougelite.env",
+  "uploadMode": "manual",
+  "legacyPolicy": "isolate old S4 application and site configuration; preserve saved backups"
+}

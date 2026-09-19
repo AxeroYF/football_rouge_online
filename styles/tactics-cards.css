@@ -1,0 +1,115 @@
+/* Display preference lives in the topbar settings menu. */
+.league-piece-display-switcher{grid-column:2;grid-row:1;justify-self:end;align-self:center;display:flex;gap:3px;padding:3px;border:1px solid #52604d;border-radius:7px;background:#141e18}
+.league-piece-display-switcher>button{min-height:30px;padding:0 11px;border:1px solid transparent;border-radius:5px;background:transparent;color:#b8c3b5;font-family:inherit;font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;cursor:pointer}
+.league-piece-display-switcher>button.active{border-color:#d4b365;background:#d4b365;color:#141b16}
+.league-piece-display-switcher>button:hover:not(.active){background:#24312a;color:#eee8d6}
+.league-piece-display-switcher>button:focus-visible{outline:2px solid #eee8d6;outline-offset:2px}
+.league-board-controls .league-relationship-controls{flex-wrap:wrap}
+#league-tactics-pitch{container-type:inline-size}
+
+/* The original magnet remains the hit target, anchor and drag/tooltip owner. */
+#league-tactics-pitch:not(.is-tactical-shape-previewing) .league-squad-magnet.is-card-mode,
+.league-field-drag-ghost.is-card-mode{width:clamp(72px,13.5cqw,110px);height:auto;min-height:0;padding:0;aspect-ratio:26/35;display:block;border:0;border-radius:0;background:none;box-shadow:none}
+.league-field-drag-ghost.is-card-mode{width:110px!important;height:auto!important;min-height:0!important;max-height:none!important;padding:0!important;border:0!important;background:none!important;outline:0!important;box-shadow:none!important;filter:none!important}
+.league-squad-magnet.is-card-mode::before{display:none}
+.league-squad-magnet.is-card-mode>.league-magnet-card{position:relative;width:100%;pointer-events:none;user-select:none}
+.league-magnet-card>.tactics-shield-card{width:100%;height:auto;pointer-events:none}
+.league-squad-magnet.is-card-mode>b,.league-squad-magnet.is-card-mode>i,.league-squad-magnet.is-card-mode>.league-magnet-upgrade{display:none}
+.league-card-fit-outline{position:absolute;inset:0;width:100%;height:100%;overflow:visible;color:var(--tactics-fit-color,#42dc87);pointer-events:none}
+.is-card-mode.fit-secondary{--tactics-fit-color:#f0c45b}.is-card-mode.fit-unfamiliar{--tactics-fit-color:#f25a66}
+.league-squad-magnet.is-card-mode>.league-magnet-role{position:absolute;z-index:4;left:50%;top:-13px;transform:translateX(-50%);margin:0;padding:1px 4px;font-size:9px;line-height:12px;white-space:nowrap;border-color:var(--tactics-fit-color,#42dc87)}
+.league-squad-magnet.is-card-mode>.league-magnet-fitness{z-index:4;left:9%;right:9%;bottom:-4px;height:3px}
+#league-squad-form .league-squad-magnet.is-card-mode .league-magnet-duty{top:calc(100% + 10px);width:max(100%,96px)}
+.league-squad-magnet.is-card-mode>.captain-c-badge{z-index:5;left:-6px;top:0}
+.league-squad-magnet.is-card-mode>.league-training-badge{z-index:5;top:45%;bottom:auto;left:50%;transform:translateX(-50%)}
+/* Hover, focus and drag cues follow the shield alpha without rectangular outlines. */
+#league-tactics-pitch:not(.is-tactical-shape-previewing) .league-squad-magnet.is-card-mode:is(:hover,:focus,.dragging,.swap-target,.role-swap-primary,.role-swap-secondary,:focus-visible){outline:0;outline-offset:0;box-shadow:none;filter:none}
+.league-squad-magnet.is-card-mode:is(:hover,:focus){--tactics-card-highlight:var(--tactics-fit-color,#42dc87)}
+.league-squad-magnet.is-card-mode.role-swap-primary{--tactics-card-highlight:#2bc86f}
+.league-squad-magnet.is-card-mode.role-swap-secondary{--tactics-card-highlight:#e9bd2f}
+.league-squad-magnet.is-card-mode:is(:hover,:focus,.dragging,.swap-target,.role-swap-primary,.role-swap-secondary,:focus-visible)>.league-magnet-card{filter:drop-shadow(0 0 5px var(--tactics-card-highlight,#f3cf71))}
+
+/* Shape previews keep their existing moving dots; returning restores the cards. */
+#league-tactics-pitch.is-tactical-shape-previewing .league-magnet-card{display:none}
+.league-field-drag-ghost.is-card-mode>.league-magnet-role{display:none}
+@media(max-width:650px){.league-piece-display-switcher{grid-column:1;grid-row:auto;justify-self:start}}
+
+/* Keep the redline reachable while the large tactical pitch can scroll. */
+@media(max-width:650px){
+  #campaign-tactics .league-board-controls{width:min(100%,calc(100vw - 72px));min-width:0;grid-template-columns:minmax(0,1fr)}
+  #campaign-tactics .league-board-tool-stack{max-width:100%;min-width:0}
+  #campaign-tactics .league-relationship-controls{max-width:100%;flex-wrap:wrap}
+  #campaign-tactics .league-board-fitness{max-width:100%}
+}
+
+#account-tactics-display{display:grid;gap:8px;padding:10px 0;border-block:1px solid #d4b36522;margin:6px 0}
+#account-tactics-display>span{font-size:11px;color:#b8c3b5}
+#account-tactics-display .league-piece-display-switcher{grid-column:auto;grid-row:auto;justify-self:stretch}
+#account-tactics-display .league-piece-display-switcher>button{flex:1;text-align:center;min-height:32px;padding:0 11px}
+#account-tactics-display .league-piece-display-switcher>button.active{background:#d4b365;color:#141b16}
+#campaign-tactics .league-board-side>.league-bond-ready{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;margin:0;max-width:250px}
+.league-bond-ready span{min-height:25px;display:inline-flex;align-items:center;padding:4px 8px;border-radius:7px;font-size:10px;font-weight:900;color:#e8f7ef;border:1px solid #67d7cf57;background:#67d7cf17}
+.league-bond-ready em{margin-left:6px;color:#f5d34a;font-style:normal;white-space:nowrap}
+.league-bond-ready .is-empty{color:#a1b8aa;border-color:transparent;background:transparent;font-weight:500}
+@media(max-width:650px){#campaign-tactics .league-board-side>.league-bond-ready{justify-content:flex-start;max-width:none}}
+.league-magnet-bond{position:absolute;right:-7px;top:-9px;z-index:3;padding:2px 4px;border:1px solid #8dcc9c;border-radius:5px;background:#183c29;color:#c1f0ce;font-size:10px;font-style:normal;line-height:1.2;white-space:nowrap;pointer-events:none}
+.league-chemistry-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}.league-chemistry-lines line{stroke:#78d7df;stroke-width:2;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.8}
+
+/* Keep all toolbar rows in the scroll flow when the bond summary is present. */
+#campaign-tactics .league-board-panel{grid-template-rows:max-content;grid-auto-rows:max-content}
+#campaign-tactics .league-board-heading{height:auto;min-height:max-content;align-items:start}
+
+/* Allow the toolbar and pitch to shrink inside their own workspace column. */
+#campaign-tactics .league-board-panel{grid-template-columns:minmax(0,1fr)}
+#campaign-tactics .league-board-heading{min-width:0;max-width:100%;box-sizing:border-box;grid-template-columns:minmax(0,1fr)}
+#campaign-tactics .league-board-controls{box-sizing:border-box;max-width:100%}
+#campaign-tactics .league-board-panel>.pitch{box-sizing:border-box;min-width:0}
+@media(max-width:1050px){
+ #campaign-tactics .league-lineup-workspace{grid-template-columns:minmax(0,1fr)}
+ #campaign-tactics .league-next-match{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #campaign-tactics .league-board-controls{width:100%}
+}
+
+@media(max-width:1050px){
+ #campaign-tactics .league-lineup-workspace{display:flex;flex-direction:column;height:auto;align-items:stretch}
+ #campaign-tactics .league-lineup-workspace>section,#campaign-tactics .league-lineup-workspace>aside{flex:none;width:100%;height:auto;overflow:visible}
+ #campaign-tactics .league-board-panel{display:block}
+ #campaign-tactics .league-board-panel>.pitch{height:auto;min-height:0}
+}
+
+/* The shared board accepts the optional coalition tab without adding another row. */
+#campaign-tactics .league-lineup-squad-tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(58px,1fr)}
+#campaign-tactics .league-next-match [data-stage-window-close]{padding:8px 16px;border:1px solid #65745b;border-radius:6px;color:#efe7cd;background:#233c30;font:inherit;cursor:pointer}
+/* Size the three columns together; keep controls in explicit rows inside each column. */
+@media(min-width:1051px){
+ #campaign-tactics .league-lineup-workspace{grid-template-columns:minmax(0,1.05fr) 320px minmax(0,1fr);justify-content:stretch}
+ #campaign-tactics .league-lineup-workspace>*,#campaign-tactics .league-tactics-detail-title,#campaign-tactics .league-match-plan-fields{min-width:0;max-width:100%;box-sizing:border-box}
+ #campaign-tactics .league-bench>header{grid-template-columns:minmax(0,1fr);grid-template-areas:"bench-title" "bench-subtitle" "bench-guidance";gap:8px;padding:14px}
+ #campaign-tactics .league-bench>header>div:first-child{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+ #campaign-tactics .league-bench>header b,#campaign-tactics .league-bench>header small{white-space:nowrap}
+ #campaign-tactics .league-bench>header .league-bench-guidance{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+ #campaign-tactics .league-bench .bench-magnet-list{grid-template-columns:repeat(2,110px);gap:12px 10px}
+ #campaign-tactics .league-autosave-footer{display:grid;grid-template-columns:minmax(0,1fr) 122px;gap:8px;padding:10px 8px}
+ #campaign-tactics .league-autosave-status{width:100%;min-width:0;padding:8px;grid-template-columns:10px minmax(0,1fr);gap:7px}
+ #campaign-tactics .league-autosave-copy small{white-space:nowrap;letter-spacing:0}
+ #campaign-tactics .league-tactical-shape-preview-menu>summary{grid-template-columns:minmax(0,1fr)}
+ #campaign-tactics .league-tactical-shape-preview-menu>summary>span{width:auto;height:auto;border-radius:0;color:inherit;background:none;box-shadow:none}
+ #campaign-tactics .league-tactics-detail>header{display:block;min-height:0;padding:14px}
+ #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"title share" "captain nodes" "ai ai";align-items:end;gap:12px 16px}
+ #campaign-tactics .league-tactics-detail-title>span{grid-area:title}
+ #campaign-tactics .league-tactics-detail-title>.league-lineup-share-actions{grid-area:share;justify-self:end}
+ #campaign-tactics .league-tactics-detail-title>.league-captain-controls{grid-area:captain;display:grid;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #campaign-tactics .league-tactics-detail-title>.league-tactical-node-controls{grid-area:nodes;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));transform:none;justify-self:stretch}
+ #campaign-tactics .league-tactics-detail-title>.league-ai-training-actions{grid-area:ai;justify-self:start}
+ #campaign-tactics .league-tactics-detail :is(select,input){max-width:100%;min-width:0}
+ #campaign-tactics .league-tactics-detail .league-match-plan-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(min-width:1800px){
+ #campaign-tactics .league-lineup-workspace{grid-template-columns:minmax(0,1.05fr) 380px minmax(0,1fr)}
+ #campaign-tactics .league-bench .bench-magnet-list{grid-template-columns:repeat(3,110px);gap:12px 6px}
+}
+@media(min-width:1051px) and (max-width:1450px){
+ #campaign-tactics .league-lineup-workspace{grid-template-columns:minmax(0,1.05fr) 300px minmax(0,1fr)}
+ #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{column-gap:10px}
+ #campaign-tactics .league-phase-instructions{grid-template-columns:minmax(0,1fr)}
+}

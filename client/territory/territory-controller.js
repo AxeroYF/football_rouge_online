@@ -1,3 +1,9 @@
+import { canUseTerritory, canConquerFromTerritory } from '../../shared/config/diplomacy.mjs';
+import { conquestAttackBlock } from '../../shared/config/conquest.mjs';
+import { neutralRewardMarkup } from '../resources/neutral-reward-markup.js';
+import { campaignFog, fogTerritoryStatus } from "../../shared/config/fog.mjs";
+import { territoryResourceMarkup, territoryResourceProfile } from "../resources/resource-markup.js?v=20260908-fans-v1";
+
 export function createTerritoryController({
   documentRef = globalThis.document,
   mapElement,
@@ -19,7 +25,10 @@ export function createTerritoryController({
   challengeSummary,
   ownActiveChallenge,
   showToast,
+  refreshTerritoryInteraction = null,
   onSelectionChange = () => {},
+  onBuildingsChange = () => {},
+  onInspectorOpen = () => {},
 }) {
   let selectedTerritoryId = null;
   let homeSelectionMode = false;
@@ -47,7 +56,7 @@ export function createTerritoryController({
         reason: `与黄色豪门区域${adjacent?.name ? `“${adjacent.name}”` : ""}直接接壤`,
       };
     }
-    return { allowed: true, reason: "可以在这里建立永久主场" };
+    return { allowed: true, reason: "可以在这里建立俱乐部总部" };
   }
 
   function renderHomeSelectionPanel(territoryId = selectedTerritoryId) {
@@ -67,14 +76,26 @@ export function createTerritoryController({
     documentRef.querySelector("#confirm-home-selection").disabled = !permission.allowed || homeClaimPending;
   }
 
+  function isVisible(territoryId) {
+    return fogTerritoryStatus(campaignFog(getCampaignState()), territoryId) === "visible";
+  }
+
   function refreshTerritoryDisplay() {
     const territoryWorld = getTerritoryWorld();
     if (!territoryWorld) return;
     territoryLayersById.forEach((layer, territoryId) => {
       const metadata = territoryMetadataById.get(territoryId);
       const state = territoryWorld.territories[territoryId];
+      const visible = isVisible(territoryId);
       layer.setStyle(territoryStyle(layer.feature));
-      if (metadata && state) layer.setTooltipContent(territoryTooltipMarkup(metadata, state));
+      if (!visible) territoryIntelCache.delete(territoryId);
+      if (refreshTerritoryInteraction) refreshTerritoryInteraction(layer,territoryId,visible);
+      else {
+        if (layer.options) layer.options.interactive = visible;
+        if (!visible) { layer.closeTooltip?.(); layer.unbindTooltip?.(); }
+        else if (layer.getTooltip && !layer.getTooltip()) layer.bindTooltip(territoryTooltipMarkup(metadata, state), { sticky:true, direction:"top", offset:[0,-8], opacity:1, className:"territory-tooltip" });
+        if (visible && metadata && state) layer.setTooltipContent(territoryTooltipMarkup(metadata, state));
+      }
     });
   }
 
@@ -105,7 +126,7 @@ export function createTerritoryController({
       documentRef.querySelector("#home-selection-panel").hidden = true;
       refreshTerritoryDisplay();
       selectTerritory(campaignState.homeTerritoryId);
-      showToast("主场建立成功，今后无法更改");
+      showToast("俱乐部总部建立成功，所在地今后无法更改");
     } catch (error) {
       try {
         const latest = await campaignRequest("/api/campaign/state");
@@ -113,7 +134,7 @@ export function createTerritoryController({
         applyCampaignWorldSnapshot(getCampaignState().world);
         refreshTerritoryDisplay();
       } catch {}
-      showToast(error.message || "主场建立失败");
+      showToast(error.message || "总部建立失败");
     } finally {
       homeClaimPending = false;
       renderHomeSelectionPanel(selectedTerritoryId);
@@ -128,16 +149,19 @@ export function createTerritoryController({
     const inspector = documentRef.querySelector("#territory-inspector");
     const actions = documentRef.querySelector("#territory-challenge-actions");
     const challengeButton = documentRef.querySelector("#territory-challenge-button");
-    const buildingActions = documentRef.querySelector("#territory-building-actions");
-    const buildingButton = documentRef.querySelector("#territory-building-button");
     const cancelButton = documentRef.querySelector("#territory-maritime-cancel-button");
     const challengeStatus = documentRef.querySelector("#territory-challenge-status");
     challengeButton.hidden = false;
     cancelButton.hidden = !maritimeMode;
     const metadata = territoryMetadataById.get(territoryId);
     const state = territoryWorld?.territories[territoryId];
-    if (!metadata || !state) {
+    const ownTerritory = Boolean(metadata && state?.ownerType === ownerTypes.PLAYER
+      && campaignState?.playerId != null && state.ownerId === campaignState.playerId);
+    inspector.classList.toggle("is-own-territory",ownTerritory);
+    for (const row of documentRef.querySelectorAll("[data-territory-ai-row]")) row.hidden = ownTerritory;
+    if (!metadata || !state || !isVisible(territoryId)) {
       inspector.hidden = true;
+      onBuildingsChange(null);
       inspector.classList.remove("has-selection");
       documentRef.querySelector("#territory-name").textContent = "选择一个省级区块";
       documentRef.querySelector("#territory-owner").textContent = "未选择";
@@ -148,29 +172,30 @@ export function createTerritoryController({
         documentRef.querySelector(`#${id}`).textContent = "—";
       }
       actions.hidden = true;
-      buildingActions.hidden = true;
-      buildingButton.hidden = true;
       cancelButton.hidden = true;
       return;
     }
 
+    onInspectorOpen(territoryId);
     inspector.hidden = false;
     inspector.classList.add("has-selection");
     documentRef.querySelector("#territory-name").textContent = `${metadata.country} - ${metadata.name}`;
     documentRef.querySelector("#territory-owner").textContent = territoryOwnerLabel(metadata, state);
+    const resourceElement = documentRef.querySelector("#territory-resources");
+    if (resourceElement) { resourceElement.innerHTML = territoryResourceMarkup(territoryResourceProfile(metadata,campaignState)); resourceElement.hidden = !resourceElement.innerHTML; }
+    const sponsorReward = documentRef.querySelector("#territory-sponsor-reward");
+    if (sponsorReward) { sponsorReward.innerHTML = state.ownerType === ownerTypes.NEUTRAL && !homeSelectionMode ? neutralRewardMarkup(campaignState?.world?.territories?.[territoryId]?.neutralReward) : ""; sponsorReward.hidden = !sponsorReward.innerHTML; }
     const weather = campaignState?.world?.weather?.territories?.[territoryId] ?? null;
     const weatherElement = documentRef.querySelector("#territory-weather");
     weatherElement.textContent = weather ? `${weather.icon} ${weather.label}` : "—";
     if (weather) weatherElement.title = `降水强度 ${weather.precipitation}% · 每个整点刷新`;
     else weatherElement.removeAttribute("title");
-    const ownTerritory = state.ownerType === ownerTypes.PLAYER && state.ownerId === campaignState.playerId;
+
     const expeditionPiece = campaignState?.expeditionPiece;
     const buildingEntryVisible = !homeSelectionMode
       && Boolean(campaignState?.setupComplete)
       && state.ownerType !== ownerTypes.NEUTRAL;
-    buildingActions.hidden = !buildingEntryVisible;
-    buildingButton.hidden = !buildingEntryVisible;
-    buildingButton.textContent = ownTerritory ? "管理地块建筑" : "查看地块建筑";
+    onBuildingsChange(buildingEntryVisible ? territoryId : null);
     const ai = territoryIntelCache.get(territoryId)?.ai;
     const aiLoading = !territoryIntelCache.has(territoryId) && state.ownerType !== ownerTypes.PLAYER;
     documentRef.querySelector("#territory-ai-difficulty").textContent = aiLoading
@@ -189,6 +214,8 @@ export function createTerritoryController({
     actions.hidden = homeSelectionMode || !campaignState?.homeTerritoryId;
     const activeChallenge = campaignState?.world?.activeChallenges?.[territoryId] ?? null;
     const playerChallenge = ownActiveChallenge();
+    if(!actions.hidden&&metadata.eliteClubIds?.length){challengeButton.disabled=false;challengeButton.dataset.action='elite';challengeButton.textContent='查看豪门挑战';challengeStatus.textContent='不可占领 · 无需接壤 · 单场挑战 5,000 金币';cancelButton.hidden=true;return;}
+    if(!actions.hidden&&campaignState?.eliteChallenge?.activeId){challengeButton.disabled=true;challengeButton.dataset.action='challenge';challengeButton.textContent='豪门挑战进行中';challengeStatus.textContent='本场结束后可再次发起地块挑战';return;}
     if (!actions.hidden && activeChallenge) {
       challengeButton.hidden = false;
       challengeButton.disabled = true;
@@ -205,11 +232,14 @@ export function createTerritoryController({
       challengeStatus.textContent = `${playerChallenge.attackerTeamName} 正在挑战 ${playerChallenge.defenderName}，结束前不能发起新挑战`;
       return;
     }
+    if(!actions.hidden && state.ownerType==='player' && !canUseTerritory(campaignState.world,campaignState.playerId,territoryId) && campaignState.interactions?.players?.find(p=>p.id===state.ownerId)?.state!=='war') {
+      challengeButton.disabled=true;challengeButton.dataset.action='challenge';challengeButton.textContent='需要先宣战';challengeStatus.textContent='在服务器玩家列表中选择该玩家，宣战后才可进攻其领土。';return;
+    }
     if (!actions.hidden) {
       const attackable = attackableTerritoryIds.has(territoryId);
       const coastal = campaignState?.coastalTerritoryIds?.includes(territoryId);
       const maritimeTarget = maritimeTargetIds.has(territoryId);
-      if (ownTerritory) {
+      if (ownTerritory || canUseTerritory(campaignState.world,campaignState.playerId,territoryId)) {
         const expeditionReadyHere = !expeditionPiece?.moving && expeditionPiece?.territoryId === territoryId;
         actions.hidden = !coastal || !expeditionReadyHere;
         if (!actions.hidden) {
@@ -235,6 +265,13 @@ export function createTerritoryController({
         challengeStatus.textContent = maritimeTarget
           ? `直线航线可达 · ${route?.distanceKm ?? "—"} 公里`
           : attackable ? "" : "仅可挑战陆地相邻区块";
+        if(!actions.hidden&&state.ownerType==='neutral'&&!canConquerFromTerritory(campaignState.world,campaignState.playerId,expeditionPiece?.territoryId)){challengeButton.disabled=true;challengeButton.textContent='需要盟友授权';challengeStatus.textContent='请在该盟友的俱乐部主页申请借地征服，对方同意后可持续使用，直至撤销。';}
+        const blocked = conquestAttackBlock(campaignState?.conquest, state.ownerType);
+        if (blocked && !actions.hidden) {
+          challengeButton.disabled = true;
+          challengeButton.textContent = blocked.code === 'expedition-cooldown' ? '远征队休整中' : '今日征服次数已用完';
+          challengeStatus.textContent = blocked.message;
+        }
       }
     }
     if (maritimeMode && actions.hidden && !homeSelectionMode) {
@@ -245,6 +282,7 @@ export function createTerritoryController({
   }
 
   function selectTerritory(territoryId) {
+    if (!isVisible(territoryId)) return;
     const previousId = selectedTerritoryId;
     if (previousId === territoryId) {
       clearTerritorySelection();
@@ -264,6 +302,7 @@ export function createTerritoryController({
     if (campaignRequest && getCampaignState()?.setupComplete && !territoryIntelCache.has(territoryId)) {
       campaignRequest(`/api/campaign/territory/intel?id=${encodeURIComponent(territoryId)}`)
         .then((intel) => {
+          if (!isVisible(territoryId)) return;
           territoryIntelCache.set(territoryId, intel);
           if (selectedTerritoryId === territoryId) renderTerritoryInspector(territoryId);
         })
@@ -275,7 +314,6 @@ export function createTerritoryController({
   }
 
   function clearTerritorySelection() {
-    if (!selectedTerritoryId) return;
     const previousId = selectedTerritoryId;
     const previousLayer = territoryLayersById.get(selectedTerritoryId);
     selectedTerritoryId = null;

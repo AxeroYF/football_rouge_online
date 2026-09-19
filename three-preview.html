@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>黄狗风云 · 三维地图预览</title>
+    <link rel="stylesheet" href="./styles/three-preview.css?v=20260904-relief-mesh-v1" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./assets/vendor/three/three.module.js",
+          "three/addons/controls/OrbitControls.js": "./assets/vendor/three/OrbitControls.js",
+          "three/addons/utils/BufferGeometryUtils.js": "./assets/vendor/three/BufferGeometryUtils.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="preview-header">
+      <a class="preview-brand" href="./game"><img src="./assets/yellowdog-logo-transparent.png" alt="" /><strong>黄狗风云</strong></a>
+      <span class="preview-title">三维地图预览</span>
+      <span class="read-only">只读 · 不影响存档</span>
+      <a class="back-link" href="./game">返回正式地图 ↗</a>
+    </header>
+    <main id="three-map" aria-label="三维战役地图">
+      <canvas id="three-canvas" tabindex="0" aria-label="左键拖动地图，滚轮缩放，右键旋转视角"></canvas>
+      <div class="loading-card" id="three-loading" role="status">
+        <span class="loader-dot"></span><strong id="loading-message">准备三维地图…</strong>
+        <small>读取本地地图与地形资源</small>
+      </div>
+      <aside class="preview-controls">
+        <div class="control-heading"><strong>视角与材质</strong><button id="reset-view" type="button">重置</button></div>
+        <nav class="terrain-profile-links" aria-label="地形风格" hidden>
+          <a href="./three-preview.html?terrain=relief" data-terrain-profile="relief">立体地形</a>
+          <a href="./three-preview.html?terrain=soft" data-terrain-profile="soft">柔和地形</a>
+          <a href="./three-preview.html?terrain=classic" data-terrain-profile="classic">原版地形</a>
+        </nav>
+        <div class="region-presets" aria-label="快速定位">
+          <button type="button" data-region="europe">欧洲</button>
+          <button type="button" data-region="alps">阿尔卑斯</button>
+          <button type="button" data-region="andes">安第斯</button>
+          <button type="button" data-region="britain">英伦</button>
+          <button type="button" data-region="south-america">南美洲</button>
+          <button type="button" data-region="svalbard">斯瓦尔巴</button>
+        </div>
+        <label class="slider-row">倾斜角度 <output id="pitch-value">35°</output><input id="pitch" type="range" min="0" max="60" step="1" value="35" /></label>
+        <label class="slider-row">大陆厚度 <output id="height-value">1.1</output><input id="land-height" type="range" min="0.15" max="1.8" step="0.05" value="1.1" /></label>
+        <label class="slider-row">光照亮度 <output id="exposure-value">1.30</output><input id="exposure" type="range" min="0.65" max="1.65" step="0.05" value="1.30" /></label>
+        <div class="toggle-row">
+          <label><input id="province-lines" type="checkbox" checked />省界</label>
+          <label><input id="terrain-visible" type="checkbox" checked />地形纹理</label>
+          <label><input id="rivers-visible" type="checkbox" checked />河流</label>
+          <label><input id="snow-visible" type="checkbox" checked />雪线</label>
+          <label><input id="shadows" type="checkbox" checked />阴影</label>
+        </div>
+        <p class="interaction-tip">左键平移 · 滚轮缩放 · 右键旋转<br />点击省份查看 · Esc 取消选择</p>
+      </aside>
+      <aside class="preview-metrics" aria-label="地图性能">
+        <strong id="three-zoom">×1.0</strong><span id="three-performance">准备渲染</span>
+        <small id="three-tiles">等待纹理</small>
+      </aside>
+      <aside id="province-card" class="province-card" hidden>
+        <small id="province-country"></small><strong id="province-name"></strong>
+        <span id="province-type"></span><small>视觉预览，不执行征服或移动操作</small>
+      </aside>
+      <div class="asset-warning" id="asset-warning" role="status" hidden>
+        <span id="asset-warning-message"></span><button id="retry-tiles" type="button">重试纹理</button>
+      </div>
+      <footer class="preview-attribution">Natural Earth · Terrarium DEM · Three.js<br />真实大陆侧壁 / 山地暂沿用 DEM 烘焙纹理</footer>
+    </main>
+    <script type="module">
+      import("./client/map-three/preview.js?v=20260907-map-zoom30-v1").catch((error) => {
+        document.querySelector("#loading-message").textContent = "预览模块未能加载";
+        document.querySelector("#three-loading small").textContent = "请先执行 npm run build:three-vendor，再刷新页面。";
+        console.error(error);
+      });
+    </script>
+  </body>
+</html>

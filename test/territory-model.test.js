@@ -1,3 +1,4 @@
+import {setTestWar} from './diplomacy-fixture.mjs';
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -38,21 +39,21 @@ const syntheticIndex = {
 };
 
 test("real territory index is internally consistent", () => {
-  assert.equal(realIndex.territories.length, 1470);
-  assert.equal(new Set(realIndex.territories.map((entry) => entry.territoryId)).size, 1470);
+  assert.equal(realIndex.territories.length, 598);
+  assert.equal(new Set(realIndex.territories.map((entry) => entry.territoryId)).size, 598);
   assert.equal(Object.keys(realIndex.cities).length, 84);
   assert.equal(Object.keys(realIndex.clubs).length, 51);
-  assert.equal(realIndex.territories.filter((entry) => entry.initialOwner.type === "club").length, 70);
+  assert.equal(realIndex.territories.filter((entry) => entry.initialOwner.type === "club").length, 38);
   const mergedCountryCounts = { LVA:119, MKD:84, MLT:68, SVN:193 };
   for (const [countryCode, sourceCount] of Object.entries(mergedCountryCounts)) {
     const entries = realIndex.territories.filter((entry) => entry.countryCode === countryCode);
     assert.equal(entries.length, 1);
     assert.equal(entries[0].territoryId, `adm1:country-${countryCode.toLowerCase()}`);
-    assert.equal(entries[0].mergedSourceTerritoryIds.length, sourceCount);
+    assert.equal(entries[0].mergedSourceTerritoryIds.length, 1);
     assert.equal(Object.values(realIndex.territoryIdAliases).filter((territoryId) => territoryId === entries[0].territoryId).length, sourceCount);
   }
   const greaterLondon = realIndex.territories.filter((entry) => entry.initialOwner.id === "club-garrison:greater-london");
-  assert.equal(greaterLondon.length, 33);
+  assert.equal(greaterLondon.length, 1);
   assert.ok(greaterLondon.every((entry) => entry.spawnAllowed === false));
   assert.ok(greaterLondon.every((entry) => entry.garrisonClubIds.length === 5));
   assert.equal(realIndex.territories.filter((entry) => entry.neighbors.length === 0).length, 0);
@@ -78,6 +79,7 @@ test("home claim, lineups, adjacent capture, permanent loss and recapture", () =
   const world = createTerritoryWorld(syntheticIndex);
   claimHome(syntheticIndex, world, "player-1", "a");
   claimHome(syntheticIndex, world, "player-2", "d");
+  setTestWar(world,"player-1","player-2");
   setPlayerLineups(world, "player-1", { attackLineupId: "attack-1", defenseLineupId: "defense-1" });
   assert.equal(world.players["player-1"].capitalTerritoryId, "a");
   assert.equal(world.players["player-1"].defenseLineupId, "defense-1");

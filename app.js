@@ -1,8 +1,37 @@
+import {createAirportController} from './client/buildings/airport-controller.js';
+import {createRaidController} from './client/elite/raid-controller.js';
+import {createCoalitionController} from './client/social/coalition-controller.js';
+import {createOilMarketController} from './client/resources/oil-market-controller.js';
+import { observeCardStage } from './client/ui/card-stage-performance.js';
+import { createForeignUnitController } from './client/map/foreign-unit-controller.js';
+import { canUseTerritory } from './shared/config/diplomacy.mjs';
+import { createRecoveryRangeController } from './client/map/recovery-range-controller.js?v=20260912-expansion-v2';
+import {createInteractionController} from "./client/social/interaction-controller.js?v=20260912-expansion-v2";
+import {createEliteController} from './client/elite/elite-controller.js?v=20260909-elite-reward-v4';
+import {createShopController} from './client/shop/shop-controller.js?v=20260909-transparent-v2';
+import { createNotificationCenter } from './client/buildings/notification-center.js?v=20260909-transparent-v2';
+import { createUnitTerritoryLayout } from './shared/map/unit-territory-layout.mjs?v=20260909-stable-unit-anchor-v2';
+import { createConquestHud } from './client/challenge/conquest-hud.js?v=20260908-conquest-v1';
+import { createResearchController } from './client/research/research-controller.js?v=20260908-panel-rename-v3';
+import { createTvSettingsController } from './client/settings/tv-settings-controller.js?v=20260908-tv-v1';
+import { createWonderCatalogController } from './client/wonders/wonder-catalog-controller.js?v=20260908-wonder-panel-v2';
+import { createSponsorshipController } from './client/sponsorship/sponsorship-controller.js?v=20260908-sponsorship-v1';
+import { createExpeditionAppearanceController } from './client/map/expedition-appearance-controller.js?v=20260908-expedition-vehicles-v1';
+import { FogSpatialIndex } from "./shared/map/fog-spatial.mjs";
+import { campaignFog, fogTerritoryStatus, withoutNavalPreview } from "./shared/config/fog.mjs";
+import { applyFogWorldSnapshot } from "./client/map/fog-state.js";
+import { createCampaignFogController } from "./client/map/campaign-fog-controller.js?v=20260912-expansion-v2";
+import { createEnhancementController } from "./client/enhancement/enhancement-controller.js?v=20260908-wonders-live-v1";
+import { createCardManagementController } from "./client/cards/card-management-controller.js?v=20260906-card-scroll-v1";
+import { createFacilityActionsController } from "./client/buildings/facility-actions-controller.js?v=20260909-infrastructure-v1";
+import { createTrainingController } from "./client/buildings/training-controller.js?v=20260909-training-growth-v1";
+import { createScoutingController } from "./client/buildings/scouting-controller.js?v=20260912-expansion-v2";
+import { createScoutUnitController, scoutTokenMetrics } from "./client/map/scout-unit-controller.js?v=20260912-expansion-v2";
 import { createTerritoryWorld, OWNER_TYPES } from "./territory-model.js";
-import { createTacticsController } from "./tactics-page.js?v=20260901-tactics-autosave-v16";
-import { createTeamController } from "./client/team/team-controller-ydl.js?v=20260901-two-state-squads-v14";
-import { createYoogleController } from "./client/yoogle/yoogle-controller.js?v=20260901-english-search-v15";
-import { showCampaignBroadcast, startCampaignBroadcastBackground } from "./campaign-broadcast.js?v=20260830-broadcast-map-fill";
+import { createTacticsController } from "./tactics-page.js?v=20260910-s4-bonds-v1";
+import { createTeamController } from "./client/team/team-controller-ydl.js?v=20260909-infrastructure-v1";
+import { createYoogleController } from "./client/yoogle/yoogle-controller.js?v=20260905-shield-v1";
+import { showCampaignBroadcast, startCampaignBroadcastBackground } from "./campaign-broadcast.js?v=20260909-v21-integration-v1";
 import { createCampaignStore } from "./client/core/campaign-store.js";
 import {
   CAMPAIGN_BOUNDS,
@@ -13,25 +42,32 @@ import {
   transformSouthAmericaFeature,
   transformSouthAmericaPoint,
 } from "./client/map/campaign-map-geometry.js";
-import { createTerritoryPresentation } from "./client/map/territory-presentation.js";
+import { createResourceController } from "./client/resources/resource-controller.js?v=20260908-gold-growth-v1";
+import { createTerritoryPresentation } from "./client/map/territory-presentation.js?v=20260908-fans-v1";
 import { loadCampaignMapData } from "./client/map/campaign-map-data.js";
 import { createInertialWheelZoom } from "./client/map/inertial-wheel-zoom.js?v=20260903-tile-viewreset-v2";
-import { createCampaignMinimap } from "./client/map/campaign-minimap-controller.js?v=20260829-minimap";
+import { createCampaignMinimap } from "./client/map/campaign-minimap-controller.js?v=20260905-smooth-fog-v5";
 import { createTerritoryWeatherLayerController } from "./client/map/territory-weather-layer-controller.js?v=20260831-weather-layer-v3";
 import { buildCoastlineLods, coastlineLodKeyForZoom } from "./client/map/coastline-lod.js?v=20260903-coastline-lod-v1";
-import { createExpeditionPieceController } from "./client/map/expedition-piece-controller.js?v=20260901-expedition-zoom-scale-v19";
-import { createTerritoryController } from "./client/territory/territory-controller.js?v=20260901-territory-card-v20";
-import { createMaritimeController } from "./client/maritime/maritime-controller.js";
-import { createChallengeController } from "./client/challenge/challenge-controller.js";
-import { createBuildingMarkerController } from "./client/buildings/building-marker-controller.js?v=20260829-building-type-scale";
-import { createBuildingPanelController } from "./client/buildings/building-panel-controller.js?v=20260829-building-type-scale";
-import { createInventoryController } from "./client/inventory/inventory-controller.js?v=20260902-inventory-natural-v1";
+import { createExpeditionPanelController } from "./client/map/expedition-panel-controller.js?v=20260909-v21-integration-v1";
+import { createExpeditionPieceController, expeditionTokenMetrics } from "./client/map/expedition-piece-controller.js?v=20260912-expansion-v2";
+import { createTerritoryInteraction } from "./client/map/territory-interaction.js?v=20260905-smooth-fog-v5";
+import { createTerritoryController } from "./client/territory/territory-controller.js?v=20260912-expansion-v2";
+import { createMaritimeController } from "./client/maritime/maritime-controller.js?v=20260912-expansion-v2";
+import { createChallengeController } from "./client/challenge/challenge-controller.js?v=20260908-conquest-v1";
+import { createBuildingMarkerController } from "./client/buildings/building-marker-controller.js?v=20260909-stable-unit-anchor-v2";
+import { createConstructionNotifications } from "./client/buildings/construction-notifications.js?v=20260909-infrastructure-v1";
+import { createBuildingPanelController } from "./client/buildings/building-panel-controller.js?v=20260912-expansion-v2";
+import { createInventoryController } from "./client/inventory/inventory-controller.js?v=20260909-shared-reward-v3";
+import { createTiltedCRS } from "./client/map-three/settings.js";
+import { setupTerrainProfileLinks } from "./client/map-three/terrain-profile.js";
+const useThreeMap = new URLSearchParams(window.location.search).get("renderer") !== "leaflet";
+const terrainProfile = setupTerrainProfileLinks(document, window.location);
+let campaignThreeLayer = null;
+let cardStageActive=false;
+observeCardStage(document,active=>{cardStageActive=active;campaignThreeLayer?.setSuspended(active);});
 const mapElement = document.querySelector("#campaign-map");
 const mapLoader = document.querySelector("#map-loader");
-const mapZoomIndicator = document.querySelector("#map-zoom-indicator");
-const mapZoomValue = document.querySelector("#map-zoom-value");
-const mapZoomDetail = document.querySelector("#map-zoom-detail");
-const ZOOM_STAGE_LABELS = Object.freeze(["全景", "洲际", "国家", "地区", "最大细节"]);
 const countryLabelMarkers = [];
 const cityMarkers = new Map();
 const clubsByCity = new Map();
@@ -58,8 +94,11 @@ let countryBordersVisible = false;
 let majorCitiesVisible = false;
 let weatherLayerVisible = false;
 const campaignStore = createCampaignStore();
+import { createNeutralRewardController } from './client/resources/neutral-reward-controller.js?v=20260908-panel-rename-v3';
+import { createDevelopmentFogController } from './client/map/development-fog-controller.js?v=20260909-production-lock-v1';
 let campaignState = campaignStore.getState();
 campaignStore.subscribe((change) => { campaignState = change.state; });
+createConquestHud({ root: document.querySelector('#topbar-conquest'), store: campaignStore });
 let campaignRequest = null;
 let campaignClearSession = null;
 let campaignWorldPlayers = {};
@@ -71,24 +110,32 @@ const territoryLayersById = new Map();
 const territoryMetadataById = new Map();
 const attackableTerritoryIds = new Set();
 let territoryController = null;
+let territoryInteractionController = null;
 let maritimeController = null;
 let challengeController = null;
 let buildingMarkerController = null;
 let buildingPanelController = null;
+let scoutingController = null;
+let trainingController = null;
 let campaignMinimapController = null;
+let campaignFogController = null, fogSpatialIndex = null;
 let weatherLayerController = null;
 let expeditionPieceController = null;
+let expeditionPanelController = null;
+let foreignUnitController=null;
+let scoutUnitController = null;
 const EMPTY_TERRITORY_IDS = new Set();
 
 const map = L.map(mapElement, {
+  crs: useThreeMap ? createTiltedCRS(L) : L.CRS.EPSG3857,
   preferCanvas: true,
-  zoomAnimation: true,
+  zoomAnimation: !useThreeMap,
   fadeAnimation: false,
-  markerZoomAnimation: true,
+  markerZoomAnimation: !useThreeMap,
   zoomControl: false,
   attributionControl: false,
   minZoom: 3,
-  maxZoom: 7,
+  maxZoom: 3 + Math.log2(30),
   zoomSnap: 0,
   zoomDelta: 0.5,
   scrollWheelZoom: false,
@@ -129,7 +176,7 @@ map.getPane("countryPane").style.pointerEvents = "none";
 map.createPane("territoryPane");
 map.getPane("territoryPane").style.zIndex = "215";
 map.createPane("maritimePane");
-map.getPane("maritimePane").style.zIndex = "625";
+map.getPane("maritimePane").style.zIndex = "635";
 map.createPane("weatherPane");
 map.getPane("weatherPane").style.zIndex = "620";
 map.getPane("weatherPane").style.pointerEvents = "none";
@@ -155,6 +202,7 @@ const countryLabelLayer = L.layerGroup().addTo(map);
 const cityLayer = L.layerGroup();
 const buildingLayer = L.layerGroup().addTo(map);
 const expeditionLayer = L.layerGroup().addTo(map);
+const scoutLayer = L.layerGroup().addTo(map);
 
 function escapeHtml(value) {
   return String(value)
@@ -175,6 +223,7 @@ const {
   ownerTypes: OWNER_TYPES,
   escapeHtml,
   getContext: () => ({
+    mapRenderer: useThreeMap ? "three" : "leaflet", terrainProfile,
     territoryWorld,
     campaignState,
     campaignWorldPlayers,
@@ -183,11 +232,12 @@ const {
     homeSelectionPermission: territoryController?.homeSelectionPermission,
     maritimeTargetIds: maritimeController?.getTargetIds() ?? EMPTY_TERRITORY_IDS,
     expeditionMoveTargetIds: expeditionPieceController?.getTargetIds() ?? EMPTY_TERRITORY_IDS,
+    scoutMoveTargetIds: scoutUnitController?.getTargetIds() ?? EMPTY_TERRITORY_IDS,
   }),
 });
 
 function ownActiveChallenge() {
-  return Object.values(campaignState?.world?.activeChallenges ?? {}).find((challenge)=>challenge.attackerId===campaignState?.playerId) ?? null;
+  return Object.values(campaignState?.world?.activeChallenges ?? {}).find((challenge)=>challenge.attackerId===campaignState?.playerId&&!challenge.coalitionId) ?? null;
 }
 
 function sourcePointToDisplay(territoryId, point) {
@@ -200,17 +250,42 @@ function displayPointToSource(territoryId, latlng) {
   return displayPointToTerritory(latlng, metadata?.region);
 }
 
+function territoryVisible(territoryId) {
+  return fogTerritoryStatus(campaignFog(campaignState), territoryId) === "visible";
+}
+
 function applyCampaignWorldSnapshot(snapshot) {
+  if (campaignState?.fog?.preview && campaignState.fog.preview.id !== maritimeController?.getMode()?.previewId) {
+    campaignStore.setState(withoutNavalPreview(campaignState), {source:"inactive-sea-preview"});
+    snapshot = campaignState.world;
+  }
   campaignWorldPlayers = snapshot?.players ?? {};
   attackableTerritoryIds.clear();
   for (const territoryId of campaignState?.attackableTerritoryIds ?? []) attackableTerritoryIds.add(territoryId);
-  for (const [territoryId, savedState] of Object.entries(snapshot?.territories ?? {})) {
-    if (territoryWorld?.territories[territoryId]) Object.assign(territoryWorld.territories[territoryId], savedState);
+  applyFogWorldSnapshot(territoryWorld, snapshot, territoryIndex, campaignFog(campaignState));
+  campaignFogController?.refresh();
+  campaignThreeLayer?.refreshVisibility?.();
+  territoryController?.refreshTerritoryDisplay();
+  const seaMode = maritimeController?.getMode();
+  const piece = campaignState?.expeditionPiece;
+  if (seaMode && (piece?.moving || piece?.territoryId !== seaMode.sourceTerritoryId
+    || (seaMode.previewId && campaignState?.fog?.preview?.id !== seaMode.previewId)
+    || !canUseTerritory(campaignState?.world,campaignState?.playerId,seaMode.sourceTerritoryId))) {
+    maritimeController.clearMaritimeMode({ keepSelection:true });
+  }
+  const selected = territoryController?.getSelectedTerritoryId();
+  if (selected && !territoryVisible(selected)) territoryController.clearTerritorySelection();
+  if (campaignFogController) {
+    const expanded = cityData.find((city) => city.id === expandedCityId);
+    if (expanded && !campaignFogController.isPointVisible([expanded.displayLat, expanded.displayLng])) closeExpandedCity();
+    updateCountryLabels(); updateCityVisibility();
   }
   buildingMarkerController?.refresh();
   campaignMinimapController?.refresh();
   weatherLayerController?.refresh();
   expeditionPieceController?.refresh();
+  scoutUnitController?.refresh();
+  foreignUnitController?.refresh();
 }
 
 territoryController = createTerritoryController({
@@ -234,7 +309,12 @@ territoryController = createTerritoryController({
   challengeSummary,
   ownActiveChallenge,
   showToast,
-  onSelectionChange: () => buildingPanelController?.close(),
+  refreshTerritoryInteraction: (layer,id,visible) => territoryInteractionController?.refreshLayer(layer,id,visible),
+  onInspectorOpen: () => { expeditionPanelController?.close(); scoutUnitController?.cancelMoveMode(); trainingController?.close(); scoutingController?.close(); },
+  onBuildingsChange: (territoryId) => {
+    if (territoryId) buildingPanelController?.open(territoryId);
+    else buildingPanelController?.close();
+  },
 });
 
 const {
@@ -247,7 +327,21 @@ const {
   selectTerritory,
 } = territoryController;
 
+const recoveryRangeController=createRecoveryRangeController({Leaflet:L,map,getState:()=>campaignState,metadata:territoryMetadataById,sourcePointToDisplay,showToast});
+campaignStore.subscribe(()=>recoveryRangeController.refresh());
+function selectMapBuilding({territoryId,buildingId}) {
+  expeditionPanelController?.close();closeExpandedCity();
+  const building=territoryWorld?.territories?.[territoryId]?.buildings?.find(b=>b.id===buildingId),owned=territoryWorld?.territories?.[territoryId]?.ownerId===campaignState?.playerId;
+  if(building?.type==='recovery-center')recoveryRangeController.show({territoryId,buildingId});else recoveryRangeController.clear();
+  if(building?.type==='airport'&&building.status==='active'&&canUseTerritory(territoryWorld,campaignState?.playerId,territoryId))return airportController.open({territoryId});
+  if(owned&&building?.type==='training-center')return trainingController?.open({territoryId,buildingId});
+  if(owned&&building?.type==='scout-center')return scoutingController?.open({territoryId,buildingId});
+  if(getSelectedTerritoryId()!==territoryId)selectTerritory(territoryId);else renderTerritoryInspector(territoryId);
+}
+
 buildingMarkerController = createBuildingMarkerController({
+  getCoastlines: id => coastlineData?.territories?.[id]?.coastlines ?? [],
+    isPointVisible: latlng => !campaignFogController || (latlng && campaignFogController.isPointVisible(latlng)),
   Leaflet: L,
   map,
   layer: buildingLayer,
@@ -255,14 +349,83 @@ buildingMarkerController = createBuildingMarkerController({
   territoryMetadataById,
   getTerritoryWorld: () => territoryWorld,
   getBuildingCatalog: () => campaignState?.buildings?.catalog ?? [],
+  getScoutingTasks: () => (campaignState?.scouting?.tasks ?? []).filter((task) => !task.scoutId && territoryWorld?.territories?.[task.territoryId]?.ownerId === campaignState?.playerId),
+  getScoutingTime: () => scoutingController?.getServerNow() ?? Date.now(),
+  getTrainingTasks: () => (campaignState?.training?.tasks ?? []).filter((task) => territoryWorld?.territories?.[task.territoryId]?.ownerId === campaignState?.playerId),
   selectTerritory,
   escapeHtml,
   showToast,
-  onBuildingSelect: ({ territoryId }) => buildingPanelController?.open(territoryId),
-  beforeExpand: () => closeExpandedCity(),
+  onBuildingSelect: selectMapBuilding,
+  beforeSelect: () => { expeditionPanelController?.close(); closeExpandedCity(); },
 });
 
+expeditionPanelController = createExpeditionPanelController({
+  root: document.querySelector('#expedition-panel'), mapElement, getState: () => campaignState, campaignStore,
+  territoryLabel: id => { const territory=territoryMetadataById.get(id); return territory ? territory.country+' · '+territory.name : id??'未知地块'; },
+  onOpen: () => { scoutUnitController?.cancelMoveMode(); expeditionPieceController?.cancelMoveMode(); trainingController?.close(); scoutingController?.close(); maritimeController?.clearMaritimeMode({keepSelection:true}); closeExpandedCity(); clearTerritorySelection(); },
+  onMove: () => expeditionPieceController?.beginMoveMode() ?? false,
+});
+L.DomEvent.disableClickPropagation(document.querySelector('#expedition-panel'));
+L.DomEvent.disableScrollPropagation(document.querySelector('#expedition-panel'));
+
+const facilityActionsController = createFacilityActionsController({
+  dialog: document.querySelector("#facility-demolition-dialog"),
+  campaignStore, getCampaignState: () => campaignState, getCampaignRequest: () => campaignRequest,
+  onState: state => { updateTopbarWallet(state); applyCampaignWorldSnapshot(state.world); buildingPanelController?.refreshFromState(); refreshTerritoryDisplay(); },
+  showToast,
+});
+L.DomEvent.disableClickPropagation(document.querySelector("#facility-demolition-dialog"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#facility-demolition-dialog"));
+
+scoutingController = createScoutingController({
+  onDemolish: (target, button) => facilityActionsController.open(target, button),
+  onUpgrade: target => {trainingController?.close();scoutingController?.close();selectTerritory(target.territoryId);buildingPanelController?.open(target.territoryId);},
+  windowRoot: document.querySelector("#scouting-window"),
+  selectionRoot: document.querySelector("#scouting-selection"),
+  onOpen: () => { expeditionPanelController?.close(); scoutUnitController?.cancelMoveMode(); expeditionPieceController?.cancelMoveMode(); trainingController?.close(); clearTerritorySelection(); },
+  onMove: scoutId => scoutUnitController?.beginMoveMode(scoutId),
+  getTerritoryLabel: id => territoryMetadataById.get(id)?.name ?? id,
+  getTerritoryInfo: id => territoryMetadataById.get(id),
+  onProgress: (now) => buildingMarkerController?.updateScoutingProgress(now),
+  notifications: document.querySelector("#scouting-notifications"),
+  getCampaignState: () => campaignState,
+  getCampaignRequest: () => campaignRequest,
+  campaignStore,
+  onState: (state) => { updateTopbarWallet(state); applyCampaignWorldSnapshot(state.world); buildingPanelController?.refreshFromState(); },
+  showToast,
+});
+createNotificationCenter(document.querySelector("#campaign-notifications"));
+L.DomEvent.disableClickPropagation(document.querySelector("#campaign-notifications"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#campaign-notifications"));
+L.DomEvent.disableClickPropagation(document.querySelector("#scouting-window"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#scouting-window"));
+L.DomEvent.disableClickPropagation(document.querySelector("#scouting-selection"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#scouting-selection"));
+
+trainingController = createTrainingController({
+  onDemolish: (target, button) => facilityActionsController.open(target, button),
+  onUpgrade: target => {trainingController?.close();scoutingController?.close();selectTerritory(target.territoryId);buildingPanelController?.open(target.territoryId);},
+  windowRoot: document.querySelector("#training-window"),
+  pickerRoot: document.querySelector("#training-picker"),
+  notifications: document.querySelector("#training-notifications"),
+  getCampaignState: () => campaignState,
+  getCampaignRequest: () => campaignRequest,
+  campaignStore,
+  onOpen: () => { expeditionPanelController?.close(); scoutUnitController?.cancelMoveMode(); scoutingController?.close(); clearTerritorySelection(); },
+  onState: (state) => { updateTopbarWallet(state); applyCampaignWorldSnapshot(state.world); buildingPanelController?.refreshFromState(); },
+  showToast,
+});
+for (const id of ["#training-window", "#training-picker"]) {
+  L.DomEvent.disableClickPropagation(document.querySelector(id));
+  L.DomEvent.disableScrollPropagation(document.querySelector(id));
+}
+
+const airportController=createAirportController({getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast});
 buildingPanelController = createBuildingPanelController({
+  onOpenAirport:target=>airportController.open(target),
+  onDemolish: (target, button) => facilityActionsController.open(target, button),
+  onOpenTraining: (target) => trainingController.open(target),
+  onOpenScouting: (target) => scoutingController.open(target),
   documentRef: document,
   getCampaignRequest: () => campaignRequest,
   getCampaignState: () => campaignState,
@@ -276,11 +439,32 @@ buildingPanelController = createBuildingPanelController({
   escapeHtml,
 });
 
+createConstructionNotifications({
+  notifications: document.querySelector("#construction-notifications"),
+  onUseProduction:rewardId=>neutralRewardController.open(rewardId),
+  onCancelResearch:async jobId=>{if(!confirm('中止本级研究？本级进度将清零，已完成等级保留。'))return;try{const value=await campaignRequest('/api/campaign/research/cancel',{method:'POST',body:{jobId,revision:campaignState.formationResearch.revision}});campaignStore.setState(value.state,{source:'research-cancel'});}catch(error){showToast(error.message||'中止失败，请重试');}},
+  onDismissWonder:async noticeId=>{try{const v=await campaignRequest('/api/campaign/wonders/notifications/read',{method:'POST',body:{noticeId}});campaignStore.setState(v.state,{source:'wonder-notice-read'});}catch(error){showToast(error.message||'通知操作失败，请重试');}},
+  campaignStore,
+  getCampaignState: () => campaignState,
+  getTerritoryLabel: id => {
+    const metadata = territoryMetadataById.get(id);
+    return metadata ? `${metadata.country} · ${metadata.name}` : id;
+  },
+  onLocate: territoryId => {
+    closeExpandedCity(); scoutingController?.close(); trainingController?.close();
+    const bounds = territoryLayersById.get(territoryId)?.getBounds?.();
+    if (bounds?.isValid?.()) map.panTo(bounds.getCenter(), { animate: true, duration: .35 });
+    if (getSelectedTerritoryId() !== territoryId) selectTerritory(territoryId);
+    else renderTerritoryInspector(territoryId);
+  },
+});
+
 maritimeController = createMaritimeController({
   Leaflet: L,
   map,
   mapElement,
   maritimeRenderer,
+  beforeBegin:()=>{ expeditionPanelController?.close(); scoutUnitController?.cancelMoveMode(); scoutingController?.close(); },
   territoryMetadataById,
   getCoastlineData: () => coastlineData,
   getTerritoryWorld: () => territoryWorld,
@@ -290,6 +474,16 @@ maritimeController = createMaritimeController({
   ownActiveChallenge,
   sourcePointToDisplay,
   displayPointToSource,
+  onSurveyClose: () => {
+    campaignStore.setState(withoutNavalPreview(campaignState), {source:"sea-preview-close"});
+    applyCampaignWorldSnapshot(campaignState.world);refreshTerritoryDisplay();
+  },
+  onSurveyState: (state, {fit=false}={}) => {
+    campaignStore.setState(state, { source:"naval-survey" });
+    applyCampaignWorldSnapshot(state.world);
+    refreshTerritoryDisplay();
+    if (fit) campaignFogController?.fit();
+  },
   selectTerritory,
   refreshTerritoryDisplay,
   renderTerritoryInspector,
@@ -333,7 +527,8 @@ function addReliefTileSet({ tiles, bounds }, version) {
     pane: "reliefPane",
     opacity: 0.46,
     minZoom: 3,
-    maxZoom: 7,
+    // GridLayer checks the rounded tile zoom before clamping to native z7.
+    maxZoom: Math.ceil(3 + Math.log2(30)),
     maxNativeZoom: 7,
     bounds: leafletBounds,
     noWrap: true,
@@ -524,14 +719,28 @@ function addProvinceOutlineLayer(displayTerritories) {
     bubblingMouseEvents: false,
     fill: false,
     color: "#d2cdb0",
-    opacity: 0.22,
-    weight: 0.7,
+    opacity: useThreeMap ? 0.09 : 0.22,
+    weight: useThreeMap ? 0.45 : 0.7,
     lineCap: "round",
     lineJoin: "round",
   }).addTo(map);
 }
 
 function addTerritoryLayer(territories) {
+  territoryInteractionController ??= createTerritoryInteraction({
+    map,element:mapElement,isTerritoryVisible:territoryVisible,
+    isPointVisible:point=>!campaignFogController||campaignFogController.isPointVisible(point),
+    getTooltipContent:id=>territoryTooltipMarkup(territoryMetadataById.get(id),territoryWorld.territories[id]),
+    getStyle:territoryStyle,getHoverStyle:territoryHoverStyle,
+    onSelect(territoryId,event) {
+      closeExpandedCity();
+      if(maritimeController.isSelectingPoint()){confirmMaritimePoint(event.latlng);return;}
+      if(coalitionController?.handleTerritoryClick(territoryId,event))return;
+      if(scoutUnitController?.handleTerritoryClick(territoryId))return;
+      if(expeditionPieceController?.handleTerritoryClick(territoryId))return;
+      selectTerritory(territoryId);
+    },
+  });
   const displayTerritories = {
     type: "FeatureCollection",
     features: territories.features.map((feature) => (
@@ -545,35 +754,8 @@ function addTerritoryLayer(territories) {
     style: territoryStyle,
     onEachFeature(feature, layer) {
       const territoryId = feature.properties.territoryId;
-      const metadata = territoryMetadataById.get(territoryId);
-      const state = territoryWorld.territories[territoryId];
-      const tooltip = territoryTooltipMarkup(metadata, state);
       territoryLayersById.set(territoryId, layer);
-      layer.bindTooltip(tooltip, {
-        sticky: true,
-        direction: "top",
-        offset: [0, -8],
-        opacity: 1,
-        className: "territory-tooltip",
-      });
-      layer.on({
-        mouseover() {
-          layer.setStyle(territoryHoverStyle(feature));
-          layer.bringToFront();
-          mapElement.classList.add("is-hovering-territory");
-        },
-        mouseout() {
-          layer.setStyle(territoryStyle(feature));
-          mapElement.classList.remove("is-hovering-territory");
-        },
-        click(event) {
-          closeExpandedCity();
-          buildingMarkerController.closeExpanded();
-          if(maritimeController.isSelectingPoint()){confirmMaritimePoint(event.latlng);return;}
-          if(expeditionPieceController?.handleTerritoryClick(territoryId))return;
-          selectTerritory(territoryId);
-        },
-      });
+      territoryInteractionController.bind(layer,territoryId,feature);
     },
   }).addTo(map);
   return displayTerritories;
@@ -581,7 +763,7 @@ function addTerritoryLayer(territories) {
 
 function fitCampaign(animate = true) {
   closeExpandedCity();
-  buildingMarkerController?.closeExpanded();
+  if (campaignFog(campaignState).enabled && campaignFogController) return campaignFogController.fit();
   map.fitBounds(CAMPAIGN_BOUNDS, {
     paddingTopLeft: [30, 30],
     paddingBottomRight: [30, 30],
@@ -641,7 +823,8 @@ function makeCountryLabel(feature) {
 function updateCountryLabels() {
   const zoom = map.getZoom();
   countryLabelMarkers.forEach(({ marker, minZoom }) => {
-    const visible = zoom < 5.35 && zoom + 0.35 >= minZoom;
+    const visible = zoom < 5.35 && zoom + 0.35 >= minZoom
+      && (!campaignFogController || campaignFogController.isPointVisible(marker.getLatLng()));
     if (visible && !countryLabelLayer.hasLayer(marker)) marker.addTo(countryLabelLayer);
     if (!visible && countryLabelLayer.hasLayer(marker)) countryLabelLayer.removeLayer(marker);
   });
@@ -715,8 +898,8 @@ function closeExpandedCity() {
 }
 
 function toggleCity(city) {
+  if (campaignFogController && !campaignFogController.isPointVisible([city.displayLat ?? city.lat, city.displayLng ?? city.lng])) return;
   if (!(clubsByCity.get(city.id)?.length)) return;
-  buildingMarkerController?.closeExpanded();
   const previous = expandedCityId;
   expandedCityId = previous === city.id ? null : city.id;
   if (expandedCityId) map.panTo([city.displayLat ?? city.lat, city.displayLng ?? city.lng], { animate: true, duration: 0.35 });
@@ -745,9 +928,12 @@ function updateCityVisibility() {
   const zoom = map.getZoom();
   cityData.forEach((city) => {
     const marker = cityMarkers.get(city.id);
+    // Zoom and state events can fire while asynchronous map data is loading.
+    if (!marker) return;
     const hasClubs = clubsByCity.has(city.id);
-    const visible = expandedCityId === city.id
-      || (zoom >= 3.65 && (city.tier === 1 || zoom >= 4.65 || (hasClubs && zoom >= 4.05)));
+    const visible = (!campaignFogController || campaignFogController.isPointVisible([city.displayLat ?? city.lat, city.displayLng ?? city.lng]))
+      && (expandedCityId === city.id
+      || (zoom >= 3.65 && (city.tier === 1 || zoom >= 4.65 || (hasClubs && zoom >= 4.05))));
     if (visible && !cityLayer.hasLayer(marker)) marker.addTo(cityLayer);
     if (!visible && cityLayer.hasLayer(marker)) cityLayer.removeLayer(marker);
   });
@@ -771,41 +957,31 @@ function updateReliefVisibility(zoom = map.getZoom()) {
   reliefLayers.forEach((layer) => layer.setOpacity(opacity));
 }
 
-function updateZoomIndicator() {
-  if (!mapZoomIndicator || !mapZoomValue || !mapZoomDetail) return;
-  const minimumZoom = map.getMinZoom();
-  const maximumZoom = map.getMaxZoom();
-  const zoom = Math.max(minimumZoom, Math.min(maximumZoom, map.getZoom()));
-  const maximumStageIndex = Math.max(0, Math.round(maximumZoom - minimumZoom));
-  const stageIndex = Math.max(0, Math.min(maximumStageIndex, Math.round(zoom - minimumZoom)));
-  const relativeScale = 2 ** (zoom - minimumZoom);
-  const scaleText = relativeScale < 10 ? relativeScale.toFixed(1) : relativeScale.toFixed(0);
-  const stageLabel = ZOOM_STAGE_LABELS[stageIndex] ?? `Z${Math.round(zoom)}`;
-  mapZoomValue.textContent = `×${scaleText}`;
-  mapZoomDetail.textContent = `Z ${zoom.toFixed(2)} · 挡位 ${stageIndex + 1}/${maximumStageIndex + 1} · ${stageLabel}`;
-  mapZoomIndicator.dataset.zoomStage = String(stageIndex + 1);
-}
-
 function updateLiveZoomState() {
-  updateZoomIndicator();
-  updateReliefVisibility();
-  updateLandDepthPerspective();
+  buildingMarkerController?.updateVisibility();
+  expeditionPieceController?.updateZoom();
+  scoutUnitController?.updateZoom();
+  foreignUnitController?.updateZoom();
+  if (!useThreeMap) {
+    updateReliefVisibility();
+    updateLandDepthPerspective();
+  }
 }
 
 function updateZoomState() {
   const zoom = map.getZoom();
   updateLiveZoomState();
-  updateCoastlineLod(zoom);
-  updateOceanDepthStyle(zoom);
+  if (!useThreeMap) {
+    updateCoastlineLod(zoom);
+    updateOceanDepthStyle(zoom);
+  }
   updateCountryLabels();
   updateCityVisibility();
-  buildingMarkerController?.updateVisibility();
-  expeditionPieceController?.updateZoom();
   mapElement.classList.toggle("zoom-detailed", zoom >= 5.8);
 }
 
 async function syncCampaignWorldState() {
-  if (!campaignRequest || !territoryWorld || campaignStateSyncPending) return;
+  if (document.hidden || !campaignRequest || !territoryWorld || campaignStateSyncPending) return;
   campaignStateSyncPending = true;
   try {
     const value = await campaignRequest("/api/campaign/state");
@@ -827,6 +1003,7 @@ async function syncCampaignWorldState() {
 function startCampaignStatePolling() {
   if (campaignStatePollTimer) return;
   campaignStatePollTimer = setInterval(syncCampaignWorldState, 5000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncCampaignWorldState(); });
 }
 
 function finishMapLoading() {
@@ -834,19 +1011,25 @@ function finishMapLoading() {
     window.requestAnimationFrame(() => {
       mapElement.classList.remove("is-loading");
       mapLoader.classList.add("is-ready");
+      window.dispatchEvent(new Event("campaign-map-loaded"));
     });
   });
 }
 
 async function loadMap() {
-  const data = await loadCampaignMapData();
+  const [data, threeModule] = await Promise.all([
+    loadCampaignMapData(),
+    useThreeMap ? import("./client/map-three/campaign-layer.js?v=20260908-pre-civ-visual-v1") : null,
+  ]);
   const countries = data.countries;
   const territories = data.territories;
-  territoryIndex = data.territoryIndex;
+  territoryIndex = { ...data.territoryIndex, territories: data.territoryIndex.territories.map(territory => ({ ...territory, resources: data.territoryResources?.territories?.[territory.territoryId] ?? null })) };
+  fogSpatialIndex = new FogSpatialIndex(territories);
   coastlineData = data.coastlines;
   territoryWorld = createTerritoryWorld(territoryIndex);
   applyCampaignWorldSnapshot(campaignState?.world);
   territoryIndex.territories.forEach((metadata) => territoryMetadataById.set(metadata.territoryId, metadata));
+  scoutingController?.refresh();
   cityData = data.cities;
   clubData = data.clubs;
   clubData.forEach((club) => {
@@ -864,16 +1047,42 @@ async function loadMap() {
   };
 
   campaignCountries.features.forEach(makeCountryLabel);
-  campaignCoastlineLods = buildCoastlineLods(collectCampaignCoastlineSegments(territories));
-  activeCoastlineLodKey = coastlineLodKeyForZoom(map.getZoom());
-  addCampaignOceanDepthLayer();
-  addCampaignLandDepthLayer();
-  addCampaignCoastlineLayer();
+  if (useThreeMap) {
+    const { createCampaignThreeLayer } = threeModule;
+    campaignThreeLayer = await createCampaignThreeLayer({
+      map, element: mapElement, territories, coastlines: coastlineData, reliefConfig: data.reliefRegions, terrainProfile,
+      isAreaVisible: (bounds) => {
+        const fog = campaignFog(campaignState);if (!fog.enabled) return true;
+        const models = fogSpatialIndex.models(fog);
+        return fogSpatialIndex.touchesLand(models.current,bounds) || fogSpatialIndex.touchesLand(models.explored,bounds);
+      },
+      onStatus: ({ message, failed }) => {
+        document.querySelector("#campaign-three-status").hidden = !failed;
+        document.querySelector("#campaign-three-message").textContent = message;
+      },
+    });
+    campaignThreeLayer.setSuspended(cardStageActive);
+    document.querySelectorAll("[data-three-layer]").forEach((input) => {
+      campaignThreeLayer.setLayerVisible(input.dataset.threeLayer, input.checked);
+      input.disabled = false;
+    });
+  } else {
+    campaignCoastlineLods = buildCoastlineLods(collectCampaignCoastlineSegments(territories));
+    activeCoastlineLodKey = coastlineLodKeyForZoom(map.getZoom());
+    addCampaignOceanDepthLayer();
+    addCampaignLandDepthLayer();
+    addCampaignCoastlineLayer();
+    addCampaignReliefLayers(data.reliefRegions);
+  }
   addCountryBorders(campaignCountries);
 
-  addCampaignReliefLayers(data.reliefRegions);
   const displayTerritories = addTerritoryLayer(territories);
   addProvinceOutlineLayer(displayTerritories);
+  // Fog may synchronously change zoom: its listeners need initialized markers.
+  addCityMarkers();
+  campaignFogController = createCampaignFogController({ Leaflet: L, map, element: mapElement,
+    displayTerritories, spatialIndex:fogSpatialIndex, getCampaignState: () => campaignState, campaignBounds: CAMPAIGN_BOUNDS });
+  refreshTerritoryDisplay();
   weatherLayerController = createTerritoryWeatherLayerController({
     Leaflet:L,
     map,
@@ -883,12 +1092,26 @@ async function loadMap() {
   });
   weatherLayerController.setEnabled(weatherLayerVisible);
   buildingMarkerController.refresh();
+  const unitLayout=createUnitTerritoryLayout({map,mapElement,territoryLayersById,getObstacles:(id,origin,zoom)=>buildingMarkerController.getUnitObstacles(id,origin,zoom),getLayoutRevision:id=>(campaignState?.world?.territories?.[id]?.buildings??[]).map(b=>[b.id,b.type,b.level]),getUnits:(zoom=map.getZoom())=>{
+    const units=[],piece=campaignState?.expeditionPiece;
+    if(piece&&!piece.movement){const m=expeditionTokenMetrics(zoom);units.push({key:'expedition',territoryId:piece.territoryId,width:m.iconSize[0],height:m.iconSize[1]});}
+    const m=scoutTokenMetrics(zoom);for(const unit of campaignState?.scouting?.scouts??[])if(!unit.movement)units.push({key:unit.id,territoryId:unit.territoryId,width:m.width,height:m.height});
+    for(const u of campaignState?.world?.units??[])if(!u.moving){const size=u.kind==='scout'?[m.width,m.height]:expeditionTokenMetrics(zoom).iconSize;units.push({key:'foreign:'+u.id,territoryId:u.territoryId,width:size[0],height:size[1]});}
+    return units;
+  }});
+  const unitDisplayMetrics=(key,unit,fallback)=>{
+    if(!unit)return fallback;
+    if(unit.movement){const m=scoutTokenMetrics(map.getZoom());return key==="expedition"?fallback:{...fallback,iconAnchor:[m.width/2,m.height-6*m.scale]};}
+    const metadata=territoryMetadataById.get(unit.territoryId);
+    return unitLayout.metrics(key,unit.territoryId,metadata?.centroid?sourcePointToDisplay(unit.territoryId,metadata.centroid):null,fallback);
+  };
   expeditionPieceController = createExpeditionPieceController({
     documentRef:document,
     Leaflet: L,
     map,
     mapElement,
     layer: expeditionLayer,
+    getDisplayMetrics:(piece,fallback)=>unitDisplayMetrics("expedition",piece,fallback),
     territoryMetadataById,
     getCampaignState: () => campaignState,
     getCampaignRequest:()=>campaignRequest,
@@ -896,16 +1119,30 @@ async function loadMap() {
     campaignStore,
     applyCampaignWorldSnapshot,
     refreshTerritoryDisplay,
+    onInspect:()=>expeditionPanelController.open(),
     beforeBegin:()=>{
+      expeditionPanelController.close(); trainingController?.close(); clearTerritorySelection();
+      scoutUnitController?.cancelMoveMode(); scoutingController?.close();
       if(maritimeController?.getMode())maritimeController.clearMaritimeMode({keepSelection:true});
-      buildingPanelController?.close();
     },
     showToast,
     escapeHtml,
   });
   expeditionPieceController.refresh();
+  scoutUnitController = createScoutUnitController({
+    Leaflet:L, map, mapElement, layer:scoutLayer, territoryMetadataById, sourcePointToDisplay,
+    getDisplayMetrics:(unit,fallback)=>unitDisplayMetrics(unit?.id,unit,fallback),
+    getCampaignState:()=>campaignState, getServerNow:()=>scoutingController.getServerNow(),
+    onOpen:(id,options)=>scoutingController.openUnit(id,options),
+    onPlanMove:(id,territoryId)=>scoutingController.planMove(id,territoryId),
+    beforeBegin:()=>{ expeditionPanelController?.close(); expeditionPieceController?.cancelMoveMode(); maritimeController?.clearMaritimeMode({keepSelection:true}); trainingController?.close(); scoutingController.close(); clearTerritorySelection(); },
+    refreshTerritoryDisplay, showToast, escapeHtml,
+  });
+  scoutUnitController.refresh();
+  raidController.attachMap({Leaflet:L,map,layer:expeditionLayer,metadata:territoryMetadataById});
+  foreignUnitController=createForeignUnitController({Leaflet:L,map,layer:expeditionLayer,getState:()=>campaignState,getDisplayMetrics:(u,m)=>unitDisplayMetrics('foreign:'+u.id,u,m),isPointVisible:p=>!campaignFogController||campaignFogController.isPointVisible(L.latLng(p)),escapeHtml,onInspect:(id,u,event)=>{if(u?.territoryId&&coalitionController.handleTerritoryClick(u.territoryId,event))return;if(u?.kind==='coalition'&&u.allied)coalitionController.openActions();else showToast(`${u?.ownerName??'其他玩家'} · ${u?.name??'地图单位'}`);}});
+  foreignUnitController.refresh();
 
-  addCityMarkers();
   setMajorCitiesVisible(majorCitiesVisible);
   updateZoomState();
   fitCampaign(false);
@@ -918,6 +1155,9 @@ async function loadMap() {
     ownerTypes: OWNER_TYPES,
     getWorld: () => territoryWorld,
     getPlayers: () => campaignWorldPlayers,
+    getFog: () => campaignFog(campaignState),
+    spatialIndex:fogSpatialIndex,
+    getExploredBounds: () => campaignFogController?.getBounds(),
   });
   finishMapLoading();
   if (campaignState?.homeSelectionRequired) enterHomeSelectionMode();
@@ -928,21 +1168,38 @@ async function loadMap() {
 document.querySelector("#country-borders-toggle").addEventListener("change", (event) => setCountryBordersVisible(event.currentTarget.checked));
 document.querySelector("#major-cities-toggle").addEventListener("change", (event) => setMajorCitiesVisible(event.currentTarget.checked));
 document.querySelector("#weather-layer-toggle").addEventListener("change", (event) => setWeatherLayerVisible(event.currentTarget.checked));
+document.querySelector("#campaign-three-retry").addEventListener("click", () => campaignThreeLayer?.retry());
+document.querySelectorAll("[data-three-layer]").forEach((input) => {
+  if (!useThreeMap) {
+    input.checked = false;
+    input.closest("label").title = "此开关仅适用于三维地图";
+  }
+  input.addEventListener("change", () => campaignThreeLayer?.setLayerVisible(input.dataset.threeLayer, input.checked));
+});
 L.DomEvent.disableClickPropagation(document.querySelector(".map-layer-toggles"));
 document.querySelector("#confirm-home-selection").addEventListener("click", confirmHomeSelection);
 L.DomEvent.disableClickPropagation(document.querySelector("#home-selection-panel"));
-document.querySelector("#territory-challenge-button").addEventListener("click", (event) => event.currentTarget.dataset.action === "maritime" ? beginMaritimeCampaign() : challengeSelectedTerritory());
+document.querySelector("#territory-challenge-button").addEventListener("click", (event) => event.currentTarget.dataset.action === "elite" ? eliteController.open(territoryMetadataById.get(territoryController.getSelectedTerritoryId())?.eliteClubIds?.[0]) : event.currentTarget.dataset.action === "maritime" ? beginMaritimeCampaign() : challengeSelectedTerritory());
 document.querySelector("#territory-maritime-cancel-button").addEventListener("click", cancelMaritimeCampaign);
-document.querySelector("#territory-building-button").addEventListener("click", () => buildingPanelController.open(getSelectedTerritoryId()));
 document.querySelector("#battle-result-close").addEventListener("click", () => { document.querySelector("#battle-result-panel").hidden = true; });
 const accountMenu = document.querySelector("#account-menu");
 const accountTrigger = document.querySelector("#account-menu-trigger");
 const accountPopover = document.querySelector("#account-menu-popover");
-const accountNickname = document.querySelector("#account-nickname");
 const accountMenuName = document.querySelector("#account-menu-name");
-const topbarWallet = document.querySelector("#topbar-wallet");
-const goldBalance = document.querySelector("#gold-balance");
-const goldFormatter = new Intl.NumberFormat("zh-CN");
+createTvSettingsController({root:document.querySelector('#tv-settings-window'),trigger:document.querySelector('#account-tv-settings'),getState:()=>campaignState,campaignStore,beforeOpen:()=>{accountPopover.hidden=true;accountTrigger.setAttribute('aria-expanded','false');}});
+L.DomEvent.disableClickPropagation(document.querySelector('#tv-settings-window'));L.DomEvent.disableScrollPropagation(document.querySelector('#tv-settings-window'));
+const expeditionAppearanceController=createExpeditionAppearanceController({trigger:document.querySelector('#account-expedition-style'),windowRoot:document.querySelector('#expedition-appearance-window'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,applyCampaignWorldSnapshot,showToast,beforeOpen:()=>{expeditionPanelController?.close();accountPopover.hidden=true;accountTrigger.setAttribute('aria-expanded','false');expeditionPieceController?.cancelMoveMode();scoutUnitController?.cancelMoveMode();}});
+const oilMarketController=createOilMarketController({getRequest:()=>campaignRequest,onState:state=>{campaignStore.setState(state,{source:'oil'});updateTopbarWallet(state);applyCampaignWorldSnapshot(state.world);}});
+const resourceController = createResourceController({ onOpenOil:()=>oilMarketController.open(), trigger: document.querySelector("#topbar-resource-summary"), windowRoot: document.querySelector("#resource-window"), getState: () => campaignState, showToast,
+  setPreference: async preference => {
+    const value=await campaignRequest('/api/campaign/resources/fans/preference',{method:'POST',body:{preference}});
+    campaignStore.setState(value.state,{source:'fan-preference'});
+    updateTopbarWallet(value.state);applyCampaignWorldSnapshot(value.state.world);refreshTerritoryDisplay();buildingPanelController?.refreshFromState();
+    const selected=territoryController.getSelectedTerritoryId();if(selected)territoryController.renderTerritoryInspector(selected);
+  }
+});
+L.DomEvent.disableClickPropagation(document.querySelector('#resource-window'));
+L.DomEvent.disableScrollPropagation(document.querySelector('#resource-window'));
 const yoogleController = createYoogleController({
   mount: document.querySelector("#yoogle-search"),
   windowRoot: document.querySelector("#yoogle-window"),
@@ -957,20 +1214,32 @@ const inventoryController = createInventoryController({
   showToast,
   documentRef:document,
 });
-function updateTopbarWallet(stateValue=campaignState) {
-  const gold=Number(stateValue?.wallet?.gold);
-  if (!Number.isSafeInteger(gold)||gold<0) {
-    topbarWallet.hidden=true;
-    return;
-  }
-  goldBalance.textContent=goldFormatter.format(gold);
-  topbarWallet.title=`金币余额：${goldFormatter.format(gold)}`;
-  topbarWallet.hidden=false;
+
+const sponsorshipController = createSponsorshipController({
+  root:document.querySelector('#sponsorship-window'),trigger:document.querySelector('#topbar-sponsorship'),
+  getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,
+  territoryLabel:id=>{const t=territoryMetadataById.get(id);return t?t.country+' · '+t.name:'中立地块';},
+  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(6);},
+  onClose:()=>selectNav(0),
+  onState:state=>{updateTopbarWallet(state);applyCampaignWorldSnapshot(state.world);refreshTerritoryDisplay();buildingPanelController?.refreshFromState();},
+});
+L.DomEvent.disableClickPropagation(document.querySelector('#sponsorship-window'));
+L.DomEvent.disableScrollPropagation(document.querySelector('#sponsorship-window'));
+document.addEventListener('click',event=>{if(event.target.closest?.('[data-open-sponsorship]'))sponsorshipController.open();});
+
+const onMapToolsState=state=>{updateTopbarWallet(state);applyCampaignWorldSnapshot(state.world);refreshTerritoryDisplay();buildingPanelController?.refreshFromState();};
+const neutralRewardController=createNeutralRewardController({root:document.querySelector('#neutral-reward-window'),trigger:document.querySelector('#pending-rewards-trigger'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,onState:onMapToolsState,showToast,territoryLabel:id=>territoryMetadataById.get(id)?.name??id});
+createDevelopmentFogController({button:document.querySelector('#development-fog-toggle'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,onState:onMapToolsState,showToast});
+for(const el of [document.querySelector('.map-development-controls'),document.querySelector('#neutral-reward-window')]){L.DomEvent.disableClickPropagation(el);L.DomEvent.disableScrollPropagation(el);}
+
+function updateTopbarWallet(stateValue = campaignState) {
+  resourceController.update(stateValue);
+  expeditionAppearanceController.update(stateValue);
 }
+
 function initializeAccountMenu(detail) {
   const nickname = detail?.state?.nickname;
   if (!nickname) return;
-  accountNickname.textContent = nickname;
   accountMenuName.textContent = nickname;
   accountMenu.hidden = false;
   updateTopbarWallet(detail.state);
@@ -992,7 +1261,7 @@ document.querySelector("#account-logout").addEventListener("click", () => {
 });
 L.DomEvent.disableClickPropagation(accountMenu);
 L.DomEvent.disableClickPropagation(document.querySelector("#territory-inspector"));
-L.DomEvent.disableClickPropagation(document.querySelector("#building-panel"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#territory-inspector"));
 L.DomEvent.disableClickPropagation(document.querySelector("#battle-result-panel"));
 const PAN_STEP = 70;
 const PAN_INTERVAL_MS = 120;
@@ -1022,15 +1291,18 @@ function clearPressedPanKeys() {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && buildingPanelController.close()) {
-    event.preventDefault();
-    return;
-  }
+  if (event.defaultPrevented) return;
   if (event.key === "Escape" && cancelMaritimeCampaign()) {
     event.preventDefault();
     return;
   }
+  if (event.key === "Escape" && scoutUnitController?.cancelMoveMode()) { event.preventDefault(); return; }
   if (event.key === "Escape" && expeditionPieceController?.cancelMoveMode()) {
+    event.preventDefault();
+    return;
+  }
+  if (event.key === "Escape" && getSelectedTerritoryId()) {
+    clearTerritorySelection();
     event.preventDefault();
     return;
   }
@@ -1043,7 +1315,6 @@ document.addEventListener("keydown", (event) => {
   if (pressedPanKeys.has(key)) return;
   pressedPanKeys.add(key);
   closeExpandedCity();
-  buildingMarkerController.closeExpanded();
   panFromPressedKeys();
   if (panTimer === null) panTimer = window.setInterval(panFromPressedKeys, PAN_INTERVAL_MS);
 });
@@ -1063,11 +1334,11 @@ map.on("zoomend", updateZoomState);
 map.on("mousemove", (event) => { if(maritimeController.isSelectingPoint())updateMaritimeSnap(event.latlng); });
 map.on("click", (event) => {
   if(maritimeController.isSelectingPoint()){confirmMaritimePoint(event.latlng);return;}
+  if(scoutUnitController?.isSelectingDestination()){showToast("请选择己方领土地块");return;}
   if(expeditionPieceController?.isSelectingDestination()){showToast("请选择本方领土地块");return;}
   const maritimeMode=maritimeController.getMode();
   if(maritimeMode?.routes){
     closeExpandedCity();
-    buildingMarkerController.closeExpanded();
     const sourceTerritoryId=maritimeMode.sourceTerritoryId;
     if(getSelectedTerritoryId()!==sourceTerritoryId)selectTerritory(sourceTerritoryId);
     else renderTerritoryInspector(sourceTerritoryId);
@@ -1075,25 +1346,27 @@ map.on("click", (event) => {
     return;
   }
   closeExpandedCity();
-  buildingMarkerController.closeExpanded();
+  expeditionPanelController?.close();
   clearTerritorySelection();
 });
 
-function startMapLoading(event) {
+async function startMapLoading(event) {
   if (mapLoadingStarted) return Promise.resolve();
   const detail = event?.detail ?? window.campaignBootstrap;
   if (!detail?.state || typeof detail.request !== "function") return Promise.resolve();
   mapLoadingStarted = true;
+  try {
+  // Login fills the viewport; restoring the game header changes map height.
+  map.invalidateSize({ pan: false });
   campaignStore.setState(detail.state, { source: "bootstrap" });
   campaignRequest = detail.request;
   campaignClearSession = typeof detail.clearSession === "function" ? detail.clearSession : null;
-  return loadMap().catch((error) => {
-  console.error(error);
-  mapLoader.classList.add("is-error");
-  mapLoader.querySelector("strong").textContent = "欧洲地图载入失败";
-  mapLoader.querySelector("small").textContent = "请刷新页面后重试（" + (error?.message || "未知错误") + "）";
-  showToast("欧洲地图数据载入失败，请刷新页面");
-});
+  await loadMap();
+  } catch (error) {
+    console.error(error);
+    window.dispatchEvent(new CustomEvent('campaign-map-error', {detail: {message: error.message}}));
+    showToast("地图载入失败，请重试或打开兼容地图");
+  }
 }
 window.addEventListener("campaign-ready", startMapLoading, { once: true });
 if (window.campaignBootstrap) startMapLoading({ detail: window.campaignBootstrap });
@@ -1109,12 +1382,60 @@ const fullTacticsController = createTacticsController({
   request:(path, options) => campaignRequest(path, options),
   showToast,
 });
+campaignStore.subscribe(()=>fullTacticsController.refreshFitness());
 const navItems = [...document.querySelectorAll(".nav-item")];
-navItems[0]?.addEventListener("click", () => { inventoryController.close(); fullTacticsController.close(); teamController.close(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[0].classList.add("is-active"); });
-navItems[1]?.addEventListener("click", () => { fullTacticsController.close(); teamController.open(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[1].classList.add("is-active"); });
-navItems[2]?.addEventListener("click", () => { fullTacticsController.open(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[2].classList.add("is-active"); });
-navItems[4]?.addEventListener("click", () => { fullTacticsController.close(); teamController.close(); navItems.forEach((x) => x.classList.remove("is-active")); navItems[4].classList.add("is-active"); });
-document.querySelector("#tactics-save")?.addEventListener("click", saveTactics);
-document.querySelector("#tactics-formation")?.addEventListener("change", (e) => { tacticsState.formation = e.target.value; });
-document.querySelector("#tactics-attack")?.addEventListener("change", (e) => { tacticsState.attackStyle = e.target.value; });
-document.querySelector("#tactics-defense")?.addEventListener("change", (e) => { tacticsState.defenseStyle = e.target.value; });
+
+navItems.forEach(item => item.addEventListener("click", () => expeditionPanelController?.close()));
+function selectNav(index) { navItems.forEach((item,i) => { item.classList.toggle("is-active", i === index); if (i === index) item.setAttribute("aria-current", "page"); else item.removeAttribute("aria-current"); }); }
+const wonderCatalogController = createWonderCatalogController({root:document.querySelector('#wonder-catalog-window'),trigger:document.querySelector('#topbar-wonders'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,
+  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(7);},onClose:()=>selectNav(0)});
+L.DomEvent.disableClickPropagation(document.querySelector('#wonder-catalog-window'));
+L.DomEvent.disableScrollPropagation(document.querySelector('#wonder-catalog-window'));
+navItems.slice(0,7).forEach(item=>item.addEventListener('click',()=>{if(!document.querySelector('#wonder-catalog-window').hidden)wonderCatalogController.close();}));
+
+const eliteController=createEliteController({root:document.querySelector('#elite-window'),trigger:document.querySelector('#topbar-elite'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,openPlayerReward:options=>inventoryController.openReward(options),
+ onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(navItems.indexOf(document.querySelector('#topbar-elite')));},onClose:()=>selectNav(0)});
+L.DomEvent.disableClickPropagation(document.querySelector('#elite-window'));L.DomEvent.disableScrollPropagation(document.querySelector('#elite-window'));
+navItems.filter(item=>item.id!=='topbar-elite').forEach(item=>item.addEventListener('click',()=>eliteController.close()));
+
+const shopController=createShopController({root:document.querySelector('#shop-window'),trigger:document.querySelector('#topbar-shop'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,
+ onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(navItems.indexOf(document.querySelector('#topbar-shop')));},onClose:()=>selectNav(0)});
+L.DomEvent.disableClickPropagation(document.querySelector('#shop-window'));L.DomEvent.disableScrollPropagation(document.querySelector('#shop-window'));
+navItems.filter(item=>item.id!=='topbar-shop').forEach(item=>item.addEventListener('click',()=>shopController.close()));
+
+const researchController=createResearchController({root:document.querySelector('#research-window'),trigger:document.querySelector('#topbar-research'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,
+ onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(navItems.indexOf(document.querySelector('#topbar-research')));},onClose:()=>selectNav(0)});
+L.DomEvent.disableClickPropagation(document.querySelector('#research-window'));L.DomEvent.disableScrollPropagation(document.querySelector('#research-window'));
+navItems.filter(item=>item.id!=='topbar-research').forEach(item=>item.addEventListener('click',()=>{if(!document.querySelector('#research-window').hidden)researchController.close();}));
+
+const enhancementController = createEnhancementController({
+  root: document.querySelector("#enhancement-window"), getCampaignState: () => campaignState, getCampaignRequest: () => campaignRequest, campaignStore,
+  onOpen: () => { expeditionPanelController?.close(); inventoryController.close(); trainingController?.close(); scoutingController?.close(); clearTerritorySelection(); },
+  onClose: () => selectNav(0), onState: (state) => { updateTopbarWallet(state); applyCampaignWorldSnapshot(state.world); }, showToast,
+});
+const cardManagementController = createCardManagementController({
+  root: document.querySelector("#card-management-window"), getCampaignState: () => campaignState, getCampaignRequest: () => campaignRequest, campaignStore,
+  onOpen: () => { expeditionPanelController?.close(); inventoryController.close(); trainingController?.close(); scoutingController?.close(); clearTerritorySelection(); },
+  onClose: () => selectNav(0), onState: (state) => { updateTopbarWallet(state); applyCampaignWorldSnapshot(state.world); }, showToast,
+});
+L.DomEvent.disableClickPropagation(document.querySelector("#card-management-window"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#card-management-window"));
+document.querySelector("#topbar-card-management")?.addEventListener("click", () => { cardManagementController.open(); if (campaignState?.setupComplete) selectNav(5); });
+navItems.slice(0,6).forEach(item => item.addEventListener("click", () => sponsorshipController.close()));
+navItems.slice(0,5).forEach(item => item.addEventListener("click", () => cardManagementController.close()));
+L.DomEvent.disableClickPropagation(document.querySelector("#enhancement-window"));
+L.DomEvent.disableScrollPropagation(document.querySelector("#enhancement-window"));
+navItems[0]?.addEventListener("click", () => { enhancementController.close(); inventoryController.close(); fullTacticsController.close(); teamController.close(); selectNav(0); });
+navItems[1]?.addEventListener("click", () => { enhancementController.close(); fullTacticsController.close(); teamController.open(); selectNav(1); });
+navItems[2]?.addEventListener("click", () => { enhancementController.close(); fullTacticsController.open(); selectNav(2); });
+navItems[3]?.addEventListener("click", () => { enhancementController.open(); if (campaignState?.setupComplete) selectNav(3); });
+navItems[4]?.addEventListener("click", () => { enhancementController.close(); fullTacticsController.close(); teamController.close(); selectNav(4); });
+
+const interactionController=createInteractionController({root:document.querySelector('#interaction-window'),listRoot:document.querySelector('#server-players'),notices:document.querySelector('#interaction-notifications'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,
+ onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();},
+ onLocate:id=>{const bounds=territoryLayersById.get(id)?.getBounds?.();if(bounds?.isValid?.())map.panTo(bounds.getCenter(),{animate:true,duration:.35});selectTerritory(id);}});
+for(const id of ['interaction-window','server-players']){L.DomEvent.disableClickPropagation(document.getElementById(id));L.DomEvent.disableScrollPropagation(document.getElementById(id));}
+
+const coalitionController=createCoalitionController({getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,mapElement,metadata:territoryMetadataById,showToast,displayPointToSource,onOpenTactics:()=>{fullTacticsController.open({squadId:'coalition'});selectNav(2);},beforeOpen:()=>{expeditionPanelController?.close();scoutUnitController?.cancelMoveMode();expeditionPieceController?.cancelMoveMode();trainingController?.close();scoutingController?.close();maritimeController?.clearMaritimeMode({keepSelection:true});}});
+const raidController=createRaidController({getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,onOpenTactics:()=>{fullTacticsController.open({squadId:'raid'});selectNav(2);},beforeOpen:()=>{fullTacticsController.close();coalitionController.close();}});
+for(const element of [coalitionController.root,raidController.root]){L.DomEvent.disableClickPropagation(element);L.DomEvent.disableScrollPropagation(element);}

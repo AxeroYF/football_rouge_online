@@ -1,0 +1,56 @@
+import {buildAccountMatchSeat} from '../shared/football/account-match-seat.mjs';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {CampaignService} from '../campaign-service.mjs';
+import {DRAFT_VERSION} from '../shared/config/draft.mjs';
+const require=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs');
+const {chromium}=require('playwright');
+const root=process.cwd(),out=path.join(root,'outputs/loading-r3-review'),data=fs.mkdtempSync(path.join(os.tmpdir(),'ydl-loading-review-'));
+const read=f=>JSON.parse(fs.readFileSync(path.join(root,f),'utf8'));
+const index=read('assets/data/territory-index.json'),geo=read('assets/data/campaign-territories.geojson'),resources=read('assets/data/territory-resources.json'),catalog=read('assets/data/s4-player-catalog.json');
+const byId=new Map(index.territories.map(t=>[t.territoryId,t]));
+const has=(id,terrain)=>resources.territories[id].terrain.includes(terrain);
+const home=index.territories.find(t=>t.countryCode==='FRA'&&has(t.territoryId,'plains')&&t.landNeighbors.some(id=>has(id,'hills')||has(id,'mountain'))&&t.landNeighbors.some(id=>has(id,'plains'))&&t.landNeighbors.length>=3);
+assert.ok(home);
+const hill=home.landNeighbors.find(id=>has(id,'hills')||has(id,'mountain')),plain=home.landNeighbors.find(id=>id!==hill&&has(id,'plains'));
+const owned=[home.territoryId,...home.landNeighbors];
+const s=new CampaignService({dataPath:path.join(data,'campaign-accounts.json'),catalog,territoryIndex:index,territoryGeoJson:geo,territoryResources:resources});
+const base=[['GK',4],['DEF',10],['MID',10],['ATT',9]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX).slice(0,n));
+const pt=catalog.filter(p=>p.nationality==='葡萄牙').slice(0,3);const roster=[...base.filter(p=>p.nationality!=='葡萄牙'),...pt,{...pt[0],id:'pt-duplicate',cardDefinitionId:pt[0].id}];
+const actor={id:'wonder-browser',nickname:'奇观验收',token:'isolated-wonder-token',createdAt:Date.now(),setupComplete:true,homeTerritoryId:home.territoryId,gold:100000,mapColor:'#5d7d9e',draft:{version:DRAFT_VERSION,teamName:'奇观验收',totalPicks:roster.length,roster},resources:{fans:50000}};
+s.accounts.set(actor.id,actor);s.world.players[actor.id]={playerId:actor.id,territoryIds:owned,capitalTerritoryId:home.territoryId};
+for(const id of owned)Object.assign(s.world.territories[id],{ownerType:'player',ownerId:actor.id,capitalOf:id===home.territoryId?actor.id:null,buildings:[]});
+s.buildings.ensureCapitalStadium(actor,s.world,home.territoryId);s.world.territories[home.territoryId].buildings.push(s.buildings.createRecord('club-shop'));
+const chosen=[];
+for(const role of ['GK','LB','RB','CB','CB','DM','AM','LM','ST','ST','RW'])chosen.push(catalog.find(p=>p.role===role&&!p.isX&&!chosen.some(v=>v.id===p.id)));
+assert.ok(chosen.every(Boolean));
+const reserve=[['GK',1],['DEF',4],['MID',3],['ATT',3]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX&&!chosen.some(v=>v.id===p.id)).slice(0,n));
+actor.draft.roster=[...chosen,...reserve];actor.draft.totalPicks=22;
+actor.playerSquads={schemaVersion:2,assignments:Object.fromEntries(actor.draft.roster.map(p=>[p.id,chosen.includes(p)?'expedition':'garrison']))};
+const coords=[[50,90],[15,62],[85,62],[40,68],[60,68],[40,48],[60,40],[15,44],[40,20],[60,20],[85,20]];
+const positions=Object.fromEntries(chosen.map((p,i)=>[p.id,{x:coords[i][0],y:coords[i][1]}]));
+const lines={attack:20,midfield:44,defense:68,goalkeeper:90},starters=chosen.map(p=>p.id);
+s.saveTactics(actor,{activeSquadId:'expedition',playerSquads:actor.playerSquads,squads:{expedition:{starters,positions,formationLines:lines,planSnapshots:{__s4V2:{starters,positionPresets:{position1:positions,position2:positions,position3:positions},formationLinePresets:{position1:lines,position2:lines,position3:lines}}}}}});
+
+const tired=actor.draft.roster.find(p=>p.id===chosen[1].id);tired.state={...tired.state,fitness:60};
+const fresh=structuredClone(catalog.find(p=>p.role==='LB'&&!p.isX&&!actor.draft.roster.some(v=>v.id===p.id)));
+fresh.state={...fresh.state,fitness:98};actor.draft.roster.push(fresh);actor.playerSquads.assignments[fresh.id]='expedition';
+const target=home.landNeighbors.at(-1);s.world.players[actor.id].territoryIds=s.world.players[actor.id].territoryIds.filter(id=>id!==target);
+Object.assign(s.world.territories[target],{ownerType:'neutral',ownerId:null,capitalOf:null,buildings:[]});
+s.world.territories[home.territoryId].buildings.push(s.buildings.createRecord('recovery-center'));
+s.save();
+
+const extra=catalog.filter(p=>p.grade==='C'&&!p.isX);for(let i=0;i<450;i++){const p=structuredClone(extra[i%extra.length]);p.cardDefinitionId=p.id;p.id='bench-'+i;actor.draft.roster.push(p);actor.playerSquads.assignments[p.id]='garrison';}s.save();
+const saved=JSON.parse(fs.readFileSync(path.join(data,'campaign-accounts.json'),'utf8')),results=[];
+for(const resultOnly of [false,true]){
+ const campaign=new CampaignService({repository:{load:()=>structuredClone(saved),save:()=>{}},catalog,territoryIndex:index,territoryGeoJson:geo,territoryResources:resources});
+ const a=campaign.accounts.get(actor.id),ids=a.draft.roster.filter(p=>p.id.startsWith('bench-')).slice(0,5).map(p=>p.id);
+ const t=performance.now(),q=campaign.previewCardManagement(a,{kind:'trade-up',cardIds:ids}),previewMs=performance.now()-t;
+ const begin=performance.now(),response=campaign.mutateCardManagement(a,'trade-up',{cardIds:ids,quote:q.quote,requestId:'benchmark-trade',resultOnly}),ready=performance.now();
+ const bytes=Buffer.byteLength(JSON.stringify(response));results.push({resultOnly,roster:a.draft.roster.length,previewMs,responseMs:ready-begin,responseBytes:bytes});
+}
+fs.mkdirSync('outputs/cards-flow-review',{recursive:true});fs.writeFileSync('outputs/cards-flow-review/performance.json',JSON.stringify(results,null,2));console.log(JSON.stringify(results));

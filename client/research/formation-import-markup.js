@@ -1,0 +1,9 @@
+import { FORMATION_RESEARCH_POINTS, FORMATION_RESEARCH_DIRECTIONS, analyzeResearchFormation } from '../../shared/config/formation-research.mjs';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function pitch(slot){return `<svg class="research-import-pitch" viewBox="0 0 100 132" aria-hidden="true"><rect x="2" y="2" width="96" height="128" rx="5"/><path d="M2 66H98 M28 2V23H72V2 M28 130V109H72V130"/><circle class="pitch-circle" cx="50" cy="66" r="10"/>${FORMATION_RESEARCH_POINTS.map(id=>`<circle class="player-dot" cx="${slot.positions[id].x}" cy="${slot.positions[id].y*1.32}" r="3.4"/>`).join('')}<circle class="keeper-dot" cx="50" cy="124" r="3.4"/></svg>`;}
+export function formationImportMarkup(slots,{target='',currentId=null}={}){
+ return `<dialog class="research-import-dialog" aria-labelledby="research-import-title"><header><div><h2 id="research-import-title">导入阵容研究</h2><p>导入至 ${esc(target)}</p></div><button type="button" data-close-research-import aria-label="关闭导入阵容研究" autofocus>×</button></header><div class="research-import-list">${slots.filter(s=>s.confirmedAt!=null).map(s=>{
+ const benefits=FORMATION_RESEARCH_DIRECTIONS.filter(d=>s.levels?.[d.id]>0);
+ return `<button type="button" class="research-import-option" data-use-research="${esc(s.id)}">${pitch(s)}<span class="research-import-info"><strong>${esc(s.name)}</strong><span class="research-import-shape">${esc(analyzeResearchFormation(s).name)}${currentId===s.id?' · 当前使用':''}</span><span class="research-import-benefits">${benefits.map(d=>`<span>${d.label} <b>+${s.levels[d.id]}%</b></span>`).join('')||'<span class="research-import-no-benefit">暂无研究加成</span>'}</span></span><span class="research-import-arrow" aria-hidden="true">→</span></button>`;
+ }).join('')||'<div class="research-import-empty">暂无已确定的研究阵型<span>先在科技研究中确定一个自定义阵型</span></div>'}</div><footer>导入后锁定站位，球员职责仍可调整。</footer></dialog>`;
+}

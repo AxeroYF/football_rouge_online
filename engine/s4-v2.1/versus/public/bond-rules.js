@@ -110,15 +110,15 @@ function structureBond(id, name, members, bonus, count = members.length, targetR
   };
 }
 
-function evaluateStructureBonds(lineup, roles) {
+function evaluateStructureBonds(lineup, roles, heightsAdjusted = false) {
   if (lineup.length !== 11) return [];
   const bonds = [];
   if (lineup.every((player) => Number(player.upgradeLevel ?? 0) === 0)) {
     bonds.push(structureBond("united", "团结起来", lineup, .03, 11));
   }
-  const shortPlayers = lineup.filter((player) => effectiveHeight(player) < S4_SHORT_PLAYER_MAX_HEIGHT);
+  const shortPlayers = lineup.filter((player) => (heightsAdjusted ? Number(player.heightCm) : effectiveHeight(player)) < S4_SHORT_PLAYER_MAX_HEIGHT);
   if (shortPlayers.length >= 5) bonds.push(structureBond("small-quick-skillful", "小快灵", shortPlayers, progressiveStructureBonus(shortPlayers.length)));
-  const tallPlayers = lineup.filter((player) => effectiveHeight(player) > S4_TALL_PLAYER_MIN_HEIGHT);
+  const tallPlayers = lineup.filter((player) => (heightsAdjusted ? Number(player.heightCm) : effectiveHeight(player)) > S4_TALL_PLAYER_MIN_HEIGHT);
   if (tallPlayers.length >= 5) bonds.push(structureBond("aerial-bombardment", "高空轰炸", tallPlayers, progressiveStructureBonus(tallPlayers.length)));
   const defenders = lineup.filter((player) => assignedGroup(player, roles) === "DEF");
   if (defenders.length >= 6) bonds.push(structureBond("steel-defense", "钢铁防线", defenders, .03, defenders.length, "DEF"));
@@ -194,14 +194,14 @@ export function evaluateS4LineupBonds(players, catalog, options = {}) {
     const strongest = ranked[0];
     return strongest?.count >= S4_BOND_LINEUP_MINIMUM ? [strongest] : [];
   });
-  return [...identityBonds, ...evaluateStructureBonds(lineup, options.roles ?? {})];
+  return [...identityBonds, ...evaluateStructureBonds(lineup, options.roles ?? {}, options.heightsAdjusted)];
 }
+
+export const selectS4AppliedBonds=bonds=>[...(bonds??[])].sort((a,b)=>Number(b.bonus??0)-Number(a.bonus??0)).slice(0,2);
 
 export function applyS4BondBonuses(players, bonds, options = {}) {
   const maximumAttribute = options.maximumAttribute === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : Math.max(1, Number(options.maximumAttribute ?? 99));
-  const appliedBonds = [...(bonds ?? [])]
-    .sort((left, right) => Number(right.bonus ?? 0) - Number(left.bonus ?? 0))
-    .slice(0, 2);
+  const appliedBonds = selectS4AppliedBonds(bonds);
   const bonusByPlayer = new Map();
   const playerById = new Map((players ?? []).map((player) => [player.id, player]));
   appliedBonds.forEach((bond) => bond.memberIds.forEach((id) => {

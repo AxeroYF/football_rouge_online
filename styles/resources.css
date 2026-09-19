@@ -1,0 +1,92 @@
+.resource-icon{display:inline-block;flex-shrink:0;object-fit:contain;vertical-align:middle}.resource-amount{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-variant-numeric:tabular-nums}.resource-amount b{font-size:inherit;color:inherit}.resource-name{font-size:11px;font-weight:500;opacity:.86}.resource-amount[data-resource=production]{color:#edaa61}.resource-amount[data-resource=science]{color:#86d8f0}.resource-amount[data-resource=fans]{color:#b7d895}.resource-amount[data-resource=sponsorship]{color:#cab5ec}
+#topbar-resource-summary{display:flex;align-items:center;align-self:center;margin-right:14px;gap:12px;padding:7px 10px;border:1px solid rgba(185,173,139,.24);border-radius:9px;background:rgba(9,25,20,.6);font-size:13px;cursor:pointer}#topbar-resource-summary[hidden]{display:none}#topbar-resource-summary:hover{border-color:#d8b968}#topbar-resource-summary .resource-icon{width:23px;height:23px}
+.territory-resource-block{display:grid;gap:8px;padding:12px 0}.territory-resource-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;font-size:12px;color:#bcc8b7}.territory-resource-heading small{font-size:10px;opacity:.8}.territory-yield-list{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.territory-yield-list .resource-amount{font-size:14px}.territory-resource-block.is-compact{margin-top:8px;padding:9px 0 0;border-top:1px solid rgba(207,211,178,.2)}.territory-resource-block.is-compact .territory-resource-heading{font-size:11px;gap:14px}.territory-resource-block.is-compact .resource-icon,.territory-resource-block.is-compact .gold-icon{width:20px;height:20px}.territory-resource-block.is-compact .resource-amount{font-size:13px}.territory-tooltip .territory-resource-block small{display:inline;color:inherit;margin:0}.territory-tooltip .territory-resource-block span{letter-spacing:0;text-transform:none}
+#territory-resources{padding:0 16px;border-top:1px solid rgba(207,211,178,.14);border-bottom:1px solid rgba(207,211,178,.14);margin:2px 0 10px}#territory-resources[hidden]{display:none}
+/* A single resource strip stays reachable at narrow widths. */
+@media(max-width:1600px){
+ .topbar:has(#topbar-resource-summary:not([hidden])) .brand{padding:0 10px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .brand strong{display:none}
+ .topbar:has(#topbar-resource-summary:not([hidden])) #account-nickname{max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .topbar-yoogle{width:auto;min-width:0;margin:0 8px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .yoogle-searchbox{display:none}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .yoogle-searchbar{display:flex}
+ #topbar-resource-summary{flex:0 0 auto;align-self:center;margin-right:8px}
+}
+@media(min-width:681px) and (max-width:1600px){.topbar:has(#topbar-resource-summary:not([hidden])) .primary-nav{flex:1 1 auto;overflow-x:auto;margin:0 8px}.topbar:has(#topbar-resource-summary:not([hidden])) .nav-item{min-width:64px;padding:0 10px}}
+@media(max-width:680px){
+ .topbar:has(#topbar-resource-summary:not([hidden])) .topbar-identity{flex:0 1 auto}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .brand{padding:0 6px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .brand-logo{width:28px;height:28px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .account-menu{min-width:0;flex:0 1 auto}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .account-menu-trigger{max-width:115px;padding:0 7px;gap:4px;font-size:11px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .topbar-yoogle{margin-left:auto;margin-right:6px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .yoogle-logo{font-size:11px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .topbar-wallet{margin-left:0;margin-right:6px;gap:2px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .topbar-wallet strong{font-size:12px}
+ #topbar-resource-summary{display:grid;gap:1px;padding:3px 6px;margin-right:5px;font-size:11px}
+ #topbar-resource-summary .resource-icon{width:18px;height:18px}
+ .topbar:has(#topbar-resource-summary:not([hidden])) .primary-nav .nav-item{min-width:0;padding:0 5px;font-size:11px}
+ #territory-inspector{width:min(340px,calc(100% - 24px));max-height:min(60%,430px);overflow:auto}
+}
+
+/* One shared resource strip: gold stock + current production + current science. */
+#topbar-resource-summary{gap:0;padding:8px 2px;flex:0 0 auto;box-shadow:inset 0 1px 0 #ffffff05}
+#topbar-resource-summary>button{display:inline-flex;align-items:center;padding:0 12px;min-height:24px}
+#topbar-resource-summary .topbar-wallet{margin:0;gap:5px;border:0;padding-top:0;padding-bottom:0;background:none;box-shadow:none;color:#e7bd57}
+#topbar-resource-summary .topbar-wallet strong{font-size:14px;line-height:1.2}
+#topbar-resource-summary .resource-icon,#topbar-resource-summary .gold-icon{width:24px;height:24px}
+#topbar-resource-summary:focus-visible{outline:2px solid #d8b968;outline-offset:3px}
+@media(max-width:1000px){#topbar-resource-summary{padding:6px 1px}#topbar-resource-summary>button{padding:0 8px}#topbar-resource-summary .topbar-wallet strong{font-size:12px}}
+@media(max-width:680px){#topbar-resource-summary{display:flex;gap:0;padding:5px 0;font-size:11px}#topbar-resource-summary>button{padding:0 6px;min-height:20px}#topbar-resource-summary .resource-icon,#topbar-resource-summary .gold-icon{width:19px;height:19px}#topbar-resource-summary .topbar-wallet{gap:3px;margin:0}#topbar-resource-summary .topbar-wallet strong{font-size:11px}.topbar:has(#topbar-resource-summary:not([hidden])) .topbar-yoogle{margin-right:4px}}
+@media(max-width:400px){.topbar:has(#topbar-resource-summary:not([hidden])) .topbar-yoogle{display:none}.topbar:has(#topbar-resource-summary:not([hidden])) .account-menu-trigger{max-width:82px;padding:0 4px}#topbar-resource-summary{margin-left:auto}#topbar-resource-summary>button{padding:0 5px}}
+
+.building-production-summary{margin:0;padding:10px 16px;color:#deb985;font-size:12px;line-height:1.5}
+
+/* Resource sources are anchored hover panels, without a modal backdrop. */
+#topbar-resource-summary{cursor:default}
+#topbar-resource-summary>button{border:0;background:transparent;font:inherit;color:inherit;cursor:default;border-radius:3px;gap:5px}
+#topbar-resource-summary>button+button{border-left:1px solid #b9ad8b29}
+#topbar-resource-summary>button:hover,#topbar-resource-summary>button[aria-expanded=true]{background:#e6c4810c}
+#topbar-resource-summary>button:focus-visible{outline:2px solid #d8b968;outline-offset:2px}
+#resource-window[hidden]{display:none}
+#resource-window{position:fixed;z-index:1800;box-sizing:border-box;padding:8px 0 0;pointer-events:auto;color:#e8ebdd}
+.resource-hover-panel{border:1px solid #59644a;border-radius:10px;background:#122219;box-shadow:0 12px 32px #0005;overflow:hidden}
+.resource-hover-panel header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px;border-bottom:1px solid #52604566}
+.resource-hover-panel h2{display:flex;align-items:center;gap:8px;margin:0;font-size:15px;font-weight:700}
+.resource-hover-panel header>strong{font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;color:#e6c77f}
+.resource-hover-panel:has([data-resource-total=production]) header>strong{color:#edaa61}
+.resource-hover-panel:has([data-resource-total=science]) header>strong{color:#86d8f0}
+.resource-source-scroll{max-height:var(--resource-source-height,360px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#58684c #15261b;outline:none}
+.resource-source-scroll:focus-visible{outline:2px solid #d8b968;outline-offset:-2px}
+.resource-hover-panel table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.5}
+.resource-hover-panel th{position:sticky;top:0;background:#1b2d20;color:#c2cbb3;font-weight:500;text-align:left;padding:10px 16px}
+.resource-hover-panel td{padding:11px 16px;border-top:1px solid #82916b22;overflow-wrap:anywhere}
+.resource-hover-panel th:last-child,.resource-hover-panel td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.resource-hover-panel td:first-child{width:76%}
+.resource-hover-panel .resource-source-empty{text-align:center!important;color:#c2cbb3;padding:22px 16px}
+@media(max-width:680px){#topbar-resource-summary>button{padding:0 6px}.resource-hover-panel header{padding:12px 14px}.resource-hover-panel td,.resource-hover-panel th{padding:10px 14px}}
+@media(max-width:400px){#topbar-resource-summary>button{padding:0 5px}}
+
+/* Population allocation controls and actual territory utilization. */
+.fan-summary{display:flex;flex-wrap:wrap;justify-content:space-between;gap:7px;padding:12px 16px 9px;color:#b7d895;font-size:12px}
+.fan-summary>span:last-child{flex-basis:100%;color:#d4d9c8}
+.fan-preferences{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 16px}
+.fan-preferences button{font:inherit;font-size:12px;color:#d4d9c8;border:1px solid #62714b;background:#203024;border-radius:5px;padding:7px 3px;cursor:pointer}
+.fan-preferences button[aria-pressed=true]{background:#d4b363;color:#1c2519;border-color:#d4b363}
+.fan-preferences button:disabled{opacity:.6;cursor:wait}
+.fan-preferences button:focus-visible{outline:2px solid #e6ce83;outline-offset:2px}
+.fan-rule{font-size:11px;line-height:1.6;color:#b8c4a9;margin:9px 16px 12px}
+.resource-hover-panel td small{display:block;font-size:11px;color:#acbca0;margin-top:3px}
+.territory-fan-usage{display:flex;align-items:center;gap:4px;font-size:11px;color:#b7d895}
+@media(max-width:680px){#topbar-resource-summary{display:grid;grid-template-columns:repeat(2,max-content);gap:2px 0;padding:3px 0}#topbar-resource-summary>button{min-height:20px}#topbar-resource-summary>button:nth-child(3){border-left:0}}
+
+#topbar-resource-summary #gold-growth{font-size:11px;font-weight:500;color:#c7d8a5;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:680px){#topbar-resource-summary #gold-growth{font-size:10px}}
+
+#topbar-resource-summary #gold-growth.is-negative{color:#f0a392}
+
+@media(min-width:761px){.topbar:has(#topbar-resource-summary:not([hidden])) .primary-nav{overflow-x:auto}}
+
+.resource-expense-rule{padding:8px 12px;margin:0;border-top:1px solid #78836a40;font:11px/1.6 "Microsoft YaHei",sans-serif;color:#c3bda9}.resource-expense-details summary{cursor:pointer;font-size:11px;color:#d7b889}.resource-expense-details small{display:block}
+
+.resource-hover-panel td[data-source-amount^="-"]{color:#e4aa97}

@@ -1,0 +1,100 @@
+.construction-notifications { display:grid; gap:10px; pointer-events:auto; }
+.construction-notifications[hidden] { display:none; }
+.construction-notice {
+  display:grid; grid-template-columns:40px minmax(0,1fr) 32px; gap:8px 10px;
+  padding:12px 16px; border:1px solid var(--ui-border,#3a473e);
+  border-left:3px solid var(--ui-gold,#d4b365); border-radius:12px;
+  color:var(--ui-text,#ede9dd); background:var(--ui-surface,#1a241f);
+  box-shadow:var(--ui-shadow-float,0 8px 22px #0004);
+}
+.construction-notice > header,.construction-notice > footer {
+  grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; gap:10px;
+  font-size:12px; line-height:1.4; color:var(--ui-muted,#b6beb0);
+}
+.construction-notice > header > span { color:var(--ui-gold,#d4b365); }
+.construction-notice.is-complete { border-left-color:var(--ui-success,#8cbd96); }
+.construction-notice.is-complete > header > span { color:var(--ui-success,#8cbd96); }
+.construction-notice-icon { width:40px; height:40px; object-fit:contain; align-self:center; }
+.construction-notice-identity { display:grid; align-content:center; gap:3px; min-width:0; }
+.construction-notice-identity strong { font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
+.construction-notice-identity small { color:var(--ui-muted,#b6beb0); font-size:11px; line-height:1.4; overflow-wrap:anywhere; }
+.construction-notice > button {
+  width:32px; height:32px; align-self:center; padding:0; border:1px solid var(--ui-border-strong,#617063);
+  border-radius:8px; background:var(--ui-raised,#24312a); color:var(--ui-text,#ede9dd); font:600 18px/1 sans-serif; cursor:pointer;
+}
+.construction-notice > button:hover { background:var(--ui-hover,#2e3d33); border-color:var(--ui-gold,#d4b365); }
+.construction-notice > button:focus-visible { outline:2px solid var(--ui-gold,#d4b365); outline-offset:2px; }
+.construction-progress { grid-column:1/-1; display:block; height:6px; overflow:hidden; border-radius:4px; background:var(--ui-raised,#24312a); }
+.construction-progress > i { display:block; width:0; height:100%; border-radius:inherit; background:var(--ui-gold,#d4b365); }
+.construction-notice.is-complete .construction-progress > i { background:var(--ui-success,#8cbd96); }
+.construction-notice > footer { font-variant-numeric:tabular-nums; }
+
+/* Keep the facility and both resource costs together on one row. */
+.territory-buildings .building-build-option {
+  grid-template-columns:34px minmax(0,1fr) auto; gap:6px;
+  min-height:58px; padding:6px;
+}
+.territory-buildings .building-build-option > img { width:34px; height:34px; }
+.territory-buildings .building-build-option strong { white-space:nowrap; overflow-wrap:normal; }
+.building-build-option > .building-build-actions {
+  display:grid; grid-template-columns:72px 64px; gap:6px;
+}
+.building-build-actions > button {
+  display:flex; justify-content:center; align-items:center;
+  min-width:0; min-height:40px; padding:6px 4px; border:1px solid #d4b36580;
+  border-radius:6px; font:inherit; font-size:12px; line-height:1.3; cursor:pointer;
+}
+.building-build-actions > .building-build-gold { background:#d4b365; color:#1a211a; }
+.building-build-actions > .building-build-production { background:#29392d; color:#e5cca0; border-color:#bda272; }
+.building-build-actions > button:hover:not(:disabled) { filter:brightness(1.13); }
+.building-build-actions > button:focus-visible { outline:2px solid #f4dda3; outline-offset:2px; }
+.building-build-actions > button:disabled { opacity:.42; cursor:not-allowed; }
+.building-build-actions > button > span { white-space:nowrap; font-weight:600; }
+.building-build-actions .gold-amount { --gold-icon-size:18px; font-size:14px; }
+.building-build-actions .resource-amount { gap:4px; font-size:14px; }
+.building-build-actions .resource-icon { width:20px; height:20px; }
+
+@media (max-width:380px) {
+  .territory-buildings .building-build-option { grid-template-columns:26px minmax(0,1fr) auto; gap:4px; padding:5px; }
+  .territory-buildings .building-build-option > img { width:26px; height:26px; }
+  .territory-buildings .building-build-option strong { font-size:12px; }
+  .building-build-option > .building-build-actions { grid-template-columns:62px 54px; gap:4px; }
+  .building-build-actions .gold-amount, .building-build-actions .resource-amount { font-size:13px; }
+  .building-build-actions .gold-amount { --gold-icon-size:16px; }
+  .building-build-actions .resource-icon { width:18px; height:18px; }
+}
+
+/* Keep a long open construction list above the bottom-left map controls. */
+.territory-inspector:has(.territory-buildings:not([hidden])) { z-index:760; }
+
+.construction-notifications{max-height:65vh;overflow-y:auto;scrollbar-width:thin}
+.wonder-race-notice{border-left-color:#d39b71}.wonder-race-message{grid-column:1/-1}.wonder-race-message>strong{font-size:14px;color:#e9ce94}.wonder-race-message p{margin:7px 0;font-size:12px;line-height:1.65;color:#c7c9b7}.wonder-race-notice footer button{padding:6px 8px;border:1px solid #837653;border-radius:5px;color:#edd59c;background:#2b3327;cursor:pointer;font:inherit}.wonder-race-notice footer button:last-child{background:transparent;color:#c7c9b7}
+
+/* Research has no facility icon: use the whole card for its title. */
+.research-notice{grid-template-columns:minmax(0,1fr);min-width:0}
+.research-notice-title{grid-column:1/-1;min-width:0;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
+.research-notice>footer{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px}
+.research-notice [data-cancel-research]{min-height:30px;padding:5px 10px;border:1px solid #84695a;border-radius:6px;background:transparent;color:#e2bfa8;font:inherit;font-size:12px;white-space:nowrap;cursor:pointer}
+.research-notice [data-cancel-research]:hover{background:#e2bfa810}
+.research-notice [data-cancel-research]:focus-visible{outline:2px solid var(--ui-gold,#d4b365);outline-offset:2px}
+
+/* One bounded scroll surface for all task types, including live/movement notices. */
+#campaign-notifications{display:flex;flex-direction:column;gap:0;max-height:var(--notification-available-height,calc(100dvh - 110px));overflow:hidden;pointer-events:auto;border-radius:14px;background:transparent;box-shadow:none;backdrop-filter:none}
+#campaign-notifications[hidden]{display:none!important}
+.notification-center-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;min-height:40px;padding:7px 12px;color:#e7ebdf;font-size:12px;background:#14251ce0;backdrop-filter:blur(14px);border-radius:14px}
+.notification-center-header strong{font-weight:600}.notification-center-header span{margin-left:6px;color:#aebfae;font-variant-numeric:tabular-nums}
+.notification-center-header button{border:0;background:transparent;color:#aac9b9;font:inherit;cursor:pointer;min-height:30px;padding:4px 8px}
+.notification-center-list{display:flex;flex-direction:column;gap:10px;min-height:0;overflow-y:auto;overflow-x:hidden;padding:6px 0 0;background:transparent;overscroll-behavior-y:contain;touch-action:pan-y;scroll-snap-type:none;scroll-padding-top:4px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.notification-center-list::-webkit-scrollbar{display:none;width:0;height:0}
+#campaign-notification-list>section{display:contents;max-height:none;overflow:visible}
+#campaign-notification-list>section[hidden]{display:none!important}
+#campaign-notification-list>aside{position:static;flex:none;width:100%;pointer-events:auto}
+#campaign-notification-list article{flex:none;scroll-snap-align:none;scroll-margin-top:4px}
+#campaign-notifications.is-collapsed .notification-center-list{display:none}
+.notification-center-list:focus-visible{outline:1px solid #8bbbad;outline-offset:-2px}
+.research-notice{--research-notice-accent:#68cbe4;border-left-color:var(--research-notice-accent);background:linear-gradient(115deg,#193441,#1a2728)}
+.research-notice>header>span{color:var(--research-notice-accent)}
+.research-notice .construction-progress>i{background:var(--research-notice-accent)}
+.research-notice [data-cancel-research]{border-color:#517f91;color:#b2e3f1}
+.research-notice [data-cancel-research]:focus-visible{outline-color:var(--research-notice-accent)}
+@media(max-width:680px){#campaign-notifications{width:min(340px,calc(100vw - 20px))}.notification-center-header{min-height:36px}}

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { LAUNCH_REWARDS } from "../../shared/config/launch-rewards.mjs";
 import { GOLD_LEDGER_LIMIT, STARTING_GOLD } from "../../shared/config/economy.mjs";
 
 function normalizeReason(value, { fallback = null } = {}) {
@@ -23,12 +24,15 @@ export class EconomyService {
 
   migrateAccount(account) {
     if (!Number.isSafeInteger(account.gold) || account.gold < 0) {
+      if (account.gold === undefined && account.setupComplete !== true && !account.launchRewards) {
+        account.launchRewards = { version: LAUNCH_REWARDS.version, conqueredTerritoryIds: [] };
+      }
       account.gold = this.startingGold;
       account.goldLedger = [...(Array.isArray(account.goldLedger) ? account.goldLedger : []), {
         id: this.createEntryId(),
         delta: this.startingGold,
         balance: this.startingGold,
-        reason: "test-starting-balance",
+        reason: "launch-starting-balance",
         createdAt: this.now(),
       }].slice(-this.ledgerLimit);
       return true;

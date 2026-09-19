@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "revision": "20260904-soft-relief-v1",
+  "region": "europe",
+  "source": "Local cached Mapzen Terrarium DEM; area-averaged z9, cached z8 fallback",
+  "processing": "generalize elevation -> local-relief mountain mask -> metric gentle hillshade -> independent z3-z7 pyramid; no sharpening",
+  "template": "assets/map-relief/europe-soft-relief/{z}/{x}/{y}.webp",
+  "classic": {
+    "files": 2031,
+    "bytes": 7024800,
+    "sha256": "cb3e57f998331ded400b13d9009025f3063a8296c4a37791cff8cd45979b05b4"
+  },
+  "dem": {
+    "files": 5228,
+    "bytes": 580924417,
+    "sha256": "7a73dcefebd47ad524e11a2bb031b7e04b5eb095dee4c298e3a5c0acddb74b0c"
+  },
+  "output": {
+    "files": 2031,
+    "bytes": 4527348,
+    "sha256": "ff44f0cff58e630b2f7611792c862201759c3997bc3ae4b96bd9135242119cf1"
+  },
+  "buildCode": {
+    "files": 2,
+    "bytes": 15277,
+    "sha256": "02940d11933c17ae9e0719c6363575e3eab4c8c1ed26758158235560e36710dc"
+  }
+}

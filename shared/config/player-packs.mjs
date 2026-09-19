@@ -1,3 +1,5 @@
+import {ELITE_CLUBS} from './elite-clubs.mjs';
+import {raidPackType} from './elite-raids.mjs';
 export const PLAYER_PACK_TYPES = Object.freeze({
   LEGENDARY: "legendary-player-pack",
   EXOTIC: "exotic-player-pack",
@@ -24,6 +26,7 @@ function packDefinition(type, name) {
 }
 
 export const PLAYER_PACK_DEFINITIONS = Object.freeze({
+  ...Object.fromEntries(ELITE_CLUBS.map(c=>[raidPackType(c.id),Object.freeze({type:raidPackType(c.id),name:c.name+"阻击礼包",clubId:c.id,choiceCount:3,upgradeLevel:1,artwork:"./assets/player-packs/elite-"+c.id+".webp",description:"本队首发球员三选一 · 强化 +1"})])),
   [PLAYER_PACK_TYPES.LEGENDARY]: packDefinition(PLAYER_PACK_TYPES.LEGENDARY,"传奇球员卡包"),
   [PLAYER_PACK_TYPES.EXOTIC]: packDefinition(PLAYER_PACK_TYPES.EXOTIC,"珍奇球员卡包"),
   [PLAYER_PACK_TYPES.RARE]: packDefinition(PLAYER_PACK_TYPES.RARE,"稀有球员卡包"),

@@ -1,0 +1,19 @@
+import fs from 'node:fs/promises';import path from 'node:path';import http from 'node:http';import {createRequire} from 'node:module';import {fileURLToPath} from 'node:url';import assert from 'node:assert/strict';
+import {createStaticHandler} from '../server/http/static-handler.mjs';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');let req=createRequire(import.meta.url),chromium,sharp;try{({chromium}=req('playwright'));sharp=req('sharp');}catch{req=createRequire(path.join(process.env.USERPROFILE,'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs'));({chromium}=req('playwright'));sharp=req('sharp');}
+const output=path.join(root,'outputs/oil-review');await fs.mkdir(output,{recursive:true});for(const d of ['thumbnails','icons'])await fs.mkdir(path.join(root,'assets/facilities',d),{recursive:true});
+const server=http.createServer(createStaticHandler(root));await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
+let browser;const report={models:[],interactionChecks:[],errors:[],failedResources:[]};
+try{browser=await chromium.launch({headless:true,channel:'chrome',args:['--enable-unsafe-swiftshader','--disable-dev-shm-usage']});const page=await browser.newPage({viewport:{width:1560,height:1080},deviceScaleFactor:1});page.on('pageerror',e=>report.errors.push(e.message));page.on('response',r=>{if(r.status()>=400)report.failedResources.push({url:r.url(),status:r.status()});});
+ await page.goto(base+'/facility-preview.html?render=1');await page.waitForFunction(()=>window.facilityPreview?.ready,{},{timeout:45000});const catalog=await page.evaluate(()=>window.facilityPreview.catalog);report.version=catalog.version;
+ for(const item of catalog.items.filter(i=>i.type==='oil-well')){const uri=await page.evaluate(id=>window.facilityPreview.capture(id,{size:512,transparent:true}),item.assetId),png=Buffer.from(uri.split(',')[1],'base64');await fs.writeFile(path.join(root,'assets/facilities/thumbnails',item.assetId+'.png'),png);await sharp(png).flatten({background:'#f8f7f0'}).webp({quality:90}).toFile(path.join(root,'assets/facilities/thumbnails',item.assetId+'.webp'));
+  const {data,info}=await sharp(png).ensureAlpha().raw().toBuffer({resolveWithObject:true});let visible=0,minX=info.width,minY=info.height,maxX=0,maxY=0;for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++)if(data[(y*info.width+x)*4+3]>48){visible++;minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}assert.ok(visible>1000,item.assetId+' nonempty');minX=Math.max(0,minX-7);minY=Math.max(0,minY-7);maxX=Math.min(info.width-1,maxX+7);maxY=Math.min(info.height-1,maxY+7);await sharp(png).extract({left:minX,top:minY,width:maxX-minX+1,height:maxY-minY+1}).resize(256,item.kind==='unit'?320:256,{fit:'contain',background:'#00000000'}).png().toFile(path.join(root,'assets/facilities/icons',item.assetId+'.png'));
+  for(const level of [1,2])await page.evaluate(({id,level})=>window.facilityPreview.select(id,{level}),{id:item.assetId,level});report.models.push({assetId:item.assetId,visiblePixels:visible,glbLevelsLoaded:3});console.log('Rendered '+item.assetId);
+ }
+
+ await page.goto(base+'/facility-preview.html?filter=planned&model=oil-well-lv1');await page.waitForFunction(()=>window.facilityPreview?.ready);
+ assert.equal(await page.locator('[data-level]').count(),1);assert.equal(await page.locator('[data-level="2"]').count(),0);
+ for(const view of ['front','iso']){await page.locator(`[data-view="${view}"]`).click();await page.screenshot({path:path.join(output,'oil-well-'+view+'.jpg'),quality:85});}
+ assert.deepEqual(report.errors,[]);assert.deepEqual(report.failedResources,[]);
+ await fs.writeFile(path.join(output,'model-report.json'),JSON.stringify(report,null,2));console.log('Oil well: 3 LODs rendered, one facility level, no browser errors');
+}finally{await browser?.close();await new Promise(r=>server.close(r));}

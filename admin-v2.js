@@ -10,7 +10,7 @@ async function api(url, options = {}) {
   if (options.body !== undefined) headers["content-type"] = "application/json";
   const response = await fetch(url, { ...options, headers, body:options.body === undefined ? undefined : JSON.stringify(options.body) });
   const value = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(value.error ?? `请求失败：${response.status}`);
+  if (!response.ok) throw Object.assign(new Error(value.error ?? `请求失败：${response.status}`), { statusCode: response.status });
   return value;
 }
 function toast(message, error = false) { const node = $("#toast"); node.textContent = message; node.className = `toast${error ? " error" : ""}`; node.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { node.hidden = true; }, 3200); }
@@ -90,7 +90,7 @@ function bindRows(studio) { $$('[data-player]').forEach((button) => button.oncli
 function bindPlayerForm() { $("#player-form")?.addEventListener("submit", savePlayer); }
 async function savePlayer(event) { event.preventDefault(); const player=selectedPlayer(); const data=Object.fromEntries(new FormData(event.currentTarget)); const attributes={}; for(const key of state.overview.attributeNames){attributes[key]=Number(data[`attr.${key}`]); delete data[`attr.${key}`];} data.attributes=attributes; data.heightCm=Number(data.heightCm); const status=$("#player-save-status"); status.textContent="保存中…"; try { const value=await api(`/api/admin/player-library/players/${encodeURIComponent(player.id)}`,{method:"POST",body:data}); state.players[state.players.findIndex((item)=>item.id===player.id)]=value.player; status.textContent=`已保存，总评 ${value.player.overall}`; await refreshOverview(); } catch(error){status.textContent=error.message;} }
 
-function bindStudio() { const player=selectedPlayer(); if(!player)return; $$('[data-position]').forEach((input)=>input.oninput=()=>{const key=input.dataset.position; $(`[data-position-value="${key}"]`).textContent=`${Number(input.value).toFixed(1)}%`; $("#card-preview").style.setProperty(`--profile-${key}`,`${input.value}%`);}); $("#reset-position").onclick=()=>{const defaults={x:50,y:52,width:200}; $$('[data-position]').forEach((input)=>{input.value=defaults[input.dataset.position];input.dispatchEvent(new Event("input"));});}; $("#profile-file").onchange=async(event)=>{const file=event.target.files[0];if(!file)return;state.studioFile=file;$("#upload-label").textContent=file.name;const url=URL.createObjectURL(file);const preview=$("#card-preview");let image=$("#card-image");if(!image){image=document.createElement("img");image.id="card-image";image.className="s4-player-card-profile";image.dataset.playerCardArt="";preview.querySelector("[data-player-card-art-placeholder]")?.remove();preview.insertBefore(image,preview.firstChild);preview.classList.add("has-player-profile");}image.src=url;}; $("#save-profile").onclick=saveProfile; }
+function bindStudio() { const player=selectedPlayer(); if(!player)return; $$('[data-position]').forEach((input)=>input.oninput=()=>{const key=input.dataset.position; $(`[data-position-value="${key}"]`).textContent=`${Number(input.value).toFixed(1)}%`; $("#card-preview").style.setProperty(`--profile-${key}`,`${input.value}%`);}); $("#reset-position").onclick=()=>{const defaults={x:50,y:52,width:200}; $$('[data-position]').forEach((input)=>{input.value=defaults[input.dataset.position];input.dispatchEvent(new Event("input"));});}; $("#profile-file").onchange=async(event)=>{const file=event.target.files[0];if(!file)return;state.studioFile=file;$("#upload-label").textContent=file.name;const url=URL.createObjectURL(file);const preview=$("#card-preview");let image=$("#card-image");if(!image){image=document.createElement("img");image.id="card-image";image.className="s4-player-card-profile";image.dataset.playerCardArt="";preview.querySelector("[data-player-card-art-placeholder]")?.remove();const surface=preview.querySelector(".shield-card-surface")??preview;surface.insertBefore(image,surface.firstChild);preview.classList.add("has-player-profile");}image.src=url;}; $("#save-profile").onclick=saveProfile; }
 async function fileToWebp(file) { const bitmap=await createImageBitmap(file); const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height)); const canvas=document.createElement("canvas");canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);const blob=await new Promise((resolve)=>canvas.toBlob(resolve,"image/webp",.9));return await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);}); }
 async function saveProfile(){const player=selectedPlayer();const button=$("#save-profile");button.disabled=true;button.textContent="处理中…";try{const body=Object.fromEntries($$('[data-position]').map((input)=>[input.dataset.position,Number(input.value)]));if(state.studioFile){body.imageDataUrl=await fileToWebp(state.studioFile);body.sourceFileName=state.studioFile.name;}const value=await api(`/api/admin/player-library/profiles/${encodeURIComponent(player.id)}`,{method:"POST",body});player.profile=value.profile;state.studioFile=null;toast("卡画与定位已保存");renderStudio();await refreshOverview();}catch(error){toast(error.message,true);button.disabled=false;button.textContent="保存卡画与定位";}}
 
@@ -120,9 +120,65 @@ function renderPlayerPackManagement(){
   bindPackAccountRows();$("#pack-grant-form")?.addEventListener("submit",grantPlayerPacks);
 }
 async function grantPlayerPacks(event){event.preventDefault();const form=event.currentTarget;const data=Object.fromEntries(new FormData(form));data.count=Number(data.count);const allPlayers=data.scope==="all";const player=selectedPackAccount();const pack=state.packManagement.packTypes.find((item)=>item.type===data.packType);if((!allPlayers&&!player)||!pack)return;const recipientCount=state.packManagement.players.length;const confirmation=allPlayers?`确认向所有 ${recipientCount} 名玩家每人发放 ${data.count} 个${pack.name}？总计 ${recipientCount*data.count} 个卡包。`:`确认向 ${player.nickname} 发放 ${data.count} 个${pack.name}？`;if(!window.confirm(confirmation))return;const button=$("#pack-grant-submit");const status=$("#pack-grant-status");button.disabled=true;button.textContent="正在发放…";status.textContent=allPlayers?"正在批量写入所有玩家背包…":"正在写入玩家背包…";try{const value=await api("/api/admin/player-packs",{method:"POST",body:data});state.packManagement=await api("/api/admin/player-packs");state.audit=(await api("/api/admin/audit?limit=100")).entries;toast(allPlayers?`已向 ${value.recipientCount} 名玩家每人发放 ${value.grant.count} 个${value.grant.name}`:`已向 ${value.player.nickname} 发放 ${value.grant.count} 个${value.grant.name}`);renderPlayerPackManagement();}catch(error){status.textContent=error.message||"卡包发放失败";button.disabled=false;button.textContent=allPlayers?"确认向所有玩家发放":"确认发放卡包";}}
+let playerGrantManagement = null, playerGrantLoading = false, playerGrantPending = false;
+const playerGrantRetries = new Map();
+async function loadPlayerGrants() {
+  if (playerGrantLoading) return;
+  playerGrantLoading = true;
+  try { playerGrantManagement = await api("/api/admin/player-grants"); if(state.page === "player-grants") renderPlayerGrants(); }
+  catch(error) { if(state.page === "player-grants") $("#app").innerHTML=`<p class="empty">${escapeHtml(error.message)}</p><button id="retry-player-grants">重新加载</button>`; $("#retry-player-grants")?.addEventListener("click",loadPlayerGrants); }
+  finally { playerGrantLoading = false; }
+}
+function renderPlayerGrants() {
+  if(!playerGrantManagement) { $("#app").innerHTML='<div class="loading">正在读取球队与球员…</div>';loadPlayerGrants();return; }
+  const data=playerGrantManagement, writable=["operator","superadmin"].includes(state.profile?.role);
+  $("#app").innerHTML=`${pageHead("PLAYER OPERATIONS","球员发放","向指定球队发放独立球员卡，可重复获得同名球员。",'<button id="refresh-player-grants">刷新列表</button>')}<section class="panel"><form id="player-grant-form" class="pack-grant-form"><div class="player-grant-layout"><div class="player-grant-fields"><label>搜索球队<input id="grant-team-search" type="search" placeholder="球队名称、昵称或账号 ID"></label><label>目标球队<select name="accountId" id="grant-team" required></select></label><label>搜索球员<input id="grant-player-search" type="search" placeholder="球员名、英文名、俱乐部或 ID"></label><label>指定球员<select name="playerId" id="grant-player" required></select></label><div class="form-grid"><label>发放数量<input name="count" type="number" min="1" max="${data.maxGrantCount}" step="1" value="1" required></label><label>强化等级<select name="upgradeLevel" id="grant-level">${Array.from({length:data.maxUpgradeLevel+1},(_,level)=>`<option value="${level}">+${level}${level===0?"（未强化）":""}</option>`).join("")}</select></label></div><label>发放原因<input name="reason" maxlength="120" value="后台测试发放" required></label><p class="grant-help">发放球员加入留守名单。+4 及以上的特性在游戏强化界面绑定。</p><output id="player-grant-status" role="status"></output><button type="submit" class="primary" id="player-grant-submit" ${!writable||playerGrantPending?"disabled":""}>${writable?"发放球员":"当前账号没有发放权限"}</button></div><aside id="grant-card-preview" class="grant-card-preview"></aside></div></form></section>`;
+  function filter(select, items, query, label) {
+    const previous=select.value, keyword=query.trim().toLocaleLowerCase();
+    select.innerHTML='<option value="">请选择</option>'+items.filter(item=>label(item).toLocaleLowerCase().includes(keyword)).map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(label(item))}</option>`).join("");
+    if([...select.options].some(option=>option.value===previous))select.value=previous;
+  }
+  const teams=data.teams.filter(team=>team.setupComplete);
+  const teamLabel=team=>`${team.teamName} · ${team.nickname} · ${team.id}`;
+  const playerLabel=player=>`${player.name} ${player.sourceName??""} · ${player.grade} / ${player.role} / ${player.overall} · ${player.club} · ${player.id}`;
+  filter($("#grant-team"),teams,"",teamLabel);filter($("#grant-player"),data.players,"",playerLabel);
+  $("#grant-team-search").oninput=event=>filter($("#grant-team"),teams,event.target.value,teamLabel);
+  $("#grant-player-search").oninput=event=>{filter($("#grant-player"),data.players,event.target.value,playerLabel);preview();};
+  function preview(){const player=data.players.find(item=>item.id===$("#grant-player").value);const level=Number($("#grant-level").value);$("#grant-card-preview").innerHTML=player?playerCardMarkup({...player,overall:player.baseOverall+data.abilityBonuses[level],effectiveOverall:player.baseOverall+data.abilityBonuses[level],upgradeLevel:level},{variant:"compact"}):'<p class="empty">选择球员后预览卡牌</p>';}
+  $("#grant-player").onchange=preview;$("#grant-level").onchange=preview;preview();
+  $("#refresh-player-grants").onclick=loadPlayerGrants;
+  $("#player-grant-form").onsubmit=async event=>{
+    event.preventDefault();if(playerGrantPending||!writable)return;
+    const form=event.currentTarget,body=Object.fromEntries(new FormData(form));body.count=Number(body.count);body.upgradeLevel=Number(body.upgradeLevel);
+    if(!body.accountId||!body.playerId)return;
+    const key=JSON.stringify(body);if(!playerGrantRetries.has(key))playerGrantRetries.set(key,crypto.randomUUID());body.requestId=playerGrantRetries.get(key);
+    const button=$("#player-grant-submit"),status=$("#player-grant-status");playerGrantPending=true;button.disabled=true;status.textContent="正在发放…";
+    try {const result=await api("/api/admin/player-grants",{method:"POST",body});playerGrantRetries.delete(key);status.textContent=`已向 ${result.teamName} 发放 ${result.playerName} +${result.upgradeLevel} × ${result.count} 张`;toast(status.textContent);state.audit= (await api("/api/admin/audit?limit=100").catch(()=>({entries:state.audit}))).entries;}
+    catch(error){status.textContent=error.message;}
+    finally{playerGrantPending=false;button.disabled=false;const current=$("#player-grant-submit");if(current)current.disabled=!writable;}
+  };
+}
 function renderOperations(){const audits=state.audit.map((entry)=>`<article><b>${escapeHtml(entry.action)}</b><small>${escapeHtml(entry.username)} · ${new Date(entry.createdAt).toLocaleString()} · ${escapeHtml(entry.adminActionId)}</small></article>`).join("");const tasks=state.tasks.map((task)=>`<article><b>${escapeHtml(task.type)} · ${escapeHtml(task.status)}</b><small>${escapeHtml(task.id)} · ${new Date(task.createdAt).toLocaleString()}</small></article>`).join("");$("#app").innerHTML=`${pageHead("SYSTEM FOUNDATION","任务与操作记录","保留现有 RBAC、幂等任务和管理员审计能力。")}<section class="audit-grid"><section class="panel"><header class="panel-head"><h2>系统任务</h2></header><div class="audit-list">${tasks||'<p class="empty">暂无任务</p>'}</div></section><section class="panel"><header class="panel-head"><h2>最近操作</h2></header><div class="audit-list">${audits||'<p class="empty">暂无记录</p>'}</div></section></section>`;}
-function render(){if(!state.overview)return;$$('.nav').forEach((button)=>button.classList.toggle("active",button.dataset.page===state.page));if(state.page==="players")renderPlayers();else if(state.page==="studio")renderStudio();else if(state.page==="packs")renderPlayerPackManagement();else if(state.page==="audit")renderAudit();else renderOperations();}
+let adminCardController = null;
+async function renderCardManagement() {
+  try {
+    const module = await import("./client/cards/admin-card-management.js?v=20260906-card-management-v1");
+    if (state.page !== "card-management") return;
+    adminCardController ??= module.createAdminCardManagement({ root: $("#app"), api, getProfile: () => state.profile, isActive: () => state.page === "card-management", toast });
+    await adminCardController.open();
+  } catch (error) { if (state.page === "card-management") { $("#app").textContent = error.message; toast(error.message, true); } }
+}
+let adminWonderController = null;
+async function renderWonderManagement() {
+  try {
+    const module = await import("./client/wonders/admin-wonder-management.js?v=20260908-wonders-live-v1");
+    if (state.page !== "wonders") return;
+    adminWonderController ??= module.createAdminWonderManagement({ root: $("#app"), api, getProfile: () => state.profile, isActive: () => state.page === "wonders", toast });
+    await adminWonderController.open();
+  } catch (error) { if (state.page === "wonders") { $("#app").textContent = error.message; toast(error.message, true); } }
+}
+function render(){if(!state.overview && state.page!=="wonders")return;$$('.nav').forEach((button)=>button.classList.toggle("active",button.dataset.page===state.page));if(state.page==="players")renderPlayers();else if(state.page==="studio")renderStudio();else if(state.page==="packs")renderPlayerPackManagement();else if(state.page==="player-grants")renderPlayerGrants();else if(state.page==="audit")renderAudit();else if(state.page==="card-management")renderCardManagement();else if(state.page==="wonders")renderWonderManagement();else renderOperations();}
 
 $("#login-form").addEventListener("submit",login);$("#logout").onclick=logout;$$('.nav').forEach((button)=>button.onclick=()=>{state.page=button.dataset.page;render();});
-import("./client/player-card/player-card.js").then((module)=>{playerCardMarkup=module.playerCardMarkup;if(state.page==="studio"&&state.overview)renderStudio();}).catch((error)=>{console.error("球员卡组件加载失败，后台登录与基础管理仍可使用",error);});
+import("./client/player-card/player-card.js?v=20260905-shield-v1").then((module)=>{playerCardMarkup=module.playerCardMarkup;if(state.page==="studio"&&state.overview)renderStudio();}).catch((error)=>{console.error("球员卡组件加载失败，后台登录与基础管理仍可使用",error);});
 if(state.token)api("/api/admin/me").then(async(value)=>{state.profile=value.profile;showAdmin();await loadAll();}).catch(()=>{state.token="";localStorage.removeItem("ydl-admin-token");});

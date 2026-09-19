@@ -1,0 +1,7 @@
+html .topbar-conquest{display:flex;flex:0 0 auto;flex-direction:column;align-self:center;align-items:flex-end;gap:3px;margin-left:auto;margin-right:22px;color:#b8c3b8;font-size:13px;line-height:1.3;white-space:nowrap;font-variant-numeric:tabular-nums}
+html .topbar-conquest[hidden],html .topbar-conquest [hidden]{display:none}
+.topbar-conquest strong{margin-left:8px;font-size:16px;color:#dfbf69}
+.topbar-conquest.is-exhausted strong,.topbar-conquest [data-conquest-cooldown]{color:#e7a68c}
+html .topbar:has(.topbar-conquest:not([hidden])) .topbar-yoogle{margin-left:0}
+@media(max-width:1600px){html .topbar-conquest{margin-right:8px;font-size:12px}.topbar-conquest strong{font-size:14px;margin-left:4px}}
+@media(max-width:680px){html .topbar-conquest{margin:0 6px;font-size:11px}.topbar-conquest strong{font-size:12px}}

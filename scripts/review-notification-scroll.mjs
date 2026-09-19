@@ -1,0 +1,30 @@
+import fs from 'node:fs';import http from 'node:http';import assert from 'node:assert/strict';import {createRequire} from 'node:module';import {createStaticHandler} from '../server/http/static-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const out='outputs/notification-scroll-review';fs.mkdirSync(out,{recursive:true});const links=fs.readFileSync('index.html','utf8').match(/<link[^>]+rel="stylesheet"[^>]*>/g).join('');
+const html=`<!doctype html><html lang="zh-CN" data-ui-theme="club"><head><meta charset="utf-8">${links}</head><body><div id="players"></div><section id="interaction" hidden></section><div id="campaign-notifications" class="campaign-notifications"><header class="notification-center-header"><strong>通知栏 <span data-notification-count></span></strong><button data-notification-toggle>收起</button></header><div id="campaign-notification-list" class="notification-center-list" tabindex="0"><section id="construction"><article class="construction-notice">研究进度 <span id="timer">0</span></article></section><section id="notices"></section></div></div></body></html>`;
+const serve=createStaticHandler(process.cwd()),server=http.createServer((req,res)=>{if(req.url==='/review.html'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end(html)}else serve(req,res)});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1440,height:900}}),checks=[],errors=[];page.on('pageerror',e=>errors.push(e.message));const check=(name,ok,detail)=>{checks.push({name,pass:!!ok,detail});if(!process.env.BASELINE)assert.ok(ok,name+': '+JSON.stringify(detail));};
+try{
+ await page.goto(`http://127.0.0.1:${server.address().port}/review.html`);
+ await page.evaluate(async()=>{
+  const {createNotificationCenter}=await import('/client/buildings/notification-center.js'),{createInteractionController}=await import('/client/social/interaction-controller.js'),{createCampaignStore}=await import('/client/core/campaign-store.js');
+  window.store=createCampaignStore({playerId:'p',setupComplete:true,interactions:{players:[],requests:[],events:[],news:Array.from({length:60},(_,i)=>({id:'n'+i,createdAt:1700000000000+i,text:'第 '+i+' 条世界动态：测试俱乐部攻下了某个地区，准备继续远征。'}))}});
+  window.social=createInteractionController({root:document.querySelector('#interaction'),listRoot:document.querySelector('#players'),notices:document.querySelector('#notices'),getState:store.getState,campaignStore:store,getRequest:()=>async()=>({acknowledged:true})});
+  window.center=createNotificationCenter(document.querySelector('#campaign-notifications'));window.list=document.querySelector('#campaign-notification-list');window.scrollWrites=0;
+  const prop=Object.getOwnPropertyDescriptor(Element.prototype,'scrollTop');Object.defineProperty(list,'scrollTop',{get(){return prop.get.call(this)},set(v){scrollWrites++;prop.set.call(this,v)}});
+  window.ticker=setInterval(()=>document.querySelector('#timer').textContent=String(Date.now()%10000),50);
+ });
+ await page.waitForTimeout(200);await page.evaluate(()=>list.scrollTop=2500);await page.waitForTimeout(400);
+ const before=await page.evaluate(()=>{scrollWrites=0;return list.scrollTop});await page.waitForTimeout(250);check('progress updates do not write to scrollTop',await page.evaluate(()=>scrollWrites===0),await page.evaluate(()=>scrollWrites));
+ const box=await page.locator('#campaign-notification-list').boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);
+ for(let i=0;i<6;i++){await page.mouse.wheel(0,-40);await page.waitForTimeout(280);}
+ const after=await page.evaluate(()=>list.scrollTop);check('small upward wheel movements make sustained progress',before-after>=180,{before,after});
+ await page.evaluate(()=>{const top=list.getBoundingClientRect().top;window.anchor=[...document.querySelectorAll('[data-world-news]')].find(e=>e.getBoundingClientRect().top>=top);window.anchorId=anchor.dataset.worldNews;window.anchorTop=anchor.getBoundingClientRect().top;const state=store.getState();store.setState({...state,interactions:{...state.interactions,news:[{id:'new',createdAt:Date.now(),text:'新世界动态'},...state.interactions.news]}});});await page.waitForTimeout(150);
+ const retained=await page.evaluate(()=>({same:anchor===document.querySelector(`[data-world-news="${anchorId}"]`),delta:document.querySelector(`[data-world-news="${anchorId}"]`).getBoundingClientRect().top-anchorTop}));check('incoming news preserves the message being read',retained.same&&Math.abs(retained.delta)<=2,retained);
+ await page.evaluate(()=>{anchorTop=document.querySelector(`[data-world-news="${anchorId}"]`).getBoundingClientRect().top;const state=store.getState();store.setState({...state,interactions:{...state.interactions,news:state.interactions.news.filter(n=>n.id!=='new')}})});await page.waitForTimeout(150);
+ check('removing an earlier notice preserves the reading position',await page.evaluate(()=>Math.abs(document.querySelector(`[data-world-news="${anchorId}"]`).getBoundingClientRect().top-anchorTop)<=2));
+ const saved=await page.evaluate(()=>list.scrollTop);await page.locator('[data-notification-toggle]').click();await page.waitForTimeout(150);await page.locator('[data-notification-toggle]').click();await page.waitForTimeout(150);check('collapse and expand restore the reading position',Math.abs(await page.evaluate(()=>list.scrollTop)-saved)<=2);
+ await page.locator('[data-notice-action="read-news"]').filter({visible:true}).count().catch(()=>{});
+ await page.screenshot({path:out+'/notification-scroll.png'});check('no runtime errors',errors.length===0);
+ await page.evaluate(()=>{clearInterval(ticker);center.destroy()});
+}finally{fs.writeFileSync(out+(process.env.BASELINE?'/baseline.json':'/report.json'),JSON.stringify({checks,errors},null,2));await browser.close();await new Promise(r=>server.close(r));}console.log(JSON.stringify(checks));

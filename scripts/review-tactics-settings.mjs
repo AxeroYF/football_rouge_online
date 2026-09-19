@@ -1,0 +1,70 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {CampaignService} from '../campaign-service.mjs';
+import {DRAFT_VERSION} from '../shared/config/draft.mjs';
+const require=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs');
+const {chromium}=require('playwright');
+const root=process.cwd(),out=path.join(root,'outputs/tactics-settings-20260909'),data=fs.mkdtempSync(path.join(os.tmpdir(),'ydl-v21-review-'));
+const read=f=>JSON.parse(fs.readFileSync(path.join(root,f),'utf8'));
+const index=read('assets/data/territory-index.json'),geo=read('assets/data/campaign-territories.geojson'),resources=read('assets/data/territory-resources.json'),catalog=read('assets/data/s4-player-catalog.json');
+const byId=new Map(index.territories.map(t=>[t.territoryId,t]));
+const has=(id,terrain)=>resources.territories[id].terrain.includes(terrain);
+const home=process.argv[2]?.includes('scotland')?byId.get('adm1:region-gbr-f9c96ad579'):index.territories.find(t=>t.countryCode==='FRA'&&has(t.territoryId,'plains')&&t.landNeighbors.some(id=>has(id,'hills')||has(id,'mountain'))&&t.landNeighbors.some(id=>has(id,'plains'))&&t.landNeighbors.length>=3);
+assert.ok(home);
+const hill=home.landNeighbors.find(id=>has(id,'hills')||has(id,'mountain'))??home.landNeighbors[0],plain=home.landNeighbors.find(id=>id!==hill&&has(id,'plains'));
+const owned=[home.territoryId,...home.landNeighbors];
+const s=new CampaignService({dataPath:path.join(data,'campaign-accounts.json'),catalog,territoryIndex:index,territoryGeoJson:geo,territoryResources:resources});
+const base=[['GK',4],['DEF',10],['MID',10],['ATT',9]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX).slice(0,n));
+const pt=catalog.filter(p=>p.nationality==='葡萄牙').slice(0,3);const roster=[...base.filter(p=>p.nationality!=='葡萄牙'),...pt,{...pt[0],id:'pt-duplicate',cardDefinitionId:pt[0].id}];
+const actor={id:'wonder-browser',nickname:'奇观验收',token:'isolated-wonder-token',createdAt:Date.now(),setupComplete:true,homeTerritoryId:home.territoryId,gold:2000000,mapColor:'#5d7d9e',draft:{version:DRAFT_VERSION,teamName:'奇观验收',totalPicks:roster.length,roster},resources:{fans:50000}};
+s.accounts.set(actor.id,actor);s.world.players[actor.id]={playerId:actor.id,territoryIds:owned,capitalTerritoryId:home.territoryId};
+for(const id of owned)Object.assign(s.world.territories[id],{ownerType:'player',ownerId:actor.id,capitalOf:id===home.territoryId?actor.id:null,buildings:[]});
+s.buildings.ensureCapitalStadium(actor,s.world,home.territoryId);s.world.territories[home.territoryId].buildings.push(s.buildings.createRecord('club-shop'));
+const chosen=[];
+for(const role of ['GK','LB','RB','CB','CB','DM','AM','LM','ST','ST','RW'])chosen.push(catalog.find(p=>p.role===role&&!p.isX&&!chosen.some(v=>v.id===p.id)));
+assert.ok(chosen.every(Boolean));
+const reserve=[['GK',1],['DEF',4],['MID',3],['ATT',3]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX&&!chosen.some(v=>v.id===p.id)).slice(0,n));
+actor.draft.roster=[...chosen,...reserve];actor.draft.totalPicks=22;
+actor.playerSquads={schemaVersion:2,assignments:Object.fromEntries(actor.draft.roster.map(p=>[p.id,chosen.includes(p)?'expedition':'garrison']))};
+const coords=[[50,90],[15,62],[85,62],[40,68],[60,68],[40,48],[60,40],[15,44],[40,20],[60,20],[85,20]];
+const positions=Object.fromEntries(chosen.map((p,i)=>[p.id,{x:coords[i][0],y:coords[i][1]}]));
+const lines={attack:20,midfield:44,defense:68,goalkeeper:90},starters=chosen.map(p=>p.id);
+s.saveTactics(actor,{activeSquadId:'expedition',playerSquads:actor.playerSquads,squads:{expedition:{starters,positions,formationLines:lines,planSnapshots:{__s4V2:{starters,positionPresets:{position1:positions,position2:positions,position3:positions},formationLinePresets:{position1:lines,position2:lines,position3:lines}}}}}});
+
+for(const p of chosen){p.nationality='法国';p.club='巴黎圣日耳曼';p.upgradeLevel=1;p.heightCm=180;p.traits=[];}chosen[0].traits=['shadow-marker'];
+s.save();fs.mkdirSync(out,{recursive:true});
+let child,browser,stdout='',stderr='';const errors=[],shots=[];
+try{
+ child=spawn(process.execPath,['server.mjs'],{cwd:root,windowsHide:true,env:{...process.env,PORT:'0',HOST:'127.0.0.1',DATA_DIR:data,ADMIN_BOOTSTRAP_PASSWORD:'isolated-scale-review'},stdio:['ignore','pipe','pipe']});child.stderr.on('data',c=>stderr+=c);
+ const url=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('server timeout '+stderr)),45000);child.once('exit',code=>{clearTimeout(timer);reject(Error('server exit '+code));});child.stdout.on('data',c=>{stdout+=c;const m=stdout.match(/game: (http:\/\/127\.0\.0\.1:\d+)\/game/);if(m){clearTimeout(timer);resolve(m[1]);}});});
+ browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+ const context=await browser.newContext({viewport:{width:1600,height:1050}});await context.addInitScript(()=>localStorage.setItem('yellowdogs-chronicles-token','isolated-wonder-token'));
+ await context.route('**/app.js?*',async route=>{const response=await route.fetch();await route.fulfill({response,body:(await response.text())+'\nwindow.__scaleReview={map,territoryLayersById,state:()=>campaignState,openTactics:()=>fullTacticsController.open(),closeTactics:()=>fullTacticsController.close(),saveTactics:()=>fullTacticsController.save()};'});});
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url+'/game');await page.waitForFunction(()=>window.__scaleReview?.state()?.playerId==='wonder-browser',null,{timeout:60000});
+ await page.waitForFunction(()=>!document.querySelector('#campaign-map')?.classList.contains('is-loading'),null,{timeout:60000});
+
+
+ await page.evaluate(()=>window.__scaleReview.openTactics());await page.waitForSelector('.league-bond-ready');
+ assert.equal(await page.locator('#campaign-tactics [data-tactics-piece-display]').count(),0);
+ const badgeBox=await page.locator('.league-bond-ready').boundingBox(),boardBox=await page.locator('.league-board-panel').boundingBox();assert.ok(badgeBox.x+badgeBox.width<=boardBox.x+boardBox.width+1,'bond badges stay inside board');
+ const badges=await page.locator('[data-active-bond-id]').allTextContents();assert.ok(badges.length>0);assert.ok(badges.every(v=>v.includes('/11')));
+ await page.locator('#account-menu-trigger').click();await page.locator('#account-tactics-display [data-tactics-piece-display="cards"]').click();assert.equal(await page.locator('#campaign-tactics .league-magnet-card').count(),11);await page.screenshot({path:path.join(out,'settings-and-bonds.png')});await page.locator('#account-menu-trigger').click();
+ await page.locator('#campaign-tactics .league-board-chemistry').filter({has:page.locator('[data-league-bond-bonus-toggle]')}).click();assert.equal(await page.locator('.league-bond-ready').count(),0);await page.locator('#campaign-tactics .league-board-chemistry').filter({has:page.locator('[data-league-bond-bonus-toggle]')}).click();
+ const board=()=>page.locator('[data-league-magnet]').evaluateAll(es=>Object.fromEntries(es.map(e=>[e.dataset.leagueMagnet,{x:parseFloat(e.style.left),y:parseFloat(e.style.top)}])));
+ const preset=async key=>{await page.locator('[data-league-position-preset="'+key+'"]').click();};
+ const initial=await board();await preset('position2');assert.deepEqual(await board(),initial);await preset('position1');
+ const targetId=chosen[9].id;
+ async function drag(dx){const node=page.locator('[data-league-magnet="'+targetId+'"]');await node.scrollIntoViewIfNeeded();const rect=await node.boundingBox();const response=page.waitForResponse(r=>r.url().endsWith('/api/campaign/tactics')&&r.request().method()==='POST');await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(rect.x+rect.width/2+dx,rect.y+rect.height/2,{steps:8});await page.mouse.up();const r=await response;const value=await r.json();assert.equal(r.status(),200,JSON.stringify(value));return value.state.tactics.squads.expedition.planSnapshots.__s4V2;}
+ let saved=await drag(30);assert.equal(saved.customPositionPresets.position2,false);assert.deepEqual(saved.positionPresets.position2,saved.positionPresets.position1);assert.deepEqual(saved.positionPresets.position3,saved.positionPresets.position1);
+ await preset('position2');assert.deepEqual(await board(),saved.positionPresets.position1);saved=await drag(-30);assert.equal(saved.customPositionPresets.position2,true);const customized=structuredClone(saved.positionPresets.position2);
+ await preset('position1');saved=await drag(20);assert.deepEqual(saved.positionPresets.position2,customized);assert.deepEqual(saved.positionPresets.position3,saved.positionPresets.position1);
+ await page.reload();await page.waitForFunction(()=>window.__scaleReview?.state()?.playerId==='wonder-browser');await page.waitForFunction(()=>!document.querySelector('#campaign-map')?.classList.contains('is-loading'));await page.evaluate(()=>window.__scaleReview.openTactics());await preset('position2');assert.deepEqual(await board(),customized);assert.equal(await page.locator('.league-magnet-card').count(),11);await preset('position3');assert.deepEqual(await board(),saved.positionPresets.position1);
+ await page.screenshot({path:path.join(out,'tactics-desktop.png')});await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(out,'tactics-mobile.png')});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));const pitchBox=await page.locator('#league-tactics-pitch').boundingBox();assert.ok(pitchBox.x>=0&&pitchBox.x+pitchBox.width<=390,'mobile pitch fully fits viewport');const mobileBench=await page.locator('.league-bench').boundingBox();assert.ok(mobileBench.y>=pitchBox.y+pitchBox.height,'bench must not cover mobile pitch');
+ const backdrop=await page.evaluate(()=>getComputedStyle(document.documentElement).getPropertyValue('--campaign-entry-backdrop'));assert.ok(backdrop.includes('screen-r4.png'));assert.equal((await context.request.get(url+'/assets/screen-r4.png')).status(),200);
+ const {buildAccountMatchSeat}=await import('../shared/football/account-match-seat.mjs');const stored=JSON.parse(fs.readFileSync(path.join(data,'campaign-accounts.json'),'utf8')).accounts[actor.id];const seat=buildAccountMatchSeat(stored);assert.deepEqual(seat.positionPresets.position2,customized);assert.deepEqual(seat.positionPresets.position3,seat.positionPresets.position1);
+ assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({errors,badges,checks:['display preference in topbar, persists across reload','S4 compact bond badges and visibility toggle','default drag propagates to untouched alternatives','customized leading stays independent','save, reload and match seat agree','mobile no horizontal overflow','r4 background exists and is selected']},null,2));console.log('Tactics settings browser review passed: '+out);
+}finally{await browser?.close();child?.kill();}

@@ -12,7 +12,7 @@ class Point {
   subtract(other) { return new Point(this.x - other.x, this.y - other.y); }
 }
 
-function createHarness() {
+function createHarness({getExploredBounds=()=>null}={}) {
   const listeners = new Map();
   const classNames = new Set();
   const mainHandlers = new Map();
@@ -29,7 +29,7 @@ function createHarness() {
   };
   const minimap = {
     fitBoundsCalls: 0,
-    fitBounds() { this.fitBoundsCalls += 1; return this; },
+    fitBounds(bounds) { this.lastFitBounds=bounds; this.fitBoundsCalls += 1; return this; },
     latLngToContainerPoint(latlng) { return new Point(latlng.lng, latlng.lat); },
     containerPointToLatLng(point) { return { lat: point.y, lng: point.x }; },
     invalidateSize() {},
@@ -84,11 +84,12 @@ function createHarness() {
     campaignBounds: [[-20, -25], [82, 100]],
     displayTerritories: { type: "FeatureCollection", features: [] },
     ownerTypes: OWNER_TYPES,
+    getExploredBounds,
     getWorld: () => state.world,
     getPlayers: () => state.players,
     view,
   });
-  return { classNames, controller, listeners, mainMap, territoryLayer, viewport };
+  return { classNames, controller, listeners, mainMap, minimap, territoryLayer, viewport };
 }
 
 test("minimap territory styling mirrors player, club, and neutral ownership", () => {
@@ -136,7 +137,7 @@ test("dragging the minimap viewport pans the main map without changing zoom", ()
   assert.equal(harness.territoryLayer.styleUpdates, 1);
 });
 
-test("campaign shell places map toggles above the bottom-left minimap", async () => {
+test("campaign shell places map toggles above the bottom-right minimap", async () => {
   const [appSource, indexSource, stylesSource] = await Promise.all([
     readFile(new URL("../app.js", import.meta.url), "utf8"),
     readFile(new URL("../index.html", import.meta.url), "utf8"),
@@ -149,6 +150,17 @@ test("campaign shell places map toggles above the bottom-left minimap", async ()
   assert.match(indexSource, /id="weather-layer-toggle" type="checkbox" \/>/);
   assert.match(appSource, /createCampaignMinimap\(\{/);
   assert.match(appSource, /campaignMinimapController\?\.refresh\(\)/);
-  assert.match(stylesSource, /\.campaign-minimap-panel\s*\{[^}]*bottom:\s*14px;[^}]*left:\s*14px;/s);
+  assert.match(stylesSource, /\.campaign-minimap-panel\s*\{[^}]*bottom:\s*14px;[^}]*left:\s*auto;[^}]*right:\s*14px;/s);
   assert.match(stylesSource, /\.campaign-minimap\s*\{[^}]*width:\s*100%;[^}]*height:\s*160px;/s);
+});
+
+
+test("minimap follows limited exploration bounds and restores the full map only before establishing home",()=>{
+  const nearby=[[60,-24],[67,-12]],expanded=[[50,-24],[67,0]];let bounds=nearby;
+  const {controller,minimap}=createHarness({getExploredBounds:()=>bounds});
+  assert.equal(minimap.lastFitBounds,nearby);assert.equal(minimap.fitBoundsCalls,1);
+  controller.refresh();assert.equal(minimap.fitBoundsCalls,1);
+  bounds=expanded;controller.refresh();assert.equal(minimap.lastFitBounds,expanded);assert.equal(minimap.fitBoundsCalls,2);
+  bounds=null;controller.refresh();assert.deepEqual(minimap.lastFitBounds,[[-20,-25],[82,100]]);
+  controller.destroy();
 });

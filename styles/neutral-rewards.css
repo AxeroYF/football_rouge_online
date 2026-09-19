@@ -1,0 +1,20 @@
+.map-development-controls{position:relative;left:auto;bottom:auto;z-index:810;display:flex;flex-wrap:wrap;gap:8px;pointer-events:auto}.map-development-controls button{min-height:36px;background:rgba(15,28,23,.96);border:1px solid #8c9674;color:#eee6cc;box-shadow:0 3px 12px #0005;border-radius:8px;padding:8px 13px;cursor:pointer;font:600 12px inherit}.map-development-controls button[aria-pressed=false]{color:#f0c56b;border-color:#c49b4e}.map-development-controls [hidden]{display:none}
+.neutral-reward{display:grid;gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid #8a92753b;color:#eee6cc;text-align:left}.neutral-reward>small{color:#c3b17b;font-size:11px}.neutral-reward>strong{display:flex;align-items:center;gap:7px;font-size:13px}.neutral-reward>span{font-size:11px;color:#acb7a3;line-height:1.6}.neutral-reward .resource-icon{width:22px;height:22px}.neutral-reward-surface{height:100%;overflow:auto;padding:28px;background:#15231d;color:#ebe7d7}.neutral-reward-surface>header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #acb58b55;padding-bottom:18px}.neutral-reward-surface h2{margin:5px 0}.neutral-reward-surface small{color:#d5b565}.reward-choice-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:20px 0}.reward-choice-list .neutral-reward{border:0;margin:0;padding:8px}.reward-choice-list .is-selected{border-color:#dfb75b;background:#3b422b}.neutral-reward-surface section{max-width:850px;padding-top:12px}.neutral-reward-surface p{color:#b9c0b2;line-height:1.7}.neutral-reward-surface label{display:grid;gap:10px}.neutral-reward-surface select{padding:12px;background:#101b16;color:#eee6cc;border:1px solid #8b9674;border-radius:6px;max-width:100%}.neutral-reward-surface .reward-allocation{color:#d8bd7b}
+
+/* Inspector owns its separator and padding; the reward itself adds neither. */
+#territory-sponsor-reward{margin:0;padding:14px 16px 18px;border-top:1px solid var(--ui-border,#3a473e)}
+#territory-sponsor-reward .neutral-reward{margin:0;padding:0;border:0;gap:8px}
+#territory-sponsor-reward .neutral-reward>small{font-size:12px}
+#territory-sponsor-reward .neutral-reward>strong{font-size:14px;line-height:1.6;flex-wrap:wrap}
+#territory-sponsor-reward .neutral-reward>span{font-size:12px;overflow-wrap:anywhere}
+@media(max-width:680px){
+ .territory-inspector dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .territory-inspector dl>div:last-child{display:block}
+ .territory-inspector dl>div:nth-child(even){border-right:0}
+ .territory-inspector dd{white-space:normal;overflow-wrap:anywhere}
+ .territory-inspector-heading strong{font-size:18px}
+}
+
+#territory-resources:has(+ #territory-sponsor-reward:not([hidden])){margin-bottom:0;border-bottom:0}
+
+@media(max-width:680px){#territory-inspector.has-selection{z-index:800}}

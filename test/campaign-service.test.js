@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { CampaignService, LINE_KEYS, PLAYER_CATALOG_VERSION, STARTING_GOLD } from "../campaign-service.mjs";
 import { PLAYER_PACK_TYPES } from "../shared/config/player-packs.mjs";
+import { MINIMUM_GOALKEEPERS } from "../shared/config/draft.mjs";
 
 test("generated player catalog retains all 26 S4 attributes", () => {
   const catalog = JSON.parse(readFileSync(new URL("../assets/data/s4-player-catalog.json", import.meta.url), "utf8"));
@@ -47,7 +48,7 @@ test("saved draft players migrate to the production catalog while preserving dyn
     const persistedAccount=JSON.parse(readFileSync(dataPath,"utf8")).accounts.account;
     assert.equal(persistedAccount.playerCatalogVersion, PLAYER_CATALOG_VERSION);
     assert.equal(persistedAccount.gold,STARTING_GOLD);
-    assert.equal(persistedAccount.goldLedger.at(-1).reason,"test-starting-balance");
+    assert.equal(persistedAccount.goldLedger.at(-1).reason,"launch-starting-balance");
   } finally {
     rmSync(directory, { recursive:true, force:true });
   }
@@ -106,8 +107,9 @@ test("YOOGLE directory includes the full YDL library and marks the current roste
   assert.equal(service.playerDatabase.some((player) => player.id === xPlayer.id), false);
 });
 
-test("registration, login and 22-player draft complete without an X-player step", () => {
-  const service = new CampaignService({ catalog: makeCatalog(), random: () => 0 });
+test("registration, login and 33-player pool draft complete without an X-player step", () => {
+  const catalog = JSON.parse(readFileSync(new URL("../assets/data/s4-player-catalog.json", import.meta.url), "utf8"));
+  const service = new CampaignService({ catalog, random: () => 0 });
   const session = service.register("测试经理", "secret12");
   const account = service.authenticate(session.token);
   assert.equal(session.state.wallet.gold,STARTING_GOLD);
@@ -116,14 +118,16 @@ test("registration, login and 22-player draft complete without an X-player step"
 
   let state = service.beginDraft(account, "黄狗测试队");
   while (!state.setupComplete) {
+    assert.equal(state.draft.offer.length, 0);
+    state = service.openDraftPool(account, state.draft.availablePools[0], state.draft.pickNumber);
     assert.equal(state.draft.offer.length, 3);
-    assert.ok(state.draft.offer.every((player) => player.isX !== true && ["A", "B", "C"].includes(player.grade)));
-    state = service.choose(account, state.draft.offer[0].id);
+    assert.ok(state.draft.offer.every((player) => player.isX !== true && ["S", "A", "B", "C"].includes(player.grade)));
+    state = service.choose(account, state.draft.offer[0].id, state.draft.offerId);
   }
 
-  assert.equal(state.draft.roster.length, 22);
+  assert.equal(state.draft.roster.length, 33);
   assert.deepEqual(Object.keys(state.draft.counts), LINE_KEYS);
-  assert.ok(LINE_KEYS.every((line) => state.draft.counts[line] >= 2));
+  assert.ok(state.draft.positionCounts.GK >= MINIMUM_GOALKEEPERS);
   assert.ok(state.draft.roster.every((player) => player.isX !== true));
   assert.equal(state.draft.offer.length, 0);
 });
@@ -134,15 +138,15 @@ test("gold transactions are integer-only, persistent account resources", () => {
   const service=new CampaignService({catalog:makeCatalog(),random:()=>0,now:()=>now});
   const account=service.authenticate(service.register("金币测试经理","secret12").token);
   now+=1000;
-  assert.deepEqual(service.adjustGold(account,25_000,"测试奖励"),{gold:1_025_000});
+  assert.deepEqual(service.adjustGold(account,25_000,"测试奖励"),{gold:STARTING_GOLD + 25_000});
   now+=1000;
-  assert.deepEqual(service.spendGold(account,40_000,"测试购买"),{gold:985_000});
-  assert.equal(service.state(account).wallet.gold,985_000);
+  assert.deepEqual(service.spendGold(account,40_000,"测试购买"),{gold:STARTING_GOLD - 15_000});
+  assert.equal(service.state(account).wallet.gold,STARTING_GOLD - 15_000);
   assert.deepEqual(account.goldLedger.slice(-2).map((entry)=>[entry.delta,entry.balance,entry.reason]),[
-    [25_000,1_025_000,"测试奖励"],
-    [-40_000,985_000,"测试购买"],
+    [25_000,STARTING_GOLD + 25_000,"测试奖励"],
+    [-40_000,STARTING_GOLD - 15_000,"测试购买"],
   ]);
-  assert.throws(()=>service.spendGold(account,985_001,"超额消费"),/金币不足/);
+  assert.throws(()=>service.spendGold(account,STARTING_GOLD - 15_000 + 1,"超额消费"),/金币不足/);
   assert.throws(()=>service.adjustGold(account,0,"无效变动"),/非零整数/);
 });
 
@@ -152,7 +156,7 @@ test("admin pack management targets one server player without exposing credentia
   const second=service.authenticate(service.register("卡包玩家二","secret12").token);
   const before=service.adminPlayerPackManagement();
   assert.equal(before.players.length,2);
-  assert.deepEqual(before.packTypes.map(({type})=>type),[
+  assert.deepEqual(before.packTypes.map(({type})=>type).filter(type=>!type.startsWith("elite-interception:")),[
     PLAYER_PACK_TYPES.LEGENDARY,
     PLAYER_PACK_TYPES.EXOTIC,
     PLAYER_PACK_TYPES.RARE,
@@ -277,13 +281,15 @@ test("shared home claims are permanent, exclusive, colored and cannot border a n
   const firstState = service.chooseHome(first, "a");
   assert.equal(firstState.homeTerritoryId, "a");
   assert.equal(firstState.world.territories.a.capitalOf, first.id);
-  assert.deepEqual(Object.keys(firstState.world.weather.territories).sort(), ["a", "b", "c", "d", "e"]);
+  assert.deepEqual(Object.keys(firstState.world.weather.territories).sort(), ["a", "b", "e"]);
   assert.ok(firstState.world.weather.refreshAt > firstState.world.weather.observedAt);
   assert.throws(() => service.chooseHome(first, "d"), /无法更改/);
   assert.throws(() => service.chooseHome(second, "a"), /其他势力占据/);
   const secondState = service.chooseHome(second, "d");
   assert.equal(secondState.world.territories.d.ownerId, second.id);
-  assert.notEqual(secondState.world.players[first.id].color, secondState.world.players[second.id].color);
+  assert.notEqual(first.mapColor, second.mapColor);
+  assert.equal(secondState.world.players[first.id], undefined);
+  assert.ok(!secondState.fog.metPlayerIds.includes(first.id));
 });
 
 test("territory challenges advance one server chain per slice and reveal the result only after both legs", () => {
@@ -322,7 +328,7 @@ test("territory challenges advance one server chain per slice and reveal the res
 
   const rivalState = service.state(rival);
   assert.equal(rivalState.attackableTerritoryIds.includes("b"), false);
-  assert.equal(rivalState.world.activeChallenges.b.attackerTeamName, "黄狗远征队");
+  assert.equal(rivalState.world.activeChallenges.b.attackerTeamName, "未相遇球队");
   assert.equal("battle" in rivalState.world.activeChallenges.b, false);
   assert.equal("outcome" in rivalState.world.activeChallenges.b, false);
   assert.throws(() => service.challengeTerritory(rival, "b"), /正在被其他球队挑战/);
@@ -455,4 +461,37 @@ test("saved fragmented-country territory ids migrate to the merged country terri
   } finally {
     rmSync(directory,{recursive:true,force:true});
   }
+});
+
+test("initial pool offers can actually draw S-grade cards through CampaignService",()=>{
+ const catalog=JSON.parse(readFileSync(new URL("../assets/data/s4-player-catalog.json",import.meta.url),"utf8"));
+ const service=new CampaignService({catalog,random:()=>.999});
+ const account=service.authenticate(service.register("传奇初选","secret12").token);
+ service.beginDraft(account,"传奇初选队");
+ const state=service.openDraftPool(account,"GK",1);
+ assert.ok(state.draft.offer.every(card=>card.grade==="S"&&card.role==="GK"));
+ assert.equal(state.draft.totalPicks,33);
+});
+
+test("resuming v2 drafts applies goalkeeper-only rules and completes already sufficient rosters without another click", () => {
+  const service = new CampaignService({ catalog: makeCatalog() });
+  const session = service.register("旧选人刷新", "password123");
+  const account = service.authenticate(session.token);
+  account.draft = { version: 2, totalPicks: 35, teamName: "旧队",
+    roster: [...makeCatalog().filter(card => card.role === "GK").slice(0, 5), ...makeCatalog().filter(card => card.pool === "ATT").slice(0, 28)], offer: [] };
+  const original = structuredClone(account.draft.roster);
+  const state = service.state(account);
+  assert.equal(state.setupComplete, true);
+  assert.equal(state.draft.totalPicks, 33);
+  assert.deepEqual(account.draft.roster, original);
+  assert.equal(state.draft.positionCounts.GK, 5);
+});
+
+test('campaign initialization binds shared fog to the live account registry',()=>{
+ const service=new CampaignService({catalog:makeCatalog(),territoryIndex,random:()=>0});
+ const a={id:'viewer',homeTerritoryId:'e'},b={id:'ally',homeTerritoryId:'b'};service.accounts.set(a.id,a);service.accounts.set(b.id,b);
+ Object.assign(service.world.territories.e,{ownerType:'player',ownerId:a.id});Object.assign(service.world.territories.b,{ownerType:'player',ownerId:b.id});
+ service.world.diplomacy.relationships.pair={players:[a.id,b.id],state:'alliance'};
+ const view=service.fog.update(a,service.world).view;assert.ok(view.visibleTerritoryIds.includes('d'));assert.equal(view.sharedVision.length,1);
+ service.world.diplomacy.relationships.pair.state='friendship';assert.ok(!service.fog.update(a,service.world).view.visibleTerritoryIds.includes('d'));
 });

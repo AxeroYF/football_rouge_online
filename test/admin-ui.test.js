@@ -8,10 +8,10 @@ const styles = await readFile(new URL("../admin-v2.css",import.meta.url),"utf8")
 
 test("Admin login binds before optional player-card studio code and shows progress", () => {
   assert.match(html,/id="login-submit"[^>]*type="submit"/);
-  assert.match(html,/admin-v2\.js\?v=20260901-pack-grants-v2/);
+  assert.match(html,/admin-v2\.js\?v=20260908-wonders-live-v1/);
   assert.doesNotMatch(source,/^import\s+\{\s*playerCardMarkup/m);
   const binding = source.indexOf('$("#login-form").addEventListener("submit",login)');
-  const optionalStudioImport = source.indexOf('import("./client/player-card/player-card.js")');
+  const optionalStudioImport = source.indexOf('import("./client/player-card/player-card.js?v=20260905-shield-v1")');
   assert.ok(binding >= 0 && optionalStudioImport > binding);
   assert.match(source,/button\.textContent = "正在登录…"/);
   assert.match(source,/正在验证管理员身份/);
@@ -19,7 +19,7 @@ test("Admin login binds before optional player-card studio code and shows progre
 });
 
 test("Admin login view is removed from layout after authentication", () => {
-  assert.match(html,/admin-v2\.css\?v=20260901-pack-grants-v2/);
+  assert.match(html,/admin-v2\.css\?v=20260908-wonders-live-v1/);
   assert.match(html,/id="admin-view" hidden/);
   assert.match(source,/\$\("#login-view"\)\.hidden = true/);
   assert.match(source,/\$\("#admin-view"\)\.hidden = false/);

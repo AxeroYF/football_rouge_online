@@ -187,6 +187,7 @@ test("ChallengeService awards a captured AI neutral territory exactly once", () 
   });
 
   const battle = service.settleChallenge(challenge);
+  assert.equal(world.news.length,1);assert.match(world.news[0].text,/攻下了 target/);
   assert.equal(battle.captured,true);
   assert.equal(battle.rewards.gold,8_000);
   assert.equal(account.battleHistory[0].rewards.packs[0].count,4);

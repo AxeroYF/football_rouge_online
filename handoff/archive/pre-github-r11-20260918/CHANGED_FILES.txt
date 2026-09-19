@@ -1,0 +1,632 @@
+2026-09-18 enhancement drag fix; local verified, not packaged/deployed
+client/enhancement/enhancement-controller.js
+styles/enhancement.css
+server/application/coalition-service.mjs
+index.html
+test/enhancement-controller.test.js
+scripts/review-enhancement-drag.mjs
+handoff/ENHANCEMENT_DRAG_FIX_2026-09-18.md
+
+2026-09-18 alliance loading fix; local verified, not packaged/deployed
+shared/map/fog-spatial.mjs
+client/map/campaign-fog-controller.js
+index.html
+test/continuous-fog.test.js
+scripts/review-four-player-alliance.mjs
+handoff/ALLIANCE_LOADING_FIX_2026-09-18.md
+README/CURRENT_STATE/NEW_CHAT_PROMPT/MANIFEST/README_UPDATE handoff entries updated
+
+Earlier snapshot follows:
+2026-09-10 documentation handoff snapshot; branch codex/rougelite; HEAD 66ce9f6
+ M .gitignore
+ M admin-v2.css
+ M admin-v2.html
+ M admin-v2.js
+ M admin.html
+ M app.js
+ M assets/data/campaign-coastlines.json
+ M assets/data/campaign-territories.geojson
+ M assets/data/territory-build-report.json
+ M assets/data/territory-index.json
+ M campaign-broadcast.js
+ M campaign-entry.js
+ M campaign-service.mjs
+ M client/buildings/building-marker-controller.js
+ M client/buildings/building-panel-controller.js
+ M client/challenge/challenge-controller.js
+ M client/inventory/inventory-controller.js
+ M client/map/campaign-map-data.js
+ M client/map/campaign-minimap-controller.js
+ M client/map/expedition-piece-controller.js
+ M client/map/territory-presentation.js
+ M client/maritime/maritime-controller.js
+ M client/player-card/player-card.js
+ M client/player-card/player-detail-window.js
+ M client/team/team-controller-ydl.js
+ M client/team/team-controller.js
+ M client/territory/territory-controller.js
+ M client/ui/WINDOW_STANDARDS.md
+ M client/ui/small-window.js
+ M client/ui/stage-window-manager.js
+ M client/yoogle/yoogle-controller.js
+ M engine/campaign-match-engine.mjs
+ M engine/s4-v2.1/game/public/schema.js
+ M engine/s4-v2.1/versus/automatic-substitution.js
+ M engine/s4-v2.1/versus/offline-attribute-settings.js
+ M engine/s4-v2.1/versus/public/bond-rules.js
+ M engine/s4-v2.1/versus/public/formation-rules.js
+ M engine/s4-v2.1/versus/v2/match-engine-v2.js
+ M engine/s4-v2.1/versus/v2/spatial-model-v2.js
+ M engine/s4-v2.1/versus/v2/team-snapshot-v2.js
+ M engine/territory-ai.mjs
+ M formation-rules.js
+ M handoff/CHANGED_FILES.txt
+ M handoff/CURRENT_STATE.md
+ M handoff/MANIFEST.md
+ M handoff/NEW_CHAT_PROMPT.md
+ M handoff/README.md
+ M handoff/README_UPDATE.md
+ M handoff/ROADMAP_2026-08-31.md
+ M index.html
+ M maritime-routes.mjs
+ M package-lock.json
+ M package.json
+ M s4-tactics-original.css
+ M scripts/build-territory-data.mjs
+ M server.mjs
+ M server/application/admin-service.mjs
+ M server/application/building-service.mjs
+ M server/application/challenge-service.mjs
+ M server/application/economy-service.mjs
+ M server/application/player-library-service.mjs
+ M server/application/player-pack-service.mjs
+ M server/domain/expedition-piece.mjs
+ M server/http/admin-api-handler.mjs
+ M server/http/campaign-api-handler.mjs
+ M server/infrastructure/campaign-save-migrations.mjs
+ M server/infrastructure/json-campaign-repository.mjs
+ M server/scheduler/challenge-scheduler.mjs
+ M shared/config/buildings.mjs
+ M shared/config/draft.mjs
+ M shared/config/economy.mjs
+ M shared/config/player-squads.mjs
+ M styles.css
+ M styles/campaign-broadcast.css
+ M styles/inventory.css
+ M styles/player-card.css
+ M tactics-page.js
+ M territory-model.js
+ M test/admin-api-handler.test.js
+ M test/admin-service.test.js
+ M test/admin-ui.test.js
+ M test/app-map-regression.test.js
+ M test/building-marker-controller.test.js
+ M test/building-panel-controller.test.js
+ M test/building-service.test.js
+ M test/campaign-api-handler.test.js
+ M test/campaign-broadcast.test.js
+ M test/campaign-map-view.test.js
+ M test/campaign-match-engine.test.js
+ M test/campaign-minimap-controller.test.js
+ M test/campaign-service.test.js
+ M test/challenge-controller.test.js
+ M test/expedition-piece.test.js
+ M test/inventory-controller.test.js
+ M test/maritime-routes.test.js
+ M test/player-card.test.js
+ M test/refactor-foundation.test.js
+ M test/tactics-lineup-rules.test.js
+ M test/team-player-detail.test.js
+ M test/territory-controller.test.js
+ M test/territory-model.test.js
+?? android-client/
+?? assets/card-frames/
+?? assets/data/campaign-boundaries.json
+?? assets/data/campaign-countries.geojson
+?? assets/data/map-environment.json
+?? assets/data/map-nature.json
+?? assets/data/territory-merge-plan.json
+?? assets/data/territory-resources.json
+?? assets/expedition-units/
+?? assets/facilities/
+?? assets/flags/
+?? assets/icon-yf-v2.png
+?? assets/map-relief/europe-soft-relief.json
+?? assets/map-relief/relief-mesh/
+?? assets/map-relief/south-america-soft-relief.json
+?? assets/map-relief/svalbard-soft-relief.json
+?? assets/map-style-demo/
+?? assets/scout-tokens/
+?? assets/screen-r2.jpg
+?? assets/screen-r3.png
+?? assets/screen-r4.png
+?? assets/screen.jpg
+?? assets/sponsors/
+?? assets/territory-merge-review/
+?? assets/ui/
+?? assets/vendor/three/
+?? assets/wonders/
+?? client/buildings/construction-notifications.js
+?? client/buildings/facility-actions-controller.js
+?? client/buildings/notification-center.js
+?? client/buildings/port-map-anchor.js
+?? client/buildings/scouting-controller.js
+?? client/buildings/training-controller.js
+?? client/buildings/wonder-hover-controller.js
+?? client/cards/
+?? client/challenge/conquest-hud.js
+?? client/core/request-id.js
+?? client/draft/
+?? client/elite/
+?? client/enhancement/
+?? client/expedition-models/
+?? client/facility-models/
+?? client/map-style-demo/
+?? client/map-three/
+?? client/map/campaign-fog-controller.js
+?? client/map/development-fog-controller.js
+?? client/map/expedition-appearance-controller.js
+?? client/map/expedition-panel-controller.js
+?? client/map/fog-geometry.js
+?? client/map/fog-raster.js
+?? client/map/fog-state.js
+?? client/map/scout-unit-controller.js
+?? client/map/territory-interaction.js
+?? client/player-card/broadcast-card.js
+?? client/player-card/card-identities.js
+?? client/player-card/card-motion-controller.js
+?? client/player-card/card-motion-model.js
+?? client/player-card/card-shield-markup.js
+?? client/player-card/deferred-card-controller.js
+?? client/research/
+?? client/resources/
+?? client/settings/
+?? client/shop/
+?? client/social/
+?? client/sponsorship/
+?? client/tactics/
+?? client/territory-merge-review.js
+?? client/ui/currency.js
+?? client/ui/meteor-background.js
+?? client/ui/mobile-landscape.js
+?? client/ui/ui-theme.js
+?? client/ui/warp-background.js
+?? client/wonders/
+?? data/
+?? deploy/
+?? engine/s4-v2.1/versus/v2/formation-research-v2.js
+?? engine/s4-v2.1/versus/v2/penalty-shootout-v2.js
+?? engine/s4-v2.1/versus/v2/tactical-shape-preview-v2.js
+?? engine/s4-v2.1/versus/v2/team-player-effects.js
+?? expedition-preview.html
+?? facility-preview.html
+?? handoff/ADMIN_PLAYER_GRANTS_2026-09-05.md
+?? handoff/ADMIN_WONDERS_2026-09-07.md
+?? handoff/ADMIN_WONDER_CONDITIONS_2026-09-08.md
+?? handoff/ALIYUN_LAUNCH_2026-09-09.md
+?? handoff/ATLAS_MAP_2026-09-05.md
+?? handoff/BROADCAST_SHIELD_CARDS_2026-09-05.md
+?? handoff/BUILDINGS_2026-09-04.md
+?? handoff/BUILDING_METHODS_2026-09-08.md
+?? handoff/CARD_EFFECTS_ROLLBACK_2026-09-05.md
+?? handoff/CARD_EXPERIENCES_2026-09-05.md
+?? handoff/CARD_MANAGEMENT_2026-09-06.md
+?? handoff/CARD_SCROLL_AND_HISTORY_2026-09-06.md
+?? handoff/CARD_SHIELD_RELEASE_2026-09-05.md
+?? handoff/CARD_SUITE_DEMO_2026-09-05.md
+?? handoff/CARD_TRADE_UP_UI_2026-09-06.md
+?? handoff/CIV6_STRATEGY_EXPANSION_2026-09-06.md
+?? handoff/CIV_VISUAL_ROLLBACK_2026-09-08.md
+?? handoff/CLUB_LINEUP_AUDIT_2026-09-09.md
+?? handoff/DAILY_CONQUEST_2026-09-08.md
+?? handoff/DEVELOPMENT_PATHS_2026-09-06.md
+?? handoff/ELITE_CLUB_CHALLENGES_2026-09-09.md
+?? handoff/ELITE_FAN_REWARDS_2026-09-09.md
+?? handoff/ELITE_TWO_LEVEL_UI_2026-09-09.md
+?? handoff/ENHANCEMENT_2026-09-04.md
+?? handoff/ENHANCEMENT_FIXES_2026-09-05.md
+?? handoff/ENHANCEMENT_UI_FIXES_2026-09-05.md
+?? handoff/EXPEDITION_CAPACITY_2026-09-09.md
+?? handoff/EXPEDITION_CONTINUITY_AND_FACILITY_HIGHLIGHT_2026-09-07.md
+?? handoff/EXPEDITION_FITNESS_REDLINE_2026-09-09.md
+?? handoff/EXPEDITION_PANEL_2026-09-07.md
+?? handoff/EXPEDITION_REDESIGN_2026-09-07.md
+?? handoff/EXPEDITION_UNITS_2026-09-07.md
+?? handoff/EXPEDITION_VEHICLES_2026-09-08.md
+?? handoff/FACILITIES_DESIGN_2026-09-05.md
+?? handoff/FACILITY_ACTIONS_2026-09-06.md
+?? handoff/FACILITY_MODELS_2026-09-07.md
+?? handoff/FACILITY_REDESIGN_2026-09-07.md
+?? handoff/FANS_POPULATION_2026-09-08.md
+?? handoff/FANS_WONDERS_SPONSORS_PLAN_2026-09-07.md
+?? handoff/FOG_CONTINUOUS_2026-09-05.md
+?? handoff/FOG_OF_WAR_2026-09-05.md
+?? handoff/FOG_ROUND_RANGE_2026-09-05.md
+?? handoff/FOG_SIGHT_DOUBLED_2026-09-09.md
+?? handoff/FOG_SMOOTH_CONTOUR_2026-09-05.md
+?? handoff/FORMATION_RESEARCH_LIVE_2026-09-08.md
+?? handoff/GAME_DESIGN_2026-09-07.md
+?? handoff/GOLD_CONSTRUCTION_UI_2026-09-05.md
+?? handoff/GROUND_ONLY_TINT_FIX_2026-09-08.md
+?? handoff/INFRASTRUCTURE_UPGRADES_2026-09-09.md
+?? handoff/INFRASTRUCTURE_UPGRADE_PROPOSAL_2026-09-09.md
+?? handoff/INITIAL_DRAFT_2026-09-06.md
+?? handoff/INTERACTION_NOTICES_FACILITY_HELP_2026-09-09.md
+?? handoff/INVENTORY_VISUAL_2026-09-06.md
+?? handoff/LAUNCH_AUDIT_2026-09-09.md
+?? handoff/LEGEND_CARD_LAYER_2026-09-05.md
+?? handoff/LOGIN_UI_2026-09-06.md
+?? handoff/MAP_LOADING_2026-09-06.md
+?? handoff/MAP_OBJECT_SCALE_2026-09-09.md
+?? handoff/MAP_STYLE_DEMO_2026-09-08.md
+?? handoff/MAP_VISUAL_REVIEW_2026-09-08.md
+?? handoff/MAP_ZOOM30_2026-09-07.md
+?? handoff/MOBILE_LANDSCAPE_AUDIT_2026-09-09.md
+?? handoff/MOBILE_LANDSCAPE_FIX_2026-09-09.md
+?? handoff/NEXT_CHAT_PROMPT_2026-09-05.md
+?? handoff/NOTIFICATIONS_AND_BONDS_2026-09-09.md
+?? handoff/NOTIFICATION_SHOP_VISUAL_2026-09-09.md
+?? handoff/PACKAGE_CONTENTS_2026-09-04.md
+?? handoff/PACKAGE_CONTENTS_2026-09-10.md
+?? handoff/PACK_GLOW_WONDER_CANCEL_2026-09-08.md
+?? handoff/PANEL_RENAME_FIXES_2026-09-08.md
+?? handoff/PLAYER_FILL_BUILDING_ROW_2026-09-08.md
+?? handoff/PLAYER_INTERACTIONS_2026-09-09.md
+?? handoff/PLAYER_INTERACTIONS_PROFILE_2026-09-09.md
+?? handoff/PROJECT_STATUS_AND_ROADMAP_2026-09-05.md
+?? handoff/RELEASE_V0.1_2026-09-06.md
+?? handoff/RELIEF_MESH_2026-09-04.md
+?? handoff/RESEARCH_ATLAS_2026-09-08.md
+?? handoff/RESEARCH_CLUB_UI_2026-09-08.md
+?? handoff/RESEARCH_CUSTOM_FORMATIONS_2026-09-08.md
+?? handoff/RESEARCH_DETAIL_CADENCE_2026-09-08.md
+?? handoff/RESEARCH_IMPORT_MODAL_2026-09-08.md
+?? handoff/RESEARCH_IMPORT_RESTORE_2026-09-08.md
+?? handoff/RESEARCH_SUBJECT_LEVELS_2026-09-08.md
+?? handoff/RESEARCH_UI_2026-09-08.md
+?? handoff/RESOURCE_CAPACITY_2026-09-07.md
+?? handoff/RESOURCE_HOVER_2026-09-07.md
+?? handoff/RESOURCE_TERRITORY_PLAN_2026-09-07.md
+?? handoff/ROADMAP_2026-09-04.md
+?? handoff/ROADMAP_2026-09-06.md
+?? handoff/ROADMAP_2026-09-07.md
+?? handoff/SCOUTING_2026-09-04.md
+?? handoff/SCOUT_PROGRESS_2026-09-06.md
+?? handoff/SCOUT_TRAVEL_RENAME_2026-09-07.md
+?? handoff/SCOUT_UNITS_2026-09-06.md
+?? handoff/SCOUT_ZOOM_ELITE_REWARD_2026-09-09.md
+?? handoff/SESSION_UPDATE_2026-09-08.md
+?? handoff/SESSION_UPDATE_2026-09-10.md
+?? handoff/SHARED_SHOP_2026-09-09.md
+?? handoff/SOFT_TERRAIN_2026-09-04.md
+?? handoff/SPONSORSHIP_2026-09-08.md
+?? handoff/SPONSOR_STANDS_FIX_2026-09-08.md
+?? handoff/STADIUM_MINIMAP_LAYOUT_2026-09-08.md
+?? handoff/TACTICS_CARD_DISPLAY_2026-09-05.md
+?? handoff/TACTICS_PREVIEW_2026-09-05.md
+?? handoff/TACTICS_REPAIR_2026-09-06.md
+?? handoff/TACTICS_SETTINGS_INHERITANCE_2026-09-09.md
+?? handoff/TERRITORY_MERGE_EVALUATION_2026-09-08.md
+?? handoff/TERRITORY_RESOURCES_2026-09-07.md
+?? handoff/THREE_LIVE_2026-09-04.md
+?? handoff/THREE_PREVIEW_2026-09-04.md
+?? handoff/TOPBAR_2026-09-08.md
+?? handoff/TRAINING_2026-09-04.md
+?? handoff/TRAINING_COST_AND_GROWTH_2026-09-09.md
+?? handoff/TRAINING_REFRESH_FIX_2026-09-08.md
+?? handoff/TRAIT_BATCH_PROPOSAL_2026-09-06.md
+?? handoff/TV_SETTINGS_2026-09-08.md
+?? handoff/UI_STYLE_AUDIT_2026-09-05.md
+?? handoff/UI_UNIFIED_2026-09-05.md
+?? handoff/UNIT_TERRITORY_ANCHOR_FIX_2026-09-09.md
+?? handoff/UPDATE_2026-09-04.md
+?? handoff/UPDATE_2026-09-06.md
+?? handoff/V21_ENGINE_AUDIT_2026-09-09.md
+?? handoff/V21_INTEGRATION_FIX_2026-09-09.md
+?? handoff/WINGBACK_FAMILIARITY_2026-09-08.md
+?? handoff/WONDERS_RUNTIME_2026-09-08.md
+?? handoff/WONDER_CATALOG_2026-09-08.md
+?? handoff/WONDER_COLORS_2026-09-07.md
+?? handoff/WONDER_EFFECTS_2026-09-07.md
+?? handoff/WONDER_GLOBAL_RACE_2026-09-08.md
+?? handoff/WONDER_HOVER_2026-09-08.md
+?? handoff/WONDER_MODELS_2026-09-07.md
+?? handoff/WONDER_REFRESH_FIX_2026-09-08.md
+?? handoff/WORLD598_REWARDS_VISUALS_2026-09-08.md
+?? handoff/WORLD_WONDERS_CANDIDATES_2026-09-07.md
+?? handoff/archive/
+?? handoff/yellowdogs-rougelite-handoff-20260902-131435.zip.sha256
+?? handoff/yellowdogs-rougelite-handoff-20260904-115058.zip.sha256
+?? map-style-demo.html
+?? scripts/audit-club-lineups.mjs
+?? scripts/audit-launch-capacity.mjs
+?? scripts/audit-world598-migration.mjs
+?? scripts/build-aliyun-release.py
+?? scripts/build-android-client.py
+?? scripts/build-campaign-boundaries.mjs
+?? scripts/build-expedition-models.mjs
+?? scripts/build-facility-models.mjs
+?? scripts/build-map-assets.mjs
+?? scripts/build-map-environment.py
+?? scripts/build-map-nature.py
+?? scripts/build-map-style-demo.mjs
+?? scripts/build-relief-mesh.py
+?? scripts/build-soft-relief.py
+?? scripts/build-territory-resource-report.mjs
+?? scripts/build-territory-resources.mjs
+?? scripts/build-three-vendor.mjs
+?? scripts/build-v01-release.py
+?? scripts/build-wonder-models.mjs
+?? scripts/check-broadcast-card-ui.py
+?? scripts/check-card-management-ui.py
+?? scripts/check-card-scroll-ui.py
+?? scripts/check-draft-ui.py
+?? scripts/check-elite-regression.mjs
+?? scripts/check-facility-actions.py
+?? scripts/check-interaction-regression.mjs
+?? scripts/check-scout-ui.py
+?? scripts/check-shield-ui.py
+?? scripts/check-tactics-card-ui.py
+?? scripts/check-training-regression.mjs
+?? scripts/check-ui-theme.py
+?? scripts/diagnose-campaign-fog.mjs
+?? scripts/diagnose-fog-loading.mjs
+?? scripts/evaluate-territory-merges.mjs
+?? scripts/facility-recognition-board.mjs
+?? scripts/import-card-flags.mjs
+?? scripts/import-s4-accounts.mjs
+?? scripts/inspect-interaction-polish.mjs
+?? scripts/inspect-interaction-profile.mjs
+?? scripts/lib/
+?? scripts/measure-map-loading.mjs
+?? scripts/package-android-release.py
+?? scripts/prepare-s4-account-seed.py
+?? scripts/prepare-sponsor-logos.mjs
+?? scripts/publish-android-release.py
+?? scripts/render-tactics-card-review.mjs
+?? scripts/requirements-soft-relief.txt
+?? scripts/reset-test-buildings.mjs
+?? scripts/review-admin-wonders.mjs
+?? scripts/review-building-methods.mjs
+?? scripts/review-conquest.mjs
+?? scripts/review-elite-challenges.mjs
+?? scripts/review-expedition-capacity.mjs
+?? scripts/review-expedition-fitness.mjs
+?? scripts/review-expedition-game.mjs
+?? scripts/review-expedition-models.mjs
+?? scripts/review-expedition-panel.mjs
+?? scripts/review-expedition-vehicle-game.mjs
+?? scripts/review-expedition-vehicles.mjs
+?? scripts/review-facility-actions.mjs
+?? scripts/review-facility-game.mjs
+?? scripts/review-facility-models.mjs
+?? scripts/review-fans.mjs
+?? scripts/review-infrastructure-upgrades.mjs
+?? scripts/review-interaction-polish.mjs
+?? scripts/review-interactions-profile.mjs
+?? scripts/review-interactions.mjs
+?? scripts/review-map-object-scale.mjs
+?? scripts/review-map-style-demo.mjs
+?? scripts/review-minimap-right.mjs
+?? scripts/review-mobile-landscape-audit.mjs
+?? scripts/review-mobile-landscape.mjs
+?? scripts/review-notifications-bonds.mjs
+?? scripts/review-pack-reveal.mjs
+?? scripts/review-panel-rename.mjs
+?? scripts/review-research-atlas.mjs
+?? scripts/review-research-club.mjs
+?? scripts/review-research-custom.mjs
+?? scripts/review-research-detail.mjs
+?? scripts/review-research-import.mjs
+?? scripts/review-research-live.mjs
+?? scripts/review-research-restore.mjs
+?? scripts/review-research-subject.mjs
+?? scripts/review-research.mjs
+?? scripts/review-scout-elite-fixes.mjs
+?? scripts/review-scout-travel.mjs
+?? scripts/review-scout-ui.mjs
+?? scripts/review-shared-shop.mjs
+?? scripts/review-shield-cards.mjs
+?? scripts/review-sponsorship.mjs
+?? scripts/review-tactics-cards.mjs
+?? scripts/review-tactics-settings.mjs
+?? scripts/review-territory-resources.mjs
+?? scripts/review-topbar.mjs
+?? scripts/review-training-growth.mjs
+?? scripts/review-training-refresh.mjs
+?? scripts/review-tv-settings.mjs
+?? scripts/review-v21-integration.mjs
+?? scripts/review-wingbacks.mjs
+?? scripts/review-wonder-cancel.mjs
+?? scripts/review-wonder-catalog.mjs
+?? scripts/review-wonder-hover.mjs
+?? scripts/review-wonder-models.mjs
+?? scripts/review-wonder-race.mjs
+?? scripts/review-wonder-refresh.mjs
+?? scripts/review-wonder-runtime.mjs
+?? scripts/review-world598.mjs
+?? scripts/serve-facility-preview.mjs
+?? scripts/serve-map-style-demo.mjs
+?? scripts/serve-wonder-preview.mjs
+?? scripts/smoke-v01.mjs
+?? scripts/soft_relief.py
+?? scripts/verify-aliyun-runtime.mjs
+?? server/application/card-management-service.mjs
+?? server/application/construction-production-service.mjs
+?? server/application/diplomacy-service.mjs
+?? server/application/draft-service.mjs
+?? server/application/elite-challenge-service.mjs
+?? server/application/enhancement-service.mjs
+?? server/application/expedition-fitness-service.mjs
+?? server/application/fog-service.mjs
+?? server/application/formation-research-service.mjs
+?? server/application/launch-reward-service.mjs
+?? server/application/match-consequences.mjs
+?? server/application/medical-service.mjs
+?? server/application/neutral-reward-service.mjs
+?? server/application/scouting-service.mjs
+?? server/application/shop-service.mjs
+?? server/application/sponsorship-service.mjs
+?? server/application/tactical-preview.mjs
+?? server/application/territory-production-service.mjs
+?? server/application/training-service.mjs
+?? server/application/wonder-service.mjs
+?? server/domain/account-password.mjs
+?? server/domain/player-card-instance.mjs
+?? server/http/public-entry.mjs
+?? server/http/static-asset-cache.mjs
+?? server/http/static-handler.mjs
+?? server/infrastructure/map-version-migration.mjs
+?? shared/account-import/
+?? shared/buildings/
+?? shared/config/card-management.mjs
+?? shared/config/conquest.mjs
+?? shared/config/countries.mjs
+?? shared/config/diplomacy.mjs
+?? shared/config/elite-clubs.mjs
+?? shared/config/enhancement.mjs
+?? shared/config/expedition-art.mjs
+?? shared/config/facility-art.mjs
+?? shared/config/facility-levels.mjs
+?? shared/config/fans.mjs
+?? shared/config/fitness.mjs
+?? shared/config/fog.mjs
+?? shared/config/formation-research.mjs
+?? shared/config/launch-rewards.mjs
+?? shared/config/map-assets.mjs
+?? shared/config/neutral-rewards.mjs
+?? shared/config/player-attributes.mjs
+?? shared/config/player-trait-presentation.mjs
+?? shared/config/position-inheritance.mjs
+?? shared/config/representative-players.mjs
+?? shared/config/research-preview.mjs
+?? shared/config/resources.mjs
+?? shared/config/scouting.mjs
+?? shared/config/shop.mjs
+?? shared/config/sponsorship.mjs
+?? shared/config/tactics-repair.mjs
+?? shared/config/training.mjs
+?? shared/config/wonder-construction.mjs
+?? shared/config/wonder-design-drafts.json
+?? shared/config/wonders.mjs
+?? shared/football/account-match-seat.mjs
+?? shared/football/campaign-bonds.mjs
+?? shared/football/elite-lineup.mjs
+?? shared/football/fitness-lineup.mjs
+?? shared/football/match-availability.mjs
+?? shared/football/training-growth.mjs
+?? shared/map/
+?? shared/scouting/
+?? styles/buildings.css
+?? styles/campaign-facilities.css
+?? styles/campaign-fog.css
+?? styles/campaign-three.css
+?? styles/card-management.css
+?? styles/conquest.css
+?? styles/construction.css
+?? styles/currency.css
+?? styles/draft.css
+?? styles/elite.css
+?? styles/enhancement.css
+?? styles/expedition-appearance.css
+?? styles/expedition-panel.css
+?? styles/expedition-preview.css
+?? styles/facility-actions.css
+?? styles/facility-preview.css
+?? styles/interactions.css
+?? styles/login.css
+?? styles/map-style-demo.css
+?? styles/mobile-landscape.css
+?? styles/neutral-rewards.css
+?? styles/player-card-shield.css
+?? styles/research-import.css
+?? styles/research.css
+?? styles/resources.css
+?? styles/scouting.css
+?? styles/shop.css
+?? styles/sponsorship.css
+?? styles/tactics-cards.css
+?? styles/three-preview.css
+?? styles/topbar.css
+?? styles/training.css
+?? styles/tv-settings.css
+?? styles/ui-theme.css
+?? styles/wonder-catalog.css
+?? styles/wonder-preview.css
+?? territory-merge-preview.html
+?? test/admin-wonders.test.js
+?? test/atlas-nature.test.js
+?? test/atlas-terrain.test.js
+?? test/campaign-bonds.test.js
+?? test/campaign-fog.test.js
+?? test/campaign-three.test.js
+?? test/card-management-ui.test.js
+?? test/card-management.test.js
+?? test/card-motion.test.js
+?? test/card-shield.test.js
+?? test/card-trade-up-animation.test.js
+?? test/conquest.test.js
+?? test/construction-notifications.test.js
+?? test/construction-production.test.js
+?? test/continuous-fog.test.js
+?? test/deferred-card.test.js
+?? test/diplomacy-fixture.mjs
+?? test/diplomacy.test.js
+?? test/draft-controller.test.js
+?? test/draft-reveal.test.js
+?? test/draft-service.test.js
+?? test/elite-challenges.test.js
+?? test/enhancement-controller.test.js
+?? test/enhancement-service.test.js
+?? test/expedition-appearance.test.js
+?? test/expedition-capacity.test.js
+?? test/expedition-fitness.test.js
+?? test/expedition-models.test.js
+?? test/expedition-panel.test.js
+?? test/facility-actions-controller.test.js
+?? test/facility-demolition.test.js
+?? test/facility-models.test.js
+?? test/fans.test.js
+?? test/fog-service.test.js
+?? test/formation-import-state.test.js
+?? test/formation-research-runtime.test.js
+?? test/formation-research.test.js
+?? test/infrastructure-upgrades.test.js
+?? test/launch-rewards.test.js
+?? test/map-environment.test.js
+?? test/map-loading.test.js
+?? test/map-three.test.js
+?? test/neutral-rewards.test.js
+?? test/player-trait-integration.test.js
+?? test/position-inheritance.test.js
+?? test/release-runtime.test.js
+?? test/relief-terrain.test.js
+?? test/representative-players.test.js
+?? test/research-preview.test.js
+?? test/scout-unit-controller.test.js
+?? test/scout-units.test.js
+?? test/scouting-controller.test.js
+?? test/scouting-persistence.test.js
+?? test/scouting-service.test.js
+?? test/scouting-ui.test.js
+?? test/shop-service.test.js
+?? test/sponsorship.test.js
+?? test/tactical-preview.test.js
+?? test/tactics-card-display.test.js
+?? test/tactics-repair.test.js
+?? test/terrain-profile.test.js
+?? test/territory-production.test.js
+?? test/territory-resources.test.js
+?? test/test_android_release.py
+?? test/test_soft_relief.py
+?? test/training-controller.test.js
+?? test/training-service.test.js
+?? test/tv-appearance.test.js
+?? test/v21-integration.test.js
+?? test/warp-background.test.js
+?? test/wingback-familiarity.test.js
+?? test/wonder-models.test.js
+?? test/wonders-runtime.test.js
+?? test/world598.test.js
+?? three-preview.html
+?? wonder-preview.html

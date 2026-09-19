@@ -1,4 +1,4 @@
-import { roleGroup } from "../game/public/schema.js";
+import { roleGroup, positionFamilyRoles } from "../game/public/schema.js";
 
 function hasUtilityPlayerTrait(candidate) {
   if (candidate?.utilityPlayer === true) return true;
@@ -12,8 +12,8 @@ function hasUtilityPlayerTrait(candidate) {
 
 export function automaticSubstitutionRank(targetRole, candidate) {
   if (!targetRole || !candidate) return 0;
-  if (candidate.role === targetRole) return 3;
-  if (candidate.secondaryRole === targetRole) return 2;
+  if (positionFamilyRoles(candidate.role).includes(targetRole)) return 3;
+  if (positionFamilyRoles(candidate.secondaryRole).includes(targetRole)) return 2;
   const targetGroup = roleGroup(targetRole);
   if (roleGroup(candidate.role) === targetGroup) return 1;
   if (candidate.secondaryRole && roleGroup(candidate.secondaryRole) === targetGroup) return 1;
@@ -32,4 +32,11 @@ export function compareAutomaticSubstitutes(
     || Number(overallFor(right) ?? 0) - Number(overallFor(left) ?? 0)
     || Number(fitnessFor(right) ?? 0) - Number(fitnessFor(left) ?? 0)
     || String(left.id ?? "").localeCompare(String(right.id ?? ""));
+}
+
+// Forced injury replacements may use another healthy outfielder as a last resort.
+// Keep goalkeeper and outfield duties separate; redline rotations remain position-matched.
+export function injurySubstitutionCandidate(targetRole,candidate){
+ if(!targetRole||!candidate)return false;
+ return automaticSubstitutionRank(targetRole,candidate)>0||(targetRole!=='GK'&&candidate?.role!=='GK');
 }

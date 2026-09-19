@@ -1,0 +1,37 @@
+limit_req_zone $binary_remote_addr zone=ydl_rougelite_login:1m rate=3r/s;
+
+server {
+    listen 80;
+    server_name yellowdogsleague.online;
+    return 308 https://yellowdogsleague.online$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name yellowdogsleague.online;
+    ssl_certificate "@@TLS_CERT@@";
+    ssl_certificate_key "@@TLS_KEY@@";
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+    client_max_body_size 20m;
+    gzip on;
+    gzip_comp_level 2;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript text/javascript application/json application/geo+json image/svg+xml;
+
+    location ~ ^/(versus/)?api/(campaign/(login|register)|admin/login)$ {
+        limit_req zone=ydl_rougelite_login burst=12 nodelay;
+        limit_req_status 429;
+        error_page 429 = @login_limited;
+        include /etc/nginx/snippets/yellowdogs-rougelite-proxy.conf;
+    }
+    location @login_limited {
+        default_type application/json;
+        add_header Retry-After 1 always;
+        return 429 '{"error":"登录请求过于频繁，请稍后重试"}';
+    }
+    # This virtual host belongs to the new game after the S4 site is isolated.
+    # Keep both /versus/* relative URLs and absolute /api/*, /assets/* working.
+    location / {
+        include /etc/nginx/snippets/yellowdogs-rougelite-proxy.conf;
+    }
+}

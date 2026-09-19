@@ -64,7 +64,8 @@ test("card art positioning is bounded by the shared studio contract", () => {
 
 test("active business entry points use the shared player card renderer", () => {
   const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-  for (const relative of ["campaign-entry.js", "admin-v2.js", "client/team/team-controller.js", "client/team/team-controller-ydl.js"]) {
+  assert.match(fs.readFileSync(path.join(root, "campaign-entry.js"), "utf8"), /createDraftController/);
+  for (const relative of ["client/draft/draft-controller.js", "admin-v2.js", "client/team/team-controller.js", "client/player-card/player-detail-window.js"]) {
     const source = fs.readFileSync(path.join(root, relative), "utf8");
     assert.match(source, /playerCardMarkup/);
     assert.doesNotMatch(source, /s4-player-card-head/);
@@ -117,4 +118,14 @@ test("S4 profile importer accepts public legendary maps and preserves recovered 
   assert.match(source, /find\(assetDir, fileName\)/);
   const syncSource = fs.readFileSync(path.join(root, "scripts/sync-player-profiles.mjs"), "utf8");
   assert.match(syncSource, /path\.resolve\(process\.argv\[1\]\) === fileURLToPath\(import\.meta\.url\)/);
+});
+
+
+test("enhancement level uses matching S4 metallic badge and frame bands", () => {
+ for (const [level,band] of [[0,'base'],[1,'mid'],[4,'mid'],[5,'high'],[7,'high'],[8,'max']]) {
+  const html=playerCardMarkup({id:'instance',name:'球员',overall:88,grade:'S',role:'ST',upgradeLevel:level});
+  assert.match(html,new RegExp(`grade-s band-${band}`));
+  if (level) assert.ok(html.includes(`s4-player-card-upgrade band-${band}">+${level}</span>`));
+  else assert.doesNotMatch(html,/s4-player-card-upgrade/);
+ }
 });

@@ -29,3 +29,42 @@
 .ydl-player-card.player-card-variant-detail:hover{transform:none}
 .player-card-art-placeholder{position:absolute;inset:28% 12%;z-index:2;display:grid;place-items:center;color:var(--muted,#8eaaa0);border:1px dashed color-mix(in srgb,var(--accent) 45%,transparent);font-size:12px;text-align:center}
 @keyframes s4-card-frame-sheen{0%,66%{transform:translateX(-46%) rotate(8deg)}84%,100%{transform:translateX(46%) rotate(8deg)}}
+
+.s4-player-card-upgrade{position:absolute;z-index:7;right:6px;top:6px;min-width:38px;height:30px;padding:0 7px;overflow:hidden;display:grid;place-items:center;border:1px solid rgba(255,255,255,.58);border-radius:10px 10px 5px 10px;color:#1d2630;background:radial-gradient(circle at 28% 12%,rgba(255,255,255,.88),transparent 34%),linear-gradient(180deg,rgba(248,251,255,.88) 0%,rgba(185,197,209,.88) 48%,rgba(120,135,148,.88) 100%);font-size:13px;font-weight:950;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.72),0 2px 3px rgba(0,0,0,.46),0 0 6px rgba(255,255,255,.2);box-shadow:0 5px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.62),inset 0 -1px 0 rgba(0,0,0,.24)}
+.s4-player-card-upgrade::after{content:"";position:absolute;inset:-70% -110%;z-index:1;opacity:0;background:linear-gradient(105deg,transparent 43%,rgba(255,255,255,.78) 49%,transparent 55%);transform:translateX(-48%) rotate(8deg);pointer-events:none;animation:none}
+.s4-player-card:hover .s4-player-card-upgrade::after{opacity:1;animation:s4-card-frame-sheen 4.2s ease-in-out infinite}
+.s4-player-card-upgrade.band-mid{color:#302548;background:radial-gradient(circle at 28% 12%,rgba(255,255,255,.88),transparent 34%),linear-gradient(180deg,rgba(250,247,255,.88) 0%,rgba(217,204,255,.88) 37%,rgba(169,149,208,.88) 70%,rgba(109,91,141,.88) 100%);text-shadow:0 1px 0 rgba(255,255,255,.78),0 2px 3px rgba(31,18,52,.52),0 0 7px rgba(224,210,255,.34)}
+.s4-player-card-upgrade.band-high{color:#302000;background:radial-gradient(circle at 28% 12%,rgba(255,255,255,.88),transparent 33%),linear-gradient(180deg,rgba(255,248,201,.88) 0%,rgba(245,204,85,.88) 38%,rgba(184,135,28,.88) 72%,rgba(111,78,8,.88) 100%);text-shadow:0 1px 0 rgba(255,248,191,.92),0 2px 3px rgba(73,43,0,.58),0 0 7px rgba(255,221,96,.38)}
+.s4-player-card-upgrade.band-max{min-width:42px;height:33px;padding:0 7px;color:#ffe47b;background:radial-gradient(circle at 28% 12%,rgba(255,197,185,.88),transparent 34%),linear-gradient(180deg,rgba(245,87,103,.88) 0%,rgba(199,17,37,.88) 42%,rgba(140,7,21,.88) 73%,rgba(82,0,6,.88) 100%);text-shadow:0 1px 0 rgba(255,240,159,.68),0 2px 3px #4b0007,0 0 9px rgba(255,213,89,.42)}
+
+/* S4 high enhancement frames. */
+.s4-player-card.band-high:not(.grade-x){--frame-bright:#fff4b5;--frame-accent:#f5cc55;--frame-dark:#7d5a0d;--frame-ambient:rgba(245,204,85,.3);box-shadow:0 27px 48px rgba(0,0,0,.44),0 9px 26px rgba(245,204,85,.22),0 0 20px rgba(245,204,85,.12),inset 0 1px 0 rgba(255,244,181,.34)}
+.s4-player-card.band-high:hover::after,.s4-player-card.band-max:hover::after{opacity:.34}
+.s4-player-card.band-max{--metal-bright:#ffe792;--metal-dark:#63000a;--frame-bright:#ffe98d;--frame-accent:#e12438;--frame-dark:#650008;--frame-ambient:rgba(238,36,59,.32);--surface-a:#34171c;--surface-b:#0e1110;box-shadow:0 28px 50px rgba(0,0,0,.46),0 10px 28px rgba(131,0,18,.34),0 0 22px rgba(245,204,85,.12),inset 0 1px 0 rgba(255,231,145,.3)}
+.s4-player-card.band-max:not(.grade-x){--stripe-accent:#e62b42;background:radial-gradient(circle at 78% 18%,color-mix(in srgb,var(--frame-accent) 13%,transparent),transparent 30%) padding-box,linear-gradient(132deg,transparent 0 12%,color-mix(in srgb,var(--stripe-accent) 16%,transparent) 12% 20%,transparent 20% 31%,rgba(0,0,0,.2) 31% 38%,transparent 38% 52%,color-mix(in srgb,var(--stripe-accent) 11%,transparent) 52% 65%,transparent 65% 78%,rgba(0,0,0,.18) 78% 84%,transparent 84% 100%) padding-box,repeating-linear-gradient(132deg,transparent 0 34px,color-mix(in srgb,var(--stripe-accent) 7%,transparent) 34px 36px,transparent 36px 69px,rgba(0,0,0,.13) 69px 71px) padding-box,linear-gradient(150deg,var(--surface-a),var(--surface-b) 72%) padding-box,linear-gradient(132deg,#ffe98d 0 7%,#75000b 18%,#e12438 37%,#ffe78a 50%,#650008 59%,#c9182c 79%,#f5cc55) border-box}
+.s4-player-card.grade-x.band-high{--accent:#dffcff;--metal-bright:#fff;--metal-dark:#314348;--frame-bright:#fff;--frame-accent:#a6e6e1;--frame-dark:#6b797d;--frame-ambient:rgba(116,247,235,.28);--surface-a:#4b5558;--surface-b:#111819;box-shadow:0 28px 50px rgba(0,0,0,.44),0 10px 28px rgba(116,247,235,.2),0 0 19px rgba(116,247,235,.14),inset 0 1px 0 rgba(255,255,255,.65)}
+.s4-player-card.grade-x.band-high .s4-player-card-upgrade{color:#13343a;background:radial-gradient(circle at 28% 12%,rgba(255,255,255,.88),transparent 34%),linear-gradient(180deg,rgba(255,255,255,.88) 0%,rgba(230,255,255,.88) 38%,rgba(166,230,225,.88) 72%,rgba(101,159,160,.88) 100%);text-shadow:0 1px 0 #fff,0 2px 3px rgba(10,55,61,.5),0 0 8px rgba(209,255,255,.55)}
+.s4-player-card.grade-x.band-max{--accent:#ff8fc4;--metal-bright:#a8e9ff;--metal-dark:#5a1838;--frame-bright:#d9f6ff;--frame-accent:#ff8fc4;--frame-dark:#61203f;--frame-ambient:rgba(126,216,255,.26);--surface-a:#583448;--surface-b:#17141c;box-shadow:0 29px 52px rgba(0,0,0,.46),0 11px 30px rgba(112,39,78,.34),0 0 21px rgba(126,216,255,.2),inset 0 1px 0 rgba(255,224,241,.5)}
+.s4-player-card.grade-x.band-max .s4-player-card-upgrade{color:#fff;background:radial-gradient(circle at 28% 12%,rgba(255,234,248,.88),transparent 34%),linear-gradient(180deg,rgba(247,154,200,.88) 0%,rgba(220,94,154,.88) 42%,rgba(169,55,112,.88) 73%,rgba(97,32,63,.88) 100%);text-shadow:0 1px 0 rgba(255,234,248,.7),0 2px 3px #571331,0 0 9px rgba(185,239,255,.5)}
+/* Retained portrait lighting on the original frames; no coordinate or layout changes. */
+.s4-player-card.has-player-profile .player-card-art-lighting{
+  position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:linear-gradient(180deg,rgba(6,16,12,.3),transparent 24% 47%,rgba(9,19,15,.55) 76%,rgba(8,18,15,.86) 100%),radial-gradient(ellipse at 0 0,rgba(8,18,15,.24),transparent 45%);
+}
+.s4-player-card.has-player-profile .s4-player-card-profile{filter:drop-shadow(0 7px 8px rgba(0,0,0,.34))}
+.s4-player-card.has-player-profile .s4-player-card-head,
+.s4-player-card.has-player-profile .s4-player-card-name,
+.s4-player-card.has-player-profile footer{z-index:5}
+.s4-player-card.has-player-profile::after{
+  inset:-20%;z-index:4;opacity:0;pointer-events:none;
+  background:linear-gradient(110deg,transparent 42%,rgba(255,255,255,.16) 49%,transparent 56%);
+  transform:translateX(-60%);
+}
+.s4-player-card.has-player-profile:hover::after{animation:s4-card-art-sheen .75s ease-out both}
+@keyframes s4-card-art-sheen{0%{opacity:0;transform:translateX(-60%)}25%{opacity:.7}100%{opacity:0;transform:translateX(60%)}}
+@media(prefers-reduced-motion:reduce){.s4-player-card.has-player-profile::after{animation:none!important;opacity:0}}
+
+/* Legendary foreground: S/X cutouts can cover card information, as in S4. */
+.s4-player-card.has-player-profile:is(.grade-s,.grade-x) .s4-player-card-profile{z-index:8}
+.s4-player-card.has-player-profile:is(.grade-s,.grade-x) .player-card-art-lighting,
+.s4-player-card.has-player-profile:is(.grade-s,.grade-x)::after{z-index:9}

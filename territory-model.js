@@ -1,3 +1,5 @@
+import { playersAtWar, canUseTerritory } from "./shared/config/diplomacy.mjs";
+import {applyEliteTerritoryRules,isEliteTerritory} from './shared/config/elite-clubs.mjs';
 import { BUILDING_TYPES } from "./shared/config/buildings.mjs";
 
 const indexCache = new WeakMap();
@@ -62,6 +64,7 @@ function addTerritoryToPlayer(world, playerId, territoryId) {
 }
 
 export function createTerritoryWorld(index, { seasonId = "season-01" } = {}) {
+  applyEliteTerritoryRules(index);
   const territories = Object.fromEntries(index.territories.map((metadata) => [
     metadata.territoryId,
     {
@@ -128,9 +131,11 @@ export function canAttack(index, world, playerId, targetTerritoryId, now = Date.
   const player = playerState(world, playerId);
   territoryMetadata(index, targetTerritoryId);
   const target = world.territories[targetTerritoryId];
+  if(isEliteTerritory(territoryMetadata(index,targetTerritoryId)))return {allowed:false,reason:"elite-challenge-only",fromTerritoryIds:[]};
   if (target.ownerType === OWNER_TYPES.PLAYER && target.ownerId === playerId) {
     return { allowed: false, reason: "already-owned", fromTerritoryIds: [] };
   }
+  if (target.ownerType === OWNER_TYPES.PLAYER && !playersAtWar(world,playerId,target.ownerId)) return {allowed:false,reason:"not-at-war",fromTerritoryIds:[]};
   if (target.protectedUntil && Number(target.protectedUntil) > now) {
     return { allowed: false, reason: "territory-protected", fromTerritoryIds: [] };
   }
@@ -143,14 +148,16 @@ export function canAttack(index, world, playerId, targetTerritoryId, now = Date.
 
 export function canAttackFromTerritory(index, world, playerId, sourceTerritoryId, targetTerritoryId, now = Date.now()) {
   const player = playerState(world, playerId);
-  if (!player.territoryIds.includes(sourceTerritoryId)) {
+  if (!canUseTerritory(world,playerId,sourceTerritoryId)) {
     return { allowed: false, reason: "invalid-source", fromTerritoryIds: [] };
   }
   territoryMetadata(index, targetTerritoryId);
   const target = world.territories[targetTerritoryId];
+  if(isEliteTerritory(territoryMetadata(index,targetTerritoryId)))return {allowed:false,reason:"elite-challenge-only",fromTerritoryIds:[]};
   if (target.ownerType === OWNER_TYPES.PLAYER && target.ownerId === playerId) {
     return { allowed: false, reason: "already-owned", fromTerritoryIds: [] };
   }
+  if (target.ownerType === OWNER_TYPES.PLAYER && !playersAtWar(world,playerId,target.ownerId)) return {allowed:false,reason:"not-at-war",fromTerritoryIds:[]};
   if (target.protectedUntil && Number(target.protectedUntil) > now) {
     return { allowed: false, reason: "territory-protected", fromTerritoryIds: [] };
   }
@@ -164,7 +171,7 @@ export function canAttackFromTerritory(index, world, playerId, sourceTerritoryId
 
 export function listAttackableTerritoriesFrom(index, world, playerId, sourceTerritoryId, now = Date.now()) {
   const player = playerState(world, playerId);
-  if (!player.territoryIds.includes(sourceTerritoryId)) return [];
+  if (!canUseTerritory(world,playerId,sourceTerritoryId)) return [];
   const source = territoryMetadata(index, sourceTerritoryId);
   return [...(source.landNeighbors ?? source.neighbors)]
     .filter((territoryId) => canAttackFromTerritory(index, world, playerId, sourceTerritoryId, territoryId, now).allowed)
@@ -182,6 +189,9 @@ export function listAttackableTerritories(index, world, playerId, now = Date.now
 }
 
 export function captureTerritory(index, world, playerId, targetTerritoryId, { protectedUntil = null, permission = null } = {}) {
+  const targetOwner=world.territories[targetTerritoryId];
+  if(targetOwner?.ownerType===OWNER_TYPES.PLAYER && targetOwner.ownerId!==playerId && !playersAtWar(world,playerId,targetOwner.ownerId))throw new Error('双方尚未宣战，不能占领玩家领土');
+  if(isEliteTerritory(index.territories.find(t=>t.territoryId===targetTerritoryId)))throw new Error("豪门地块只能挑战，不能占领");
   permission ??= canAttack(index, world, playerId, targetTerritoryId);
   if (!permission.allowed) throw new Error(permission.reason);
   const state = world.territories[targetTerritoryId];
@@ -191,7 +201,11 @@ export function captureTerritory(index, world, playerId, targetTerritoryId, { pr
   state.ownerType = OWNER_TYPES.PLAYER;
   state.ownerId = playerId;
   state.capitalOf = null;
-  state.buildings = (state.buildings ?? []).filter((building) => building.type !== BUILDING_TYPES.MAIN_STADIUM);
+  const alreadyOwnsScoutCenter = Object.entries(world.territories).some(([id, territory]) =>
+    id !== targetTerritoryId && territory.ownerType === OWNER_TYPES.PLAYER && territory.ownerId === playerId
+    && (territory.buildings ?? []).some(building => building.type === BUILDING_TYPES.SCOUT_CENTER));
+  state.buildings = (state.buildings ?? []).filter((building) => building.type !== BUILDING_TYPES.CLUB_HEADQUARTERS
+    && !(alreadyOwnsScoutCenter && building.type === BUILDING_TYPES.SCOUT_CENTER));
   state.protectedUntil = protectedUntil;
   state.version += 1;
   addTerritoryToPlayer(world, playerId, targetTerritoryId);

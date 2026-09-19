@@ -1,3 +1,9 @@
+import {oilMovementText,applyMovementOilChoice} from '../resources/oil-movement.js';
+import { unitTeamBadge, compactUnitBadge } from './map-unit-color.js';
+import { canUseTerritory } from '../../shared/config/diplomacy.mjs';
+import { mapObjectDetailScale } from '../../shared/map/object-display-scale.mjs';
+import { unitTravelProgress, interpolateMapTravel } from '../../shared/map/unit-travel.mjs';
+import { expeditionArtIcon, isExpeditionStyle } from '../../shared/config/expedition-art.mjs';
 function countdownLabel(milliseconds) {
   const totalSeconds = Math.max(0, Math.ceil(Number(milliseconds) / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -5,17 +11,13 @@ function countdownLabel(milliseconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function movementProgress(piece,nowValue) {
-  const movement=piece?.movement;
-  if (!movement) return 0;
-  const duration=Math.max(1,Number(movement.durationMs)||Number(movement.arrivesAt)-Number(movement.startedAt)||1);
-  return Math.max(0,Math.min(1,(Number(nowValue)-Number(movement.startedAt))/duration));
-}
+function movementProgress(piece,nowValue) { return unitTravelProgress(piece?.movement,nowValue); }
 
 export function expeditionTokenMetrics(zoomValue) {
-  const zoom = Number.isFinite(Number(zoomValue)) ? Number(zoomValue) : 5.8;
-  const zoomProgress = Math.max(0, Math.min(1, (zoom - 3) / 2.8));
-  const scale = 0.58 + (0.42 * zoomProgress);
+  // Region overviews keep a small token; full size is reserved for close inspection.
+  const detailZoom = 6.8;
+  const zoom = Number.isFinite(Number(zoomValue)) ? Number(zoomValue) : detailZoom;
+  const scale = Math.max(.2, Math.min(1, 2 ** (zoom - detailZoom))) * mapObjectDetailScale(zoom);
   return {
     iconSize: [Math.round(76 * scale), Math.round(80 * scale)],
     iconAnchor: [Math.round(38 * scale), Math.round(64 * scale)],
@@ -32,10 +34,12 @@ export function createExpeditionPieceController({
   getCampaignState,
   getCampaignRequest,
   sourcePointToDisplay,
+  getDisplayMetrics = (_piece, fallback) => fallback,
   campaignStore,
   applyCampaignWorldSnapshot,
   refreshTerritoryDisplay,
   beforeBegin=()=>{},
+  onInspect=()=>{},
   showToast=()=>{},
   escapeHtml=String,
   now = Date.now,
@@ -51,6 +55,17 @@ export function createExpeditionPieceController({
   const movementWidget=documentRef.querySelector("#expedition-movement-widget");
   const confirmButton=confirmPanel?.querySelector("[data-expedition-move-confirm]");
   const cancelConfirmButton=confirmPanel?.querySelector("[data-expedition-move-back]");
+  const oilChoice=confirmPanel?.querySelector("[data-expedition-use-oil]");
+  function renderEstimate() {
+    if (!pendingEstimate) return;
+    confirmPanel.querySelector("[data-expedition-duration]").textContent=`预计 ${Math.ceil(Number(pendingEstimate.durationMs)/60_000)} 分钟${oilMovementText(pendingEstimate)?` · ${oilMovementText(pendingEstimate)}`:''}`;
+    if (oilChoice) { oilChoice.value=pendingEstimate.useOil===false?'slow':'fuel';oilChoice.disabled=requestPending; }
+  }
+  oilChoice?.addEventListener("change",()=>{
+    if (!pendingEstimate || requestPending) return;
+    pendingEstimate=applyMovementOilChoice(pendingEstimate,oilChoice.value!=="slow");
+    renderEstimate();
+  });
   if (confirmPanel) Leaflet.DomEvent.disableClickPropagation(confirmPanel);
   if (movementWidget) Leaflet.DomEvent.disableClickPropagation(movementWidget);
 
@@ -64,7 +79,7 @@ export function createExpeditionPieceController({
     const destination=position(piece?.movement?.toTerritoryId);
     if (!piece?.movement||!source||!destination) return source;
     const progress=movementProgress(piece,now());
-    return [source[0]+(destination[0]-source[0])*progress,source[1]+(destination[1]-source[1])*progress];
+    return interpolateMapTravel(map,source,destination,progress);
   }
 
   function territoryName(territoryId) {
@@ -79,7 +94,7 @@ export function createExpeditionPieceController({
   function updateTargets() {
     targetIds.clear();
     const state=getCampaignState();
-    for (const territoryId of state?.world?.players?.[state.playerId]?.territoryIds ?? []) targetIds.add(territoryId);
+    for(const territoryId of Object.keys(state?.world?.territories??{}))if(canUseTerritory(state.world,state.playerId,territoryId))targetIds.add(territoryId);
   }
 
   function setSelectingDestination(value,{keepConfirmation=false}={}) {
@@ -93,10 +108,10 @@ export function createExpeditionPieceController({
   }
 
   function icon(piece) {
-    const { iconSize, iconAnchor } = expeditionTokenMetrics(map.getZoom());
+    const { iconSize, iconAnchor } = getDisplayMetrics(piece,expeditionTokenMetrics(map.getZoom()));
     return Leaflet.divIcon({
       className: "expedition-piece-map-icon",
-      html: `<button type="button" class="expedition-piece-token ${piece.moving ? "is-moving" : ""} ${selectingDestination ? "is-selecting" : ""}" style="--expedition-piece-width:${iconSize[0]}px;--expedition-piece-height:${iconSize[1]}px" aria-label="${piece.moving ? "远征队移动中" : "调动远征队"}"><img src="${piece.tokenUrl}" alt=""></button>`,
+      html: `<button type="button" class="expedition-piece-token ${piece.moving ? "is-moving" : ""} ${selectingDestination ? "is-selecting" : ""}" style="--expedition-piece-width:${iconSize[0]}px;--expedition-piece-height:${iconSize[1]}px;--expedition-piece-scale:${iconSize[1] / 80}" aria-label="${piece.moving ? "查看行军中的远征队" : "查看远征队"}">${unitTeamBadge({color:getCampaignState()?.world?.players?.[getCampaignState()?.playerId]?.color,ownerName:getCampaignState()?.world?.players?.[getCampaignState()?.playerId]?.teamName,kind:'expedition',own:true,compact:compactUnitBadge(map)})}<img src="${isExpeditionStyle(piece.tokenId) ? expeditionArtIcon(piece.tokenId) : piece.tokenUrl}" alt=""></button>`,
       iconSize,
       iconAnchor,
     });
@@ -104,7 +119,18 @@ export function createExpeditionPieceController({
 
   function updateZoom() {
     const piece = getCampaignState()?.expeditionPiece;
-    if (piece && marker) marker.setIcon(icon(piece));
+    if (!piece || !marker) return;
+    const element = marker.getElement?.();
+    const token = element?.querySelector?.(".expedition-piece-token");
+    if (!element || !token) { marker.setIcon(icon(piece)); return; }
+    const { iconSize, iconAnchor } = getDisplayMetrics(piece,expeditionTokenMetrics(map.getZoom()));
+    // Keep the same DOM node while applying territory-aware size and anchor updates.
+    Object.assign(element.style, {width:iconSize[0]+"px",height:iconSize[1]+"px",
+      marginLeft:-iconAnchor[0]+"px",marginTop:-iconAnchor[1]+"px"});
+    token.style.setProperty("--expedition-piece-width",iconSize[0]+"px");
+    token.style.setProperty("--expedition-piece-height",iconSize[1]+"px");
+    token.style.setProperty("--expedition-piece-scale",String(iconSize[1] / 80));
+    Object.assign(marker.options.icon.options,{iconSize,iconAnchor});
   }
 
   function renderMovementWidget() {
@@ -147,7 +173,7 @@ export function createExpeditionPieceController({
         interactive: true,
         bubblingMouseEvents: false,
         zIndexOffset: 1000,
-      }).on("click", (event) => { Leaflet.DomEvent.stop(event);beginMoveMode(); }).addTo(layer);
+      }).on("click", (event) => { Leaflet.DomEvent.stop(event);onInspect(); }).addTo(layer);
     } else {
       marker.setLatLng(point);
       marker.setIcon(icon(piece));
@@ -171,11 +197,12 @@ export function createExpeditionPieceController({
 
   function beginMoveMode() {
     const state=getCampaignState();
+    if (!state?.setupComplete || !state?.playerId || !state?.expeditionPiece?.territoryId) return false;
     if (state?.expeditionPiece?.moving) { showToast("远征队正在移动中");return false; }
     if (state?.activeChallengeId) { showToast("板块挑战进行中，远征队暂时不能调动");return false; }
     beforeBegin();
     setSelectingDestination(true);
-    showToast("请选择任意本方领土地块");
+    showToast("请选择自己或盟友的领土地块");
     return true;
   }
 
@@ -188,7 +215,7 @@ export function createExpeditionPieceController({
 
   async function chooseDestination(territoryId) {
     if (!selectingDestination||requestPending) return;
-    if (!targetIds.has(territoryId)) return showToast("远征队只能在本方领土内移动");
+    if (!targetIds.has(territoryId)) return showToast("远征队只能在自己或盟友的领土内移动");
     if (territoryId===getCampaignState()?.expeditionPiece?.territoryId) return showToast("远征队已经驻扎在该地块");
     requestPending=true;
     try {
@@ -197,12 +224,13 @@ export function createExpeditionPieceController({
       pendingEstimate={territoryId,...value.estimate};
       confirmPanel.querySelector("[data-expedition-from]").textContent=territoryName(value.estimate.fromTerritoryId);
       confirmPanel.querySelector("[data-expedition-to]").textContent=territoryName(value.estimate.toTerritoryId);
-      confirmPanel.querySelector("[data-expedition-duration]").textContent=`预计 ${Math.ceil(Number(value.estimate.durationMs)/60_000)} 分钟`;
+      renderEstimate();
       confirmPanel.hidden=false;
     } catch(error) {
       showToast(error.message||"无法估算移动时间");
     } finally {
       requestPending=false;
+      renderEstimate();
     }
   }
 
@@ -216,8 +244,9 @@ export function createExpeditionPieceController({
     if (!pendingEstimate||requestPending) return;
     requestPending=true;
     if (confirmButton) confirmButton.disabled=true;
+    renderEstimate();
     try {
-      const value=await getCampaignRequest()("/api/campaign/expedition/move",{method:"POST",body:{territoryId:pendingEstimate.territoryId}});
+      const value=await getCampaignRequest()("/api/campaign/expedition/move",{method:"POST",body:{territoryId:pendingEstimate.territoryId,useOil:pendingEstimate.useOil!==false}});
       campaignStore.setState(value.state,{source:"expedition-move"});
       setSelectingDestination(false);
       applyCampaignWorldSnapshot(value.state.world);
@@ -227,6 +256,7 @@ export function createExpeditionPieceController({
     } finally {
       requestPending=false;
       if (confirmButton) confirmButton.disabled=false;
+      renderEstimate();
     }
   }
 

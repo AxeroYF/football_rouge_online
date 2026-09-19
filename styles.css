@@ -206,62 +206,6 @@ button {
   visibility: hidden;
 }
 
-.map-zoom-indicator {
-  position: absolute;
-  z-index: 750;
-  top: 14px;
-  right: 14px;
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: baseline;
-  gap: 2px 12px;
-  min-width: 164px;
-  padding: 9px 12px 8px;
-  border: 1px solid rgba(223, 184, 91, 0.34);
-  border-radius: 10px;
-  background: rgba(8, 20, 16, 0.88);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
-  color: var(--ink);
-  pointer-events: none;
-  backdrop-filter: blur(10px);
-  font-variant-numeric: tabular-nums;
-}
-
-.map-zoom-indicator > span {
-  color: var(--ink-dim);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.map-zoom-indicator > strong {
-  grid-row: 1 / span 2;
-  grid-column: 2;
-  color: var(--gold);
-  font: 700 22px/1 Georgia, "Microsoft YaHei", serif;
-  text-align: right;
-}
-
-.map-zoom-indicator > small {
-  grid-column: 1;
-  color: rgba(241, 237, 223, 0.76);
-  font-size: 9px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-@media (max-width: 680px) {
-  .map-zoom-indicator {
-    top: 8px;
-    right: 8px;
-    min-width: 146px;
-    padding: 7px 9px;
-  }
-
-  .map-zoom-indicator > strong { font-size: 18px; }
-  .map-zoom-indicator > small { font-size: 8px; }
-}
-
 .map-loader {
   position: absolute;
   z-index: 900;
@@ -294,12 +238,6 @@ button {
   font-family: Georgia, "Microsoft YaHei", serif;
   font-size: 18px;
   font-weight: 500;
-}
-
-.map-loader small {
-  margin-top: 7px;
-  color: var(--ink-dim);
-  font-size: 10px;
 }
 
 .map-loader.is-error .map-loader-mark {
@@ -415,96 +353,17 @@ button {
   border-top-color: var(--paper);
 }
 
-.territory-building-actions {
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--line);
-  pointer-events: auto;
+/* Own land uses a warm brown inspector, distinct from the ocean. */
+.territory-inspector.is-own-territory {
+  background: rgba(55, 37, 29, 0.97);
+  border-color: rgba(188, 145, 98, 0.7);
 }
-
-.territory-building-actions[hidden] {
-  display: none;
+.territory-inspector.is-own-territory .territory-inspector-heading {
+  background: rgba(83, 56, 39, 0.65);
 }
-
-.territory-building-actions button {
-  width: 100%;
-  min-height: 40px;
-  border: 1px solid rgba(223, 184, 91, 0.52);
-  background: rgba(45, 58, 48, 0.68);
-  color: var(--paper);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.territory-building-actions button:hover,
-.territory-building-actions button:focus-visible {
-  border-color: var(--gold);
-  background: rgba(65, 78, 64, 0.9);
-}
-
-.territory-building-actions button[hidden] {
-  display: none;
-}
-
-/* Building construction drawer */
-.building-panel {
-  position: absolute;
-  z-index: 820;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  flex-direction: column;
-  width: min(460px, calc(100% - 48px));
-  max-height: calc(100% - 24px);
-  overflow: hidden;
-  border: 1px solid rgba(223, 184, 91, 0.5);
-  border-radius: var(--radius-panel);
-  background: rgba(9, 19, 14, 0.97);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(16px);
-}
-
-.building-panel[hidden] {
-  display: none;
-}
-
-.building-panel > header {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--line);
-}
-
-.building-panel > header div {
-  display: grid;
-  gap: 3px;
-}
-
-.building-panel > header span,
-.building-panel-summary > div small {
-  color: var(--gold);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-}
-
-.building-panel > header strong {
-  color: var(--ink);
-  font-size: 20px;
-}
-
-.building-panel > header button {
-  width: 34px;
-  height: 34px;
-  border: 0;
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: 26px;
-  cursor: pointer;
-}
+.territory-inspector.is-own-territory dt { color: #cbb9a3; }
+.territory-inspector.is-own-territory dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.territory-inspector [data-territory-ai-row][hidden] { display: none; }
 
 .building-panel-content {
   min-height: 180px;
@@ -618,7 +477,7 @@ button {
 }
 
 .building-preview-card small,
-.building-build-option span {
+.building-build-option > div > span {
   color: var(--ink-dim);
   font-size: 12px;
 }
@@ -792,7 +651,7 @@ button {
   border: 0;
   background: transparent;
   cursor: pointer;
-  filter: drop-shadow(0 9px 8px rgba(0, 0, 0, 0.56));
+  filter: drop-shadow(0 calc(9px * var(--expedition-piece-scale, 1)) calc(8px * var(--expedition-piece-scale, 1)) rgba(0, 0, 0, 0.56));
 }
 
 .expedition-piece-token img {
@@ -808,7 +667,7 @@ button {
 }
 
 .expedition-piece-token.is-selecting img {
-  filter: drop-shadow(0 0 8px #f1cb62) drop-shadow(0 0 18px rgba(241, 203, 98, 0.72));
+  filter: drop-shadow(0 0 calc(8px * var(--expedition-piece-scale, 1)) #f1cb62) drop-shadow(0 0 calc(18px * var(--expedition-piece-scale, 1)) rgba(241, 203, 98, 0.72));
   animation: expedition-piece-select 0.7s ease-in-out infinite alternate;
 }
 
@@ -842,12 +701,12 @@ button {
 
 @keyframes expedition-piece-march {
   from { transform: translateY(0); }
-  to { transform: translateY(-5px); }
+  to { transform: translateY(calc(-5px * var(--expedition-piece-scale, 1))); }
 }
 
 @keyframes expedition-piece-select {
   from { transform: translateY(0) scale(1); }
-  to { transform: translateY(-3px) scale(1.05); }
+  to { transform: translateY(calc(-3px * var(--expedition-piece-scale, 1))) scale(1.05); }
 }
 
 .territory-challenge-actions[hidden] {
@@ -1458,335 +1317,25 @@ button {
   }
 }
 
-/* Territory building hubs: collapsed summary, lazy orbit on demand */
-.building-marker {
-  --building-accent: #a18cff;
-  --building-accent-soft: #d8d0ff;
-  overflow: visible !important;
-}
+/* Facilities stay on the territory instead of inside a collapsed hub. */
+.building-marker { pointer-events:none; }
+.building-direct-items { position:absolute; left:0; top:0; display:grid; grid-template-columns:repeat(var(--building-columns,1),52px); gap:6px; width:max-content; transform:translate(-50%,-50%) scale(var(--building-scale,1)); transform-origin:center; }
+.building-map-item { position:relative; display:grid; place-items:center; width:52px; height:60px; padding:0; border:0; border-radius:8px; background:transparent; cursor:pointer; pointer-events:auto; }
+.building-map-item img { display:block; width:52px; height:52px; object-fit:contain; filter:drop-shadow(0 3px 3px rgba(0,0,0,.65)); }
+.building-map-item.is-constructing img { opacity:.72; filter:drop-shadow(0 0 4px rgba(234,188,81,.85)); }
+#campaign-map .building-map-item:is(:hover,:focus-visible,:active) { z-index:10; background:transparent; outline:none; box-shadow:none; }
+/* Alpha-aware shadows trace the actual building silhouette, including roof edges. */
+.building-map-item:is(:hover,:focus-visible,:active) img { opacity:1; filter:brightness(1.08) drop-shadow(1px 0 0 #fff0ac) drop-shadow(-1px 0 0 #fff0ac) drop-shadow(0 1px 0 #fff0ac) drop-shadow(0 -1px 0 #fff0ac) drop-shadow(0 0 3px rgba(255,214,105,.92)) drop-shadow(0 3px 3px rgba(0,0,0,.5)); }
+.building-map-item:focus-visible .building-map-fallback { text-decoration:underline; text-underline-offset:3px; }
+.building-map-item:is(:hover,:focus-visible,:active) .building-map-level { color:#fff2c2; }
+.building-map-level { position:absolute; bottom:0; padding:2px 4px; border-radius:4px; background:rgba(7,17,13,.88); color:#f1e8c9; font-size:10px; line-height:1.1; white-space:nowrap; }
+.building-map-item.is-constructing .building-map-level { color:#f2cf75; }
+.building-map-fallback { color:#eee7d5; font-size:11px; }
+.building-map-tooltip { position:absolute; bottom:calc(100% + 6px); left:50%; display:none; gap:4px; width:max-content; max-width:220px; padding:9px 11px; border:1px solid rgba(223,184,91,.5); border-radius:7px; background:rgba(12,23,18,.97); color:#eee7d5; transform:translateX(-50%); pointer-events:none; text-align:left; }
+.building-map-tooltip strong { font-size:13px; }
+.building-map-tooltip > span { font-size:11px; color:#b8beb0; }
+.building-map-item:hover .building-map-tooltip,.building-map-item:focus-visible .building-map-tooltip { display:grid; }
 
-.building-marker .building-node {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  width: max-content;
-  min-height: 27px;
-  padding: 5px 7px;
-  border: 1px solid rgba(161, 140, 255, 0.62);
-  border-radius: 8px;
-  background: rgba(13, 21, 17, 0.88);
-  color: var(--building-accent);
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.28);
-  cursor: pointer;
-  pointer-events: auto;
-  transform: translate(-50%, -50%);
-  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
-}
-
-.building-marker .building-node > i {
-  position: relative;
-  width: 12px;
-  height: 10px;
-  flex: 0 0 12px;
-  border: 2px solid currentColor;
-  border-radius: 2px;
-  transition: transform 220ms ease;
-}
-
-.building-marker .building-node > i::before {
-  content: "";
-  position: absolute;
-  left: 2px;
-  top: -6px;
-  width: 6px;
-  height: 6px;
-  border-top: 2px solid currentColor;
-  border-left: 2px solid currentColor;
-  transform: rotate(45deg);
-}
-
-.building-marker .building-node > i::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  bottom: 0;
-  width: 3px;
-  height: 5px;
-  background: currentColor;
-}
-
-.building-marker .building-node > b {
-  color: inherit;
-  font-size: 12px;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.building-marker .building-node > small {
-  display: grid;
-  place-items: center;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 50%;
-  background: var(--building-accent);
-  color: #151326;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.building-marker .building-node:hover,
-.building-marker .building-node.is-expanded {
-  border-color: var(--building-accent-soft);
-  background: rgba(13, 21, 17, 0.98);
-  color: var(--building-accent-soft);
-}
-
-.building-marker .building-node.is-expanded > i {
-  transform: rotate(90deg);
-}
-
-.building-marker .building-list-tooltip {
-  position: absolute;
-  z-index: 50;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  display: grid;
-  width: 260px;
-  padding: 12px 13px;
-  border-left: 3px solid var(--building-accent);
-  background: rgba(13, 21, 17, 0.98);
-  color: var(--ink);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 5px);
-  transition: opacity 140ms ease, transform 140ms ease;
-}
-
-.building-marker .building-list-tooltip strong,
-.building-marker .building-list-tooltip span,
-.building-marker .building-list-tooltip em {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-style: normal;
-}
-
-.building-marker .building-list-tooltip strong {
-  color: var(--ink);
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.building-marker .building-list-tooltip span {
-  margin-top: 4px;
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.building-marker .building-list-tooltip em {
-  margin-top: 5px;
-  color: var(--building-accent);
-  font-size: 11px;
-}
-
-.building-marker .building-node:hover .building-list-tooltip,
-.building-marker .building-node:focus-within .building-list-tooltip {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.building-marker .building-orbit {
-  position: absolute;
-  z-index: 20;
-  left: 0;
-  top: 0;
-  display: block;
-  width: 1px;
-  height: 1px;
-  pointer-events: auto;
-}
-
-.building-marker .building-orbit-ray {
-  position: absolute;
-  z-index: 0;
-  left: 0;
-  top: 0;
-  width: var(--building-ray-length);
-  height: 1px;
-  background: rgba(161, 140, 255, 0.48);
-  pointer-events: none;
-  transform: rotate(var(--building-ray-angle)) scaleX(0);
-  transform-origin: 0 50%;
-  animation: building-ray-in 220ms ease forwards;
-}
-
-.building-marker .building-orbit-item {
-  position: absolute;
-  z-index: 2;
-  left: 0;
-  top: 0;
-  display: grid;
-  place-items: center;
-  width: 104px;
-  height: 104px;
-  padding: 2px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  cursor: pointer;
-  pointer-events: auto;
-  transform: translate(-50%, -50%) translate(0, 0) rotate(-120deg) scale(0.2);
-  animation: building-orbit-in 300ms cubic-bezier(.2,.85,.25,1.15) var(--building-orbit-delay) forwards;
-}
-
-.building-marker .building-orbit-item img {
-  display: block;
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-  filter: drop-shadow(0 7px 7px rgba(0, 0, 0, 0.52));
-  pointer-events: none;
-}
-
-.building-marker .building-orbit-item.is-constructing img {
-  opacity: 0.62;
-  filter: grayscale(0.55) drop-shadow(0 7px 7px rgba(0, 0, 0, 0.52));
-}
-
-.building-marker .building-orbit-fallback {
-  width: 44px;
-  height: 44px;
-  border: 2px solid var(--building-accent);
-  border-radius: 10px;
-  background: var(--surface-strong);
-}
-
-.building-marker .building-orbit-item:hover,
-.building-marker .building-orbit-item:focus-visible {
-  z-index: 30;
-  outline: none;
-  transform: translate(-50%, -50%) translate(var(--building-orbit-x), var(--building-orbit-y)) rotate(0) scale(1.14);
-}
-
-.building-marker .building-orbit-item:hover img,
-.building-marker .building-orbit-item:focus-visible img {
-  filter: drop-shadow(0 0 7px rgba(161, 140, 255, 0.95)) drop-shadow(0 9px 8px rgba(0, 0, 0, 0.58));
-}
-
-.building-marker .building-orbit-tooltip {
-  position: absolute;
-  z-index: 40;
-  top: calc(100% + 7px);
-  left: 50%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  width: 270px;
-  padding: 12px 13px;
-  border-left: 3px solid var(--building-accent);
-  background: rgba(13, 21, 17, 0.98);
-  color: var(--ink);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 5px);
-  transition: opacity 140ms ease, transform 140ms ease;
-}
-
-.building-marker .building-orbit-tooltip-copy,
-.building-marker .building-orbit-tooltip-meta {
-  display: grid;
-  min-width: 0;
-}
-
-.building-marker .building-orbit-tooltip strong,
-.building-marker .building-orbit-tooltip small,
-.building-marker .building-orbit-tooltip b,
-.building-marker .building-orbit-tooltip em {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.building-marker .building-orbit-tooltip strong {
-  color: var(--ink);
-  font-size: 15px;
-}
-
-.building-marker .building-orbit-tooltip small {
-  margin-top: 3px;
-  color: var(--ink-dim);
-  font-size: 12px;
-}
-
-.building-marker .building-orbit-tooltip-meta {
-  justify-items: end;
-  text-align: right;
-}
-
-.building-marker .building-orbit-tooltip b {
-  color: var(--building-accent);
-  font-size: 15px;
-}
-
-.building-marker .building-orbit-tooltip em {
-  margin-top: 5px;
-  color: #8fc59e;
-  font-size: 11px;
-  font-style: normal;
-}
-
-.building-marker .building-orbit-item:hover .building-orbit-tooltip,
-.building-marker .building-orbit-item:focus-visible .building-orbit-tooltip {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-@keyframes building-orbit-in {
-  from { transform: translate(-50%, -50%) translate(0, 0) rotate(-120deg) scale(0.2); opacity: 0; }
-  to { transform: translate(-50%, -50%) translate(var(--building-orbit-x), var(--building-orbit-y)) rotate(0) scale(1); opacity: 1; }
-}
-
-@keyframes building-ray-in {
-  to { transform: rotate(var(--building-ray-angle)) scaleX(1); }
-}
-
-@media (max-width: 680px) {
-  .building-marker .building-orbit-item {
-    width: 96px;
-    height: 96px;
-  }
-
-  .building-marker .building-orbit-item img {
-    width: 88px;
-    height: 88px;
-  }
-
-  .building-marker .building-list-tooltip,
-  .building-marker .building-orbit-tooltip {
-    width: 230px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .building-marker .building-orbit-item {
-    animation: none;
-    transform: translate(-50%, -50%) translate(var(--building-orbit-x), var(--building-orbit-y));
-  }
-
-  .building-marker .building-orbit-ray {
-    animation: none;
-    transform: rotate(var(--building-ray-angle));
-  }
-}
 
 /* Europe city-orbit map */
 .club-sheet {
@@ -2287,7 +1836,11 @@ button {
 
 /* S4-style rounded shell for the campaign map UI. */
 .territory-inspector {
-  overflow: hidden;
+  max-height: calc(100% - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
   border: 1px solid rgba(223, 184, 91, 0.45);
   border-radius: var(--radius-panel);
 }
@@ -2388,12 +1941,13 @@ button {
 .tactics-layout{grid-template-columns:minmax(420px,1fr) 300px 320px 280px}.tactics-sidebar{grid-column:4;grid-row:1}.tactics-pitch{grid-column:1;grid-row:1}.tactics-bench{grid-column:2;grid-row:1}#tactics-detail{grid-column:3;grid-row:1}.tactics-layout{overflow:auto}.tactics-bench .bench-magnet-list{grid-template-columns:repeat(2,110px)}
 .formation-line-controls{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}.formation-line-controls label{display:grid;grid-template-columns:42px 1fr 22px;gap:6px;align-items:center;color:var(--ink-dim);font-size:10px}.formation-line-controls input{width:100%;accent-color:var(--cyan)}.formation-line-controls b{color:var(--gold);text-align:right}
 
-/* Bottom-left campaign overview and viewport navigation. */
+/* Bottom-right campaign overview and viewport navigation. */
 .campaign-minimap-panel {
   position: absolute;
   z-index: 750;
   bottom: 14px;
-  left: 14px;
+  left: auto;
+  right: 14px;
   display: grid;
   gap: 8px;
   width: 250px;
@@ -2403,7 +1957,7 @@ button {
   position: static;
   display: inline-grid;
   grid-template-columns: repeat(3, auto);
-  justify-self: start;
+  justify-self: end;
   width: max-content;
   border-color: rgba(241, 237, 223, 0.2);
   background: rgba(9, 18, 14, 0.96);
@@ -2479,7 +2033,8 @@ button {
 @media (max-width: 680px) {
   .campaign-minimap-panel {
     bottom: 8px;
-    left: 8px;
+    left: auto;
+    right: 8px;
     width: 190px;
     gap: 6px;
   }
@@ -2572,6 +2127,9 @@ button {
 .team-management-toolbar input:focus,.team-management-toolbar select:focus{border-color:rgba(113,217,208,.68);background:rgba(10,29,22,.96);box-shadow:0 0 0 3px rgba(113,217,208,.1)}
 .team-management-toolbar label.team-search{flex:0 1 380px;width:380px;min-width:240px}
 .team-management-toolbar label.team-squad-filter{min-width:140px}
+.team-management-shell{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto minmax(0,1fr)}
+.team-squad-limit{margin:0;padding:8px 16px;color:#dfcba0;font-size:13px;line-height:1.5;flex:none}
+.team-squad-limit.is-over-limit{color:#ffad95}
 .team-squad-summary{display:flex;align-items:center;align-self:end;gap:10px;margin-left:auto}
 .team-squad-summary>span{display:flex;align-items:center;justify-content:space-between;gap:20px;min-width:132px;height:40px;padding:0 14px;border:1px solid transparent;border-radius:8px;font-size:16px}
 .team-squad-summary b{font-weight:800}
@@ -2581,3 +2139,53 @@ button {
 @media(max-width:1120px){.team-squad-summary{width:100%;margin-left:0}.team-squad-summary>span{flex:1}}
 .team-range{gap:7px}
 .team-range input{width:74px}
+
+
+/* Buildings share the selected territory's shell, colour and scroll area. */
+.territory-buildings { min-width:0; border-top:1px solid var(--line); }
+.territory-buildings[hidden] { display:none; }
+.territory-buildings .building-panel-content { min-height:0; overflow:visible; }
+.territory-buildings .building-panel-summary { gap:10px; padding:12px 16px; background:rgba(255,255,255,.025); }
+.territory-buildings .building-panel-summary > div strong { font-size:16px; }
+.territory-buildings .building-panel-summary > span { display:flex; align-items:center; gap:8px; }
+.territory-buildings .building-panel-summary > span b { font-size:15px; }
+.territory-buildings .building-panel-section { padding:12px 16px; }
+.territory-buildings .building-panel-section > header { gap:8px; margin-bottom:9px; }
+.territory-buildings .building-panel-section > header strong { font-size:14px; }
+.territory-buildings .building-panel-section > header span { font-size:11px; }
+.territory-buildings .building-preview-card,
+.territory-buildings .building-build-option { grid-template-columns:42px minmax(0,1fr) auto; gap:8px; min-height:64px; padding:8px; border-radius:7px; background:rgba(0,0,0,.14); }
+.territory-buildings .building-preview-card > img,
+.territory-buildings .building-build-option > img { width:42px; height:42px; }
+.territory-buildings .building-preview-card strong,
+.territory-buildings .building-build-option strong { font-size:13px; line-height:1.4; white-space:normal; overflow-wrap:anywhere; }
+.territory-buildings .building-preview-card small,
+.territory-buildings .building-build-option > div > span,
+.territory-buildings .building-card-status { font-size:11px; }
+.territory-buildings .building-preview-meta > b { font-size:13px; }
+.territory-buildings .building-build-option > button { min-width:76px; min-height:44px; padding:6px 8px; border-radius:6px; }
+.territory-buildings .building-build-option > button b { font-size:13px; }
+.territory-buildings .building-panel-empty,
+.territory-buildings .building-panel-loading { min-height:64px; padding:12px; }
+.territory-buildings .building-panel-empty strong { font-size:13px; }
+.territory-buildings .building-panel-empty span,
+.territory-buildings .building-panel-loading span { font-size:12px; }
+.territory-buildings .building-preview-list,
+.territory-buildings .building-build-list { gap:7px; }
+
+/* Shared topbar function buttons, including the inventory counter. */
+.primary-nav{gap:6px;align-items:center}
+.primary-nav .nav-item{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:80px;height:40px;padding:0 14px;border:1px solid #ffffff16;border-radius:9px;background:#ffffff03;color:#aeb9af;font:inherit;font-size:13px;font-weight:600;line-height:1;white-space:nowrap}
+.primary-nav .nav-item[hidden]{display:none}
+.primary-nav .nav-item::after{display:none}
+.primary-nav .nav-item:hover,.primary-nav .nav-item:focus-visible{border-color:#b8a36380;background:#ffffff09;color:#f0ecda}
+.primary-nav .nav-item.is-active{border-color:#c0a85c99;background:#aa91441f;color:#f1dea1}
+.primary-nav .nav-item:focus-visible{outline:2px solid #d8c285;outline-offset:2px}
+@media(max-width:760px){.primary-nav{gap:4px}.primary-nav .nav-item{min-width:58px;height:36px;padding:0 9px;font-size:12px}}
+
+@media(max-width:560px){.team-management-toolbar label.team-search{flex:1 1 100%;width:100%;min-width:0}.team-squad-summary>span{min-width:0;gap:8px;padding:0 10px}.team-squad-summary strong{white-space:nowrap;font-size:20px}}
+
+.map-loader-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:16px; }
+.map-loader-actions[hidden] { display:none; }
+.map-loader-actions a { padding:10px 16px; border:1px solid #d6b663; border-radius:8px; background:#17271e; color:#f4d67c; text-decoration:none; font-size:14px; }
+.map-loader-actions a:hover { background:#314434; }

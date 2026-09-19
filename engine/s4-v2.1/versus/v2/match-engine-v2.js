@@ -1,3 +1,5 @@
+import {biologyFatigueLoss} from './biology-research-v2.js';
+import { formationResearchMultiplier, researchedShotMetric } from './formation-research-v2.js';
 import { positionFitScore, roleGroup } from "../../game/public/schema.js";
 import { analyzeElevenBoardFormation, inferElevenBoardRoles } from "../public/formation-rules.js";
 import { activeCaptain } from "../public/captain-rules.js";
@@ -17,7 +19,7 @@ import { v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
 import { buildV2TeamSnapshots } from "./team-snapshot-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
-import { automaticSubstitutionRank, compareAutomaticSubstitutes } from "../automatic-substitution.js";
+import { automaticSubstitutionRank, compareAutomaticSubstitutes, injurySubstitutionCandidate } from "../automatic-substitution.js";
 import {
   resolveV2PlayerDuty,
   v2DutyDefenderMultiplier,
@@ -133,7 +135,7 @@ function resolveSuperStormStopMinute(seed, range, requestedMinute) {
 }
 
 export function createV2MatchRng(seed = "ydl-v2", restoredState = null) {
-  let state = Number.isFinite(Number(restoredState)) ? Number(restoredState) : (hashSeed(seed) || 1);
+  let state = restoredState != null && Number.isFinite(Number(restoredState)) ? Number(restoredState) : (hashSeed(seed) || 1);
   const rng = () => {
     state += 0x6D2B79F5;
     let value = state;
@@ -159,7 +161,7 @@ function cloneTeam(team, index) {
   const details = tacticalDetailsForPlan(opening, team);
   const positions = structuredClone(team.positionPresets?.[opening.positionPreset] ?? team.positions ?? {});
   const formationLines = structuredClone(team.formationLinePresets?.[opening.positionPreset] ?? team.formationLines ?? null);
-  const assignedRoles = inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:positions[player.id] })), formationLines);
+  const assignedRoles = inferElevenBoardRoles((team.players ?? []).filter(player=>player.active!==false).map((player) => ({ id:player.id, position:positions[player.id] })), formationLines);
   return {
     ...structuredClone(team),
     index,
@@ -178,6 +180,7 @@ function cloneTeam(team, index) {
     positions,
     formationLines,
     activePlan:"opening",
+    formationResearchBonuses:structuredClone(team.formationResearchPresets?.[opening.positionPreset??"position1"]??{}),
     score:0,
     stats:{ possessions:0, normalPossessions:0, transitionPossessions:0, possessionSeconds:0, normalPossessionSeconds:0, transitionPossessionSeconds:0, possessionControl:0, shots:0, normalShots:0, transitionShots:0, shotsOnTarget:0, blockedShots:0, goals:0, xg:0, normalXg:0, transitionXg:0, saves:0, tackles:0, interceptions:0, clearances:0, setPieceClearances:0, blocks:0, pressuresWon:0, corners:0, fouls:0, yellowCards:0, redCards:0, injuries:0, substitutions:0, setPieces:0, penalties:0 },
     players:(team.players ?? []).map((player) => ({
@@ -189,7 +192,7 @@ function cloneTeam(team, index) {
       startedMatch:player.active !== false,
       sentOff:false,
       injury:null,
-      state:{ ...structuredClone(player.state ?? {}), fitness:Number(player.state?.fitness ?? player.fitness ?? 100) },
+      state:{ ...structuredClone(player.state ?? {}), fitness:Number(traitHook(player,"fixedFitness")?.value ?? player.state?.fitness ?? player.fitness ?? 100) },
       matchStats:{ shots:0, shotsOnTarget:0, goals:0, assists:0, tackles:0, interceptions:0, clearances:0, setPieceClearances:0, blocks:0, pressuresWon:0, saves:0, yellowCards:0, redCards:0, fouls:0 },
     })),
   };
@@ -709,6 +712,7 @@ function applyTacticalPlan(match, team) {
   team.tacticalDimensions = tacticalDimensionsForPlan(plan);
   team.playerDuties = structuredClone(plan.playerDuties ?? team.openingPlan?.playerDuties ?? team.playerDuties ?? {});
   const preset = plan.positionPreset ?? "position1";
+  team.formationResearchBonuses=structuredClone(team.formationResearchPresets?.[preset]??{});
   team.positions = structuredClone(team.positionPresets?.[preset] ?? team.positions);
   team.formationLines = structuredClone(team.formationLinePresets?.[preset] ?? team.formationLines ?? null);
   const assignedRoles = inferElevenBoardRoles(team.players.map((player) => ({ id:player.id, position:team.positions[player.id] })), team.formationLines);
@@ -809,11 +813,14 @@ function autoSubstituteInjuredPlayer(match, team, injuredPlayer) {
   if (!match.parameters.state.substitutionsEnabled) return null;
   const targetRole = injuredPlayer.assignedRole ?? injuredPlayer.role;
   const substitute = team.players
-    .filter((player) => player.active === false && !player.injury && !player.sentOff && automaticSubstitutionRank(targetRole, player) > 0)
+    .filter((player) => player.active === false && !player.substitutedOut && !player.injury && !player.sentOff && injurySubstitutionCandidate(targetRole, player))
     .sort((left, right) => compareAutomaticSubstitutes(targetRole, left, right))[0];
   if (!substitute) return null;
   const outgoingRole = injuredPlayer.assignedRole ?? injuredPlayer.role;
   replacePositionPlayer(team.positions, injuredPlayer.id, substitute.id);
+  replacePositionPlayer(team.structureRoles, injuredPlayer.id, substitute.id);
+  replacePositionPlayer(team.spatialRoles, injuredPlayer.id, substitute.id);
+  if(team.captainId===injuredPlayer.id)team.captainId=substitute.id;
   Object.values(team.positionPresets ?? {}).forEach((positions) => replacePositionPlayer(positions, injuredPlayer.id, substitute.id));
   replaceDutyPlayer(team.playerDuties, injuredPlayer.id, substitute.id);
   Object.values(team.tacticalPlans ?? {}).forEach((plan) => replaceDutyPlayer(plan.playerDuties, injuredPlayer.id, substitute.id));
@@ -824,6 +831,7 @@ function autoSubstituteInjuredPlayer(match, team, injuredPlayer) {
   substitute.boardPosition = structuredClone(team.positions[substitute.id] ?? injuredPlayer.boardPosition ?? null);
   substitute.enteredAsSubstitute = true;
   substitute.substitutedForId = injuredPlayer.id;
+  injuredPlayer.active = false;
   injuredPlayer.substitutedOut = true;
   team.stats.substitutions = Number(team.stats.substitutions ?? 0) + 1;
   addEvent(match, "substitution", team.index, `${team.name}完成伤病换人：${substitute.name}替换${injuredPlayer.name}出场。`, {
@@ -836,7 +844,7 @@ function autoSubstituteInjuredPlayer(match, team, injuredPlayer) {
     reason:"injury",
     assignedRole:outgoingRole,
     tacticalDuty:substitute.tacticalDuty,
-    detail:`换下：${injuredPlayer.name}；换上：${substitute.name}；位置匹配顺序：主位置、次位置、同位置线；${substitute.name}接管${outgoingRole}职责。`,
+    detail:`换下：${injuredPlayer.name}；换上：${substitute.name}；位置匹配顺序：主位置、次位置、同位置线、全能球员、外场应急；${substitute.name}接管${outgoingRole}职责。`,
   });
   return substitute;
 }
@@ -853,7 +861,7 @@ function currentMatchRating(player) {
 export function autoSubstituteDismissedGoalkeeper(match, team, dismissedGoalkeeper) {
   if (!match.parameters.state.substitutionsEnabled || (dismissedGoalkeeper.assignedRole ?? dismissedGoalkeeper.role) !== "GK") return null;
   const substitute = team.players
-    .filter((player) => player.active === false && !player.injury && !player.sentOff && automaticSubstitutionRank("GK", player) > 0)
+    .filter((player) => player.active === false && !player.substitutedOut && !player.injury && !player.sentOff && automaticSubstitutionRank("GK", player) > 0)
     .sort((left, right) => compareAutomaticSubstitutes("GK", left, right))[0];
   const outgoingCenterBack = activePlayers(team)
     .filter((player) => (player.assignedRole ?? player.role) === "CB")
@@ -864,6 +872,7 @@ export function autoSubstituteDismissedGoalkeeper(match, team, dismissedGoalkeep
 
   replacePositionPlayer(team.positions, dismissedGoalkeeper.id, substitute.id);
   delete team.positions[outgoingCenterBack.id];
+  for(const map of [team.structureRoles,team.spatialRoles]){replacePositionPlayer(map,dismissedGoalkeeper.id,substitute.id);if(map)delete map[outgoingCenterBack.id];}
   Object.values(team.positionPresets ?? {}).forEach((positions) => {
     replacePositionPlayer(positions, dismissedGoalkeeper.id, substitute.id);
     delete positions[outgoingCenterBack.id];
@@ -982,8 +991,8 @@ function removePlayer(match, team, player, reason, details = {}) {
     });
     const substitute = autoSubstituteInjuredPlayer(match, team, player);
     if (!substitute) {
-      injuryEvent.text += `${team.name}替补席没有符合位置要求的球员，只能以${activePlayers(team).length}人继续比赛。`;
-      injuryEvent.detail += `替补席无同位置、次位置或同位置线球员；剩余人数：${activePlayers(team).length}。`;
+      injuryEvent.text += `${team.name}没有可用的伤病替补，只能以${activePlayers(team).length}人继续比赛。`;
+      injuryEvent.detail += `无可用健康替补，或伤退门将没有可用门将替补；剩余人数：${activePlayers(team).length}。`;
     }
   }
   return true;
@@ -1006,6 +1015,7 @@ function applyFatigue(match) {
       if (fixed) {
         player.state.fitness = Number(fixed.value);
         player.v2WeatherFatigueRemainder = 0;
+        player.biologyFitnessSaved = 0;
       }
       else {
         const stamina = effectiveMetric(match, team.index, player, { stamina:1 });
@@ -1016,7 +1026,9 @@ function applyFatigue(match) {
         const weatherLoss = Math.floor((player.v2WeatherFatigueRemainder + 1e-9) * 10) / 10;
         player.v2WeatherFatigueRemainder -= weatherLoss;
         const loss = baseLoss + weatherLoss;
-        player.state.fitness = round(clamp(player.state.fitness - loss, 18, 100), 1);
+        const normalFitness=round(clamp(player.state.fitness-loss,18,100),1);
+        const actualLoss=biologyFatigueLoss(player,player.state.fitness-normalFitness,player.coalitionBiologyReduction ?? team.biologyFatigueReduction);
+        player.state.fitness=round(clamp(player.state.fitness-actualLoss,18,100),1);
       }
     }
   }
@@ -1044,7 +1056,7 @@ function longShotProfile(match, teamIndex, team, candidate, chain, requestedType
   const lane = chain.endZone?.split(":")[1] ?? "center";
   if (["farLeft", "farRight"].includes(lane)) return null;
   const config = match.parameters.chain.longShot;
-  const skill = effectiveMetric(match, teamIndex, candidate, { longShots:0.55, composure:0.2, decisions:0.15, firstTouch:0.1 });
+  const skill = effectiveMetric(match, teamIndex, candidate, { longShots:0.55, composure:0.2, decisions:0.15, firstTouch:0.1 }) * formationResearchMultiplier(team.formationResearchBonuses,"longShot",candidate.assignedRole);
   const defending = match.teams[1 - teamIndex];
   const lowBlock = (defending.splitTacticsExplicit ? defending.defensiveBlock : defending.style) === "lowBlock" || ["defensive", "parkBus"].includes(defending.tactic);
   const attackingMentality = ["positive", "allOutAttack"].includes(team.tactic);
@@ -1444,7 +1456,8 @@ function resolveShot(match, teamIndex, chain, options = {}) {
   }
   const typeLabel = SHOT_TYPE_LABELS[type] ?? "进攻配合";
   describeShotBuildUp(match, teamIndex, chain, shooter, creator, type);
-  const finishing = ["cross", "setPiece"].includes(type) ? effectiveMetric(match, teamIndex, shooter, { heading:0.42, jumping:0.2, composure:0.2, finishing:0.18 }) : ["longShot", "freeKick"].includes(type) ? effectiveMetric(match, teamIndex, shooter, { longShots:0.42, setPieces:0.3, composure:0.18, finishing:0.1 }) : effectiveMetric(match, teamIndex, shooter, { finishing:0.5, composure:0.3, offBall:0.2 });
+  const baseFinishing = ["cross", "setPiece"].includes(type) ? effectiveMetric(match, teamIndex, shooter, { heading:0.42, jumping:0.2, composure:0.2, finishing:0.18 }) : ["longShot", "freeKick"].includes(type) ? effectiveMetric(match, teamIndex, shooter, { longShots:0.42, setPieces:0.3, composure:0.18, finishing:0.1 }) : effectiveMetric(match, teamIndex, shooter, { finishing:0.5, composure:0.3, offBall:0.2 });
+  const finishing=researchedShotMetric(baseFinishing,attacking.formationResearchBonuses,type,shooter.assignedRole);
   const keeperValue = keeper ? effectiveMetric(match, 1 - teamIndex, keeper, { goalkeeping:0.52, reflexes:0.32, positioning:0.16 }) : 18;
   const displayedFinishing = ["cross", "setPiece"].includes(type) ? displayMetric(match, teamIndex, shooter, { heading:0.42, jumping:0.2, composure:0.2, finishing:0.18 }) : ["longShot", "freeKick"].includes(type) ? displayMetric(match, teamIndex, shooter, { longShots:0.42, setPieces:0.3, composure:0.18, finishing:0.1 }) : displayMetric(match, teamIndex, shooter, { finishing:0.5, composure:0.3, offBall:0.2 });
   const displayedKeeperValue = keeper ? displayMetric(match, 1 - teamIndex, keeper, { goalkeeping:0.52, reflexes:0.32, positioning:0.16 }) : 18;
@@ -2000,11 +2013,20 @@ function maybeBlackWhistle(match, chainIndex, regulationChainCount) {
 }
 
 function ensurePlayable(match) {
+  if(match.abandoned)return false;
   for (const team of match.teams) {
     if (activePlayers(team).length < 7) {
       match.finished = true;
       match.abandoned = true;
-      addEvent(match, "abandoned", team.index, `${team.name}仅剩${activePlayers(team).length}名可比赛球员，少于规则要求的7人，比赛立即终止；终止时比分${match.teams[0].score}:${match.teams[1].score}。`, {
+      match.abandonmentReason = "insufficientPlayers";
+      const shortTeams=match.teams.filter(t=>activePlayers(t).length<7);
+      match.forfeitedTeamIndex=shortTeams.length===1?team.index:null;
+      if(match.campaignForfeit){
+        match.playedScore=match.teams.map(t=>t.score);
+        match.teams.forEach(t=>{t.score=shortTeams.length===2?0:t.index===team.index?0:3;});
+        match.score=match.teams.map(t=>t.score);
+      }
+      addEvent(match, "abandoned", team.index, `${team.name}仅剩${activePlayers(team).length}名可比赛球员，少于规则要求的7人，比赛立即终止；${match.campaignForfeit ? (shortTeams.length===2?"双方人数不足，本回合不分胜负；":"该队本回合判负；") : ""}结算比分${match.teams[0].score}:${match.teams[1].score}。`, {
         activePlayers:activePlayers(team).length,
         score:match.teams.map((entry) => entry.score),
         detail:`终止球队：${team.name}；可比赛人数：${activePlayers(team).length}；最低要求：7人；终止时比分：${match.teams[0].score}:${match.teams[1].score}。`,
@@ -2375,6 +2397,7 @@ export function advanceV2Match(match, targetChainCount = match.nextChainIndex + 
     match.started = true;
     addEvent(match, "kickoff", null, "比赛开始，YDL V2引擎正式开球。", { importance:"stage" });
   }
+  if(match.campaignForfeit)ensurePlayable(match);
   while (match.nextChainIndex < target && !match.abandoned) {
     if (stopV2MatchForSuperStorm(match)) break;
     runV2Chain(match, match.nextChainIndex, options);

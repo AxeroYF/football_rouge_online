@@ -1,3 +1,6 @@
+import { neutralRewardMarkup } from '../resources/neutral-reward-markup.js';
+import { campaignFog, fogTerritoryStatus } from "../../shared/config/fog.mjs";
+import { territoryResourceMarkup, territoryResourceProfile } from "../resources/resource-markup.js?v=20260908-fans-v1";
 export function createTerritoryPresentation({
   ownerTypes,
   escapeHtml,
@@ -43,8 +46,14 @@ export function createTerritoryPresentation({
       homeSelectionPermission,
       maritimeTargetIds = new Set(),
       expeditionMoveTargetIds = new Set(),
+      scoutMoveTargetIds = new Set(),
+      mapRenderer = "leaflet",
     } = context();
     const territoryId = feature.properties.territoryId;
+    const visibility = fogTerritoryStatus(campaignFog(campaignState), territoryId);
+    if (visibility !== "visible") return { pane:"territoryPane", interactive:false,
+      fillColor:"#63706e", fillOpacity:mapRenderer === "three" ? 0 : visibility === "explored" ? .8 : 0,
+      opacity:visibility === "explored" ? .2 : 0, color:"#a2aba0", weight:visibility === "explored" ? .5 : 0 };
     const state = territoryWorld?.territories[territoryId];
     const selected = territoryId === selectedTerritoryId;
     const activeChallenge = campaignState?.world?.activeChallenges?.[territoryId] ?? null;
@@ -85,13 +94,30 @@ export function createTerritoryPresentation({
       weight = Math.max(weight,2.4);
       fillOpacity = Math.max(fillOpacity,.96);
     }
+    if (scoutMoveTargetIds.has(territoryId) && !selected) {
+      color = "#77dfc0"; weight = Math.max(weight, 2.4);
+    }
     if (activeChallenge) {
       color = "#f0c75e";
       weight = Math.max(weight, 3);
       fillOpacity = Math.max(fillOpacity, 0.9);
     }
+    // Three already draws an opaque land surface and terrain. Live state is
+    // a translucent tint above it, never another almost-opaque green base.
+    if (mapRenderer === "three") {
+      fillOpacity = state?.ownerType === ownerTypes.PLAYER ? 0.38
+        : state?.ownerType === ownerTypes.CLUB ? 0.30 : 0;
+      if (homeSelectionMode && state?.ownerType === ownerTypes.NEUTRAL) {
+        fillOpacity = homeSelectionPermission(territoryId).allowed ? 0.10 : 0.04;
+      }
+      if (selected || activeChallenge || expeditionMoveTargetIds.has(territoryId) || scoutMoveTargetIds.has(territoryId)) {
+        fillOpacity = Math.max(fillOpacity, 0.12);
+      }
+    }
     return {
       pane: "territoryPane",
+      interactive: true,
+      opacity: 1,
       fillColor,
       fillOpacity,
       color,
@@ -102,9 +128,10 @@ export function createTerritoryPresentation({
 
   function territoryHoverStyle(feature) {
     const baseStyle = territoryStyle(feature);
+    if (baseStyle.interactive === false) return baseStyle;
     return {
       ...baseStyle,
-      fillOpacity: Math.max(baseStyle.fillOpacity, feature.properties.clubCount ? 0.38 : 0.18),
+      fillOpacity: Math.max(baseStyle.fillOpacity, context().mapRenderer === "three" ? 0.12 : feature.properties.clubCount ? 0.38 : 0.18),
       color: "#f1eddf",
       weight: Math.max(baseStyle.weight, 1.5),
     };
@@ -112,11 +139,15 @@ export function createTerritoryPresentation({
 
   function territoryTooltipMarkup(metadata, state) {
     const { campaignState } = context();
+    if (fogTerritoryStatus(campaignFog(campaignState), metadata.territoryId) !== "visible") return "";
     const challenge = campaignState?.world?.activeChallenges?.[metadata.territoryId] ?? null;
     const weather = campaignState?.world?.weather?.territories?.[metadata.territoryId] ?? null;
     return "<span>" + escapeHtml(metadata.country) + "</span>"
       + "<strong>" + escapeHtml(metadata.name) + "</strong>"
       + "<small>" + escapeHtml(territoryOwnerLabel(metadata, state)) + "</small>"
+      + (state.raidSuppression ? "<small class=\"raid-suppression-label\">豪门压制 · 基础收益 −30% · 设施停用至 " + escapeHtml(new Date(state.raidSuppression.until).toLocaleString("zh-CN")) + "</small>" : "")
+      + territoryResourceMarkup(territoryResourceProfile(metadata,campaignState), { compact: true })
+      + (state.ownerType === ownerTypes.NEUTRAL ? neutralRewardMarkup(campaignState?.world?.territories?.[metadata.territoryId]?.neutralReward) : "")
       + (weather ? "<small class=\"territory-tooltip-weather\"><i aria-hidden=\"true\">" + escapeHtml(weather.icon)
         + "</i><b>" + escapeHtml(weather.label) + "</b><u>本小时天气</u></small>" : "")
       + (challenge ? "<em><b>⚔ " + escapeHtml(challengeSummary(challenge)) + "</b>"

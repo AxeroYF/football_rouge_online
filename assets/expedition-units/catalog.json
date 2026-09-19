@@ -1,0 +1,581 @@
+{
+  "version": "20260908-expedition-vehicles-v1",
+  "status": "colored-models-generated",
+  "format": "glTF 2.0 / GLB",
+  "total": 5,
+  "facilities": 0,
+  "units": 5,
+  "totalBytes": 2705072,
+  "items": [
+    {
+      "id": "airplane",
+      "name": "飞机",
+      "title": "云端远征",
+      "accent": "#4EABB8",
+      "palette": [
+        "#E7EEE7",
+        "#3B929F",
+        "#D1B568"
+      ],
+      "signature": "后掠双翼 · 双涡扇发动机 · 蓝白涂装",
+      "pose": "双翼展开，起落架落地",
+      "assetId": "airplane",
+      "type": "airplane",
+      "kind": "unit",
+      "level": null,
+      "change": "双翼展开，起落架落地",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/expedition-units/models/airplane.glb",
+          "bytes": 186500,
+          "sha256": "7dfad44bbb6933a15bdea5b656da10816bd166b2175b501f86aa5f20c6167319"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/expedition-units/models/lod1/airplane.glb",
+          "bytes": 133228,
+          "sha256": "86fad11e076944e6964af6bfa91f42689878ce0c01e6f9cca4be8c3d88f8ad0c"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/expedition-units/models/lod2/airplane.glb",
+          "bytes": 77980,
+          "sha256": "a974d5f6f6bcc3dfa011c3cf50e4ca1009f2e2eaa4ac1f4a13310a2ac58b97c0"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 5872,
+          "meshes": 19,
+          "vertices": 5574,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -1.2,
+              0,
+              -0.967307722286361
+            ],
+            "max": [
+              1.2,
+              0.8769230987722361,
+              0.967307722286361
+            ]
+          },
+          "size": [
+            2.4,
+            0.8769230987722361,
+            1.934615444572722
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3696,
+          "meshes": 19,
+          "vertices": 3898,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -1.2,
+              0,
+              -0.967307722286361
+            ],
+            "max": [
+              1.2,
+              0.8769230987722361,
+              0.967307722286361
+            ]
+          },
+          "size": [
+            2.4,
+            0.8769230987722361,
+            1.934615444572722
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1832,
+          "meshes": 17,
+          "vertices": 2122,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -1.2,
+              0,
+              -0.967307722286361
+            ],
+            "max": [
+              1.2,
+              0.87428767879818,
+              0.967307722286361
+            ]
+          },
+          "size": [
+            2.4,
+            0.87428767879818,
+            1.934615444572722
+          ]
+        }
+      ],
+      "thumbnail": "./assets/expedition-units/thumbnails/airplane.webp",
+      "icon": "./assets/expedition-units/icons/airplane.png"
+    },
+    {
+      "id": "excavator",
+      "name": "挖掘机",
+      "title": "开拓先锋",
+      "accent": "#E1AE3F",
+      "palette": [
+        "#E1AE3F",
+        "#343E3E",
+        "#8CABB0"
+      ],
+      "signature": "工程黄车身 · 液压动臂 · 宽履带",
+      "pose": "动臂向前抬起，铲斗收拢",
+      "assetId": "excavator",
+      "type": "excavator",
+      "kind": "unit",
+      "level": null,
+      "change": "动臂向前抬起，铲斗收拢",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/expedition-units/models/excavator.glb",
+          "bytes": 349308,
+          "sha256": "bc83fd8eae1e71a2a61b0fd351b891c945cc067ea1481d035601e8648b1bf152"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/expedition-units/models/lod1/excavator.glb",
+          "bytes": 276608,
+          "sha256": "655b8aa14fe23741d4b8c249fe5d1966156b98139b00f3dffcd8286f618771d2"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/expedition-units/models/lod2/excavator.glb",
+          "bytes": 95224,
+          "sha256": "74e070d1ba0ba3186a3550263e3a04b0ce8f39ef0b443dfada4a4c5467da05ba"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 8376,
+          "meshes": 25,
+          "vertices": 11530,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.6366063293197606,
+              8.673617379884035e-19,
+              -1.2000000000000002
+            ],
+            "max": [
+              0.6366063293197606,
+              1.6225810693578122,
+              1.2000000000000002
+            ]
+          },
+          "size": [
+            1.2732126586395212,
+            1.6225810693578122,
+            2.4000000000000004
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 6568,
+          "meshes": 25,
+          "vertices": 8954,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.6366063293197606,
+              8.673617379884035e-19,
+              -1.2000000000000002
+            ],
+            "max": [
+              0.6366063293197606,
+              1.6225810693578122,
+              1.2000000000000002
+            ]
+          },
+          "size": [
+            1.2732126586395212,
+            1.6225810693578122,
+            2.4000000000000004
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 2112,
+          "meshes": 22,
+          "vertices": 2610,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.6285449799208065,
+              0,
+              -1.2
+            ],
+            "max": [
+              0.6285449799208065,
+              1.618475711617487,
+              1.1999999999999997
+            ]
+          },
+          "size": [
+            1.257089959841613,
+            1.618475711617487,
+            2.3999999999999995
+          ]
+        }
+      ],
+      "thumbnail": "./assets/expedition-units/thumbnails/excavator.webp",
+      "icon": "./assets/expedition-units/icons/excavator.png"
+    },
+    {
+      "id": "bus",
+      "name": "大巴车",
+      "title": "全队出征",
+      "accent": "#569B80",
+      "palette": [
+        "#E8E5CF",
+        "#367E68",
+        "#344E56"
+      ],
+      "signature": "绿白双色 · 全景车窗 · 巡航车身",
+      "pose": "长轴客车，车顶配有空调机组",
+      "assetId": "bus",
+      "type": "bus",
+      "kind": "unit",
+      "level": null,
+      "change": "长轴客车，车顶配有空调机组",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/expedition-units/models/bus.glb",
+          "bytes": 198068,
+          "sha256": "49cce3ca67f5075fd4d7b2a8937b1281364f5751ceef975fa03a951e9967fb58"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/expedition-units/models/lod1/bus.glb",
+          "bytes": 150808,
+          "sha256": "61d1caca1397cb35cde64c5f84f5c15d88b3d9ec102c77fa4354d41bcb10d462"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/expedition-units/models/lod2/bus.glb",
+          "bytes": 85816,
+          "sha256": "e1e65697f06658b96ac9ca59c18e6425592ccb2da12bdac79ea1729fb7958648"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 4284,
+          "meshes": 24,
+          "vertices": 6294,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5723326988977614,
+              0,
+              -1.2
+            ],
+            "max": [
+              0.5723326988977614,
+              1.176076643596723,
+              1.2
+            ]
+          },
+          "size": [
+            1.1446653977955228,
+            1.176076643596723,
+            2.4
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3132,
+          "meshes": 23,
+          "vertices": 4648,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5723326988977614,
+              0,
+              -1.2
+            ],
+            "max": [
+              0.5723326988977614,
+              1.1641952499409745,
+              1.2
+            ]
+          },
+          "size": [
+            1.1446653977955228,
+            1.1641952499409745,
+            2.4
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1496,
+          "meshes": 21,
+          "vertices": 2416,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5728506403642432,
+              1.734723475976807e-18,
+              -1.2
+            ],
+            "max": [
+              0.5728506403642432,
+              1.1556815658857327,
+              1.2
+            ]
+          },
+          "size": [
+            1.1457012807284863,
+            1.1556815658857327,
+            2.4
+          ]
+        }
+      ],
+      "thumbnail": "./assets/expedition-units/thumbnails/bus.webp",
+      "icon": "./assets/expedition-units/icons/bus.png"
+    },
+    {
+      "id": "sports-car",
+      "name": "跑车",
+      "title": "极速巡游",
+      "accent": "#CF5749",
+      "palette": [
+        "#C8483C",
+        "#26393E",
+        "#E4C885"
+      ],
+      "signature": "低矮宽体 · 红色车漆 · 双道拉花",
+      "pose": "前倾车身，尾翼与运动轮毂",
+      "assetId": "sports-car",
+      "type": "sports-car",
+      "kind": "unit",
+      "level": null,
+      "change": "前倾车身，尾翼与运动轮毂",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/expedition-units/models/sports-car.glb",
+          "bytes": 174256,
+          "sha256": "2e4fa6ca42be6d0e8f1ce0fb523b3137e92dd75717a730e799989ee77dd82bc3"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/expedition-units/models/lod1/sports-car.glb",
+          "bytes": 136980,
+          "sha256": "e1474cbc07acc059e4cb981ca9cd91ba8406693db19a6bce704d5d85bf20479f"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/expedition-units/models/lod2/sports-car.glb",
+          "bytes": 77360,
+          "sha256": "61d27c594d9af153ebee3c9531b2b938505a37ad1b441c2354242e357a17404c"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3668,
+          "meshes": 19,
+          "vertices": 5620,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5882620806439318,
+              0,
+              -1.2
+            ],
+            "max": [
+              0.5882620806439318,
+              0.700215034077621,
+              1.2
+            ]
+          },
+          "size": [
+            1.1765241612878636,
+            0.700215034077621,
+            2.4
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2836,
+          "meshes": 19,
+          "vertices": 4276,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5882620806439318,
+              0,
+              -1.2
+            ],
+            "max": [
+              0.5882620806439318,
+              0.700215034077621,
+              1.2
+            ]
+          },
+          "size": [
+            1.1765241612878636,
+            0.700215034077621,
+            2.4
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1320,
+          "meshes": 17,
+          "vertices": 2236,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5848175393009253,
+              -1.734723475976807e-18,
+              -1.1999999999999997
+            ],
+            "max": [
+              0.5848175393009253,
+              0.7038470564499216,
+              1.2
+            ]
+          },
+          "size": [
+            1.1696350786018506,
+            0.7038470564499216,
+            2.3999999999999995
+          ]
+        }
+      ],
+      "thumbnail": "./assets/expedition-units/thumbnails/sports-car.webp",
+      "icon": "./assets/expedition-units/icons/sports-car.png"
+    },
+    {
+      "id": "tank",
+      "name": "坦克",
+      "title": "钢铁先锋",
+      "accent": "#899266",
+      "palette": [
+        "#798460",
+        "#343E38",
+        "#D5AC65"
+      ],
+      "signature": "橄榄绿装甲 · 旋转炮塔 · 重型履带",
+      "pose": "炮塔朝前，履带稳稳落地",
+      "assetId": "tank",
+      "type": "tank",
+      "kind": "unit",
+      "level": null,
+      "change": "炮塔朝前，履带稳稳落地",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/expedition-units/models/tank.glb",
+          "bytes": 379060,
+          "sha256": "b2d9a7036496edffd9ce2582fa3293af8d80a6a4307e32fff1a08d6c21b886f5"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/expedition-units/models/lod1/tank.glb",
+          "bytes": 290888,
+          "sha256": "f5a258bf12741360753d337f9c088574ba0ff3bc44bf88a835c7a232ac68da9f"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/expedition-units/models/lod2/tank.glb",
+          "bytes": 92988,
+          "sha256": "bb8cd0cb200c75a61d611b50a2a71388312731793a93436b3cf92151b013c3b3"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 8928,
+          "meshes": 23,
+          "vertices": 12707,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.6845472723759103,
+              -8.673617379884035e-19,
+              -1.2
+            ],
+            "max": [
+              0.6845472723759103,
+              1.1842605661810017,
+              1.1999999999999997
+            ]
+          },
+          "size": [
+            1.3690945447518206,
+            1.1842605661810017,
+            2.3999999999999995
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 6796,
+          "meshes": 23,
+          "vertices": 9567,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.6845472723759103,
+              -8.673617379884035e-19,
+              -1.2
+            ],
+            "max": [
+              0.6845472723759103,
+              1.1842605661810017,
+              1.1999999999999997
+            ]
+          },
+          "size": [
+            1.3690945447518206,
+            1.1842605661810017,
+            2.3999999999999995
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 2012,
+          "meshes": 19,
+          "vertices": 2653,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.6731022682361567,
+              -3.469446951953614e-18,
+              -1.2
+            ],
+            "max": [
+              0.6731022682361567,
+              1.0257282197052267,
+              1.1999999999999997
+            ]
+          },
+          "size": [
+            1.3462045364723134,
+            1.0257282197052267,
+            2.3999999999999995
+          ]
+        }
+      ],
+      "thumbnail": "./assets/expedition-units/thumbnails/tank.webp",
+      "icon": "./assets/expedition-units/icons/tank.png"
+    }
+  ]
+}

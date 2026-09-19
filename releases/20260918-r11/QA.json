@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "version": "20260918-r11",
+  "preflight": {
+    "passed": true,
+    "version": "20260918-r11",
+    "checks": [
+      "Complete 20260918-r10 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "r4 without port r5 rejected",
+      "Applied 20260918-r11 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload"
+    ],
+    "changedFiles": 7,
+    "newFiles": 1,
+    "requiredBaseFiles": 474,
+    "imports": 77,
+    "scope": "Isolated file-baseline and integrity checks only; no Linux service upgrade rehearsal",
+    "remoteDeployed": false
+  },
+  "browser": {
+    "checks": [
+      "normal /versus/ map renders",
+      "WebGL failure shows recovery; clicking it renders compatible map and retains login",
+      "recovery is available even when main app module download fails"
+    ],
+    "errors": [],
+    "serverErrors": [],
+    "passed": true
+  },
+  "accountStateRender": {
+    "errors": [],
+    "loader": "map-loader is-ready"
+  },
+  "regression": {
+    "passed": 32,
+    "failed": 0,
+    "sha256": "a55cb83b06e47c3feb845b5f43cc21a09e6874cc04e5aa4f5770568bd612eb78"
+  },
+  "syntaxChecked": [
+    "app.js",
+    "client/elite/raid-controller.js",
+    "client/map/campaign-map-data.js",
+    "client/map/map-loading-recovery.js",
+    "server/application/elite-raid-service.mjs"
+  ],
+  "remoteDeployed": false,
+  "limitations": "User-specific original browser failure not reproduced. Real account login succeeded and its state rendered in an isolated browser. Fixed verified recovery defects and fault-injected GPU/module failures. No Linux service upgrade rehearsal."
+}

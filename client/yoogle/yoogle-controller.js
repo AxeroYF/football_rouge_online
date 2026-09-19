@@ -1,4 +1,4 @@
-import { playerCardMarkup } from "../player-card/player-card.js";
+import { playerCardMarkup } from "../player-card/player-card.js?v=20260905-shield-v1";
 import { createPlayerCardViewModel } from "../../shared/player-card/player-card-contract.js";
 import {
   playerDetailBodyMarkup,

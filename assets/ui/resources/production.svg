@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <title>生产力</title>
+  <path d="m20 2 8 0 1 6 4 2 5-3 6 6-3 5 2 4 5 1v8l-6 1-2 4 3 5-6 6-5-3-4 2-1 6h-8l-1-6-4-2-5 3-6-6 3-5-2-4-6-1v-8l6-1 2-4-3-5 6-6 5 3 4-2z" transform="translate(2 0) scale(.92)" fill="#805027" stroke="#edbd73" stroke-width="1.8" stroke-linejoin="round"/>
+  <circle cx="24" cy="24" r="13" fill="#c9914c"/>
+  <circle cx="24" cy="24" r="8.5" fill="#17271e" stroke="#f6d397" stroke-width="2"/>
+  <path d="M14 20a11 11 0 0 1 16-6" fill="none" stroke="#f7d99c" stroke-width="2" stroke-linecap="round"/>
+</svg>

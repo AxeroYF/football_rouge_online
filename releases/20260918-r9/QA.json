@@ -1,0 +1,90 @@
+{
+  "passed": true,
+  "version": "20260918-r9",
+  "baseline": "20260914-r8",
+  "kind": "incremental",
+  "package": {
+    "files": 97,
+    "newFiles": 49,
+    "hashesMatchWorkspace": true,
+    "javascriptSyntaxChecked": 51
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260918-r9",
+    "checks": [
+      "Complete 20260914-r8 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "r4 without port r5 rejected",
+      "Applied 20260918-r9 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload"
+    ],
+    "changedFiles": 97,
+    "newFiles": 49,
+    "requiredBaseFiles": 420,
+    "imports": 361,
+    "scope": "Isolated file-baseline and integrity checks only; no Linux service upgrade rehearsal",
+    "remoteDeployed": false
+  },
+  "priorRegression": [
+    {
+      "scope": "Alliance map loading",
+      "passed": 39,
+      "failed": 0,
+      "log": "alliance-loading-20260918/tests.txt",
+      "sha256": "e58cd811e557598c84f1877a0326f6c34e6af2f393ff38c870e352ac4c02a4eb",
+      "runDuring": "Implementation; reused for packaging, overlapping tests are not summed"
+    },
+    {
+      "scope": "Enhancement dragging",
+      "passed": 59,
+      "failed": 0,
+      "log": "enhancement-drag-20260918/tests.txt",
+      "sha256": "34514fc1dadb479cfd4b13632304defdf396a18fcdd2c7b02c4b6d4d73c8fcd1",
+      "runDuring": "Implementation; reused for packaging, overlapping tests are not summed"
+    },
+    {
+      "scope": "Optional movement oil",
+      "passed": 78,
+      "failed": 0,
+      "log": "optional-movement-oil-20260918/tests.txt",
+      "sha256": "a01deee1d89dde092db817f5e78250a9c81456632635329f0a4c8340875d05af",
+      "runDuring": "Implementation; reused for packaging, overlapping tests are not summed"
+    },
+    {
+      "scope": "Economy and curfew",
+      "passed": 155,
+      "failed": 0,
+      "log": "economy-curfew-20260918/tests.txt",
+      "sha256": "b5199979c2b2797965e9f36fbd795371ae8286ef921fa2f54818c11f96134d87",
+      "runDuring": "Implementation; reused for packaging, overlapping tests are not summed"
+    },
+    {
+      "scope": "Elite raids, restart and facilities",
+      "passed": 105,
+      "failed": 0,
+      "log": "elite-raids-20260918/tests-restart.txt",
+      "sha256": "a72970bd4495e70a62c20e0b18b2096233139d7de2f82b9d6c1b6c3047b2a57a",
+      "runDuring": "Implementation; reused for packaging, overlapping tests are not summed"
+    }
+  ],
+  "browser": {
+    "checks": [
+      "full game boots and map loads",
+      "two crest tokens appear on the real map",
+      "rotating candidate accepts through real API",
+      "activity displays 2 opponents and 11 borrowed players",
+      "existing tactics board opens activity lineup with 11 players",
+      "garrison and activity schemes switch independently",
+      "commander starts real interception match",
+      "club pack shows three choices then grants a unique +1 card"
+    ],
+    "errors": [],
+    "serverErrors": [],
+    "passed": true
+  },
+  "validationScope": "Isolated R8 base plus payload integrity and dependency verification, changed JavaScript syntax checks and implementation regression/browser evidence. No remote deployment or Linux service restart rehearsal.",
+  "remoteDeployed": false
+}

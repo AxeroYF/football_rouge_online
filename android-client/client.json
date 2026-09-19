@@ -1,0 +1,10 @@
+{
+  "applicationId": "online.yellowdogsleague.client",
+  "versionCode": 2,
+  "versionName": "0.1.1",
+  "gameUrl": "https://yellowdogsleague.online/versus/",
+  "updateUrl": "https://yellowdogsleague.online/android/releases/latest.json",
+  "orientation": "sensorLandscape",
+  "minSdk": 26,
+  "targetSdk": 36
+}

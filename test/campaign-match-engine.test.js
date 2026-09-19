@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  createCampaignLiveLeg, publicCampaignLiveLeg,
   buildAccountMatchSeat,
   buildTerritoryDefenderSeat,
   simulateCampaignTerritoryMatch,
@@ -102,4 +103,19 @@ test("club territory difficulty remains one star above its neutral roll and garr
   }
   const garrison=createTerritoryAiGarrison({catalog,territory:{territoryId:"schema-test",countryCode:"ALB"},territoryState:{ownerType:"neutral"}});
   assert.equal(garrison.schemaVersion,TERRITORY_AI_SCHEMA_VERSION);
+});
+
+
+test('live snapshots carry normalized card identity and portrait placement for both teams',()=>{
+  const home=buildAccountMatchSeat({id:'art-home',draft:{roster:balancedRoster()}});
+  const away=buildAccountMatchSeat({id:'art-away',draft:{roster:balancedRoster()}});
+  home.players[0]={...home.players[0],sourceName:'Studio Player',profile:{imageUrl:'./assets/studio.webp',x:61,y:55,width:180}};
+  away.players[0]={...away.players[0],sourceName:'Catalog Player',portrait:'./assets/catalog.webp',portraitPosition:{x:49,y:51,width:192}};
+  const leg=createCampaignLiveLeg({home,away,seed:'live-card-identity',legNumber:1,startedAt:0});
+  const result=publicCampaignLiveLeg(leg);
+  const a=result.teams[0].players.find(p=>p.id===home.players[0].id),b=result.teams[1].players.find(p=>p.id===away.players[0].id);
+  assert.equal(a.card.sourceName,'Studio Player');assert.deepEqual(a.card.art,{url:'/assets/studio.webp',x:61,y:55,width:180});
+  assert.equal(b.card.sourceName,'Catalog Player');assert.deepEqual(b.card.art,{url:'/assets/catalog.webp',x:49,y:51,width:192});
+  assert.equal(a.card.club,home.players[0].club);assert.equal(b.card.nationality,away.players[0].nationality);
+  assert.equal(Object.hasOwn(a.card,'attributes'),false);assert.equal(Object.hasOwn(a.card,'status'),false);
 });

@@ -36,7 +36,7 @@ const catalog = [
 
 test("four player pack tiers expose their fixed names and grade odds", () => {
   assert.deepEqual(
-    Object.values(PLAYER_PACK_DEFINITIONS).map(({ type,name }) => [type,name]),
+    Object.values(PLAYER_PACK_DEFINITIONS).filter(p=>!p.clubId).map(({ type,name }) => [type,name]),
     [
       [PLAYER_PACK_TYPES.LEGENDARY,"传奇球员卡包"],
       [PLAYER_PACK_TYPES.EXOTIC,"珍奇球员卡包"],

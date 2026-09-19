@@ -1,5 +1,7 @@
+import { canUseTerritory } from '../../shared/config/diplomacy.mjs';
+import { expeditionArtIcon, expeditionStyle, isExpeditionStyle } from '../../shared/config/expedition-art.mjs';
 export const EXPEDITION_TOKEN_ID = "default";
-export const EXPEDITION_TOKEN_URL = "./assets/expedition-tokens/default.png";
+export const EXPEDITION_TOKEN_URL = expeditionArtIcon(EXPEDITION_TOKEN_ID);
 export const EXPEDITION_MIN_MOVE_MS = 60_000;
 export const EXPEDITION_MAX_MOVE_MS = 600_000;
 
@@ -51,18 +53,24 @@ export function normalizeExpeditionPiece(account, world, now = Date.now()) {
     piece = { schemaVersion: 1, tokenId: EXPEDITION_TOKEN_ID, territoryId: fallbackTerritoryId(account, world), movement: null };
     changed = true;
   }
-  if (piece.tokenId !== EXPEDITION_TOKEN_ID) {
+  if (!isExpeditionStyle(piece.tokenId)) {
     piece.tokenId = EXPEDITION_TOKEN_ID;
     changed = true;
   }
+  // Old footballer selections migrate to the matching vehicle without moving it.
+  if (piece.tokenId !== 'default' && piece.tokenId !== expeditionStyle(piece.tokenId).id) {
+    piece.tokenId=expeditionStyle(piece.tokenId).id;changed=true;
+  }
+  if(piece.movement?.transport==='airport'){account.expeditionPiece=piece;return {changed,piece};}
+  if(piece.movement&&!canUseTerritory(world,account.id,piece.movement.toTerritoryId)){piece.movement=null;changed=true;}
   if (piece.movement && Number(piece.movement.arrivesAt) <= Number(now)) {
-    piece.territoryId = owned.includes(piece.movement.toTerritoryId)
+    piece.territoryId = canUseTerritory(world,account.id,piece.movement.toTerritoryId)
       ? piece.movement.toTerritoryId
       : fallbackTerritoryId(account, world);
     piece.movement = null;
     changed = true;
   }
-  if (!owned.includes(piece.territoryId)) {
+  if (!canUseTerritory(world,account.id,piece.territoryId)) {
     piece.territoryId = fallbackTerritoryId(account, world);
     piece.movement = null;
     changed = true;
@@ -80,8 +88,10 @@ export function publicExpeditionPiece(account, world, now = Date.now()) {
   } : null;
   return {
     schemaVersion: 1,
-    tokenId: EXPEDITION_TOKEN_ID,
-    tokenUrl: EXPEDITION_TOKEN_URL,
+    tokenId: piece.tokenId,
+    styleId: expeditionStyle(piece.tokenId).id,
+    styleName: expeditionStyle(piece.tokenId).name,
+    tokenUrl: expeditionArtIcon(piece.tokenId),
     territoryId: piece.territoryId,
     moving: Boolean(movement),
     movement,
@@ -97,16 +107,19 @@ export function expeditionAttackSource(account, world, now = Date.now()) {
   return piece.territoryId;
 }
 
+export function territoryTravelEstimate(territoryIndex, sourceTerritoryId, targetTerritoryId) {
+  const distanceKm = haversineDistanceKm(centroid(territoryIndex, sourceTerritoryId), centroid(territoryIndex, targetTerritoryId));
+  return { fromTerritoryId:sourceTerritoryId, toTerritoryId:targetTerritoryId, distanceKm, durationMs:expeditionMoveDuration(distanceKm) };
+}
+
 export function estimateExpeditionMove({ account, world, territoryIndex, targetTerritoryId, now = Date.now() }) {
   const sourceTerritoryId = expeditionAttackSource(account, world, now);
   const target = String(targetTerritoryId ?? "");
-  if (!ownedTerritoryIds(account, world).includes(target)) {
-    throw new Error("远征战棋只能移动到你的领土");
+  if (!canUseTerritory(world,account.id,target)) {
+    throw new Error("远征战棋只能移动到自己或盟友的领土");
   }
   if (target === sourceTerritoryId) throw new Error("远征队已经驻扎在该地块");
-  const distanceKm = haversineDistanceKm(centroid(territoryIndex, sourceTerritoryId), centroid(territoryIndex, target));
-  const durationMs = expeditionMoveDuration(distanceKm);
-  return { fromTerritoryId:sourceTerritoryId,toTerritoryId:target,distanceKm,durationMs };
+  return territoryTravelEstimate(territoryIndex, sourceTerritoryId, target);
 }
 
 export function moveExpeditionPiece({ account, world, territoryIndex, targetTerritoryId, now = Date.now() }) {
@@ -130,11 +143,19 @@ export function cancelExpeditionMovement(account, world, now = Date.now()) {
   return {piece:publicExpeditionPiece(account,world,now),canceledMovement};
 }
 
+export function selectExpeditionStyle(account, world, tokenId, now = Date.now()) {
+  if (typeof tokenId !== "string" || !isExpeditionStyle(tokenId)) throw Object.assign(new Error("未知的远征单位外观"), {statusCode:400});
+  const {piece}=normalizeExpeditionPiece(account,world,now);
+  if (!piece) throw Object.assign(new Error("请先完成建队并建立总部"), {statusCode:409});
+  piece.tokenId=expeditionStyle(tokenId).id;
+  return publicExpeditionPiece(account,world,now);
+}
+
 export function placeExpeditionPiece(account, territoryId) {
   if (!account) return;
   account.expeditionPiece = {
     schemaVersion: 1,
-    tokenId: EXPEDITION_TOKEN_ID,
+    tokenId: isExpeditionStyle(account.expeditionPiece?.tokenId) ? account.expeditionPiece.tokenId : EXPEDITION_TOKEN_ID,
     territoryId: String(territoryId),
     movement: null,
   };

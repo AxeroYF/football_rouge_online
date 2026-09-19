@@ -26,11 +26,15 @@ YDL_backup/
 
 # Local player portrait/card-art library
 assets/player-profiles/
-assets/player-packs/
+assets/player-packs/*
+!assets/player-packs/elite-*.webp
 
 # Local terrain textures (keep generation scripts and metadata in Git)
 assets/map-relief/**/*.webp
 assets/map-relief/**/*.png
+
+# Local numerical elevation grids for the 3D relief renderer
+assets/map-relief/relief-mesh/*.bin
 
 # Python build cache
 __pycache__/
@@ -53,3 +57,21 @@ handoff/*.zip
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Runtime data, private migration plans, account seeds and backups (never publish)
+/data/
+/seed/
+*.bak
+*.backup
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+/local-private/
+
+# Local operational browser diagnosis, not a reusable project test
+/scripts/review-live-map-state.mjs
+
+# Required default-map elevation assets belong to the source baseline
+!assets/map-relief/relief-mesh/*.bin

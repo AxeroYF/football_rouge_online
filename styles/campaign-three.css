@@ -1,0 +1,47 @@
+/* WebGL base + projection-aligned live business overlays. No CSS perspective. */
+.campaign-three-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.campaign-map.has-three-terrain::after { display: none; }
+.campaign-three-status {
+  position: absolute;
+  z-index: 760;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  max-width: min(600px, calc(100% - 32px));
+  padding: 10px 14px;
+  border: 1px solid rgba(223, 184, 91, .4);
+  border-radius: 10px;
+  background: rgba(8, 20, 16, .94);
+  color: #e8e1cc;
+  font-size: 12px;
+}
+.campaign-three-status[hidden] { display: none; }
+.campaign-three-status button, .campaign-three-status a, .map-loader a {
+  margin-left: 10px;
+  color: #dfb85b;
+  cursor: pointer;
+}
+.campaign-three-status button { background: none; border: 0; }
+
+/* Two rows of three switches above the minimap. */
+.terrain-profile-links { display: flex; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: rgba(9, 18, 14, .96); }
+.terrain-profile-links[hidden] { display: none; }
+.terrain-profile-links a { flex: 1; min-width: 0; white-space: nowrap; padding: 7px 3px; text-align: center; font-size: 13px; color: #adb8ae; text-decoration: none; }
+.terrain-profile-links a[aria-current="true"] { color: #e1c481; background: rgba(208, 178, 98, .1); }
+.terrain-profile-links a:hover { color: #f1e7cb; }
+.terrain-profile-links a:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.campaign-minimap-panel .map-layer-toggle:nth-child(3n) { border-right: 0; }
+.campaign-minimap-panel .map-layer-toggle:nth-child(n + 4) { border-top: 1px solid var(--line); }
+.map-layer-toggle:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+.map-layer-toggle:has(input:focus-visible) { outline: 2px solid var(--gold); outline-offset: -2px; }
+.map-stage .home-selection-panel { bottom: 268px; }
+@media (max-width: 680px) {
+  .map-stage .home-selection-panel { bottom: 210px; }
+}

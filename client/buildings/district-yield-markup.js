@@ -1,0 +1,9 @@
+import {resourceAmountMarkup} from '../resources/resource-markup.js';
+const number=n=>Number(Number(n??0).toFixed(2)).toLocaleString('zh-CN');
+export function districtYieldMarkup(site,{escapeHtml=String,constructing=false}={}){
+ if(!site)return '';
+ const terrain=site.terrain.map(t=>`${t.label} +${t.value}`).join('、')||'无额外加成';
+ const adjacent=site.neighbors.map(b=>`${b.label} +${b.value}`).join('、')||'无己方已建成设施';
+ return `<div class="district-yield-preview" data-district-preview="${escapeHtml(site.type)}"><strong>${constructing?'完工预计':'满覆盖产出'} ${resourceAmountMarkup(site.resource,site.fullYield,{signed:true,showName:true})}</strong><p>选址基础 <b>${site.baseYield}</b> × LV${site.level} 倍率 <b>${site.multiplier}</b></p>${site.oilSupply?`<p class="factory-oil-supply">供油需求 ${site.oilSupply.requiredPerHour} 石油/小时 · ${site.oilSupply.active?'供油正常，工厂产出 +20%（+'+number(site.oilBonus)+'）':'缺少石油，工厂增产暂停'}<br><small>持续消耗石油；油井产出或可用库存均可供油，断供后恢复基础产出。</small></p>`:''}<dl><div><dt>设施基础</dt><dd>+${site.base}</dd></div><div><dt>地形加成（上限 ${site.terrainCap}）</dt><dd>+${site.terrainBonus}</dd></div></dl><small>${escapeHtml(terrain)}</small><dl><div><dt>邻接加成（上限 ${site.adjacencyCap}）</dt><dd>+${site.adjacencyBonus}</dd></div></dl><small>${escapeHtml(adjacent)}</small><p>预计球迷覆盖 ${number(site.coverage*100)}% · 设施基础实得 +${number(site.expectedYield)}${escapeHtml(site.resourceName)}</p><p>全队${escapeHtml(site.resourceName)} ${number(site.currentCapacity)} → ${number(site.projectedCapacity)}</p>${!site.operating?'<small>同类设施仅取产出最高的一座；当前这座不额外产出。</small>':''}<small>同地块及陆地相邻地块，限己方已建成设施。设施基础实得不含奇观联动，全队预测包含联动；周边变化会实时重算。</small></div>`;
+}
+export function districtUpgradeText(current,next){return current&&next?`${current.resourceName} ${number(current.fullYield)} → ${number(next.fullYield)}（满覆盖）；当前球迷分配下全队 ${number(current.projectedCapacity)} → ${number(next.projectedCapacity)}`:'';}

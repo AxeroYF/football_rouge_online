@@ -1,4 +1,5 @@
-export const CORE_COUNTRY_CODES = Object.freeze(["GBR", "ESP", "DEU", "ITA", "FRA", "PRT", "NLD", "BRA", "ARG"]);
+import { CORE_COUNTRY_CODES } from "../shared/config/countries.mjs";
+export { CORE_COUNTRY_CODES };
 export const TERRITORY_AI_SCHEMA_VERSION = 3;
 export const NEUTRAL_DIFFICULTY_WEIGHTS = Object.freeze([10, 15, 20, 25, 30]);
 

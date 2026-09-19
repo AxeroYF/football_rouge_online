@@ -1,0 +1,43 @@
+.expedition-panel{position:absolute;z-index:790;left:12px;top:12px;bottom:12px;width:min(366px,calc(100% - 24px));max-height:744px;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--ui-border-strong,#76684b);border-radius:12px;background:var(--ui-surface,#17231d);color:var(--ui-text,#eee8d8);box-shadow:0 12px 32px #0005;pointer-events:auto;font-family:var(--ui-font,inherit)}
+.expedition-panel[hidden]{display:none!important}
+.expedition-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px 10px;border-bottom:1px solid var(--ui-border,#ffffff18);flex:none}
+.expedition-panel-header>div>span{font-size:10px;letter-spacing:2px;color:var(--ui-muted,#a8b1a5)}
+.expedition-panel-header h2{margin:4px 0 0;font-size:18px;line-height:1.3}
+.expedition-panel-header button{width:36px;height:36px;padding:0;border:1px solid var(--ui-border,#ffffff18);border-radius:8px;background:var(--ui-raised,#233027);color:inherit;font-size:24px;line-height:1;cursor:pointer}
+.expedition-panel-identity{display:flex;align-items:center;gap:12px;min-width:0;padding:12px 16px 10px;flex:none}
+.expedition-panel-identity>img{width:44px;height:62px;object-fit:contain;flex:none}
+.expedition-panel-identity>div{min-width:0;flex:1}
+.expedition-panel-identity strong{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expedition-panel-status{display:inline-block;margin-top:5px;font-size:11px;color:var(--ui-gold,#decb94)}
+.expedition-panel-identity p{margin:4px 0 0;color:var(--ui-muted,#a8b1a5);font-size:11px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expedition-panel-tactics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin:0 14px 12px;padding:12px 6px;border:1px solid var(--ui-border,#ffffff18);border-radius:8px;background:var(--ui-inset,#102018);flex:none}
+.expedition-panel-tactics>div{display:grid;gap:6px;min-width:0;text-align:center}
+.expedition-panel-tactics>div+div{border-left:1px solid var(--ui-border,#ffffff18)}
+.expedition-panel-tactics span{color:var(--ui-muted,#a8b1a5);font-size:10px}
+.expedition-panel-tactics strong{font-size:12px;font-weight:700;overflow-wrap:anywhere}
+.expedition-panel-tactics>div:first-child strong{font-size:17px;line-height:1;color:var(--ui-gold,#decb94);font-variant-numeric:tabular-nums}
+.expedition-panel-roster-heading{display:flex;align-items:center;justify-content:space-between;margin:0 16px 5px;flex:none}
+.expedition-panel-roster-heading h3{margin:0;font-size:12px}
+.expedition-panel-roster-heading>span{color:var(--ui-muted,#a8b1a5);font-size:10px}
+.expedition-panel-roster{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:0 14px 6px}
+.expedition-panel-roster ol{list-style:none;padding:0;margin:0}
+.expedition-panel-roster li{display:flex;align-items:center;gap:9px;min-width:0;min-height:33px;padding:4px 3px;border-bottom:1px solid var(--ui-border,#ffffff12);box-sizing:border-box}
+.expedition-panel-roster li>strong{flex:1;min-width:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expedition-player-role{display:inline-flex;justify-content:center;align-items:center;flex:none;width:31px;height:21px;border-radius:4px;background:var(--ui-raised,#26362b);color:var(--ui-muted,#bac6b9);font-size:10px}
+.expedition-player-rating{flex:none;width:32px;text-align:center;font-size:12px;color:var(--ui-gold,#dfcc95);font-variant-numeric:tabular-nums}
+.expedition-player-captain{flex:none;width:15px;height:15px;border:1px solid var(--ui-gold,#dfcc95);border-radius:3px;line-height:13px;text-align:center;color:var(--ui-gold,#dfcc95);font-size:9px}
+.expedition-player-vacant{color:var(--ui-muted,#a8b1a5);opacity:.7}
+.expedition-player-vacant>span{width:31px;text-align:center}
+.expedition-panel-notice{margin:5px 0 8px;padding:9px;border:1px solid var(--ui-border-strong,#887753);border-radius:8px;font-size:11px;line-height:1.65;color:var(--ui-gold,#dfcc95)}
+.expedition-panel-footer{flex:none;padding:12px 14px;border-top:1px solid var(--ui-border,#ffffff18);background:var(--ui-surface,#17231d)}
+.expedition-panel-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px}
+.expedition-panel-actions button{min-height:40px;padding:8px 16px;border:1px solid var(--ui-gold,#decb94);border-radius:8px;background:var(--ui-gold,#decb94);color:var(--ui-on-gold,#1b241d);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.expedition-panel-actions button:disabled{opacity:.45;cursor:default}
+.expedition-panel-footer p{margin:8px 0 0;color:var(--ui-muted,#a8b1a5);font-size:11px;line-height:1.5}
+.expedition-panel-actions button:hover:not(:disabled),.expedition-panel-header button:hover{filter:brightness(1.1)}
+@media(max-width:760px){.expedition-panel{top:8px;bottom:8px;left:8px;width:min(342px,calc(100% - 16px));max-height:none}.expedition-panel-identity{padding-top:8px;padding-bottom:8px}.expedition-panel-tactics{padding-top:10px;padding-bottom:10px;margin-bottom:10px}}
+
+.expedition-panel-roster-columns{display:grid;grid-template-columns:minmax(0,1fr) 32px 60px;gap:9px;padding:2px 3px 6px;color:var(--ui-muted,#a8b1a5);font-size:10px}
+.expedition-panel-roster-columns>span:nth-child(2){text-align:center}
+.expedition-panel-roster-columns>span:last-child{text-align:right}
+.expedition-player-fitness{flex:none;width:60px;text-align:right;font-size:12px;color:var(--ui-text,#eee8d8);font-variant-numeric:tabular-nums;white-space:nowrap}

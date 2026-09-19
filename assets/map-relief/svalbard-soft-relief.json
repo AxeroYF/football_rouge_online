@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "revision": "20260904-soft-relief-v1",
+  "region": "svalbard",
+  "source": "Local cached Mapzen Terrarium DEM; area-averaged z9, cached z8 fallback",
+  "processing": "generalize elevation -> local-relief mountain mask -> metric gentle hillshade -> independent z3-z7 pyramid; no sharpening",
+  "template": "assets/map-relief/svalbard-soft-relief/{z}/{x}/{y}.webp",
+  "classic": {
+    "files": 258,
+    "bytes": 702190,
+    "sha256": "30e2532a4802456d8c328466df67d98672bd6dff5505f7ce157ae4efba973fcd"
+  },
+  "dem": {
+    "files": 775,
+    "bytes": 53186663,
+    "sha256": "2bb8cef1b34caa727b4a108990ab8e4b662a04df79624d816ba90558def03d43"
+  },
+  "output": {
+    "files": 258,
+    "bytes": 730426,
+    "sha256": "efb604255f26371c3e3d8b5865dc5d7ad5a7f056a0a655493903f10148c14cbc"
+  },
+  "buildCode": {
+    "files": 2,
+    "bytes": 15277,
+    "sha256": "02940d11933c17ae9e0719c6363575e3eab4c8c1ed26758158235560e36710dc"
+  }
+}

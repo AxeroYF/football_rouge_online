@@ -1,3 +1,6 @@
+import {ELITE_CLUB_BY_ID} from '../../shared/config/elite-clubs.mjs';
+import {eliteClubPlayers,strongestEliteLineup} from '../../shared/football/elite-lineup.mjs';
+import {createPlayerCardInstance} from '../domain/player-card-instance.mjs';
 import crypto from "node:crypto";
 import { createPlayerCardViewModel } from "../../shared/player-card/player-card-contract.js";
 import {
@@ -36,7 +39,7 @@ function publicOpening(opening, playersById) {
     cards: opening.candidateIds
       .map((playerId) => playersById.get(playerId))
       .filter(Boolean)
-      .map(createPlayerCardViewModel),
+      .map(p=>createPlayerCardViewModel(PLAYER_PACK_DEFINITIONS[opening.packType]?.clubId?{...createPlayerCardInstance(p,1),id:p.id,playerId:p.id,cardInstanceId:p.id}:p)),
   };
 }
 
@@ -79,7 +82,7 @@ export class PlayerPackService {
       && pendingDefinition
       && typeof pendingOpening.id === "string"
       && Array.isArray(pendingOpening.candidateIds)
-      && pendingOpening.candidateIds.length === pendingDefinition.choiceCount
+      && [pendingDefinition.choiceCount,4].includes(pendingOpening.candidateIds.length)
       && pendingOpening.candidateIds.every((playerId) => this.playersById.has(String(playerId)));
     if (pendingOpening && !validPending) {
       const type = pendingOpening.packType;
@@ -99,6 +102,7 @@ export class PlayerPackService {
     this.migrateAccount(account);
     const packs = Object.values(PLAYER_PACK_DEFINITIONS).map((definition) => ({
       ...definition,
+      choiceCount:definition.clubId?3:(this.wonders?.modifiers(account).packChoices??definition.choiceCount),
       count: nonNegativeInteger(account.inventory.packs[definition.type]),
     }));
     return {
@@ -120,13 +124,21 @@ export class PlayerPackService {
   }
 
   drawCandidates(account, packType) {
+    const clubId=PLAYER_PACK_DEFINITIONS[packType]?.clubId;
+    if(clubId){
+      const club=ELITE_CLUB_BY_ID[clubId],pool=strongestEliteLineup(eliteClubPlayers(this.playerDatabase,club),club.formation).map(s=>s.player),selected=[];
+      if(pool.length!==11)throw Error('豪门首发球员库不完整');
+      while(selected.length<3){const index=Math.min(pool.length-1,Math.floor(Math.max(0,Number(this.random())||0)*pool.length));selected.push(pool.splice(index,1)[0]);}
+      return selected;
+    }
     const weights = PLAYER_PACK_GRADE_WEIGHTS[packType];
     if (!weights) throw new Error("该卡包暂不支持开启");
     const ownedIds = new Set((account.draft?.roster ?? []).map((player) => String(player.id)));
     const available = this.playerDatabase.filter((player) => !ownedIds.has(String(player.id)));
-    if (available.length < 3) throw new Error("可获取的未拥有球员不足三名");
+    const choiceCount=this.wonders?.modifiers(account).packChoices??3;
+    if (available.length < choiceCount) throw new Error(`可获取的未拥有球员不足 ${choiceCount} 名`);
     const selected = [];
-    while (selected.length < 3) {
+    while (selected.length < choiceCount) {
       const grade = weightedGrade(weights,this.random);
       const blocked = new Set(selected.map((player) => String(player.id)));
       const exact = available.filter((player) => player.grade === grade && !blocked.has(String(player.id)));
@@ -166,11 +178,15 @@ export class PlayerPackService {
     if (!opening || opening.id !== String(openingIdValue ?? "")) throw new Error("待选择的卡包不存在");
     const playerId = String(playerIdValue ?? "");
     if (!opening.candidateIds.includes(playerId)) throw new Error("该球员不在本次卡包候选中");
-    if ((account.draft?.roster ?? []).some((player) => String(player.id) === playerId)) throw new Error("该球员已经属于你的球队");
+    if (!PLAYER_PACK_DEFINITIONS[opening.packType]?.clubId && (account.draft?.roster ?? []).some((player) => String(player.id) === playerId)) throw new Error("该球员已经属于你的球队");
     const source = this.playersById.get(playerId);
     if (!source) throw new Error("候选球员已经失效");
-    account.draft.roster.push(structuredClone(source));
+    const raid=Boolean(PLAYER_PACK_DEFINITIONS[opening.packType]?.clubId);
+    const received=raid?{...createPlayerCardInstance(source,1),acquisitionSource:'elite-interception',state:{fitness:100}}:structuredClone(source);
+    account.draft.roster.push(received);
+    if(raid){account.playerSquads??={schemaVersion:2,assignments:{}};account.playerSquads.assignments??={};account.playerSquads.assignments[received.id]='garrison';}
+    this.wonders?.packChosen(account,opening,source);
     account.inventory.pendingOpening = null;
-    return createPlayerCardViewModel(source);
+    return createPlayerCardViewModel(received);
   }
 }

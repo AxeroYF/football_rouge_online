@@ -1,3 +1,5 @@
+import { refreshTrainingGrowth } from "../../shared/football/training-growth.mjs";
+import { remapTerritoryReferences, assertSafeMapMerge } from "./map-version-migration.mjs";
 import { createTerritoryWorld, OWNER_TYPES } from "../../territory-model.js";
 import { normalizePlayerSquads } from "../../shared/config/player-squads.mjs";
 import { nextAvailablePlayerMapColor } from "../domain/player-map-colors.mjs";
@@ -19,11 +21,13 @@ function selectMergedTerritoryState(states) {
       .filter((state) => state.ownerId === winningOwnerId)
       .sort((left, right) => Number(right.version ?? 0) - Number(left.version ?? 0))[0];
   }
-  return [...states].sort((left, right) => Number(right?.version ?? 0) - Number(left?.version ?? 0))[0];
+  const clubStates = states.filter(state => state?.ownerType === OWNER_TYPES.CLUB);
+  return [...(clubStates.length ? clubStates : states)].sort((left, right) => Number(right?.version ?? 0) - Number(left?.version ?? 0))[0];
 }
 
 export function hydrateCampaignWorld(index, savedWorld) {
   const world = createTerritoryWorld(index);
+  world.mapVersion=index.mapVersion??savedWorld?.mapVersion??null;
   if (!savedWorld) return world;
   const groupedStates = new Map();
   for (const [savedTerritoryId, state] of Object.entries(savedWorld.territories ?? {})) {
@@ -55,13 +59,31 @@ export function hydrateCampaignWorld(index, savedWorld) {
     Object.entries(savedWorld.aiGarrisons ?? {})
       .filter(([territoryId]) => world.territories[territoryId] && !index.territoryIdAliases?.[territoryId]),
   );
-  world.activeChallenges = Object.fromEntries(
-    Object.entries(savedWorld.activeChallenges ?? {})
-      .filter(([territoryId, challenge]) => world.territories[territoryId] && (challenge?.battle || challenge?.live?.firstLeg)),
-  );
+  world.activeChallenges = {};
+  for(const [oldId,oldChallenge]of Object.entries(savedWorld.activeChallenges??{})){
+    const id=canonicalTerritoryId(index,oldId);
+    if(!world.territories[id]||!(oldChallenge?.battle||oldChallenge?.live?.firstLeg))continue;
+    if(world.activeChallenges[id]&&world.activeChallenges[id].id!==oldChallenge.id)throw Error('合并地块存在多场进行中比赛，已保留原存档');
+    const challenge=structuredClone(oldChallenge);remapTerritoryReferences(challenge,index.territoryIdAliases??{});world.activeChallenges[id]=challenge;
+  }
   world.schemaVersion = 4;
   world.revision = Number(savedWorld.revision ?? 0);
   world.seasonId = savedWorld.seasonId ?? world.seasonId;
+  if(Array.isArray(savedWorld.news))world.news=structuredClone(savedWorld.news.slice(-200));
+  if(savedWorld.coalitions){world.coalitions=structuredClone(savedWorld.coalitions);remapTerritoryReferences(world.coalitions,index.territoryIdAliases??{});}
+  if(savedWorld.diplomacy)world.diplomacy=structuredClone(savedWorld.diplomacy);
+  if(savedWorld.eliteChallenges)world.eliteChallenges=structuredClone(savedWorld.eliteChallenges);
+  if(savedWorld.eliteRaids){world.eliteRaids=structuredClone(savedWorld.eliteRaids);remapTerritoryReferences(world.eliteRaids,index.territoryIdAliases??{});}
+  for(const t of index.territories){const state=world.territories[t.territoryId];if(!Array.isArray(t.eliteClubIds)||state.ownerType==='player')continue;
+   const type=t.eliteClubIds.length?'club':'neutral';if(state.ownerType!==type){state.ownerType=type;state.ownerId=type==='club'?t.initialOwner.id:null;state.capitalOf=null;state.version++;delete world.aiGarrisons[t.territoryId];}
+  }
+  if (savedWorld.shop) world.shop = structuredClone(savedWorld.shop);
+  if (savedWorld.cardManagement) world.cardManagement = structuredClone(savedWorld.cardManagement);
+  if (savedWorld.economyRecoveries) world.economyRecoveries = structuredClone(savedWorld.economyRecoveries);
+  if (savedWorld.serverEconomyClock) world.serverEconomyClock = structuredClone(savedWorld.serverEconomyClock);
+  if (savedWorld.resourceEconomy) world.resourceEconomy = structuredClone(savedWorld.resourceEconomy);
+  if (savedWorld.constructionEconomy) world.constructionEconomy = structuredClone(savedWorld.constructionEconomy);
+  if (savedWorld.neutralRewards) world.neutralRewards = structuredClone(savedWorld.neutralRewards);
   return world;
 }
 
@@ -129,14 +151,17 @@ function migratePlayerCatalog(context) {
   for (const account of context.accounts.values()) {
     if (account.draft) {
       const hydrateSavedPlayer = (savedPlayer) => {
+        if (savedPlayer.cardInstanceId) return savedPlayer;
         const source = byId.get(savedPlayer.id);
         if (!source) return savedPlayer;
         if (account.playerCatalogVersion !== context.playerCatalogVersion) changed = true;
+        const trainedAttributes = (base) => Object.fromEntries(Object.entries(base ?? {}).map(([key, value]) => [key, Math.min(99, Number(value) + Number(savedPlayer.trainingBonuses?.[key] ?? 0))]));
         return {
           ...savedPlayer,
           ...source,
+          attributes: trainedAttributes(source.attributes),
           state: { ...source.state, ...savedPlayer.state },
-          effectiveAttributes: source.effectiveAttributes,
+          effectiveAttributes: trainedAttributes(source.effectiveAttributes ?? source.attributes),
           effectiveOverall: source.effectiveOverall,
           effectiveHeightCm: source.effectiveHeightCm,
         };
@@ -148,6 +173,17 @@ function migratePlayerCatalog(context) {
       account.playerCatalogVersion = context.playerCatalogVersion;
       changed = true;
     }
+  }
+  return changed;
+}
+
+function migrateTrainingGrowth(context) {
+  let changed = false;
+  for (const account of context.accounts.values()) for (const player of account.draft?.roster ?? []) {
+    if (!Object.values(player.trainingBonuses ?? {}).some(value => Number(value) > 0)) continue;
+    const before = JSON.stringify(player);
+    refreshTrainingGrowth(player);
+    changed = before !== JSON.stringify(player) || changed;
   }
   return changed;
 }
@@ -169,6 +205,7 @@ export const CAMPAIGN_SAVE_MIGRATIONS = Object.freeze([
   Object.freeze({ id: "account-economy", apply: migrateAccountEconomy }),
   Object.freeze({ id: "territory-aliases", apply: migrateTerritoryAliases }),
   Object.freeze({ id: "player-catalog", apply: migratePlayerCatalog }),
+  Object.freeze({ id: "training-growth", apply: migrateTrainingGrowth }),
   Object.freeze({ id: "player-squads", apply: migratePlayerSquads }),
 ]);
 
@@ -179,10 +216,13 @@ export function migrateCampaignSave({
   playerCatalogVersion,
   economy,
 }) {
+  assertSafeMapMerge(saved,territoryIndex);
   const accounts = new Map(Object.values(saved?.accounts ?? {}).map((account) => [account.id, account]));
+  let mapReferencesChanged=false;
+  for(const account of accounts.values())mapReferencesChanged=remapTerritoryReferences(account,territoryIndex?.territoryIdAliases??{})||mapReferencesChanged;
   const world = territoryIndex ? hydrateCampaignWorld(territoryIndex, saved?.world) : null;
   const context = { saved, accounts, world, territoryIndex, playerDatabase, playerCatalogVersion, economy };
-  const appliedMigrations = [];
+  const appliedMigrations = mapReferencesChanged||saved?.world&&territoryIndex?.mapVersion&&saved.world.mapVersion!==territoryIndex.mapVersion?["world-map-version"]:[];
   for (const migration of CAMPAIGN_SAVE_MIGRATIONS) {
     if (migration.apply(context)) appliedMigrations.push(migration.id);
   }

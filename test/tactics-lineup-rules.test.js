@@ -3,9 +3,30 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { optimalLineupAssignment, remapLineupPresetSlots } from "../tactics-lineup-rules.js";
 import { autoCompletePlayerSquads } from "../shared/config/player-squads.mjs";
-import { normalizeTacticsSquads } from "../tactics-page.js";
+import { normalizeTacticsSquads, playerTooltip } from "../tactics-page.js";
 
 const tacticsSource = readFileSync(new URL("../tactics-page.js",import.meta.url),"utf8");
+
+
+test("tactics magnet tooltip shows enhancement trait names and summaries",()=>{
+  const tooltip=playerTooltip({
+    id:"trait-player",name:"特性球员",role:"ST",pool:"ATT",overall:90,heightCm:180,
+    attributes:{finishing:90,offBall:89,pace:88,dribbling:87,composure:86},
+    traits:[
+      {id:"test-lone-finisher",name:"孤胆终结者",summary:"单箭头时提升射门威胁"},
+      {id:"test-aerial-dominator",name:"制空霸主",summary:"争顶时获得优势"},
+    ],
+  },"ST");
+  assert.match(tooltip,/孤胆终结者：单箭头时提升射门威胁/);
+  assert.doesNotMatch(tooltip,/强化特性|\n\n/);
+  assert.match(tooltip,/制空霸主：争顶时获得优势/);
+});
+
+test("tactics magnet tooltip supports legacy string traits and stays compact without traits",()=>{
+  const base={id:"legacy",role:"GK",pool:"GK",overall:80,heightCm:190,attributes:{goalkeeping:80,reflexes:81,positioning:79,composure:78}};
+  assert.match(playerTooltip({...base,traits:["门神"]}),/冷静 78\n门神$/);
+  assert.doesNotMatch(playerTooltip(base),/门神/);
+});
 
 function twoSquadRoster() {
   return [
@@ -58,7 +79,7 @@ test("tactics board exposes two fixed squad schemes with independent automatic l
   assert.match(tacticsSource,/league-lineup-squad-tabs/);
   assert.match(tacticsSource,/PLAYER_SQUAD_DEFINITIONS\.map/);
   assert.match(tacticsSource,/playerSquads:\{schemaVersion:2,assignments:\{\.\.\.squadAssignments\}\}/);
-  assert.match(tacticsSource,/setSaveStatus\("error",message\)/);
+  assert.match(tacticsSource,/setSaveStatus\(['"]error['"],message\)/);
   assert.doesNotMatch(tacticsSource,/适配赛事|方案 1|重命名当前方案|新增阵容方案/);
   assert.match(tacticsSource,/const rosterValue=squadRoster\(\)/);
   assert.match(tacticsSource,/bench:eligible\.map\(\(player\)=>player\.id\)/);

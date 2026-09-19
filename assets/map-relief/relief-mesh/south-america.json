@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "revision": "20260904-relief-mesh-v1",
+  "region": "south-america",
+  "width": 834,
+  "height": 676,
+  "origin": [
+    -43.0,
+    -110.25
+  ],
+  "step": 0.25,
+  "layout": "uint16-le elevation metres, then uint8 coastline alpha",
+  "file": "assets/map-relief/relief-mesh/south-america.bin",
+  "bytes": 1691352,
+  "sha256": "82fca311735ef35b99c754ea0a2ded86498cc64f6b53b7c76b26fbeeb59c3d5a",
+  "landNodes": 202518,
+  "maxElevation": 5570,
+  "source": "existing local Mapzen Terrarium cache; no downloads",
+  "dem": {
+    "files": 4131,
+    "bytes": 291627508,
+    "sha256": "d945a0fafab313331754f07612fa3004ce7e528f4ff848d4089a0bbc4c7952e0"
+  }
+}

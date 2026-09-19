@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "version": "20260918-r10",
+  "baseline": "20260918-r9",
+  "kind": "incremental",
+  "automaticRecovery": {
+    "enabled": true,
+    "planId": "downtime-20260914-20260918-half-v1",
+    "plannedTotals": {
+      "gold": 1552669,
+      "oil": 3277,
+      "fans": 57685
+    },
+    "balanceFloor": 0,
+    "idempotent": true
+  },
+  "package": {
+    "files": 26,
+    "newFiles": 5,
+    "javascriptSyntaxChecked": 23
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260918-r10",
+    "checks": [
+      "Complete 20260918-r9 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "r4 without port r5 rejected",
+      "Applied 20260918-r10 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload"
+    ],
+    "changedFiles": 26,
+    "newFiles": 5,
+    "requiredBaseFiles": 469,
+    "imports": 192,
+    "scope": "Isolated file-baseline and integrity checks only; no Linux service upgrade rehearsal",
+    "remoteDeployed": false
+  },
+  "regression": [
+    {
+      "log": "economy-correction-20260918/r10-auto-recovery-tests.txt",
+      "sha256": "0595b92a210583f4063fea12c85e13fa63b75cfaccb5164003314b6db6834998",
+      "reusedImplementationEvidence": true
+    },
+    {
+      "log": "economy-correction-20260918/pause-tests.txt",
+      "sha256": "379f846766b0d63992b0aaf780a950bbeed7903ea32c9acacfa035e79825fbed",
+      "reusedImplementationEvidence": true
+    },
+    {
+      "log": "airport-render-tests.txt",
+      "sha256": "46b0a40090a400cf766f743ad99d783710dab45157985a9124524881d180bc2f",
+      "reusedImplementationEvidence": true
+    }
+  ],
+  "browser": {
+    "checks": [
+      "game and map load",
+      "airport construction appears and completes through game UI",
+      "real API starts gold-only intercontinental flight from Europe to Brazil",
+      "arrives at destination after exactly one minute"
+    ],
+    "errors": [],
+    "serverErrors": [],
+    "passed": true
+  },
+  "remoteDeployed": false,
+  "validationScope": "Isolated R9 plus R10 payload integrity, syntax/import checks and recorded behavior tests. No remote deployment or Linux service upgrade rehearsal."
+}

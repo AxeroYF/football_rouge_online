@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <title>科技值</title>
+  <path d="M18 4h12v4h-2v9l12 20c1.6 3-.1 6-3.5 6h-25C8 43 6.4 40 8 37l12-20V8h-2z" fill="#154966" stroke="#8ee3ef" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="m18 25-8 13c-.4.8 0 1.5 1 1.5h26c1 0 1.4-.7 1-1.5l-8-13c-4 3-8-3-12 0z" fill="#47badb"/>
+  <path d="M22 9v9l-9 16" fill="none" stroke="#e0faff" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M17 4h14" stroke="#d7f7f5" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="27" cy="30" r="2.2" fill="#d0f6f5"/><circle cx="21" cy="35" r="1.5" fill="#d0f6f5"/>
+</svg>

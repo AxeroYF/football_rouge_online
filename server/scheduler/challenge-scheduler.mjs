@@ -23,7 +23,7 @@ export function createChallengeScheduler({
     return dirty;
   };
   const persist = () => {
-    if (!dirty) return false;
+    if (!dirty && !campaign.economyDue?.(now())) return false;
     campaign.save();
     dirty = false;
     return true;

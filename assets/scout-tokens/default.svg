@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="128" viewBox="0 0 100 128">
+<defs>
+ <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#537568"/><stop offset="1" stop-color="#233d36"/></linearGradient>
+ <linearGradient id="hat" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e6c58a"/><stop offset="1" stop-color="#9d7d49"/></linearGradient>
+ <linearGradient id="lens"><stop stop-color="#95e3ed"/><stop offset=".48" stop-color="#377589"/><stop offset="1" stop-color="#162c3e"/></linearGradient>
+</defs>
+<ellipse cx="51" cy="118" rx="28" ry="6" fill="#101d1b" opacity=".28"/>
+<path d="M24 110 48 102 78 111 55 123Z" fill="#25473f" stroke="#c1b078" stroke-width="1.3"/>
+<path d="m39 79-5 27 13 3 5-24 6 21 13-4-9-29Z" fill="#263644"/>
+<path d="m34 103-5 8 16 4 4-8Z" fill="#17232b" stroke="#60717b"/>
+<path d="m58 102 1 8 19-3-8-8Z" fill="#17232b" stroke="#60717b"/>
+<path d="m35 43 22-3 18 18-10 29-18 5-21-10 3-28Z" fill="url(#coat)" stroke="#182f2b" stroke-width="1.5"/>
+<path d="m36 46 9 34 12 6-8-37" fill="#789086" opacity=".55"/>
+<path d="m32 55-8 21 11 7 9-17" fill="#3e5b50" stroke="#203e34"/>
+<path d="m62 48 13 7 6 17-10 5-12-17" fill="#59776a" stroke="#233d36"/>
+<path d="m29 74 8 2 1 10-10-3Z" fill="#d5a076"/>
+<path d="m43 35 2 14 11 3 8-14" fill="#bf895f"/>
+<path d="m35 23 4 18 13 5 14-10 2-18-20-6Z" fill="#e6b78a" stroke="#9c704e"/>
+<path d="m56 16 10 3-1 17-10 8" fill="#c78e61"/>
+<path d="m34 24 9 4 1 11-6-4" fill="#553d2c"/>
+<path d="M27 23 34 10 57 5 73 15 72 25 50 33Z" fill="url(#hat)" stroke="#745e3d" stroke-width="1.5"/>
+<path d="m35 17 31-3 7 10-22 7-19-5Z" fill="#423d31"/>
+<path d="m24 23 30-2 26 7-23 10-29-5-7-5Z" fill="#cbae77" stroke="#836844" stroke-width="1.2"/>
+<path d="m41 31 10-3 19 5 1 12-20 6-13-6Z" fill="#213c4c" stroke="#0d2430" stroke-width="1.5"/>
+<path d="m41 33 9 0 0 13-9-1Z" fill="url(#lens)" stroke="#9ac0c6" stroke-width="1.4"/>
+<path d="m58 35 10-2 2 10-10 3Z" fill="url(#lens)" stroke="#9ac0c6" stroke-width="1.4"/>
+<path d="m68 46 7 4-5 8-8-5Z" fill="#e6b78a"/>
+<path d="m32 66 11 5-4 27-15-6Z" fill="#b49b65" stroke="#715f3b" stroke-width="1.4"/>
+<path d="m31 71 8 2-3 18-8-3Z" fill="#e9dfbd"/>
+<path d="m30 79 6 2m-7 3 6 2" stroke="#8c997c" stroke-width="1.2"/>
+<path d="m46 51 3 37" stroke="#cfb578" stroke-width="2" opacity=".7"/>
+<path d="m58 67 8-3-2 12-7 2Z" fill="#304c43" stroke="#90a090"/>
+</svg>

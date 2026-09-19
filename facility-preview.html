@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>设施与单位模型图鉴 · 黄狗风云</title><link rel="icon" href="./assets/icon-yf-v2.png"><link rel="stylesheet" href="./styles/wonder-preview.css">
+<script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js","three/addons/controls/OrbitControls.js":"./assets/vendor/three/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"./assets/vendor/three/GLTFLoader.js","three/addons/environments/RoomEnvironment.js":"./assets/vendor/three/RoomEnvironment.js"}}</script>
+<link rel="stylesheet" href="./styles/facility-preview.css?v=20260918-airport-v2"></head><body>
+<header><a class="brand" href="./facility-preview.html">黄狗风云<span>CLUB FACILITIES & UNITS</span></a><div class="edition">设施与单位模型图鉴 <i>01 / 52</i></div><span class="count">10 类设施 × 5 级 · 2 种单位</span></header>
+<main><section class="collection"><div class="collection-heading"><div><p class="eyebrow">DISTINCT DISTRICTS · V2</p><h1>从 LV1，就认得出来。</h1></div><span class="collection-total">52</span></div>
+<nav class="filters" aria-label="模型筛选"><button class="selected" data-kind="all">全部 <span>52</span></button><button data-kind="airport">机场方案 <span>1</span></button><button data-kind="planned">新设施 <span>10</span></button><button data-kind="basic">LV1 / LV2 <span>20</span></button><button data-kind="facility">设施 <span>50</span></button><button data-kind="unit">单位 <span>2</span></button><a class="wonder-link" href="./expedition-preview.html">球星远征 ↗</a><a class="wonder-link" href="./wonder-preview.html">奇观图鉴 ↗</a></nav>
+<div id="model-grid" class="model-grid"></div></section>
+<aside class="inspector"><div class="viewer-top"><span id="selected-id">W16</span><span class="status"><b></b>彩色模型</span></div>
+<div id="viewer"><canvas id="wonder-canvas" aria-label="拖动旋转三维模型，滚轮缩放"></canvas><div id="loading" role="status">读取模型…</div><div class="view-presets"><button data-view="iso" class="selected">立体</button><button data-view="front">正面</button><button data-view="top">俯视</button></div></div>
+<div class="model-info"><p id="location" class="eyebrow"></p><h2 id="model-name">主体育场 · LV5</h2><p id="signature"></p>
+<div class="level-strip" id="level-strip" aria-label="设施等级"></div><p id="level-change"></p><div class="swatches" id="swatches"></div>
+<section id="airport-identity" class="airport-identity" hidden><p class="eyebrow">玩家专属机场 · 美术预览</p><label>俱乐部名称<input id="airport-club" maxlength="40" value="蓝港竞技"></label><label>所在地<input id="airport-place" maxlength="40" value="里斯本"></label><label>领土颜色（预览）<input id="airport-color" type="color" value="#256ba4"></label><div id="airport-map-colors" class="airport-map-colors" aria-label="模拟地图领土色"></div><small>机场自动继承所属玩家的领土颜色，不限制玩家数量。这里的颜色仅用于模拟地图状态；运输规则尚未接入游戏。</small></section>
+<div class="tools"><label>精度 <select id="lod"><option value="0">近景</option><option value="1">中景</option><option value="2">远景</option></select></label><label class="wire"><input id="wireframe" type="checkbox">线框</label><button id="reset">重置视角</button></div>
+<div class="asset-meta"><span id="triangle-count"></span><a id="download" download>下载 GLB ↗</a><a href="./wonder-preview.html">奇观风格参考 ↗</a></div>
+<p class="gesture">拖动旋转 · 滚轮缩放</p></div></aside></main>
+<footer>第二版 · 独立布局与类别主色 · 设施 LV1–LV5 美术模型 · 大学与工厂已接入地形与邻接产出 · 机场为单等级模型方案</footer>
+<script type="module" src="./client/facility-models/facility-preview.js?v=20260918-airport-v2"></script></body></html>
+

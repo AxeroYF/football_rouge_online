@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "revision": "20260904-soft-relief-v1",
+  "region": "south-america",
+  "source": "Local cached Mapzen Terrarium DEM; area-averaged z9, cached z8 fallback",
+  "processing": "generalize elevation -> local-relief mountain mask -> metric gentle hillshade -> independent z3-z7 pyramid; no sharpening",
+  "template": "assets/map-relief/south-america-soft-relief/{z}/{x}/{y}.webp",
+  "classic": {
+    "files": 814,
+    "bytes": 6203778,
+    "sha256": "627dc7b29827966223d477b42f3bd13ede67e6c1867c99c22a0407b30606ca22"
+  },
+  "dem": {
+    "files": 4200,
+    "bytes": 300705530,
+    "sha256": "224db0ca88454db862127eb4a587c5747022c8535c52ed899cc753efb7df1328"
+  },
+  "output": {
+    "files": 814,
+    "bytes": 3730350,
+    "sha256": "58be0e4f2231a7457bc042ee06ba1f75186aebe3320bf0fdcb76aafdabc9223c"
+  },
+  "buildCode": {
+    "files": 2,
+    "bytes": 15277,
+    "sha256": "02940d11933c17ae9e0719c6363575e3eab4c8c1ed26758158235560e36710dc"
+  }
+}

@@ -1,0 +1,31 @@
+/* Flat game navigation. Keep selection and keyboard focus visible without button frames. */
+html .topbar .primary-nav{gap:6px;align-items:center;margin-left:14px;scrollbar-width:none}
+html .topbar .primary-nav::-webkit-scrollbar{display:none}
+html .topbar .primary-nav .nav-item,
+html .topbar .account-menu-trigger{height:44px;min-height:44px;margin:0;padding:0 14px;border:0;border-radius:0;background:transparent;box-shadow:none;color:#b8c3b8;font-size:13px;font-weight:600;line-height:1;transition:color 140ms ease;white-space:nowrap}
+html .topbar .primary-nav .nav-item{min-width:0;flex:0 0 auto;gap:5px}
+html .topbar .primary-nav .nav-item:hover,
+html .topbar .primary-nav .nav-item:focus-visible,
+html .topbar .account-menu-trigger:hover,
+html .topbar .account-menu-trigger:focus-visible{background:transparent;color:#f1eedf}
+html .topbar .primary-nav .nav-item.is-active,
+html .topbar .account-menu-trigger[aria-expanded=true]{background:transparent;color:#e2c678}
+html .topbar .primary-nav .nav-item::after{display:block;left:14px;right:14px;bottom:0;height:2px;border-radius:0;background:transparent}
+html .topbar .primary-nav .nav-item.is-active::after{background:#d6ba6e}
+html .topbar .primary-nav .nav-item:focus-visible,
+html .topbar .account-menu-trigger:focus-visible{outline:none}
+html .topbar .primary-nav .nav-item:focus-visible::after{background:#d6ba6e}
+html .topbar .account-menu-trigger:focus-visible{text-decoration:underline;text-underline-offset:10px}
+html .topbar .account-menu{margin-left:0}
+html .topbar .account-menu-popover{left:0;right:auto}
+html .topbar .account-menu-trigger{gap:6px;padding:0 10px;font-weight:500}
+html .topbar .account-chevron{color:inherit;opacity:.55}
+html .topbar .nav-inventory strong{min-width:0;height:auto;padding:0;border-radius:0;background:transparent;color:#d6ba6e;font-size:10px;font-weight:600}
+html .topbar #topbar-resource-summary{border:0;border-radius:0;background:transparent;box-shadow:none}
+html .topbar .yoogle-input-shell{border:0;border-bottom:1px solid #a5b29a33;border-radius:0;background:transparent;box-shadow:none}
+html .topbar .yoogle-input-shell:focus-within{border-bottom-color:#d6ba6e;box-shadow:none}
+@media(min-width:681px) and (max-width:1600px){html .topbar .primary-nav{gap:2px;margin:0 8px}html .topbar .primary-nav .nav-item{padding:0 10px;min-width:0}html .topbar .primary-nav .nav-item::after{left:10px;right:10px}}
+@media(max-width:680px){html .topbar .primary-nav{gap:0;margin:0;padding:0 6px;overflow-x:auto;box-sizing:border-box}html .topbar .primary-nav .nav-item{flex:1 0 auto;padding:0 9px;font-size:11px;height:44px}html .topbar .primary-nav .nav-item::after{left:9px;right:9px}html .topbar .account-menu-trigger{padding:0 6px;font-size:12px}}
+
+/* Settings must remain clickable while a map-stage window is open. */
+html .topbar:has(#account-menu-popover:not([hidden])){z-index:1600}

@@ -1,0 +1,163 @@
+{
+  "version": "20260907-roadmap-v1",
+  "status": "not-adopted-pending-user-decisions",
+  "scope": "黄狗风云大地图经营版，从当前本地基线到24座奇观完整可玩",
+  "milestones": [
+    {
+      "id": "R0",
+      "name": "结算与存档基础",
+      "dependsOn": [],
+      "status": "planned",
+      "deliverable": "统一多资源结算、自然日和联赛日标识、持久化去重与迁移规则。",
+      "exit": "断线、重试、重启、保存失败均不重复发奖、不丢扣款；旧余额和卡片保持。"
+    },
+    {
+      "id": "R1",
+      "name": "多资源与土地经营",
+      "dependsOn": [
+        "R0"
+      ],
+      "status": "planned",
+      "deliverable": "建材、物资、固定资源分布、生产仓储、经营席位、开发与基础消耗。",
+      "exit": "单地主场可启动；三地完成产出—消耗—扩建闭环；离线和换主结算一致。"
+    },
+    {
+      "id": "R2",
+      "name": "每日联赛、球迷与主场",
+      "dependsOn": [
+        "R0"
+      ],
+      "status": "planned",
+      "deliverable": "每日一届自动赛事、主客场、球迷来源地、容量、需求与门票。",
+      "exit": "8／10／12队样本完整结算；同一天重启不重复发奖；日赛不重置世界。"
+    },
+    {
+      "id": "R3",
+      "name": "赞助、社区活动与探索奖励",
+      "dependsOn": [
+        "R1",
+        "R2"
+      ],
+      "status": "planned",
+      "deliverable": "S4赞助能力适配、三类广告位、报价箱、分期履约、球迷和合同探索奖励。",
+      "exit": "完成一份7日合同；报价满箱与重复探索不丢奖励、不重复付款；活动消耗与增长闭合。"
+    },
+    {
+      "id": "R4",
+      "name": "稀缺地块、经营协作与知识",
+      "dependsOn": [
+        "R1",
+        "R3"
+      ],
+      "status": "planned",
+      "deliverable": "可靠地形标签、稀有服务、邻接支援、位置调研、专项训练、可完成研究课题。",
+      "exit": "同样经营席位能形成不同路线；支援不递归；知识确有消费和成果。"
+    },
+    {
+      "id": "R5",
+      "name": "奇观竞建与地图接入",
+      "dependsOn": [
+        "R1",
+        "R2",
+        "R4"
+      ],
+      "status": "planned",
+      "deliverable": "唯一登记、阶段工程、竞建退款、换主接管与实际GLB地图显示，内部试跑W15。",
+      "exit": "多人竞建同刻与离线完工正确；夺地不复制资产；30×多奇观显示与交互通过。"
+    },
+    {
+      "id": "R6",
+      "name": "全部24座奇观效果",
+      "dependsOn": [
+        "R3",
+        "R4",
+        "R5"
+      ],
+      "status": "planned",
+      "deliverable": "四个效果包覆盖24座，统一配额、收益上限、事件快照与界面。",
+      "exit": "24座全部有选址—建设—运行—停用—换主完整链路；组合数值与原子结算通过。"
+    },
+    {
+      "id": "R7",
+      "name": "经营版整体封测与发布验收",
+      "dependsOn": [
+        "R6"
+      ],
+      "status": "planned",
+      "deliverable": "7／30日总经济、晚加入体验、联赛压测、长时间运行、隔离恢复与更新回退。",
+      "exit": "无阻塞性存档或结算问题；所有正式开放奇观均完整可用；形成可审阅发布候选。"
+    }
+  ],
+  "wonderBatches": [
+    {
+      "id": "R6-A",
+      "name": "资源与布局",
+      "wonderIds": [
+        "W05",
+        "W09",
+        "W11",
+        "W12",
+        "W14",
+        "W15",
+        "W18",
+        "W19",
+        "W22"
+      ]
+    },
+    {
+      "id": "R6-B",
+      "name": "球迷与文化",
+      "wonderIds": [
+        "W01",
+        "W02",
+        "W03",
+        "W07",
+        "W17"
+      ]
+    },
+    {
+      "id": "R6-C",
+      "name": "联赛与赞助",
+      "wonderIds": [
+        "W06",
+        "W16",
+        "W20",
+        "W21",
+        "W24"
+      ]
+    },
+    {
+      "id": "R6-D",
+      "name": "培养与科研",
+      "wonderIds": [
+        "W04",
+        "W08",
+        "W10",
+        "W13",
+        "W23"
+      ]
+    }
+  ],
+  "nextWorkPackage": {
+    "name": "多资源账本与单地经营闭环",
+    "includes": [
+      "R0最小结算契约",
+      "旧档幂等迁移",
+      "金币整数余额与余数处理",
+      "建材/物资产出与容量",
+      "单地开发/切换/消耗",
+      "离线、重试和保存失败恢复"
+    ],
+    "status": "recommended-not-started"
+  },
+  "later": [
+    "球员长期体力与伤病",
+    "恢复/医疗设施",
+    "有实际效果的设施升级与专业分支",
+    "领袖与新特性",
+    "资源挂单市场",
+    "长期分级联赛与地区目标"
+  ],
+  "scheduleBasis": "依验收推进；没有团队产能与实测工期，不承诺日历日期；R1与R2数据依赖均仅为R0，可独立推进。",
+  "userDecision": "Mechanics remain undecided. Keep as historical proposal only; no runtime import or draft prefilling. User authors optional effect text in admin wonder management."
+}

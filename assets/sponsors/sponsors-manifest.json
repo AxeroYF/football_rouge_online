@@ -1,0 +1,284 @@
+{
+  "version": "20260908-sponsorship-v1",
+  "status": "integrated",
+  "sourceS4": "D:/Project/game_test/.worktrees/s4/versus/public/assets/sponsors",
+  "sponsors": [
+    {
+      "id": "microsoft",
+      "nameZh": "微软",
+      "nameEn": "Microsoft",
+      "icon": "microsoft.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:Microsoft_logo_(2012).svg",
+      "origin": "S4",
+      "sha256": "34ec1619e4a62515d67c5240fe5762ef5a1838fe67d2fb1fb0b001099cebf1db",
+      "displayIcon": "display/microsoft.svg",
+      "displayViewBox": [
+        -5.064,
+        -5.064,
+        347.728,
+        82.128
+      ],
+      "displaySha256": "a0d806971afd07be74fb4a590171983cdc4433441713281a5485be7bd7d97eac"
+    },
+    {
+      "id": "apple",
+      "nameZh": "苹果",
+      "nameEn": "Apple",
+      "icon": "apple.svg",
+      "source": "https://cdn.simpleicons.org/apple",
+      "origin": "S4",
+      "sha256": "cbc36e6e70deb9764f033108a090de80df021a665b6209e4cf44f8bad06fd8db",
+      "displayIcon": "display/apple.svg",
+      "displayViewBox": [
+        1.84313,
+        -0.36,
+        20.29031,
+        24.72
+      ],
+      "displaySha256": "76a1a4a2d2ca404a4ccfd1881e11edc69c5ceaeb584ae4cfbfbc0f9f1ef00550"
+    },
+    {
+      "id": "emirates",
+      "nameZh": "阿联酋航空",
+      "nameEn": "Emirates",
+      "icon": "emirates.svg",
+      "source": "https://cdn.simpleicons.org/emirates",
+      "origin": "S4",
+      "sha256": "3170cdb779f2c8b3c3615623f7ae1f02309773bf2a5fc9183af2036fcfc8993d",
+      "displayIcon": "display/emirates.svg",
+      "displayViewBox": [
+        1.98375,
+        -0.36,
+        20.0325,
+        24.72
+      ],
+      "displaySha256": "2e08c922847b9da374848fabc44c94d046f804b34d60b8802e58ec1b712371b1"
+    },
+    {
+      "id": "nike",
+      "nameZh": "耐克",
+      "nameEn": "Nike",
+      "icon": "nike.svg",
+      "source": "https://cdn.simpleicons.org/nike",
+      "origin": "S4",
+      "sha256": "bafb08923ddd2d4ca56d49c191fb0b4533046e0300ae3165acf12f7874b9de8c",
+      "displayIcon": "display/nike.svg",
+      "displayViewBox": [
+        -0.36,
+        7.44469,
+        24.72,
+        9.13406
+      ],
+      "displaySha256": "3ee662e696ecbdc588fdbab9f3562ec7c3f2357a8bc1c210332263e97a17b0f2"
+    },
+    {
+      "id": "adidas",
+      "nameZh": "阿迪达斯",
+      "nameEn": "Adidas",
+      "icon": "adidas.svg",
+      "source": "https://cdn.simpleicons.org/adidas",
+      "origin": "S4",
+      "sha256": "360ad2feb672d4704d2ec6ca27a396668904602ff654dff6ca2bd9bf3bc4c677",
+      "displayIcon": "display/adidas.svg",
+      "displayViewBox": [
+        -0.36,
+        4.09312,
+        24.72,
+        15.81375
+      ],
+      "displaySha256": "3c5c148e188bfcb450944ecea472708d74ec51a8b9a1bdb9b56d24c8e38c183f"
+    },
+    {
+      "id": "jissbon",
+      "nameZh": "杰士邦",
+      "nameEn": "Jissbon",
+      "icon": "jissbon.png",
+      "source": "http://www.jissbon.com/theme/img/logo-black2.png",
+      "origin": "S4",
+      "sha256": "e4abe236f1e00230add855cfac92626ad471425fb488ba046c359b53d7d6c012"
+    },
+    {
+      "id": "samsung",
+      "nameZh": "三星",
+      "nameEn": "Samsung",
+      "icon": "samsung.svg",
+      "source": "https://cdn.simpleicons.org/samsung",
+      "origin": "S4",
+      "sha256": "f187e2e69fcdc4f119707652bcd97a1516d796442d7790e8d7a129f771c1e36e",
+      "displayIcon": "display/samsung.svg",
+      "displayViewBox": [
+        -0.36,
+        9.78844,
+        24.72,
+        4.42312
+      ],
+      "displaySha256": "5c4ca77292375fd0503798efc811515c21c8edaa2d0eebb1c4ee424b51d84e48"
+    },
+    {
+      "id": "sony",
+      "nameZh": "索尼",
+      "nameEn": "Sony",
+      "icon": "sony.svg",
+      "source": "https://cdn.simpleicons.org/sony",
+      "origin": "S4",
+      "sha256": "b5ec33f0548c0ce3311e707e1597db4aeec6a0ed6171f33a14da1bfff5c04988",
+      "displayIcon": "display/sony.svg",
+      "displayViewBox": [
+        -0.36,
+        9.50719,
+        24.72,
+        4.98562
+      ],
+      "displaySha256": "4c156bcddf14321b37e422cd45f976d66b0d5359a640d8e8dc4b9a8508c98325"
+    },
+    {
+      "id": "mizuno",
+      "nameZh": "美津浓",
+      "nameEn": "Mizuno",
+      "icon": "mizuno.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:MIZUNO_logo.svg",
+      "origin": "S4",
+      "sha256": "ed41cff6d67b6e6ce1e1f70f9c3e98f53cb773755093710663e721322283b8a9",
+      "displayIcon": "display/mizuno.svg",
+      "displayViewBox": [
+        -3.62109,
+        -3.62122,
+        307.24219,
+        172.74583
+      ],
+      "displaySha256": "4beb27db720dba377bb23765e0e5abbbba978890c5c74d0ed41d11f7464a6d7d"
+    },
+    {
+      "id": "zhuren",
+      "nameZh": "主任株式会社",
+      "nameEn": "Zhuren Kabushiki Kaisha",
+      "icon": "zhuren-kabushiki-kaisha.png",
+      "original": "zhuren-kabushiki-kaisha.ico",
+      "source": "user-provided",
+      "origin": "S4",
+      "sha256": "30ba9c4f6cff5be938af36bb1db2f3b851ed46f15f5bdbeebf7fd22c059c65de"
+    },
+    {
+      "id": "bmw",
+      "nameZh": "宝马",
+      "icon": "bmw.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/bmw.svg",
+      "sha256": "bbd521e926909d1643e7c9106e7cd395a79f4842ca713445251ecda0a2821b94",
+      "displayIcon": "display/bmw.svg",
+      "displayViewBox": [
+        -0.36,
+        -0.36,
+        24.72,
+        24.72
+      ],
+      "displaySha256": "01c2b26a12afc74236d029a23a673ea1aabb3d0dc92bd31535855df3c8c7ce3f",
+      "displayTreatment": "Original blue artwork with opaque white inner roundel; canvas outside the badge remains transparent."
+    },
+    {
+      "id": "mercedes",
+      "nameZh": "奔驰",
+      "icon": "mercedes.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/11.15.0/icons/mercedes.svg",
+      "sha256": "7f8721a120a731b11560e6571f3ce4b6922b09696b945ff5f69686a01aefdbd9",
+      "displayIcon": "display/mercedes.svg",
+      "displayViewBox": [
+        -0.36,
+        -0.36,
+        24.72,
+        24.72
+      ],
+      "displaySha256": "b827521effba5dbbf9c39b07ff78504d21f63bac8e1826204b755ac31b7492ed"
+    },
+    {
+      "id": "audi",
+      "nameZh": "奥迪",
+      "icon": "audi.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/audi.svg",
+      "sha256": "666c77e144e904c1a15a6b969f7a389521ef3edefa5b58c5fe0608be9581dc38",
+      "displayIcon": "display/audi.svg",
+      "displayViewBox": [
+        -0.36,
+        7.46812,
+        24.72,
+        9.06375
+      ],
+      "displaySha256": "e7c1ee2982dcab95b58e1e07e989b3be47e279b3b7a9a4bd6e9da8a35a22eb8c"
+    },
+    {
+      "id": "tesla",
+      "nameZh": "特斯拉",
+      "icon": "tesla.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/tesla.svg",
+      "sha256": "0a4fd5f20aea8430e25a3e9bb9be4ab00b1bdac6751ea48dd6e39e40ae9098b7",
+      "displayIcon": "display/tesla.svg",
+      "displayViewBox": [
+        -0.36,
+        -0.36,
+        24.72,
+        24.72
+      ],
+      "displaySha256": "a5dbe2a68282b2973bd484f15832ab3bb66d50c78cd9767948f21571c040599a"
+    },
+    {
+      "id": "mcdonalds",
+      "nameZh": "麦当劳",
+      "icon": "mcdonalds.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/mcdonalds.svg",
+      "sha256": "6d0a595e5b5f8cec4878cc6c7eae0b3a316a71391a2bef5b5b153251c90c7d46",
+      "displayIcon": "display/mcdonalds.svg",
+      "displayViewBox": [
+        -0.36,
+        1.14,
+        24.72,
+        21.72
+      ],
+      "displaySha256": "7ddd9f52989e8d5c7e07a0a9e575b8ed5165f5de1a49d9007a16da11bf48d6cd"
+    },
+    {
+      "id": "honda",
+      "nameZh": "本田",
+      "icon": "honda.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/honda.svg",
+      "sha256": "f1cb4036cdacb1ccfe3cde3037af70e36b895690e49f7e4fe78838d9a5a866fb",
+      "displayIcon": "display/honda.svg",
+      "displayViewBox": [
+        -0.36,
+        1.86656,
+        24.72,
+        20.26687
+      ],
+      "displaySha256": "4f6526fa2536e632eeebb491c69400cc8c8434ca7d3cfcfb990ae9e979d3c9f6"
+    },
+    {
+      "id": "toyota",
+      "nameZh": "丰田",
+      "icon": "toyota.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/toyota.svg",
+      "sha256": "5eb1ca8d1888a6ba13eec0f0f4c510edccef5e9053261092c3bab77f419c105c",
+      "displayIcon": "display/toyota.svg",
+      "displayViewBox": [
+        -0.36,
+        3.48375,
+        24.72,
+        17.0325
+      ],
+      "displaySha256": "9e048aaf631abca1dacf7299bf010d6d997396bf830c0d3ca573e67bc2e8c881"
+    },
+    {
+      "id": "ferrari",
+      "nameZh": "法拉利",
+      "icon": "ferrari.svg",
+      "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/ferrari.svg",
+      "sha256": "cd73fa37970f2759223393cb4e720cffae3246a60d9a737dc751c9293f748248",
+      "displayIcon": "display/ferrari.svg",
+      "displayViewBox": [
+        2.99156,
+        -0.36,
+        18.01687,
+        24.72
+      ],
+      "displaySha256": "edd10d3ee52229ff72bf6922e3cb97c8590afe77531ba94413318deb89fe30cb"
+    }
+  ],
+  "displayTreatment": "Transparent SVG canvas trimmed with 1.5% safe margin; original paths, colors and source assets preserved; BMW inner roundel retains white quarter fields. UI uses object-fit: contain and no recoloring filters."
+}

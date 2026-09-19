@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {visibleMapUnits} from '../server/application/map-unit-visibility.mjs';
+import {FogService} from '../server/application/fog-service.mjs';
+import {project} from '../client/map-three/projection.js';
+import {relationKey} from '../shared/config/diplomacy.mjs';
+const territoryIndex={territories:[{territoryId:'home',centroid:[0,0]},{territoryId:'neutral',centroid:[40,0]},{territoryId:'middle',centroid:[20,0]}]};
+const territoryGeoJson={features:territoryIndex.territories.map(t=>({properties:{territoryId:t.territoryId,region:'europe'},geometry:{type:'Polygon',coordinates:[[[t.centroid[0]-.2,-.2],[t.centroid[0]+.2,-.2],[t.centroid[0]+.2,.2],[t.centroid[0]-.2,.2],[t.centroid[0]-.2,-.2]]]}}))};
+test('scout footprints remain separate from homeland, share with allies and revoke current sight',()=>{
+ const a={id:'a',homeTerritoryId:'home',scouting:{units:{s:{id:'s',territoryId:'neutral'}}}},b={id:'b',homeTerritoryId:'middle'};
+ const accounts=new Map([['a',a],['b',b]]),world={seasonId:'s',territories:{home:{ownerType:'player',ownerId:'a'},neutral:{ownerType:'neutral'},middle:{ownerType:'player',ownerId:'b'}},diplomacy:{relationships:{[relationKey('a','b')]:{players:['a','b'],state:'alliance'}}}};
+ const fog=new FogService({territoryIndex,territoryGeoJson,accounts});
+ const own=fog.update(a,world,{share:false}).view,p=project(10,0);
+ assert.ok(own.visibleTerritoryIds.includes('neutral'));assert.ok(!fog.spatial.pointVisible(fog.spatial.models(own).current,[p.x,p.z]));
+ assert.ok(fog.update(b,world).view.visibleTerritoryIds.includes('neutral'));
+ world.diplomacy.relationships[relationKey('a','b')].state='friendship';assert.ok(!fog.update(b,world).view.visibleTerritoryIds.includes('neutral'));
+ a.scouting.units.s.territoryId='home';const returned=fog.update(a,world).view;
+ assert.ok(!returned.visibleTerritoryIds.includes('neutral'));assert.ok(returned.exploredTerritoryIds.includes('neutral'));
+ assert.ok(fog.spatial.models(returned).explored.sourceIds.has('neutral'));
+});
+test('foreign units expose position and color only inside current geometric sight, including moving positions',()=>{
+ const a={id:'a',setupComplete:true,homeTerritoryId:'home'},b={id:'b',setupComplete:true,homeTerritoryId:'neutral',mapColor:'#cf806b',draft:{teamName:'北海联队'},expeditionPiece:{territoryId:'neutral',tokenId:'tank'},scouting:{units:{s:{id:'s',name:'Oliver',territoryId:'home',secret:'no',movement:null}}}};
+ const accounts=new Map([['a',a],['b',b]]),world={seasonId:'s',territories:{home:{ownerType:'player',ownerId:'a'},neutral:{ownerType:'player',ownerId:'b'},middle:{ownerType:'neutral'}}};
+ const service=new FogService({territoryIndex,territoryGeoJson,accounts}),fog=service.update(a,world).view;
+ const options={account:a,accounts,territoryIndex,spatial:service.spatial,fog,now:0};
+ const units=visibleMapUnits(options);assert.equal(units.length,1);assert.equal(units[0].color,'#cf806b');assert.equal(units[0].ownerName,'北海联队');assert.deepEqual(units[0].position,[0,0]);assert.equal(units[0].movement,undefined);assert.equal(units[0].secret,undefined);
+ b.scouting.units.s.movement={fromTerritoryId:'home',toTerritoryId:'neutral',startedAt:0,arrivesAt:1000};
+ const moving=visibleMapUnits({...options,now:25})[0];assert.ok(moving.moving);assert.equal(moving.territoryId,null);assert.ok(Math.abs(moving.position[1]-1)<1e-9);assert.equal(moving.toTerritoryId,undefined);
+ assert.equal(visibleMapUnits({...options,now:500}).length,0);assert.equal(visibleMapUnits({...options,now:1000}).length,0);
+ assert.equal(visibleMapUnits({...options,fog:{enabled:true,visibleTerritoryIds:['home','neutral'],sourceTerritoryIds:[]}}).length,0);
+});

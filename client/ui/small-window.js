@@ -36,7 +36,7 @@ export function bindSmallWindow(overlay, { onRequestClose } = {}) {
   };
   overlay.addEventListener("click", clickHandler);
   dialog.addEventListener("keydown", keyHandler);
-  queueMicrotask(() => dialog.focus?.());
+  queueMicrotask(() => dialog.focus?.({preventScroll:true}));
   return () => {
     overlay.removeEventListener("click", clickHandler);
     dialog.removeEventListener("keydown", keyHandler);

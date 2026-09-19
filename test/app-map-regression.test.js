@@ -73,22 +73,12 @@ test("map layer defaults keep national borders, weather and major cities off", a
   assert.match(appSource, /weatherLayerController\?\.setEnabled\(weatherLayerVisible\)/);
 });
 
-test("map shows live zoom and caps five stages at sixteen-times scale", async () => {
-  const [indexSource, stylesSource] = await Promise.all([
-    readFile(new URL("../index.html", import.meta.url), "utf8"),
-    readFile(new URL("../styles.css", import.meta.url), "utf8"),
-  ]);
-  const indicatorSource = functionSource("updateZoomIndicator", "updateZoomState");
-  assert.match(indexSource, /id="map-zoom-indicator"[^>]*aria-label="地图缩放级别"/);
-  assert.match(indexSource, /id="map-zoom-value">×1\.0</);
-  assert.match(indexSource, /id="map-zoom-detail">Z 3\.00 · 挡位 1\/5 · 全景</);
-  assert.match(appSource, /minZoom:\s*3,\s*\n\s*maxZoom:\s*7,/);
-  assert.match(appSource, /ZOOM_STAGE_LABELS = Object\.freeze\(\["全景", "洲际", "国家", "地区", "最大细节"\]\)/);
-  assert.match(indicatorSource, /2 \*\* \(zoom - minimumZoom\)/);
-  assert.match(indicatorSource, /zoom\.toFixed\(2\)/);
-  assert.match(indicatorSource, /挡位 \$\{stageIndex \+ 1\}\/\$\{maximumStageIndex \+ 1\}/);
+test("map hides zoom readout while retaining twenty-five-times zoom and live icon resizing", async () => {
+  const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(index, /map-zoom-indicator|map-zoom-value|map-zoom-detail/);
+  assert.doesNotMatch(appSource, /updateZoomIndicator|ZOOM_STAGE_LABELS/);
+  assert.match(appSource, /maxZoom:\s*3 \+ Math\.log2\(30\)/);
   assert.match(appSource, /map\.on\("zoom", updateLiveZoomState\)/);
-  assert.match(stylesSource, /\.map-zoom-indicator\s*\{[^}]*top:\s*14px;[^}]*right:\s*14px;/s);
 });
 
 test("campaign relief uses one unified z3-z7 tile pyramid per region", () => {
@@ -101,7 +91,7 @@ test("campaign relief uses one unified z3-z7 tile pyramid per region", () => {
   assert.match(reliefSource, /L\.tileLayer/);
   assert.match(reliefSource, /tiles\}\?v=/);
   assert.match(reliefSource, /minZoom:\s*3/);
-  assert.match(reliefSource, /maxZoom:\s*7/);
+  assert.match(reliefSource, /maxZoom:\s*Math\.ceil\(3 \+ Math\.log2\(30\)\)/);
   assert.match(reliefSource, /maxNativeZoom:\s*7/);
   assert.match(reliefSource, /keepBuffer:\s*2/);
   assert.match(reliefSource, /updateWhenIdle:\s*false/);
@@ -130,7 +120,7 @@ test("campaign oceans use map-coordinate shallow-water color bands without curre
   assert.match(appSource, /updateOceanDepthStyle\(zoom\)/);
   assert.doesNotMatch(appSource, /europe-ocean-currents|OceanCurrent|imageOverlay/);
   assert.doesNotMatch(indexSource, /europe-ocean-currents/);
-  assert.match(serverSource, /public, max-age=604800, immutable/);
+  assert.match(serverSource, /createStaticHandler/);
 });
 
 test("Europe and relocated South America share consolidated coastline and 2.5D land-depth strokes", () => {
@@ -173,7 +163,7 @@ test("province outlines reuse display coordinates in one non-interactive path ab
     },
   };
   const create = new Function("L", "map", "provinceOutlineRenderer",
-    "let provinceOutlineLayer = null;\n" + source + "\nreturn addProvinceOutlineLayer;");
+    "let provinceOutlineLayer = null; const useThreeMap = true;\n" + source + "\nreturn addProvinceOutlineLayer;");
   const add = create(leaflet, mapStub, renderer);
   const ring = [[20, 7], [21, 7], [20, 8], [20, 7]];
   const data = { features: [
@@ -191,7 +181,7 @@ test("province outlines reuse display coordinates in one non-interactive path ab
   assert.equal(calls[0].options.fill, false);
   assert.equal(calls[0].options.interactive, false);
   assert.equal(calls[0].options.renderer, renderer);
-  assert.equal(calls[0].options.opacity, 0.22);
+  assert.equal(calls[0].options.opacity, 0.09);
   assert.match(appSource, /map\.getPane\("provinceOutlinePane"\)\.style\.zIndex = "219"/);
   assert.match(appSource, /map\.getPane\("provinceOutlinePane"\)\.style\.pointerEvents = "none"/);
   assert.match(appSource, /addProvinceOutlineLayer\(displayTerritories\)/);
@@ -204,8 +194,10 @@ test("map startup does not wait for every club badge", () => {
   assert.match(appSource, /club-badges\/\$\{escapeHtml\(club\.id\)\}\.webp" alt="" loading="lazy" decoding="async"/);
 });
 test("expanded buildings and neutral clubs survive smooth animated map zoom", () => {
-  assert.match(appSource, /zoomAnimation:\s*true/);
-  assert.match(appSource, /markerZoomAnimation:\s*true/);
+  // Native CSS zoom transitions cannot animate an independent WebGL camera.
+  // Three uses the existing continuous wheel movement; compatibility retains CSS animation.
+  assert.match(appSource, /zoomAnimation:\s*!useThreeMap/);
+  assert.match(appSource, /markerZoomAnimation:\s*!useThreeMap/);
   assert.match(appSource, /expandedCityId === city\.id/);
   assert.doesNotMatch(appSource, /map\.on\("zoomstart"[\s\S]{0,180}closeExpandedCity/);
   assert.doesNotMatch(appSource, /map\.on\("zoomstart"[\s\S]{0,180}buildingMarkerController\.closeExpanded/);
@@ -283,16 +275,22 @@ test("expedition piece enters owned-territory movement mode with estimate, progr
   assert.match(stylesSource,/\.expedition-move-route span\s*\{[^}]*font-size:\s*36px/s);
 });
 
-test("expedition piece shrinks at overview zoom and keeps its detailed size", () => {
+test("expedition piece keeps overview sizes and grows into the merged-territory close-up", () => {
   const overview = expeditionTokenMetrics(3);
-  const middle = expeditionTokenMetrics(4.4);
-  const detailed = expeditionTokenMetrics(5.8);
+  const middle = expeditionTokenMetrics(5.4);
+  const regional = expeditionTokenMetrics(5.8);
+  const detailed = expeditionTokenMetrics(6.8);
   const maximum = expeditionTokenMetrics(9);
+  assert.deepEqual(overview, {iconSize:[15,16],iconAnchor:[8,13]});
   assert.ok(overview.iconSize[0] < middle.iconSize[0]);
-  assert.ok(middle.iconSize[0] < detailed.iconSize[0]);
-  assert.deepEqual(detailed, { iconSize: [76, 80], iconAnchor: [38, 64] });
-  assert.deepEqual(maximum, detailed);
-  assert.match(appSource, /expeditionPieceController\?\.updateZoom\(\)/);
+  assert.ok(middle.iconSize[0] < regional.iconSize[0]);
+  assert.deepEqual(regional, {iconSize:[38,40],iconAnchor:[19,32]});
+  assert.ok(regional.iconSize[0] < detailed.iconSize[0]);
+  assert.ok(detailed.iconSize[0]>76);
+  assert.deepEqual(maximum.iconSize,[125,132]);assert.ok(maximum.iconSize[0]>detailed.iconSize[0]);
+  const liveSource = functionSource("updateLiveZoomState", "updateZoomState");
+  assert.match(liveSource, /expeditionPieceController\?\.updateZoom\(\)/);
+  assert.match(liveSource, /buildingMarkerController\?\.updateVisibility\(\)/);
 });
 
 test("primary navigation stays left aligned and the gold wallet stays on the right", async () => {
@@ -305,22 +303,25 @@ test("primary navigation stays left aligned and the gold wallet stays on the rig
   assert.doesNotMatch(walletStyle, /background|border|box-shadow|border-radius|padding/);
   assert.ok(indexSource.indexOf('class="topbar-wallet"')>indexSource.indexOf('class="primary-nav"'));
   assert.doesNotMatch(indexSource, /wallet-coin|wallet-copy/);
-  assert.match(indexSource, /<span>\u91d1\u5e01<\/span><strong id="gold-balance">0<\/strong>/);
+  assert.match(indexSource, /<img class="gold-icon"[^>]*gold-coin\.svg[^>]*><strong id="gold-balance">0<\/strong>/);
   assert.match(indexSource,/id="gold-balance"/);
-  assert.match(appSource,/new Intl\.NumberFormat\("zh-CN"\)/);
-  assert.match(appSource,/stateValue\?\.wallet\?\.gold/);
+  const resourceSource = await readFile(new URL("../client/resources/resource-controller.js", import.meta.url), "utf8");
+  assert.match(resourceSource,/new Intl\.NumberFormat\(['"]zh-CN['"]\)/);
+  assert.match(resourceSource,/state\?\.wallet\?\.gold/);
+  assert.match(indexSource, /<div id="topbar-resource-summary"[^>]*>[\s\S]*id="topbar-wallet"[\s\S]*data-resource-slot="production"[\s\S]*data-resource-slot="science"[\s\S]*?<\/button>/);
+  assert.match(appSource,/resourceController\.update\(stateValue\)/);
 });
 
 test("topbar inventory uses a light small shelf and a full-screen meteor player choice stage", () => {
   assert.ok(indexSource.indexOf('id="topbar-inventory"') < indexSource.indexOf('id="topbar-wallet"'));
-  assert.match(indexSource,/<nav class="primary-nav"[\s\S]*id="topbar-inventory"[\s\S]*<\/nav>/);
+  assert.match(indexSource,/<nav[^>]*class="primary-nav"[\s\S]*id="topbar-inventory"[\s\S]*<\/nav>/);
   assert.match(indexSource,/id="inventory-window"[^>]*data-small-window="inventory"/);
   assert.match(appSource,/createInventoryController\(\{/);
   assert.match(inventoryControllerSource,/bindSmallWindow\(windowRoot/);
   assert.match(inventoryControllerSource,/registerStageWindow\(windowRoot,\{kind:"inventory"/);
   assert.match(inventoryControllerSource,/smallShelf \? "small-window__dialog" : "inventory-opening-surface"/);
   assert.match(inventoryControllerSource,/inventory-opening-stage-root/);
-  assert.match(inventoryControllerSource,/inventory-opening-meteors/);
+  assert.match(inventoryControllerSource,/meteorLayer\(\)/);
   assert.doesNotMatch(inventoryControllerSource,/\.flatMap\(\(pack\) => Array\.from/);
   assert.match(inventoryControllerSource,/inventory-pack-count/);
   assert.match(inventoryControllerSource,/data-select-pack/);
@@ -362,4 +363,70 @@ test("result dialog keeps the aggregate score and shows neutral conquest rewards
   assert.match(resultSource,/battle-score/);
   assert.match(indexSource,/battle-result-(gold|pack)-reward/);
   assert.match(resultSource,/battle\.rewards/);
+});
+
+
+test("live token resizing updates dimensions and foot anchor without replacing its image node",()=>{
+  let zoom=3;
+  const values=new Map(),token={style:{setProperty:(key,value)=>values.set(key,value)}};
+  const element={style:{transform:"translate3d(100px,200px,0)"},querySelector:()=>token};
+  const marker={options:{icon:{options:{}}},getElement:()=>element,setIcon(){assert.fail("Live zoom must preserve the token node");}};
+  const source=functionSource("updateZoom","renderMovementWidget",expeditionPieceSource);
+  const update=new Function("marker","map","getCampaignState","expeditionTokenMetrics","getDisplayMetrics",source+";return updateZoom;")(
+    marker,{getZoom:()=>zoom},()=>({expeditionPiece:{}}),expeditionTokenMetrics,(_piece,fallback)=>fallback);
+  update();
+  assert.equal(element.style.width,"15px");assert.equal(element.style.marginLeft,"-8px");assert.equal(element.style.marginTop,"-13px");
+  assert.equal(values.get("--expedition-piece-scale"),"0.2");
+  zoom=5.8;update();
+  assert.equal(element.style.width,"38px");assert.equal(element.style.marginTop,"-32px");
+  assert.equal(values.get("--expedition-piece-scale"),"0.5");
+  zoom=6.8;update();
+  const detailed=expeditionTokenMetrics(zoom);
+  assert.equal(element.style.width,detailed.iconSize[0]+"px");assert.equal(element.style.marginTop,-detailed.iconAnchor[1]+"px");
+  assert.deepEqual(marker.options.icon.options,detailed);
+  assert.equal(element.style.transform,"translate3d(100px,200px,0)");
+});
+
+
+test("compatibility relief keeps native z7 tiles visible across the 30x cap and rounding boundary",async()=>{
+  const source=functionSource("addReliefTileSet","addCampaignReliefLayers");let options;
+  const L={tileLayer:(url,value)=>{options=value;return{addTo:()=>({url})};}};
+  const add=Function("L","map","return ("+source+");")(L,{});
+  add({tiles:"tiles/{z}/{x}/{y}.webp",bounds:{south:0,west:0,north:1,east:1}},"test");
+  const vendor=await readFile(new URL("../assets/vendor/leaflet.js",import.meta.url),"utf8");
+  const start=vendor.indexOf("_setView:function("),end=vendor.indexOf(",_setZoomTransforms:",start);
+  assert.ok(start>=0&&end>start);
+  const setView=Function("return "+vendor.slice(start+"_setView:".length,end))();
+  let updated=0;
+  const layer={options,_clampZoom:zoom=>Math.min(zoom,options.maxNativeZoom),_updateLevels(){},_resetGrid(){},
+    _update(){updated++;},_pruneTiles(){},_setZoomTransforms(){}};
+  for(const magnification of [20,22.7,25,29.9,30]) {
+    setView.call(layer,null,3+Math.log2(magnification));assert.equal(layer._tileZoom,7);
+  }
+  assert.equal(updated,5, "Maximum magnification must still schedule native relief tiles");
+});
+
+
+test("startup zoom tolerates pending city markers and applies fog once markers arrive", () => {
+  const cities=[{id:"known",lat:40,lng:0,tier:1},{id:"hidden",lat:40,lng:2,tier:1}];
+  const markers=new Map(),active=new Set();let checks=0,allow=true;
+  const layer={
+    hasLayer(marker){
+      // Leaflet stamp() uses the in operator, which throws for undefined.
+      if (!("_leaflet_id" in marker)) marker._leaflet_id=++checks;
+      return active.has(marker);
+    },
+    removeLayer(marker){active.delete(marker);},
+  };
+  const run=new Function("map","cityData","cityMarkers","clubsByCity","campaignFogController","expandedCityId","cityLayer",
+    functionSource("updateCityVisibility","setObjective")+"\nreturn updateCityVisibility;")(
+      {getZoom:()=>6},cities,markers,new Map(),{isPointVisible:([_lat,lng])=>allow&&lng===0},null,layer);
+  assert.doesNotThrow(run);assert.equal(checks,0);
+  const makeMarker=()=>({addTo(target){assert.equal(target,layer);active.add(this);return this;}});
+  const known=makeMarker();markers.set("known",known);
+  assert.doesNotThrow(run);assert.deepEqual([...active],[known]);
+  const hidden=makeMarker();markers.set("hidden",hidden);run();
+  assert.deepEqual([...active],[known]);
+  allow=false;run();assert.equal(active.size,0);
+  allow=true;run();assert.deepEqual([...active],[known]);
 });

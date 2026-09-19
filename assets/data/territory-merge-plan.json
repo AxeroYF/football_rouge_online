@@ -1,0 +1,8224 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "20260908-world598-v1",
+  "sourceTerritoryCount": 1470,
+  "targetTerritoryCount": 598,
+  "players": 8,
+  "regions": [
+    {
+      "territoryId": "adm1:region-alb-ed65c02c54",
+      "countryCode": "ALB",
+      "region": "europe",
+      "members": [
+        "adm1:alb-1495",
+        "adm1:alb-1523",
+        "adm1:alb-1524",
+        "adm1:alb-1529"
+      ],
+      "name": null,
+      "anchorName": "地拉那州",
+      "archipelagoException": false,
+      "cityIds": [
+        "tirana"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-alb-c81de9a52e",
+      "countryCode": "ALB",
+      "region": "europe",
+      "members": [
+        "adm1:alb-1498",
+        "adm1:alb-1502"
+      ],
+      "name": null,
+      "anchorName": "斯库台州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-alb-912a4d929c",
+      "countryCode": "ALB",
+      "region": "europe",
+      "members": [
+        "adm1:alb-1504",
+        "adm1:alb-1525"
+      ],
+      "name": null,
+      "anchorName": "吉诺卡斯特州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:alb-1521",
+      "countryCode": "ALB",
+      "region": "europe",
+      "members": [
+        "adm1:alb-1521"
+      ],
+      "name": "科尔察",
+      "anchorName": "科尔察",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-alb-3c2dc50fbd",
+      "countryCode": "ALB",
+      "region": "europe",
+      "members": [
+        "adm1:alb-1494",
+        "adm1:alb-1526",
+        "adm1:alb-1528"
+      ],
+      "name": null,
+      "anchorName": "迪勃拉州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ald-47978e129a",
+      "countryCode": "ALD",
+      "region": "europe",
+      "members": [
+        "adm1:ald-4810",
+        "adm1:ald-4812",
+        "adm1:ald-4814",
+        "adm1:ald-4817",
+        "adm1:ald-4818",
+        "adm1:ald-4819",
+        "adm1:ald-4820",
+        "adm1:ald-4821",
+        "adm1:ald-4822",
+        "adm1:ald-4823",
+        "adm1:ald-4824"
+      ],
+      "name": null,
+      "anchorName": "约马拉",
+      "archipelagoException": true,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-and-ba2a858eed",
+      "countryCode": "AND",
+      "region": "europe",
+      "members": [
+        "adm1:and-4876",
+        "adm1:and-4877",
+        "adm1:and-4878",
+        "adm1:and-4879",
+        "adm1:and-4880",
+        "adm1:and-4881",
+        "adm1:and-4882"
+      ],
+      "name": null,
+      "anchorName": "圣胡利娅-德洛里亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1271",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1271"
+      ],
+      "name": "圣克鲁斯省",
+      "anchorName": "圣克鲁斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1272",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1272"
+      ],
+      "name": "火地岛省",
+      "anchorName": "火地岛省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1273",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1273"
+      ],
+      "name": "圣胡安省",
+      "anchorName": "圣胡安省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1274",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1274"
+      ],
+      "name": "丘布特省",
+      "anchorName": "丘布特省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1275",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1275"
+      ],
+      "name": "门多萨省",
+      "anchorName": "门多萨省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1276",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1276"
+      ],
+      "name": "内乌肯省",
+      "anchorName": "内乌肯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1295",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1295"
+      ],
+      "name": "布宜诺斯艾利斯省",
+      "anchorName": "布宜诺斯艾利斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1296",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1296"
+      ],
+      "name": "拉潘帕省",
+      "anchorName": "拉潘帕省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1297",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1297"
+      ],
+      "name": "内格罗河省",
+      "anchorName": "内格罗河省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1298",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1298"
+      ],
+      "name": "圣路易省",
+      "anchorName": "圣路易省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1299",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1299"
+      ],
+      "name": "科尔多瓦省",
+      "anchorName": "科尔多瓦省",
+      "archipelagoException": false,
+      "cityIds": [
+        "cordoba-ar"
+      ]
+    },
+    {
+      "territoryId": "adm1:arg-1300",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1300"
+      ],
+      "name": "卡塔马卡省",
+      "anchorName": "卡塔马卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1301",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1301"
+      ],
+      "name": "胡胡伊省",
+      "anchorName": "胡胡伊省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1302",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1302"
+      ],
+      "name": "拉里奥哈省",
+      "anchorName": "拉里奥哈省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1303",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1303"
+      ],
+      "name": "萨尔塔省",
+      "anchorName": "萨尔塔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1304",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1304"
+      ],
+      "name": "圣地亚哥－德尔埃斯特罗省",
+      "anchorName": "圣地亚哥－德尔埃斯特罗省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1305",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1305"
+      ],
+      "name": "图库曼省",
+      "anchorName": "图库曼省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1306",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1306"
+      ],
+      "name": "查科省",
+      "anchorName": "查科省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1307",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1307"
+      ],
+      "name": "福尔摩沙省",
+      "anchorName": "福尔摩沙省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1308",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1308"
+      ],
+      "name": "科连特斯省",
+      "anchorName": "科连特斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1309",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1309"
+      ],
+      "name": "恩特雷里奥斯省",
+      "anchorName": "恩特雷里奥斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-1310",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1310"
+      ],
+      "name": "圣大非省",
+      "anchorName": "圣大非省",
+      "archipelagoException": false,
+      "cityIds": [
+        "rosario"
+      ]
+    },
+    {
+      "territoryId": "adm1:arg-1312",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-1312"
+      ],
+      "name": "米西奥内斯省",
+      "anchorName": "米西奥内斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:arg-5493",
+      "countryCode": "ARG",
+      "region": "south-america",
+      "members": [
+        "adm1:arg-5493"
+      ],
+      "name": "布宜诺斯艾利斯",
+      "anchorName": "布宜诺斯艾利斯",
+      "archipelagoException": false,
+      "cityIds": [
+        "buenos-aires"
+      ]
+    },
+    {
+      "territoryId": "adm1:aut-2320",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2320"
+      ],
+      "name": "福拉尔贝格州",
+      "anchorName": "福拉尔贝格州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:aut-2322",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2322"
+      ],
+      "name": "布尔根兰州",
+      "anchorName": "布尔根兰州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:aut-2323",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2323"
+      ],
+      "name": "施蒂利亚州",
+      "anchorName": "施蒂利亚州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:aut-2325",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2325"
+      ],
+      "name": "克恩顿州",
+      "anchorName": "克恩顿州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:aut-2326",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2326"
+      ],
+      "name": "上奥地利州",
+      "anchorName": "上奥地利州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:aut-2327",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2327"
+      ],
+      "name": "萨尔茨堡州",
+      "anchorName": "萨尔茨堡州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:aut-2329",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2329"
+      ],
+      "name": "蒂罗尔州",
+      "anchorName": "蒂罗尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-aut-d35f56c98f",
+      "countryCode": "AUT",
+      "region": "europe",
+      "members": [
+        "adm1:aut-2330",
+        "adm1:aut-2331"
+      ],
+      "name": null,
+      "anchorName": "维也纳",
+      "archipelagoException": false,
+      "cityIds": [
+        "vienna"
+      ]
+    },
+    {
+      "territoryId": "adm1:bel-2",
+      "countryCode": "BEL",
+      "region": "europe",
+      "members": [
+        "adm1:bel-2"
+      ],
+      "name": "埃诺省",
+      "anchorName": "埃诺省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bel-82892f9de0",
+      "countryCode": "BEL",
+      "region": "europe",
+      "members": [
+        "adm1:bel-3",
+        "adm1:bel-3481"
+      ],
+      "name": null,
+      "anchorName": "列日省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bel-3476",
+      "countryCode": "BEL",
+      "region": "europe",
+      "members": [
+        "adm1:bel-3476"
+      ],
+      "name": "那慕尔省",
+      "anchorName": "那慕尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bel-3477",
+      "countryCode": "BEL",
+      "region": "europe",
+      "members": [
+        "adm1:bel-3477"
+      ],
+      "name": "卢森堡区",
+      "anchorName": "卢森堡区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bel-c80a69ab7b",
+      "countryCode": "BEL",
+      "region": "europe",
+      "members": [
+        "adm1:bel-3474",
+        "adm1:bel-3475",
+        "adm1:bel-3478",
+        "adm1:bel-3480",
+        "adm1:bel-3482"
+      ],
+      "name": null,
+      "anchorName": "布鲁塞尔-首都大区",
+      "archipelagoException": false,
+      "cityIds": [
+        "brussels"
+      ]
+    },
+    {
+      "territoryId": "adm1:bel-3479",
+      "countryCode": "BEL",
+      "region": "europe",
+      "members": [
+        "adm1:bel-3479"
+      ],
+      "name": "西弗兰德省",
+      "anchorName": "西弗兰德省",
+      "archipelagoException": false,
+      "cityIds": [
+        "bruges"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-bgr-9d4a07cd8a",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2231",
+        "adm1:bgr-2255"
+      ],
+      "name": null,
+      "anchorName": "扬博尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bgr-911f64f47e",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2232",
+        "adm1:bgr-2237"
+      ],
+      "name": null,
+      "anchorName": "克尔贾利州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bgr-e04ffedff5",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2233",
+        "adm1:bgr-2246",
+        "adm1:bgr-2249"
+      ],
+      "name": null,
+      "anchorName": "旧扎戈拉州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bgr-35f44b8be4",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2234",
+        "adm1:bgr-2235",
+        "adm1:bgr-2236"
+      ],
+      "name": null,
+      "anchorName": "普罗夫迪夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bgr-744e22df5c",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2247",
+        "adm1:bgr-2248",
+        "adm1:bgr-2250",
+        "adm1:bgr-2251",
+        "adm1:bgr-2253"
+      ],
+      "name": null,
+      "anchorName": "普列文州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bgr-2254",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2254"
+      ],
+      "name": "布尔加斯州",
+      "anchorName": "布尔加斯州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bgr-766582ebad",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2256",
+        "adm1:bgr-2257",
+        "adm1:bgr-2258",
+        "adm1:bgr-2259",
+        "adm1:bgr-2260",
+        "adm1:bgr-2261",
+        "adm1:bgr-2262"
+      ],
+      "name": null,
+      "anchorName": "多布里奇州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bgr-685944886f",
+      "countryCode": "BGR",
+      "region": "europe",
+      "members": [
+        "adm1:bgr-2243",
+        "adm1:bgr-2244",
+        "adm1:bgr-2245",
+        "adm1:bgr-2252",
+        "adm1:bgr-3002"
+      ],
+      "name": null,
+      "anchorName": "索菲亞市州",
+      "archipelagoException": false,
+      "cityIds": [
+        "sofia"
+      ]
+    },
+    {
+      "territoryId": "adm1:bih-2224",
+      "countryCode": "BIH",
+      "region": "europe",
+      "members": [
+        "adm1:bih-2224"
+      ],
+      "name": "西波士尼亚",
+      "anchorName": "西波士尼亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bih-0cf2f442d1",
+      "countryCode": "BIH",
+      "region": "europe",
+      "members": [
+        "adm1:bih-2225",
+        "adm1:bih-3153",
+        "adm1:bih-4801",
+        "adm1:bih-4802"
+      ],
+      "name": null,
+      "anchorName": "巴尼亚卢卡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bih-bfd31b5356",
+      "countryCode": "BIH",
+      "region": "europe",
+      "members": [
+        "adm1:bih-2226",
+        "adm1:bih-2889"
+      ],
+      "name": null,
+      "anchorName": "泽尼察-多博伊州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bih-9a0a986a20",
+      "countryCode": "BIH",
+      "region": "europe",
+      "members": [
+        "adm1:bih-2887",
+        "adm1:bih-4803",
+        "adm1:bih-4804",
+        "adm1:bih-4805"
+      ],
+      "name": null,
+      "anchorName": "图兹拉州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-bih-c136cc9d6b",
+      "countryCode": "BIH",
+      "region": "europe",
+      "members": [
+        "adm1:bih-2890",
+        "adm1:bih-2891",
+        "adm1:bih-4806",
+        "adm1:bih-4807"
+      ],
+      "name": null,
+      "anchorName": "薩拉熱窩州",
+      "archipelagoException": false,
+      "cityIds": [
+        "sarajevo"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-bih-02cf39d0e4",
+      "countryCode": "BIH",
+      "region": "europe",
+      "members": [
+        "adm1:bih-2227",
+        "adm1:bih-2228",
+        "adm1:bih-4808"
+      ],
+      "name": null,
+      "anchorName": "黑塞哥维那-涅雷特瓦州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-2338",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-2338"
+      ],
+      "name": "布列斯特州",
+      "anchorName": "布列斯特州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-2339",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-2339"
+      ],
+      "name": "戈梅利州",
+      "anchorName": "戈梅利州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-2340",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-2340"
+      ],
+      "name": "莫吉廖夫州",
+      "anchorName": "莫吉廖夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-2341",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-2341"
+      ],
+      "name": "维捷布斯克州",
+      "anchorName": "维捷布斯克州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-2344",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-2344"
+      ],
+      "name": "格罗德诺州",
+      "anchorName": "格罗德诺州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-2345",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-2345"
+      ],
+      "name": "明斯克州",
+      "anchorName": "明斯克州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:blr-4825",
+      "countryCode": "BLR",
+      "region": "europe",
+      "members": [
+        "adm1:blr-4825"
+      ],
+      "name": "明斯克",
+      "anchorName": "明斯克",
+      "archipelagoException": false,
+      "cityIds": [
+        "minsk"
+      ]
+    },
+    {
+      "territoryId": "adm1:bol-1291",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1291"
+      ],
+      "name": "科恰班巴省",
+      "anchorName": "科恰班巴省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1292",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1292"
+      ],
+      "name": "丘基萨卡省",
+      "anchorName": "丘基萨卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1293",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1293"
+      ],
+      "name": "贝尼省",
+      "anchorName": "贝尼省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1936",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1936"
+      ],
+      "name": "拉巴斯省",
+      "anchorName": "拉巴斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1937",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1937"
+      ],
+      "name": "奥鲁罗省",
+      "anchorName": "奥鲁罗省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1938",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1938"
+      ],
+      "name": "潘多省",
+      "anchorName": "潘多省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1939",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1939"
+      ],
+      "name": "波托西省",
+      "anchorName": "波托西省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1940",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1940"
+      ],
+      "name": "圣克鲁斯省",
+      "anchorName": "圣克鲁斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bol-1941",
+      "countryCode": "BOL",
+      "region": "south-america",
+      "members": [
+        "adm1:bol-1941"
+      ],
+      "name": "塔里哈省",
+      "anchorName": "塔里哈省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-1294",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-1294"
+      ],
+      "name": "戈亚斯",
+      "anchorName": "戈亚斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-1311",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-1311"
+      ],
+      "name": "圣保罗州",
+      "anchorName": "圣保罗州",
+      "archipelagoException": false,
+      "cityIds": [
+        "sao-paulo"
+      ]
+    },
+    {
+      "territoryId": "adm1:bra-1313",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-1313"
+      ],
+      "name": "伯南布哥",
+      "anchorName": "伯南布哥",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-576",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-576"
+      ],
+      "name": "阿克里州",
+      "anchorName": "阿克里州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-592",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-592"
+      ],
+      "name": "亚马孙州",
+      "anchorName": "亚马孙州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-593",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-593"
+      ],
+      "name": "马拉尼昂州",
+      "anchorName": "马拉尼昂州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-594",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-594"
+      ],
+      "name": "帕拉",
+      "anchorName": "帕拉",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-595",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-595"
+      ],
+      "name": "朗多尼亚州",
+      "anchorName": "朗多尼亚州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-596",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-596"
+      ],
+      "name": "托坎廷斯",
+      "anchorName": "托坎廷斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-599",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-599"
+      ],
+      "name": "联邦区",
+      "anchorName": "联邦区",
+      "archipelagoException": false,
+      "cityIds": [
+        "brasilia"
+      ]
+    },
+    {
+      "territoryId": "adm1:bra-600",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-600"
+      ],
+      "name": "南马托格罗索州",
+      "anchorName": "南马托格罗索州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-601",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-601"
+      ],
+      "name": "米纳斯吉拉斯",
+      "anchorName": "米纳斯吉拉斯",
+      "archipelagoException": false,
+      "cityIds": [
+        "belo-horizonte"
+      ]
+    },
+    {
+      "territoryId": "adm1:bra-602",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-602"
+      ],
+      "name": "马托格罗索州",
+      "anchorName": "马托格罗索州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-612",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-612"
+      ],
+      "name": "南里奥格兰德州",
+      "anchorName": "南里奥格兰德州",
+      "archipelagoException": false,
+      "cityIds": [
+        "porto-alegre"
+      ]
+    },
+    {
+      "territoryId": "adm1:bra-613",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-613"
+      ],
+      "name": "巴拉那州",
+      "anchorName": "巴拉那州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-614",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-614"
+      ],
+      "name": "圣卡塔琳娜州",
+      "anchorName": "圣卡塔琳娜州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-621",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-621"
+      ],
+      "name": "塞阿腊",
+      "anchorName": "塞阿腊",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-622",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-622"
+      ],
+      "name": "皮奥伊州",
+      "anchorName": "皮奥伊州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-623",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-623"
+      ],
+      "name": "阿拉戈斯州",
+      "anchorName": "阿拉戈斯州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-624",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-624"
+      ],
+      "name": "巴伊亚",
+      "anchorName": "巴伊亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-625",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-625"
+      ],
+      "name": "聖埃斯皮里圖州",
+      "anchorName": "聖埃斯皮里圖州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-626",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-626"
+      ],
+      "name": "帕拉伊巴",
+      "anchorName": "帕拉伊巴",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-627",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-627"
+      ],
+      "name": "里约热内卢州",
+      "anchorName": "里约热内卢州",
+      "archipelagoException": false,
+      "cityIds": [
+        "rio-de-janeiro"
+      ]
+    },
+    {
+      "territoryId": "adm1:bra-628",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-628"
+      ],
+      "name": "北里约格朗德",
+      "anchorName": "北里约格朗德",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-629",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-629"
+      ],
+      "name": "塞尔希培州",
+      "anchorName": "塞尔希培州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-670",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-670"
+      ],
+      "name": "罗赖马州",
+      "anchorName": "罗赖马州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bra-681",
+      "countryCode": "BRA",
+      "region": "south-america",
+      "members": [
+        "adm1:bra-681"
+      ],
+      "name": "阿马帕",
+      "anchorName": "阿马帕",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-che-caac40e1ea",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-159",
+        "adm1:che-3422"
+      ],
+      "name": null,
+      "anchorName": "沃州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-che-8eefbbe9c6",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-161",
+        "adm1:che-3421"
+      ],
+      "name": null,
+      "anchorName": "弗里堡州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-che-005b3dc780",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-162",
+        "adm1:che-171",
+        "adm1:che-176"
+      ],
+      "name": null,
+      "anchorName": "苏黎世州",
+      "archipelagoException": false,
+      "cityIds": [
+        "zurich"
+      ]
+    },
+    {
+      "territoryId": "adm1:che-165",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-165"
+      ],
+      "name": "瓦莱州",
+      "anchorName": "瓦莱州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:che-168",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-168"
+      ],
+      "name": "提契诺州",
+      "anchorName": "提契诺州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:che-170",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-170"
+      ],
+      "name": "格劳宾登州",
+      "anchorName": "格劳宾登州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-che-55b40e023f",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-166",
+        "adm1:che-167",
+        "adm1:che-169",
+        "adm1:che-174",
+        "adm1:che-3473"
+      ],
+      "name": null,
+      "anchorName": "圣加仑州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-che-efac7a36b9",
+      "countryCode": "CHE",
+      "region": "europe",
+      "members": [
+        "adm1:che-160",
+        "adm1:che-163",
+        "adm1:che-164",
+        "adm1:che-173",
+        "adm1:che-175",
+        "adm1:che-177",
+        "adm1:che-3423",
+        "adm1:che-3424",
+        "adm1:che-3425",
+        "adm1:che-3426",
+        "adm1:che-3427"
+      ],
+      "name": null,
+      "anchorName": "伯恩州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-20010",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-20010"
+      ],
+      "name": "纽布莱大区",
+      "anchorName": "纽布莱大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2691",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2691"
+      ],
+      "name": "伊瓦涅斯将军艾森大区",
+      "anchorName": "伊瓦涅斯将军艾森大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2692",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2692"
+      ],
+      "name": "麦哲伦-智利南极大区",
+      "anchorName": "麦哲伦-智利南极大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2693",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2693"
+      ],
+      "name": "塔拉帕卡大区",
+      "anchorName": "塔拉帕卡大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2694",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2694"
+      ],
+      "name": "阿里卡和帕里纳科塔大区",
+      "anchorName": "阿里卡和帕里纳科塔大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2695",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2695"
+      ],
+      "name": "安托法加斯塔大区",
+      "anchorName": "安托法加斯塔大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2696",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2696"
+      ],
+      "name": "阿塔卡马大区",
+      "anchorName": "阿塔卡马大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2697",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2697"
+      ],
+      "name": "科金博大区",
+      "anchorName": "科金博大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2698",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2698"
+      ],
+      "name": "圣地亚哥首都大区",
+      "anchorName": "圣地亚哥首都大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2699",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2699"
+      ],
+      "name": "瓦尔帕莱索大区",
+      "anchorName": "瓦尔帕莱索大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2700",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2700"
+      ],
+      "name": "阿劳卡尼亚大区",
+      "anchorName": "阿劳卡尼亚大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2701",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2701"
+      ],
+      "name": "河大区",
+      "anchorName": "河大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2702",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2702"
+      ],
+      "name": "比奥比奥大区",
+      "anchorName": "比奥比奥大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2703",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2703"
+      ],
+      "name": "奥伊金斯将军解放者大区",
+      "anchorName": "奥伊金斯将军解放者大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2704",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2704"
+      ],
+      "name": "湖大区",
+      "anchorName": "湖大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:chl-2705",
+      "countryCode": "CHL",
+      "region": "south-america",
+      "members": [
+        "adm1:chl-2705"
+      ],
+      "name": "马乌莱大区",
+      "anchorName": "马乌莱大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1283",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1283"
+      ],
+      "name": "亚马孙省",
+      "anchorName": "亚马孙省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1314",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1314"
+      ],
+      "name": "安蒂奥基亚省",
+      "anchorName": "安蒂奥基亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-cd82b04c17",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1315",
+        "adm1:col-1398",
+        "adm1:col-1399",
+        "adm1:col-1425"
+      ],
+      "name": null,
+      "anchorName": "梅塔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1342",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1342"
+      ],
+      "name": "聖安德列斯-普羅維登西亞和聖卡塔利娜群島省",
+      "anchorName": "聖安德列斯-普羅維登西亞和聖卡塔利娜群島省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1404",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1404"
+      ],
+      "name": "考卡省",
+      "anchorName": "考卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1406",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1406"
+      ],
+      "name": "纳里尼奥省",
+      "anchorName": "纳里尼奥省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-fa1e270443",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1403",
+        "adm1:col-1407"
+      ],
+      "name": null,
+      "anchorName": "卡克塔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-856843827b",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1397",
+        "adm1:col-1400",
+        "adm1:col-1401",
+        "adm1:col-1402",
+        "adm1:col-1405",
+        "adm1:col-1408"
+      ],
+      "name": null,
+      "anchorName": "托利马省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-3eea8a187b",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1318",
+        "adm1:col-1412",
+        "adm1:col-1414",
+        "adm1:col-1416"
+      ],
+      "name": null,
+      "anchorName": "马格达莱纳省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1413",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1413"
+      ],
+      "name": "玻利瓦尔省",
+      "anchorName": "玻利瓦尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1415",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1415"
+      ],
+      "name": "乔科省",
+      "anchorName": "乔科省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-eb021b682c",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1316",
+        "adm1:col-1417"
+      ],
+      "name": null,
+      "anchorName": "科尔多瓦",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-a9ccf3a49f",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1420",
+        "adm1:col-1422"
+      ],
+      "name": null,
+      "anchorName": "卡萨纳雷省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-col-76d0eccbe0",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1317",
+        "adm1:col-1421"
+      ],
+      "name": null,
+      "anchorName": "桑坦德省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1423",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1423"
+      ],
+      "name": "瓜维亚雷省",
+      "anchorName": "瓜维亚雷省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1424",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1424"
+      ],
+      "name": "瓜伊尼亚省",
+      "anchorName": "瓜伊尼亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1426",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1426"
+      ],
+      "name": "沃佩斯省",
+      "anchorName": "沃佩斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-1427",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-1427"
+      ],
+      "name": "比查达省",
+      "anchorName": "比查达省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:col-99",
+      "countryCode": "COL",
+      "region": "south-america",
+      "members": [
+        "adm1:col-99"
+      ],
+      "name": "哥伦比亚",
+      "anchorName": "哥伦比亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:cyp-3465",
+      "countryCode": "CYP",
+      "region": "europe",
+      "members": [
+        "adm1:cyp-3465"
+      ],
+      "name": "帕福斯区",
+      "anchorName": "帕福斯区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-cyp-cbdc032f3d",
+      "countryCode": "CYP",
+      "region": "europe",
+      "members": [
+        "adm1:cyp-3463",
+        "adm1:cyp-3464",
+        "adm1:cyp-3466"
+      ],
+      "name": null,
+      "anchorName": "尼科西亚区",
+      "archipelagoException": false,
+      "cityIds": [
+        "nicosia"
+      ]
+    },
+    {
+      "territoryId": "adm1:cyp-3489",
+      "countryCode": "CYP",
+      "region": "europe",
+      "members": [
+        "adm1:cyp-3489"
+      ],
+      "name": "利马索尔区",
+      "anchorName": "利马索尔区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:cze-10368",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-10368"
+      ],
+      "name": "乌斯季州",
+      "anchorName": "乌斯季州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:cze-10370",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-10370"
+      ],
+      "name": "南摩拉维亚州",
+      "anchorName": "南摩拉维亚州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-cze-a6381620c6",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-10371",
+        "adm1:cze-1612"
+      ],
+      "name": null,
+      "anchorName": "摩拉维亚-西里西亚州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:cze-10372",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-10372"
+      ],
+      "name": "奥洛穆克州",
+      "anchorName": "奥洛穆克州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-cze-4435b1e317",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-10369",
+        "adm1:cze-1590"
+      ],
+      "name": null,
+      "anchorName": "比爾森城縣",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:cze-1593",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-1593"
+      ],
+      "name": "南波希米亚州",
+      "anchorName": "南波希米亚州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-cze-4648ee43fe",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-1595",
+        "adm1:cze-1596",
+        "adm1:cze-1597"
+      ],
+      "name": null,
+      "anchorName": "布拉格",
+      "archipelagoException": false,
+      "cityIds": [
+        "prague"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-cze-8287699daa",
+      "countryCode": "CZE",
+      "region": "europe",
+      "members": [
+        "adm1:cze-10373",
+        "adm1:cze-1594",
+        "adm1:cze-1598"
+      ],
+      "name": null,
+      "anchorName": "维索基纳州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1572",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1572"
+      ],
+      "name": "北莱茵－威斯特法伦",
+      "anchorName": "北莱茵－威斯特法伦",
+      "archipelagoException": false,
+      "cityIds": [
+        "dortmund",
+        "leverkusen"
+      ]
+    },
+    {
+      "territoryId": "adm1:deu-1573",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1573"
+      ],
+      "name": "巴登－符腾堡",
+      "anchorName": "巴登－符腾堡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1574",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1574"
+      ],
+      "name": "黑森",
+      "anchorName": "黑森",
+      "archipelagoException": false,
+      "cityIds": [
+        "frankfurt"
+      ]
+    },
+    {
+      "territoryId": "adm1:deu-1575",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1575"
+      ],
+      "name": "不来梅",
+      "anchorName": "不来梅",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1576",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1576"
+      ],
+      "name": "下萨克森",
+      "anchorName": "下萨克森",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1577",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1577"
+      ],
+      "name": "图林根",
+      "anchorName": "图林根",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1578",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1578"
+      ],
+      "name": "汉堡",
+      "anchorName": "汉堡",
+      "archipelagoException": false,
+      "cityIds": [
+        "hamburg"
+      ]
+    },
+    {
+      "territoryId": "adm1:deu-1579",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1579"
+      ],
+      "name": "石勒苏益格-荷尔斯泰因",
+      "anchorName": "石勒苏益格-荷尔斯泰因",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1580",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1580"
+      ],
+      "name": "莱茵兰－普法尔茨",
+      "anchorName": "莱茵兰－普法尔茨",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1581",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1581"
+      ],
+      "name": "萨尔",
+      "anchorName": "萨尔",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1591",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1591"
+      ],
+      "name": "巴伐利亚",
+      "anchorName": "巴伐利亚",
+      "archipelagoException": false,
+      "cityIds": [
+        "munich"
+      ]
+    },
+    {
+      "territoryId": "adm1:deu-1599",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1599"
+      ],
+      "name": "柏林",
+      "anchorName": "柏林",
+      "archipelagoException": false,
+      "cityIds": [
+        "berlin"
+      ]
+    },
+    {
+      "territoryId": "adm1:deu-1600",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1600"
+      ],
+      "name": "萨克森－安哈尔特",
+      "anchorName": "萨克森－安哈尔特",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-1601",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-1601"
+      ],
+      "name": "萨克森",
+      "anchorName": "萨克森",
+      "archipelagoException": false,
+      "cityIds": [
+        "leipzig"
+      ]
+    },
+    {
+      "territoryId": "adm1:deu-3487",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-3487"
+      ],
+      "name": "勃兰登堡",
+      "anchorName": "勃兰登堡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:deu-3488",
+      "countryCode": "DEU",
+      "region": "europe",
+      "members": [
+        "adm1:deu-3488"
+      ],
+      "name": "梅克伦堡－前波美拉尼亚",
+      "anchorName": "梅克伦堡－前波美拉尼亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:dnk-3416",
+      "countryCode": "DNK",
+      "region": "europe",
+      "members": [
+        "adm1:dnk-3416"
+      ],
+      "name": "中日德兰大区",
+      "anchorName": "中日德兰大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:dnk-3417",
+      "countryCode": "DNK",
+      "region": "europe",
+      "members": [
+        "adm1:dnk-3417"
+      ],
+      "name": "南丹麦大区",
+      "anchorName": "南丹麦大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:dnk-3418",
+      "countryCode": "DNK",
+      "region": "europe",
+      "members": [
+        "adm1:dnk-3418"
+      ],
+      "name": "北日德兰大区",
+      "anchorName": "北日德兰大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:dnk-3419",
+      "countryCode": "DNK",
+      "region": "europe",
+      "members": [
+        "adm1:dnk-3419"
+      ],
+      "name": "首都大区",
+      "anchorName": "首都大区",
+      "archipelagoException": false,
+      "cityIds": [
+        "copenhagen"
+      ]
+    },
+    {
+      "territoryId": "adm1:dnk-3420",
+      "countryCode": "DNK",
+      "region": "europe",
+      "members": [
+        "adm1:dnk-3420"
+      ],
+      "name": "西兰大区",
+      "anchorName": "西兰大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ecu-c7ee3fa721",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1267",
+        "adm1:ecu-1268",
+        "adm1:ecu-1269"
+      ],
+      "name": null,
+      "anchorName": "洛哈省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ecu-1270",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1270"
+      ],
+      "name": "加拉帕戈斯省",
+      "anchorName": "加拉帕戈斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ecu-89eb67a36a",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1266",
+        "adm1:ecu-1278"
+      ],
+      "name": null,
+      "anchorName": "阿苏艾省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ecu-23fd631105",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1281",
+        "adm1:ecu-1282"
+      ],
+      "name": null,
+      "anchorName": "马纳比省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ecu-1285",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1285"
+      ],
+      "name": "莫罗纳-圣地亚哥省",
+      "anchorName": "莫罗纳-圣地亚哥省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ecu-1286",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1286"
+      ],
+      "name": "奥雷亚纳省",
+      "anchorName": "奥雷亚纳省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ecu-1288",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1288"
+      ],
+      "name": "帕斯塔萨省",
+      "anchorName": "帕斯塔萨省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ecu-2307bea39f",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1277",
+        "adm1:ecu-1279",
+        "adm1:ecu-1284",
+        "adm1:ecu-1287",
+        "adm1:ecu-1289",
+        "adm1:ecu-1290",
+        "adm1:ecu-5508"
+      ],
+      "name": null,
+      "anchorName": "通古拉瓦省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ecu-710390644f",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1335",
+        "adm1:ecu-1409",
+        "adm1:ecu-1410"
+      ],
+      "name": null,
+      "anchorName": "埃斯梅拉达斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ecu-1411",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1411"
+      ],
+      "name": "苏昆比奥斯省",
+      "anchorName": "苏昆比奥斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ecu-ab200caea2",
+      "countryCode": "ECU",
+      "region": "south-america",
+      "members": [
+        "adm1:ecu-1280",
+        "adm1:ecu-5507"
+      ],
+      "name": null,
+      "anchorName": "瓜亚斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-32ec9fad51",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5803",
+        "adm1:esp-5849"
+      ],
+      "name": null,
+      "anchorName": "巴伦西亚省",
+      "archipelagoException": false,
+      "cityIds": [
+        "valencia"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-esp-7f9ffbb7ca",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5804",
+        "adm1:esp-5821"
+      ],
+      "name": null,
+      "anchorName": "格拉纳达省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-da7a5eb307",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5805",
+        "adm1:esp-5830"
+      ],
+      "name": null,
+      "anchorName": "莱昂省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-c48c420e76",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5806",
+        "adm1:esp-5833",
+        "adm1:esp-5843"
+      ],
+      "name": null,
+      "anchorName": "马德里自治区",
+      "archipelagoException": false,
+      "cityIds": [
+        "madrid"
+      ]
+    },
+    {
+      "territoryId": "adm1:esp-5808",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5808"
+      ],
+      "name": "巴利阿里群岛",
+      "anchorName": "巴利阿里群岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5811",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5811"
+      ],
+      "name": "卡塞雷斯省",
+      "anchorName": "卡塞雷斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-862a9732f8",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5812",
+        "adm1:esp-5834",
+        "adm1:esp-5844"
+      ],
+      "name": null,
+      "anchorName": "塞维利亚省",
+      "archipelagoException": false,
+      "cityIds": [
+        "seville"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-esp-ceeae93fe0",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5814",
+        "adm1:esp-5847"
+      ],
+      "name": null,
+      "anchorName": "特魯埃爾省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5815",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5815"
+      ],
+      "name": "休达",
+      "anchorName": "休达",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5816",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5816"
+      ],
+      "name": "雷阿尔城省",
+      "anchorName": "雷阿尔城省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5817",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5817"
+      ],
+      "name": "科尔多瓦省",
+      "anchorName": "科尔多瓦省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5818",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5818"
+      ],
+      "name": "昆卡省",
+      "anchorName": "昆卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-01bb0d8faf",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5809",
+        "adm1:esp-5820"
+      ],
+      "name": null,
+      "anchorName": "巴塞罗那省",
+      "archipelagoException": false,
+      "cityIds": [
+        "barcelona"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-esp-b4785f67e7",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5807",
+        "adm1:esp-5824"
+      ],
+      "name": null,
+      "anchorName": "巴达霍斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5825",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5825"
+      ],
+      "name": "韋斯卡省",
+      "anchorName": "韋斯卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5826",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5826"
+      ],
+      "name": "哈恩省",
+      "anchorName": "哈恩省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-0098d7c5f7",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5801",
+        "adm1:esp-5823",
+        "adm1:esp-5828",
+        "adm1:esp-5837",
+        "adm1:esp-5851"
+      ],
+      "name": null,
+      "anchorName": "比斯开省",
+      "archipelagoException": false,
+      "cityIds": [
+        "bilbao"
+      ]
+    },
+    {
+      "territoryId": "adm1:esp-5829",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5829"
+      ],
+      "name": "拉斯帕尔马斯省",
+      "anchorName": "拉斯帕尔马斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5835",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5835"
+      ],
+      "name": "梅利利亚",
+      "anchorName": "梅利利亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-8b21d1fd27",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5802",
+        "adm1:esp-5836"
+      ],
+      "name": null,
+      "anchorName": "阿尔瓦塞特省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-5ddaef2e53",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5810",
+        "adm1:esp-5813",
+        "adm1:esp-5839"
+      ],
+      "name": null,
+      "anchorName": "布尔戈斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-91cea9ca92",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5827",
+        "adm1:esp-5832",
+        "adm1:esp-5838",
+        "adm1:esp-5840"
+      ],
+      "name": null,
+      "anchorName": "卢戈省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5841",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5841"
+      ],
+      "name": "萨拉曼卡省",
+      "anchorName": "萨拉曼卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5842",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5842"
+      ],
+      "name": "圣克鲁斯-德特内里费省",
+      "anchorName": "圣克鲁斯-德特内里费省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-b6c3509351",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5822",
+        "adm1:esp-5845"
+      ],
+      "name": null,
+      "anchorName": "瓜达拉哈拉省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-bb3a932b2d",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5831",
+        "adm1:esp-5846"
+      ],
+      "name": null,
+      "anchorName": "莱里达省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5848",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5848"
+      ],
+      "name": "托萊多省",
+      "anchorName": "托萊多省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-esp-c595f634d6",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5850",
+        "adm1:esp-5852"
+      ],
+      "name": null,
+      "anchorName": "萨莫拉省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:esp-5853",
+      "countryCode": "ESP",
+      "region": "europe",
+      "members": [
+        "adm1:esp-5853"
+      ],
+      "name": "萨拉戈萨省",
+      "anchorName": "萨拉戈萨省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-est-3c2c29a5a4",
+      "countryCode": "EST",
+      "region": "europe",
+      "members": [
+        "adm1:est-1654",
+        "adm1:est-1655",
+        "adm1:est-1656",
+        "adm1:est-1657",
+        "adm1:est-1658"
+      ],
+      "name": null,
+      "anchorName": "哈尔尤县",
+      "archipelagoException": false,
+      "cityIds": [
+        "tallinn"
+      ]
+    },
+    {
+      "territoryId": "adm1:est-1660",
+      "countryCode": "EST",
+      "region": "europe",
+      "members": [
+        "adm1:est-1660"
+      ],
+      "name": "希乌县",
+      "anchorName": "希乌县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-est-d304221092",
+      "countryCode": "EST",
+      "region": "europe",
+      "members": [
+        "adm1:est-1661",
+        "adm1:est-2346",
+        "adm1:est-2348"
+      ],
+      "name": null,
+      "anchorName": "派尔努县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-est-98bc67aa14",
+      "countryCode": "EST",
+      "region": "europe",
+      "members": [
+        "adm1:est-1659",
+        "adm1:est-2347",
+        "adm1:est-2349",
+        "adm1:est-2350",
+        "adm1:est-2351"
+      ],
+      "name": null,
+      "anchorName": "塔尔图县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:est-2352",
+      "countryCode": "EST",
+      "region": "europe",
+      "members": [
+        "adm1:est-2352"
+      ],
+      "name": "萨雷县",
+      "anchorName": "萨雷县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3176",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3176"
+      ],
+      "name": "拉普蘭區",
+      "anchorName": "拉普蘭區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3177",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3177"
+      ],
+      "name": "中芬蘭區",
+      "anchorName": "中芬蘭區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3178",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3178"
+      ],
+      "name": "北萨沃尼亚区",
+      "anchorName": "北萨沃尼亚区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3179",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3179"
+      ],
+      "name": "凯努区",
+      "anchorName": "凯努区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3180",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3180"
+      ],
+      "name": "北博滕区",
+      "anchorName": "北博滕区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fin-1a3ba94d2b",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3181",
+        "adm1:fin-3182",
+        "adm1:fin-3183"
+      ],
+      "name": null,
+      "anchorName": "南博滕区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fin-ae6a67db81",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3184",
+        "adm1:fin-3187"
+      ],
+      "name": null,
+      "anchorName": "派耶特海梅区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fin-4cfdaa3f5b",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3188",
+        "adm1:fin-3189"
+      ],
+      "name": null,
+      "anchorName": "南萨沃尼亚区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3190",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3190"
+      ],
+      "name": "北卡累利阿区",
+      "anchorName": "北卡累利阿区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fin-3191",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3191"
+      ],
+      "name": "西南芬蘭區",
+      "anchorName": "西南芬蘭區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fin-354bacb533",
+      "countryCode": "FIN",
+      "region": "europe",
+      "members": [
+        "adm1:fin-3185",
+        "adm1:fin-3186",
+        "adm1:fin-3192",
+        "adm1:fin-3193"
+      ],
+      "name": null,
+      "anchorName": "新地区",
+      "archipelagoException": false,
+      "cityIds": [
+        "helsinki"
+      ]
+    },
+    {
+      "territoryId": "adm1:flk-5152",
+      "countryCode": "FLK",
+      "region": "south-america",
+      "members": [
+        "adm1:flk-5152"
+      ],
+      "name": "福克兰群岛",
+      "anchorName": "福克兰群岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fra-1442",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-1442"
+      ],
+      "name": "马提尼克",
+      "anchorName": "马提尼克",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fra-2000",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-2000"
+      ],
+      "name": "法属圭亚那",
+      "anchorName": "法属圭亚那",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fra-4601",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-4601"
+      ],
+      "name": "留尼汪",
+      "anchorName": "留尼汪",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fra-4602",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-4602"
+      ],
+      "name": "马约特",
+      "anchorName": "马约特",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fra-4603",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-4603"
+      ],
+      "name": "瓜德罗普",
+      "anchorName": "瓜德罗普",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-821e485548",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5262",
+        "adm1:fra-5302",
+        "adm1:fra-5341"
+      ],
+      "name": null,
+      "anchorName": "萨瓦省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-6c2191aaaa",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5263",
+        "adm1:fra-5268",
+        "adm1:fra-5323"
+      ],
+      "name": null,
+      "anchorName": "马恩省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-ed7dcbbfba",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5269",
+        "adm1:fra-5271",
+        "adm1:fra-5337"
+      ],
+      "name": null,
+      "anchorName": "奥德省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-c7e70c7da0",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5273",
+        "adm1:fra-5296",
+        "adm1:fra-5348",
+        "adm1:fra-5355"
+      ],
+      "name": null,
+      "anchorName": "孚日省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-76ccdfd8f1",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5277",
+        "adm1:fra-5278"
+      ],
+      "name": null,
+      "anchorName": "滨海夏朗德省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-272bcc768d",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5280",
+        "adm1:fra-5284",
+        "adm1:fra-5303"
+      ],
+      "name": null,
+      "anchorName": "科雷兹省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-b5ee1fcba9",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5281",
+        "adm1:fra-5297"
+      ],
+      "name": null,
+      "anchorName": "上科西嘉",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-931e381fec",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5270",
+        "adm1:fra-5282",
+        "adm1:fra-5300",
+        "adm1:fra-5356"
+      ],
+      "name": null,
+      "anchorName": "科多尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-36a21ddfbb",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5288",
+        "adm1:fra-5311"
+      ],
+      "name": null,
+      "anchorName": "伊泽尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-df486fc9b1",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5289",
+        "adm1:fra-5291",
+        "adm1:fra-5306",
+        "adm1:fra-5333",
+        "adm1:fra-5342",
+        "adm1:fra-5344",
+        "adm1:fra-5350",
+        "adm1:fra-5357"
+      ],
+      "name": null,
+      "anchorName": "巴黎",
+      "archipelagoException": false,
+      "cityIds": [
+        "paris"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-fra-d1ec8a632b",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5283",
+        "adm1:fra-5292",
+        "adm1:fra-5327"
+      ],
+      "name": null,
+      "anchorName": "阿摩尔滨海省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-3914b0b965",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5267",
+        "adm1:fra-5276",
+        "adm1:fra-5293",
+        "adm1:fra-5299",
+        "adm1:fra-5320"
+      ],
+      "name": null,
+      "anchorName": "加尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-b4083d13c7",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5294",
+        "adm1:fra-5298",
+        "adm1:fra-5347"
+      ],
+      "name": null,
+      "anchorName": "上加龙省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-6d201a9f69",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5287",
+        "adm1:fra-5301",
+        "adm1:fra-5312"
+      ],
+      "name": null,
+      "anchorName": "上索恩省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-9d4f07f217",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5295",
+        "adm1:fra-5305",
+        "adm1:fra-5313",
+        "adm1:fra-5336"
+      ],
+      "name": null,
+      "anchorName": "吉伦特省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-36972ee741",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5272",
+        "adm1:fra-5307",
+        "adm1:fra-5346"
+      ],
+      "name": null,
+      "anchorName": "阿韦龙省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-cef0ec4aa4",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5285",
+        "adm1:fra-5309",
+        "adm1:fra-5310",
+        "adm1:fra-5354"
+      ],
+      "name": null,
+      "anchorName": "維埃納省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-24206dd720",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5314",
+        "adm1:fra-5317"
+      ],
+      "name": null,
+      "anchorName": "卢瓦雷省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-0169f43024",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5286",
+        "adm1:fra-5318",
+        "adm1:fra-5319"
+      ],
+      "name": null,
+      "anchorName": "多尔多涅省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-3f5b384fed",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5308",
+        "adm1:fra-5321",
+        "adm1:fra-5324",
+        "adm1:fra-5340"
+      ],
+      "name": null,
+      "anchorName": "曼恩-卢瓦尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-cdf9cf78a4",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5275",
+        "adm1:fra-5322",
+        "adm1:fra-5332"
+      ],
+      "name": null,
+      "anchorName": "奥恩省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-bde69472cd",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5325",
+        "adm1:fra-5326",
+        "adm1:fra-5328"
+      ],
+      "name": null,
+      "anchorName": "默兹省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-d3111f4c19",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5279",
+        "adm1:fra-5329"
+      ],
+      "name": null,
+      "anchorName": "谢尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-6ff50bf955",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5290",
+        "adm1:fra-5330",
+        "adm1:fra-5331",
+        "adm1:fra-5334",
+        "adm1:fra-5343",
+        "adm1:fra-5345",
+        "adm1:fra-5349"
+      ],
+      "name": null,
+      "anchorName": "加来海峡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-fra-e26a1a3048",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5264",
+        "adm1:fra-5315",
+        "adm1:fra-5335",
+        "adm1:fra-5338",
+        "adm1:fra-5339"
+      ],
+      "name": null,
+      "anchorName": "罗讷省",
+      "archipelagoException": false,
+      "cityIds": [
+        "lyon"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-fra-11e6bb15b2",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5265",
+        "adm1:fra-5266",
+        "adm1:fra-5274",
+        "adm1:fra-5304",
+        "adm1:fra-5351",
+        "adm1:fra-5352"
+      ],
+      "name": null,
+      "anchorName": "罗讷河口省",
+      "archipelagoException": false,
+      "cityIds": [
+        "marseille"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-fra-005f3c4156",
+      "countryCode": "FRA",
+      "region": "europe",
+      "members": [
+        "adm1:fra-5316",
+        "adm1:fra-5353"
+      ],
+      "name": null,
+      "anchorName": "大西洋卢瓦尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:fro-1443",
+      "countryCode": "FRO",
+      "region": "europe",
+      "members": [
+        "adm1:fro-1443"
+      ],
+      "name": "东岛",
+      "anchorName": "东岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-f9c96ad579",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2001",
+        "adm1:gbr-2002",
+        "adm1:gbr-2003",
+        "adm1:gbr-2004",
+        "adm1:gbr-2005",
+        "adm1:gbr-2006",
+        "adm1:gbr-2007",
+        "adm1:gbr-2008",
+        "adm1:gbr-2010",
+        "adm1:gbr-2015",
+        "adm1:gbr-2025"
+      ],
+      "name": null,
+      "anchorName": "格拉斯哥",
+      "archipelagoException": false,
+      "cityIds": [
+        "glasgow"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-4b32caf78e",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2009",
+        "adm1:gbr-2138"
+      ],
+      "name": null,
+      "anchorName": "邓弗里斯-加洛韦",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-6fbe08afe3",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2011",
+        "adm1:gbr-2016",
+        "adm1:gbr-2017",
+        "adm1:gbr-2018",
+        "adm1:gbr-2019",
+        "adm1:gbr-2020",
+        "adm1:gbr-2021"
+      ],
+      "name": null,
+      "anchorName": "珀斯-金罗斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-b4ec93d2a7",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2012",
+        "adm1:gbr-2013",
+        "adm1:gbr-2014"
+      ],
+      "name": null,
+      "anchorName": "阿伯丁郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-0ec34c6423",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2022",
+        "adm1:gbr-2023",
+        "adm1:gbr-2024",
+        "adm1:gbr-2026"
+      ],
+      "name": null,
+      "anchorName": "爱丁堡",
+      "archipelagoException": false,
+      "cityIds": [
+        "edinburgh"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-d09442624a",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2039",
+        "adm1:gbr-2750",
+        "adm1:gbr-2776",
+        "adm1:gbr-5690",
+        "adm1:gbr-5691",
+        "adm1:gbr-5692",
+        "adm1:gbr-5695",
+        "adm1:gbr-5696"
+      ],
+      "name": null,
+      "anchorName": "伯明翰",
+      "archipelagoException": false,
+      "cityIds": [
+        "birmingham"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-7ce84a6822",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2043",
+        "adm1:gbr-2044",
+        "adm1:gbr-2045",
+        "adm1:gbr-2046",
+        "adm1:gbr-2047",
+        "adm1:gbr-2050",
+        "adm1:gbr-2051",
+        "adm1:gbr-2052",
+        "adm1:gbr-2756",
+        "adm1:gbr-2757"
+      ],
+      "name": null,
+      "anchorName": "森麻實郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-f2304ab5fe",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2031",
+        "adm1:gbr-2032",
+        "adm1:gbr-2033",
+        "adm1:gbr-2055",
+        "adm1:gbr-2120",
+        "adm1:gbr-2124",
+        "adm1:gbr-2140",
+        "adm1:gbr-5671",
+        "adm1:gbr-5673",
+        "adm1:gbr-5674",
+        "adm1:gbr-5675",
+        "adm1:gbr-5686",
+        "adm1:gbr-5687",
+        "adm1:gbr-5688",
+        "adm1:gbr-5689"
+      ],
+      "name": null,
+      "anchorName": "里茲市",
+      "archipelagoException": false,
+      "cityIds": [
+        "leeds"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-8f9299551d",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2058",
+        "adm1:gbr-2059",
+        "adm1:gbr-2777",
+        "adm1:gbr-2778",
+        "adm1:gbr-5693",
+        "adm1:gbr-5694"
+      ],
+      "name": null,
+      "anchorName": "伍尔弗汉普顿",
+      "archipelagoException": false,
+      "cityIds": [
+        "wolverhampton"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-73a1273852",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2060",
+        "adm1:gbr-2061",
+        "adm1:gbr-2062",
+        "adm1:gbr-2063",
+        "adm1:gbr-2064",
+        "adm1:gbr-2065",
+        "adm1:gbr-2066",
+        "adm1:gbr-2067",
+        "adm1:gbr-2068",
+        "adm1:gbr-2069",
+        "adm1:gbr-2070",
+        "adm1:gbr-2071",
+        "adm1:gbr-2072",
+        "adm1:gbr-2073",
+        "adm1:gbr-2074",
+        "adm1:gbr-2075",
+        "adm1:gbr-2076",
+        "adm1:gbr-2077",
+        "adm1:gbr-2078",
+        "adm1:gbr-2079",
+        "adm1:gbr-2080",
+        "adm1:gbr-2675",
+        "adm1:gbr-2753",
+        "adm1:gbr-2754",
+        "adm1:gbr-2755",
+        "adm1:gbr-2765",
+        "adm1:gbr-2766",
+        "adm1:gbr-2767",
+        "adm1:gbr-2768",
+        "adm1:gbr-2769",
+        "adm1:gbr-2770",
+        "adm1:gbr-2771",
+        "adm1:gbr-4809",
+        "adm1:gbr-5701",
+        "adm1:gbr-5702",
+        "adm1:gbr-5703",
+        "adm1:gbr-5704",
+        "adm1:gbr-5705"
+      ],
+      "name": null,
+      "anchorName": "威斯敏斯特",
+      "archipelagoException": false,
+      "cityIds": [
+        "london"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-cbafbb042a",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2082",
+        "adm1:gbr-2085",
+        "adm1:gbr-2086",
+        "adm1:gbr-2087",
+        "adm1:gbr-2088",
+        "adm1:gbr-2090",
+        "adm1:gbr-2092",
+        "adm1:gbr-2094",
+        "adm1:gbr-2095",
+        "adm1:gbr-2096",
+        "adm1:gbr-2097",
+        "adm1:gbr-2098",
+        "adm1:gbr-2099",
+        "adm1:gbr-2100",
+        "adm1:gbr-2101",
+        "adm1:gbr-2103",
+        "adm1:gbr-2137",
+        "adm1:gbr-2773"
+      ],
+      "name": null,
+      "anchorName": "贝尔法斯特区",
+      "archipelagoException": false,
+      "cityIds": [
+        "belfast"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-e48bd0fa18",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2104",
+        "adm1:gbr-2105",
+        "adm1:gbr-2106",
+        "adm1:gbr-2119"
+      ],
+      "name": null,
+      "anchorName": "卡马森郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2110",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2110"
+      ],
+      "name": "康沃爾郡",
+      "anchorName": "康沃爾郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-b53a89534a",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2121",
+        "adm1:gbr-2779"
+      ],
+      "name": null,
+      "anchorName": "什罗普郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-d120cfb9a3",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2108",
+        "adm1:gbr-2125",
+        "adm1:gbr-2126",
+        "adm1:gbr-2127",
+        "adm1:gbr-2774",
+        "adm1:gbr-5666",
+        "adm1:gbr-5668",
+        "adm1:gbr-5669",
+        "adm1:gbr-5683",
+        "adm1:gbr-5706",
+        "adm1:gbr-5707",
+        "adm1:gbr-5708"
+      ],
+      "name": null,
+      "anchorName": "利物浦",
+      "archipelagoException": false,
+      "cityIds": [
+        "liverpool"
+      ]
+    },
+    {
+      "territoryId": "adm1:gbr-2128",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2128"
+      ],
+      "name": "安格尔西岛",
+      "anchorName": "安格尔西岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-48501eec39",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2129",
+        "adm1:gbr-2130"
+      ],
+      "name": null,
+      "anchorName": "格温内斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-3ee65ce8f1",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2111",
+        "adm1:gbr-2112",
+        "adm1:gbr-2113",
+        "adm1:gbr-2114",
+        "adm1:gbr-2115",
+        "adm1:gbr-2116",
+        "adm1:gbr-2117",
+        "adm1:gbr-2118",
+        "adm1:gbr-2131",
+        "adm1:gbr-2132",
+        "adm1:gbr-2133",
+        "adm1:gbr-2134",
+        "adm1:gbr-2775"
+      ],
+      "name": null,
+      "anchorName": "加地夫",
+      "archipelagoException": false,
+      "cityIds": [
+        "cardiff"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-c84f601eaf",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2083",
+        "adm1:gbr-2084",
+        "adm1:gbr-2089",
+        "adm1:gbr-2091",
+        "adm1:gbr-2093",
+        "adm1:gbr-2102",
+        "adm1:gbr-2135",
+        "adm1:gbr-2136"
+      ],
+      "name": null,
+      "anchorName": "弗马纳区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2139",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2139"
+      ],
+      "name": "坎布里亚",
+      "anchorName": "坎布里亚",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-18db25e3fa",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2048",
+        "adm1:gbr-2141",
+        "adm1:gbr-2142"
+      ],
+      "name": null,
+      "anchorName": "德文郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2318",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2318"
+      ],
+      "name": "薩福克郡",
+      "anchorName": "薩福克郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2319",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2319"
+      ],
+      "name": "诺福克郡",
+      "anchorName": "诺福克郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-141a28fd8d",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2674",
+        "adm1:gbr-2677",
+        "adm1:gbr-2678",
+        "adm1:gbr-2748",
+        "adm1:gbr-3409"
+      ],
+      "name": null,
+      "anchorName": "布莱顿-霍夫",
+      "archipelagoException": false,
+      "cityIds": [
+        "brighton"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-489ee892ce",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2317",
+        "adm1:gbr-2676",
+        "adm1:gbr-2679"
+      ],
+      "name": null,
+      "anchorName": "埃塞克斯郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2744",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2744"
+      ],
+      "name": "奥克尼群岛",
+      "anchorName": "奥克尼群岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2745",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2745"
+      ],
+      "name": "高地",
+      "anchorName": "高地",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2746",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2746"
+      ],
+      "name": "阿盖尔-比特",
+      "anchorName": "阿盖尔-比特",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2747",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2747"
+      ],
+      "name": "设得兰",
+      "anchorName": "设得兰",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:gbr-2758",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2758"
+      ],
+      "name": "怀特岛郡",
+      "anchorName": "怀特岛郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-85a18c18b8",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2038",
+        "adm1:gbr-2053",
+        "adm1:gbr-2054",
+        "adm1:gbr-2749",
+        "adm1:gbr-2760",
+        "adm1:gbr-2761",
+        "adm1:gbr-5698"
+      ],
+      "name": null,
+      "anchorName": "莱斯特",
+      "archipelagoException": false,
+      "cityIds": [
+        "leicester"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-a9e4fd66ce",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2056",
+        "adm1:gbr-2057",
+        "adm1:gbr-2081",
+        "adm1:gbr-2762",
+        "adm1:gbr-2763",
+        "adm1:gbr-2764"
+      ],
+      "name": null,
+      "anchorName": "诺丁汉",
+      "archipelagoException": false,
+      "cityIds": [
+        "nottingham"
+      ]
+    },
+    {
+      "territoryId": "adm1:gbr-2772",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2772"
+      ],
+      "name": "埃利安锡尔",
+      "anchorName": "埃利安锡尔",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-b983dba775",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2028",
+        "adm1:gbr-2029",
+        "adm1:gbr-2030",
+        "adm1:gbr-2034",
+        "adm1:gbr-5661",
+        "adm1:gbr-5662",
+        "adm1:gbr-5663",
+        "adm1:gbr-5664",
+        "adm1:gbr-5665"
+      ],
+      "name": null,
+      "anchorName": "泰恩河畔纽卡斯尔",
+      "archipelagoException": false,
+      "cityIds": [
+        "newcastle"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-a7f60c5d7b",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2122",
+        "adm1:gbr-2123",
+        "adm1:gbr-5667",
+        "adm1:gbr-5670",
+        "adm1:gbr-5672",
+        "adm1:gbr-5676",
+        "adm1:gbr-5677",
+        "adm1:gbr-5678",
+        "adm1:gbr-5679",
+        "adm1:gbr-5680",
+        "adm1:gbr-5681",
+        "adm1:gbr-5682",
+        "adm1:gbr-5684",
+        "adm1:gbr-5685"
+      ],
+      "name": null,
+      "anchorName": "曼彻斯特",
+      "archipelagoException": false,
+      "cityIds": [
+        "manchester"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-gbr-2271ea7ed1",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2040",
+        "adm1:gbr-2042",
+        "adm1:gbr-2751",
+        "adm1:gbr-2752",
+        "adm1:gbr-5697"
+      ],
+      "name": null,
+      "anchorName": "牛津郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-gbr-bf33aaddb1",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-2035",
+        "adm1:gbr-2036",
+        "adm1:gbr-2759",
+        "adm1:gbr-5699",
+        "adm1:gbr-5700"
+      ],
+      "name": null,
+      "anchorName": "南安普敦",
+      "archipelagoException": false,
+      "cityIds": [
+        "southampton"
+      ]
+    },
+    {
+      "territoryId": "adm1:gbr-5988",
+      "countryCode": "GBR",
+      "region": "europe",
+      "members": [
+        "adm1:gbr-5988"
+      ],
+      "name": "锡利群岛",
+      "anchorName": "锡利群岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ggy-00",
+      "countryCode": "GGY",
+      "region": "europe",
+      "members": [
+        "adm1:ggy-00"
+      ],
+      "name": "萨克岛",
+      "anchorName": "萨克岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:grc-2883",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2883"
+      ],
+      "name": "伊奧尼亞群島區",
+      "anchorName": "伊奧尼亞群島區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-grc-06c1b8d72e",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2884",
+        "adm1:grc-2885"
+      ],
+      "name": null,
+      "anchorName": "阿提卡",
+      "archipelagoException": false,
+      "cityIds": [
+        "athens"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-grc-0bde912c2c",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2886",
+        "adm1:grc-2989"
+      ],
+      "name": null,
+      "anchorName": "中希腊",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:grc-2900",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2900"
+      ],
+      "name": "色萨利",
+      "anchorName": "色萨利",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-grc-9228fe3703",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2892",
+        "adm1:grc-2949"
+      ],
+      "name": null,
+      "anchorName": "西马其顿",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:grc-2988",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2988"
+      ],
+      "name": "北爱琴",
+      "anchorName": "北爱琴",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:grc-2990",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2990"
+      ],
+      "name": "克里特",
+      "anchorName": "克里特",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-grc-2c0d841521",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-2991",
+        "adm1:grc-2992"
+      ],
+      "name": null,
+      "anchorName": "中马其顿",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:grc-3001",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-3001"
+      ],
+      "name": "东马其顿-色雷斯",
+      "anchorName": "东马其顿-色雷斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:grc-3013",
+      "countryCode": "GRC",
+      "region": "europe",
+      "members": [
+        "adm1:grc-3013"
+      ],
+      "name": "南爱琴",
+      "anchorName": "南爱琴",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:guy-671",
+      "countryCode": "GUY",
+      "region": "south-america",
+      "members": [
+        "adm1:guy-671"
+      ],
+      "name": "马海卡-伯比斯区",
+      "anchorName": "马海卡-伯比斯区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:guy-672",
+      "countryCode": "GUY",
+      "region": "south-america",
+      "members": [
+        "adm1:guy-672"
+      ],
+      "name": "波塔罗-锡帕鲁尼区",
+      "anchorName": "波塔罗-锡帕鲁尼区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:guy-674",
+      "countryCode": "GUY",
+      "region": "south-america",
+      "members": [
+        "adm1:guy-674"
+      ],
+      "name": "上德梅拉拉-伯比斯区",
+      "anchorName": "上德梅拉拉-伯比斯区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-guy-1cabfe7735",
+      "countryCode": "GUY",
+      "region": "south-america",
+      "members": [
+        "adm1:guy-675",
+        "adm1:guy-676",
+        "adm1:guy-680"
+      ],
+      "name": null,
+      "anchorName": "波默伦-苏佩纳姆区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-guy-a1ad8fb5fc",
+      "countryCode": "GUY",
+      "region": "south-america",
+      "members": [
+        "adm1:guy-673",
+        "adm1:guy-677",
+        "adm1:guy-678",
+        "adm1:guy-679"
+      ],
+      "name": null,
+      "anchorName": "上塔库图-上埃塞奎博",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hrv-30b953248b",
+      "countryCode": "HRV",
+      "region": "europe",
+      "members": [
+        "adm1:hrv-1490",
+        "adm1:hrv-1491",
+        "adm1:hrv-1492",
+        "adm1:hrv-1493"
+      ],
+      "name": null,
+      "anchorName": "扎达尔县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hrv-c3ae5b1a69",
+      "countryCode": "HRV",
+      "region": "europe",
+      "members": [
+        "adm1:hrv-1582",
+        "adm1:hrv-1587",
+        "adm1:hrv-1588",
+        "adm1:hrv-1589"
+      ],
+      "name": null,
+      "anchorName": "萨格勒布",
+      "archipelagoException": false,
+      "cityIds": [
+        "zagreb"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-hrv-d80b480670",
+      "countryCode": "HRV",
+      "region": "europe",
+      "members": [
+        "adm1:hrv-1583",
+        "adm1:hrv-1584"
+      ],
+      "name": null,
+      "anchorName": "利卡-塞尼县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hrv-fc232e0870",
+      "countryCode": "HRV",
+      "region": "europe",
+      "members": [
+        "adm1:hrv-1586",
+        "adm1:hrv-1592"
+      ],
+      "name": null,
+      "anchorName": "滨海和山区县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hrv-04c2d0473d",
+      "countryCode": "HRV",
+      "region": "europe",
+      "members": [
+        "adm1:hrv-1602",
+        "adm1:hrv-1603",
+        "adm1:hrv-1604",
+        "adm1:hrv-1605"
+      ],
+      "name": null,
+      "anchorName": "奥西耶克-巴拉尼亚县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hrv-01c82f5e23",
+      "countryCode": "HRV",
+      "region": "europe",
+      "members": [
+        "adm1:hrv-1606",
+        "adm1:hrv-1607",
+        "adm1:hrv-1608",
+        "adm1:hrv-1609",
+        "adm1:hrv-1610"
+      ],
+      "name": null,
+      "anchorName": "别洛瓦尔-比洛戈拉县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-c013ce40e0",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3156",
+        "adm1:hun-3158",
+        "adm1:hun-4904",
+        "adm1:hun-4905",
+        "adm1:hun-4909"
+      ],
+      "name": null,
+      "anchorName": "维斯普雷姆州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-4bc62f774a",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3162",
+        "adm1:hun-3163",
+        "adm1:hun-4906",
+        "adm1:hun-4908",
+        "adm1:hun-4925"
+      ],
+      "name": null,
+      "anchorName": "费耶尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-89c153cafa",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3138",
+        "adm1:hun-3159",
+        "adm1:hun-4903",
+        "adm1:hun-4910",
+        "adm1:hun-4911"
+      ],
+      "name": null,
+      "anchorName": "沃什州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-ca002fd993",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3155",
+        "adm1:hun-3157",
+        "adm1:hun-4912",
+        "adm1:hun-4913"
+      ],
+      "name": null,
+      "anchorName": "绍莫吉州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-ee1eed225e",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3161",
+        "adm1:hun-3165",
+        "adm1:hun-4914",
+        "adm1:hun-4915"
+      ],
+      "name": null,
+      "anchorName": "巴奇-基什孔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-ba2c4c0a41",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3171",
+        "adm1:hun-3172",
+        "adm1:hun-4916",
+        "adm1:hun-4917",
+        "adm1:hun-4919"
+      ],
+      "name": null,
+      "anchorName": "贝凯什州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-8921910693",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3160",
+        "adm1:hun-3164",
+        "adm1:hun-3166",
+        "adm1:hun-3174",
+        "adm1:hun-3175",
+        "adm1:hun-4907",
+        "adm1:hun-4918",
+        "adm1:hun-4920",
+        "adm1:hun-4921"
+      ],
+      "name": null,
+      "anchorName": "布达佩斯",
+      "archipelagoException": false,
+      "cityIds": [
+        "budapest"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-hun-066ca038a7",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3168",
+        "adm1:hun-4922"
+      ],
+      "name": null,
+      "anchorName": "包尔绍德-奥包乌伊-曾普伦州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-d80875b483",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3169",
+        "adm1:hun-4923"
+      ],
+      "name": null,
+      "anchorName": "索博尔奇-索特马尔-贝拉格州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-hun-ddc42cde35",
+      "countryCode": "HUN",
+      "region": "europe",
+      "members": [
+        "adm1:hun-3173",
+        "adm1:hun-4924"
+      ],
+      "name": null,
+      "anchorName": "豪伊杜-比豪尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:imn-00",
+      "countryCode": "IMN",
+      "region": "europe",
+      "members": [
+        "adm1:imn-00"
+      ],
+      "name": "马恩岛",
+      "anchorName": "马恩岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-irl-703e3e2c4c",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-3412",
+        "adm1:irl-5574",
+        "adm1:irl-5575",
+        "adm1:irl-712",
+        "adm1:irl-715",
+        "adm1:irl-79"
+      ],
+      "name": null,
+      "anchorName": "都柏林地区",
+      "archipelagoException": false,
+      "cityIds": [
+        "dublin"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-irl-03f304d7d6",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-5568",
+        "adm1:irl-713"
+      ],
+      "name": null,
+      "anchorName": "戈尔韦郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-irl-cb68a069dd",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-5569",
+        "adm1:irl-78"
+      ],
+      "name": null,
+      "anchorName": "科克郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-irl-1119587b5d",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-5570",
+        "adm1:irl-726",
+        "adm1:irl-76"
+      ],
+      "name": null,
+      "anchorName": "克莱尔郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:irl-714",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-714"
+      ],
+      "name": "梅奥郡",
+      "anchorName": "梅奥郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-irl-03d1dbe645",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-5573",
+        "adm1:irl-5576",
+        "adm1:irl-716",
+        "adm1:irl-717",
+        "adm1:irl-719",
+        "adm1:irl-721",
+        "adm1:irl-723",
+        "adm1:irl-731"
+      ],
+      "name": null,
+      "anchorName": "奥法利郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:irl-725",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-725"
+      ],
+      "name": "凯里郡",
+      "anchorName": "凯里郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-irl-8f1e27abe8",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-727",
+        "adm1:irl-728",
+        "adm1:irl-730"
+      ],
+      "name": null,
+      "anchorName": "罗斯康芒郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:irl-729",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-729"
+      ],
+      "name": "多尼戈尔郡",
+      "anchorName": "多尼戈尔郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-irl-897bd45615",
+      "countryCode": "IRL",
+      "region": "europe",
+      "members": [
+        "adm1:irl-1444",
+        "adm1:irl-5571",
+        "adm1:irl-5572",
+        "adm1:irl-718",
+        "adm1:irl-722",
+        "adm1:irl-724",
+        "adm1:irl-77"
+      ],
+      "name": null,
+      "anchorName": "韦克斯福德郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-isl-7996480106",
+      "countryCode": "ISL",
+      "region": "europe",
+      "members": [
+        "adm1:isl-5131",
+        "adm1:isl-704",
+        "adm1:isl-705",
+        "adm1:isl-709"
+      ],
+      "name": null,
+      "anchorName": "雷克雅未克",
+      "archipelagoException": false,
+      "cityIds": [
+        "reykjavik"
+      ]
+    },
+    {
+      "territoryId": "adm1:isl-690",
+      "countryCode": "ISL",
+      "region": "europe",
+      "members": [
+        "adm1:isl-690"
+      ],
+      "name": "西峡湾区",
+      "anchorName": "西峡湾区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:isl-695",
+      "countryCode": "ISL",
+      "region": "europe",
+      "members": [
+        "adm1:isl-695"
+      ],
+      "name": "东部区",
+      "anchorName": "东部区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:isl-697",
+      "countryCode": "ISL",
+      "region": "europe",
+      "members": [
+        "adm1:isl-697"
+      ],
+      "name": "西北区",
+      "anchorName": "西北区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:isl-702",
+      "countryCode": "ISL",
+      "region": "europe",
+      "members": [
+        "adm1:isl-702"
+      ],
+      "name": "东北区",
+      "anchorName": "东北区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:isl-710",
+      "countryCode": "ISL",
+      "region": "europe",
+      "members": [
+        "adm1:isl-710"
+      ],
+      "name": "西部区",
+      "anchorName": "西部区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-a5a15cb6a8",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5360",
+        "adm1:ita-5361",
+        "adm1:ita-5370",
+        "adm1:ita-5382"
+      ],
+      "name": null,
+      "anchorName": "帕爾馬省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-00436988b3",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5366",
+        "adm1:ita-5428",
+        "adm1:ita-5432"
+      ],
+      "name": null,
+      "anchorName": "佩魯賈省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-c8adb9fe9d",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5367",
+        "adm1:ita-5439",
+        "adm1:ita-5440"
+      ],
+      "name": null,
+      "anchorName": "亚历山德里亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-9988c7bdb3",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5368",
+        "adm1:ita-5369",
+        "adm1:ita-5441"
+      ],
+      "name": null,
+      "anchorName": "库内奥省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-529b9fd1c8",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5371",
+        "adm1:ita-5372",
+        "adm1:ita-5378"
+      ],
+      "name": null,
+      "anchorName": "卡利亚里省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-09e12f9d73",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5373",
+        "adm1:ita-5376",
+        "adm1:ita-5377"
+      ],
+      "name": null,
+      "anchorName": "努奥罗省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-f36ed18461",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5374",
+        "adm1:ita-5375"
+      ],
+      "name": null,
+      "anchorName": "萨萨里省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-48998970fa",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5379",
+        "adm1:ita-5380",
+        "adm1:ita-5387",
+        "adm1:ita-5388"
+      ],
+      "name": null,
+      "anchorName": "格羅塞托省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-7eb83ff5e5",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5381",
+        "adm1:ita-5383",
+        "adm1:ita-5384",
+        "adm1:ita-5385",
+        "adm1:ita-5386"
+      ],
+      "name": null,
+      "anchorName": "佛罗伦斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-703aa93d6f",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5391",
+        "adm1:ita-5392"
+      ],
+      "name": null,
+      "anchorName": "科森札省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-3db8804fa1",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5393",
+        "adm1:ita-5394",
+        "adm1:ita-5395"
+      ],
+      "name": null,
+      "anchorName": "雷焦卡拉布里亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-18d55a628a",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5399",
+        "adm1:ita-5400"
+      ],
+      "name": null,
+      "anchorName": "萨莱诺省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-9887623167",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5389",
+        "adm1:ita-5390",
+        "adm1:ita-5403"
+      ],
+      "name": null,
+      "anchorName": "波坦察省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-6c7ad782dd",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5404",
+        "adm1:ita-5405"
+      ],
+      "name": null,
+      "anchorName": "福贾省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-9b56b6689d",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5406",
+        "adm1:ita-5407",
+        "adm1:ita-5408"
+      ],
+      "name": null,
+      "anchorName": "莱切省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-f2a4607a2c",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5411",
+        "adm1:ita-5413"
+      ],
+      "name": null,
+      "anchorName": "卡塔尼亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-3e16777b51",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5412",
+        "adm1:ita-5414",
+        "adm1:ita-5415",
+        "adm1:ita-5416"
+      ],
+      "name": null,
+      "anchorName": "恩纳省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-3a6787f78c",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5409",
+        "adm1:ita-5410",
+        "adm1:ita-5417"
+      ],
+      "name": null,
+      "anchorName": "巴勒莫省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-960d912494",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5418",
+        "adm1:ita-5419",
+        "adm1:ita-5420",
+        "adm1:ita-5421"
+      ],
+      "name": null,
+      "anchorName": "阿奎拉省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-cec3218bc6",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5422",
+        "adm1:ita-5424"
+      ],
+      "name": null,
+      "anchorName": "罗马省",
+      "archipelagoException": false,
+      "cityIds": [
+        "rome"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-ita-216cbba563",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5396",
+        "adm1:ita-5397",
+        "adm1:ita-5398",
+        "adm1:ita-5401",
+        "adm1:ita-5402",
+        "adm1:ita-5425",
+        "adm1:ita-5426"
+      ],
+      "name": null,
+      "anchorName": "那不勒斯省",
+      "archipelagoException": false,
+      "cityIds": [
+        "naples"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-ita-6214fd7d78",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5427",
+        "adm1:ita-5429",
+        "adm1:ita-5430",
+        "adm1:ita-5431"
+      ],
+      "name": null,
+      "anchorName": "马切拉塔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-ffba9cb895",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5423",
+        "adm1:ita-5433"
+      ],
+      "name": null,
+      "anchorName": "维泰博省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-f69a5083bc",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5434",
+        "adm1:ita-5442"
+      ],
+      "name": null,
+      "anchorName": "都灵省",
+      "archipelagoException": false,
+      "cityIds": [
+        "turin"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-ita-3e423dc938",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5443",
+        "adm1:ita-5444",
+        "adm1:ita-5452",
+        "adm1:ita-5453"
+      ],
+      "name": null,
+      "anchorName": "松德里奥省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-923e55929b",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5446",
+        "adm1:ita-5460",
+        "adm1:ita-5464",
+        "adm1:ita-5465"
+      ],
+      "name": null,
+      "anchorName": "特倫托自治省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-30c40bf28e",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5445",
+        "adm1:ita-5447"
+      ],
+      "name": null,
+      "anchorName": "布雷西亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-19fa739170",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5435",
+        "adm1:ita-5436",
+        "adm1:ita-5437",
+        "adm1:ita-5438",
+        "adm1:ita-5451"
+      ],
+      "name": null,
+      "anchorName": "韦尔巴诺-库西亚-奥索拉省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-f3a4bf0dc2",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5448",
+        "adm1:ita-5449",
+        "adm1:ita-5450",
+        "adm1:ita-5454"
+      ],
+      "name": null,
+      "anchorName": "米兰省",
+      "archipelagoException": false,
+      "cityIds": [
+        "milan"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-ita-594c980f0b",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5455",
+        "adm1:ita-5456",
+        "adm1:ita-5457",
+        "adm1:ita-5458",
+        "adm1:ita-5461",
+        "adm1:ita-5463",
+        "adm1:ita-5466",
+        "adm1:ita-5467"
+      ],
+      "name": null,
+      "anchorName": "乌迪内省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ita-5459",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5459"
+      ],
+      "name": "特伦蒂诺-上阿迪杰",
+      "anchorName": "特伦蒂诺-上阿迪杰",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ita-62c06e06ba",
+      "countryCode": "ITA",
+      "region": "europe",
+      "members": [
+        "adm1:ita-5358",
+        "adm1:ita-5359",
+        "adm1:ita-5362",
+        "adm1:ita-5363",
+        "adm1:ita-5364",
+        "adm1:ita-5365",
+        "adm1:ita-5462"
+      ],
+      "name": null,
+      "anchorName": "博洛尼亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:jey-00",
+      "countryCode": "JEY",
+      "region": "europe",
+      "members": [
+        "adm1:jey-00"
+      ],
+      "name": "泽西",
+      "anchorName": "泽西",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-kos-532dc7aaa1",
+      "countryCode": "KOS",
+      "region": "europe",
+      "members": [
+        "adm1:kos-5886",
+        "adm1:kos-5889",
+        "adm1:kos-5890",
+        "adm1:kos-5891"
+      ],
+      "name": null,
+      "anchorName": "佩奇",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-kos-23bd11056a",
+      "countryCode": "KOS",
+      "region": "europe",
+      "members": [
+        "adm1:kos-5887",
+        "adm1:kos-5888",
+        "adm1:kos-5892",
+        "adm1:kos-5893",
+        "adm1:kos-5894",
+        "adm1:kos-5895",
+        "adm1:kos-5896",
+        "adm1:kos-5897",
+        "adm1:kos-5899",
+        "adm1:kos-5900",
+        "adm1:kos-5901",
+        "adm1:kos-5902",
+        "adm1:kos-5906",
+        "adm1:kos-5911"
+      ],
+      "name": null,
+      "anchorName": "科索沃和梅托希亚自治省（1963-1968）",
+      "archipelagoException": false,
+      "cityIds": [
+        "pristina"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-kos-c0d8f0170e",
+      "countryCode": "KOS",
+      "region": "europe",
+      "members": [
+        "adm1:kos-5898",
+        "adm1:kos-5903",
+        "adm1:kos-5904",
+        "adm1:kos-5905",
+        "adm1:kos-5907",
+        "adm1:kos-5908",
+        "adm1:kos-5909",
+        "adm1:kos-5910",
+        "adm1:kos-5912",
+        "adm1:kos-5913",
+        "adm1:kos-5914",
+        "adm1:kos-5915"
+      ],
+      "name": null,
+      "anchorName": "普盧日內區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-lie-9c9f714651",
+      "countryCode": "LIE",
+      "region": "europe",
+      "members": [
+        "adm1:lie-4892",
+        "adm1:lie-4893",
+        "adm1:lie-4894",
+        "adm1:lie-4895",
+        "adm1:lie-4896",
+        "adm1:lie-4897",
+        "adm1:lie-4898",
+        "adm1:lie-4899",
+        "adm1:lie-4900",
+        "adm1:lie-4901",
+        "adm1:lie-4902"
+      ],
+      "name": null,
+      "anchorName": "特里森",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ltu-61c2085875",
+      "countryCode": "LTU",
+      "region": "europe",
+      "members": [
+        "adm1:ltu-1067",
+        "adm1:ltu-1069",
+        "adm1:ltu-1070"
+      ],
+      "name": null,
+      "anchorName": "考纳斯县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ltu-1071",
+      "countryCode": "LTU",
+      "region": "europe",
+      "members": [
+        "adm1:ltu-1071"
+      ],
+      "name": "帕内韦日斯县",
+      "anchorName": "帕内韦日斯县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ltu-1074",
+      "countryCode": "LTU",
+      "region": "europe",
+      "members": [
+        "adm1:ltu-1074"
+      ],
+      "name": "乌泰纳县",
+      "anchorName": "乌泰纳县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ltu-1075",
+      "countryCode": "LTU",
+      "region": "europe",
+      "members": [
+        "adm1:ltu-1075"
+      ],
+      "name": "维尔纽斯县",
+      "anchorName": "维尔纽斯县",
+      "archipelagoException": false,
+      "cityIds": [
+        "vilnius"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-ltu-b092244fc0",
+      "countryCode": "LTU",
+      "region": "europe",
+      "members": [
+        "adm1:ltu-1072",
+        "adm1:ltu-1073",
+        "adm1:ltu-935",
+        "adm1:ltu-936"
+      ],
+      "name": null,
+      "anchorName": "希奥利艾县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-lux-4eff26a6fd",
+      "countryCode": "LUX",
+      "region": "europe",
+      "members": [
+        "adm1:lux-906",
+        "adm1:lux-907",
+        "adm1:lux-908"
+      ],
+      "name": null,
+      "anchorName": "卢森堡",
+      "archipelagoException": false,
+      "cityIds": [
+        "luxembourg"
+      ]
+    },
+    {
+      "territoryId": "adm1:country-lva",
+      "countryCode": "LVA",
+      "region": "europe",
+      "members": [
+        "adm1:country-lva"
+      ],
+      "name": "拉脱维亚",
+      "anchorName": "拉脱维亚",
+      "archipelagoException": false,
+      "cityIds": [
+        "riga"
+      ]
+    },
+    {
+      "territoryId": "adm1:mco-00",
+      "countryCode": "MCO",
+      "region": "europe",
+      "members": [
+        "adm1:mco-00"
+      ],
+      "name": "摩纳哥城",
+      "anchorName": "摩纳哥城",
+      "archipelagoException": false,
+      "cityIds": [
+        "monaco"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-mda-2d7404f463",
+      "countryCode": "MDA",
+      "region": "europe",
+      "members": [
+        "adm1:mda-1613",
+        "adm1:mda-1614",
+        "adm1:mda-1615",
+        "adm1:mda-1616",
+        "adm1:mda-1617",
+        "adm1:mda-1619",
+        "adm1:mda-1620",
+        "adm1:mda-1621"
+      ],
+      "name": null,
+      "anchorName": "弗莱什蒂区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-mda-cb86218868",
+      "countryCode": "MDA",
+      "region": "europe",
+      "members": [
+        "adm1:mda-1624",
+        "adm1:mda-1625",
+        "adm1:mda-1626",
+        "adm1:mda-1631"
+      ],
+      "name": null,
+      "anchorName": "科姆拉特",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-mda-534facd174",
+      "countryCode": "MDA",
+      "region": "europe",
+      "members": [
+        "adm1:mda-1623",
+        "adm1:mda-1628",
+        "adm1:mda-1629",
+        "adm1:mda-1632",
+        "adm1:mda-1634",
+        "adm1:mda-1637",
+        "adm1:mda-1638",
+        "adm1:mda-1642",
+        "adm1:mda-1643",
+        "adm1:mda-1647"
+      ],
+      "name": null,
+      "anchorName": "温格内区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-mda-2c4787189b",
+      "countryCode": "MDA",
+      "region": "europe",
+      "members": [
+        "adm1:mda-1618",
+        "adm1:mda-1622",
+        "adm1:mda-1635",
+        "adm1:mda-1644",
+        "adm1:mda-1645",
+        "adm1:mda-1646",
+        "adm1:mda-1648",
+        "adm1:mda-1652",
+        "adm1:mda-1653"
+      ],
+      "name": null,
+      "anchorName": "森杰雷区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-mda-78c354a9b1",
+      "countryCode": "MDA",
+      "region": "europe",
+      "members": [
+        "adm1:mda-1627",
+        "adm1:mda-1630",
+        "adm1:mda-1633",
+        "adm1:mda-1639",
+        "adm1:mda-1640",
+        "adm1:mda-1641",
+        "adm1:mda-1649",
+        "adm1:mda-1650",
+        "adm1:mda-1651"
+      ],
+      "name": null,
+      "anchorName": "基希讷乌",
+      "archipelagoException": false,
+      "cityIds": [
+        "chisinau"
+      ]
+    },
+    {
+      "territoryId": "adm1:country-mkd",
+      "countryCode": "MKD",
+      "region": "europe",
+      "members": [
+        "adm1:country-mkd"
+      ],
+      "name": "北马其顿",
+      "anchorName": "北马其顿",
+      "archipelagoException": false,
+      "cityIds": [
+        "skopje"
+      ]
+    },
+    {
+      "territoryId": "adm1:country-mlt",
+      "countryCode": "MLT",
+      "region": "europe",
+      "members": [
+        "adm1:country-mlt"
+      ],
+      "name": "马耳他",
+      "anchorName": "马耳他",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-mne-40c0b47c11",
+      "countryCode": "MNE",
+      "region": "europe",
+      "members": [
+        "adm1:mne-1501",
+        "adm1:mne-1503",
+        "adm1:mne-1508",
+        "adm1:mne-1509",
+        "adm1:mne-1510",
+        "adm1:mne-1512",
+        "adm1:mne-1513"
+      ],
+      "name": null,
+      "anchorName": "科拉欣區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-mne-26fa1bf1b1",
+      "countryCode": "MNE",
+      "region": "europe",
+      "members": [
+        "adm1:mne-1496",
+        "adm1:mne-1497",
+        "adm1:mne-1499",
+        "adm1:mne-1500",
+        "adm1:mne-1506",
+        "adm1:mne-1507",
+        "adm1:mne-1511",
+        "adm1:mne-1517",
+        "adm1:mne-1518"
+      ],
+      "name": null,
+      "anchorName": "波德里查區",
+      "archipelagoException": false,
+      "cityIds": [
+        "podgorica"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-mne-b286430140",
+      "countryCode": "MNE",
+      "region": "europe",
+      "members": [
+        "adm1:mne-1514",
+        "adm1:mne-1515",
+        "adm1:mne-1516",
+        "adm1:mne-1519",
+        "adm1:mne-1520"
+      ],
+      "name": null,
+      "anchorName": "尼克希奇區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nld-3485",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-3485"
+      ],
+      "name": "南荷兰省",
+      "anchorName": "南荷兰省",
+      "archipelagoException": false,
+      "cityIds": [
+        "rotterdam"
+      ]
+    },
+    {
+      "territoryId": "adm1:nld-3486",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-3486"
+      ],
+      "name": "北荷兰省",
+      "anchorName": "北荷兰省",
+      "archipelagoException": false,
+      "cityIds": [
+        "amsterdam"
+      ]
+    },
+    {
+      "territoryId": "adm1:nld-5147",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-5147"
+      ],
+      "name": "薩巴",
+      "anchorName": "薩巴",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nld-5148",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-5148"
+      ],
+      "name": "圣尤斯特歇斯",
+      "anchorName": "圣尤斯特歇斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nld-5149",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-5149"
+      ],
+      "name": "博奈尔",
+      "anchorName": "博奈尔",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nld-895",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-895"
+      ],
+      "name": "弗里斯兰省",
+      "anchorName": "弗里斯兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nld-ba3a6b2674",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-894",
+        "adm1:nld-897"
+      ],
+      "name": null,
+      "anchorName": "德伦特省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nld-fd0c0ba93a",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-3483",
+        "adm1:nld-898",
+        "adm1:nld-903"
+      ],
+      "name": null,
+      "anchorName": "北布拉班特省",
+      "archipelagoException": false,
+      "cityIds": [
+        "eindhoven"
+      ]
+    },
+    {
+      "territoryId": "adm1:nld-899",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-899"
+      ],
+      "name": "上艾瑟尔省",
+      "anchorName": "上艾瑟尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nld-4b61bd784b",
+      "countryCode": "NLD",
+      "region": "europe",
+      "members": [
+        "adm1:nld-3484",
+        "adm1:nld-896",
+        "adm1:nld-902"
+      ],
+      "name": null,
+      "anchorName": "海尔德兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:bvt-00",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:bvt-00"
+      ],
+      "name": "布韦岛",
+      "anchorName": "布韦岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-1062",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-1062"
+      ],
+      "name": "芬马克",
+      "anchorName": "芬马克",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-75",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-75"
+      ],
+      "name": "诺尔兰郡",
+      "anchorName": "诺尔兰郡",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-900",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-900"
+      ],
+      "name": "特罗姆斯",
+      "anchorName": "特罗姆斯",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-901",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-901"
+      ],
+      "name": "斯瓦尔巴",
+      "anchorName": "斯瓦尔巴",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nor-045e3e3dc7",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-910",
+        "adm1:nor-920"
+      ],
+      "name": null,
+      "anchorName": "奥普兰",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-911",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-911"
+      ],
+      "name": "南特伦德拉格",
+      "anchorName": "南特伦德拉格",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nor-0d4110addd",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-913",
+        "adm1:nor-922",
+        "adm1:nor-923"
+      ],
+      "name": null,
+      "anchorName": "泰勒马克",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nor-4699d6b8a5",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-912",
+        "adm1:nor-914",
+        "adm1:nor-916"
+      ],
+      "name": null,
+      "anchorName": "东阿格德尔",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-915",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-915"
+      ],
+      "name": "松恩-菲尤拉讷",
+      "anchorName": "松恩-菲尤拉讷",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:nor-919",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-919"
+      ],
+      "name": "海德马克",
+      "anchorName": "海德马克",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-nor-5cc606c307",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-917",
+        "adm1:nor-918",
+        "adm1:nor-921",
+        "adm1:nor-924"
+      ],
+      "name": null,
+      "anchorName": "奥斯陆",
+      "archipelagoException": false,
+      "cityIds": [
+        "oslo"
+      ]
+    },
+    {
+      "territoryId": "adm1:nor-925",
+      "countryCode": "NOR",
+      "region": "europe",
+      "members": [
+        "adm1:nor-925"
+      ],
+      "name": "北特倫德拉格",
+      "anchorName": "北特倫德拉格",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-2a56cbf944",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-3505",
+        "adm1:per-587",
+        "adm1:per-591"
+      ],
+      "name": null,
+      "anchorName": "利马省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-f279d232f8",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-566",
+        "adm1:per-567",
+        "adm1:per-568"
+      ],
+      "name": null,
+      "anchorName": "皮乌拉地区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-bdba763385",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-569",
+        "adm1:per-571"
+      ],
+      "name": null,
+      "anchorName": "库斯科大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-570",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-570"
+      ],
+      "name": "阿雷基帕大区",
+      "anchorName": "阿雷基帕大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-572",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-572"
+      ],
+      "name": "马德雷德迪奥斯大区",
+      "anchorName": "马德雷德迪奥斯大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-e5a5cfe062",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-573",
+        "adm1:per-574",
+        "adm1:per-575"
+      ],
+      "name": null,
+      "anchorName": "普诺大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-578",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-578"
+      ],
+      "name": "卡哈马卡大区",
+      "anchorName": "卡哈马卡大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-ef532e5294",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-577",
+        "adm1:per-580"
+      ],
+      "name": null,
+      "anchorName": "安卡什大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-b1a8861704",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-579",
+        "adm1:per-581"
+      ],
+      "name": null,
+      "anchorName": "瓦努科大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-582",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-582"
+      ],
+      "name": "圣马丁大区",
+      "anchorName": "圣马丁大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-583",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-583"
+      ],
+      "name": "乌卡亚利大区",
+      "anchorName": "乌卡亚利大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-584",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-584"
+      ],
+      "name": "亚马孙大区",
+      "anchorName": "亚马孙大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-585",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-585"
+      ],
+      "name": "洛雷托大区",
+      "anchorName": "洛雷托大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-586",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-586"
+      ],
+      "name": "阿亚库乔大区",
+      "anchorName": "阿亚库乔大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-per-67afcf4673",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-588",
+        "adm1:per-589"
+      ],
+      "name": null,
+      "anchorName": "万卡韦利卡大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:per-590",
+      "countryCode": "PER",
+      "region": "south-america",
+      "members": [
+        "adm1:per-590"
+      ],
+      "name": "胡宁大区",
+      "anchorName": "胡宁大区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3139",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3139"
+      ],
+      "name": "瓦尔米亚-马祖里省",
+      "anchorName": "瓦尔米亚-马祖里省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3140",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3140"
+      ],
+      "name": "滨海省",
+      "anchorName": "滨海省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3141",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3141"
+      ],
+      "name": "下西里西亚省",
+      "anchorName": "下西里西亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3142",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3142"
+      ],
+      "name": "西波美拉尼亚省",
+      "anchorName": "西波美拉尼亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3143",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3143"
+      ],
+      "name": "卢布斯卡省",
+      "anchorName": "卢布斯卡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3144",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3144"
+      ],
+      "name": "大波兰省",
+      "anchorName": "大波兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3145",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3145"
+      ],
+      "name": "库亚维-波美拉尼亚省",
+      "anchorName": "库亚维-波美拉尼亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3146",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3146"
+      ],
+      "name": "西里西亚省",
+      "anchorName": "西里西亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3147",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3147"
+      ],
+      "name": "罗兹省",
+      "anchorName": "罗兹省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3148",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3148"
+      ],
+      "name": "马佐夫舍省",
+      "anchorName": "马佐夫舍省",
+      "archipelagoException": false,
+      "cityIds": [
+        "warsaw"
+      ]
+    },
+    {
+      "territoryId": "adm1:pol-3149",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3149"
+      ],
+      "name": "圣十字省",
+      "anchorName": "圣十字省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3150",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3150"
+      ],
+      "name": "波德拉谢省",
+      "anchorName": "波德拉谢省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3151",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3151"
+      ],
+      "name": "卢布林省",
+      "anchorName": "卢布林省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3152",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3152"
+      ],
+      "name": "喀尔巴阡山省",
+      "anchorName": "喀尔巴阡山省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3167",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3167"
+      ],
+      "name": "奥波莱省",
+      "anchorName": "奥波莱省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pol-3170",
+      "countryCode": "POL",
+      "region": "europe",
+      "members": [
+        "adm1:pol-3170"
+      ],
+      "name": "小波兰省",
+      "anchorName": "小波兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-5498",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-5498"
+      ],
+      "name": "塞图巴尔区",
+      "anchorName": "塞图巴尔区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-735",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-735"
+      ],
+      "name": "亚速尔群岛",
+      "anchorName": "亚速尔群岛",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-736",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-736"
+      ],
+      "name": "马德拉",
+      "anchorName": "马德拉",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-prt-75d77e137a",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-740",
+        "adm1:prt-746",
+        "adm1:prt-748"
+      ],
+      "name": null,
+      "anchorName": "里斯本区",
+      "archipelagoException": false,
+      "cityIds": [
+        "lisbon"
+      ]
+    },
+    {
+      "territoryId": "adm1:prt-743",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-743"
+      ],
+      "name": "贝雅区",
+      "anchorName": "贝雅区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-744",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-744"
+      ],
+      "name": "埃武拉区",
+      "anchorName": "埃武拉区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-745",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-745"
+      ],
+      "name": "法鲁区",
+      "anchorName": "法鲁区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-747",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-747"
+      ],
+      "name": "波塔萊格雷區",
+      "anchorName": "波塔萊格雷區",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-750",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-750"
+      ],
+      "name": "布拉干萨区",
+      "anchorName": "布拉干萨区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-751",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-751"
+      ],
+      "name": "布朗库堡区",
+      "anchorName": "布朗库堡区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-prt-e8b2bba80d",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-739",
+        "adm1:prt-752",
+        "adm1:prt-755"
+      ],
+      "name": null,
+      "anchorName": "维塞乌区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:prt-753",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-753"
+      ],
+      "name": "瓜达区",
+      "anchorName": "瓜达区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-prt-a932cf4dc0",
+      "countryCode": "PRT",
+      "region": "europe",
+      "members": [
+        "adm1:prt-741",
+        "adm1:prt-749",
+        "adm1:prt-754",
+        "adm1:prt-756"
+      ],
+      "name": null,
+      "anchorName": "波尔图区",
+      "archipelagoException": false,
+      "cityIds": [
+        "porto"
+      ]
+    },
+    {
+      "territoryId": "adm1:pry-597",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-597"
+      ],
+      "name": "上巴拉圭省",
+      "anchorName": "上巴拉圭省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pry-598",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-598"
+      ],
+      "name": "博克龙省",
+      "anchorName": "博克龙省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-pry-edf3133b57",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-4837",
+        "adm1:pry-604",
+        "adm1:pry-607",
+        "adm1:pry-611"
+      ],
+      "name": null,
+      "anchorName": "巴拉瓜里省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pry-605",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-605"
+      ],
+      "name": "阿耶斯总统省",
+      "anchorName": "阿耶斯总统省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:pry-606",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-606"
+      ],
+      "name": "圣佩德罗省",
+      "anchorName": "圣佩德罗省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-pry-14e1c1e41d",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-609",
+        "adm1:pry-610"
+      ],
+      "name": null,
+      "anchorName": "涅恩布库省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-pry-4799e89e2a",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-603",
+        "adm1:pry-615"
+      ],
+      "name": null,
+      "anchorName": "康塞普西翁省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-pry-33528a9b9a",
+      "countryCode": "PRY",
+      "region": "south-america",
+      "members": [
+        "adm1:pry-608",
+        "adm1:pry-616",
+        "adm1:pry-617",
+        "adm1:pry-618",
+        "adm1:pry-619",
+        "adm1:pry-620"
+      ],
+      "name": null,
+      "anchorName": "伊塔普阿省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-657c656d9d",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-122",
+        "adm1:rou-126"
+      ],
+      "name": null,
+      "anchorName": "多尔日县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-1af44e11eb",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-127",
+        "adm1:rou-128",
+        "adm1:rou-130",
+        "adm1:rou-131",
+        "adm1:rou-310",
+        "adm1:rou-4844"
+      ],
+      "name": null,
+      "anchorName": "布加勒斯特",
+      "archipelagoException": false,
+      "cityIds": [
+        "bucharest"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-rou-e4ed7df9e3",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-129",
+        "adm1:rou-132",
+        "adm1:rou-313",
+        "adm1:rou-314",
+        "adm1:rou-315",
+        "adm1:rou-317"
+      ],
+      "name": null,
+      "anchorName": "布泽乌县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-b2d5fda28e",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-133",
+        "adm1:rou-4847"
+      ],
+      "name": null,
+      "anchorName": "图尔恰县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-ae6064ba05",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-276",
+        "adm1:rou-280"
+      ],
+      "name": null,
+      "anchorName": "蒂米什县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-fd128d0450",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-277",
+        "adm1:rou-296",
+        "adm1:rou-300"
+      ],
+      "name": null,
+      "anchorName": "比霍尔县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-70a54cec7e",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-123",
+        "adm1:rou-124",
+        "adm1:rou-278"
+      ],
+      "name": null,
+      "anchorName": "卡拉什-塞维林县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-bec2739c44",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-287",
+        "adm1:rou-311"
+      ],
+      "name": null,
+      "anchorName": "苏恰瓦县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-9b4e2c3cac",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-294",
+        "adm1:rou-297",
+        "adm1:rou-303"
+      ],
+      "name": null,
+      "anchorName": "胡内多阿拉县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-615bc48400",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-298",
+        "adm1:rou-301"
+      ],
+      "name": null,
+      "anchorName": "马拉穆列什县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-cfdd7018df",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-302",
+        "adm1:rou-304"
+      ],
+      "name": null,
+      "anchorName": "阿尔杰什县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-5f3716da9d",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-295",
+        "adm1:rou-299",
+        "adm1:rou-305",
+        "adm1:rou-306",
+        "adm1:rou-307"
+      ],
+      "name": null,
+      "anchorName": "哈尔吉塔县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-rou-01b8b5e88f",
+      "countryCode": "ROU",
+      "region": "europe",
+      "members": [
+        "adm1:rou-308",
+        "adm1:rou-309",
+        "adm1:rou-312",
+        "adm1:rou-316"
+      ],
+      "name": null,
+      "anchorName": "巴克乌县",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-smr-af66d88d9f",
+      "countryCode": "SMR",
+      "region": "europe",
+      "members": [
+        "adm1:smr-4883",
+        "adm1:smr-4884",
+        "adm1:smr-4885",
+        "adm1:smr-4886",
+        "adm1:smr-4887",
+        "adm1:smr-4888",
+        "adm1:smr-4889",
+        "adm1:smr-4890",
+        "adm1:smr-4891"
+      ],
+      "name": null,
+      "anchorName": "博尔戈·马吉欧雷",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-4df4aa6ef3",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-1060",
+        "adm1:srb-1061"
+      ],
+      "name": null,
+      "anchorName": "南巴纳特州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-724781d5f1",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-125",
+        "adm1:srb-279",
+        "adm1:srb-831"
+      ],
+      "name": null,
+      "anchorName": "布兰尼切夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-c84310fe91",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-273",
+        "adm1:srb-274",
+        "adm1:srb-275"
+      ],
+      "name": null,
+      "anchorName": "西巴奇卡州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-7c40539058",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-1059",
+        "adm1:srb-281"
+      ],
+      "name": null,
+      "anchorName": "南巴奇卡州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-489b8c0ba1",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-1505",
+        "adm1:srb-829",
+        "adm1:srb-834"
+      ],
+      "name": null,
+      "anchorName": "茲拉蒂博爾州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-b03a0cb021",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-121",
+        "adm1:srb-830",
+        "adm1:srb-833",
+        "adm1:srb-835",
+        "adm1:srb-841",
+        "adm1:srb-843",
+        "adm1:srb-844"
+      ],
+      "name": null,
+      "anchorName": "扎耶查尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-srb-96668f4619",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-836",
+        "adm1:srb-837",
+        "adm1:srb-838"
+      ],
+      "name": null,
+      "anchorName": "贝尔格莱德",
+      "archipelagoException": false,
+      "cityIds": [
+        "belgrade"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-srb-bd2ce4aaa4",
+      "countryCode": "SRB",
+      "region": "europe",
+      "members": [
+        "adm1:srb-832",
+        "adm1:srb-839"
+      ],
+      "name": null,
+      "anchorName": "波莫拉夫斯基",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:sur-37",
+      "countryCode": "SUR",
+      "region": "south-america",
+      "members": [
+        "adm1:sur-37"
+      ],
+      "name": "尼克里区",
+      "anchorName": "尼克里区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:sur-66",
+      "countryCode": "SUR",
+      "region": "south-america",
+      "members": [
+        "adm1:sur-66"
+      ],
+      "name": "布罗科蓬多区",
+      "anchorName": "布罗科蓬多区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:sur-67",
+      "countryCode": "SUR",
+      "region": "south-america",
+      "members": [
+        "adm1:sur-67"
+      ],
+      "name": "马罗韦讷区",
+      "anchorName": "马罗韦讷区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-sur-d2c02aebad",
+      "countryCode": "SUR",
+      "region": "south-america",
+      "members": [
+        "adm1:sur-69",
+        "adm1:sur-71"
+      ],
+      "name": null,
+      "anchorName": "锡帕利维尼区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-sur-3a46341c22",
+      "countryCode": "SUR",
+      "region": "south-america",
+      "members": [
+        "adm1:sur-68",
+        "adm1:sur-70",
+        "adm1:sur-72",
+        "adm1:sur-73",
+        "adm1:sur-74"
+      ],
+      "name": null,
+      "anchorName": "帕拉区",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:svk-1052",
+      "countryCode": "SVK",
+      "region": "europe",
+      "members": [
+        "adm1:svk-1052"
+      ],
+      "name": "班斯卡·比斯特理察州",
+      "anchorName": "班斯卡·比斯特理察州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:svk-1053",
+      "countryCode": "SVK",
+      "region": "europe",
+      "members": [
+        "adm1:svk-1053"
+      ],
+      "name": "日利纳州",
+      "anchorName": "日利纳州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-svk-62eec860c8",
+      "countryCode": "SVK",
+      "region": "europe",
+      "members": [
+        "adm1:svk-1051",
+        "adm1:svk-1054",
+        "adm1:svk-1055",
+        "adm1:svk-1056"
+      ],
+      "name": null,
+      "anchorName": "布拉迪斯拉发州",
+      "archipelagoException": false,
+      "cityIds": [
+        "bratislava"
+      ]
+    },
+    {
+      "territoryId": "adm1:svk-1057",
+      "countryCode": "SVK",
+      "region": "europe",
+      "members": [
+        "adm1:svk-1057"
+      ],
+      "name": "科希策州",
+      "anchorName": "科希策州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:svk-1058",
+      "countryCode": "SVK",
+      "region": "europe",
+      "members": [
+        "adm1:svk-1058"
+      ],
+      "name": "普列索夫州",
+      "anchorName": "普列索夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:country-svn",
+      "countryCode": "SVN",
+      "region": "europe",
+      "members": [
+        "adm1:country-svn"
+      ],
+      "name": "斯洛文尼亚",
+      "anchorName": "斯洛文尼亚",
+      "archipelagoException": false,
+      "cityIds": [
+        "ljubljana"
+      ]
+    },
+    {
+      "territoryId": "adm1:swe-178",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-178"
+      ],
+      "name": "耶夫勒堡省",
+      "anchorName": "耶夫勒堡省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-181",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-181"
+      ],
+      "name": "达拉纳省",
+      "anchorName": "达拉纳省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-swe-dcb0c4b1f7",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-183",
+        "adm1:swe-185",
+        "adm1:swe-186"
+      ],
+      "name": null,
+      "anchorName": "厄勒布鲁省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-184",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-184"
+      ],
+      "name": "东约特兰省",
+      "anchorName": "东约特兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-swe-e26d213614",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-187",
+        "adm1:swe-3428"
+      ],
+      "name": null,
+      "anchorName": "西约塔兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-188",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-188"
+      ],
+      "name": "韦姆兰省",
+      "anchorName": "韦姆兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-189",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-189"
+      ],
+      "name": "耶姆特兰省",
+      "anchorName": "耶姆特兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-190",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-190"
+      ],
+      "name": "北博滕省",
+      "anchorName": "北博滕省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-191",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-191"
+      ],
+      "name": "西诺尔兰省",
+      "anchorName": "西诺尔兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-192",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-192"
+      ],
+      "name": "西博滕省",
+      "anchorName": "西博滕省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:swe-193",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-193"
+      ],
+      "name": "哥得兰省",
+      "anchorName": "哥得兰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-swe-d7fce66b2f",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-194",
+        "adm1:swe-195"
+      ],
+      "name": null,
+      "anchorName": "斯德哥尔摩省",
+      "archipelagoException": false,
+      "cityIds": [
+        "stockholm"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-swe-b873d68fa6",
+      "countryCode": "SWE",
+      "region": "europe",
+      "members": [
+        "adm1:swe-179",
+        "adm1:swe-180",
+        "adm1:swe-182",
+        "adm1:swe-262",
+        "adm1:swe-3429"
+      ],
+      "name": null,
+      "anchorName": "斯科讷省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-090116ac5a",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2238",
+        "adm1:tur-2239"
+      ],
+      "name": null,
+      "anchorName": "巴勒克埃西尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-1b952d25ff",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2240",
+        "adm1:tur-2241",
+        "adm1:tur-2242"
+      ],
+      "name": null,
+      "anchorName": "泰基尔达省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-dccd908c75",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2264",
+        "adm1:tur-2265",
+        "adm1:tur-2266",
+        "adm1:tur-2267",
+        "adm1:tur-2276",
+        "adm1:tur-5518"
+      ],
+      "name": null,
+      "anchorName": "伊斯坦堡省",
+      "archipelagoException": false,
+      "cityIds": [
+        "istanbul"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-tur-6edce75527",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2263",
+        "adm1:tur-2269",
+        "adm1:tur-2272"
+      ],
+      "name": null,
+      "anchorName": "阿菲永卡拉希萨尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-88ce9d6993",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2271",
+        "adm1:tur-2273",
+        "adm1:tur-2275"
+      ],
+      "name": null,
+      "anchorName": "安塔利亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-96ed6256b6",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2229",
+        "adm1:tur-2230",
+        "adm1:tur-2277"
+      ],
+      "name": null,
+      "anchorName": "马尼萨省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-a72baa417d",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2274",
+        "adm1:tur-2278",
+        "adm1:tur-3014"
+      ],
+      "name": null,
+      "anchorName": "穆拉省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-58e921f8a7",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2282",
+        "adm1:tur-2300",
+        "adm1:tur-2308",
+        "adm1:tur-3045"
+      ],
+      "name": null,
+      "anchorName": "埃尔津詹省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-416c2948b2",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2281",
+        "adm1:tur-2284",
+        "adm1:tur-3017"
+      ],
+      "name": null,
+      "anchorName": "尚勒乌尔法省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-ced0c72bbe",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2286",
+        "adm1:tur-2287",
+        "adm1:tur-3026"
+      ],
+      "name": null,
+      "anchorName": "开塞利省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-bc43ac09ab",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2289",
+        "adm1:tur-3018",
+        "adm1:tur-4842"
+      ],
+      "name": null,
+      "anchorName": "阿达纳省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-59fe97273e",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2292",
+        "adm1:tur-2302",
+        "adm1:tur-3031"
+      ],
+      "name": null,
+      "anchorName": "吉雷松省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-3099c36a3a",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2291",
+        "adm1:tur-2294"
+      ],
+      "name": null,
+      "anchorName": "乔鲁姆省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:tur-2295",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2295"
+      ],
+      "name": "锡瓦斯省",
+      "anchorName": "锡瓦斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-c9b104942b",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2290",
+        "adm1:tur-2293",
+        "adm1:tur-2296",
+        "adm1:tur-2297"
+      ],
+      "name": null,
+      "anchorName": "萨姆松省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-5f41ae6972",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2298",
+        "adm1:tur-2299",
+        "adm1:tur-2301",
+        "adm1:tur-3032"
+      ],
+      "name": null,
+      "anchorName": "埃尔祖鲁姆省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-8f4b7a1add",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2268",
+        "adm1:tur-2270",
+        "adm1:tur-3009",
+        "adm1:tur-3010",
+        "adm1:tur-5519",
+        "adm1:tur-5520",
+        "adm1:tur-5521"
+      ],
+      "name": null,
+      "anchorName": "卡斯塔莫努省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:tur-3011",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-3011"
+      ],
+      "name": "科尼亚省",
+      "anchorName": "科尼亚省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-b07a795dec",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2285",
+        "adm1:tur-3012"
+      ],
+      "name": null,
+      "anchorName": "梅尔辛省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-d010246da6",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-3008",
+        "adm1:tur-3019"
+      ],
+      "name": null,
+      "anchorName": "安卡拉次分區",
+      "archipelagoException": false,
+      "cityIds": [
+        "ankara"
+      ]
+    },
+    {
+      "territoryId": "adm1:region-tur-901de98fbf",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2288",
+        "adm1:tur-3020",
+        "adm1:tur-3021"
+      ],
+      "name": null,
+      "anchorName": "阿克萨赖省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-1ca1485cf9",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2309",
+        "adm1:tur-3041",
+        "adm1:tur-3042"
+      ],
+      "name": null,
+      "anchorName": "迪亚巴克尔省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-628b0ddb00",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2310",
+        "adm1:tur-2311",
+        "adm1:tur-3043",
+        "adm1:tur-3044"
+      ],
+      "name": null,
+      "anchorName": "比特利斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-fc6e84e64a",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-3047",
+        "adm1:tur-3048"
+      ],
+      "name": null,
+      "anchorName": "凡城省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-442beea912",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2307",
+        "adm1:tur-3040",
+        "adm1:tur-4839",
+        "adm1:tur-4840"
+      ],
+      "name": null,
+      "anchorName": "卡尔斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-tur-9f605b8d64",
+      "countryCode": "TUR",
+      "region": "europe",
+      "members": [
+        "adm1:tur-2283",
+        "adm1:tur-3016",
+        "adm1:tur-4841"
+      ],
+      "name": null,
+      "anchorName": "卡赫拉曼马拉什省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ukr-f2076385d3",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-284",
+        "adm1:ukr-319",
+        "adm1:ukr-320"
+      ],
+      "name": null,
+      "anchorName": "基洛夫格勒州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-285",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-285"
+      ],
+      "name": "切尔尼戈夫州",
+      "anchorName": "切尔尼戈夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ukr-5fd874f2b2",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-290",
+        "adm1:ukr-291",
+        "adm1:ukr-292"
+      ],
+      "name": null,
+      "anchorName": "利沃夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ukr-0f35153497",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-288",
+        "adm1:ukr-289",
+        "adm1:ukr-293"
+      ],
+      "name": null,
+      "anchorName": "伊万诺-弗兰科夫斯克州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ukr-91f8686755",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-286",
+        "adm1:ukr-318"
+      ],
+      "name": null,
+      "anchorName": "罗夫诺州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-322",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-322"
+      ],
+      "name": "敖德萨州",
+      "anchorName": "敖德萨州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-323",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-323"
+      ],
+      "name": "文尼察州",
+      "anchorName": "文尼察州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-324",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-324"
+      ],
+      "name": "日托米尔州",
+      "anchorName": "日托米尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ukr-49ed72405f",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-325",
+        "adm1:ukr-330"
+      ],
+      "name": null,
+      "anchorName": "波尔塔瓦州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-326",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-326"
+      ],
+      "name": "第聂伯罗彼得罗夫斯克州",
+      "anchorName": "第聂伯罗彼得罗夫斯克州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-327",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-327"
+      ],
+      "name": "顿涅茨克州",
+      "anchorName": "顿涅茨克州",
+      "archipelagoException": false,
+      "cityIds": [
+        "donetsk"
+      ]
+    },
+    {
+      "territoryId": "adm1:ukr-328",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-328"
+      ],
+      "name": "哈尔科夫州",
+      "anchorName": "哈尔科夫州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-329",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-329"
+      ],
+      "name": "卢甘斯克州",
+      "anchorName": "卢甘斯克州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ukr-331",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-331"
+      ],
+      "name": "扎波罗热州",
+      "anchorName": "扎波罗热州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ukr-c2fe5403bf",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-321",
+        "adm1:ukr-4826"
+      ],
+      "name": null,
+      "anchorName": "基辅",
+      "archipelagoException": false,
+      "cityIds": [
+        "kyiv"
+      ]
+    },
+    {
+      "territoryId": "adm1:ukr-4827",
+      "countryCode": "UKR",
+      "region": "europe",
+      "members": [
+        "adm1:ukr-4827"
+      ],
+      "name": "赫尔松州",
+      "anchorName": "赫尔松州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ury-10",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-10"
+      ],
+      "name": "萨尔托省",
+      "anchorName": "萨尔托省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ury-ae7dc5c22b",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-13",
+        "adm1:ury-17",
+        "adm1:ury-18",
+        "adm1:ury-21"
+      ],
+      "name": null,
+      "anchorName": "杜拉斯诺省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ury-6da40a89bc",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-14",
+        "adm1:ury-15"
+      ],
+      "name": null,
+      "anchorName": "塔夸伦博省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ury-e0d21f55c3",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-12",
+        "adm1:ury-16"
+      ],
+      "name": null,
+      "anchorName": "塞罗拉尔戈省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ury-fe924b203d",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-19",
+        "adm1:ury-20",
+        "adm1:ury-22"
+      ],
+      "name": null,
+      "anchorName": "罗恰省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ury-78a33b7bb6",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-11",
+        "adm1:ury-4",
+        "adm1:ury-5",
+        "adm1:ury-7"
+      ],
+      "name": null,
+      "anchorName": "索里亚诺省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ury-6",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-6"
+      ],
+      "name": "阿蒂加斯省",
+      "anchorName": "阿蒂加斯省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ury-06a190992c",
+      "countryCode": "URY",
+      "region": "south-america",
+      "members": [
+        "adm1:ury-8",
+        "adm1:ury-9"
+      ],
+      "name": null,
+      "anchorName": "派桑杜省",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:vat-00",
+      "countryCode": "VAT",
+      "region": "europe",
+      "members": [
+        "adm1:vat-00"
+      ],
+      "name": "梵蒂冈",
+      "anchorName": "梵蒂冈",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-23",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-23"
+      ],
+      "name": "法尔孔州",
+      "anchorName": "法尔孔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-25",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-25"
+      ],
+      "name": "阿普雷州",
+      "anchorName": "阿普雷州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-26",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-26"
+      ],
+      "name": "巴里纳斯州",
+      "anchorName": "巴里纳斯州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ven-50751f9f00",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-27",
+        "adm1:ven-28"
+      ],
+      "name": null,
+      "anchorName": "梅里达州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ven-446790094e",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-29",
+        "adm1:ven-34",
+        "adm1:ven-36"
+      ],
+      "name": null,
+      "anchorName": "拉腊州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-31",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-31"
+      ],
+      "name": "苏利亚州",
+      "anchorName": "苏利亚州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ven-d5cbf3ed18",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-32",
+        "adm1:ven-33",
+        "adm1:ven-41",
+        "adm1:ven-42",
+        "adm1:ven-43",
+        "adm1:ven-45",
+        "adm1:ven-47"
+      ],
+      "name": null,
+      "anchorName": "瓜里科州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-35",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-35"
+      ],
+      "name": "波图格萨州",
+      "anchorName": "波图格萨州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-38",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-38"
+      ],
+      "name": "亚马逊州",
+      "anchorName": "亚马逊州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-39",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-39"
+      ],
+      "name": "玻利瓦尔州",
+      "anchorName": "玻利瓦尔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-40",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-40"
+      ],
+      "name": "安索阿特吉州",
+      "anchorName": "安索阿特吉州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-44",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-44"
+      ],
+      "name": "联邦属地",
+      "anchorName": "联邦属地",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-48",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-48"
+      ],
+      "name": "新埃斯帕塔州",
+      "anchorName": "新埃斯帕塔州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:region-ven-ee9094e5dd",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-46",
+        "adm1:ven-49"
+      ],
+      "name": null,
+      "anchorName": "莫纳加斯州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-65",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-65"
+      ],
+      "name": "阿马库罗三角洲州",
+      "anchorName": "阿马库罗三角洲州",
+      "archipelagoException": false,
+      "cityIds": []
+    },
+    {
+      "territoryId": "adm1:ven-99",
+      "countryCode": "VEN",
+      "region": "south-america",
+      "members": [
+        "adm1:ven-99"
+      ],
+      "name": "委内瑞拉",
+      "anchorName": "委内瑞拉",
+      "archipelagoException": false,
+      "cityIds": []
+    }
+  ]
+}

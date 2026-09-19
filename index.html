@@ -1,30 +1,387 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-ui-theme="club">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101914" />
     <title>黄狗风云 · 联机足球战略</title>
-    <link rel="preload" href="./assets/data/natural-earth-countries-50m.geojson" as="fetch" type="application/geo+json" crossorigin />
-    <link rel="preload" href="./assets/data/europe-cities.json" as="fetch" type="application/json" crossorigin />
-    <link rel="preload" href="./assets/data/south-america-cities.json" as="fetch" type="application/json" crossorigin />
-    <link rel="preload" href="./assets/data/europe-clubs.json" as="fetch" type="application/json" crossorigin />
-    <link rel="preload" href="./assets/data/campaign-territories.geojson" as="fetch" type="application/geo+json" crossorigin />
-    <link rel="preload" href="./assets/data/territory-index.json" as="fetch" type="application/json" crossorigin />
-    <link rel="preload" href="./assets/data/campaign-coastlines.json" as="fetch" type="application/json" crossorigin />
-    <link rel="stylesheet" href="./assets/vendor/leaflet.css" />
-    <link rel="stylesheet" href="./styles/player-card.css?v=20260828-local" />
-    <link rel="stylesheet" href="./styles/team-player-detail.css?v=20260830-ydl-player-detail-v1" />
-    <link rel="stylesheet" href="./styles.css?v=20260904-land-shelf-v9" />
-    <link rel="stylesheet" href="./styles/yoogle.css?v=20260831-yoogle-window-v12" />
-    <link rel="stylesheet" href="./s4-tactics-original.css?v=20260901-two-state-squads-v14" />
-    <link rel="stylesheet" href="./styles/campaign-broadcast.css?v=20260901-broadcast-width-v2" />
-    <link rel="stylesheet" href="./styles/standard-window.css?v=20260901-broadcast-width-v2" />
-    <link rel="stylesheet" href="./styles/wide-window.css?v=20260831-window-standards-v1" />
-    <link rel="stylesheet" href="./styles/small-window.css?v=20260902-small-window-height-v3" />
-    <link rel="stylesheet" href="./styles/inventory.css?v=20260902-inventory-natural-v1" />
-  </head>
-  <body>
+    <link rel="stylesheet" href="./assets/vendor/leaflet.css?v=sha256-a7837102824184820dfa" />
+    <link rel="stylesheet" href="./styles/campaign-three.css?v=sha256-eae57ea8bdf1d9d3ae2d" />
+    <link rel="stylesheet" href="./styles/campaign-fog.css?v=sha256-fae2c73584df6c0dacbb" />
+    <script type="importmap">
+{
+  "imports": {
+    "three": "./assets/vendor/three/three.module.js",
+    "three/addons/loaders/GLTFLoader.js": "./assets/vendor/three/GLTFLoader.js",
+    "three/addons/utils/BufferGeometryUtils.js": "./assets/vendor/three/BufferGeometryUtils.js",
+    "./admin-v2.js": "./admin-v2.js?v=sha256-1d061a6c1ff54e2cdce3",
+    "./admin.js": "./admin.js?v=sha256-cd7c95ea4ef9dab67f5f",
+    "./app.js": "./app.js?v=sha256-6c49c5092e3c1119a5da",
+    "./campaign-broadcast.js": "./campaign-broadcast.js?v=sha256-07cf418626a7480ee0a8",
+    "./campaign-broadcast.js?v=20260909-v21-integration-v1": "./campaign-broadcast.js?v=sha256-07cf418626a7480ee0a8",
+    "./campaign-entry.js": "./campaign-entry.js?v=sha256-88f0888ba8d35a7581e4",
+    "./campaign-service.mjs": "./campaign-service.mjs?v=sha256-6fd7f6e89e4ba007e6dc",
+    "./client/buildings/airport-controller.js": "./client/buildings/airport-controller.js?v=sha256-3e63aca7a6aa561404b4",
+    "./client/buildings/building-marker-controller.js": "./client/buildings/building-marker-controller.js?v=sha256-cb647d9412fb45dcaef3",
+    "./client/buildings/building-marker-controller.js?v=20260909-stable-unit-anchor-v2": "./client/buildings/building-marker-controller.js?v=sha256-cb647d9412fb45dcaef3",
+    "./client/buildings/building-panel-controller.js": "./client/buildings/building-panel-controller.js?v=sha256-c1fcb43e8e3b6d2e6b82",
+    "./client/buildings/building-panel-controller.js?v=20260912-expansion-v2": "./client/buildings/building-panel-controller.js?v=sha256-c1fcb43e8e3b6d2e6b82",
+    "./client/buildings/construction-notifications.js": "./client/buildings/construction-notifications.js?v=sha256-e73dfc5cfc1bd888aa20",
+    "./client/buildings/construction-notifications.js?v=20260909-infrastructure-v1": "./client/buildings/construction-notifications.js?v=sha256-e73dfc5cfc1bd888aa20",
+    "./client/buildings/district-yield-markup.js": "./client/buildings/district-yield-markup.js?v=sha256-3827cca80ff500bcbe70",
+    "./client/buildings/facility-actions-controller.js": "./client/buildings/facility-actions-controller.js?v=sha256-57fb50b6f0da6b7b03b2",
+    "./client/buildings/facility-actions-controller.js?v=20260909-infrastructure-v1": "./client/buildings/facility-actions-controller.js?v=sha256-57fb50b6f0da6b7b03b2",
+    "./client/buildings/notification-center.js": "./client/buildings/notification-center.js?v=sha256-e9cc965f9f0b4e837551",
+    "./client/buildings/notification-center.js?v=20260909-transparent-v2": "./client/buildings/notification-center.js?v=sha256-e9cc965f9f0b4e837551",
+    "./client/buildings/port-map-anchor.js": "./client/buildings/port-map-anchor.js?v=sha256-228e998edc76ad060ced",
+    "./client/buildings/scouting-controller.js": "./client/buildings/scouting-controller.js?v=sha256-6394414d3ea1873c2103",
+    "./client/buildings/scouting-controller.js?v=20260912-expansion-v2": "./client/buildings/scouting-controller.js?v=sha256-6394414d3ea1873c2103",
+    "./client/buildings/training-controller.js": "./client/buildings/training-controller.js?v=sha256-f3718092052c66c090b5",
+    "./client/buildings/training-controller.js?v=20260909-training-growth-v1": "./client/buildings/training-controller.js?v=sha256-f3718092052c66c090b5",
+    "./client/buildings/wonder-hover-controller.js": "./client/buildings/wonder-hover-controller.js?v=sha256-2987bdcc575267499551",
+    "./client/buildings/wonder-hover-controller.js?v=20260909-facilities-v1": "./client/buildings/wonder-hover-controller.js?v=sha256-2987bdcc575267499551",
+    "./client/cards/admin-card-management.js": "./client/cards/admin-card-management.js?v=sha256-49e983c207b415c3b271",
+    "./client/cards/admin-card-management.js?v=20260906-card-management-v1": "./client/cards/admin-card-management.js?v=sha256-49e983c207b415c3b271",
+    "./client/cards/card-management-controller.js": "./client/cards/card-management-controller.js?v=sha256-343a31da2414d2a5a40a",
+    "./client/cards/card-management-controller.js?v=20260906-card-scroll-v1": "./client/cards/card-management-controller.js?v=sha256-343a31da2414d2a5a40a",
+    "./client/cards/card-market-view.js": "./client/cards/card-market-view.js?v=sha256-02659a9706e152369915",
+    "./client/cards/card-market-view.js?v=20260906-card-scroll-v1": "./client/cards/card-market-view.js?v=sha256-02659a9706e152369915",
+    "./client/cards/card-trade-up-animation.js": "./client/cards/card-trade-up-animation.js?v=sha256-b9f50bbcbb39a9cc31f2",
+    "./client/cards/card-trade-up-animation.js?v=20260906-trade-up-v2": "./client/cards/card-trade-up-animation.js?v=sha256-b9f50bbcbb39a9cc31f2",
+    "./client/cards/card-trade-up-view.js": "./client/cards/card-trade-up-view.js?v=sha256-3ca09549fcaae8fab04f",
+    "./client/cards/card-trade-up-view.js?v=20260906-card-scroll-v1": "./client/cards/card-trade-up-view.js?v=sha256-3ca09549fcaae8fab04f",
+    "./client/challenge/challenge-controller.js": "./client/challenge/challenge-controller.js?v=sha256-1b0b92e14c1631040b37",
+    "./client/challenge/challenge-controller.js?v=20260908-conquest-v1": "./client/challenge/challenge-controller.js?v=sha256-1b0b92e14c1631040b37",
+    "./client/challenge/conquest-hud.js": "./client/challenge/conquest-hud.js?v=sha256-fcdd8915b6177aa6fcde",
+    "./client/challenge/conquest-hud.js?v=20260908-conquest-v1": "./client/challenge/conquest-hud.js?v=sha256-fcdd8915b6177aa6fcde",
+    "./client/core/campaign-api-client.js": "./client/core/campaign-api-client.js?v=sha256-db2abe00a0b4175e3e39",
+    "./client/core/campaign-store.js": "./client/core/campaign-store.js?v=sha256-2bc273c4108a277182ad",
+    "./client/core/request-id.js": "./client/core/request-id.js?v=sha256-265da1c96c24ae753944",
+    "./client/core/request-id.js?v=20260906-release-v01": "./client/core/request-id.js?v=sha256-265da1c96c24ae753944",
+    "./client/draft/draft-controller.js": "./client/draft/draft-controller.js?v=sha256-cb6befa52bd2ec940dac",
+    "./client/draft/draft-controller.js?v=20260906-draft-v3": "./client/draft/draft-controller.js?v=sha256-cb6befa52bd2ec940dac",
+    "./client/draft/draft-reveal.js": "./client/draft/draft-reveal.js?v=sha256-b2af801fa00d11d34d8f",
+    "./client/draft/draft-reveal.js?v=20260906-draft-v3": "./client/draft/draft-reveal.js?v=sha256-b2af801fa00d11d34d8f",
+    "./client/elite/elite-controller.js": "./client/elite/elite-controller.js?v=sha256-83162d945f5b353f670b",
+    "./client/elite/elite-controller.js?v=20260909-elite-reward-v4": "./client/elite/elite-controller.js?v=sha256-83162d945f5b353f670b",
+    "./client/elite/raid-controller.js": "./client/elite/raid-controller.js?v=sha256-487eae9c2bb4e716332c",
+    "./client/enhancement/enhancement-controller.js": "./client/enhancement/enhancement-controller.js?v=sha256-e994ffa8766b390506eb",
+    "./client/enhancement/enhancement-controller.js?v=20260908-wonders-live-v1": "./client/enhancement/enhancement-controller.js?v=sha256-e994ffa8766b390506eb",
+    "./client/expedition-models/athlete-geometry.js": "./client/expedition-models/athlete-geometry.js?v=sha256-3405da065523ccf940ae",
+    "./client/expedition-models/athlete-heads.js": "./client/expedition-models/athlete-heads.js?v=sha256-cfc794d52f23e8907e97",
+    "./client/expedition-models/athlete-surfaces.js": "./client/expedition-models/athlete-surfaces.js?v=sha256-fe1eb62092e73cb89fae",
+    "./client/expedition-models/expedition-models.js": "./client/expedition-models/expedition-models.js?v=sha256-ea97f258390a0a1102db",
+    "./client/expedition-models/expedition-preview.js": "./client/expedition-models/expedition-preview.js?v=sha256-636feb84c14947b01065",
+    "./client/facility-models/airport-identity.js": "./client/facility-models/airport-identity.js?v=sha256-8254a9d2e5ecb2da5ebc",
+    "./client/facility-models/airport-model.js": "./client/facility-models/airport-model.js?v=sha256-97e7d759db57ed161fd1",
+    "./client/facility-models/facility-kit.js": "./client/facility-models/facility-kit.js?v=sha256-fa5071f8e0e0a92c4d27",
+    "./client/facility-models/facility-models.js": "./client/facility-models/facility-models.js?v=sha256-aea4cc1df18872a4b44d",
+    "./client/facility-models/facility-preview.js": "./client/facility-models/facility-preview.js?v=sha256-ec5dcd16af78dc7a8786",
+    "./client/facility-models/industry-academy-models.js": "./client/facility-models/industry-academy-models.js?v=sha256-f5a2655fee5024db25e6",
+    "./client/facility-models/oil-well-model.js": "./client/facility-models/oil-well-model.js?v=sha256-5a38633043dde9433373",
+    "./client/facility-models/unit-models.js": "./client/facility-models/unit-models.js?v=sha256-4c47b378aee5c5e80b83",
+    "./client/inventory/inventory-controller.js": "./client/inventory/inventory-controller.js?v=sha256-f09f8dad04f63132b03b",
+    "./client/inventory/inventory-controller.js?v=20260909-shared-reward-v3": "./client/inventory/inventory-controller.js?v=sha256-f09f8dad04f63132b03b",
+    "./client/map-style-demo/main.js": "./client/map-style-demo/main.js?v=sha256-28b02cfea3e7ca152e63",
+    "./client/map-style-demo/world.js": "./client/map-style-demo/world.js?v=sha256-c65e2d80c4505a69bc10",
+    "./client/map-three/atlas-environment.js": "./client/map-three/atlas-environment.js?v=sha256-c3e2860458a33a3f29f3",
+    "./client/map-three/atlas-mountains.js": "./client/map-three/atlas-mountains.js?v=sha256-8dd4ecc37826d1863784",
+    "./client/map-three/atlas-nature-model.js": "./client/map-three/atlas-nature-model.js?v=sha256-21106356a73390841717",
+    "./client/map-three/atlas-nature.js": "./client/map-three/atlas-nature.js?v=sha256-5555ac59463133f4c072",
+    "./client/map-three/atlas-oil.js": "./client/map-three/atlas-oil.js?v=sha256-75b1ddb6c8554839e62f",
+    "./client/map-three/atlas-ribbons.js": "./client/map-three/atlas-ribbons.js?v=sha256-ebc3d8c1e9cb5cba12d8",
+    "./client/map-three/atlas-shore.js": "./client/map-three/atlas-shore.js?v=sha256-d76838be0f8d4bc9ca3a",
+    "./client/map-three/atlas-style.js": "./client/map-three/atlas-style.js?v=sha256-36f3e89aa9d93ff868c7",
+    "./client/map-three/atlas-terrain.js": "./client/map-three/atlas-terrain.js?v=sha256-e399b61b113eaf8d6088",
+    "./client/map-three/campaign-borders.js": "./client/map-three/campaign-borders.js?v=sha256-60bb381e7c348c91a945",
+    "./client/map-three/campaign-facilities.js": "./client/map-three/campaign-facilities.js?v=sha256-c54ac3630796c1c46e4c",
+    "./client/map-three/campaign-layer.js": "./client/map-three/campaign-layer.js?v=sha256-7aa63a88397d9cf5d9b0",
+    "./client/map-three/campaign-layer.js?v=20260908-pre-civ-visual-v1": "./client/map-three/campaign-layer.js?v=sha256-7aa63a88397d9cf5d9b0",
+    "./client/map-three/environment.js": "./client/map-three/environment.js?v=sha256-3787e9b939f27ee613d7",
+    "./client/map-three/facility-layout.js": "./client/map-three/facility-layout.js?v=sha256-b501a8bdddd9429429f6",
+    "./client/map-three/geometry.js": "./client/map-three/geometry.js?v=sha256-1b3a6336d369e24f206c",
+    "./client/map-three/preview.js": "./client/map-three/preview.js?v=sha256-ec808acb84ac525a3023",
+    "./client/map-three/projection.js": "./client/map-three/projection.js?v=sha256-163f95fcd89b009e0644",
+    "./client/map-three/relief-field.js": "./client/map-three/relief-field.js?v=sha256-fc32e5423a676c0c709c",
+    "./client/map-three/relief-terrain.js": "./client/map-three/relief-terrain.js?v=sha256-923cb1be67238aa278ac",
+    "./client/map-three/settings.js": "./client/map-three/settings.js?v=sha256-a17cd7906f1e5fb2f833",
+    "./client/map-three/shore.js": "./client/map-three/shore.js?v=sha256-e7527305a0e4f56cf6ad",
+    "./client/map-three/terrain-material.js": "./client/map-three/terrain-material.js?v=sha256-352fca94a5fbbedadb1a",
+    "./client/map-three/terrain-profile.js": "./client/map-three/terrain-profile.js?v=sha256-ec185e006348e9a66539",
+    "./client/map-three/tiles.js": "./client/map-three/tiles.js?v=sha256-e244d06ff09d45fb0a6c",
+    "./client/map/campaign-fog-controller.js": "./client/map/campaign-fog-controller.js?v=sha256-dda63bc2eb9bdd090379",
+    "./client/map/campaign-fog-controller.js?v=20260912-expansion-v2": "./client/map/campaign-fog-controller.js?v=sha256-dda63bc2eb9bdd090379",
+    "./client/map/campaign-map-data.js": "./client/map/campaign-map-data.js?v=sha256-4216e6131117d5e52be8",
+    "./client/map/campaign-map-geometry.js": "./client/map/campaign-map-geometry.js?v=sha256-640ef8e3a266d199c532",
+    "./client/map/campaign-minimap-controller.js": "./client/map/campaign-minimap-controller.js?v=sha256-dc8ab4a73922bf9ba1b6",
+    "./client/map/campaign-minimap-controller.js?v=20260905-smooth-fog-v5": "./client/map/campaign-minimap-controller.js?v=sha256-dc8ab4a73922bf9ba1b6",
+    "./client/map/coastline-lod.js": "./client/map/coastline-lod.js?v=sha256-883bdc0ac639054bd2d7",
+    "./client/map/coastline-lod.js?v=20260903-coastline-lod-v1": "./client/map/coastline-lod.js?v=sha256-883bdc0ac639054bd2d7",
+    "./client/map/development-fog-controller.js": "./client/map/development-fog-controller.js?v=sha256-aed3d88814ba971574e1",
+    "./client/map/development-fog-controller.js?v=20260909-production-lock-v1": "./client/map/development-fog-controller.js?v=sha256-aed3d88814ba971574e1",
+    "./client/map/expedition-appearance-controller.js": "./client/map/expedition-appearance-controller.js?v=sha256-bad126f428e562c17035",
+    "./client/map/expedition-appearance-controller.js?v=20260908-expedition-vehicles-v1": "./client/map/expedition-appearance-controller.js?v=sha256-bad126f428e562c17035",
+    "./client/map/expedition-panel-controller.js": "./client/map/expedition-panel-controller.js?v=sha256-3ea705bf8574820c3df4",
+    "./client/map/expedition-panel-controller.js?v=20260909-v21-integration-v1": "./client/map/expedition-panel-controller.js?v=sha256-3ea705bf8574820c3df4",
+    "./client/map/expedition-piece-controller.js": "./client/map/expedition-piece-controller.js?v=sha256-3aec058e55676e16b707",
+    "./client/map/expedition-piece-controller.js?v=20260912-expansion-v2": "./client/map/expedition-piece-controller.js?v=sha256-3aec058e55676e16b707",
+    "./client/map/fog-geometry.js": "./client/map/fog-geometry.js?v=sha256-426e165d2b3812833f21",
+    "./client/map/fog-raster.js": "./client/map/fog-raster.js?v=sha256-439becc744343d7dfa9d",
+    "./client/map/fog-state.js": "./client/map/fog-state.js?v=sha256-43b8e5aee8a141999812",
+    "./client/map/foreign-unit-controller.js": "./client/map/foreign-unit-controller.js?v=sha256-6d9dc9a0a7e5cce469e2",
+    "./client/map/inertial-wheel-zoom.js": "./client/map/inertial-wheel-zoom.js?v=sha256-84b4bfabe5711d9e7430",
+    "./client/map/inertial-wheel-zoom.js?v=20260903-tile-viewreset-v2": "./client/map/inertial-wheel-zoom.js?v=sha256-84b4bfabe5711d9e7430",
+    "./client/map/map-loading-recovery.js": "./client/map/map-loading-recovery.js?v=sha256-78ee7aa3dbf15ec4466c",
+    "./client/map/map-unit-color.js": "./client/map/map-unit-color.js?v=sha256-3a44a042ad342d6dbf02",
+    "./client/map/recovery-range-controller.js": "./client/map/recovery-range-controller.js?v=sha256-dd71fec434f9927855a6",
+    "./client/map/recovery-range-controller.js?v=20260912-expansion-v2": "./client/map/recovery-range-controller.js?v=sha256-dd71fec434f9927855a6",
+    "./client/map/scout-unit-controller.js": "./client/map/scout-unit-controller.js?v=sha256-dd9d909171766f17e7cb",
+    "./client/map/scout-unit-controller.js?v=20260912-expansion-v2": "./client/map/scout-unit-controller.js?v=sha256-dd9d909171766f17e7cb",
+    "./client/map/territory-interaction.js": "./client/map/territory-interaction.js?v=sha256-27027c80f799d8eb92b3",
+    "./client/map/territory-interaction.js?v=20260905-smooth-fog-v5": "./client/map/territory-interaction.js?v=sha256-27027c80f799d8eb92b3",
+    "./client/map/territory-presentation.js": "./client/map/territory-presentation.js?v=sha256-1058c63f0cccfb7d6751",
+    "./client/map/territory-presentation.js?v=20260908-fans-v1": "./client/map/territory-presentation.js?v=sha256-1058c63f0cccfb7d6751",
+    "./client/map/territory-weather-layer-controller.js": "./client/map/territory-weather-layer-controller.js?v=sha256-511badb03cdd26492a5f",
+    "./client/map/territory-weather-layer-controller.js?v=20260831-weather-layer-v3": "./client/map/territory-weather-layer-controller.js?v=sha256-511badb03cdd26492a5f",
+    "./client/maritime/maritime-controller.js": "./client/maritime/maritime-controller.js?v=sha256-8248e7eefd689f7efac3",
+    "./client/maritime/maritime-controller.js?v=20260912-expansion-v2": "./client/maritime/maritime-controller.js?v=sha256-8248e7eefd689f7efac3",
+    "./client/player-card/broadcast-card.js": "./client/player-card/broadcast-card.js?v=sha256-b18dcbf598502a538de1",
+    "./client/player-card/broadcast-card.js?v=20260905-broadcast-cards-v1": "./client/player-card/broadcast-card.js?v=sha256-b18dcbf598502a538de1",
+    "./client/player-card/card-identities.js": "./client/player-card/card-identities.js?v=sha256-193bbb749881c8944133",
+    "./client/player-card/card-identities.js?v=20260905-shield-v1": "./client/player-card/card-identities.js?v=sha256-193bbb749881c8944133",
+    "./client/player-card/card-motion-controller.js": "./client/player-card/card-motion-controller.js?v=sha256-e6a49db50e4741ea59d2",
+    "./client/player-card/card-motion-controller.js?v=20260905-shield-v1": "./client/player-card/card-motion-controller.js?v=sha256-e6a49db50e4741ea59d2",
+    "./client/player-card/card-motion-model.js": "./client/player-card/card-motion-model.js?v=sha256-cbab7ae28a95bfdb3229",
+    "./client/player-card/card-motion-model.js?v=20260905-shield-v1": "./client/player-card/card-motion-model.js?v=sha256-cbab7ae28a95bfdb3229",
+    "./client/player-card/card-shield-markup.js": "./client/player-card/card-shield-markup.js?v=sha256-45e1fe99eceea71d12da",
+    "./client/player-card/card-shield-markup.js?v=20260905-tactics-cards-v1": "./client/player-card/card-shield-markup.js?v=sha256-45e1fe99eceea71d12da",
+    "./client/player-card/deferred-card-controller.js": "./client/player-card/deferred-card-controller.js?v=sha256-e8c48071c2e077deea4a",
+    "./client/player-card/deferred-card-controller.js?v=20260906-card-scroll-v1": "./client/player-card/deferred-card-controller.js?v=sha256-e8c48071c2e077deea4a",
+    "./client/player-card/player-card.js": "./client/player-card/player-card.js?v=sha256-ec5c83917a8ff375331d",
+    "./client/player-card/player-card.js?v=20260905-shield-v1": "./client/player-card/player-card.js?v=sha256-ec5c83917a8ff375331d",
+    "./client/player-card/player-card.js?v=20260905-tactics-cards-v1": "./client/player-card/player-card.js?v=sha256-ec5c83917a8ff375331d",
+    "./client/player-card/player-card.js?v=20260906-card-scroll-v1": "./client/player-card/player-card.js?v=sha256-ec5c83917a8ff375331d",
+    "./client/player-card/player-detail-window.js": "./client/player-card/player-detail-window.js?v=sha256-98ac6e2ffafba73aee36",
+    "./client/research/formation-import-markup.js": "./client/research/formation-import-markup.js?v=sha256-8ec2bcbe412e70eea856",
+    "./client/research/formation-import-state.js": "./client/research/formation-import-state.js?v=sha256-55374b94ff36fadb2106",
+    "./client/research/formation-research-controller.js": "./client/research/formation-research-controller.js?v=sha256-bd6a1ac8995daf20bc56",
+    "./client/research/research-art.js": "./client/research/research-art.js?v=sha256-5fbc756055b0bf3dc7f9",
+    "./client/research/research-controller.js": "./client/research/research-controller.js?v=sha256-da2c872a01fe43b9b93a",
+    "./client/research/research-controller.js?v=20260908-panel-rename-v3": "./client/research/research-controller.js?v=sha256-da2c872a01fe43b9b93a",
+    "./client/research/research-layout.js": "./client/research/research-layout.js?v=sha256-f1aff6359d691fcc607f",
+    "./client/research/topic-research-controller.js": "./client/research/topic-research-controller.js?v=sha256-9d9a3928ede29398a19d",
+    "./client/resources/neutral-reward-controller.js": "./client/resources/neutral-reward-controller.js?v=sha256-3ea5504842855e72d167",
+    "./client/resources/neutral-reward-controller.js?v=20260908-panel-rename-v3": "./client/resources/neutral-reward-controller.js?v=sha256-3ea5504842855e72d167",
+    "./client/resources/neutral-reward-markup.js": "./client/resources/neutral-reward-markup.js?v=sha256-47e98652f8c227067b3c",
+    "./client/resources/neutral-reward-markup.js?v=20260908-wonder-race-v1": "./client/resources/neutral-reward-markup.js?v=sha256-47e98652f8c227067b3c",
+    "./client/resources/oil-market-controller.js": "./client/resources/oil-market-controller.js?v=sha256-b663be30df597173e43b",
+    "./client/resources/oil-movement.js": "./client/resources/oil-movement.js?v=sha256-2711adbc79f05cb88f63",
+    "./client/resources/resource-controller.js": "./client/resources/resource-controller.js?v=sha256-42ffc2bdfde25a02ee68",
+    "./client/resources/resource-controller.js?v=20260908-gold-growth-v1": "./client/resources/resource-controller.js?v=sha256-42ffc2bdfde25a02ee68",
+    "./client/resources/resource-markup.js": "./client/resources/resource-markup.js?v=sha256-8f1409f8e182adef7a1a",
+    "./client/resources/resource-markup.js?v=20260907-resource-hover-v1": "./client/resources/resource-markup.js?v=sha256-8f1409f8e182adef7a1a",
+    "./client/resources/resource-markup.js?v=20260908-fans-v1": "./client/resources/resource-markup.js?v=sha256-8f1409f8e182adef7a1a",
+    "./client/settings/tv-appearance.js": "./client/settings/tv-appearance.js?v=sha256-03cb425d3ee53ebd3e83",
+    "./client/settings/tv-appearance.js?v=20260908-tv-v1": "./client/settings/tv-appearance.js?v=sha256-03cb425d3ee53ebd3e83",
+    "./client/settings/tv-settings-controller.js": "./client/settings/tv-settings-controller.js?v=sha256-31eec0f9ab42c3688664",
+    "./client/settings/tv-settings-controller.js?v=20260908-tv-v1": "./client/settings/tv-settings-controller.js?v=sha256-31eec0f9ab42c3688664",
+    "./client/shop/shop-controller.js": "./client/shop/shop-controller.js?v=sha256-22cbdac2c11ad9f5729b",
+    "./client/shop/shop-controller.js?v=20260909-transparent-v2": "./client/shop/shop-controller.js?v=sha256-22cbdac2c11ad9f5729b",
+    "./client/social/coalition-controller.js": "./client/social/coalition-controller.js?v=sha256-88a362f24714af501b12",
+    "./client/social/interaction-controller.js": "./client/social/interaction-controller.js?v=sha256-240e247097856bffbe2d",
+    "./client/social/interaction-controller.js?v=20260912-expansion-v2": "./client/social/interaction-controller.js?v=sha256-240e247097856bffbe2d",
+    "./client/sponsorship/sponsor-markup.js": "./client/sponsorship/sponsor-markup.js?v=sha256-093e7c183b98993c6c92",
+    "./client/sponsorship/sponsor-markup.js?v=20260908-sponsorship-v1": "./client/sponsorship/sponsor-markup.js?v=sha256-093e7c183b98993c6c92",
+    "./client/sponsorship/sponsorship-controller.js": "./client/sponsorship/sponsorship-controller.js?v=sha256-8f94f11f19f3d3d77141",
+    "./client/sponsorship/sponsorship-controller.js?v=20260908-sponsorship-v1": "./client/sponsorship/sponsorship-controller.js?v=sha256-8f94f11f19f3d3d77141",
+    "./client/tactics/bond-display.js": "./client/tactics/bond-display.js?v=sha256-599ea231e6818e2a056b",
+    "./client/tactics/bond-display.js?v=20260910-s4-bonds-v1": "./client/tactics/bond-display.js?v=sha256-599ea231e6818e2a056b",
+    "./client/tactics/card-display-controller.js": "./client/tactics/card-display-controller.js?v=sha256-698231279afd8c9e4ad7",
+    "./client/tactics/card-display-controller.js?v=20260909-settings-v1": "./client/tactics/card-display-controller.js?v=sha256-698231279afd8c9e4ad7",
+    "./client/tactics/shape-preview-controller.js": "./client/tactics/shape-preview-controller.js?v=sha256-4e6c6523b94f7b518749",
+    "./client/team/team-controller-ydl.js": "./client/team/team-controller-ydl.js?v=sha256-485cda2521f2fb9f3011",
+    "./client/team/team-controller-ydl.js?v=20260909-infrastructure-v1": "./client/team/team-controller-ydl.js?v=sha256-485cda2521f2fb9f3011",
+    "./client/team/team-controller.js": "./client/team/team-controller.js?v=sha256-ccf73534cb2d97eda9d3",
+    "./client/territory-merge-review.js": "./client/territory-merge-review.js?v=sha256-611c45d20bfcff13e4cb",
+    "./client/territory/territory-controller.js": "./client/territory/territory-controller.js?v=sha256-5adac21ce4f92ee3ab2c",
+    "./client/territory/territory-controller.js?v=20260912-expansion-v2": "./client/territory/territory-controller.js?v=sha256-5adac21ce4f92ee3ab2c",
+    "./client/ui/card-stage-performance.js": "./client/ui/card-stage-performance.js?v=sha256-c4c1c864d21336d0012b",
+    "./client/ui/currency.js": "./client/ui/currency.js?v=sha256-1041f0c354a0d3c4b793",
+    "./client/ui/meteor-background.js": "./client/ui/meteor-background.js?v=sha256-4e0aed5f5cf4a0fafbdd",
+    "./client/ui/mobile-landscape.js": "./client/ui/mobile-landscape.js?v=sha256-5ce5a22aec6b9bbae244",
+    "./client/ui/small-window.js": "./client/ui/small-window.js?v=sha256-12b12d12705c29d8db58",
+    "./client/ui/stage-window-manager.js": "./client/ui/stage-window-manager.js?v=sha256-a465786d66d18660c0c9",
+    "./client/ui/standard-window.js": "./client/ui/standard-window.js?v=sha256-a68e0bbdf7d18148e906",
+    "./client/ui/ui-theme.js": "./client/ui/ui-theme.js?v=sha256-e343ff6c946e17a3c1f6",
+    "./client/ui/warp-background.js": "./client/ui/warp-background.js?v=sha256-c55dfc413439524d2603",
+    "./client/ui/wide-window.js": "./client/ui/wide-window.js?v=sha256-7e6b88ac415c24f9454c",
+    "./client/wonders/admin-wonder-conditions.js": "./client/wonders/admin-wonder-conditions.js?v=sha256-a3d77248a86cba66ed07",
+    "./client/wonders/admin-wonder-conditions.js?v=20260908-wonders-live-v1": "./client/wonders/admin-wonder-conditions.js?v=sha256-a3d77248a86cba66ed07",
+    "./client/wonders/admin-wonder-management.js": "./client/wonders/admin-wonder-management.js?v=sha256-297e40e2c88677862648",
+    "./client/wonders/admin-wonder-management.js?v=20260908-wonders-live-v1": "./client/wonders/admin-wonder-management.js?v=sha256-297e40e2c88677862648",
+    "./client/wonders/model-kit.js": "./client/wonders/model-kit.js?v=sha256-6de22c71b50ad3969a9a",
+    "./client/wonders/wonder-catalog-controller.js": "./client/wonders/wonder-catalog-controller.js?v=sha256-c191f887715fa5764163",
+    "./client/wonders/wonder-catalog-controller.js?v=20260908-wonder-panel-v2": "./client/wonders/wonder-catalog-controller.js?v=sha256-c191f887715fa5764163",
+    "./client/wonders/wonder-materials.js": "./client/wonders/wonder-materials.js?v=sha256-a6d9cde415453c591379",
+    "./client/wonders/wonder-model-viewer.js": "./client/wonders/wonder-model-viewer.js?v=sha256-d4949c7999c8f1cf2a13",
+    "./client/wonders/wonder-model-viewer.js?v=20260908-wonder-catalog-v1": "./client/wonders/wonder-model-viewer.js?v=sha256-d4949c7999c8f1cf2a13",
+    "./client/wonders/wonder-models.js": "./client/wonders/wonder-models.js?v=sha256-657efc2a9b314ca0552d",
+    "./client/wonders/wonder-preview.js": "./client/wonders/wonder-preview.js?v=sha256-38a7298b67a2a92eb24b",
+    "./client/yoogle/yoogle-controller.js": "./client/yoogle/yoogle-controller.js?v=sha256-c21311d8afad00ed3122",
+    "./client/yoogle/yoogle-controller.js?v=20260905-shield-v1": "./client/yoogle/yoogle-controller.js?v=sha256-c21311d8afad00ed3122",
+    "./engine/campaign-match-engine.mjs": "./engine/campaign-match-engine.mjs?v=sha256-a58bcf9bab8818bf48f6",
+    "./engine/campaign-weather.mjs": "./engine/campaign-weather.mjs?v=sha256-2dce01514a5eaca8bced",
+    "./engine/s4-v2.1/game/public/schema.js": "./engine/s4-v2.1/game/public/schema.js?v=sha256-68d54c6bc08946de9e45",
+    "./engine/s4-v2.1/game/public/trait-runtime.js": "./engine/s4-v2.1/game/public/trait-runtime.js?v=sha256-621873d2325a36581374",
+    "./engine/s4-v2.1/src/new-trait-batch.js": "./engine/s4-v2.1/src/new-trait-batch.js?v=sha256-9e97e146c4a8d4578dd3",
+    "./engine/s4-v2.1/src/random.js": "./engine/s4-v2.1/src/random.js?v=sha256-dafbf98c2d005465cff1",
+    "./engine/s4-v2.1/src/traits.js": "./engine/s4-v2.1/src/traits.js?v=sha256-b839d05a257a08dff655",
+    "./engine/s4-v2.1/versus/automatic-substitution.js": "./engine/s4-v2.1/versus/automatic-substitution.js?v=sha256-5dd937554244c56a0905",
+    "./engine/s4-v2.1/versus/new-trait-batch.js": "./engine/s4-v2.1/versus/new-trait-batch.js?v=sha256-f3c6c073bf894e08a191",
+    "./engine/s4-v2.1/versus/offline-attribute-settings.js": "./engine/s4-v2.1/versus/offline-attribute-settings.js?v=sha256-737bb25d07e76ad1bb15",
+    "./engine/s4-v2.1/versus/public/bond-rules.js": "./engine/s4-v2.1/versus/public/bond-rules.js?v=sha256-497c04a87ac93dd90dee",
+    "./engine/s4-v2.1/versus/public/captain-rules.js": "./engine/s4-v2.1/versus/public/captain-rules.js?v=sha256-099504ea50236cf353f5",
+    "./engine/s4-v2.1/versus/public/formation-rules.js": "./engine/s4-v2.1/versus/public/formation-rules.js?v=sha256-3a9320b4b1581b882802",
+    "./engine/s4-v2.1/versus/public/v2-player-duty-options.js": "./engine/s4-v2.1/versus/public/v2-player-duty-options.js?v=sha256-c94dae1cb180857202bf",
+    "./engine/s4-v2.1/versus/public/v2-tactical-fit.js": "./engine/s4-v2.1/versus/public/v2-tactical-fit.js?v=sha256-fba62af947f951c8b060",
+    "./engine/s4-v2.1/versus/public/v2-tactical-profiles.js": "./engine/s4-v2.1/versus/public/v2-tactical-profiles.js?v=sha256-55aaa6d51ab2d4825590",
+    "./engine/s4-v2.1/versus/trait-pool.js": "./engine/s4-v2.1/versus/trait-pool.js?v=sha256-840ea4943b432e208227",
+    "./engine/s4-v2.1/versus/v2/biology-research-v2.js": "./engine/s4-v2.1/versus/v2/biology-research-v2.js?v=sha256-cd14475e36549ad63e82",
+    "./engine/s4-v2.1/versus/v2/dynamic-shape-v2.js": "./engine/s4-v2.1/versus/v2/dynamic-shape-v2.js?v=sha256-26efd714ba9b67b020b6",
+    "./engine/s4-v2.1/versus/v2/formation-research-v2.js": "./engine/s4-v2.1/versus/v2/formation-research-v2.js?v=sha256-792ab0430997eaf54f16",
+    "./engine/s4-v2.1/versus/v2/match-engine-v2.js": "./engine/s4-v2.1/versus/v2/match-engine-v2.js?v=sha256-8793fbea75df2f639112",
+    "./engine/s4-v2.1/versus/v2/match-parameters-v2.js": "./engine/s4-v2.1/versus/v2/match-parameters-v2.js?v=sha256-fa57f3ed2bbdcd23d906",
+    "./engine/s4-v2.1/versus/v2/penalty-shootout-v2.js": "./engine/s4-v2.1/versus/v2/penalty-shootout-v2.js?v=sha256-9b5e3c121f2803a9aef3",
+    "./engine/s4-v2.1/versus/v2/player-duties-v2.js": "./engine/s4-v2.1/versus/v2/player-duties-v2.js?v=sha256-55859fefdbf48ada6a75",
+    "./engine/s4-v2.1/versus/v2/possession-chain-v2.js": "./engine/s4-v2.1/versus/v2/possession-chain-v2.js?v=sha256-17a4788f1ee983ae39cc",
+    "./engine/s4-v2.1/versus/v2/spatial-model-v2.js": "./engine/s4-v2.1/versus/v2/spatial-model-v2.js?v=sha256-e6df2151d6a40128f9b9",
+    "./engine/s4-v2.1/versus/v2/tactical-balance-v2.js": "./engine/s4-v2.1/versus/v2/tactical-balance-v2.js?v=sha256-15bb21a97d0a43003a5f",
+    "./engine/s4-v2.1/versus/v2/tactical-shape-preview-v2.js": "./engine/s4-v2.1/versus/v2/tactical-shape-preview-v2.js?v=sha256-94288643717c207afc35",
+    "./engine/s4-v2.1/versus/v2/team-player-effects.js": "./engine/s4-v2.1/versus/v2/team-player-effects.js?v=sha256-9f381a0949a1583f5074",
+    "./engine/s4-v2.1/versus/v2/team-player-effects.js?v=20260909-notifications-bonds-v1": "./engine/s4-v2.1/versus/v2/team-player-effects.js?v=sha256-9f381a0949a1583f5074",
+    "./engine/s4-v2.1/versus/v2/team-snapshot-v2.js": "./engine/s4-v2.1/versus/v2/team-snapshot-v2.js?v=sha256-6cef470847df8f835e21",
+    "./engine/territory-ai.mjs": "./engine/territory-ai.mjs?v=sha256-c2b80ebdedcb8a5ebbd9",
+    "./formation-rules.js": "./formation-rules.js?v=sha256-3a9320b4b1581b882802",
+    "./maritime-routes.mjs": "./maritime-routes.mjs?v=sha256-2cae032eaf26224a90fa",
+    "./server.mjs": "./server.mjs?v=sha256-0da8d75d5635fdab7118",
+    "./shared/account-import/s4-accounts.mjs": "./shared/account-import/s4-accounts.mjs?v=sha256-aaae152f33593baeb9a8",
+    "./shared/buildings/building-visibility.mjs": "./shared/buildings/building-visibility.mjs?v=sha256-a0b4190e120a20007c7b",
+    "./shared/buildings/construction-limit.mjs": "./shared/buildings/construction-limit.mjs?v=sha256-1ebf0503a21cdaaa944f",
+    "./shared/buildings/construction-production.mjs": "./shared/buildings/construction-production.mjs?v=sha256-0d2260512a1d942f172a",
+    "./shared/buildings/district-yields.mjs": "./shared/buildings/district-yields.mjs?v=sha256-2cc1ec3322ef900ab4a1",
+    "./shared/buildings/oil-extraction.mjs": "./shared/buildings/oil-extraction.mjs?v=sha256-c91dd6c0c167fb542b3a",
+    "./shared/config/advanced-research.mjs": "./shared/config/advanced-research.mjs?v=sha256-45a3e33b5a3048d03fd8",
+    "./shared/config/airport-identity.mjs": "./shared/config/airport-identity.mjs?v=sha256-b052afd0b461f9b7fb1f",
+    "./shared/config/buildings.mjs": "./shared/config/buildings.mjs?v=sha256-0bcf8d19a6c5d4c2cbe7",
+    "./shared/config/card-management.mjs": "./shared/config/card-management.mjs?v=sha256-df63a8371329213189fd",
+    "./shared/config/challenge.mjs": "./shared/config/challenge.mjs?v=sha256-a021baaea2b1e8e8c820",
+    "./shared/config/coalition.mjs": "./shared/config/coalition.mjs?v=sha256-84c66fa7d50e7f7b9d3d",
+    "./shared/config/conquest.mjs": "./shared/config/conquest.mjs?v=sha256-5fa40c2a48b1cd6e147d",
+    "./shared/config/countries.mjs": "./shared/config/countries.mjs?v=sha256-6c28237932190c30daac",
+    "./shared/config/diplomacy.mjs": "./shared/config/diplomacy.mjs?v=sha256-4600de2927fa841f32f4",
+    "./shared/config/draft.mjs": "./shared/config/draft.mjs?v=sha256-64468e1cb8b81effc526",
+    "./shared/config/draft.mjs?v=20260906-draft-v3": "./shared/config/draft.mjs?v=sha256-64468e1cb8b81effc526",
+    "./shared/config/economy.mjs": "./shared/config/economy.mjs?v=sha256-6ae92fb4f325f6958547",
+    "./shared/config/elite-clubs.mjs": "./shared/config/elite-clubs.mjs?v=sha256-9f536c69c2533ab22008",
+    "./shared/config/elite-raids.mjs": "./shared/config/elite-raids.mjs?v=sha256-0aafd65bd66203a7e0fa",
+    "./shared/config/enhancement.mjs": "./shared/config/enhancement.mjs?v=sha256-3fa5b5aeac62bcc98801",
+    "./shared/config/expedition-art.mjs": "./shared/config/expedition-art.mjs?v=sha256-a896d1d196951551f94c",
+    "./shared/config/facility-art.mjs": "./shared/config/facility-art.mjs?v=sha256-96e6a559aee30b0fcbd3",
+    "./shared/config/facility-levels.mjs": "./shared/config/facility-levels.mjs?v=sha256-9dd7a447d6012e154201",
+    "./shared/config/fans.mjs": "./shared/config/fans.mjs?v=sha256-1a39e45a6056a94cd5b0",
+    "./shared/config/fitness.mjs": "./shared/config/fitness.mjs?v=sha256-823dc17973d3df6a0a75",
+    "./shared/config/fog.mjs": "./shared/config/fog.mjs?v=sha256-4974f142d0f54aaf5b42",
+    "./shared/config/formation-research.mjs": "./shared/config/formation-research.mjs?v=sha256-baa5c47a5378f1cc4c09",
+    "./shared/config/launch-rewards.mjs": "./shared/config/launch-rewards.mjs?v=sha256-9a0df2ce9a87502d33a3",
+    "./shared/config/map-assets.mjs": "./shared/config/map-assets.mjs?v=sha256-413948664083eebccd91",
+    "./shared/config/map.mjs": "./shared/config/map.mjs?v=sha256-033dbe24c78afc7a0fc9",
+    "./shared/config/maritime.mjs": "./shared/config/maritime.mjs?v=sha256-2ef915b2175bff182158",
+    "./shared/config/movement-oil.mjs": "./shared/config/movement-oil.mjs?v=sha256-9ba4e632872d0168e392",
+    "./shared/config/neutral-rewards.mjs": "./shared/config/neutral-rewards.mjs?v=sha256-1eee79421ca8907f773d",
+    "./shared/config/oil-deposits.mjs": "./shared/config/oil-deposits.mjs?v=sha256-e335679a0ac376672735",
+    "./shared/config/oil-economy.mjs": "./shared/config/oil-economy.mjs?v=sha256-0eaa8efa252f43e2cb96",
+    "./shared/config/operating-costs.mjs": "./shared/config/operating-costs.mjs?v=sha256-153f33616a591e7d4f33",
+    "./shared/config/player-attributes.mjs": "./shared/config/player-attributes.mjs?v=sha256-979e928cdb1e49dbee20",
+    "./shared/config/player-packs.mjs": "./shared/config/player-packs.mjs?v=sha256-7e3cb4aa3064e011afec",
+    "./shared/config/player-squads.mjs": "./shared/config/player-squads.mjs?v=sha256-28d1e5c5cd5f6484231c",
+    "./shared/config/player-trait-presentation.mjs": "./shared/config/player-trait-presentation.mjs?v=sha256-20a33a5767cfac8f59da",
+    "./shared/config/position-inheritance.mjs": "./shared/config/position-inheritance.mjs?v=sha256-0b9811ccd406f703a8c0",
+    "./shared/config/representative-players.mjs": "./shared/config/representative-players.mjs?v=sha256-40ba28e3277b1211ab1d",
+    "./shared/config/research-preview.mjs": "./shared/config/research-preview.mjs?v=sha256-613691dd24fcc2ec8e19",
+    "./shared/config/resources.mjs": "./shared/config/resources.mjs?v=sha256-ac3f6914ced84e1c3f44",
+    "./shared/config/scouting.mjs": "./shared/config/scouting.mjs?v=sha256-0be3eda89c6dde307736",
+    "./shared/config/shop.mjs": "./shared/config/shop.mjs?v=sha256-8e67668546e64e54cb04",
+    "./shared/config/sponsorship.mjs": "./shared/config/sponsorship.mjs?v=sha256-b2bb49c4170001e1e0b1",
+    "./shared/config/tactics-repair.mjs": "./shared/config/tactics-repair.mjs?v=sha256-b4f67604df82f576204b",
+    "./shared/config/training.mjs": "./shared/config/training.mjs?v=sha256-a8a5706074a622bb3702",
+    "./shared/config/wonder-construction.mjs": "./shared/config/wonder-construction.mjs?v=sha256-cca543d2c43f5e6dce0a",
+    "./shared/config/wonders.mjs": "./shared/config/wonders.mjs?v=sha256-e20563807a5f5dea8432",
+    "./shared/football/account-match-seat.mjs": "./shared/football/account-match-seat.mjs?v=sha256-c16d76e8e702915c558f",
+    "./shared/football/campaign-bonds.mjs": "./shared/football/campaign-bonds.mjs?v=sha256-993bbee77f7a509acdc8",
+    "./shared/football/elite-lineup.mjs": "./shared/football/elite-lineup.mjs?v=sha256-541d8a5c2fab60943aa6",
+    "./shared/football/fitness-lineup.mjs": "./shared/football/fitness-lineup.mjs?v=sha256-4487f62e11a59878751d",
+    "./shared/football/labels.js": "./shared/football/labels.js?v=sha256-faae2d69b49baa701caa",
+    "./shared/football/match-availability.mjs": "./shared/football/match-availability.mjs?v=sha256-a76643d0b2c98c80860b",
+    "./shared/football/training-growth.mjs": "./shared/football/training-growth.mjs?v=sha256-987ce7ffad9be4771e3f",
+    "./shared/map/fog-spatial.mjs": "./shared/map/fog-spatial.mjs?v=sha256-7785e89a8f528efd65c8",
+    "./shared/map/object-display-scale.mjs": "./shared/map/object-display-scale.mjs?v=sha256-c8dae0c3d3d7cd544f49",
+    "./shared/map/recovery-aura.mjs": "./shared/map/recovery-aura.mjs?v=sha256-8ce93c5c9f7770e428c4",
+    "./shared/map/unit-territory-layout.mjs": "./shared/map/unit-territory-layout.mjs?v=sha256-76f5c756504fd4db3c72",
+    "./shared/map/unit-territory-layout.mjs?v=20260909-stable-unit-anchor-v2": "./shared/map/unit-territory-layout.mjs?v=sha256-76f5c756504fd4db3c72",
+    "./shared/map/unit-travel.mjs": "./shared/map/unit-travel.mjs?v=sha256-d771f1ad667602df73c2",
+    "./shared/player-card/player-card-contract.js": "./shared/player-card/player-card-contract.js?v=sha256-eb4f712709960b30fd96",
+    "./shared/scouting/scout-units.mjs": "./shared/scouting/scout-units.mjs?v=sha256-430a84f4d362001d2a85",
+    "./tactics-lineup-rules.js": "./tactics-lineup-rules.js?v=sha256-9a56d922dda55d66baba",
+    "./tactics-page.js": "./tactics-page.js?v=sha256-9ea2b4404470df4c4777",
+    "./tactics-page.js?v=20260910-s4-bonds-v1": "./tactics-page.js?v=sha256-9ea2b4404470df4c4777",
+    "./territory-model.js": "./territory-model.js?v=sha256-40b052d56bfceb1c978e"
+  }
+}
+    </script>
+    <link rel="stylesheet" href="./styles/player-card.css?v=sha256-4f0ec1d2e31b7faac2b0" />
+    <link rel="stylesheet" href="./styles/team-player-detail.css?v=sha256-6bca2fe71fd96b94ecbe" />
+    <link rel="stylesheet" href="./styles.css?v=sha256-79f5c1d80f0fdb9925d0" />
+    <link rel="stylesheet" href="./styles/yoogle.css?v=sha256-06dfb147be21ca012a59" />
+    <link rel="stylesheet" href="./s4-tactics-original.css?v=sha256-c30ae5c77a289431e187" />
+    <link rel="stylesheet" href="./styles/campaign-broadcast.css?v=sha256-75c00b8850a747c9e85f" />
+    <link rel="stylesheet" href="./styles/standard-window.css?v=sha256-6ab69837f2d4029aa01b" />
+    <link rel="stylesheet" href="./styles/wide-window.css?v=sha256-3a548a4c4096cf542ab5" />
+    <link rel="stylesheet" href="./styles/small-window.css?v=sha256-30b3eb0fc9d005255193" />
+    <link rel="stylesheet" href="./styles/training.css?v=sha256-951f872374d9ce9e82b7" />
+    <link rel="stylesheet" href="./styles/scouting.css?v=sha256-374e34dbb67c9e547a80" />
+    <link rel="stylesheet" href="./styles/facility-actions.css?v=sha256-6b834809609ad9bafd87" />
+    <link rel="stylesheet" href="./styles/enhancement.css?v=sha256-eb338ac58ebbf94f3736" />
+    <link rel="stylesheet" href="./styles/card-management.css?v=sha256-0ec84796673a9f7ca392" />
+    <link rel="stylesheet" href="./styles/inventory.css?v=sha256-50d1aa33e734a2eab564" />
+    <script src="./client/ui/ui-theme.js?v=sha256-e343ff6c946e17a3c1f6"></script>
+  <link rel="stylesheet" href="./styles/ui-theme.css?v=sha256-78a556f2434fcd0b4e21" />
+  <link rel="stylesheet" href="./styles/currency.css?v=sha256-8567fc9c4db4055209b2" />
+  <link rel="stylesheet" href="./styles/buildings.css?v=sha256-9e87a4a6c105ecf0b8f2">
+  <link rel="stylesheet" href="./styles/construction.css?v=sha256-86576c1af0de8d035d10" />
+  <link rel="stylesheet" href="./styles/tactics-cards.css?v=sha256-46903cd328c1e3dfa102">
+  <link rel="stylesheet" href="./styles/draft.css?v=sha256-c5e8b45dd3de596f09d8">
+  <link rel="stylesheet" href="./styles/player-card-shield.css?v=sha256-b819d312625e061865e7">
+  <link rel="stylesheet" href="./styles/login.css?v=sha256-fccef57a8d56abc34e6a">
+  <link rel="stylesheet" href="./styles/resources.css?v=sha256-31ba02a27da31c490192">
+  <link rel="stylesheet" href="./styles/sponsorship.css?v=sha256-d7f4ac4c9b462c374f4b">
+<link rel="stylesheet" href="./styles/expedition-appearance.css?v=sha256-08ed0c40050c54bc365f">
+<link rel="stylesheet" href="./styles/expedition-panel.css?v=sha256-10405f902b95061a99ea">
+  <link rel="stylesheet" href="./styles/neutral-rewards.css?v=sha256-400195c742265edca355">
+  <link rel="stylesheet" href="./styles/wonder-catalog.css?v=sha256-93e6b711801f1c9af6ea">
+  <link rel="stylesheet" href="./styles/topbar.css?v=sha256-a9308a0960e44905b210">
+  <link rel="stylesheet" href="./styles/tv-settings.css?v=sha256-d80c7a95bc7675779bee">
+  <link rel="stylesheet" href="./styles/research.css?v=sha256-b304632dfe610c44ea79">
+  <link rel="stylesheet" href="./styles/research-import.css?v=sha256-8ec1786bd560af2ed4bc">
+    <link rel="stylesheet" href="./styles/conquest.css?v=sha256-d0664612b35e13191731">
+    <link rel="stylesheet" href="./styles/shop.css?v=sha256-938994656108284baae1">
+  <link rel="stylesheet" href="./styles/interactions.css?v=sha256-3c18eb182dd081155b62">
+  <link rel="stylesheet" href="./styles/elite.css?v=sha256-6991bc8ea6f1b4134780">
+  <link rel="stylesheet" href="./styles/mobile-landscape.css?v=sha256-57b4e7493e6ac09e05ac">
+  <link rel="stylesheet" href="./styles/oil.css?v=sha256-7e8fb7695c56688bffbd">
+  <link rel="stylesheet" href="./styles/coalition.css?v=sha256-a386c204ba444a32e73a">
+<link rel="stylesheet" href="./styles/elite-raids.css?v=sha256-80c1934d37f3b4bc4b20">
+</head>
+  <body class="is-auth-screen">
     <div class="campaign-shell">
       <header class="topbar">
         <div class="topbar-identity">
@@ -33,26 +390,40 @@
             <strong>黄狗风云</strong>
           </a>
           <div class="account-menu" id="account-menu" hidden>
-            <button class="account-menu-trigger" id="account-menu-trigger" type="button" aria-expanded="false">
-              <span class="account-avatar" aria-hidden="true">●</span><span id="account-nickname">账号</span><span class="account-chevron" aria-hidden="true">⌄</span>
+            <button class="account-menu-trigger" id="account-menu-trigger" type="button" aria-controls="account-menu-popover" aria-expanded="false">
+              <span>设置</span><span class="account-chevron" aria-hidden="true">⌄</span>
             </button>
             <div class="account-menu-popover" id="account-menu-popover" hidden>
               <small>当前账号</small><strong id="account-menu-name">—</strong>
+              <div id="account-tactics-display"></div>
+              <button id="account-tv-settings" type="button" hidden aria-expanded="false" aria-controls="tv-settings-window">电视台外观</button>
+              <button id="account-expedition-style" type="button" hidden aria-expanded="false">远征外观</button>
               <button id="account-logout" type="button">退出登录</button>
             </div>
           </div>
         </div>
 
-        <nav class="primary-nav" aria-label="主要功能">
+        <button id="mobile-menu-toggle" class="mobile-only mobile-menu-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false">☰ <span>菜单</span></button>
+        <nav id="primary-navigation" class="primary-nav" aria-label="主要功能">
           <button class="nav-item is-active" type="button" aria-current="page">征程地图</button>
-          <button class="nav-item" type="button">球队</button>
+          <button class="nav-item" type="button">编队</button>
           <button class="nav-item" type="button">战术</button>
-          <button class="nav-item" type="button">球探</button>
+          <button class="nav-item" id="topbar-enhancement" type="button">强化</button>
           <button class="nav-item nav-inventory" id="topbar-inventory" type="button" hidden aria-label="打开背包">
             <span>背包</span><strong data-inventory-count>0</strong>
           </button>
+          <button class="nav-item" id="topbar-card-management" type="button">球员卡管理</button>
+          <button class="nav-item" id="topbar-sponsorship" type="button" hidden>赞助商</button>
+          <button class="nav-item" id="topbar-wonders" type="button" hidden>奇观</button>
+          <button class="nav-item" id="topbar-research" type="button" hidden aria-expanded="false" aria-controls="research-window">科技</button>
+          <button class="nav-item" id="topbar-elite" type="button" hidden>豪门挑战</button>
+          <button class="nav-item" id="topbar-shop" type="button" hidden>商店</button>
         </nav>
 
+        <div id="topbar-conquest" class="topbar-conquest" hidden>
+          <span>可征服 <strong data-conquest-count>8/8</strong></span>
+          <span data-conquest-cooldown hidden></span>
+        </div>
         <section class="topbar-yoogle" id="yoogle-search" aria-label="YOOGLE 球员搜索" hidden>
           <div class="yoogle-searchbar">
             <button class="yoogle-logo" id="yoogle-window-trigger" type="button" aria-label="打开 YOOGLE 搜索"><i>Y</i>OOGLE</button>
@@ -66,19 +437,31 @@
           </div>
         </section>
 
-        <div class="topbar-wallet" id="topbar-wallet" aria-label="金币余额" hidden>
-          <span>金币</span><strong id="gold-balance">0</strong>
+        <div id="topbar-resource-summary" role="group" hidden aria-label="俱乐部资源">
+          <button type="button" class="topbar-wallet" id="topbar-wallet" data-resource="gold" data-resource-trigger="gold" aria-controls="resource-window" aria-expanded="false">
+            <img class="gold-icon" src="./assets/ui/gold-coin.svg" width="24" height="24" alt="" aria-hidden="true" draggable="false"><strong id="gold-balance">0</strong><span id="gold-growth" aria-hidden="true">0/h</span>
+          </button>
+          <button type="button" data-resource-slot="production" data-resource-trigger="production" aria-controls="resource-window" aria-expanded="false"></button>
+          <button type="button" data-resource-slot="science" data-resource-trigger="science" aria-controls="resource-window" aria-expanded="false"></button>
+          <button type="button" data-resource-slot="oil" data-resource-trigger="oil" aria-controls="resource-window" aria-expanded="false"></button>
+          <button type="button" data-resource-slot="fans" data-resource-trigger="fans" aria-controls="resource-window" aria-expanded="false"></button>
         </div>
       </header>
 
+      <section id="resource-window" role="region" aria-label="资源来源" hidden></section>
       <main class="map-stage">
-        <div id="campaign-entry"></div>
+        <section id="neutral-reward-window" class="standard-window" hidden aria-label="待处理奖励"></section>
+        <aside id="server-players" hidden aria-label="服务器玩家"></aside>
+        <section id="interaction-window" class="standard-window" hidden aria-label="玩家互动"></section>
+        <section id="elite-window" class="standard-window" hidden aria-label="豪门挑战"></section>
+        <section id="shop-window" class="standard-window" hidden aria-label="商店"></section>
+        <section id="sponsorship-window" class="standard-window" hidden aria-label="赞助商管理"></section>
+        <section id="wonder-catalog-window" class="standard-window" hidden aria-label="全服奇观预览"></section>
+        <section id="research-window" class="standard-window" hidden aria-label="科技树"></section>
+        <section id="tv-settings-window" class="standard-window" hidden aria-label="电视台外观设置"></section>
+        <section id="expedition-appearance-window" class="small-window" data-small-window="expedition-appearance" hidden></section>
+        <div id="campaign-entry" class="is-auth"></div>
         <div id="campaign-map" class="campaign-map is-loading" aria-label="欧洲与南美俱乐部征程地图"></div>
-        <aside id="map-zoom-indicator" class="map-zoom-indicator" aria-label="地图缩放级别">
-          <span>地图缩放</span>
-          <strong id="map-zoom-value">×1.0</strong>
-          <small id="map-zoom-detail">Z 3.00 · 挡位 1/5 · 全景</small>
-        </aside>
         <section id="yoogle-window" class="yoogle-window standard-window" data-standard-window="yoogle" hidden aria-label="YOOGLE 球员搜索窗口">
           <div class="yoogle-window-shell standard-window__surface" role="dialog" aria-modal="true" aria-labelledby="yoogle-window-title">
             <button class="yoogle-window-close" type="button" data-stage-window-close aria-label="关闭 YOOGLE">×</button>
@@ -95,7 +478,9 @@
             <div id="yoogle-window-detail-layer"></div>
           </div>
         </section>
-        <section id="campaign-team" class="campaign-team standard-window" data-standard-window="team" hidden aria-label="球队管理"></section>
+        <section id="enhancement-window" class="enhancement-window wide-window" data-wide-window="enhancement" hidden aria-label="球员强化"></section>
+        <section id="card-management-window" class="card-management-window standard-window" data-standard-window="card-management" hidden aria-label="球员卡管理"></section>
+        <section id="campaign-team" class="campaign-team standard-window" data-standard-window="team" hidden aria-label="编队"></section>
         <section id="inventory-window" class="inventory-window small-window" data-small-window="inventory" hidden aria-label="球员卡包背包"></section>
         <section id="campaign-tactics" class="campaign-tactics wide-window" data-wide-window="tactics" hidden aria-label="球队战术管理">
           <header class="tactics-header"><div><span>YELLOWDOGS CHRONICLES · SQUAD MANAGEMENT</span><h2>战术管理</h2></div><button id="tactics-save" type="button">保存战术</button></header>
@@ -107,8 +492,7 @@
         </section>
         <div id="map-loader" class="map-loader" role="status" aria-live="polite">
           <span class="map-loader-mark" aria-hidden="true"></span>
-          <strong>正在绘制欧洲征程</strong>
-          <small>载入欧洲与南美洲的国家、省州、城市与俱乐部资料</small>
+          <strong>征程地图加载中</strong>
         </div>
 
         <aside id="territory-inspector" class="territory-inspector" aria-live="polite" hidden>
@@ -118,14 +502,16 @@
           <dl>
             <div><dt>归属</dt><dd id="territory-owner">未选择</dd></div>
             <div class="territory-weather-row"><dt>当前天气</dt><dd id="territory-weather">—</dd></div>
-            <div><dt>AI 难度</dt><dd id="territory-ai-difficulty">—</dd></div>
-            <div><dt>平均能力</dt><dd id="territory-ai-overall">—</dd></div>
-            <div><dt>阵型 / 心态</dt><dd id="territory-ai-formation">—</dd></div>
-            <div><dt>主要打法</dt><dd id="territory-ai-style">—</dd></div>
+            <div data-territory-ai-row><dt>AI 难度</dt><dd id="territory-ai-difficulty">—</dd></div>
+            <div data-territory-ai-row><dt>平均能力</dt><dd id="territory-ai-overall">—</dd></div>
+            <div data-territory-ai-row><dt>阵型 / 心态</dt><dd id="territory-ai-formation">—</dd></div>
+            <div data-territory-ai-row><dt>主要打法</dt><dd id="territory-ai-style">—</dd></div>
           </dl>
-          <div id="territory-building-actions" class="territory-building-actions" hidden>
-            <button id="territory-building-button" type="button" hidden>查看地块建筑</button>
-          </div>
+          <section id="territory-resources" aria-label="地块基础产出" hidden></section>
+          <section id="territory-sponsor-reward" hidden aria-label="征服奖励"></section>
+          <section id="building-panel" class="territory-buildings" aria-label="地块建筑" hidden>
+            <div id="building-panel-content" class="building-panel-content"></div>
+          </section>
           <div class="territory-challenge-actions" id="territory-challenge-actions" hidden>
             <small id="territory-challenge-status">选择相邻地块发起比赛</small>
             <button id="territory-challenge-button" type="button" disabled>挑战（两回合）</button>
@@ -133,46 +519,81 @@
           </div>
         </aside>
 
-        <aside id="building-panel" class="building-panel" aria-label="地块建筑管理" hidden>
-          <header>
-            <div><span>CLUB CONSTRUCTION</span><strong>地块建筑</strong></div>
-            <button id="building-panel-close" type="button" aria-label="关闭建筑面板">×</button>
-          </header>
-          <div id="building-panel-content" class="building-panel-content"></div>
-        </aside>
-
         <section id="battle-result-panel" class="battle-result-panel" aria-live="assertive" hidden>
           <header><span>S4 V2.1 MATCH RESULT</span><button id="battle-result-close" type="button" aria-label="关闭赛果">×</button></header>
           <div class="battle-result-title"><small id="battle-result-territory">地块争夺赛</small><strong id="battle-result-outcome">比赛结束</strong></div>
           <div class="battle-result-score"><span id="battle-home-name">我方球队</span><b id="battle-score">0 : 0</b><span id="battle-away-name">地块守军</span></div>
+          <button type="button" id="battle-result-details" class="button secondary" hidden>查看两回合战报</button>
           <div class="battle-result-rewards" id="battle-result-rewards" hidden>
             <small>新地块征服奖励</small>
-            <div><strong id="battle-result-gold-reward">+0 金币</strong><strong id="battle-result-pack-reward">+0 珍奇球员卡包</strong></div>
+            <div><strong id="battle-result-gold-reward"><span class="gold-amount" role="img" aria-label="0 金币"><img class="gold-icon" src="./assets/ui/gold-coin.svg" width="24" height="24" alt="" aria-hidden="true" draggable="false"><span class="gold-amount-value" aria-hidden="true">0</span></span></strong><strong id="battle-result-pack-reward">+0 珍奇球员卡包</strong></div>
+            <div id="battle-result-sponsorship" hidden></div>
           </div>
         </section>
 
         <div id="campaign-broadcast" class="broadcast-overlay standard-window" data-standard-window="broadcast" hidden aria-label="黄狗风云比赛电视台"></div>
+        <div id="campaign-notifications" class="campaign-notifications" aria-label="进行中的任务" hidden>
+          <header class="notification-center-header"><strong>通知栏 <span data-notification-count>0</span></strong><button type="button" data-notification-toggle aria-expanded="true" aria-controls="campaign-notification-list">收起</button></header>
+          <div id="campaign-notification-list" class="notification-center-list" tabindex="0" aria-label="滚动查看通知栏">
         <aside id="campaign-live-widget" class="campaign-live-widget" hidden aria-label="后台进行中的比赛"></aside>
         <aside id="expedition-movement-widget" class="campaign-expedition-widget" hidden aria-label="远征队移动进程"></aside>
+          <section id="construction-notifications" class="construction-notifications" hidden aria-label="设施施工任务"></section>
+          <section id="interaction-notifications" hidden aria-label="玩家互动申请"></section>
+          <section id="training-notifications" class="training-notifications" hidden aria-label="球员训练任务"></section>
+          <section id="scouting-notifications" class="scout-notifications" hidden aria-label="球探动态"></section>
+          </div>
+        </div>
+        <dialog id="facility-demolition-dialog" aria-labelledby="facility-demolition-title"></dialog>
+        <aside id="expedition-panel" class="expedition-panel" hidden aria-hidden="true" aria-labelledby="expedition-panel-title"></aside>
+        <aside id="training-window" class="training-window" hidden aria-label="训练中心">
+          <header class="training-header"><h2>训练中心</h2><button type="button" data-training-close aria-label="关闭训练中心">×</button></header>
+          <div class="training-content" data-training-content></div>
+          <footer class="facility-actions" data-facility-actions hidden></footer>
+        </aside>
+        <aside id="training-picker" class="training-picker" hidden aria-label="训练球员">
+          <header class="training-header"><h2 data-training-picker-title>选择训练球员</h2><button type="button" data-training-picker-close aria-label="关闭训练球员面板">×</button></header>
+          <div class="training-picker-content" data-training-picker-content></div>
+        </aside>
+        <aside id="scouting-window" class="scouting-window" hidden aria-label="球探中心">
+          <div class="scouting-surface">
+            <header class="scouting-header"><h2>球探中心</h2><button type="button" data-scout-close aria-label="关闭球探中心">×</button></header>
+            <div class="scouting-content" data-scout-content></div>
+            <footer class="facility-actions" data-facility-actions hidden></footer>
+          </div>
+        </aside>
+        <section id="scouting-selection" class="scouting-selection inventory-window inventory-opening-stage-root" hidden>
+          <div class="inventory-opening-surface" role="dialog" aria-modal="true" aria-label="球探发掘结果，选择球员并领取" tabindex="-1">
+            <div data-scout-meteors aria-hidden="true"></div>
+            <div class="inventory-opening-stage" data-scout-content></div>
+          </div>
+        </section>
 
         <section id="expedition-move-confirm" class="expedition-move-confirm" role="dialog" aria-modal="true" aria-labelledby="expedition-move-title" hidden>
           <header id="expedition-move-title">调动远征队</header>
           <div class="expedition-move-route"><strong data-expedition-from>出发地</strong><span>→</span><strong data-expedition-to>目的地</strong></div>
+          <label class="oil-movement-choice">移动方式<select data-expedition-use-oil><option value="fuel">消耗石油</option><option value="slow">慢速移动（不耗油）</option></select></label>
           <b data-expedition-duration>预计 1 分钟</b>
           <footer><button type="button" data-expedition-move-back>返回选点</button><button type="button" data-expedition-move-confirm>确定移动</button></footer>
         </section>
 
         <aside id="home-selection-panel" class="home-selection-panel" aria-live="polite" hidden>
-          <header><span>FOUND YOUR CLUB</span><h2>选择永久主场</h2></header>
+          <header><span>FOUND YOUR CLUB</span><h2>选择俱乐部总部所在地</h2></header>
           <div class="home-selection-target">
             <strong id="home-selection-name">尚未选择区域</strong>
             <small id="home-selection-status">请在地图上选择一个省级地块</small>
           </div>
-          <button id="confirm-home-selection" type="button" disabled>确认建立主场</button>
+          <button id="confirm-home-selection" type="button" disabled>确认建立总部</button>
           <p>确认后不可更改；黄色豪门区域及其陆地相邻省份不可选择。</p>
         </aside>
 
         <aside class="campaign-minimap-panel" aria-label="战役地图导航">
+          <button type="button" class="mobile-only mobile-map-tools" aria-expanded="false">地图工具</button>
+          <div class="map-development-controls"><button id="development-fog-toggle" type="button" hidden aria-pressed="true">迷雾：开</button><button id="pending-rewards-trigger" type="button" hidden>待处理奖励</button></div>
+          <nav class="terrain-profile-links" aria-label="地形风格" hidden>
+            <a href="./game?terrain=relief" data-terrain-profile="relief">立体地形</a>
+            <a href="./game?terrain=soft" data-terrain-profile="soft">柔和地形</a>
+            <a href="./game?terrain=classic" data-terrain-profile="classic">原版地形</a>
+          </nav>
           <div class="map-layer-toggles" aria-label="地图显示设置">
             <label class="map-layer-toggle">
               <span>天气</span>
@@ -189,16 +610,38 @@
               <input id="major-cities-toggle" type="checkbox" />
               <i aria-hidden="true"></i>
             </label>
+            <label class="map-layer-toggle" title="显示河流">
+              <span>河流</span>
+              <input id="rivers-layer-toggle" data-three-layer="rivers" type="checkbox" checked disabled />
+              <i aria-hidden="true"></i>
+            </label>
+            <label class="map-layer-toggle" title="显示地形；关闭时保留大陆和海岸">
+              <span>地形</span>
+              <input id="terrain-layer-toggle" data-three-layer="terrain" type="checkbox" checked disabled />
+              <i aria-hidden="true"></i>
+            </label>
+            <label class="map-layer-toggle" title="显示高山与高纬度积雪">
+              <span>雪线</span>
+              <input id="snow-layer-toggle" data-three-layer="snow" type="checkbox" checked disabled />
+              <i aria-hidden="true"></i>
+            </label>
           </div>
           <div id="campaign-minimap" class="campaign-minimap" aria-label="拖动白色视口框移动主地图"></div>
           <div class="map-attribution">Natural Earth · S4 club assets</div>
         </aside>
+        <div class="campaign-three-status" id="campaign-three-status" role="status" hidden>
+          <span id="campaign-three-message"></span><button id="campaign-three-retry" type="button">重试纹理</button>
+          <a href="?renderer=leaflet">兼容地图</a>
+        </div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
       </main>
     </div>
 
+    <aside id="wonder-hover" class="wonder-hover" hidden aria-label="建筑要求与效果"></aside>
+    <script type="module" src="./client/ui/mobile-landscape.js?v=sha256-5ce5a22aec6b9bbae244"></script>
+    <script type="module" src="./client/map/map-loading-recovery.js?v=sha256-78ee7aa3dbf15ec4466c"></script>
     <script src="./assets/vendor/leaflet.js"></script>
-    <script type="module" src="./campaign-entry.js?v=20260827-map-bootstrap-fix"></script>
-    <script type="module" src="./app.js?v=20260904-pan-outlines-v20"></script>
+    <script type="module" src="./campaign-entry.js?v=sha256-88f0888ba8d35a7581e4"></script>
+    <script type="module" src="./app.js?v=sha256-6c49c5092e3c1119a5da"></script>
   </body>
 </html>

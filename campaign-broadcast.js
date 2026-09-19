@@ -1,3 +1,6 @@
+import { syncTvBackground } from './client/settings/tv-appearance.js?v=20260908-tv-v1';
+import { broadcastSponsorMarkup } from './client/sponsorship/sponsor-markup.js?v=20260908-sponsorship-v1';
+import { broadcastCardFace, captureBroadcastCardFaces, restoreBroadcastCardFaces } from "./client/player-card/broadcast-card.js?v=20260905-broadcast-cards-v1";
 import { CHALLENGE_SECOND_LEG_COOLDOWN_MS } from "./shared/config/challenge.mjs";
 import { PLAY_STYLE_LABELS as STYLES, ROLE_LABELS, TACTIC_LABELS as TACTICS } from "./shared/football/labels.js";
 import {
@@ -6,8 +9,8 @@ import {
   registerStandardWindow,
 } from "./client/ui/standard-window.js";
 
-const EVENT_MARKS = { kickoff:"开",duel:"对抗",attack:"推进",counter:"反击",save:"扑救",miss:"射门",block:"封堵",tackle:"抢断",interception:"拦截",goal:"进球",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",foul:"犯规",yellow:"黄牌",red:"红牌",injury:"伤退",substitution:"换人",lightning:"雷击",weather:"天气",blackWhistle:"争议判罚",corner:"角球",setPiece:"定位球",setPieceDuel:"争顶",clearance:"解围",penaltyAwarded:"点球",halftime:"半场",extraTimeStart:"加时",extraTimeHalfTime:"加时半场",extraTimeEnd:"加时结束",penaltyShootoutStart:"点球大战",penaltyShootoutEqualise:"人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球结束",tactical:"战术",penalty:"点球",shootout:"点球大战",fulltime:"结束",abandoned:"终止" };
-const EVENT_ICONS = { goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",blackWhistle:"⚖",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",save:"◆",block:"◆",tackle:"◆",interception:"◆",setPiece:"◆",setPieceDuel:"◆",clearance:"◇",corner:"◇",miss:"○",tactical:"↔",halftime:"Ⅱ",extraTimeStart:"Ⅱ",extraTimeHalfTime:"Ⅱ",extraTimeEnd:"Ⅱ",fulltime:"■",abandoned:"!" };
+const EVENT_MARKS = { kickoff:"开",duel:"对抗",attack:"推进",counter:"反击",save:"扑救",miss:"射门",block:"封堵",tackle:"抢断",interception:"拦截",goal:"进球",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",foul:"犯规",yellow:"黄牌",red:"红牌",injury:"伤退",substitution:"换人",lightning:"雷击",weather:"天气",blackWhistle:"争议判罚",brawl:"群架",corner:"角球",setPiece:"定位球",setPieceDuel:"争顶",clearance:"解围",penaltyAwarded:"点球",halftime:"半场",extraTimeStart:"加时",extraTimeHalfTime:"加时半场",extraTimeEnd:"加时结束",penaltyShootoutStart:"点球大战",penaltyShootoutEqualise:"人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球结束",tactical:"战术",penalty:"点球",shootout:"点球大战",fulltime:"结束",abandoned:"终止" };
+const EVENT_ICONS = { goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",blackWhistle:"⚖",brawl:"!",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",save:"◆",block:"◆",tackle:"◆",interception:"◆",setPiece:"◆",setPieceDuel:"◆",clearance:"◇",corner:"◇",miss:"○",tactical:"↔",halftime:"Ⅱ",extraTimeStart:"Ⅱ",extraTimeHalfTime:"Ⅱ",extraTimeEnd:"Ⅱ",fulltime:"■",abandoned:"!" };
 export const SECOND_LEG_COOLDOWN_MS = CHALLENGE_SECOND_LEG_COOLDOWN_MS;
 
 const escapeHtml = (value) => String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
@@ -26,16 +29,15 @@ function liveStatusMarkers(player) {
   ].join("")}</span>`;
 }
 
-function broadcastMagnet(player) {
+export function broadcastMagnet(player) {
   const assignedRole = player.assignedRole ?? player.role;
   const position = player.position ?? { x:50, y:50 };
   const status = player.sentOff ? "红牌" : player.injury ? "伤退" : "";
   const fitness = clamp(Math.round(player.fitness ?? 100),0,100);
-  const upgrade = Number(player.upgradeLevel ?? 0);
   const tooltip = `${player.name}\n${fieldRoleAbbreviation(assignedRole)} · 总评 ${Math.round(player.overall ?? 0)} · 评分 ${Number(player.rating ?? 0).toFixed(1)} · 体力 ${fitness}`;
   const captain = player.captain && player.active ? `<span class="league-captain-badge">C</span>` : "";
   const side = Number.isInteger(player.broadcastTeamIndex) ? ` broadcast-side-${player.broadcastTeamIndex}` : "";
-  return `<button type="button" class="magnet live-magnet league-squad-magnet s4-broadcast-magnet${side} grade-${String(player.grade ?? "C").toLowerCase()} fit-primary ${status ? "inactive unavailable" : ""}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" disabled>${captain}${liveStatusMarkers(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole))}</span><b>${escapeHtml(player.name)}</b><i>${Math.round(player.overall ?? 0)}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness}"><span style="width:${fitness}%"></span></span><span class="s4-broadcast-rating">评分 ${Number(player.rating ?? 0).toFixed(1)}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8,upgrade)}">+${upgrade}</em>` : ""}</button>`;
+  return `<button type="button" class="magnet live-magnet league-squad-magnet s4-broadcast-magnet broadcast-card-magnet${side} grade-${String(player.grade ?? "C").toLowerCase()} fit-primary ${status ? "inactive unavailable" : ""}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" aria-label="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" disabled>${broadcastCardFace(player)}${captain}${liveStatusMarkers(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole))}</span><span class="league-magnet-fitness" aria-label="体力 ${fitness}"><span style="width:${fitness}%"></span></span><span class="s4-broadcast-rating">评分 ${Number(player.rating ?? 0).toFixed(1)}</span></button>`;
 }
 
 function pitchMarkup(content) {
@@ -47,7 +49,7 @@ function combinedPosition(position = { x:50,y:50 }, teamIndex = 0) {
   return teamIndex === 0 ? { x,y:50+y*.5 } : { x:100-x,y:50-y*.5 };
 }
 
-function combinedPitchMarkup(teams) {
+export function combinedPitchMarkup(teams) {
   const magnets = teams.flatMap((team,teamIndex)=>(team.players??[]).filter((player)=>player.active||player.sentOff||player.injury).map((player)=>broadcastMagnet({ ...player,position:combinedPosition(player.position,teamIndex),broadcastTeamIndex:teamIndex }))).join("");
   const labels = `<span class="broadcast-v2-half-label away">${escapeHtml(teams[1].name)} · ${escapeHtml(teams[1].formation)}</span><span class="broadcast-v2-half-label home">${escapeHtml(teams[0].name)} · ${escapeHtml(teams[0].formation)}</span>`;
   return pitchMarkup(`${labels}${magnets}`);
@@ -60,11 +62,12 @@ function matchEventMarkup(entry) {
 function matchStatsMarkup(match) {
   const [left,right] = match.teams.map((team)=>team.stats ?? {});
   const possessionTotal = Number(left.possession ?? 0)+Number(right.possession ?? 0)||1;
-  const rows = [["控球",`${Math.round(Number(left.possession??0)/possessionTotal*100)}%`,`${Math.round(Number(right.possession??0)/possessionTotal*100)}%`],["射门",left.shots??0,right.shots??0],["射正",left.shotsOnTarget??0,right.shotsOnTarget??0],["xG",Number(left.xg??0).toFixed(2),Number(right.xg??0).toFixed(2)],["犯规",left.fouls??0,right.fouls??0],["红牌",left.redCards??0,right.redCards??0]];
+  const rows = [["控球",`${Math.round(Number(left.possession??0)/possessionTotal*100)}%`,`${Math.round(Number(right.possession??0)/possessionTotal*100)}%`],["射门",left.shots??0,right.shots??0],["射正",left.shotsOnTarget??0,right.shotsOnTarget??0],["xG",Number(left.xg??0).toFixed(2),Number(right.xg??0).toFixed(2)],["犯规",left.fouls??0,right.fouls??0],["黄牌",left.yellowCards??0,right.yellowCards??0],["红牌",left.redCards??0,right.redCards??0]];
   return `<div class="live-stats">${rows.map(([label,a,b])=>`<div><b>${a}</b><span>${label}</span><b>${b}</b></div>`).join("")}</div>`;
 }
 
 function phaseLabel(match) {
+  if(match.abandoned)return "比赛终止";
   if (match.phase === "finished") return "比赛结束";
   if (match.segment === "penalties") return "点球大战";
   if (match.segment === "extra") return "加时赛";
@@ -104,13 +107,13 @@ function matchLayoutMarkup(match) {
   const latestIcon = latest ? EVENT_ICONS[latest.type] ?? "•" : "";
   const weather = match.weather;
   const feed = match.events.length ? [...match.events].reverse().map(matchEventMarkup).join("") : `<p class="feed-empty">比赛进行中</p>`;
-  return `<div class="broadcast-v2-layout"><section class="broadcast-v2-field-column stand-none"><header class="broadcast-v2-venue-head"><div><small>HOME STADIUM</small><h2>${escapeHtml(match.teams[0].name)} 主场</h2></div><span>${weatherIcon(weather)} ${escapeHtml(weather.name)} · ${match.phase === "finished" ? "最终比赛阵型" : "实时比赛阵型"}</span></header><div class="broadcast-v2-stadium pitch-striped">${combinedPitchMarkup(match.teams)}</div>${strategiesMarkup(match.teams)}</section><aside class="broadcast-v2-sidebar"><section class="commentary-panel match-center-panel broadcast-v2-commentary"><header><h2>${match.phase === "finished" ? "比赛详情" : "实时战况"}</h2><span>${match.events.length}</span></header>${latest ? `<div class="latest-event event-${escapeHtml(latest.type)}"><i>${latestIcon}</i><b>${Math.ceil(Number(latest.minute??0))}'</b><span>${escapeHtml(latest.text??"比赛事件")}</span></div>` : ""}<div class="event-feed">${feed}</div></section><section class="broadcast-v2-data-panel"><header><div><small>MATCH DATA</small><h2>比赛数据</h2></div><span>${escapeHtml(match.teams[0].name)} / ${escapeHtml(match.teams[1].name)}</span></header>${matchStatsMarkup(match)}</section></aside></div>`;
+  return `<div class="broadcast-v2-layout"><section class="broadcast-v2-field-column stand-none"><header class="broadcast-v2-venue-head"><div><small>HOME STADIUM</small><h2>${escapeHtml(match.venue?.name ?? match.teams[0].name+" 主场")}</h2></div><span>${weatherIcon(weather)} ${escapeHtml(weather.name)} · ${match.phase === "finished" ? "最终比赛阵型" : "实时比赛阵型"}</span></header><div class="broadcast-v2-stadium pitch-striped">${broadcastSponsorMarkup(match.venue)}${combinedPitchMarkup(match.teams)}</div>${strategiesMarkup(match.teams)}</section><aside class="broadcast-v2-sidebar"><section class="commentary-panel match-center-panel broadcast-v2-commentary"><header><h2>${match.phase === "finished" ? "比赛详情" : "实时战况"}</h2><span>${match.events.length}</span></header>${latest ? `<div class="latest-event event-${escapeHtml(latest.type)}"><i>${latestIcon}</i><b>${Math.ceil(Number(latest.minute??0))}'</b><span>${escapeHtml(latest.text??"比赛事件")}</span></div>` : ""}<div class="event-feed">${feed}</div></section><section class="broadcast-v2-data-panel"><header><div><small>MATCH DATA</small><h2>比赛数据</h2></div><span>${escapeHtml(match.teams[0].name)} / ${escapeHtml(match.teams[1].name)}</span></header>${matchStatsMarkup(match)}</section></aside></div>`;
 }
 
 function screenMarkup(broadcast) {
   const { match } = broadcast;
   const center = match.segment === "penalties" ? `${match.penalties?.[0]??0}:${match.penalties?.[1]??0}` : `${match.minute}'`;
-  return `<div class="broadcast-v2-content"><section class="broadcast-screen"><header class="broadcast-toolbar"><button class="button secondary" data-leave-broadcast>${broadcast.actionLabel}</button><div><i>${broadcast.live ? "LIVE" : "FT"}</i><b>黄狗风云比赛电视台</b><small>地块争夺赛 · 第 ${broadcast.legNumber} 回合${broadcast.live ? "" : " · 回合结束"}</small>${broadcast.live ? "" : `<em class="broadcast-toolbar-result">最终详情 · ${escapeHtml(match.teams[0].name)} ${match.score[0]} : ${match.score[1]} ${escapeHtml(match.teams[1].name)}</em>`}</div><span><b>S4 V2.1 ENGINE</b><small>服务器实时转播</small></span></header><section class="match-shell broadcast-match-shell"><header class="scoreboard"><div><small>${escapeHtml(match.teams[0].name)}</small><b>${match.score[0]}</b><em>${match.teams[0].activeCount} 人 · ${escapeHtml(match.teams[0].formation)}</em></div><span><small>${phaseLabel(match)}</small><strong>${center}</strong><em>${weatherIcon(match.weather)} ${escapeHtml(match.weather.name)}</em></span><div><small>${escapeHtml(match.teams[1].name)}</small><b>${match.score[1]}</b><em>${match.teams[1].activeCount} 人 · ${escapeHtml(match.teams[1].formation)}</em></div></header>${matchLayoutMarkup(match)}</section></section></div>`;
+  return `<div class="broadcast-v2-content"><section class="broadcast-screen"><header class="broadcast-toolbar"><button class="button secondary" data-leave-broadcast>${broadcast.actionLabel}</button><div><i>${broadcast.live ? "LIVE" : "FT"}</i><b>黄狗风云比赛电视台</b><small>地块争夺赛 · 第 ${broadcast.legNumber} 回合${broadcast.live ? "" : " · 回合结束"}</small>${broadcast.live ? "" : `<em class="broadcast-toolbar-result">最终详情 · ${escapeHtml(match.teams[0].name)} ${match.score[0]} : ${match.score[1]} ${escapeHtml(match.teams[1].name)}</em>`}</div><span><b>S4 V2.1 ENGINE</b><small>服务器实时转播</small></span></header><section class="match-shell broadcast-match-shell"><header class="scoreboard"><div><small title="${escapeHtml(match.teams[0].name)}">${escapeHtml(match.teams[0].name)}</small><b>${match.score[0]}</b></div><span><small>${phaseLabel(match)}</small><strong>${center}</strong><em>${weatherIcon(match.weather)} ${escapeHtml(match.weather.name)}</em></span><div><small title="${escapeHtml(match.teams[1].name)}">${escapeHtml(match.teams[1].name)}</small><b>${match.score[1]}</b></div></header>${matchLayoutMarkup(match)}</section></section></div>`;
 }
 
 function liveMatch(broadcast) {
@@ -121,9 +124,11 @@ function liveMatch(broadcast) {
     minute,
     score:[...(broadcast?.score ?? [0,0])],
     phase:broadcast?.finished?"finished":"playing",
+    abandoned:Boolean(broadcast?.abandoned),
     segment:shootout?"penalties":minute>90?"extra":"regular",
     penalties:broadcast?.penalties ?? null,
     weather:weatherProfile(broadcast?.environment),
+    venue:broadcast?.venue ?? null,
     events:broadcast?.events ?? [],
     teams:(broadcast?.teams ?? []).map((team)=>({ ...team,activeCount:team.activeCount??team.players?.filter((player)=>player.active).length??0 })),
   };
@@ -137,9 +142,16 @@ export function campaignPlaybackTickMs() {
   return CAMPAIGN_LIVE_POLL_MS;
 }
 
+export function campaignReportBroadcast(controller) {
+  const reports=controller?.snapshot?.battle?.broadcasts;
+  return controller?.snapshot?.completed && reports?.length
+    ? reports.find(b=>b.legNumber===controller.reportLegNumber)??reports.at(-1)
+    : controller?.snapshot?.live?.broadcast;
+}
+
 export function showCampaignBroadcast(controller, { onClose } = {}) {
   const overlay=document.querySelector("#campaign-broadcast");
-  if (!controller?.snapshot?.live?.broadcast) { onClose?.(); return; }
+  if (!campaignReportBroadcast(controller)) { onClose?.(); return; }
   const close=()=>{
     if (controller.renderOverlay===render) controller.renderOverlay=null;
     overlay.hidden=true;
@@ -150,13 +162,26 @@ export function showCampaignBroadcast(controller, { onClose } = {}) {
   };
   registerStandardWindow(overlay,{onRequestClose:close});
   const render=({reset=false}={})=>{
-    const broadcast=controller.snapshot?.live?.broadcast;
+    const broadcast=campaignReportBroadcast(controller);
     if (!broadcast) { close(); return; }
-    if (reset) overlay.replaceChildren();
+    if (reset) overlay.querySelector(":scope > .broadcast-v2-content")?.remove();
     const feedScroll=reset ? null : captureEventFeedScroll(overlay);
-    const legNumber=Number(controller.snapshot.live.legNumber ?? broadcast.legNumber ?? 1);
+    const cardFaces=captureBroadcastCardFaces(overlay);
+    const legNumber=Number(broadcast.legNumber ?? controller.snapshot.live?.legNumber ?? 1);
     overlay.hidden=false;
-    overlay.innerHTML=screenMarkup({match:liveMatch(broadcast),live:!broadcast.finished,legNumber,actionLabel:"退出观赛"});
+    const template=document.createElement('template');
+    template.innerHTML=screenMarkup({match:liveMatch(broadcast),live:!broadcast.finished,legNumber,actionLabel:"退出观赛"});
+    const content=overlay.querySelector(':scope > .broadcast-v2-content');
+    if(content)content.replaceChildren(...template.content.firstElementChild.childNodes);
+    else overlay.append(template.content);
+    const reports=controller.snapshot?.battle?.broadcasts??[];
+    if(controller.snapshot?.completed&&reports.length>1){
+      const nav=document.createElement('nav');nav.className='broadcast-report-legs';nav.setAttribute('aria-label','回合战报');
+      for(const report of reports){const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=`第 ${report.legNumber} 回合`;button.setAttribute('aria-pressed',String(report.legNumber===legNumber));button.onclick=()=>{controller.reportLegNumber=report.legNumber;render({reset:true});};nav.append(button);}
+      overlay.querySelector('.broadcast-toolbar>div')?.append(nav);
+    }
+    syncTvBackground(overlay);
+    restoreBroadcastCardFaces(overlay,cardFaces);
     dockBroadcastTeamStrategies(overlay);
     restoreEventFeedScroll(overlay,feedScroll);
     overlay.querySelector("[data-leave-broadcast]").onclick=close;

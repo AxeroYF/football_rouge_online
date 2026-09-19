@@ -1,0 +1,26 @@
+/* Native modal top layer keeps the selector clear of the tactical grid and map HUD. */
+.research-import-dialog{box-sizing:border-box;position:fixed;inset:0;width:min(680px,calc(100vw - 32px));max-width:none;max-height:calc(100dvh - 40px);margin:auto;padding:0;border:1px solid var(--ui-border-strong,#617063);border-radius:16px;background:var(--ui-surface,#1a241f);color:var(--ui-text,#ede9dd);box-shadow:0 24px 80px #0008;font-family:inherit;overflow:hidden}
+.research-import-dialog[open]{display:flex;flex-direction:column}
+.research-import-dialog::backdrop{background:#07110cc9;backdrop-filter:blur(3px)}
+.research-import-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 24px;border-bottom:1px solid var(--ui-border,#3a473e);flex:none}
+.research-import-dialog h2{font-size:24px;line-height:1.4;margin:0;font-weight:700}
+.research-import-dialog header p{margin:7px 0 0;font-size:15px;color:var(--ui-muted,#b6beb0)}
+.research-import-dialog [data-close-research-import]{width:40px;height:40px;flex:none;border:0;border-radius:8px;background:transparent;color:inherit;font:28px/1 sans-serif;cursor:pointer}
+.research-import-dialog [data-close-research-import]:hover{background:var(--ui-raised,#24312a)}
+.research-import-list{display:grid;gap:12px;padding:20px 24px;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.research-import-option{display:grid;grid-template-columns:84px minmax(0,1fr) 26px;gap:20px;align-items:center;text-align:left;padding:16px;border:1px solid var(--ui-border,#3a473e);border-radius:12px;background:var(--ui-raised,#24312a);color:inherit;font:inherit;cursor:pointer;min-width:0}
+.research-import-option:hover{border-color:var(--ui-gold,#d4b365);background:#2e3b30}
+.research-import-dialog button:focus-visible{outline:2px solid var(--ui-gold,#d4b365);outline-offset:-3px}
+.research-import-info{display:grid;gap:8px;min-width:0;overflow-wrap:anywhere}
+.research-import-info>strong{font-size:20px;line-height:1.35}.research-import-shape{font-size:16px;color:var(--ui-muted,#b6beb0)}
+.research-import-benefits{display:flex;flex-wrap:wrap;gap:7px 14px;font-size:14px;line-height:1.6}.research-import-benefits b{color:var(--ui-gold,#d4b365);white-space:nowrap}.research-import-no-benefit{color:var(--ui-muted,#b6beb0)}
+.research-import-arrow{font-size:30px;color:var(--ui-gold,#d4b365)}
+.research-import-pitch{width:84px;height:111px;fill:#172b21;stroke:#7d927d;stroke-width:1}.research-import-pitch path,.research-import-pitch .pitch-circle{fill:none;stroke:#597b67}.research-import-pitch .player-dot{fill:#d4b365;stroke:none}.research-import-pitch .keeper-dot{fill:#ede9dd;stroke:none}
+.research-import-dialog>footer{flex:none;padding:16px 24px;border-top:1px solid var(--ui-border,#3a473e);font-size:14px;line-height:1.6;color:var(--ui-muted,#b6beb0)}
+.research-import-empty{padding:36px 8px;text-align:center;font-size:20px}.research-import-empty span{display:block;font-size:15px;color:var(--ui-muted,#b6beb0);margin-top:12px}
+#league-squad-form .league-board-toolbar{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0}
+#league-squad-form .league-position-tabs{display:flex;flex:0 1 auto;flex-wrap:nowrap;width:auto;min-width:0;max-width:100%;gap:5px;overflow-x:auto;scrollbar-width:thin}
+#league-squad-form .league-position-tabs button{flex:0 0 auto;width:auto;min-width:0;min-height:32px;padding:0 10px;font-size:11px;white-space:nowrap}
+#league-squad-form [data-import-research]{color:var(--ui-gold,#d4b365)}
+#league-squad-form .league-board-toolbar .league-lineup-scheme-switcher{flex:none;margin-left:auto}
+@media(max-width:600px){.research-import-dialog{width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}.research-import-dialog>header{padding:16px}.research-import-dialog h2{font-size:21px}.research-import-list{padding:14px;gap:10px}.research-import-option{grid-template-columns:58px minmax(0,1fr) 20px;gap:12px;padding:12px}.research-import-pitch{width:58px;height:78px}.research-import-info>strong{font-size:17px}.research-import-benefits{font-size:13px}.research-import-arrow{font-size:25px}.research-import-dialog>footer{padding:14px 16px}}

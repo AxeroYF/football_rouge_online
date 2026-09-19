@@ -82,7 +82,7 @@ export function inferElevenBoardRoles(entries = [], formationLines = null) {
   const lines = sanitizeFormationLines(formationLines);
   const roles = {};
   for (const entry of normalized) {
-    const line = FORMATION_LINE_KEYS.reduce((closest, key) => Math.abs(entry.y - lines[key]) < Math.abs(entry.y - lines[closest]) ? key : closest, "attack");
+    const line = FORMATION_LINE_KEYS.reduce((closest, key) => (Math.abs(entry.y - lines[key]) < Math.abs(entry.y - lines[closest]) || (key === "defense" && Math.abs(entry.y - lines[key]) === Math.abs(entry.y - lines[closest]))) ? key : closest, "attack");
     if (line === "goalkeeper") roles[entry.id] = "GK";
     else if (line === "attack") roles[entry.id] = entry.x < FORMATION_ROLE_LANES.central.minimumX ? "LW" : entry.x > FORMATION_ROLE_LANES.central.maximumX ? "RW" : "ST";
     else if (line === "defense") {

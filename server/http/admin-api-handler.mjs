@@ -9,9 +9,17 @@ export function createAdminApiHandler({ admin, campaign, players } = {}) {
     }
     const actor = admin.authenticate(bearerToken(request));
     const requestUrl = new URL(url, "http://localhost");
+    if (request.method === "GET" && pathname === "/api/admin/wonders") return sendJson(response, 200, admin.wonderManagement(actor));
+    const wonderMatch = pathname.match(/^\/api\/admin\/wonders\/([^/]+)$/);
+    if (request.method === "POST" && wonderMatch) {
+      const input = await readJsonBody(request, { maximumBytes: 160_000 });
+      return sendJson(response, 200, admin.saveWonderDraft(actor, decodeURIComponent(wonderMatch[1]), input));
+    }
     if (request.method === "GET" && pathname === "/api/admin/me") return sendJson(response, 200, { profile: admin.publicAdmin(actor) });
+    if (request.method === "GET" && pathname === "/api/admin/card-management") return sendJson(response, 200, admin.cardManagement(actor));
     if (request.method === "GET" && pathname === "/api/admin/audit") return sendJson(response, 200, { entries: admin.listAudit(requestUrl.searchParams.get("limit")) });
     if (request.method === "GET" && pathname === "/api/admin/tasks") return sendJson(response, 200, { tasks: admin.listTasks() });
+    if (request.method === "GET" && pathname === "/api/admin/player-grants") return sendJson(response, 200, admin.playerGrantManagement(actor));
     if (request.method === "GET" && pathname === "/api/admin/player-packs") return sendJson(response, 200, admin.playerPackManagement(actor));
     if (request.method === "GET" && pathname === "/api/admin/player-library") return sendJson(response, 200, players.overview());
     if (request.method === "GET" && pathname === "/api/admin/player-library/players") return sendJson(response, 200, { players: players.listPlayers(Object.fromEntries(requestUrl.searchParams)) });
@@ -21,9 +29,12 @@ export function createAdminApiHandler({ admin, campaign, players } = {}) {
     const playerMatch = pathname.match(/^\/api\/admin\/player-library\/players\/([^/]+)$/);
     if (request.method === "GET" && playerMatch) return sendJson(response, 200, { player: players.getPlayer(decodeURIComponent(playerMatch[1])) });
     const body = request.method === "POST" ? await readJsonBody(request, { maximumBytes: pathname.includes("/profiles/") ? 16_000_000 : 4_000_000 }) : {};
+    if (request.method === "POST" && pathname === "/api/admin/card-management/trade") return sendJson(response, 200, admin.tradePlayerCard(actor, body));
+    if (request.method === "POST" && pathname === "/api/admin/card-management/config") return sendJson(response, 200, admin.configureCardManagement(actor, body));
     if (request.method === "POST" && pathname === "/api/admin/tasks") return sendJson(response, 200, { task: admin.createTask(actor, body) });
     if (request.method === "POST" && pathname === "/api/admin/tasks/complete") return sendJson(response, 200, { task: admin.completeTask(actor, body.taskId) });
     if (request.method === "POST" && pathname === "/api/admin/players/gold") return sendJson(response, 200, { wallet: admin.adjustPlayerGold(actor, body.accountId, body.delta, body.reason) });
+    if (request.method === "POST" && pathname === "/api/admin/player-grants") return sendJson(response, 200, admin.grantPlayers(actor, body));
     if (request.method === "POST" && pathname === "/api/admin/player-packs") return sendJson(response, 200, admin.grantPlayerPacks(actor, body));
     if (request.method === "POST" && playerMatch) {
       admin.requireRole(actor, ["content", "superadmin"]); const id = decodeURIComponent(playerMatch[1]); const before = players.getPlayer(id);

@@ -44,7 +44,7 @@ function assertChoice(value, choices, label) {
 }
 
 export class PlayerLibraryService {
-  constructor({ root, catalog, campaign = null } = {}) {
+  constructor({ root, catalog, campaign = null, dataDirectory = null } = {}) {
     if (!root || !Array.isArray(catalog)) throw new Error("PlayerLibraryService requires root and catalog");
     this.root = root;
     this.catalog = catalog;
@@ -54,7 +54,7 @@ export class PlayerLibraryService {
     this.overridesPath = path.join(root, "assets/data/s4-production-content-overrides.json");
     this.registryPath = path.join(root, "assets/data/s4-player-profile-registry.json");
     this.profileRoot = path.join(root, "assets/player-profiles");
-    this.studioPath = path.join(root, "data/player-library-admin.json");
+    this.studioPath = path.join(dataDirectory ?? path.join(root, "data"), "player-library-admin.json");
     this.baseCatalog = readJson(this.baseCatalogPath, []);
     this.overrides = readJson(this.overridesPath, { schemaVersion: 2, updatedAt: null, players: {} });
     this.registry = readJson(this.registryPath, { schemaVersion: 1, generatedAt: null, profiles: {} });

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="1400" viewBox="0 0 520 700"><defs><linearGradient id="metal" x1="0%" y1="0%" x2="92%" y2="100%"><stop offset="0" stop-color="#dce4ca"/><stop offset="0.14285714285714285" stop-color="#748069"/><stop offset="0.2857142857142857" stop-color="#ced8ba"/><stop offset="0.42857142857142855" stop-color="#454e40"/><stop offset="0.5714285714285714" stop-color="#becaae"/><stop offset="0.7142857142857143" stop-color="#69755e"/><stop offset="0.8571428571428571" stop-color="#e3e9d5"/><stop offset="1" stop-color="#4c5746"/></linearGradient>
+ <linearGradient id="edge"><stop stop-color="#454e40"/><stop offset=".22" stop-color="#dce4ca"/><stop offset=".5" stop-color="#748069"/><stop offset=".7" stop-color="#e3e9d5"/><stop offset="1" stop-color="#454e40"/></linearGradient>
+ <linearGradient id="base" x1="0%" y1="100%" x2="76%" y2="0%"><stop stop-color="#18291f"/><stop offset=".48" stop-color="#354f3e"/><stop offset="1" stop-color="#71896a"/></linearGradient>
+ <radialGradient id="spot" cx="61%" cy="26%" r="72%"><stop stop-color="#d0e2be" stop-opacity=".27"/><stop offset="1" stop-color="#354f3e" stop-opacity="0"/></radialGradient>
+ <linearGradient id="foil" x1="0%" y1="100%" x2="100%" y2="0%"><stop stop-color="#d0e2be" stop-opacity="0"/><stop offset=".47" stop-color="#71896a" stop-opacity=".12"/><stop offset=".52" stop-color="#d0e2be" stop-opacity=".48"/><stop offset=".61" stop-color="#354f3e" stop-opacity=".05"/><stop offset="1" stop-color="#dce4ca" stop-opacity=".18"/></linearGradient>
+ <linearGradient id="paper" x1="0%" y1="0%" x2="70%" y2="100%"><stop offset="0" stop-color="#eff0df"/><stop offset="0.5" stop-color="#d5ddc8"/><stop offset="1" stop-color="#a0b096"/></linearGradient>
+ <linearGradient id="fade" x1="0%" y1="0%" x2="0%" y2="100%"><stop stop-color="#18291f" stop-opacity="0"/><stop offset="1" stop-color="#18291f" stop-opacity=".72"/></linearGradient>
+ <clipPath id="inner"><path d="M46 81 78 55 260 27 442 55 474 81V603L443 642 260 673 77 642 46 603Z"/></clipPath><clipPath id="outer"><path d="M27 77 63 38 260 8 457 38 493 77V610L456 660 260 693 64 660 27 610Z"/></clipPath></defs><g clip-path="url(#inner)"><path d="M46 554H474V603L443 642 260 673 77 642 46 603Z" fill="url(#paper)"/>
+ <path d="M46 554 89 566 78 634 47 603Z" fill="#2c3b2d" opacity=".08"/><path d="M474 554 436 566 442 634 474 603Z" fill="#2c3b2d" opacity=".12"/>
+ <path d="M77 642 260 673 443 642 422 635 260 661 97 635Z" fill="#2c3b2d" opacity=".1"/>
+ <path d="M47 554H473" stroke="#d0d9b8" stroke-width="1.5"/><path d="M88 561H447" stroke="#fff" stroke-width="1.5" opacity=".7"/>
+ <path d="M196 554 295 554 412 631 355 641Z" fill="#fff" opacity=".2"/>
+ </g></svg>

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "revision": "20260904-relief-mesh-v1",
+  "region": "svalbard",
+  "width": 334,
+  "height": 459,
+  "origin": [
+    19.5,
+    -434.0
+  ],
+  "step": 0.25,
+  "layout": "uint16-le elevation metres, then uint8 coastline alpha",
+  "file": "assets/map-relief/relief-mesh/svalbard.bin",
+  "bytes": 459918,
+  "sha256": "e952a78c7efae7ffa8a2cbcab3653aeac0d830283b86acd8c7830301f59cf725",
+  "landNodes": 17587,
+  "maxElevation": 1352,
+  "source": "existing local Mapzen Terrarium cache; no downloads",
+  "dem": {
+    "files": 709,
+    "bytes": 47035197,
+    "sha256": "bedc8d8cfa8aa72cc7ae68414d0aa765aad7d80c2c5812dddc12a7f39e1e6d30"
+  }
+}

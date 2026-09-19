@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>奇观模型图鉴 · 黄狗风云</title><link rel="icon" href="./assets/icon-yf-v2.png"><link rel="stylesheet" href="./styles/wonder-preview.css">
+<script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js","three/addons/controls/OrbitControls.js":"./assets/vendor/three/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"./assets/vendor/three/GLTFLoader.js","three/addons/environments/RoomEnvironment.js":"./assets/vendor/three/RoomEnvironment.js"}}</script>
+</head><body>
+<header><a class="brand" href="./wonder-preview.html">黄狗风云<span>WORLD LANDMARKS</span></a><div class="edition">奇观模型图鉴 <i>01 / 24</i></div><span class="count">欧洲 16 · 南美洲 8</span></header>
+<main><section class="collection"><div class="collection-heading"><div><p class="eyebrow">THE FIRST COLLECTION</p><h1>把世界，放进地图。</h1></div><span class="collection-total">24</span></div>
+<nav class="filters" aria-label="地区筛选"><button class="selected" data-region="all">全部 <span>24</span></button><button data-region="欧洲">欧洲 <span>16</span></button><button data-region="南美洲">南美洲 <span>8</span></button></nav>
+<div id="model-grid" class="model-grid"></div></section>
+<aside class="inspector"><div class="viewer-top"><span id="selected-id">W16</span><span class="status"><b></b>彩色模型</span></div>
+<div id="viewer"><canvas id="wonder-canvas" aria-label="拖动旋转三维模型，滚轮缩放"></canvas><div id="loading" role="status">读取模型…</div><div class="view-presets"><button data-view="iso" class="selected">立体</button><button data-view="front">正面</button><button data-view="top">俯视</button></div></div>
+<div class="model-info"><p id="location" class="eyebrow"></p><h2 id="model-name">伯纳乌球场</h2><p id="signature"></p>
+<div class="swatches" id="swatches"></div>
+<div class="tools"><label>精度 <select id="lod"><option value="0">近景</option><option value="1">中景</option><option value="2">远景</option></select></label><label class="wire"><input id="wireframe" type="checkbox">线框</label><button id="reset">重置视角</button></div>
+<div class="asset-meta"><span id="triangle-count"></span><a id="download" download>下载 GLB ↗</a><a id="reference" target="_blank" rel="noreferrer">原型参考 ↗</a></div>
+<p class="gesture">拖动旋转 · 滚轮缩放</p></div></aside></main>
+<footer>首批彩色模型 · 现实地标的风格化三维表达</footer>
+<script type="module" src="./client/wonders/wonder-preview.js?v=20260907-color-v2"></script></body></html>
+

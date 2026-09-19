@@ -1,3 +1,4 @@
+import { formationResearchMultiplier } from './formation-research-v2.js';
 import { positionFitScore, roleGroup } from "../../game/public/schema.js";
 import { traitPositionFit } from "../../game/public/trait-runtime.js";
 import { inferElevenBoardRoles } from "../public/formation-rules.js";
@@ -81,7 +82,7 @@ function adjustedLocalPosition(position, assignedRole, dimensions, parameters, o
   };
 }
 
-function playerSpatialProfile(player, assignedRole, position, teamIndex, dimensions, parameters, outOfPossessionDetails, positionsResolved = false) {
+function playerSpatialProfile(player, assignedRole, position, teamIndex, dimensions, parameters, outOfPossessionDetails, positionsResolved = false, researchBonuses = {}) {
   const localPosition = positionsResolved
     ? boardPosition(position)
     : adjustedLocalPosition(position, assignedRole, dimensions, parameters, outOfPossessionDetails);
@@ -90,7 +91,7 @@ function playerSpatialProfile(player, assignedRole, position, teamIndex, dimensi
   const fitnessFactor = 0.72 + fitness / 357;
   const fit = clamp(traitPositionFit({ ...player, assignedRole, traitDefinitions:(player.v2AppliedTraitIds ?? []).map((id) => ({ id, rules:(player.v2TraitHooks ?? []).filter((rule) => rule.traitId === id) })) }, positionFitScore(player, assignedRole)), 0.35, 1.04);
   const execution = fitnessFactor * (0.72 + fit * 0.28);
-  const metrics = Object.fromEntries(Object.entries(parameters.metrics).map(([key, weights]) => [key, weightedMetric(player, weights) * execution]));
+  const metrics = Object.fromEntries(Object.entries(parameters.metrics).map(([key, weights]) => [key, weightedMetric(player, weights) * execution * formationResearchMultiplier(researchBonuses,key,assignedRole)]));
   return {
     id:player.id,
     name:player.name,
@@ -357,7 +358,7 @@ export function v2DoublePivot451Profile(players = []) {
 
 function projectTeam(team, teamIndex, zones, parameters, options = {}) {
   const positions = team.positions ?? {};
-  const roles = team.spatialRoles ?? inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:positions[player.id] })), team.formationLines);
+  const roles = team.spatialRoles ?? inferElevenBoardRoles((team.players ?? []).filter(player=>player.active!==false).map((player) => ({ id:player.id, position:positions[player.id] })), team.formationLines);
   const dimensions = resolveV2TacticalDimensions(team.tactic, team.style, team.tacticalDimensions, parameters);
   const basePlayers = (team.players ?? []).filter((player) => player.active !== false).map((player) => playerSpatialProfile(
     player,
@@ -368,6 +369,7 @@ function projectTeam(team, teamIndex, zones, parameters, options = {}) {
     parameters,
     team.outOfPossessionDetails,
     Boolean(options.positionsResolved),
+    team.formationResearchBonuses,
   ));
   const roleBalance = parameters.spatial.roleBalance ?? {};
   const advancedMidfielderCount = basePlayers.filter((player) => player.assignedRole === "AM").length;
@@ -642,7 +644,7 @@ function resolveStageParameters(options) {
 function buildV2StageContexts(teams, parameters) {
   return teams.map((team) => {
     const positions = team.positions ?? {};
-    const roles = team.structureRoles ?? inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:positions[player.id] })), team.formationLines);
+    const roles = team.structureRoles ?? inferElevenBoardRoles((team.players ?? []).filter(player=>player.active!==false).map((player) => ({ id:player.id, position:positions[player.id] })), team.formationLines);
     const dimensions = resolveV2TacticalDimensions(team.tactic, team.style, team.tacticalDimensions, parameters);
     return { roles, dimensions };
   });

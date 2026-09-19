@@ -1,4 +1,4 @@
-export const MARITIME_MAX_RANGE_KM = 900;
+export const MARITIME_MAX_RANGE_KM = 600;
 export const MARITIME_ANGULAR_SECTOR_DEGREES = 12;
 export const MARITIME_ROUTE_SAMPLE_KM = 25;
 export const MARITIME_MIN_ROUTE_KM = 8;

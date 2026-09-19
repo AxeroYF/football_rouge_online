@@ -1,0 +1,8 @@
+{
+  "archive": "YDL_backup/ydl-s4-final-20260825-172250/ydl-s4-final-20260825-172250/archives/football-s4-data-20260825-172250.tar.gz",
+  "archiveSha256": "f1ebbc868b63ad89bf5913ef2c7529f29145729aff95047475f2d2654f4251cd",
+  "member": "data/versus-accounts.json",
+  "expectedAccounts": 11,
+  "backupDate": "2026-08-25 17:22:50",
+  "policy": "Identity and password hashes only; fresh campaign progress and launch resources"
+}

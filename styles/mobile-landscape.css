@@ -1,0 +1,150 @@
+/* Short landscape screens share this layout in Chrome and Android WebView. */
+.mobile-only{display:none!important}
+@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+ html,body{height:100%;overflow:clip;overscroll-behavior:none}
+ body{position:fixed;inset:0;width:100%}
+ .mobile-only{display:inline-flex!important;align-items:center;justify-content:center;gap:6px}
+ .campaign-shell,body.is-auth-screen .campaign-shell{height:var(--mobile-viewport-height,100dvh);min-height:0;grid-template-rows:44px minmax(0,1fr)}
+ body.is-auth-screen .campaign-shell{grid-template-rows:minmax(0,1fr)}
+ html .topbar{height:44px;min-height:0;align-items:center;gap:4px;padding:0 max(6px,env(safe-area-inset-right)) 0 max(6px,env(safe-area-inset-left));z-index:1500}
+ html .topbar .topbar-identity{flex:none}
+ html .topbar .brand{padding:0 4px!important}html .topbar .brand-logo{width:28px;height:28px}html .topbar .brand strong{display:none}
+ html .topbar .account-menu-trigger{height:40px;min-height:40px;padding:0 8px;font-size:13px}
+ html .topbar .mobile-menu-toggle{flex:none;height:40px;padding:0 10px;border:0;border-radius:6px;color:#ead59a;background:#d7b96716;font-family:inherit;font-size:14px;font-weight:600;line-height:1;cursor:pointer}
+ html .topbar .primary-nav{display:none;position:fixed;top:48px;left:8px;z-index:1601;margin:0!important;width:min(480px,calc(100vw - 16px));max-height:calc(var(--mobile-viewport-height,100dvh) - 56px);overflow:auto!important;padding:8px;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:#15271ff5;border:1px solid #61715e;border-radius:10px;box-shadow:0 16px 40px #0007;overscroll-behavior:contain}
+ html.mobile-menu-open .topbar .primary-nav{display:grid}
+ html .topbar .primary-nav .nav-item{min-width:0;min-height:44px;height:auto;padding:10px 6px;font-size:14px;border-radius:6px;background:#ffffff05;white-space:normal}
+ html .topbar .primary-nav .nav-item.is-active{background:#ddbf6b20}
+ html .topbar .topbar-yoogle{flex:none;width:auto;min-width:0;margin:0 4px!important}
+ html .topbar .yoogle-searchbox{display:none}html .topbar .yoogle-logo{font-size:15px;padding:10px 2px}
+ html .topbar #topbar-resource-summary{display:flex;flex:0 1 auto;min-width:0;gap:0;margin:0 0 0 auto;padding:0;font-size:12px}
+ html .topbar #topbar-resource-summary>button{min-height:40px;padding:0 7px;gap:4px}
+ html .topbar #topbar-resource-summary .resource-icon,html .topbar #topbar-resource-summary .gold-icon{width:19px;height:19px}
+ html .topbar #topbar-resource-summary .topbar-wallet strong{font-size:13px}
+ html .topbar #gold-growth{display:none}
+ html .topbar .topbar-conquest{flex:none;margin:0;padding:0 5px;font-size:12px;min-width:0}
+ html .topbar .topbar-conquest strong{font-size:14px}
+ html .topbar .account-menu-popover{position:fixed;top:48px;left:8px;max-height:calc(var(--mobile-viewport-height,100dvh) - 56px);max-width:calc(100vw - 16px);overflow:auto}
+ .map-stage{min-height:0;overflow:hidden}
+ #server-players{top:52px;right:8px;left:auto;width:200px;max-height:calc(var(--mobile-viewport-height,100dvh) - 104px);display:flex;flex-direction:column}
+ #server-players:has(.server-player-list[hidden]){width:auto}
+ #server-players>header{padding:3px 8px;gap:8px;min-height:40px;font-size:13px;flex:none}
+ #server-players>header span{font-size:12px;margin-left:3px}#server-players>header button{min-height:34px;font-size:12px}
+ .server-player-list{min-height:0;max-height:none;overflow:auto}.server-player{min-height:44px;padding:7px 4px}.server-player b{font-size:14px}
+ #campaign-notifications{top:52px;right:220px;left:auto;width:300px;max-height:min(var(--notification-available-height,100vh),calc(var(--mobile-viewport-height,100dvh) - 104px))}
+ #campaign-notifications.is-collapsed{width:150px}
+ .notification-center-header{min-height:40px;padding:3px 8px}.notification-center-header button{min-height:34px}
+ .campaign-minimap-panel{right:8px;bottom:8px;width:230px;max-height:calc(100% - 16px);overflow:auto;gap:6px;overscroll-behavior:contain;scrollbar-width:none}
+ .campaign-minimap-panel:not(.mobile-tools-open){width:auto}
+ .campaign-minimap-panel:not(.mobile-tools-open)>:not(.mobile-map-tools){display:none!important}
+ .mobile-map-tools{justify-self:end;min-height:40px;padding:6px 12px;border:1px solid #66785f;border-radius:8px;background:#14271ff2;color:#e6e8d7;font-family:inherit;font-size:13px;font-weight:600;line-height:1;cursor:pointer}
+ .campaign-minimap-panel .campaign-minimap{height:110px}
+ .campaign-minimap-panel .map-layer-toggles{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .campaign-minimap-panel .map-layer-toggle{padding:0 5px;gap:4px;min-height:36px;font-size:11px}
+ .map-stage.has-stage-window>#server-players,.map-stage.has-stage-window>#campaign-notifications,.map-stage.has-stage-window>.campaign-minimap-panel{visibility:hidden;pointer-events:none}
+ .map-stage .home-selection-panel{bottom:8px;left:8px;max-height:calc(100% - 16px);overflow:auto}
+ .territory-inspector{top:8px;bottom:8px;max-height:calc(100% - 16px);width:min(340px,calc(100% - 16px));overflow:auto}
+ #campaign-entry{padding:12px 20px;align-items:start;overscroll-behavior:contain}
+ #campaign-entry.is-auth{padding:12px 20px}
+ #campaign-entry .auth-panel{grid-template-columns:minmax(140px,.75fr) minmax(240px,1fr);width:min(680px,100%);gap:24px;padding:18px 24px;margin:auto;min-height:0}
+ #campaign-entry .auth-identity{justify-content:center;gap:10px}#campaign-entry .auth-identity img{width:64px;height:64px}#campaign-entry .auth-identity h1{font-size:26px}
+ #campaign-entry .auth-panel .entry-form{gap:10px}#campaign-entry .auth-panel .entry-form label{gap:4px}#campaign-entry .auth-panel .entry-tabs button{height:34px}
+ #campaign-entry #entry-auth-form input{min-height:40px;height:40px;padding:8px 12px;font-size:16px}#campaign-entry .auth-panel .entry-primary{height:40px;margin-top:0}
+ #campaign-entry .team-panel{grid-template-columns:minmax(130px,.7fr) minmax(240px,1fr);width:min(720px,100%);min-height:0;padding:24px;gap:28px;align-items:center;margin:auto}
+ #campaign-entry .team-panel .entry-copy h1{font-size:28px;margin:0}#campaign-entry .team-panel .entry-form{gap:12px}#campaign-entry .team-panel .entry-error:empty{display:none}
+ .standard-window,.wide-window,#interaction-window{padding:4px!important;overflow:hidden!important}
+ .standard-window>.standard-window__surface,.standard-window>.team-management-shell,.standard-window>.shop-surface,.standard-window>.elite-surface,.standard-window>.interaction-surface,.standard-window>.sponsorship-surface{height:100%!important;max-height:100%!important;border-radius:8px}
+ .small-window,.team-player-detail-overlay{padding:4px}.small-window__dialog,.team-player-detail-dialog{height:100%;max-height:100%;border-radius:8px}
+ .shop-header,.elite-header,.sponsorship-header,.team-management-header,.research-header,.card-management-header,.enhancement-header{min-height:44px;padding:6px 12px;gap:10px;flex:none}
+ .shop-header h2,.elite-header h2,.sponsorship-header h2,.team-management-header h2,.research-header h2{font-size:18px}
+ .shop-content,.elite-scroll,.sponsorship-content{padding:10px 12px}
+ .shop-section-heading{margin-bottom:8px}.shop-section-heading h3,.elite-catalog-heading h3{font-size:16px;margin:0}
+ .shop-legend-grid{gap:14px}.shop-legend{gap:6px;padding:0 4px 8px}.shop-card-art>.s4-player-card{width:min(100%,132px)}.shop-legend>button{min-height:40px;width:min(100%,190px)}
+ .shop-pack-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.shop-pack{padding:8px}.shop-pack>img{height:65px}.shop-pack h4{font-size:13px}
+ .elite-catalog-heading{margin-bottom:8px}.elite-tier{grid-template-columns:112px minmax(0,1fr);gap:8px;padding:8px 0}.elite-tier-clubs{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}.elite-club-tile{padding:4px 2px;gap:3px}.elite-club-tile .elite-badge{width:40px;height:40px}.elite-club-tile b{font-size:11px}.elite-tier h4{font-size:16px}.elite-tier>header{padding:4px 0 4px 8px}.elite-tier>header>strong{font-size:11px}
+ .elite-preview{grid-template-columns:minmax(220px,1fr) minmax(220px,1fr)}.elite-heading{margin-bottom:8px}.elite-heading h3{font-size:19px}.elite-heading>.elite-badge{width:42px;height:42px}.elite-pitch{max-width:290px;width:100%;justify-self:center}.elite-rules{padding:10px}.elite-rules h4{margin-bottom:8px}.elite-rules>button{margin-top:10px}
+ .interaction-hero{padding:10px 14px;gap:12px;flex-wrap:nowrap;min-height:0}.interaction-crest{width:36px;height:44px}.interaction-crest>span{font-size:20px}.interaction-identity>small{display:none}.interaction-surface h2{font-size:20px;margin:0 0 4px}.interaction-identity p{font-size:12px}.interaction-stats{gap:14px;margin:0 8px 0 0;width:auto;padding:0;border:0}.interaction-stats dt{font-size:11px;margin-bottom:4px}.interaction-stats dd{font-size:18px}.interaction-scroll{padding:10px 12px}
+ .interaction-profile-grid{display:grid;grid-template-columns:minmax(200px,.85fr) minmax(300px,1fr);gap:14px}.interaction-sidebar{display:flex}.interaction-action small{display:none}.interaction-surface .interaction-action{min-height:44px;padding:8px;gap:8px}.interaction-action b{font-size:14px}.interaction-section-heading h3{font-size:16px}.interaction-section-heading{margin-bottom:8px}.interaction-roster-list{min-height:160px}
+ .training-window,.scouting-window{top:4px;bottom:4px;left:4px;width:calc(100% - 8px);max-height:none;border-radius:8px}
+ .training-header,.scouting-header{padding:6px 12px;min-height:44px}.training-header h2,.scouting-header h2{font-size:18px}
+ .training-content,.scouting-content{min-height:0;overflow:auto;padding:10px 12px}
+ .training-picker,.training-picker:has(.training-card-list){width:calc(100% - 8px);height:calc(100% - 8px)}.training-picker-content{padding:8px 12px}.training-card-list .training-player-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:200px}.training-picker-hint{margin-bottom:8px}
+ .team-management-shell{grid-template-rows:auto auto auto minmax(0,1fr)}.team-management-shell>header{padding:6px 12px;min-height:44px}.team-management-shell>header h2{font-size:18px;margin:0}.mobile-filter-toggle{margin-left:auto;min-height:36px;padding:6px 12px;border:1px solid #637962;border-radius:6px;background:#193426;color:#dfdfce;cursor:pointer}
+ .team-management-toolbar{padding:6px 12px;gap:8px;flex-wrap:nowrap;position:relative}.team-management-toolbar label.team-search{flex:1 1 180px;width:auto;min-width:120px}.team-management-toolbar label.team-squad-filter{min-width:110px}.team-management-toolbar label>span{display:none}
+ .team-management-shell:not(.mobile-filters-open) .team-management-toolbar>label:not(.team-search):not(.team-squad-filter){display:none}
+ .team-management-shell.mobile-filters-open .team-management-toolbar{flex-wrap:wrap;max-height:120px;overflow:auto}.team-management-toolbar input,.team-management-toolbar select{height:36px;min-height:36px}
+ .team-squad-summary{width:auto;margin-left:auto;gap:6px}.team-squad-summary>span{min-width:82px;height:36px;padding:0 7px;gap:6px;font-size:12px}.team-squad-summary strong{font-size:16px}
+ .inventory-window .inventory-surface{height:100%;max-height:100%;min-height:0}.inventory-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;width:min(680px,calc(100% - 24px));max-height:100%;overflow:auto;padding:12px;justify-items:center}.inventory-choice-card{width:min(100%,calc((var(--mobile-viewport-height,100dvh) - 88px)*.72))}.inventory-choice-card .s4-player-card{min-height:0!important;width:100%;aspect-ratio:4/5}
+ .inventory-acquired-card{width:min(220px,calc((var(--mobile-viewport-height,100dvh) - 80px)*.72))}.inventory-acquired-card .s4-player-card{min-height:0!important}
+ #wonder-hover{max-height:calc(var(--mobile-viewport-height,100dvh) - 16px);overflow:auto}
+ .toast{max-width:calc(100% - 24px);bottom:8px}
+}
+
+@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+ html.is-compact-landscape #campaign-tactics .league-squad-page{height:100%!important;display:flex;flex-direction:column;overflow:hidden!important}
+ .mobile-tactics-nav{flex:none;min-height:40px;gap:6px;padding:2px 6px;border-radius:8px;background:#14271f}
+ .mobile-tactics-nav button{height:36px;padding:0 12px;border:1px solid #506953;border-radius:6px;background:transparent;color:#cedccb;font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+ .mobile-tactics-nav button[aria-pressed=true]{background:#d5b665;color:#15271c;border-color:#d5b665}.mobile-tactics-nav [data-mobile-tactics-close]{margin-left:auto}.mobile-tactics-nav button[hidden]{display:none!important}
+ html.is-compact-landscape #campaign-tactics .league-tactics-layout{flex:1;min-height:0;height:0!important;display:flex;flex-direction:column;overflow:hidden!important;padding:4px 0 0}
+ html.is-compact-landscape #campaign-tactics .league-next-match{display:none}
+ html.is-compact-landscape #campaign-tactics .league-lineup-workspace{display:grid;grid-template-columns:minmax(0,1fr) 240px;height:100%;min-height:0;gap:8px;overflow:hidden}
+ html.is-compact-landscape #campaign-tactics .league-board-panel{height:100%;min-height:0;padding:4px;overflow:auto;display:block;border-radius:8px;overscroll-behavior:contain}
+ html.is-compact-landscape #campaign-tactics .league-board-panel>.pitch{width:480px;height:600px;min-height:600px;aspect-ratio:auto;margin:0 auto;zoom:var(--mobile-pitch-zoom,.42);flex:none}
+ html.is-compact-landscape #campaign-tactics .mobile-pitch-expanded .league-board-panel>.pitch{zoom:1;margin:0 auto}
+ html.is-compact-landscape #campaign-tactics .league-bench{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:8px}
+ html.is-compact-landscape #campaign-tactics .league-bench>header{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;min-height:0;padding:6px 8px;flex:none}
+ html.is-compact-landscape #campaign-tactics .league-bench>header>div:first-child{display:flex;gap:4px}html.is-compact-landscape #campaign-tactics .league-bench>header small,html.is-compact-landscape #campaign-tactics .league-bench>header>span{display:none}
+ html.is-compact-landscape #campaign-tactics .league-bench>header b{font-size:13px}html.is-compact-landscape #campaign-tactics .league-bench-guidance{display:flex!important;gap:4px!important;grid-template-columns:1fr 1fr;width:100%;margin:0!important}
+ html.is-compact-landscape #campaign-tactics .league-bench-guidance button{min-height:32px;padding:4px;font-size:11px;flex:1}
+ html.is-compact-landscape #campaign-tactics .league-bench .bench-magnet-list{min-height:0;max-height:none;flex:1;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:6px;padding:6px}
+ html.is-compact-landscape #campaign-tactics .league-bench-magnet{width:100%;min-width:0}
+ html.is-compact-landscape #campaign-tactics .league-autosave-footer{flex:none;min-height:36px;padding:4px 6px;gap:4px;display:flex}
+ html.is-compact-landscape #campaign-tactics .league-autosave-status{min-height:32px;padding:4px;min-width:0;gap:4px}html.is-compact-landscape #campaign-tactics .league-autosave-copy small{display:none}html.is-compact-landscape #campaign-tactics .league-autosave-copy b{font-size:11px}
+ html.is-compact-landscape #campaign-tactics .league-tactical-shape-preview-menu,html.is-compact-landscape #campaign-tactics .league-tactical-shape-preview-menu>summary{min-width:92px;min-height:32px;padding:3px;grid-template-columns:1fr}
+ html.is-compact-landscape #campaign-tactics .league-tactical-shape-preview-menu small{display:none}
+ html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=lineup] .league-board-heading,html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=lineup] .league-tactics-detail{display:none}
+ html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=controls] .league-lineup-workspace,html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=tactics] .league-lineup-workspace{grid-template-columns:minmax(0,1fr)}
+ html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=controls] .league-bench,html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=controls] .league-tactics-detail,html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=controls] .pitch{display:none}
+ html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=controls] .league-board-heading{padding:12px;display:block}
+ html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=controls] .league-board-controls{display:flex;flex-direction:column;gap:16px;width:100%}
+ html.is-compact-landscape #campaign-tactics .league-board-toolbar,html.is-compact-landscape #campaign-tactics .league-relationship-controls{flex-wrap:wrap;gap:10px}html.is-compact-landscape #campaign-tactics .league-position-tabs button,html.is-compact-landscape #campaign-tactics .league-lineup-squad-tabs button{min-height:40px;font-size:13px}
+ html.is-compact-landscape #campaign-tactics .league-board-side>.league-bond-ready{max-width:none}
+ html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=tactics] .league-board-panel,html.is-compact-landscape #campaign-tactics .league-squad-page[data-mobile-view=tactics] .league-bench{display:none}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail{height:100%;min-height:0;overflow:auto;display:block;border-radius:8px}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail>header{min-height:0;padding:8px 12px}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail-title{display:flex;flex-wrap:wrap;gap:10px}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail-title>span{display:none}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail-scroll{height:auto;overflow:visible;padding:8px 12px}
+ html.is-compact-landscape #campaign-tactics .league-mobile-plan-tabs{display:flex;gap:6px;padding:6px 12px;position:sticky;top:0;z-index:20;background:#14291f}
+ html.is-compact-landscape #campaign-tactics .league-mobile-plan-tabs button{flex:1;min-height:38px;border:1px solid #64725d;border-radius:6px;background:transparent;color:#c4d5c3;font-size:13px}
+ html.is-compact-landscape #campaign-tactics .league-mobile-plan-tabs button.active{background:#cfb15e;color:#12251a}
+ html.is-compact-landscape #campaign-tactics #league-squad-form[data-active-mobile-plan=opening] [data-plan-state]:not([data-plan-state=opening]),html.is-compact-landscape #campaign-tactics #league-squad-form[data-active-mobile-plan=leading] [data-plan-state]:not([data-plan-state=leading]),html.is-compact-landscape #campaign-tactics #league-squad-form[data-active-mobile-plan=trailing] [data-plan-state]:not([data-plan-state=trailing]){display:none}
+ html.is-compact-landscape #campaign-tactics .league-match-plan-grid{grid-template-columns:1fr}
+ html.is-compact-landscape #campaign-tactics .league-position-save-warning{flex:none;padding:4px 8px;font-size:11px;margin:0;max-height:32px;overflow:auto}
+ .league-mobile-duty-backdrop{padding:6px;align-items:center}.league-mobile-duty-sheet{max-height:calc(var(--mobile-viewport-height,100dvh) - 12px);overflow:auto}
+}
+
+@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+ .team-management-shell>header .mobile-filter-toggle{width:auto!important;min-width:68px;height:36px!important;padding:6px 12px!important;font-size:13px!important;line-height:1.2;white-space:nowrap;margin-left:auto!important}
+ .team-management-toolbar .team-search{max-width:300px}.team-squad-summary{flex:none}.team-squad-summary>span{min-width:92px!important;white-space:nowrap;flex:none}.team-squad-summary strong{white-space:nowrap;font-size:15px!important}.team-squad-limit{padding:4px 12px;font-size:12px}
+ .team-player-list-table{min-width:0;width:100%;padding:0 8px 12px}.team-list-columns,.team-player-list-row{grid-template-columns:minmax(140px,1.4fr) 110px 88px 94px minmax(90px,1fr);gap:10px;padding-left:8px;padding-right:8px}
+ .team-list-columns>:nth-child(n+6),.team-player-list-row>:nth-child(n+6){display:none}.team-list-name{min-height:40px;font-size:15px}.team-list-name strong{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}.team-list-name em{display:none}.team-player-list-row{min-height:48px;padding-top:4px;padding-bottom:4px}.team-player-list-row>span{font-size:13px}.team-list-rating>strong{font-size:17px}.team-list-rating>b{font-size:13px}.team-position-row{min-height:24px;padding:6px 8px 2px}.team-position-row h3{font-size:15px}.team-list-columns{min-height:32px;font-size:12px}
+ .shop-card-art>.s4-player-card{width:clamp(76px,calc((var(--mobile-viewport-height,100dvh) - 210px)*.68),132px)}.shop-legend-caption strong{font-size:13px}.shop-legend>button{min-height:36px}.shop-content{padding-top:8px}.shop-header{height:48px;min-height:48px}
+ .training-window .training-overview{gap:10px;margin:0}.training-window .training-overview>img{width:40px;height:42px}.training-window .training-overview>div{gap:2px}.training-overview strong{font-size:14px}.training-rule{margin:4px 0 8px;font-size:12px}
+ .training-window .training-groups{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:1fr;min-height:128px;gap:8px}.training-group{padding:6px}.training-group header{margin-bottom:4px}.training-seat{min-height:78px;padding:6px;gap:4px}.training-plus{font-size:22px}
+ .facility-actions{grid-template-columns:1fr 1fr;padding:4px 10px;gap:8px}.facility-actions>button{min-height:36px;padding:6px 10px;font-size:13px}
+ #scouting-window.is-scout-center{height:calc(100% - 8px)}#scouting-window .scout-center-identity{gap:10px;padding-bottom:6px}#scouting-window .scout-center-identity>img{width:40px;height:42px}#scouting-window .scout-center-identity>div{gap:2px}#scouting-window .scout-center-identity strong{font-size:14px}
+ #scouting-window.is-scout-center .scouting-content{gap:8px}#scouting-window .scout-roster-heading h3{font-size:14px;margin:0}#scouting-window .scout-unit-roster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#scouting-window .scout-unit-slot{min-height:64px}
+}
+
+@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+ html.is-compact-landscape .training-window .training-header,html.is-compact-landscape .scouting-window .scouting-header{min-height:44px;height:44px;padding:4px 12px}
+ html.is-compact-landscape .training-window .training-header h2,html.is-compact-landscape .scouting-window .scouting-header h2{font-size:18px}
+ html.is-compact-landscape .training-content{gap:6px;padding:8px 12px}
+ html.is-compact-landscape #campaign-tactics .league-tactics-layout{gap:0}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{display:grid;grid-template-columns:minmax(190px,1fr) auto minmax(200px,1fr);gap:8px;align-items:end}
+ html.is-compact-landscape #campaign-tactics .league-captain-controls{width:auto;grid-column:auto;grid-template-columns:1fr 1fr}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail-title>.league-tactical-node-controls{width:auto;grid-column:auto;transform:none}
+ html.is-compact-landscape #campaign-tactics .league-ai-training-actions{grid-column:1/-1;display:flex;justify-content:flex-end;margin:0}
+ html.is-compact-landscape #campaign-tactics .league-tactics-detail-scroll{overflow:visible;max-height:none}
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>山海之间 · 地图风格样板</title><link rel="icon" href="./assets/icon-yf-v2.png"><link rel="stylesheet" href="./styles/map-style-demo.css?v=20260908">
+<script type="importmap">{"imports":{"three":"./assets/vendor/three/three.module.js","three/addons/controls/OrbitControls.js":"./assets/vendor/three/OrbitControls.js","three/addons/loaders/GLTFLoader.js":"./assets/vendor/three/GLTFLoader.js","three/addons/utils/BufferGeometryUtils.js":"./assets/vendor/three/BufferGeometryUtils.js"}}</script></head>
+<body><header class="top"><a class="brand" href="./map-style-demo.html"><img src="./assets/yellowdog-logo-transparent.png" alt="">黄狗风云<span>WORLD ATELIER</span></a><div class="edition"><i></i>地图风格样板 <span>01</span></div><a class="back" href="./facility-preview.html">设施模型图鉴 ↗</a></header>
+<main id="stage"><canvas id="map-canvas" tabindex="0" aria-label="三维地图，拖动平移，滚轮缩放，点击建筑查看"></canvas>
+<div class="scene-heading"><p>ALPS · NORTHERN ITALY</p><h1>山海之间</h1><span id="scene-caption">让建筑成为风景的一部分。</span><div class="legend"><span><i class="jade"></i>示例主场领土</span><span><i class="gold"></i>邻近俱乐部</span></div></div>
+<aside class="control-panel" aria-label="样板控制"><div class="control-title"><span>观看方式</span><span class="demo-badge">DEMO</span></div>
+<div class="mode-switch"><button type="button" data-mode="enhanced" aria-pressed="true" class="active">改进方案</button><button type="button" data-mode="legacy" aria-pressed="false">原有表达示意</button></div>
+<p id="mode-note">实体设施 · 山脊层次 · 连片领土外缘</p>
+<div class="control-row"><label>俯视角度</label><div class="segments" id="angles"><button data-angle="55">55°</button><button class="active" data-angle="50">50°</button><button data-angle="45">45°</button></div></div>
+<div class="control-row"><label for="facility-level">设施外观</label><select id="facility-level"><option value="1">LV1 · 基础</option><option value="2">LV2 · 扩建</option><option value="3" selected>LV3 · 完整院区</option><option value="4">LV4 · 专业</option><option value="5">LV5 · 旗舰</option></select></div>
+<div class="switches"><label><input type="checkbox" id="show-borders" checked>领土边缘</label><label><input type="checkbox" id="show-labels" checked>设施标记</label></div>
+<button id="reset" class="reset">重置视角 <span>↺</span></button></aside>
+<div id="loading" role="status"><div class="loading-orbit"></div><strong>铺开山川与城市…</strong><span id="load-note">读取北意大利地形与设施模型</span><button id="retry" hidden>重新加载</button></div>
+<div id="labels" aria-hidden="true"></div>
+<aside id="building-card" hidden><button id="close-card" aria-label="关闭建筑详情">×</button><small id="building-kind"></small><h2 id="building-name"></h2><p id="building-description"></p><span id="building-level"></span></aside>
+<nav class="view-dock" aria-label="场景定位"><button class="active" data-view="overview"><span>01</span>区域总览</button><button data-view="club"><span>02</span>俱乐部园区</button><button data-view="mountains"><span>03</span>山脊与边界</button><button data-view="port"><span>04</span>海岸与港口</button></nav>
+<div class="compass"><span>N</span><i>↑</i></div><div class="zoom-tools"><button id="zoom-in" aria-label="放大">＋</button><output id="zoom-value">1.0×</output><button id="zoom-out" aria-label="缩小">−</button></div>
+<footer class="scene-foot"><span>现有地形切片 · 示例设施与归属 · 仅视觉预览</span><span>拖动平移 · 滚轮缩放 · 点击设施</span></footer>
+</main><script type="module" src="./client/map-style-demo/main.js?v=20260908"></script></body></html>

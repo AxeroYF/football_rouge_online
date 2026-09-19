@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "revision": "20260904-relief-mesh-v1",
+  "region": "europe",
+  "width": 1426,
+  "height": 990,
+  "origin": [
+    -71.5,
+    -320.25
+  ],
+  "step": 0.25,
+  "layout": "uint16-le elevation metres, then uint8 coastline alpha",
+  "file": "assets/map-relief/relief-mesh/europe.bin",
+  "bytes": 4235220,
+  "sha256": "768470a0ae6845b6ae6dfce0dc48e560c6a20daa15d62198223246cc86b46cdc",
+  "landNodes": 190338,
+  "maxElevation": 3118,
+  "source": "existing local Mapzen Terrarium cache; no downloads",
+  "dem": {
+    "files": 5208,
+    "bytes": 582292730,
+    "sha256": "28df4c5107c35359889ba851ba3284891e573b05cf25561348e88747d0654304"
+  }
+}

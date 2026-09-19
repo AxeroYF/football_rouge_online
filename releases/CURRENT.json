@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "latestPublished": "20260918-r11",
+  "lastUserConfirmedDeployed": "20260918-r10",
+  "sourceState": "R11 plus repository baseline cleanup, private migration configuration extraction and removal of legacy development password hints; not a newly deployed server release",
+  "releases": [
+    {
+      "version": "20260918-r9",
+      "parent": "20260914-r8",
+      "bundleSha256": "5589d6236a0bfa060a92b4ecbcd45ad179def8fd4527a3a631d44e71a1144ae3",
+      "baselineFiles": 1196,
+      "changedFiles": 97,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260918-r10",
+      "parent": "20260918-r9",
+      "bundleSha256": "0f377a469c54ad7a2671e633578b3c1ba018e45b017ff90def9c0e4293ac6262",
+      "baselineFiles": 1201,
+      "changedFiles": 26,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260918-r11",
+      "parent": "20260918-r10",
+      "bundleSha256": "e4ea118b2f1051332445b6d4fb372dbfd446df63c5c8573ceecc68c790ca6d56",
+      "baselineFiles": 1202,
+      "changedFiles": 7,
+      "deployment": "not-confirmed"
+    }
+  ]
+}

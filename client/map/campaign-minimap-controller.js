@@ -1,3 +1,5 @@
+import { createCampaignFogController } from "./campaign-fog-controller.js";
+import { fogTerritoryStatus } from "../../shared/config/fog.mjs";
 function ownerStyle(feature, ownerTypes, world, players) {
   const territoryId = feature?.properties?.territoryId;
   const state = world?.territories?.[territoryId];
@@ -25,8 +27,13 @@ function ownerStyle(feature, ownerTypes, world, players) {
   };
 }
 
-export function createMinimapTerritoryStyle({ ownerTypes, getWorld, getPlayers }) {
-  return (feature) => ownerStyle(feature, ownerTypes, getWorld(), getPlayers());
+export function createMinimapTerritoryStyle({ ownerTypes, getWorld, getPlayers, getFog = () => null }) {
+  return (feature) => {
+    const status = getFog()?.schemaVersion >= 2 ? "visible" : fogTerritoryStatus(getFog(), feature?.properties?.territoryId);
+    if (status === "unexplored") return { fillOpacity:0, opacity:0, weight:0 };
+    if (status === "explored") return { fillColor:"#56615f", fillOpacity:.65, color:"#828c83", opacity:.4, weight:.35 };
+    return { ...ownerStyle(feature, ownerTypes, getWorld(), getPlayers()), opacity:1 };
+  };
 }
 
 export function createCampaignMinimap({
@@ -38,6 +45,9 @@ export function createCampaignMinimap({
   ownerTypes,
   getWorld,
   getPlayers,
+  getFog = () => null,
+  getExploredBounds = () => null,
+  spatialIndex = null,
   view = container?.ownerDocument?.defaultView ?? globalThis,
 } = {}) {
   if (!Leaflet || !container || !mainMap || !campaignBounds || !displayTerritories || !ownerTypes) {
@@ -50,6 +60,8 @@ export function createCampaignMinimap({
   const minimap = Leaflet.map(container, {
     preferCanvas: true,
     zoomControl: false,
+    zoomSnap: 0,
+    maxZoom: 12,
     attributionControl: false,
     dragging: false,
     touchZoom: false,
@@ -61,7 +73,13 @@ export function createCampaignMinimap({
     zoomAnimation: false,
     markerZoomAnimation: false,
   });
-  const territoryStyle = createMinimapTerritoryStyle({ ownerTypes, getWorld, getPlayers });
+  const territoryStyle = createMinimapTerritoryStyle({ ownerTypes, getWorld, getPlayers, getFog });
+  let boundsKey = null;
+  function fitExploration(force = false) {
+    const next = getExploredBounds() ?? campaignBounds;
+    const key = JSON.stringify(next.getSouth ? [next.getSouth(),next.getWest(),next.getNorth(),next.getEast()] : next);
+    if (force || key !== boundsKey) { boundsKey = key; minimap.fitBounds(next, { padding:[5,5], animate:false }); }
+  }
   const territoryRenderer = Leaflet.canvas({ padding: 0.05, tolerance: 0 });
   const viewportRenderer = Leaflet.svg({ padding: 0.15 });
   const territoryLayer = Leaflet.geoJSON(displayTerritories, {
@@ -79,9 +97,17 @@ export function createCampaignMinimap({
     fillColor: "#f4efe0",
     fillOpacity: 0.08,
   }).addTo(minimap);
-  minimap.fitBounds(campaignBounds, { padding: [5, 5], animate: false });
+  fitExploration(true);
   viewport.bringToFront?.();
+  const fogController = spatialIndex ? createCampaignFogController({Leaflet,map:minimap,element:container,
+    displayTerritories,spatialIndex,getCampaignState:()=>({fog:getFog()}),campaignBounds,manageCamera:false,showStatus:false}) : null;
 
+  // Keep the camera outline readable even where it crosses unknown pixels.
+  const outline=container.ownerDocument?.createElement("div");
+  if(outline){
+    outline.className="minimap-camera-outline";outline.setAttribute("aria-hidden","true");container.append(outline);
+    viewport.setStyle?.({opacity:0,fillOpacity:0});
+  }
   let draggingViewport = false;
   let dragPointerId = null;
   let dragOffset = null;
@@ -90,6 +116,11 @@ export function createCampaignMinimap({
   function syncViewport() {
     viewport.setBounds(mainMap.getBounds());
     viewport.bringToFront?.();
+    if(outline){
+      const box=Leaflet.latLngBounds(mainMap.getBounds());
+      const a=minimap.latLngToContainerPoint(box.getNorthWest()),b=minimap.latLngToContainerPoint(box.getSouthEast());
+      Object.assign(outline.style,{left:a.x+"px",top:a.y+"px",width:Math.max(0,b.x-a.x)+"px",height:Math.max(0,b.y-a.y)+"px"});
+    }
   }
 
   function pointerPoint(event) {
@@ -130,12 +161,14 @@ export function createCampaignMinimap({
     resizeFrame = view.requestAnimationFrame(() => {
       resizeFrame = null;
       minimap.invalidateSize({ pan: false });
-      minimap.fitBounds(campaignBounds, { padding: [5, 5], animate: false });
+      fitExploration(true);
       syncViewport();
     });
   }
 
   function refresh() {
+    fogController?.refresh();
+    fitExploration();
     territoryLayer.setStyle(territoryStyle);
     syncViewport();
   }
@@ -148,6 +181,8 @@ export function createCampaignMinimap({
     container.removeEventListener("pointercancel", endViewportDrag);
     view.removeEventListener("resize", handleResize);
     if (resizeFrame !== null) view.cancelAnimationFrame(resizeFrame);
+    outline?.remove();
+    fogController?.destroy();
     minimap.remove();
   }
 

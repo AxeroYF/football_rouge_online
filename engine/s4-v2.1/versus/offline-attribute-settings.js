@@ -1,6 +1,6 @@
 ﻿const ALLOWED_OVERFLOW_RATES = new Set([1, 0.5, 0.3]);
 
-export function resolveOfflineAttributeSettings(environment = process.env) {
+export function resolveOfflineAttributeSettings(environment = typeof process !== "undefined" ? process.env : {}) {
   const unlocked = environment.YDL_OFFLINE_MODE === "1" && environment.YDL_OFFLINE_ATTRIBUTE_UNCAP === "1";
   const requestedRate = Number(environment.YDL_OFFLINE_OVERCAP_RATE ?? 1);
   const overflowRate = unlocked && ALLOWED_OVERFLOW_RATES.has(requestedRate) ? requestedRate : 0;

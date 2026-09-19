@@ -1,0 +1,515 @@
+{
+  "version": "wonder-design-draft-20260908-v1",
+  "items": {
+    "eiffel-tower": {
+      "effectText": "",
+      "construction": {
+        "totalProduction": 18000,
+        "adjacentBuildings": [
+          "scout-center"
+        ],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 6,
+          "nationalities": [
+            "法国"
+          ]
+        }
+      },
+      "note": "原文保留。“附近”建议指本地块及一圈陆地邻地，作用于该范围内己方球探，包括其在未占领地块发掘。任务开始时按目标位置判断；现有 10 分钟变为 6 分钟。",
+      "dependency": null
+    },
+    "colosseum": {
+      "effectText": "",
+      "construction": {
+        "totalProduction": 22000,
+        "adjacentBuildings": [
+          "training-center"
+        ],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "nationalities": [
+            "意大利"
+          ]
+        }
+      },
+      "note": "原文“训练场”对应训练中心。当前每次随机分配 5 点，建成后变为 6 点；属性上限仍为 99。",
+      "dependency": null
+    },
+    "sagrada-familia": {
+      "effectText": "",
+      "construction": {
+        "totalProduction": 40000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 12,
+          "nationalities": [
+            "西班牙"
+          ]
+        }
+      },
+      "note": "正式球员卡包三选一改为四选一，仍只拿一张，不改品级概率；建队选秀、球探发掘不是卡包，不自动套用。",
+      "dependency": null
+    },
+    "elizabeth-tower": {
+      "effectText": "",
+      "construction": {
+        "totalProduction": 32000,
+        "adjacentBuildings": [
+          "club-shop"
+        ],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": null
+      },
+      "note": "一次性奖励按发奖前钱包余额计算，向下取整；同一玩家同一奇观本局只首次建成触发，拆建、重夺、刷新不重发。本地 +100% 只放大经过球迷利用率折算的地块金币，不放大赞助或全俱乐部收入。原文没写奖励上限，草稿不擅加；存款 1 万奖励 5 千，存款 100 万奖励 50 万，需单列平衡。建议选本身产金币的平原。",
+      "dependency": null
+    },
+    "brandenburg-gate": {
+      "effectText": "",
+      "construction": {
+        "totalProduction": 26000,
+        "adjacentBuildings": [
+          "recovery-center"
+        ],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 10,
+          "nationalities": [
+            "德国"
+          ]
+        }
+      },
+      "note": "当前代码没有每日中立地块进攻额度，必须先定基础额度、重置及失败／取消计次规则，才能让 +1 有意义；不擅自改成进攻速度加成。",
+      "dependency": "每日中立进攻额度"
+    },
+    "versailles-palace": {
+      "effectText": "生效期间签订的新赞助合同，持续时间延长 50%，每小时金币不变。普通合同由 1 天变为 1.5 天，球场／球队冠名由 2 天变为 3 天。",
+      "construction": {
+        "totalProduction": 20000,
+        "adjacentBuildings": [
+          "club-shop"
+        ],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": null
+      },
+      "note": "签约时锁定期限，不追溯已有合同，不增加同签名额。失去奇观后新合同不再加成，已签合同仍按锁定期限履约。",
+      "dependency": null
+    },
+    "louvre": {
+      "effectText": "俱乐部每拥有一种不同国籍的球员，奇观提供 +2 科技值，最多 +30 科技值。",
+      "construction": {
+        "totalProduction": 24000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 12,
+          "minNationalities": 12
+        }
+      },
+      "note": "按当前持有计算，同国籍不重复，失去该国最后一人则重算。固定科技贡献挂在奇观所在地，并按该地球迷利用率折算；科技不存入余额。",
+      "dependency": null
+    },
+    "british-museum": {
+      "effectText": "球探每次完成发掘后，候选球员由三选一变为四选一，最终仍只签下一名。",
+      "construction": {
+        "totalProduction": 24000,
+        "adjacentBuildings": [
+          "scout-center"
+        ],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "nationalities": [
+            "英格兰"
+          ]
+        }
+      },
+      "note": "只改候选数量，不改地区偏好、品级概率和发掘费用。与圣家堂分别作用于球探和卡包，不会叠成五选一。",
+      "dependency": null
+    },
+    "alhambra": {
+      "effectText": "每次训练可指定一个属性获得 1 点，其余训练点数继续随机分配。",
+      "construction": {
+        "totalProduction": 20000,
+        "adjacentBuildings": [
+          "training-center"
+        ],
+        "terrain": {
+          "anyOf": [
+            "hills"
+          ],
+          "allOf": []
+        },
+        "playerCollection": null
+      },
+      "note": "指定点包含在总点数内，不额外赠点。正常为 1 点指定 +4 点随机，与斗兽场一起为 1 点指定 +5 点随机；已满 99 的属性不能选。",
+      "dependency": null
+    },
+    "acropolis": {
+      "effectText": "阵型研究与战术研究的科技工作量需求降低 20%；强化成功率研究不享受此减免。",
+      "construction": {
+        "totalProduction": 24000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [
+            "hills"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "pools": [
+            "MID"
+          ]
+        }
+      },
+      "note": "不消耗科技余额，也不直接加比赛属性。保留已有研究进度；研究等级、工作量曲线须在研究系统确定。",
+      "dependency": "阵型／战术研究"
+    },
+    "belem-tower": {
+      "effectText": "远征队海上移动耗时降低 30%，海上移动造成的体力消耗降低 30%。",
+      "construction": {
+        "totalProduction": 20000,
+        "adjacentBuildings": [
+          "port"
+        ],
+        "terrain": {
+          "anyOf": [
+            "coastal"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 10,
+          "nationalities": [
+            "葡萄牙"
+          ]
+        }
+      },
+      "note": "只对海上行程生效，不改陆上移动、比赛或冷却。出发时锁定参数，不额外解锁航线或增加港口航程。",
+      "dependency": null
+    },
+    "neuschwanstein": {
+      "effectText": "奇观所在地及一圈陆地相邻己方地块，每块只需 800 球迷即可获得完整地块收益。",
+      "construction": {
+        "totalProduction": 26000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [
+            "hills",
+            "mountain"
+          ],
+          "allOf": [
+            "forest"
+          ]
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "nationalities": [
+            "德国"
+          ]
+        }
+      },
+      "note": "这是普通地块 1,000 人需求的奇观例外，不增加球迷总量。同类减免不叠加，分配器按各地实际需求择优；超额人数不超产，退出覆盖后恢复 1,000。",
+      "dependency": null
+    },
+    "atomium": {
+      "effectText": "玩家所有原本产科技值的地块，每块完整产出的科技值额外 +2。",
+      "construction": {
+        "totalProduction": 22000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 5,
+          "nationalities": [
+            "比利时"
+          ]
+        }
+      },
+      "note": "仅认基础配置科技值大于 0 的地块；额外部分同样按球迷利用率折算，不凭空将金币地变成科研地。",
+      "dependency": null
+    },
+    "pont-du-gard": {
+      "effectText": "奇观所在地及一圈陆地相邻己方地块的生产力产出提高 50%。",
+      "construction": {
+        "totalProduction": 16000,
+        "adjacentBuildings": [
+          "recovery-center"
+        ],
+        "terrain": {
+          "anyOf": [
+            "plains",
+            "hills"
+          ],
+          "allOf": []
+        },
+        "playerCollection": null
+      },
+      "note": "加成作用于各地自身生产力；基础为 0 时不凭空产出，仍按球迷利用率折算。不赠送生产力库存。",
+      "dependency": null
+    },
+    "leaning-tower-pisa": {
+      "effectText": "使用强化保护时，保护所需金币降低 30%。",
+      "construction": {
+        "totalProduction": 18000,
+        "adjacentBuildings": [
+          "training-center"
+        ],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 6,
+          "nationalities": [
+            "意大利"
+          ]
+        }
+      },
+      "note": "只减保护费，不减强化本体费用、不免材料、不提高成功率；保护费为零时无额外奖励。金币费用最终向上取整。",
+      "dependency": null
+    },
+    "santiago-bernabeu": {
+      "effectText": "玩家正式主场比赛的门票金币收入提高 50%。",
+      "construction": {
+        "totalProduction": 40000,
+        "adjacentBuildings": [
+          "main-stadium"
+        ],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "clubs": [
+            "皇家马德里"
+          ]
+        }
+      },
+      "note": "在实际观众和票价形成的基础票房上加成，不增加座位、虚构观众或放大赞助收入。主体育场仍留在永久主场，奇观建在陆地邻接地块。",
+      "dependency": "正式主场赛事与门票结算"
+    },
+    "christ-the-redeemer": {
+      "effectText": "玩家固定球迷增长额外 +50 人／小时。",
+      "construction": {
+        "totalProduction": 22000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [
+            "hills",
+            "mountain"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "nationalities": [
+            "巴西"
+          ]
+        }
+      },
+      "note": "基础 100／小时变为 150／小时，离线计入。按有效持有时段结算，不放大征服、开包或赛事的一次性球迷奖励。",
+      "dependency": null
+    },
+    "machu-picchu": {
+      "effectText": "玩家所有山脉地块，每块完整产出额外 +2 生产力、+2 科技值。",
+      "construction": {
+        "totalProduction": 16000,
+        "adjacentBuildings": [],
+        "terrain": {
+          "anyOf": [
+            "mountain"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 6,
+          "nationalities": [
+            "巴西",
+            "阿根廷",
+            "乌拉圭",
+            "哥伦比亚",
+            "智利",
+            "秘鲁",
+            "厄瓜多尔",
+            "巴拉圭",
+            "委内瑞拉",
+            "玻利维亚",
+            "圭亚那",
+            "苏里南"
+          ],
+          "minNationalities": 3
+        }
+      },
+      "note": "按资源配置的山脉标签判断，额外产出同样受球迷利用率约束。球员条件采用南美组合，避免秘鲁球员池只有 1 人造成死门槛。",
+      "dependency": null
+    },
+    "la-moneda": {
+      "effectText": "玩家球员工资与设施维护的周期性金币支出降低 20%。",
+      "construction": {
+        "totalProduction": 24000,
+        "adjacentBuildings": [
+          "club-shop"
+        ],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": null
+      },
+      "note": "不减建设、交易、强化或发掘等一次性费用；不把零支出变成收入。需与金币净增长、收支明细和离线结算一起接入。",
+      "dependency": "球员工资／设施维护扣费"
+    },
+    "teatro-colon": {
+      "effectText": "打开正式球员卡包并最终选中 A 级球员时增加 100 球迷，选中 S 级球员时增加 300 球迷；每天最多由此获得 1,000 球迷。",
+      "construction": {
+        "totalProduction": 18000,
+        "adjacentBuildings": [
+          "club-shop"
+        ],
+        "terrain": {
+          "anyOf": [],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 8,
+          "nationalities": [
+            "阿根廷"
+          ]
+        }
+      },
+      "note": "按卡包基础品级判断，不按强化等级。只在最终确认签入时发放，候选展示、刷新、球探和建队选秀不发。重复球员仍算一次真实开包，以日上限约束批量收益。",
+      "dependency": null
+    },
+    "palacio-salvo": {
+      "effectText": "每 1,000 名闲置球迷额外提供 100 金币／小时，不足 1,000 按比例计算，最多 +500 金币／小时。",
+      "construction": {
+        "totalProduction": 14000,
+        "adjacentBuildings": [
+          "club-shop"
+        ],
+        "terrain": {
+          "anyOf": [
+            "coastal"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 4,
+          "nationalities": [
+            "乌拉圭"
+          ]
+        }
+      },
+      "note": "只计未分配给地块的球迷，同一批人不能同时算地块满产与闲置收益。自动分配要将该收入作为可选去向参与综合／金币偏好优化，不能仍无条件塞满低价值地块。",
+      "dependency": null
+    },
+    "las-lajas-sanctuary": {
+      "effectText": "远征队完成一次完整地块挑战后，实际出场且未伤退的球员额外恢复 15 体力，上限 100。",
+      "construction": {
+        "totalProduction": 18000,
+        "adjacentBuildings": [
+          "medical-center"
+        ],
+        "terrain": {
+          "anyOf": [
+            "hills",
+            "mountain"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 4,
+          "nationalities": [
+            "哥伦比亚"
+          ]
+        }
+      },
+      "note": "完整两回合挑战只结算一次，取消不触发；不在每回合或回放时重复恢复。红牌不等于伤退，不治疗伤病。",
+      "dependency": null
+    },
+    "museum-of-tomorrow": {
+      "effectText": "玩家实际地块科技产出的 25%，额外作为生产力参与建筑建设；原科技值不减少。",
+      "construction": {
+        "totalProduction": 28000,
+        "adjacentBuildings": [
+          "training-center"
+        ],
+        "terrain": {
+          "anyOf": [
+            "coastal"
+          ],
+          "allOf": []
+        },
+        "playerCollection": null
+      },
+      "note": "只读取经过球迷折算的地块科技来源，可包含直接地块加成；不读取转换产能、一次性研究奖励或账号临时值，避免循环。允许小数，如 40 科技额外提供 10 生产力；空闲不存储。",
+      "dependency": null
+    },
+    "maracana": {
+      "effectText": "正式主场比赛获胜额外增加 500 球迷，平局额外增加 200 球迷；每天仅前 3 场正式主场比赛可触发。",
+      "construction": {
+        "totalProduction": 36000,
+        "adjacentBuildings": [
+          "main-stadium"
+        ],
+        "terrain": {
+          "anyOf": [
+            "plains"
+          ],
+          "allOf": []
+        },
+        "playerCollection": {
+          "minDistinctPlayers": 12,
+          "nationalities": [
+            "巴西"
+          ]
+        }
+      },
+      "note": "失利也占该日场次但不发额外球迷；仅正式联赛，不含地块挑战、友谊赛、重赛。按比赛 ID 去重，不在回放发放。与自然增长分开，不直接保证满座。",
+      "dependency": "正式主场赛事与结果结算"
+    }
+  }
+}

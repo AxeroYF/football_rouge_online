@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {createStaticHandler} from '../server/http/static-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const out='outputs/research-reward-review';fs.mkdirSync(out,{recursive:true});
+const links=fs.readFileSync('index.html','utf8').match(/<link[^>]+rel="stylesheet"[^>]*>/g).join('');
+const html=`<!doctype html><html lang="zh-CN" data-ui-theme="club"><head><meta charset="utf-8">${links}</head><body><button id="trigger">待处理奖励</button><section id="rewards" class="standard-window" hidden></section></body></html>`;
+const serve=createStaticHandler(process.cwd()),server=http.createServer((req,res)=>{if(req.url==='/review.html'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end(html);}else serve(req,res);});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1440,height:1000}}),checks=[],errors=[];
+page.on('pageerror',e=>errors.push(e.message));const check=(name,value)=>{checks.push({name,pass:!!value});assert.ok(value,name);};
+try{
+ await page.goto(`http://127.0.0.1:${server.address().port}/review.html`);
+ await page.evaluate(async()=>{
+  const {createNeutralRewardController}=await import('/client/resources/neutral-reward-controller.js'),{createCampaignStore}=await import('/client/core/campaign-store.js');
+  window.store=createCampaignStore({setupComplete:true,formationResearch:{slots:[],active:null},neutralRewards:{pending:[{id:'legacy-reward',kind:'research',amount:250,status:'pending'}]}});window.posts=[];window.toasts=[];
+  window.controller=createNeutralRewardController({root:document.querySelector('#rewards'),trigger:document.querySelector('#trigger'),getState:store.getState,campaignStore:store,onState:()=>{},showToast:t=>toasts.push(t),getRequest:()=>async(url,options)=>{posts.push({url,...options});return new Promise(resolve=>window.finishRequest=resolve);}});controller.open();
+ });
+ check('no active research preserves reward and explains next step',(await page.locator('#rewards').textContent()).includes('请先开始一项科技研究'));
+ check('no obsolete research-closed message',!(await page.locator('#rewards').textContent()).includes('研究系统开放后'));
+ await page.evaluate(()=>store.setState({...store.getState(),formationResearch:{slots:[],active:{id:'job1',topicId:'biology:match-endurance',level:1,completed:80,required:200}}}));
+ check('active research and retained overflow visible',(await page.locator('#rewards').textContent()).includes('本次投入 120 研究进度，剩余 130 保留'));
+ await page.screenshot({path:path.join(out,'research-reward.png')});
+ await page.locator('[data-apply-research-reward]').click();
+ check('button disabled while applying',await page.locator('[data-apply-research-reward]').isDisabled());
+ check('request binds reward and job',await page.evaluate(()=>posts.length===1&&posts[0].url==='/api/campaign/rewards/research'&&posts[0].body.rewardId==='legacy-reward'&&posts[0].body.jobId==='job1'));
+ await page.evaluate(()=>finishRequest({researchCompleted:true,reward:{status:'pending'},state:{...store.getState(),formationResearch:{slots:[],active:null,topicLevels:{'biology:match-endurance':1}},neutralRewards:{pending:[{id:'legacy-reward',kind:'research',amount:130,status:'pending'}]}}}));
+ await page.waitForFunction(()=>toasts.length===1);
+ check('completed research retains leftover reward',await page.evaluate(()=>store.getState().neutralRewards.pending[0].amount===130&&!store.getState().formationResearch.active));
+ check('panel offers start-research guidance after completion',(await page.locator('#rewards').textContent()).includes('请先开始一项科技研究'));
+ await page.evaluate(()=>store.setState({...store.getState(),formationResearch:{slots:[],active:{id:'job2',topicId:'enhancement:2:1',level:1,completed:0,required:200}}}));
+ check('remaining reward can apply to enhancement',(await page.locator('#rewards').textContent()).includes('强化研究'));
+ await page.locator('[data-apply-research-reward]').click();await page.evaluate(()=>finishRequest({reward:{status:'applied'},state:{...store.getState(),formationResearch:{slots:[],active:{id:'job2',topicId:'enhancement:2:1',level:1,completed:130,required:200}},neutralRewards:{pending:[]}}}));
+ await page.waitForFunction(()=>toasts.length===2);
+ check('fully consumed reward closes panel and hides trigger',await page.locator('#rewards').isHidden()&&await page.locator('#trigger').isHidden());
+ check('no runtime errors',errors.length===0);
+}finally{fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({checks,errors},null,2));await browser.close();await new Promise(r=>server.close(r));}
+console.log(JSON.stringify({checks:checks.length,errors}));

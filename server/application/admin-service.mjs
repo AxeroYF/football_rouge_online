@@ -1,19 +1,27 @@
+import { emptyWonderConstruction, normalizeWonderConstruction, wonderRequirementOptions } from "../../shared/config/wonder-construction.mjs";
+import { createPlayerCardInstance } from "../domain/player-card-instance.mjs";
+import { createPlayerCardViewModel } from "../../shared/player-card/player-card-contract.js";
+import { normalizePlayerSquads } from "../../shared/config/player-squads.mjs";
+import { S4_ENHANCEMENT } from "../../shared/config/enhancement.mjs";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
 const ROLES = ["readonly", "operator", "content", "superadmin"];
 const WRITE_ROLES = new Set(["operator", "content", "superadmin"]);
-const DEFAULT_ADMIN_PASSWORD = "19971019";
+const DEFAULT_ADMIN_PASSWORD = "local-dev-admin";
 
 function clean(value, fallback = "") {
   return String(value ?? fallback).trim();
 }
 
 export class AdminService {
-  constructor({ dataPath, campaign, bootstrapPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD || DEFAULT_ADMIN_PASSWORD, now = Date.now } = {}) {
+  constructor({ dataPath, campaign, wonderCatalog = { items: [] }, wonderProposals = {}, playerCatalog = [], bootstrapPassword = process.env.ADMIN_BOOTSTRAP_PASSWORD || DEFAULT_ADMIN_PASSWORD, now = Date.now } = {}) {
     this.dataPath = dataPath;
     this.campaign = campaign;
+    this.wonderCatalog = wonderCatalog;
+    this.wonderProposals = wonderProposals;
+    this.wonderOptions = wonderRequirementOptions(playerCatalog, wonderProposals);
     this.now = now;
     this.bootstrapPassword = String(bootstrapPassword);
     this.state = this.load();
@@ -25,15 +33,74 @@ export class AdminService {
     try {
       const value = JSON.parse(fs.readFileSync(this.dataPath, "utf8"));
       return { version: 1, admins: {}, sessions: {}, audit: [], tasks: [], ...value };
-    } catch {
-      return { version: 1, admins: {}, sessions: {}, audit: [], tasks: [] };
+    } catch (cause) {
+      throw new Error("后台存档读取失败，已停止加载以保留原始数据", { cause });
     }
   }
 
-  save() {
+  save(state = this.state) {
     if (!this.dataPath) return;
     fs.mkdirSync(path.dirname(this.dataPath), { recursive: true });
-    fs.writeFileSync(this.dataPath, JSON.stringify(this.state, null, 2));
+    const temporary = this.dataPath + "." + crypto.randomUUID() + ".tmp";
+    try {
+      fs.writeFileSync(temporary, JSON.stringify(state, null, 2), { flag: "wx", flush: true });
+      fs.renameSync(temporary, this.dataPath);
+    } finally {
+      if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+    }
+  }
+
+  wonderView(item, record = this.state.wonderDrafts?.[item.assetId]) {
+    const proposal = this.wonderProposals[item.assetId];
+    return {
+      id: item.id, assetId: item.assetId, name: item.name, region: item.region,
+      location: item.location, thumbnail: item.thumbnail,
+      liveEffectText:this.campaign?.wonders?.catalog().find(w=>w.wonderId===item.assetId)?.effectText??null,
+      effectText: record?.effectText ?? proposal?.effectText ?? "",
+      construction: normalizeWonderConstruction(record?.construction ?? proposal?.construction ?? emptyWonderConstruction(), this.wonderOptions),
+      suggestedConstruction: !Object.hasOwn(record ?? {}, "construction") && !!proposal,
+      suggestedEffect: !record && !!proposal?.effectText,
+      designNote: proposal?.note ?? "", dependency: proposal?.dependency ?? null,
+      revision: record?.revision ?? 0,
+      updatedAt: record?.updatedAt ?? null, updatedBy: record?.updatedBy ?? null,
+      status: record ? "draft" : proposal ? "proposal" : "empty",
+    };
+  }
+
+  wonderManagement(actor) {
+    this.requireRole(actor);
+    return { wonders: this.wonderCatalog.items.map(item => this.wonderView(item)), maxEffectLength: 20000, runtimeVersion:this.campaign?.wonders?.version??null, requirementOptions: this.wonderOptions };
+  }
+
+  saveWonderDraft(actor, assetId, input = {}) {
+    this.requireRole(actor, ["content", "superadmin"]);
+    const item = this.wonderCatalog.items.find(value => value.assetId === assetId);
+    if (!item) throw Object.assign(new Error("奇观不存在"), { statusCode: 404 });
+    if (!input || typeof input.effectText !== "string" || input.effectText.length > 20000) {
+      throw Object.assign(new Error("效果须为文字，可留空，最多 20000 字符"), { statusCode: 400 });
+    }
+    if (!Number.isSafeInteger(input.revision) || input.revision < 0) {
+      throw Object.assign(new Error("缺少有效的草稿版本，请重新读取奇观"), { statusCode: 400 });
+    }
+    const before = this.state.wonderDrafts?.[assetId];
+    const currentConstruction = this.wonderView(item).construction;
+    const construction = input.construction === undefined ? normalizeWonderConstruction(currentConstruction, this.wonderOptions) : normalizeWonderConstruction(input.construction, this.wonderOptions);
+    if (input.revision !== (before?.revision ?? 0)) {
+      // A lost response can be retried without duplicating the revision or audit.
+      if (before && input.revision < before.revision && input.effectText === before.effectText && JSON.stringify(construction) === JSON.stringify(normalizeWonderConstruction(currentConstruction, this.wonderOptions))) return { wonder: this.wonderView(item) };
+      throw Object.assign(new Error("此奇观已在其他页面更新，请读取最新版本后再保存；当前输入仍保留"), { statusCode: 409 });
+    }
+    const record = { effectText: input.effectText, construction, revision: (before?.revision ?? 0) + 1, updatedAt: this.now(), updatedBy: actor.username };
+    const entry = {
+      adminActionId: "ACT-" + crypto.randomBytes(8).toString("hex"), adminId: actor.id,
+      username: actor.username, action: "wonder.draft.save", createdAt: record.updatedAt,
+      details: { assetId, wonderId: item.id, revision: record.revision, textLength: record.effectText.length },
+    };
+    const next = { ...this.state, wonderDrafts: { ...this.state.wonderDrafts, [assetId]: record }, audit: [entry, ...this.state.audit].slice(0, 1000) };
+    // Draft and audit commit together; failed writes leave the live state unchanged.
+    this.save(next);
+    this.state = next;
+    return { wonder: this.wonderView(item) };
   }
 
   ensureBootstrapAdmin() {
@@ -124,9 +191,83 @@ export class AdminService {
     return { accountId, ...result };
   }
 
+  cardManagement(admin) {
+    this.requireRole(admin);
+    this.campaign.settleDueChallenges();
+    return this.campaign.cardManagement.adminView();
+  }
+
+  tradePlayerCard(admin, input) {
+    this.requireRole(admin, ["operator", "superadmin"]);
+    this.campaign.settleDueChallenges();
+    const result = this.campaign.cardManagement.adminTrade(admin, input);
+    // The canonical audit is committed with both accounts; audit-file failures can be retried.
+    if (!this.state.audit.some(entry => entry.action === "player.card.trade" && entry.details.id === result.id)) this.audit(admin, "player.card.trade", result);
+    return result;
+  }
+
+  configureCardManagement(admin, input) {
+    this.requireRole(admin, ["operator", "superadmin"]);
+    const config = this.campaign.cardManagement.updateConfig(input);
+    this.audit(admin, "player.card.config", config);
+    return { config };
+  }
+
   playerPackManagement(admin) {
     this.requireRole(admin);
     return this.campaign.adminPlayerPackManagement();
+  }
+
+  playerGrantManagement(admin) {
+    this.requireRole(admin);
+    return {
+      teams: [...this.campaign.accounts.values()].map((account) => ({ id:account.id, nickname:account.nickname, teamName:account.draft?.teamName ?? "尚未建队", setupComplete:account.setupComplete === true, playerCount:account.draft?.roster?.length ?? 0 })),
+      players: this.campaign.playerLibrary.map((player) => ({ ...createPlayerCardViewModel(player), id:player.id })),
+      maxGrantCount:999, maxUpgradeLevel:S4_ENHANCEMENT.maxLevel, abilityBonuses:S4_ENHANCEMENT.abilityBonuses,
+    };
+  }
+
+  grantPlayers(admin, input = {}) {
+    this.requireRole(admin, ["operator", "superadmin"]);
+    const accountId = clean(input.accountId), playerId = clean(input.playerId);
+    const count = Number(input.count), upgradeLevel = Number(input.upgradeLevel);
+    const requestId = clean(input.requestId), reason = clean(input.reason, "后台球员发放").slice(0,120);
+    const fail = (message, statusCode=400) => { throw Object.assign(new Error(message), {statusCode}); };
+    if (typeof input.count !== "number" || !Number.isSafeInteger(count) || count < 1 || count > 999) fail("发放数量必须是 1 至 999 的整数");
+    if (typeof input.upgradeLevel !== "number" || !Number.isInteger(upgradeLevel) || upgradeLevel < 0 || upgradeLevel > S4_ENHANCEMENT.maxLevel) fail("强化等级必须是 0 至 8 的整数");
+    if (!/^[A-Za-z0-9._:-]{8,128}$/.test(requestId)) fail("发放请求标识无效");
+    const account = this.campaign.accounts.get(accountId);
+    if (!account) fail("目标球队不存在",404);
+    if (!account.setupComplete || !Array.isArray(account.draft?.roster)) fail("目标账号尚未完成建队");
+    const signature = JSON.stringify([admin.id, playerId, count, upgradeLevel, reason]);
+    const previous = account.adminPlayerGrants?.[requestId];
+    if (previous && previous.signature !== signature) fail("发放请求标识与原请求不一致",409);
+    let result = previous?.result;
+    if (!result) {
+      const source = this.campaign.playerLibrary.find((player) => player.id === playerId);
+      if (!source) fail("请选择已上线的球员",404);
+      result = this.campaign.enhancement.transaction(account, () => {
+        const cards = Array.from({length:count}, () => {
+          const card = createPlayerCardInstance(source,0);
+          this.campaign.enhancement.applyLevel(card,upgradeLevel);
+          card.acquisitionSource = "admin"; card.acquiredAt = this.now();
+          card.adminGrantRequestId = requestId;
+          account.draft.roster.push(card);
+          this.campaign.enhancement.offer(account,card);
+          return card;
+        });
+        account.playerSquads = normalizePlayerSquads(account.playerSquads,account.draft.roster);
+        for (const card of cards) account.playerSquads.assignments[card.id] = "garrison";
+        const granted = { requestId, accountId, teamName:account.draft.teamName, nickname:account.nickname, playerId, playerName:source.name, count, upgradeLevel, reason, cardIds:cards.map((card) => card.id), rosterCount:account.draft.roster.length };
+        account.adminPlayerGrants ??= {};
+        account.adminPlayerGrants[requestId] = {signature,result:granted};
+        return granted;
+      });
+    }
+    if (!this.state.audit.some((entry) => entry.action === "player.card.grant" && entry.details.accountId === accountId && entry.details.requestId === requestId)) {
+      this.audit(admin,"player.card.grant",result);
+    }
+    return {...structuredClone(result), replayed:Boolean(previous)};
   }
 
   grantPlayerPacks(admin, input = {}) {

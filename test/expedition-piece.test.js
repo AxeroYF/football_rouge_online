@@ -1,3 +1,4 @@
+import { expeditionArtIcon } from '../shared/config/expedition-art.mjs';
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -13,6 +14,7 @@ import {
 function setup() {
   const account = { id: "player", homeTerritoryId: "home", expeditionPiece: null };
   const world = {
+    territories:Object.fromEntries(["home","near","far"].map(id=>[id,{ownerType:"player",ownerId:"player"}])),
     players: {
       player: {
         capitalTerritoryId: "home",
@@ -36,14 +38,14 @@ test("expedition piece starts at the capital and moves only within owned territo
   const normalized = normalizeExpeditionPiece(account, world, 1_000);
   assert.equal(normalized.changed, true);
   assert.equal(normalized.piece.territoryId, "home");
-  assert.equal(publicExpeditionPiece(account, world, 1_000).tokenUrl, "./assets/expedition-tokens/default.png");
+  assert.equal(publicExpeditionPiece(account, world, 1_000).tokenUrl, expeditionArtIcon("default"));
   assert.throws(() => moveExpeditionPiece({
     account,
     world,
     territoryIndex,
     targetTerritoryId: "enemy",
     now: 1_000,
-  }), /只能移动到你的领土/);
+  }), /只能移动到自己或盟友的领土/);
 
   const moving = moveExpeditionPiece({
     account,

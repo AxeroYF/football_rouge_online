@@ -48,7 +48,7 @@ update("admin-v2.html", (source) => {
       <label>管理员账号<input name="username" value="admin" autocomplete="username" required></label>
       <label>登录密码<input name="password" type="password" autocomplete="current-password" placeholder="请输入登录密码" required></label>
       <button type="submit" class="primary">进入工作台</button>
-      <p class="login-hint">默认账号 <b>admin</b> · 默认密码 <b>19971019</b></p>
+      <p class="login-hint">默认账号 <b>admin</b> · 密码由服务器配置</p>
       <output id="login-error" role="alert"></output>
     </form>
   </div>`;
@@ -102,4 +102,4 @@ update("server/application/admin-service.mjs", (source) => {
   return replaceRequired(source, oldMethod, newMethod, "默认 admin 密码校准");
 });
 
-console.log(JSON.stringify({ layout:"single-column", logo:"yellowdog-logo-transparent.png", defaultAdmin:"admin", defaultPassword:"19971019" }, null, 2));
+console.log(JSON.stringify({ layout:"single-column", logo:"yellowdog-logo-transparent.png", defaultAdmin:"admin", passwordSource:"ADMIN_BOOTSTRAP_PASSWORD" }, null, 2));

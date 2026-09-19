@@ -1,0 +1,68 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {CampaignService} from '../campaign-service.mjs';
+import {DRAFT_VERSION} from '../shared/config/draft.mjs';
+const require=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs');
+const {chromium}=require('playwright');
+const root=process.cwd(),out=path.join(root,'outputs/wonder-race-20260908'),data=fs.mkdtempSync(path.join(os.tmpdir(),'ydl-wonder-live-'));
+const read=f=>JSON.parse(fs.readFileSync(path.join(root,f),'utf8'));
+const index=read('assets/data/territory-index.json'),geo=read('assets/data/campaign-territories.geojson'),resources=read('assets/data/territory-resources.json'),catalog=read('assets/data/s4-player-catalog.json');
+const byId=new Map(index.territories.map(t=>[t.territoryId,t]));
+const has=(id,terrain)=>resources.territories[id].terrain.includes(terrain);
+const home=index.territories.find(t=>t.countryCode==='FRA'&&has(t.territoryId,'plains')&&t.landNeighbors.some(id=>has(id,'hills')||has(id,'mountain'))&&t.landNeighbors.some(id=>has(id,'plains'))&&t.landNeighbors.length>=3);
+assert.ok(home);
+const hill=home.landNeighbors.find(id=>has(id,'hills')||has(id,'mountain')),plain=home.landNeighbors.find(id=>id!==hill&&has(id,'plains'));
+const owned=[home.territoryId,...home.landNeighbors];
+const s=new CampaignService({dataPath:path.join(data,'campaign-accounts.json'),catalog,territoryIndex:index,territoryGeoJson:geo,territoryResources:resources});
+const base=[['GK',4],['DEF',10],['MID',10],['ATT',9]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX).slice(0,n));
+const pt=catalog.filter(p=>p.nationality==='葡萄牙').slice(0,3);const roster=[...base.filter(p=>p.nationality!=='葡萄牙'),...pt,{...pt[0],id:'pt-duplicate',cardDefinitionId:pt[0].id}];
+const actor={id:'wonder-browser',nickname:'奇观验收',token:'isolated-wonder-token',createdAt:Date.now(),setupComplete:true,homeTerritoryId:home.territoryId,gold:100000,mapColor:'#5d7d9e',draft:{version:DRAFT_VERSION,teamName:'奇观验收',totalPicks:roster.length,roster},resources:{fans:50000}};
+s.accounts.set(actor.id,actor);s.world.players[actor.id]={playerId:actor.id,territoryIds:owned,capitalTerritoryId:home.territoryId};
+for(const id of owned)Object.assign(s.world.territories[id],{ownerType:'player',ownerId:actor.id,capitalOf:id===home.territoryId?actor.id:null,buildings:[]});
+s.buildings.ensureCapitalStadium(actor,s.world,home.territoryId);s.world.territories[home.territoryId].buildings.push(s.buildings.createRecord('club-shop'));
+const built=id=>({id:'fixture-'+id,type:'wonder:'+id,wonderId:id,level:1,status:'active',builtAt:Date.now(),wonderActivatedAt:Date.now()});
+ s.world.territories[hill].buildings.push(built('christ-the-redeemer'));
+ const other={...structuredClone(actor),id:'other-owner',nickname:'模型测试对手',token:'other-private-token',homeTerritoryId:plain,draft:{...actor.draft,teamName:'另一家俱乐部'}};
+ s.accounts.set(other.id,other);s.world.players[actor.id].territoryIds=owned.filter(id=>id!==plain);s.world.players[other.id]={playerId:other.id,territoryIds:[plain],capitalTerritoryId:plain};s.world.territories[plain].ownerId=other.id;s.world.territories[plain].capitalOf=other.id;s.world.territories[plain].buildings.push(built('christ-the-redeemer'));
+ s.world.territories[home.territoryId].buildings.push({id:'fixture-eiffel',type:'wonder:eiffel-tower',wonderId:'eiffel-tower',level:1,status:'constructing',buildMethod:'production',constructionRequirements:{totalProduction:100000,adjacentBuildings:[],terrain:{anyOf:[],allOf:[]},playerCollection:null},productionWork:{required:6000000000,completed:1200000000,updatedAt:Date.now(),ownerId:actor.id},constructionStartedAt:Date.now()});
+ const hiddenProject=structuredClone(s.world.territories[home.territoryId].buildings.find(b=>b.wonderId==='eiffel-tower'));Object.assign(hiddenProject,{id:'hidden-rival-project',type:'wonder:colosseum',wonderId:'colosseum'});hiddenProject.productionWork.ownerId=other.id;s.world.territories[plain].buildings.push(hiddenProject);s.save();
+for(const t of Object.values(s.world.territories))t.buildings=(t.buildings??[]).filter(b=>!b.wonderId);
+const project=(id,wonderId,ownerId,spent)=>({id,type:'wonder:'+wonderId,wonderId,level:1,status:'constructing',buildMethod:'production',constructionRequirements:{totalProduction:1000,adjacentBuildings:[],terrain:{anyOf:[],allOf:[]},playerCollection:null},productionWork:{required:1000*60000,completed:spent*60000,updatedAt:Date.now(),ownerId},constructionStartedAt:Date.now()});
+s.world.territories[home.territoryId].buildings.push(project('losing-colosseum','colosseum',actor.id,400));
+s.world.territories[plain].buildings.push(project('winning-colosseum','colosseum',other.id,0));
+s.world.territories[hill].buildings.push({id:'refund-target',type:'training-center',level:1,status:'constructing',buildMethod:'production',productionWork:{required:10000*60000,completed:0,updatedAt:Date.now(),ownerId:actor.id},constructionStartedAt:Date.now()});
+other.pendingNeutralRewards=[{id:'winner-boost',kind:'production',amount:1000,status:'pending'}];s.save();
+const checks=[],errors=[];const check=(name,value=true)=>{assert.ok(value,name);checks.push(name);console.log('PASS '+name);};
+fs.mkdirSync(out,{recursive:true});
+let child,browser,page,stdout='',stderr='';
+try{
+ child=spawn(process.execPath,['server.mjs'],{cwd:root,windowsHide:true,env:{...process.env,PORT:'0',HOST:'127.0.0.1',DATA_DIR:data,ADMIN_BOOTSTRAP_PASSWORD:'isolated-wonder-admin'},stdio:['ignore','pipe','pipe']});child.stderr.on('data',c=>stderr+=c);
+ const url=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('server timeout '+stderr)),45000);child.once('exit',code=>{clearTimeout(timer);reject(Error('server exit '+code+' '+stderr));});child.stdout.on('data',c=>{stdout+=c;const m=stdout.match(/game: (http:\/\/127\.0\.0\.1:\d+)\/game/);if(m){clearTimeout(timer);resolve(m[1]);}});});
+ browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+ const context=await browser.newContext({viewport:{width:1600,height:1050}});await context.addInitScript(()=>localStorage.setItem('yellowdogs-chronicles-token','isolated-wonder-token'));
+ page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ const ready=async()=>{await page.waitForFunction(()=>document.querySelector('#map-loader')?.classList.contains('is-ready'),null,{timeout:60000});await page.waitForTimeout(400);};
+ await page.goto(url+'/game',{waitUntil:'domcontentloaded'});await ready();check('map finishes loading');
+
+
+ const actorHeaders={authorization:'Bearer isolated-wonder-token'},winnerHeaders={authorization:'Bearer other-private-token'};
+ const overview=await (await context.request.get(url+'/api/campaign/wonders',{headers:actorHeaders})).json();const before=overview.wonders.find(w=>w.wonderId==='colosseum');check('competitor construction remains private',before.owners.length===1&&before.owners[0].mine);
+ const boost=await context.request.post(url+'/api/campaign/rewards/production',{headers:winnerHeaders,data:{rewardId:'winner-boost',territoryId:plain,buildingId:'winning-colosseum'}});assert.equal(boost.status(),200,await boost.text());
+ const notice=page.locator('.wonder-race-notice');await notice.waitFor({timeout:15000});check('upper right reports rival completion',(await notice.textContent()).includes('另一家俱乐部已率先建成')&&(await notice.textContent()).includes('罗马斗兽场'));check('notice appears at upper right',await notice.evaluate(el=>{const b=el.getBoundingClientRect();return b.left>innerWidth/2&&b.top<200;}));check('compensation does not interrupt with popup',await page.locator('#neutral-reward-window').isHidden());
+ const state=await (await context.request.get(url+'/api/campaign/state',{headers:actorHeaders})).json();const n=state.state.wonders.competitionNotices[0],reward=state.state.neutralRewards.pending.find(r=>r.id===n.rewardId);check('half actual spent work returned',n.spentProduction>=400&&n.refundProduction===n.spentProduction*.5&&reward.amount===n.refundProduction);check('project removed and slot freed',!state.state.buildings.territories[home.territoryId].buildings.some(b=>b.id==='losing-colosseum')&&state.state.buildings.territories[home.territoryId].availableSlots===1);check('no false completion for loser',!(await page.locator('#construction-notifications').textContent()).includes('设施建成'));
+ const late=await context.request.post(url+'/api/campaign/territory/buildings/build',{headers:actorHeaders,data:{territoryId:home.territoryId,type:'wonder:colosseum',buildMethod:'production'}});check('completed world wonder blocks new construction',late.status()===409&&(await late.text()).includes('全服建成'));
+ await page.screenshot({path:path.join(out,'notification-desktop.png')});await page.reload({waitUntil:'domcontentloaded'});await ready();await notice.waitFor();check('offline-style reload preserves notice and reward',await notice.count()===1&&await page.locator('#neutral-reward-window').isHidden());
+ await notice.locator('[data-wonder-race-reward]').click();await page.locator('#neutral-reward-window').waitFor({state:'visible'});check('notice opens stored production',await page.locator('[data-reward-id="'+reward.id+'"]').count()===1);check('refund source clearly shown',(await page.locator('#neutral-reward-window').textContent()).includes('奇观建造返还'));await page.locator('[data-reward-target]').selectOption('refund-target');
+ const [applied]=await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/campaign/rewards/production')&&r.request().method()==='POST'),page.locator('[data-apply-reward]').click()]);const appliedValue=await applied.json();check('stored refund applies to another project',applied.status()===200&&appliedValue.reward.appliedProduction===reward.amount&&appliedValue.reward.status==='applied');check('spent refund removed from storage',!appliedValue.state.neutralRewards.pending.some(r=>r.id===reward.id));
+ await page.keyboard.press('Escape');await page.setViewportSize({width:390,height:844});await page.waitForTimeout(300);check('mobile notice stays within viewport',await notice.evaluate(el=>{const b=el.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth;}));await page.screenshot({path:path.join(out,'notification-mobile.png')});
+ const forged=await context.request.post(url+'/api/campaign/wonders/notifications/read',{headers:winnerHeaders,data:{noticeId:n.id}});check('other player cannot dismiss personal notice',forged.status()===404);
+ await notice.getByRole('button',{name:'已读',exact:true}).click();await notice.waitFor({state:'detached'});await page.reload({waitUntil:'domcontentloaded'});await ready();check('acknowledgement persists',await page.locator('.wonder-race-notice').count()===0);
+ const after=await (await context.request.get(url+'/api/campaign/wonders',{headers:actorHeaders})).json();check('catalog has one completed owner',after.wonders.find(w=>w.wonderId==='colosseum').owners.length===1&&!after.wonders.find(w=>w.wonderId==='colosseum').owners[0].mine);
+ const persisted=JSON.parse(fs.readFileSync(path.join(data,'campaign-accounts.json'),'utf8'));check('refund and notice stored durably',persisted.accounts[actor.id].pendingNeutralRewards.filter(r=>r.source==='wonder-competition').length===1&&persisted.accounts[actor.id].wonderCompetitionNotices[0].readAt!=null);
+ check('no browser exceptions',errors.length===0);fs.writeFileSync(path.join(out,'browser-results.json'),JSON.stringify({passed:checks.length,checks,errors,isolation:'Two competing accounts in temporary data; isolated browser and random-port server. No real saved games modified.'},null,2));
+}catch(error){if(page)await page.screenshot({path:path.join(out,'browser-failure.png')}).catch(()=>{});fs.writeFileSync(path.join(out,'browser-failure.json'),JSON.stringify({error:error.stack,checks,errors,stderr},null,2));throw error;}
+finally{await browser?.close();child?.kill();if(child&&child.exitCode===null)await new Promise(resolve=>{child.once('exit',resolve);setTimeout(resolve,5000)});fs.rmSync(data,{recursive:true,force:true});}

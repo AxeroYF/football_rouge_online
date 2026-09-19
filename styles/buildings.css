@@ -1,0 +1,57 @@
+.wonder-build-list{display:grid;gap:8px}
+.wonder-build-option{display:flex;align-items:center;gap:8px;border:1px solid #756443;border-radius:8px;background:#2a251f;padding:8px}
+.wonder-build-info{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:help}
+.wonder-build-info img{width:44px;height:44px;object-fit:contain}.wonder-build-info strong{font-size:13px;line-height:1.5}
+.wonder-build-option>.building-build-production{flex:none;min-height:36px;padding:6px 9px;border:1px solid #bba061;border-radius:6px;background:#29382d;color:#ecd591;cursor:pointer}
+.wonder-build-option button:focus-visible{outline:2px solid #e6d39e;outline-offset:3px}.wonder-build-option button:disabled{opacity:.5;cursor:wait}
+.wonder-build-empty{font-size:12px;line-height:1.7;color:#b8ae99}
+.wonder-hover{position:fixed;z-index:1800;box-sizing:border-box;overflow:auto;padding:16px;border:1px solid #9f8759;border-radius:10px;background:#2c281f;color:#eee6d5;box-shadow:0 10px 32px #0007;scrollbar-width:thin}
+.wonder-hover[hidden]{display:none!important}.wonder-hover header{display:flex;align-items:center;gap:10px;border-bottom:1px solid #786645;padding-bottom:10px}.wonder-hover header img{width:54px;height:54px;object-fit:contain}.wonder-hover h3{flex:1;margin:0;font-size:16px}.wonder-hover header button{align-self:flex-start;border:0;background:transparent;color:#d8c8a3;font-size:24px;cursor:pointer}
+.wonder-hover h4{margin:14px 0 7px;color:#dbc58e;font-size:13px}.wonder-hover p,.wonder-hover li{font-size:12px;line-height:1.8;margin:5px 0}.wonder-hover ul{list-style:none;padding:0;margin:8px 0 0}.wonder-hover li{color:#bed0ad}.wonder-hover-production{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.wonder-built-effect{font-size:12px;line-height:1.65}.wonder-built-effect{grid-column:1/-1;margin:4px 0}.wonder-built-effect small{display:block;color:#d6ac75}.wonder-pending-system{color:#d6ac75}.wonder-training-attribute{display:flex;align-items:center;gap:12px;padding:12px;background:#2b3025}.wonder-training-attribute select{padding:7px;max-width:160px}
+
+.wonder-cancel-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.wonder-cancel-actions p{flex-basis:100%;margin:2px 0;color:#d3b38c;font-size:12px}.wonder-cancel-actions button{padding:6px 10px;border:1px solid #9d79564d;border-radius:5px;background:transparent;color:#d3b38c;cursor:pointer}.wonder-cancel-actions button[data-confirm-cancel-wonder]{color:#ffc5ac;border-color:#ba7657}.wonder-cancel-actions button:disabled{opacity:.5;cursor:wait}
+
+.facility-upgrade-panel,.facility-medical{grid-column:1/-1;min-width:0;padding:10px;border-top:1px solid #405246;font-size:12px;line-height:1.6}.facility-upgrade-panel p,.facility-medical p{margin:0 0 6px}.facility-upgrade-panel .building-build-actions{flex-wrap:wrap;margin:8px 0}.facility-upgrade-panel small{display:block;color:#c5c0a8}.facility-medical select{max-width:100%;background:#14251d;color:#eee8d8;padding:8px}.building-preview-card>.building-panel-notice,.building-preview-card>[data-cancel-upgrade]{grid-column:1/-1}
+
+.facility-upgrade-panel button,.facility-medical button,.building-preview-card>[data-cancel-upgrade]{min-height:36px;border:1px solid #71664c;border-radius:7px;background:#26372d;color:#eee8d8;padding:8px 10px;font:600 12px/1.4 "Microsoft YaHei",sans-serif;cursor:pointer}
+.facility-upgrade-panel button:hover,.facility-medical button:hover,.building-preview-card>[data-cancel-upgrade]:hover{background:#344a3d;border-color:#d8b873}
+.facility-upgrade-panel button:disabled,.facility-medical button:disabled{opacity:.5;cursor:default}
+.facility-upgrade-panel .building-build-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.facility-upgrade-panel .building-build-actions button{display:flex;gap:5px;align-items:center;justify-content:center;flex:1 1 130px}
+.facility-medical select{display:block;width:100%;margin:8px 0;border:1px solid #71664c;border-radius:7px;min-height:36px}
+.facility-medical>[data-start-medical]{display:flex;gap:8px;align-items:center;justify-content:center;width:100%}
+
+.territory-buildings .building-build-option:has(.facility-build-info){grid-template-columns:minmax(0,1fr) auto}
+.territory-buildings .building-build-option>.facility-build-info{display:flex;gap:8px;align-items:center;min-width:0;min-height:40px;padding:0;border:0;background:none;color:inherit;text-align:left;cursor:help;box-shadow:none}
+.facility-build-info>img{width:42px;height:42px;object-fit:contain;flex:none}
+.facility-build-info .building-build-identity{min-width:0}
+.facility-build-info:focus-visible{outline:2px solid #e6d39e;outline-offset:3px}
+.wonder-hover p,.wonder-hover li{font-size:14px}.wonder-hover h4{font-size:15px}
+
+html[data-ui-theme="club"] .territory-buildings .building-build-option>.facility-build-info,
+html[data-ui-theme="club"] .territory-buildings .building-build-option>.facility-build-info:hover{padding:0;border:0;background:transparent;color:var(--ui-text,#eee6d5);box-shadow:none;cursor:help}
+
+.recovery-range-label{background:#0d302c;color:#d7fff5;border:1px solid #63e1d4;padding:7px 10px;border-radius:8px;font-weight:700;pointer-events:none}.recovery-range-boundary,.recovery-range-pulse{pointer-events:none}
+
+.scout-queue-input{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0}.scout-queue-note{flex-basis:100%;opacity:.75}.scout-queue-input select{background:#1a3028;color:#f4e3af;padding:8px;border:1px solid #776a42;border-radius:6px}.scout-queue-navigation{position:relative;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;padding:10px;background:#14271ee8;color:#ffe6a5;border-radius:10px}.scout-queue-navigation>div{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.scout-queue-navigation button{min-width:34px;padding:8px;border-radius:6px;border:1px solid #7f714b;background:#263b30;color:#ffe6a5}.scout-queue-navigation button.is-current{background:#8c7441;color:white}.scout-queue-navigation button:disabled{opacity:.5}.scout-queue-navigation+.inventory-choice-grid{flex:1;min-height:0}@media(max-height:500px){.scout-queue-navigation{padding:4px;gap:4px;font-size:12px}.scout-queue-navigation button{padding:4px;min-width:28px}}
+
+.scouting-selection.has-scout-queue .inventory-opening-stage{display:flex;flex-direction:column;gap:12px;padding:14px;overflow:auto}.scouting-selection.has-scout-queue .scout-queue-navigation{flex-shrink:0;max-width:1100px}.scouting-selection.has-scout-queue .inventory-choice-grid{width:100%;min-height:200px}@media(max-height:500px){.scouting-selection.has-scout-queue .inventory-opening-stage{gap:4px;padding:4px}}
+
+@media(orientation:landscape) and (max-height:500px){.scouting-selection.has-scout-queue .inventory-choice-grid{min-height:0;padding:4px;overflow:visible}.scouting-selection.has-scout-queue .inventory-choice-card{width:min(100%,calc((var(--mobile-viewport-height,100dvh) - 180px)*.64))}.scouting-selection.has-scout-queue .inventory-choice-grid[data-choice-count="4"]{grid-template-columns:repeat(4,minmax(0,1fr));max-height:none}}
+
+.district-yield-preview{grid-column:1/-1;padding:12px;margin:8px 0;background:#19312d38;border:1px solid #bca66e44;border-radius:7px;color:inherit;font-size:12px;line-height:1.6}
+.district-yield-preview>strong{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:14px;color:#e8ca82}.district-yield-preview p{margin:6px 0}.district-yield-preview dl{margin:6px 0 0}.district-yield-preview dl>div{display:flex;justify-content:space-between;gap:8px}.district-yield-preview dd{margin:0;color:#e8ca82}.district-yield-preview small{display:block;font-size:11px;opacity:.8;line-height:1.6;white-space:normal}
+
+#building-panel .district-yield-preview dl{display:block;margin:5px 0 0}
+#building-panel .district-yield-preview dl>div{display:flex;justify-content:space-between;gap:12px;padding:2px 0;border:0}
+#building-panel .district-yield-preview dt{font-size:12px}
+#building-panel .district-yield-preview dd{flex:none;margin:0;overflow:visible;white-space:nowrap;color:#e8ca82;font-size:12px}
+#building-panel .building-build-option:has(.district-yield-preview)>.building-build-actions{grid-column:1/-1;justify-self:stretch;justify-content:flex-end}
+#building-panel .building-preview-card>[data-demolish-building]{grid-column:1/-1;justify-self:end;min-width:88px;min-height:36px;margin-top:6px;padding:7px 12px;border:1px solid #bd79676b;border-radius:6px;background:#ac513812;color:#edb3a2;cursor:pointer;font:600 12px/1.5 "Microsoft YaHei",sans-serif}
+#building-panel .building-preview-card>[data-demolish-building]:hover:not(:disabled){background:#ac513828;border-color:#cf8b77}
+#building-panel .building-preview-card>[data-demolish-building]:disabled{opacity:.5;cursor:default}
+
+.building-upkeep-preview{grid-column:1/-1;font-size:11px;color:#c4bca9}.building-preview-card>.building-panel-notice{grid-column:1/-1}
+
+.airport-window{position:fixed;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:min(620px,90vw);max-height:80vh;overflow:auto;z-index:1300;padding:24px;border:1px solid #697766;border-radius:14px;background:#14251e;color:#f0efdf;box-shadow:0 20px 70px #0009}.airport-window[hidden]{display:none}.airport-window header{display:flex;align-items:center;justify-content:space-between;gap:24px}.airport-window h2{margin:0}.airport-window label{display:grid;gap:8px;margin:20px 0}.airport-window select,.airport-window button{padding:10px 14px;border:1px solid #68785f;border-radius:7px;background:#223b30;color:inherit}.airport-window main>button{background:#e3c569;color:#17251d;font-weight:700}.airport-window button:disabled{opacity:.5}.airport-ticket{display:grid;gap:10px;margin:20px 0;padding:18px;background:#203a2c;border-radius:8px}.airport-ticket strong{font-size:24px;color:#e6c76d}

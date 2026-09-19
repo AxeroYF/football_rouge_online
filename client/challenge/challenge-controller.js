@@ -1,3 +1,7 @@
+import { sponsorRewardMarkup } from '../sponsorship/sponsor-markup.js?v=20260908-sponsorship-v1';
+import { neutralRewardMarkup } from '../resources/neutral-reward-markup.js';
+import { goldAmountMarkup } from "../ui/currency.js";
+
 export function createChallengeController({
   documentRef = globalThis.document,
   territoryMetadataById,
@@ -24,8 +28,8 @@ export function createChallengeController({
     const panel = documentRef.querySelector("#battle-result-panel");
     const [home, away] = battle.teams ?? [];
     const outcomeText = battle.outcome === "win"
-      ? battle.captured ? "两回合胜利 · 地块已占领" : "胜利"
-      : "两回合失利 · 归属不变";
+      ? battle.captured ? "两回合胜利 · 地块已占领" : `胜利 · ${battle.captureBlockedReason ?? "归属未变更"}`
+      : battle.outcome === "draw" ? "比赛平局 · 归属不变" : battle.attackCooldownUntil ? "两回合失利 · 远征队休整 20 分钟" : "两回合失利 · 归属不变";
     documentRef.querySelector("#battle-result-territory").textContent = (
       territoryMetadataById.get(battle.territoryId)?.name ?? "地块争夺赛"
     );
@@ -39,13 +43,20 @@ export function createChallengeController({
     const rewards = documentRef.querySelector("#battle-result-rewards");
     const goldReward = Number(battle.rewards?.gold ?? 0);
     const packReward = battle.rewards?.packs?.[0];
-    if (rewards) {
+    if (rewards && battle.rewards?.reward) {
+      rewards.hidden = !battle.captured;
+      rewards.innerHTML = neutralRewardMarkup(battle.rewards.reward,{preview:false});
+    } else if (rewards) {
       rewards.hidden = !(battle.captured && goldReward > 0 && packReward);
       if (!rewards.hidden) {
-        documentRef.querySelector("#battle-result-gold-reward").textContent = `+${goldReward.toLocaleString("zh-CN")} 金币`;
+        documentRef.querySelector("#battle-result-gold-reward").innerHTML = goldAmountMarkup(goldReward, { signed: true });
         documentRef.querySelector("#battle-result-pack-reward").textContent = `+${Number(packReward.count)} ${packReward.name}`;
       }
     }
+    const sponsorReward = documentRef.querySelector("#battle-result-sponsorship");
+    if (sponsorReward) { sponsorReward.hidden = !battle.captured || !battle.rewards?.sponsorship; sponsorReward.innerHTML = sponsorReward.hidden ? "" : sponsorRewardMarkup(battle.rewards.sponsorship); }
+    const details=documentRef.querySelector('#battle-result-details');
+    if(details){details.hidden=!battle.broadcasts?.length;details.onclick=()=>showCampaignBroadcast({snapshot:{completed:true,battle},opened:true});}
     panel.hidden = false;
   }
 

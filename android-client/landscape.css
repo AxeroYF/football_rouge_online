@@ -1,0 +1,25 @@
+/* Bundled WebView overrides; only applied to the game origin. */
+@media (orientation: landscape) and (max-height: 540px) {
+  html[data-ydl-android] .campaign-shell { min-height: 0; height: 100dvh; }
+  html[data-ydl-android] #campaign-entry { align-items: start; padding: 12px 20px; }
+  html[data-ydl-android] #campaign-entry.is-auth { align-items: flex-start; }
+  html[data-ydl-android] #campaign-entry .auth-panel {
+    grid-template-columns: minmax(140px, .75fr) minmax(240px, 1fr);
+    width: min(680px, 100%); gap: 24px; padding: 18px 24px; margin: auto;
+  }
+  html[data-ydl-android] #campaign-entry .auth-identity { justify-content: center; gap: 10px; }
+  html[data-ydl-android] #campaign-entry .auth-identity img { width: 64px; height: 64px; }
+  html[data-ydl-android] #campaign-entry .auth-identity h1 { font-size: 26px; }
+  html[data-ydl-android] #campaign-entry .auth-panel .entry-form { gap: 10px; }
+  html[data-ydl-android] #campaign-entry .auth-panel .entry-form label { gap: 4px; }
+  html[data-ydl-android] #campaign-entry .auth-panel .entry-tabs button { height: 34px; }
+  html[data-ydl-android] #campaign-entry #entry-auth-form input { min-height: 40px; height: 40px; padding: 8px 12px; font-size: 16px; }
+  html[data-ydl-android] #campaign-entry .auth-panel .entry-primary { height: 40px; margin-top: 0; }
+  html[data-ydl-android] #campaign-entry .team-panel {
+    grid-template-columns: minmax(130px, .7fr) minmax(240px, 1fr); width: min(720px, 100%);
+    min-height: 0; padding: 24px; gap: 28px; align-items: center; margin: auto;
+  }
+  html[data-ydl-android] #campaign-entry .team-panel .entry-copy h1 { font-size: 28px; margin: 0; }
+  html[data-ydl-android] #campaign-entry .team-panel .entry-form { gap: 12px; }
+  html[data-ydl-android] #campaign-entry .team-panel .entry-error:empty { display: none; }
+}

@@ -1,0 +1,6025 @@
+{
+  "version": "20260909-headquarters-v3",
+  "status": "colored-models-generated",
+  "format": "glTF 2.0 / GLB",
+  "total": 54,
+  "facilities": 52,
+  "units": 2,
+  "totalBytes": 16213188,
+  "items": [
+    {
+      "assetId": "club-headquarters-lv1",
+      "type": "club-headquarters",
+      "name": "俱乐部总部",
+      "kind": "facility",
+      "level": 1,
+      "change": "玻璃办公塔与总部入口广场",
+      "signature": "青蓝玻璃摩天大楼 · 金色竖向框架 · 阶梯式塔冠",
+      "accent": "#276B77",
+      "palette": [
+        "#276B77",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-headquarters-lv1.glb",
+          "bytes": 25148,
+          "sha256": "55bb2b959dc0ff129fba9f8f727cc2db009dc90bfab1573431e681aef90702d4"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-headquarters-lv1.glb",
+          "bytes": 22548,
+          "sha256": "a59f05000e2b8cb3c7b94dafdcc36d57c78011a73806e4aab7bdb900ff811aca"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-headquarters-lv1.glb",
+          "bytes": 21528,
+          "sha256": "977ce499bd4181dd9ea931b762011cddfaa57c491401fb571ff7a691ee809c56"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 352,
+          "meshes": 11,
+          "vertices": 508,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.526388897535242,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.526388897535242,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 256,
+          "meshes": 11,
+          "vertices": 424,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.526388897535242,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.526388897535242,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 220,
+          "meshes": 11,
+          "vertices": 388,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.526388897535242,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.526388897535242,
+            0.9000000264909538
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-headquarters-lv1.webp",
+      "icon": "./assets/facilities/icons/club-headquarters-lv1.png"
+    },
+    {
+      "assetId": "club-headquarters-lv2",
+      "type": "club-headquarters",
+      "name": "俱乐部总部",
+      "kind": "facility",
+      "level": 2,
+      "change": "增高办公塔、侧翼与入口雨棚",
+      "signature": "青蓝玻璃摩天大楼 · 金色竖向框架 · 阶梯式塔冠",
+      "accent": "#276B77",
+      "palette": [
+        "#276B77",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-headquarters-lv2.glb",
+          "bytes": 38092,
+          "sha256": "66dec57d1c1ad761a3092e8541d2ee09c5f48a155c82412138929fd2e8c08d19"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-headquarters-lv2.glb",
+          "bytes": 34848,
+          "sha256": "93d5dd8c53d613fa12514a87597b2f26b7743038a02a09eb07579af95b18d33a"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-headquarters-lv2.glb",
+          "bytes": 31232,
+          "sha256": "879228c57ebeeae56aafe9f2124c551097d473eda8c1e3d611d68d53f1d1e9ef"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 520,
+          "meshes": 16,
+          "vertices": 844,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6486111388898198,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6486111388898198,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 412,
+          "meshes": 16,
+          "vertices": 736,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6486111388898198,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6486111388898198,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 328,
+          "meshes": 16,
+          "vertices": 604,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6486111388898198,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6486111388898198,
+            0.9000000264909538
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-headquarters-lv2.webp",
+      "icon": "./assets/facilities/icons/club-headquarters-lv2.png"
+    },
+    {
+      "assetId": "club-headquarters-lv3",
+      "type": "club-headquarters",
+      "name": "俱乐部总部",
+      "kind": "facility",
+      "level": 3,
+      "change": "阶梯双塔、玻璃幕墙与连廊",
+      "signature": "青蓝玻璃摩天大楼 · 金色竖向框架 · 阶梯式塔冠",
+      "accent": "#276B77",
+      "palette": [
+        "#276B77",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-headquarters-lv3.glb",
+          "bytes": 57652,
+          "sha256": "dd513df69bd31922723d59e1bff6769d4608881286418bc6bd29dc73ad23b8f3"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-headquarters-lv3.glb",
+          "bytes": 53760,
+          "sha256": "2bfb42b74943ba27b27e9e288462bbf2dff06e69fb77ff2c557459d56d19cefb"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-headquarters-lv3.glb",
+          "bytes": 44960,
+          "sha256": "170da73dffce510c00f563916806754e99a99ec61a52614b345f78241f05fff2"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 796,
+          "meshes": 22,
+          "vertices": 1396,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.7708333802443976,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.7708333802443976,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 676,
+          "meshes": 22,
+          "vertices": 1264,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.7708333802443976,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.7708333802443976,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 496,
+          "meshes": 22,
+          "vertices": 940,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              0.7708333802443976,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.7708333802443976,
+            0.9000000264909538
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-headquarters-lv3.webp",
+      "icon": "./assets/facilities/icons/club-headquarters-lv3.png"
+    },
+    {
+      "assetId": "club-headquarters-lv4",
+      "type": "club-headquarters",
+      "name": "俱乐部总部",
+      "kind": "facility",
+      "level": 4,
+      "change": "高层主塔、双翼裙楼与屋顶花园",
+      "signature": "青蓝玻璃摩天大楼 · 金色竖向框架 · 阶梯式塔冠",
+      "accent": "#276B77",
+      "palette": [
+        "#276B77",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-headquarters-lv4.glb",
+          "bytes": 62236,
+          "sha256": "12ab52340b39738271a461ae93194de90e164bb626864318e4654a4df4c992aa"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-headquarters-lv4.glb",
+          "bytes": 57696,
+          "sha256": "9209e55ac214898a3dc8d20eadcec2891b28560dd34f18e298528d72fea64f97"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-headquarters-lv4.glb",
+          "bytes": 48900,
+          "sha256": "0fb302745e7c52a1a33a8e3d7e75e39fae0f010d22f517d419075b51d09f6626"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 856,
+          "meshes": 24,
+          "vertices": 1494,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              1.0805556133205523,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.0805556133205523,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 724,
+          "meshes": 24,
+          "vertices": 1338,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              1.0805556133205523,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.0805556133205523,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 544,
+          "meshes": 24,
+          "vertices": 1014,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              1.0805556133205523,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.0805556133205523,
+            0.9000000264909538
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-headquarters-lv4.webp",
+      "icon": "./assets/facilities/icons/club-headquarters-lv4.png"
+    },
+    {
+      "assetId": "club-headquarters-lv5",
+      "type": "club-headquarters",
+      "name": "俱乐部总部",
+      "kind": "facility",
+      "level": 5,
+      "change": "旗舰摩天楼、金色塔冠与空中连桥",
+      "signature": "青蓝玻璃摩天大楼 · 金色竖向框架 · 阶梯式塔冠",
+      "accent": "#276B77",
+      "palette": [
+        "#276B77",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-headquarters-lv5.glb",
+          "bytes": 72984,
+          "sha256": "dca0ec8d1bd546945c3e63520f164661fb91a6b6454b806eba9d5142e4813d99"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-headquarters-lv5.glb",
+          "bytes": 67800,
+          "sha256": "045653966a6ef7a7c643fa49254e3e8dd091aa6c002a7870a4ea3e4c6dc5777e"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-headquarters-lv5.glb",
+          "bytes": 56412,
+          "sha256": "7492bdcc13ddb45df26293ab1330b3c22c098bd05514c7a7e5e9b2e584c89bfc"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1012,
+          "meshes": 27,
+          "vertices": 1806,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              1.2027777884477453,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.2027777884477453,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 868,
+          "meshes": 27,
+          "vertices": 1626,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              1.2027777884477453,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.2027777884477453,
+            0.9000000264909538
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 640,
+          "meshes": 27,
+          "vertices": 1206,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.45000001324547695
+            ],
+            "max": [
+              0.49999999999999994,
+              1.2027777884477453,
+              0.4500000132454769
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            1.2027777884477453,
+            0.9000000264909538
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-headquarters-lv5.webp",
+      "icon": "./assets/facilities/icons/club-headquarters-lv5.png"
+    },
+    {
+      "assetId": "main-stadium-lv1",
+      "type": "main-stadium",
+      "name": "主体育场",
+      "kind": "facility",
+      "level": 1,
+      "change": "紧凑马蹄看台、蓝色外墙和双塔入口",
+      "signature": "宝蓝马蹄看台 · 椭圆场碗 · 白色悬挑冠棚",
+      "accent": "#235ABD",
+      "palette": [
+        "#235ABD",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/main-stadium-lv1.glb",
+          "bytes": 112892,
+          "sha256": "f3f773784d7093d66abebf6f65c9eebf62ee3b215b7313ac480edcf9f73ae09c"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/main-stadium-lv1.glb",
+          "bytes": 85452,
+          "sha256": "5f0904bf2c6b580bcd04ddccb8a1580969b512c1f6843f1fdd41fbb95171ea44"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/main-stadium-lv1.glb",
+          "bytes": 63648,
+          "sha256": "0858f16f4df7220120cd332a6a7ff89763df6886fbe05ac37d66c21b12c1b6ec"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2508,
+          "meshes": 19,
+          "vertices": 3344,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.29675923509086455,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.29675923509086455,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1732,
+          "meshes": 19,
+          "vertices": 2396,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.29675923509086455,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.29675923509086455,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1132,
+          "meshes": 19,
+          "vertices": 1636,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.29675923509086455,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.29675923509086455,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/main-stadium-lv1.webp",
+      "icon": "./assets/facilities/icons/main-stadium-lv1.png"
+    },
+    {
+      "assetId": "main-stadium-lv2",
+      "type": "main-stadium",
+      "name": "主体育场",
+      "kind": "facility",
+      "level": 2,
+      "change": "补齐南看台、照明与计分牌",
+      "signature": "宝蓝马蹄看台 · 椭圆场碗 · 白色悬挑冠棚",
+      "accent": "#235ABD",
+      "palette": [
+        "#235ABD",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/main-stadium-lv2.glb",
+          "bytes": 139856,
+          "sha256": "2b26caa0bbf4ef940b3bc09d5a7723c8957c77f03e1d34664ed056c36b5eee10"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/main-stadium-lv2.glb",
+          "bytes": 107304,
+          "sha256": "f175581c01b66eeb4b2c62b9ea03a651d67fa94be67855ea016f8652d27662a8"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/main-stadium-lv2.glb",
+          "bytes": 82836,
+          "sha256": "68c79e883736013e7d48a9b20c63081bd16e73a0b6266d5b2d13eed7be0e76f7"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3044,
+          "meshes": 24,
+          "vertices": 4156,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.33495369678202264,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.33495369678202264,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2140,
+          "meshes": 24,
+          "vertices": 3028,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.33495369678202264,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.33495369678202264,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1476,
+          "meshes": 24,
+          "vertices": 2172,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.33495369678202264,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.33495369678202264,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/main-stadium-lv2.webp",
+      "icon": "./assets/facilities/icons/main-stadium-lv2.png"
+    },
+    {
+      "assetId": "main-stadium-lv3",
+      "type": "main-stadium",
+      "name": "主体育场",
+      "kind": "facility",
+      "level": 3,
+      "change": "二层看台、连续外立面与入口门楼",
+      "signature": "宝蓝马蹄看台 · 椭圆场碗 · 白色悬挑冠棚",
+      "accent": "#235ABD",
+      "palette": [
+        "#235ABD",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/main-stadium-lv3.glb",
+          "bytes": 174936,
+          "sha256": "77cc31818aeb2676a67fdc545e8e49b07bbc03ff5774fc1f701c561e41fca626"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/main-stadium-lv3.glb",
+          "bytes": 130600,
+          "sha256": "652902236e366ba90c6c8d80a684cc8830299387d99b9f862e5470e402e1e8a4"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/main-stadium-lv3.glb",
+          "bytes": 99448,
+          "sha256": "b6724db5af15bb242ca2ade639589ea0dd2cbc3b2ef280861bd0347373afbddb"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3732,
+          "meshes": 30,
+          "vertices": 5248,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2556,
+          "meshes": 30,
+          "vertices": 3700,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1740,
+          "meshes": 30,
+          "vertices": 2604,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/main-stadium-lv3.webp",
+      "icon": "./assets/facilities/icons/main-stadium-lv3.png"
+    },
+    {
+      "assetId": "main-stadium-lv4",
+      "type": "main-stadium",
+      "name": "主体育场",
+      "kind": "facility",
+      "level": 4,
+      "change": "双侧白色悬挑棚与媒体包厢",
+      "signature": "宝蓝马蹄看台 · 椭圆场碗 · 白色悬挑冠棚",
+      "accent": "#235ABD",
+      "palette": [
+        "#235ABD",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/main-stadium-lv4.glb",
+          "bytes": 209704,
+          "sha256": "930ed900ee5432f765d174112c41facdc1e44a6d7ca6232c08e33cc86dcc81ed"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/main-stadium-lv4.glb",
+          "bytes": 152260,
+          "sha256": "45d8d5a9cde2b4e6752379c50784bb190365fdc1a42759e009eaae290ee81a01"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/main-stadium-lv4.glb",
+          "bytes": 113028,
+          "sha256": "c237edf8506afac4d1910c229dc213df5abeeba4d40d8340d7b76f68a43383f6"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 4540,
+          "meshes": 31,
+          "vertices": 6460,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3044,
+          "meshes": 31,
+          "vertices": 4444,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 2036,
+          "meshes": 31,
+          "vertices": 3060,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/main-stadium-lv4.webp",
+      "icon": "./assets/facilities/icons/main-stadium-lv4.png"
+    },
+    {
+      "assetId": "main-stadium-lv5",
+      "type": "main-stadium",
+      "name": "主体育场",
+      "kind": "facility",
+      "level": 5,
+      "change": "完整冠棚、结构肋与金色屋顶环",
+      "signature": "宝蓝马蹄看台 · 椭圆场碗 · 白色悬挑冠棚",
+      "accent": "#235ABD",
+      "palette": [
+        "#235ABD",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/main-stadium-lv5.glb",
+          "bytes": 239896,
+          "sha256": "2b5f30a884b7283c7a6399aeee5adc6fca5d27a480c768ee043d5e93ac2f6cb9"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/main-stadium-lv5.glb",
+          "bytes": 172024,
+          "sha256": "bf79f564687992b9c6443a15d07d12b67ad4b677cff24b37b71ebbfdc4a1dafc"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/main-stadium-lv5.glb",
+          "bytes": 125864,
+          "sha256": "d0e658397d913ea223859dc9e533e0fcbd07d23adfe32d71c4e64863c6e8cc43"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 5312,
+          "meshes": 34,
+          "vertices": 7420,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3528,
+          "meshes": 34,
+          "vertices": 5044,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 2328,
+          "meshes": 34,
+          "vertices": 3420,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.45370369450545645,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.45370369450545645,
+              0.3662036933326799,
+              0.5
+            ]
+          },
+          "size": [
+            0.9074073890109129,
+            0.3662036933326799,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/main-stadium-lv5.webp",
+      "icon": "./assets/facilities/icons/main-stadium-lv5.png"
+    },
+    {
+      "assetId": "scout-center-lv1",
+      "type": "scout-center",
+      "name": "球探中心",
+      "kind": "facility",
+      "level": 1,
+      "change": "八角观测所、大型双筒镜与罗盘入口",
+      "signature": "紫色八角观测塔 · 大型双筒镜 · 罗盘前庭",
+      "accent": "#6746A3",
+      "palette": [
+        "#6746A3",
+        "#D7B15E",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/scout-center-lv1.glb",
+          "bytes": 50288,
+          "sha256": "c835113921bfb29b11a4c040d4afa8527a3d242cb3bb169a0ab03c10a644ece1"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/scout-center-lv1.glb",
+          "bytes": 45380,
+          "sha256": "daee23bdf8d278818e0f35f91c3ba01e02bd39e69f0e7927eb861b134da2505a"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/scout-center-lv1.glb",
+          "bytes": 42656,
+          "sha256": "1c85561467b0c1d426056b6c1fd3bc1207f248c1c8616c22949e6dec90d13eac"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 836,
+          "meshes": 19,
+          "vertices": 1134,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5571115255944256,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.5571115255944256,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 692,
+          "meshes": 19,
+          "vertices": 966,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5571115255944256,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.5571115255944256,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 612,
+          "meshes": 19,
+          "vertices": 870,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5571115255944256,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.5571115255944256,
+            0.9825581558544358
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/scout-center-lv1.webp",
+      "icon": "./assets/facilities/icons/scout-center-lv1.png"
+    },
+    {
+      "assetId": "scout-center-lv2",
+      "type": "scout-center",
+      "name": "球探中心",
+      "kind": "facility",
+      "level": 2,
+      "change": "紫顶档案翼与地图展台",
+      "signature": "紫色八角观测塔 · 大型双筒镜 · 罗盘前庭",
+      "accent": "#6746A3",
+      "palette": [
+        "#6746A3",
+        "#D7B15E",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/scout-center-lv2.glb",
+          "bytes": 66820,
+          "sha256": "710c921121012f9b6dc81c2730f772a3a9e63f2b539cc60f8d33ba4a5dd91403"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/scout-center-lv2.glb",
+          "bytes": 60616,
+          "sha256": "8482b2e67cba47e51674eb0b69c34c4ee223f8af1cc2801747f9398fd76f6ab7"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/scout-center-lv2.glb",
+          "bytes": 56196,
+          "sha256": "b5848d10a11bef8ac8b14b4ffed1abf41d892d3d05ef36678a1802a0f20ab818"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1088,
+          "meshes": 28,
+          "vertices": 1444,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5571115255944256,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.5571115255944256,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 872,
+          "meshes": 28,
+          "vertices": 1240,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5571115255944256,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.5571115255944256,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 744,
+          "meshes": 28,
+          "vertices": 1084,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.5571115255944256,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.5571115255944256,
+            0.9825581558544358
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/scout-center-lv2.webp",
+      "icon": "./assets/facilities/icons/scout-center-lv2.png"
+    },
+    {
+      "assetId": "scout-center-lv3",
+      "type": "scout-center",
+      "name": "球探中心",
+      "kind": "facility",
+      "level": 3,
+      "change": "环形观察阳台、侧翼与交通连廊",
+      "signature": "紫色八角观测塔 · 大型双筒镜 · 罗盘前庭",
+      "accent": "#6746A3",
+      "palette": [
+        "#6746A3",
+        "#D7B15E",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/scout-center-lv3.glb",
+          "bytes": 95848,
+          "sha256": "399c9ee71d7d31c0a94ee7d84fe69255225f52674b10fd05e2319a5839354d55"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/scout-center-lv3.glb",
+          "bytes": 82196,
+          "sha256": "0a57f594db5fd4341aa8e2aaf3a8f4b8e2098e11e4b29ce2c10029b2ff0f5711"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/scout-center-lv3.glb",
+          "bytes": 72740,
+          "sha256": "649a8c41315e6dd251afab67186ba4b03abff7917606c4ad967cab5539740ef3"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1652,
+          "meshes": 35,
+          "vertices": 2278,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6559487810347443,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6559487810347443,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1252,
+          "meshes": 35,
+          "vertices": 1810,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6559487810347443,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6559487810347443,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1004,
+          "meshes": 35,
+          "vertices": 1474,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6559487810347443,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6559487810347443,
+            0.9825581558544358
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/scout-center-lv3.webp",
+      "icon": "./assets/facilities/icons/scout-center-lv3.png"
+    },
+    {
+      "assetId": "scout-center-lv4",
+      "type": "scout-center",
+      "name": "球探中心",
+      "kind": "facility",
+      "level": 4,
+      "change": "情报分析翼、碟形天线与庭院",
+      "signature": "紫色八角观测塔 · 大型双筒镜 · 罗盘前庭",
+      "accent": "#6746A3",
+      "palette": [
+        "#6746A3",
+        "#D7B15E",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/scout-center-lv4.glb",
+          "bytes": 138032,
+          "sha256": "99205527f106d1f7161c9b10f1b93ad99d674f4722acabf4abc58328cbd182e1"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/scout-center-lv4.glb",
+          "bytes": 115128,
+          "sha256": "2fc07e187f847a4bba89b7ec731f848da9e18d61d8e017b2abb70bb731523fb8"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/scout-center-lv4.glb",
+          "bytes": 93136,
+          "sha256": "9bbd0a9395ab0b65cf0308413c09dc918d93bf85295f8d9a4296ce965ec04623"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2600,
+          "meshes": 44,
+          "vertices": 3481,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6559487810347443,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6559487810347443,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1930,
+          "meshes": 44,
+          "vertices": 2695,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6559487810347443,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6559487810347443,
+            0.9825581558544358
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1320,
+          "meshes": 44,
+          "vertices": 1925,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4912790779272179
+            ],
+            "max": [
+              0.49999999999999994,
+              0.6559487810347443,
+              0.4912790779272179
+            ]
+          },
+          "size": [
+            0.9999999999999999,
+            0.6559487810347443,
+            0.9825581558544358
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/scout-center-lv4.webp",
+      "icon": "./assets/facilities/icons/scout-center-lv4.png"
+    },
+    {
+      "assetId": "scout-center-lv5",
+      "type": "scout-center",
+      "name": "球探中心",
+      "kind": "facility",
+      "level": 5,
+      "change": "高层总部、金色地球仪与双翼院区",
+      "signature": "紫色八角观测塔 · 大型双筒镜 · 罗盘前庭",
+      "accent": "#6746A3",
+      "palette": [
+        "#6746A3",
+        "#D7B15E",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/scout-center-lv5.glb",
+          "bytes": 180148,
+          "sha256": "b0e9a6d1c024834975315f62991d20f4ff5ebf730da5e1b99771ee13ee8219e4"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/scout-center-lv5.glb",
+          "bytes": 145800,
+          "sha256": "7e16daee73d6733b4fa5adca836ac319106705c11a88d2f7a07ef7b33faf0ce3"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/scout-center-lv5.glb",
+          "bytes": 114536,
+          "sha256": "82dfc75aa4991ed342e069b6f225dfefd581d03344a6e8482d9915cb2f65a5d2"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3620,
+          "meshes": 52,
+          "vertices": 4719,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49782923501792803,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.497829235017928,
+              0.8131317229900383,
+              0.5
+            ]
+          },
+          "size": [
+            0.995658470035856,
+            0.8131317229900383,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2598,
+          "meshes": 52,
+          "vertices": 3545,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49782923501792803,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.497829235017928,
+              0.8115461531454693,
+              0.5
+            ]
+          },
+          "size": [
+            0.995658470035856,
+            0.8115461531454693,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1732,
+          "meshes": 52,
+          "vertices": 2451,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49782923501792803,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.497829235017928,
+              0.8126923565279079,
+              0.5
+            ]
+          },
+          "size": [
+            0.995658470035856,
+            0.8126923565279079,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/scout-center-lv5.webp",
+      "icon": "./assets/facilities/icons/scout-center-lv5.png"
+    },
+    {
+      "assetId": "port-lv1",
+      "type": "port",
+      "name": "港口",
+      "kind": "facility",
+      "level": 1,
+      "change": "黄白灯塔、蓝顶仓库、U 形木港与泊船",
+      "signature": "深蓝仓库 · 黄白灯塔 · U 形泊位与船只",
+      "accent": "#253F65",
+      "palette": [
+        "#253F65",
+        "#DAA127",
+        "#279DAA",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/port-lv1.glb",
+          "bytes": 64048,
+          "sha256": "f39a5475c9e8b9da72e4a60d839fd5be1ff107e664fbd30c99dc69ae058f9775"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/port-lv1.glb",
+          "bytes": 59532,
+          "sha256": "6e15c2a3be12df0a71e3cc65fc23679652f4080b64349d58690bcce9466fbda3"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/port-lv1.glb",
+          "bytes": 40008,
+          "sha256": "c3ea47ed2a57f65780fd77e47ff91783ddbd335ddb64d78e5cc40f62782e1b05"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 988,
+          "meshes": 22,
+          "vertices": 1553,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.5888324618146027,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.5888324618146027,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 876,
+          "meshes": 22,
+          "vertices": 1393,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.5888324618146027,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.5888324618146027,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 524,
+          "meshes": 20,
+          "vertices": 753,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.5888324618146027,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.5888324618146027,
+            0.9035532718471595
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/port-lv1.webp",
+      "icon": "./assets/facilities/icons/port-lv1.png"
+    },
+    {
+      "assetId": "port-lv2",
+      "type": "port",
+      "name": "港口",
+      "kind": "facility",
+      "level": 2,
+      "change": "岸吊、第二泊位与航标",
+      "signature": "深蓝仓库 · 黄白灯塔 · U 形泊位与船只",
+      "accent": "#253F65",
+      "palette": [
+        "#253F65",
+        "#DAA127",
+        "#279DAA",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/port-lv2.glb",
+          "bytes": 80152,
+          "sha256": "8e021d386945a2ba5a918a4befe4fd7e4c4c46c12b9ab6e4fb0078b1215f566c"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/port-lv2.glb",
+          "bytes": 75640,
+          "sha256": "14f06afc26d9b61762d5559904db7057eefbf52fd431f1ba496f14820291e53e"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/port-lv2.glb",
+          "bytes": 56112,
+          "sha256": "751224bed2b7d60fd5bf039fb3839d7dd510dc5e505c1f91618b1519d5821fff"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1216,
+          "meshes": 30,
+          "vertices": 1901,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.6319796886737502,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.6319796886737502,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1104,
+          "meshes": 30,
+          "vertices": 1741,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.6319796886737502,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.6319796886737502,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 752,
+          "meshes": 28,
+          "vertices": 1101,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.6319796886737502,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.6319796886737502,
+            0.9035532718471595
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/port-lv2.webp",
+      "icon": "./assets/facilities/icons/port-lv2.png"
+    },
+    {
+      "assetId": "port-lv3",
+      "type": "port",
+      "name": "港口",
+      "kind": "facility",
+      "level": 3,
+      "change": "石码头、货箱仓储与双起重架",
+      "signature": "深蓝仓库 · 黄白灯塔 · U 形泊位与船只",
+      "accent": "#253F65",
+      "palette": [
+        "#253F65",
+        "#DAA127",
+        "#279DAA",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/port-lv3.glb",
+          "bytes": 105880,
+          "sha256": "c34fe913c719869890e24f7c2903dbd99aba40e576c9862761c7c5af78e12f02"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/port-lv3.glb",
+          "bytes": 98772,
+          "sha256": "90dbcee9130ff1a2b044084f9dd254d046c4f73d39d2078e20f83a7f375a53d0"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/port-lv3.glb",
+          "bytes": 72756,
+          "sha256": "fda8866c9742b3ff8ba96d15802d8ad2aa0aaee22f8de1876d82f077fc2ebc85"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1608,
+          "meshes": 37,
+          "vertices": 2645,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.6751269155328977,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.6751269155328977,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1448,
+          "meshes": 37,
+          "vertices": 2389,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.6751269155328977,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.6751269155328977,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 976,
+          "meshes": 35,
+          "vertices": 1509,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.6751269155328977,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.6751269155328977,
+            0.9035532718471595
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/port-lv3.webp",
+      "icon": "./assets/facilities/icons/port-lv3.png"
+    },
+    {
+      "assetId": "port-lv4",
+      "type": "port",
+      "name": "港口",
+      "kind": "facility",
+      "level": 4,
+      "change": "弧顶客运厅、长泊位与大型船只",
+      "signature": "深蓝仓库 · 黄白灯塔 · U 形泊位与船只",
+      "accent": "#253F65",
+      "palette": [
+        "#253F65",
+        "#DAA127",
+        "#279DAA",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/port-lv4.glb",
+          "bytes": 141748,
+          "sha256": "75361c60770cae17f30b672b0e81cad5a4b447c4dde10f4f070d22e8990e849e"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/port-lv4.glb",
+          "bytes": 126284,
+          "sha256": "38002f2290091da4412b4da4df9df5710aa0f5bf08c43c568a2e8acd3d360475"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/port-lv4.glb",
+          "bytes": 86228,
+          "sha256": "abc78b7640767d2d27990f878ff92cab91e5c314ca7894381e4452f704b77e91"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2376,
+          "meshes": 46,
+          "vertices": 3651,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.7182740818797164,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.7182740818797164,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1976,
+          "meshes": 46,
+          "vertices": 3107,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.7182740818797164,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.7182740818797164,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1120,
+          "meshes": 43,
+          "vertices": 1775,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.7182740818797164,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.7182740818797164,
+            0.9035532718471595
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/port-lv4.webp",
+      "icon": "./assets/facilities/icons/port-lv4.png"
+    },
+    {
+      "assetId": "port-lv5",
+      "type": "port",
+      "name": "港口",
+      "kind": "facility",
+      "level": 5,
+      "change": "双层航站楼、高灯塔与港口门架",
+      "signature": "深蓝仓库 · 黄白灯塔 · U 形泊位与船只",
+      "accent": "#253F65",
+      "palette": [
+        "#253F65",
+        "#DAA127",
+        "#279DAA",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/port-lv5.glb",
+          "bytes": 172972,
+          "sha256": "11e88869307e304846903ac2ef0b8ef84ae0547013ee3c612ae1ee0557d704a9"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/port-lv5.glb",
+          "bytes": 149132,
+          "sha256": "c2be667d75944d38c3771ae40a32b222a9ae748238b6c425ae9f3135914494a9"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/port-lv5.glb",
+          "bytes": 97244,
+          "sha256": "b460582d89e6e72659f46560ba91cdd1991116d75facc73fe770c608a5984f62"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3156,
+          "meshes": 54,
+          "vertices": 4479,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.7614213087388639,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.7614213087388639,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2468,
+          "meshes": 54,
+          "vertices": 3659,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.7614213087388639,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.7614213087388639,
+            0.9035532718471595
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1252,
+          "meshes": 50,
+          "vertices": 1959,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.45177663592357975
+            ],
+            "max": [
+              0.5000000000000001,
+              0.7614213087388639,
+              0.45177663592357975
+            ]
+          },
+          "size": [
+            1,
+            0.7614213087388639,
+            0.9035532718471595
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/port-lv5.webp",
+      "icon": "./assets/facilities/icons/port-lv5.png"
+    },
+    {
+      "assetId": "training-center-lv1",
+      "type": "training-center",
+      "name": "训练中心",
+      "kind": "facility",
+      "level": 1,
+      "change": "完整橙色跑道、草坪与拱顶训练馆",
+      "signature": "赭橙环形跑道 · 侧置拱形训练馆 · 器材阵列",
+      "accent": "#CA5A28",
+      "palette": [
+        "#CA5A28",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/training-center-lv1.glb",
+          "bytes": 112832,
+          "sha256": "7d8fe56a0b147b65cabfbb47d9c4bdba6ba7aa3ef8e4db8161f3035a71a26e82"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/training-center-lv1.glb",
+          "bytes": 83736,
+          "sha256": "bfc10ffd4f6fec0f5de359f2da8e68d49dc616149c1893b4418c39ce23bd9799"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/training-center-lv1.glb",
+          "bytes": 51980,
+          "sha256": "a5f72cbf40d39f2e2548c98611693654aeb453ef7a33342e8fe2c45d0ebab036"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2356,
+          "meshes": 18,
+          "vertices": 3398,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.3650390304670102,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.3650390304670102,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1636,
+          "meshes": 18,
+          "vertices": 2366,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.3650159897469758,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.3650159897469758,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 836,
+          "meshes": 16,
+          "vertices": 1326,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.3602150599657973,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.3602150599657973,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/training-center-lv1.webp",
+      "icon": "./assets/facilities/icons/training-center-lv1.png"
+    },
+    {
+      "assetId": "training-center-lv2",
+      "type": "training-center",
+      "name": "训练中心",
+      "kind": "facility",
+      "level": 2,
+      "change": "计时门、照明和器材训练区",
+      "signature": "赭橙环形跑道 · 侧置拱形训练馆 · 器材阵列",
+      "accent": "#CA5A28",
+      "palette": [
+        "#CA5A28",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/training-center-lv2.glb",
+          "bytes": 130072,
+          "sha256": "a37183966a6cbe91486a4bb6de382ff62244dc6f3dc8060f2a33db00a03e9871"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/training-center-lv2.glb",
+          "bytes": 100960,
+          "sha256": "b1a53ff0a4d28c4e7530992a8e94fb83019552710f95c7a9f2c43aac3aab2c8b"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/training-center-lv2.glb",
+          "bytes": 69440,
+          "sha256": "9cdb6f8f3ad28baa3fb9b3aa075c082fe9f4e7b2585b10feb9b7a2ce9ed9c5e9"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2664,
+          "meshes": 25,
+          "vertices": 3816,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.38897849881024654,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.38897849881024654,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1944,
+          "meshes": 25,
+          "vertices": 2784,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.38897849881024654,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.38897849881024654,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1144,
+          "meshes": 23,
+          "vertices": 1744,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.38897849881024654,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.38897849881024654,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/training-center-lv2.webp",
+      "icon": "./assets/facilities/icons/training-center-lv2.png"
+    },
+    {
+      "assetId": "training-center-lv3",
+      "type": "training-center",
+      "name": "训练中心",
+      "kind": "facility",
+      "level": 3,
+      "change": "加高训练馆、体测楼与看台棚",
+      "signature": "赭橙环形跑道 · 侧置拱形训练馆 · 器材阵列",
+      "accent": "#CA5A28",
+      "palette": [
+        "#CA5A28",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/training-center-lv3.glb",
+          "bytes": 179228,
+          "sha256": "14c0cfce5aaa7d6db141b915cda156b318616b601b0ba5e5616e49e90cf99034"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/training-center-lv3.glb",
+          "bytes": 138000,
+          "sha256": "b5a5c0078916d0003b100f4b581fad28cf5e27f76c36db700c0d817bf7ba8dc5"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/training-center-lv3.glb",
+          "bytes": 87812,
+          "sha256": "ff62afc9d0977d75264fd1d272614608e5fac347d131ac38e84e34174ea761b1"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3684,
+          "meshes": 31,
+          "vertices": 5392,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.45106054928179296,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.45106054928179296,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2676,
+          "meshes": 31,
+          "vertices": 3928,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.4510374765162509,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.4510374765162509,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1412,
+          "meshes": 29,
+          "vertices": 2224,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.4462365467350724,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.4462365467350724,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/training-center-lv3.webp",
+      "icon": "./assets/facilities/icons/training-center-lv3.png"
+    },
+    {
+      "assetId": "training-center-lv4",
+      "type": "training-center",
+      "name": "训练中心",
+      "kind": "facility",
+      "level": 4,
+      "change": "体测楼二层、太阳能顶与训练平台",
+      "signature": "赭橙环形跑道 · 侧置拱形训练馆 · 器材阵列",
+      "accent": "#CA5A28",
+      "palette": [
+        "#CA5A28",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/training-center-lv4.glb",
+          "bytes": 195812,
+          "sha256": "aef0fe546ea346266aead1b4097af5c602cfdb26abebd891a0a8843402f5bdb2"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/training-center-lv4.glb",
+          "bytes": 151988,
+          "sha256": "c2163510637d96186605c2bfaf07ef9f9f45c2817fb632926f4770ba40179b06"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/training-center-lv4.glb",
+          "bytes": 97736,
+          "sha256": "de1c55cfc6f9cad5cc7059bb58a88a0d9543ea9a88e3c5d0a4e3997be4bb5f12"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3888,
+          "meshes": 38,
+          "vertices": 5800,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.5112903053174201,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.5112903053174201,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2832,
+          "meshes": 38,
+          "vertices": 4240,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.5112903053174201,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.5112903053174201,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1508,
+          "meshes": 35,
+          "vertices": 2416,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.5088709656227972,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.5088709656227972,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/training-center-lv4.webp",
+      "icon": "./assets/facilities/icons/training-center-lv4.png"
+    },
+    {
+      "assetId": "training-center-lv5",
+      "type": "training-center",
+      "name": "训练中心",
+      "kind": "facility",
+      "level": 5,
+      "change": "高层教练观察台、连桥与完整训练基地",
+      "signature": "赭橙环形跑道 · 侧置拱形训练馆 · 器材阵列",
+      "accent": "#CA5A28",
+      "palette": [
+        "#CA5A28",
+        "#EDEAD8",
+        "#658B47"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/training-center-lv5.glb",
+          "bytes": 225056,
+          "sha256": "ebef72451b4cecff1329e61377597f58764e4e17e09b65935660b2d8e8b848d1"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/training-center-lv5.glb",
+          "bytes": 181236,
+          "sha256": "c44fbb36c04c6166ea0f3deeed6ad56df768ce86477757f0008bb5f9fef81418"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/training-center-lv5.glb",
+          "bytes": 120476,
+          "sha256": "e4ae4ab1cea66b5383449531d11bba412d764237d0977ebd095ea2ab3edec278"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 4332,
+          "meshes": 46,
+          "vertices": 6644,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.6405913652354054,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.6405913652354054,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3276,
+          "meshes": 46,
+          "vertices": 5084,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.6405913652354054,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.6405913652354054,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1832,
+          "meshes": 43,
+          "vertices": 3020,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.4892473061424637,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48924730614246364,
+              0.6405913652354054,
+              0.5
+            ]
+          },
+          "size": [
+            0.9784946122849274,
+            0.6405913652354054,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/training-center-lv5.webp",
+      "icon": "./assets/facilities/icons/training-center-lv5.png"
+    },
+    {
+      "assetId": "medical-center-lv1",
+      "type": "medical-center",
+      "name": "医疗中心",
+      "kind": "facility",
+      "level": 1,
+      "change": "完整十字诊所、深绿屋顶与急救入口",
+      "signature": "白色十字楼体 · 深绿十字屋顶 · 独立急救车道",
+      "accent": "#216957",
+      "palette": [
+        "#216957",
+        "#EDEAD8",
+        "#327F99"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/medical-center-lv1.glb",
+          "bytes": 33696,
+          "sha256": "5bec4df5073180a72298a884a31e36e58addd974d30ecce0ef6bd30dd049fe70"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/medical-center-lv1.glb",
+          "bytes": 31104,
+          "sha256": "d8db0423a7191135207c644703c2c63c8019e67c1a8b9cc587362f5ee30a60a7"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/medical-center-lv1.glb",
+          "bytes": 27712,
+          "sha256": "926d52e7274ffadc0979cf9895f41095e943fef0610ca05895f0d442c6639fad"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 424,
+          "meshes": 13,
+          "vertices": 792,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.2728813554755941,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.2728813554755941,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 376,
+          "meshes": 13,
+          "vertices": 696,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.2728813554755941,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.2728813554755941,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 328,
+          "meshes": 12,
+          "vertices": 600,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.2728813554755941,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.2728813554755941,
+            0.9887005423315376
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/medical-center-lv1.webp",
+      "icon": "./assets/facilities/icons/medical-center-lv1.png"
+    },
+    {
+      "assetId": "medical-center-lv2",
+      "type": "medical-center",
+      "name": "医疗中心",
+      "kind": "facility",
+      "level": 2,
+      "change": "救护车、住院侧楼和有盖落客区",
+      "signature": "白色十字楼体 · 深绿十字屋顶 · 独立急救车道",
+      "accent": "#216957",
+      "palette": [
+        "#216957",
+        "#EDEAD8",
+        "#327F99"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/medical-center-lv2.glb",
+          "bytes": 57688,
+          "sha256": "aec2133b8c6c08dff36eb020ae5bc53504d06ee627bd7faa8286b4df30850b7e"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/medical-center-lv2.glb",
+          "bytes": 55092,
+          "sha256": "07684059c241807f1564c7223728e405677ef50016ed3602724a53bcf80bdef4"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/medical-center-lv2.glb",
+          "bytes": 49108,
+          "sha256": "51a4e576b7bedfe518cd989343e1837c79563a0b2667cf278a2a9347c6897f51"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 788,
+          "meshes": 23,
+          "vertices": 1372,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.2728813554755941,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.2728813554755941,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 740,
+          "meshes": 23,
+          "vertices": 1276,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.2728813554755941,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.2728813554755941,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 644,
+          "meshes": 22,
+          "vertices": 1084,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.2728813554755941,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.2728813554755941,
+            0.9887005423315376
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/medical-center-lv2.webp",
+      "icon": "./assets/facilities/icons/medical-center-lv2.png"
+    },
+    {
+      "assetId": "medical-center-lv3",
+      "type": "medical-center",
+      "name": "医疗中心",
+      "kind": "facility",
+      "level": 3,
+      "change": "二层十字诊疗楼与双侧病房",
+      "signature": "白色十字楼体 · 深绿十字屋顶 · 独立急救车道",
+      "accent": "#216957",
+      "palette": [
+        "#216957",
+        "#EDEAD8",
+        "#327F99"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/medical-center-lv3.glb",
+          "bytes": 70692,
+          "sha256": "d1adf5ff8051e0603f6ae8f47ddecaef5ca136dfdb406a35dbceba1795a777ff"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/medical-center-lv3.glb",
+          "bytes": 68096,
+          "sha256": "513a8d561832982de3c265867b18f90931829364a98d23f3042623c1597bc656"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/medical-center-lv3.glb",
+          "bytes": 59516,
+          "sha256": "5f5c788be761a30b3e9c2e5d928def14121b1bcd18fd10317af48a821387a40a"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 956,
+          "meshes": 28,
+          "vertices": 1708,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.3915254252698702,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.3915254252698702,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 908,
+          "meshes": 28,
+          "vertices": 1612,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.3915254252698702,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.3915254252698702,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 764,
+          "meshes": 27,
+          "vertices": 1324,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.3915254252698702,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.3915254252698702,
+            0.9887005423315376
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/medical-center-lv3.webp",
+      "icon": "./assets/facilities/icons/medical-center-lv3.png"
+    },
+    {
+      "assetId": "medical-center-lv4",
+      "type": "medical-center",
+      "name": "医疗中心",
+      "kind": "facility",
+      "level": 4,
+      "change": "玻璃诊疗厅、空中连廊与院区",
+      "signature": "白色十字楼体 · 深绿十字屋顶 · 独立急救车道",
+      "accent": "#216957",
+      "palette": [
+        "#216957",
+        "#EDEAD8",
+        "#327F99"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/medical-center-lv4.glb",
+          "bytes": 94312,
+          "sha256": "7152b300b2fd9867824813d84d17b55ebc9f2f969e221567ac38c79211242695"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/medical-center-lv4.glb",
+          "bytes": 85864,
+          "sha256": "84fe022871be6d73874b2a3b2caab226703e657c9545de8f68b67d325b217a64"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/medical-center-lv4.glb",
+          "bytes": 73544,
+          "sha256": "5c0dff1374b41628805a5a4de3a4ab91f03e8c37e1708a4421be2d2e5d42f8ce"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1540,
+          "meshes": 35,
+          "vertices": 2311,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.45000000505124105,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.45000000505124105,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1236,
+          "meshes": 35,
+          "vertices": 2035,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.45000000505124105,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.45000000505124105,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 968,
+          "meshes": 34,
+          "vertices": 1623,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.45000000505124105,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.45000000505124105,
+            0.9887005423315376
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/medical-center-lv4.webp",
+      "icon": "./assets/facilities/icons/medical-center-lv4.png"
+    },
+    {
+      "assetId": "medical-center-lv5",
+      "type": "medical-center",
+      "name": "医疗中心",
+      "kind": "facility",
+      "level": 5,
+      "change": "高层诊疗塔、绿色停机坪与双翼医院",
+      "signature": "白色十字楼体 · 深绿十字屋顶 · 独立急救车道",
+      "accent": "#216957",
+      "palette": [
+        "#216957",
+        "#EDEAD8",
+        "#327F99"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/medical-center-lv5.glb",
+          "bytes": 121224,
+          "sha256": "bc9affa03c4b4984fe8abc86612bfcb17809b7adae944cad7c36e1439b2c3f4b"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/medical-center-lv5.glb",
+          "bytes": 107544,
+          "sha256": "e8c9258fa5853df86c7fab72eafe697d74f97843a4e0532e2b032266c9628b60"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/medical-center-lv5.glb",
+          "bytes": 90664,
+          "sha256": "a2b5d01e3f6b3b5cfde244be81326d50d18bcea67e5c4bf43bde660d6877aaa8"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1972,
+          "meshes": 41,
+          "vertices": 3127,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.7302259827551307,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.7302259827551307,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1564,
+          "meshes": 41,
+          "vertices": 2659,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.7302259827551307,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.7302259827551307,
+            0.9887005423315376
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1208,
+          "meshes": 40,
+          "vertices": 2079,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.4943502711657688
+            ],
+            "max": [
+              0.5,
+              0.7302259827551307,
+              0.49435027116576885
+            ]
+          },
+          "size": [
+            1,
+            0.7302259827551307,
+            0.9887005423315376
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/medical-center-lv5.webp",
+      "icon": "./assets/facilities/icons/medical-center-lv5.png"
+    },
+    {
+      "assetId": "recovery-center-lv1",
+      "type": "recovery-center",
+      "name": "体能恢复中心",
+      "kind": "facility",
+      "level": 1,
+      "change": "大圆池、新月形水疗馆与白色柱廊",
+      "signature": "青蓝圆形水院 · 新月凉廊 · 阶梯温泉",
+      "accent": "#198F9A",
+      "palette": [
+        "#198F9A",
+        "#54C5CA",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/recovery-center-lv1.glb",
+          "bytes": 101380,
+          "sha256": "ceb524dfaaddeacd78a7577436db7c1084a3510d3916086a6401d522a21966e8"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/recovery-center-lv1.glb",
+          "bytes": 63280,
+          "sha256": "085c1dd4345051d1d28af8b9fef90c03558447916e4d4a3c4c7e7a715d500f90"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/recovery-center-lv1.glb",
+          "bytes": 33792,
+          "sha256": "9367925b12e48ce5ce4d10b343c6d121e858548609b0b48107d9b32c41aff6d9"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2656,
+          "meshes": 9,
+          "vertices": 3172,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.23351648358216306,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.23351648358216306,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1528,
+          "meshes": 9,
+          "vertices": 1868,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.23351648358216306,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.23351648358216306,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 644,
+          "meshes": 9,
+          "vertices": 858,
+          "materials": 6,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.23351648358216306,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.23351648358216306,
+            0.9230768676541781
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/recovery-center-lv1.webp",
+      "icon": "./assets/facilities/icons/recovery-center-lv1.png"
+    },
+    {
+      "assetId": "recovery-center-lv2",
+      "type": "recovery-center",
+      "name": "体能恢复中心",
+      "kind": "facility",
+      "level": 2,
+      "change": "双层水池、侧池与日光平台",
+      "signature": "青蓝圆形水院 · 新月凉廊 · 阶梯温泉",
+      "accent": "#198F9A",
+      "palette": [
+        "#198F9A",
+        "#54C5CA",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/recovery-center-lv2.glb",
+          "bytes": 112452,
+          "sha256": "ac61acc027298bb3a3498d396f6e20290ba8f1df9db1ce7d7d83c0f457e1c824"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/recovery-center-lv2.glb",
+          "bytes": 72432,
+          "sha256": "709d0da8aa4e659f7fd3d4eac73515a3f00628902cb5a54d893a7f81976a2a1b"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/recovery-center-lv2.glb",
+          "bytes": 41980,
+          "sha256": "1ace4d47cfc99502ca8dacebfaf97e1744f319f68d1405bb3902d35cc0086cce"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2864,
+          "meshes": 13,
+          "vertices": 3432,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.23351648358216306,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.23351648358216306,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1672,
+          "meshes": 13,
+          "vertices": 2064,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.23351648358216306,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.23351648358216306,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 756,
+          "meshes": 13,
+          "vertices": 1022,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.23351648358216306,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.23351648358216306,
+            0.9230768676541781
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/recovery-center-lv2.webp",
+      "icon": "./assets/facilities/icons/recovery-center-lv2.png"
+    },
+    {
+      "assetId": "recovery-center-lv3",
+      "type": "recovery-center",
+      "name": "体能恢复中心",
+      "kind": "facility",
+      "level": 3,
+      "change": "铜青圆顶、完整后院与休憩凉廊",
+      "signature": "青蓝圆形水院 · 新月凉廊 · 阶梯温泉",
+      "accent": "#198F9A",
+      "palette": [
+        "#198F9A",
+        "#54C5CA",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/recovery-center-lv3.glb",
+          "bytes": 150640,
+          "sha256": "42dd674e3fb7d7b642b70c15a571ea4e6868030b04c2927bc895869efbc58df5"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/recovery-center-lv3.glb",
+          "bytes": 100068,
+          "sha256": "c45644912d2e0596875a5e74f88d17d053adf881164f01b1357b339284977ee2"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/recovery-center-lv3.glb",
+          "bytes": 58048,
+          "sha256": "c6b142d65cabc8450dbde480768f5591f42066ff050a6dfa26cdb875cd6bc6db"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3928,
+          "meshes": 19,
+          "vertices": 4533,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2344,
+          "meshes": 19,
+          "vertices": 2825,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1048,
+          "meshes": 19,
+          "vertices": 1395,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/recovery-center-lv3.webp",
+      "icon": "./assets/facilities/icons/recovery-center-lv3.png"
+    },
+    {
+      "assetId": "recovery-center-lv4",
+      "type": "recovery-center",
+      "name": "体能恢复中心",
+      "kind": "facility",
+      "level": 4,
+      "change": "玻璃康复翼、景观桥和水疗平台",
+      "signature": "青蓝圆形水院 · 新月凉廊 · 阶梯温泉",
+      "accent": "#198F9A",
+      "palette": [
+        "#198F9A",
+        "#54C5CA",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/recovery-center-lv4.glb",
+          "bytes": 189320,
+          "sha256": "0cc3feb6cfa959776f3def19a8a5c2ecaf03d5447947ced82a88ff808a64631a"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/recovery-center-lv4.glb",
+          "bytes": 129072,
+          "sha256": "d177713ced9e14b1cc2215e10392bcd1c2e96999ba9493c5c1647ce020538091"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/recovery-center-lv4.glb",
+          "bytes": 72776,
+          "sha256": "3f90f3a1c1e419dbf9f2997bbd7478b26a17af870a57a1a4b259c8d8ff11557e"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 4740,
+          "meshes": 28,
+          "vertices": 5621,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2892,
+          "meshes": 28,
+          "vertices": 3577,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1212,
+          "meshes": 27,
+          "vertices": 1695,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/recovery-center-lv4.webp",
+      "icon": "./assets/facilities/icons/recovery-center-lv4.png"
+    },
+    {
+      "assetId": "recovery-center-lv5",
+      "type": "recovery-center",
+      "name": "体能恢复中心",
+      "kind": "facility",
+      "level": 5,
+      "change": "双弧遮棚、中央穹顶与喷泉水院",
+      "signature": "青蓝圆形水院 · 新月凉廊 · 阶梯温泉",
+      "accent": "#198F9A",
+      "palette": [
+        "#198F9A",
+        "#54C5CA",
+        "#E8D9BB"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/recovery-center-lv5.glb",
+          "bytes": 218300,
+          "sha256": "f447eed680b97860b69ee0d409fc8e6281a258a499518f7c2a6e7a98f24d8c98"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/recovery-center-lv5.glb",
+          "bytes": 149336,
+          "sha256": "aad48faf9a57f172c41b7c9efb5b29bac7fe60a2454a0bbef139cbf77d269a4c"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/recovery-center-lv5.glb",
+          "bytes": 83448,
+          "sha256": "e2b2cde1def71c38e3f47a8f294ee561a567f66b64474dc9fab21897749b513f"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 5504,
+          "meshes": 31,
+          "vertices": 6539,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3404,
+          "meshes": 31,
+          "vertices": 4195,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1432,
+          "meshes": 30,
+          "vertices": 1983,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.46153843382708903
+            ],
+            "max": [
+              0.5,
+              0.49587909242368006,
+              0.46153843382708903
+            ]
+          },
+          "size": [
+            1,
+            0.49587909242368006,
+            0.9230768676541781
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/recovery-center-lv5.webp",
+      "icon": "./assets/facilities/icons/recovery-center-lv5.png"
+    },
+    {
+      "assetId": "club-shop-lv1",
+      "type": "club-shop",
+      "name": "俱乐部商店",
+      "kind": "facility",
+      "level": 1,
+      "change": "L 形商街、黄白棚、橱窗与球衣招牌",
+      "signature": "金黄连排屋顶 · 酒红商业街 · 巨型球衣招牌",
+      "accent": "#DAA127",
+      "palette": [
+        "#DAA127",
+        "#863B45",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-shop-lv1.glb",
+          "bytes": 96748,
+          "sha256": "f94df3da401c2fe1960c9574773f96b14b7787cd21b803fabc3c71f5940b80a9"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-shop-lv1.glb",
+          "bytes": 79180,
+          "sha256": "674245103e91d9a18aec8d1e54a4a8505dbb3112d04b803c069a07282b3279b7"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-shop-lv1.glb",
+          "bytes": 58980,
+          "sha256": "5f8dcf781f4474a28dd637867fb5be3c07cca0e150c55e27acc299aac3516df3"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1476,
+          "meshes": 24,
+          "vertices": 2784,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.5895953581970375,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.5895953581970375,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1140,
+          "meshes": 24,
+          "vertices": 2136,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.5895953581970375,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.5895953581970375,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 756,
+          "meshes": 24,
+          "vertices": 1392,
+          "materials": 7,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.5895953581970375,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.5895953581970375,
+            0.7861271672317509
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-shop-lv1.webp",
+      "icon": "./assets/facilities/icons/club-shop-lv1.png"
+    },
+    {
+      "assetId": "club-shop-lv2",
+      "type": "club-shop",
+      "name": "俱乐部商店",
+      "kind": "facility",
+      "level": 2,
+      "change": "侧街摊位、拱廊与铺装广场",
+      "signature": "金黄连排屋顶 · 酒红商业街 · 巨型球衣招牌",
+      "accent": "#DAA127",
+      "palette": [
+        "#DAA127",
+        "#863B45",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-shop-lv2.glb",
+          "bytes": 125208,
+          "sha256": "34d5ba6c849d0b8f1c10ce8cc1a23f6949a280379ac2033538b9c3f34eed6398"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-shop-lv2.glb",
+          "bytes": 102444,
+          "sha256": "0b515cbcddfd00695a2f83c35744aa2ab7614414849e6d75c16fb46e60c02b13"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-shop-lv2.glb",
+          "bytes": 77072,
+          "sha256": "923b910cce99b1590d2c74dc626bfcb64c328345b1611ea20f212a38668c9bc8"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1992,
+          "meshes": 27,
+          "vertices": 3730,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.5895953581970375,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.5895953581970375,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1560,
+          "meshes": 27,
+          "vertices": 2890,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.5895953581970375,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.5895953581970375,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1080,
+          "meshes": 27,
+          "vertices": 1954,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.5895953581970375,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.5895953581970375,
+            0.7861271672317509
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-shop-lv2.webp",
+      "icon": "./assets/facilities/icons/club-shop-lv2.png"
+    },
+    {
+      "assetId": "club-shop-lv3",
+      "type": "club-shop",
+      "name": "俱乐部商店",
+      "kind": "facility",
+      "level": 3,
+      "change": "二层连排商店、挑台和金色门楼",
+      "signature": "金黄连排屋顶 · 酒红商业街 · 巨型球衣招牌",
+      "accent": "#DAA127",
+      "palette": [
+        "#DAA127",
+        "#863B45",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-shop-lv3.glb",
+          "bytes": 153716,
+          "sha256": "323f2368391362c604644675364c258801786b897310024bad75bb9305b37a61"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-shop-lv3.glb",
+          "bytes": 124432,
+          "sha256": "6c5ccdfa58a6d15aa42ca926a871a5f265afd8ef910040c507ae53d04c5c611b"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-shop-lv3.glb",
+          "bytes": 91296,
+          "sha256": "190f5b74fabd09cd6994c4a5c4d101426611f173eb4053d382b8cfc1e0ccf120"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2492,
+          "meshes": 31,
+          "vertices": 4660,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.728323685879529,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.728323685879529,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1940,
+          "meshes": 31,
+          "vertices": 3580,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.728323685879529,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.728323685879529,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1316,
+          "meshes": 31,
+          "vertices": 2356,
+          "materials": 8,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.728323685879529,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.728323685879529,
+            0.7861271672317509
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-shop-lv3.webp",
+      "icon": "./assets/facilities/icons/club-shop-lv3.png"
+    },
+    {
+      "assetId": "club-shop-lv4",
+      "type": "club-shop",
+      "name": "俱乐部商店",
+      "kind": "facility",
+      "level": 4,
+      "change": "玻璃展销馆、露台与徽章",
+      "signature": "金黄连排屋顶 · 酒红商业街 · 巨型球衣招牌",
+      "accent": "#DAA127",
+      "palette": [
+        "#DAA127",
+        "#863B45",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-shop-lv4.glb",
+          "bytes": 194532,
+          "sha256": "60fecf2990d9f2d2d0b7fd4fe04525ed20f66bbad49236f7ae982aba12e036af"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-shop-lv4.glb",
+          "bytes": 154284,
+          "sha256": "77571b36044e33323cd9dc474dc696a2a70600afa08f05221d92d18999ea4509"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-shop-lv4.glb",
+          "bytes": 107572,
+          "sha256": "067fd7c6ef65342630c64714a9d069eb6119c9249ec5d24638ce51ba839037c7"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3496,
+          "meshes": 41,
+          "vertices": 5768,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.728323685879529,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.728323685879529,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2560,
+          "meshes": 41,
+          "vertices": 4328,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.728323685879529,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.728323685879529,
+            0.7861271672317509
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1528,
+          "meshes": 40,
+          "vertices": 2676,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.39306358361587546
+            ],
+            "max": [
+              0.5,
+              0.728323685879529,
+              0.3930635836158754
+            ]
+          },
+          "size": [
+            1,
+            0.728323685879529,
+            0.7861271672317509
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-shop-lv4.webp",
+      "icon": "./assets/facilities/icons/club-shop-lv4.png"
+    },
+    {
+      "assetId": "club-shop-lv5",
+      "type": "club-shop",
+      "name": "俱乐部商店",
+      "kind": "facility",
+      "level": 5,
+      "change": "双翼旗舰商场、金色穹顶与纪念球",
+      "signature": "金黄连排屋顶 · 酒红商业街 · 巨型球衣招牌",
+      "accent": "#DAA127",
+      "palette": [
+        "#DAA127",
+        "#863B45",
+        "#EDEAD8"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/club-shop-lv5.glb",
+          "bytes": 220304,
+          "sha256": "0c820f1989ee20850867bf22ce31a15fc085cd33e8eac85078ed538a6e1c631d"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/club-shop-lv5.glb",
+          "bytes": 171264,
+          "sha256": "e6030e076e018deefde2ad227fbec58afbc8cff494b24a63a4f838f5e8dd6ba0"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/club-shop-lv5.glb",
+          "bytes": 121296,
+          "sha256": "4025d04661b000a8e8ea2e252b14a4a4f27cd26bc48abad57a03db80988717ea"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 4404,
+          "meshes": 46,
+          "vertices": 6435,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3705347594844217
+            ],
+            "max": [
+              0.5,
+              0.8577539937183718,
+              0.3705347594844217
+            ]
+          },
+          "size": [
+            1,
+            0.8577539937183718,
+            0.7410695189688434
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 3028,
+          "meshes": 46,
+          "vertices": 4739,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3705347594844217
+            ],
+            "max": [
+              0.5,
+              0.8577539937183718,
+              0.3705347594844217
+            ]
+          },
+          "size": [
+            1,
+            0.8577539937183718,
+            0.7410695189688434
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1840,
+          "meshes": 45,
+          "vertices": 2991,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.3689839550034019
+            ],
+            "max": [
+              0.5,
+              0.8577539937183718,
+              0.3689839550034019
+            ]
+          },
+          "size": [
+            1,
+            0.8577539937183718,
+            0.7379679100068038
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/club-shop-lv5.webp",
+      "icon": "./assets/facilities/icons/club-shop-lv5.png"
+    },
+    {
+      "assetId": "university-lv1",
+      "type": "university",
+      "name": "大学",
+      "kind": "facility",
+      "level": 1,
+      "change": "钟楼讲堂、入口柱廊与书卷标识",
+      "signature": "蓝灰学院屋顶 · 白石柱廊 · 金色时钟塔",
+      "accent": "#395B70",
+      "palette": [
+        "#395B70",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/university-lv1.glb",
+          "bytes": 82288,
+          "sha256": "9308f6e2e481194f62c253808e56baba0cceea52a5decaf46ed5d264b0a24376"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/university-lv1.glb",
+          "bytes": 65532,
+          "sha256": "37248c4767f979cccf63ab3e3d01bf86b60ce7726126456f54f34206263c6637"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/university-lv1.glb",
+          "bytes": 45028,
+          "sha256": "b25ebf6c51fc731f7ee9be077c4260411a262876563b763c8c093f77c1d7ae1e"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1520,
+          "meshes": 24,
+          "vertices": 2121,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7081395547089541,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7081395547089541,
+            0.8604650784015919
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1048,
+          "meshes": 24,
+          "vertices": 1541,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7081395547089541,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7081395547089541,
+            0.8604650784015919
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 512,
+          "meshes": 24,
+          "vertices": 817,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7081395547089541,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7081395547089541,
+            0.8604650784015919
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/university-lv1.webp",
+      "icon": "./assets/facilities/icons/university-lv1.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "university-lv2",
+      "type": "university",
+      "name": "大学",
+      "kind": "facility",
+      "level": 2,
+      "change": "图书馆侧翼、庭院长椅与校园门柱",
+      "signature": "蓝灰学院屋顶 · 白石柱廊 · 金色时钟塔",
+      "accent": "#395B70",
+      "palette": [
+        "#395B70",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/university-lv2.glb",
+          "bytes": 102512,
+          "sha256": "f6a952e15b0448b881aff974469be472524af1a5b5e946f770107cc6e457236c"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/university-lv2.glb",
+          "bytes": 83160,
+          "sha256": "8b96b34dd3dc0b57540dca200798d8007842bef10acf7540dafd9a37793726ea"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/university-lv2.glb",
+          "bytes": 59236,
+          "sha256": "1dbe741e97f9c946e2b1fd4ef6679ea70983bd6dd2e7d7f62874e39a2593da0b"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1936,
+          "meshes": 32,
+          "vertices": 2599,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7459302157147506,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7459302157147506,
+            0.8604650784015919
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1320,
+          "meshes": 32,
+          "vertices": 1947,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7459302157147506,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7459302157147506,
+            0.8604650784015919
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 688,
+          "meshes": 32,
+          "vertices": 1103,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7459302157147506,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7459302157147506,
+            0.8604650784015919
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/university-lv2.webp",
+      "icon": "./assets/facilities/icons/university-lv2.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "university-lv3",
+      "type": "university",
+      "name": "大学",
+      "kind": "facility",
+      "level": 3,
+      "change": "双翼学院、抬高钟楼与中庭绿地",
+      "signature": "蓝灰学院屋顶 · 白石柱廊 · 金色时钟塔",
+      "accent": "#395B70",
+      "palette": [
+        "#395B70",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/university-lv3.glb",
+          "bytes": 132028,
+          "sha256": "925f4705acef05c76b1f927afc2ce0fc9e19a8c005d95e242caa663b5b8a0daf"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/university-lv3.glb",
+          "bytes": 108784,
+          "sha256": "9990cdcbae768e8626a3a35daa929c46d5e4443f2ffdc2b18b990ddda52160d2"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/university-lv3.glb",
+          "bytes": 77084,
+          "sha256": "79eacbceebdd367525ffdacf7f4f359d38a620d0019cef9b0082e71d976b17c4"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2352,
+          "meshes": 41,
+          "vertices": 3411,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7837209460282724,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7837209460282724,
+            0.8604650784015919
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1664,
+          "meshes": 41,
+          "vertices": 2615,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7837209460282724,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7837209460282724,
+            0.8604650784015919
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 888,
+          "meshes": 41,
+          "vertices": 1483,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.43023253920079596
+            ],
+            "max": [
+              0.5,
+              0.7837209460282724,
+              0.43023253920079596
+            ]
+          },
+          "size": [
+            1,
+            0.7837209460282724,
+            0.8604650784015919
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/university-lv3.webp",
+      "icon": "./assets/facilities/icons/university-lv3.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "university-lv4",
+      "type": "university",
+      "name": "大学",
+      "kind": "facility",
+      "level": 4,
+      "change": "科研楼、玻璃连廊与铜青观测穹顶",
+      "signature": "蓝灰学院屋顶 · 白石柱廊 · 金色时钟塔",
+      "accent": "#395B70",
+      "palette": [
+        "#395B70",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/university-lv4.glb",
+          "bytes": 170848,
+          "sha256": "b8e474d5510d10f8b8861d245d36ad8fc16ef42e6a3b11bb8769ec3ba95a80a5"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/university-lv4.glb",
+          "bytes": 133944,
+          "sha256": "153b8ae43425a4415b25cc88092462ee26bf168e68e2f86eda47eaa1a2d5eac5"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/university-lv4.glb",
+          "bytes": 95964,
+          "sha256": "36b1a790bb86d1b05779eb79f62d8764a30f394c8ffaf1323fe365281e858ea6"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3188,
+          "meshes": 50,
+          "vertices": 4506,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.4816308466864076,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.4816308466864076,
+              0.7913306617170599,
+              0.5000000000000001
+            ]
+          },
+          "size": [
+            0.9632616933728152,
+            0.7913306617170599,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2100,
+          "meshes": 50,
+          "vertices": 3242,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.4816308466864076,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.4816308466864076,
+              0.7913306617170599,
+              0.5000000000000001
+            ]
+          },
+          "size": [
+            0.9632616933728152,
+            0.7913306617170599,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1152,
+          "meshes": 50,
+          "vertices": 1890,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.48314608321799724,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48314608321799724,
+              0.7938202305132658,
+              0.5
+            ]
+          },
+          "size": [
+            0.9662921664359945,
+            0.7938202305132658,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/university-lv4.webp",
+      "icon": "./assets/facilities/icons/university-lv4.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "university-lv5",
+      "type": "university",
+      "name": "大学",
+      "kind": "facility",
+      "level": 5,
+      "change": "旗舰大学、双层钟楼塔冠与完整研究院区",
+      "signature": "蓝灰学院屋顶 · 白石柱廊 · 金色时钟塔",
+      "accent": "#395B70",
+      "palette": [
+        "#395B70",
+        "#EDEAD8",
+        "#D7B15E"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/university-lv5.glb",
+          "bytes": 197760,
+          "sha256": "2543d2727d119f467c152d6d5ed83c63a0a9574c796708a5bb4f18ff6eda22d4"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/university-lv5.glb",
+          "bytes": 158012,
+          "sha256": "ce516e02e35a00148c859e0e9c4bc5c0b3c799c46c2398ec9daaa39a717b07d9"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/university-lv5.glb",
+          "bytes": 116356,
+          "sha256": "971a983efcd2fce617f2ef8f815b98472a18ff503e20a3a2181620cc496e4842"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3740,
+          "meshes": 59,
+          "vertices": 5178,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.4816308466864076,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.4816308466864076,
+              0.8277330245926584,
+              0.5000000000000001
+            ]
+          },
+          "size": [
+            0.9632616933728152,
+            0.8277330245926584,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2500,
+          "meshes": 59,
+          "vertices": 3834,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.4816308466864076,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.4816308466864076,
+              0.8277330245926584,
+              0.5000000000000001
+            ]
+          },
+          "size": [
+            0.9632616933728152,
+            0.8277330245926584,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1448,
+          "meshes": 59,
+          "vertices": 2354,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.48314608321799724,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.48314608321799724,
+              0.8303371171791172,
+              0.5
+            ]
+          },
+          "size": [
+            0.9662921664359945,
+            0.8303371171791172,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/university-lv5.webp",
+      "icon": "./assets/facilities/icons/university-lv5.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "factory-lv1",
+      "type": "factory",
+      "name": "工厂",
+      "kind": "facility",
+      "level": 1,
+      "change": "锯齿屋顶车间、砖烟囱与装卸平台",
+      "signature": "砖红锯齿厂房 · 分节烟囱 · 金色起重设备",
+      "accent": "#AC5941",
+      "palette": [
+        "#AC5941",
+        "#62787A",
+        "#DAA127"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/factory-lv1.glb",
+          "bytes": 42800,
+          "sha256": "0796ea2e6b6f777f0b4d10953baf2ca5e5186aafbb4ce3aa46267c4215a1de12"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/factory-lv1.glb",
+          "bytes": 37276,
+          "sha256": "7089129d400a5f6cc41103a32897307dfe2c38fbcae044dd916e582388490500"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/factory-lv1.glb",
+          "bytes": 33732,
+          "sha256": "1b50ba5cdf3f569467f8258ac3b76163a85bfafd0d8c4b25d5be678608c7cba7"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 654,
+          "meshes": 17,
+          "vertices": 938,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.5339999880109515,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.5339999880109515,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 486,
+          "meshes": 17,
+          "vertices": 746,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.5339999880109515,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.5339999880109515,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 378,
+          "meshes": 17,
+          "vertices": 626,
+          "materials": 10,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.5339999880109515,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.5339999880109515,
+            0.8800000122615268
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/factory-lv1.webp",
+      "icon": "./assets/facilities/icons/factory-lv1.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "factory-lv2",
+      "type": "factory",
+      "name": "工厂",
+      "kind": "facility",
+      "level": 2,
+      "change": "仓储侧房、料罐与传送带",
+      "signature": "砖红锯齿厂房 · 分节烟囱 · 金色起重设备",
+      "accent": "#AC5941",
+      "palette": [
+        "#AC5941",
+        "#62787A",
+        "#DAA127"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/factory-lv2.glb",
+          "bytes": 75516,
+          "sha256": "c6af311c6fcdc449b80395b459af7120956e49a7e086cd58e417e4e8c6004a76"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/factory-lv2.glb",
+          "bytes": 62460,
+          "sha256": "13195086ae4f92b5934eb8dbacc6608894d2d3ca9f1b11dbd1cfc83db81b8ec6"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/factory-lv2.glb",
+          "bytes": 53880,
+          "sha256": "83b776e4606851b405cfde030bebeedea63d632bee20ba3843916e2c69a9b19c"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 1342,
+          "meshes": 28,
+          "vertices": 1765,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.5711428437914168,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.5711428437914168,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 890,
+          "meshes": 28,
+          "vertices": 1329,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.5711428437914168,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.5711428437914168,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 634,
+          "meshes": 28,
+          "vertices": 1037,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.5711428437914168,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.5711428437914168,
+            0.8800000122615268
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/factory-lv2.webp",
+      "icon": "./assets/facilities/icons/factory-lv2.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "factory-lv3",
+      "type": "factory",
+      "name": "工厂",
+      "kind": "facility",
+      "level": 3,
+      "change": "双生产车间、双烟囱与储料系统",
+      "signature": "砖红锯齿厂房 · 分节烟囱 · 金色起重设备",
+      "accent": "#AC5941",
+      "palette": [
+        "#AC5941",
+        "#62787A",
+        "#DAA127"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/factory-lv3.glb",
+          "bytes": 129616,
+          "sha256": "60139a07e721cc158b3757c80ae2d5339402a9ea9e3070e6deb00448a1664511"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/factory-lv3.glb",
+          "bytes": 99952,
+          "sha256": "8b62843ab17e64b1d54d61c39d545c86f7aec9fdcb21d6a460f0a44831f1563f"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/factory-lv3.glb",
+          "bytes": 83220,
+          "sha256": "19ad89454cf61a90ebd557c5d02ef3f1b1a37854e1b4a81fb531c31df9a57a07"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2836,
+          "meshes": 39,
+          "vertices": 3271,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1728,
+          "meshes": 39,
+          "vertices": 2307,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1172,
+          "meshes": 39,
+          "vertices": 1751,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/factory-lv3.webp",
+      "icon": "./assets/facilities/icons/factory-lv3.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "factory-lv4",
+      "type": "factory",
+      "name": "工厂",
+      "kind": "facility",
+      "level": 4,
+      "change": "高架起重门机、装配机械臂与连通管线",
+      "signature": "砖红锯齿厂房 · 分节烟囱 · 金色起重设备",
+      "accent": "#AC5941",
+      "palette": [
+        "#AC5941",
+        "#62787A",
+        "#DAA127"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/factory-lv4.glb",
+          "bytes": 146480,
+          "sha256": "0d1fc7238982ca74df8fde234d2f615407e19d038ee366e697a71e7edbc7a685"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/factory-lv4.glb",
+          "bytes": 115028,
+          "sha256": "b6faef6f0f14470265d21e39c5c36f5fe111a483671283b30f1e438793691f83"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/factory-lv4.glb",
+          "bytes": 97696,
+          "sha256": "5477058b36c74f6d1bd5e02540ca05af526a3df44172fc365ed47ffa4fd4dcc3"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3140,
+          "meshes": 48,
+          "vertices": 3597,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1944,
+          "meshes": 48,
+          "vertices": 2581,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1356,
+          "meshes": 48,
+          "vertices": 2005,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/factory-lv4.webp",
+      "icon": "./assets/facilities/icons/factory-lv4.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "factory-lv5",
+      "type": "factory",
+      "name": "工厂",
+      "kind": "facility",
+      "level": 5,
+      "change": "完整工业园、双层物流桥与大型生产配套",
+      "signature": "砖红锯齿厂房 · 分节烟囱 · 金色起重设备",
+      "accent": "#AC5941",
+      "palette": [
+        "#AC5941",
+        "#62787A",
+        "#DAA127"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/factory-lv5.glb",
+          "bytes": 180752,
+          "sha256": "b7e6c273a4e2fafdbc8a07e7994e27fa5a865162879c72e2654069217432a581"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/factory-lv5.glb",
+          "bytes": 148780,
+          "sha256": "30e84046ae98e47055e8e8bbda199f47ec776a6adcf60d651f05622317b46fb7"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/factory-lv5.glb",
+          "bytes": 124760,
+          "sha256": "e3cf54430ff36cac9bf96fbfc5f1ddfa5c2d4c1cf3004c7fd3031ab15bc6fee8"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3628,
+          "meshes": 61,
+          "vertices": 4477,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2416,
+          "meshes": 61,
+          "vertices": 3445,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1700,
+          "meshes": 61,
+          "vertices": 2621,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.49999999999999994,
+              0,
+              -0.4400000061307634
+            ],
+            "max": [
+              0.5,
+              0.7197143009730749,
+              0.44000000613076345
+            ]
+          },
+          "size": [
+            1,
+            0.7197143009730749,
+            0.8800000122615268
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/factory-lv5.webp",
+      "icon": "./assets/facilities/icons/factory-lv5.png",
+      "newFacility": true
+    },
+    {
+      "assetId": "oil-well-lv1",
+      "type": "oil-well",
+      "name": "油井",
+      "kind": "facility",
+      "newFacility": true,
+      "level": 1,
+      "change": "单等级抽油机、配重传动、储油罐与管线",
+      "signature": "游梁式抽油机 · A 形支架 · 弧形驴头",
+      "accent": "#62787A",
+      "palette": [
+        "#253F65",
+        "#62787A",
+        "#DAA127"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/oil-well-lv1.glb",
+          "bytes": 46184,
+          "sha256": "b0afb143f5936b4299f583d59bf8a162ee67ab08fe9cec1e73c704546815c4f4"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/oil-well-lv1.glb",
+          "bytes": 42312,
+          "sha256": "e1b7f3213c399bb9cd22a06be686b6defd31b437dbbb50d5248018375d716fb0"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/oil-well-lv1.glb",
+          "bytes": 40084,
+          "sha256": "051e0a69d5057aea4880618f9dc4e5d0d345a4300afe246cddd5516c1990c36f"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 756,
+          "meshes": 20,
+          "vertices": 944,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.32608695793016645
+            ],
+            "max": [
+              0.49999999999999994,
+              0.8478260679427525,
+              0.32608695793016645
+            ]
+          },
+          "size": [
+            1,
+            0.8478260679427525,
+            0.6521739158603329
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 632,
+          "meshes": 20,
+          "vertices": 814,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.32608695793016645
+            ],
+            "max": [
+              0.49999999999999994,
+              0.8478260679427525,
+              0.32608695793016645
+            ]
+          },
+          "size": [
+            1,
+            0.8478260679427525,
+            0.6521739158603329
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 560,
+          "meshes": 20,
+          "vertices": 738,
+          "materials": 9,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.32608695793016645
+            ],
+            "max": [
+              0.49999999999999994,
+              0.8478260679427525,
+              0.32608695793016645
+            ]
+          },
+          "size": [
+            1,
+            0.8478260679427525,
+            0.6521739158603329
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/oil-well-lv1.webp",
+      "icon": "./assets/facilities/icons/oil-well-lv1.png"
+    },
+    {
+      "assetId": "airport-lv1",
+      "type": "airport",
+      "name": "机场",
+      "kind": "facility",
+      "newFacility": true,
+      "planned": false,
+      "customizable": true,
+      "level": 1,
+      "change": "单等级机场：以宽跑道和高塔台为主体，配小型航站楼及停机坪",
+      "signature": "宽阔长跑道 · 高耸八角塔台 · 小型航站楼 · 领土色涂装",
+      "accent": "#256BA4",
+      "palette": [
+        "#256BA4",
+        "#EDEAD8",
+        "#454E53",
+        "#327F99"
+      ],
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/airport-lv1.glb",
+          "bytes": 202588,
+          "sha256": "3885a42c3ae84f957b84a98bfcced9b072bc384a387bca642e465bec5e287270"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/airport-lv1.glb",
+          "bytes": 169688,
+          "sha256": "feee390aa42926ef38d1f1d2a47691ffca5a26ac56a94c7dbc6a53f0979a1108"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/airport-lv1.glb",
+          "bytes": 125792,
+          "sha256": "81156e11aace5b63cf611537e90a6c7d695cda43d3a15b4c73cab4d1b6915043"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 3709,
+          "meshes": 60,
+          "vertices": 5331,
+          "materials": 15,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.2521613812062262
+            ],
+            "max": [
+              0.5,
+              0.45878962377617244,
+              0.2521613812062263
+            ]
+          },
+          "size": [
+            1,
+            0.45878962377617244,
+            0.5043227624124524
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2617,
+          "meshes": 57,
+          "vertices": 4341,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.2521613812062262
+            ],
+            "max": [
+              0.5,
+              0.45878962377617244,
+              0.2521613812062263
+            ]
+          },
+          "size": [
+            1,
+            0.45878962377617244,
+            0.5043227624124524
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1729,
+          "meshes": 49,
+          "vertices": 3001,
+          "materials": 14,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.2521613812062262
+            ],
+            "max": [
+              0.5,
+              0.45878962377617244,
+              0.2521613812062263
+            ]
+          },
+          "size": [
+            1,
+            0.45878962377617244,
+            0.5043227624124524
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/airport-lv1.webp",
+      "icon": "./assets/facilities/icons/airport-lv1.png"
+    },
+    {
+      "type": "expedition",
+      "name": "远征战棋",
+      "accent": "#AC263D",
+      "palette": [
+        "#AC263D",
+        "#D7B15E",
+        "#EDEAD8"
+      ],
+      "signature": "深红盾形棋座、金边大旗、三人红白远征队",
+      "assetId": "expedition",
+      "kind": "unit",
+      "level": null,
+      "change": "深红盾形棋座、金边大旗、三人红白远征队",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/expedition.glb",
+          "bytes": 162200,
+          "sha256": "8d492f918cae0afff58757156ba8156c0e1d27ce3e8569e998b70cb053ce3a14"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/expedition.glb",
+          "bytes": 128760,
+          "sha256": "b490a6b7cb91b744224d57f400af3d01b4f838339058f0849de2fa540046b6d0"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/expedition.glb",
+          "bytes": 111196,
+          "sha256": "c2e1a6bdd75a151a150c4b379027d0abfd96c1a8ab30f248b7bf44e74db84f94"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 4154,
+          "meshes": 61,
+          "vertices": 3495,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.44396553053016796
+            ],
+            "max": [
+              0.5,
+              1.29741382632542,
+              0.44396553053016785
+            ]
+          },
+          "size": [
+            1,
+            1.29741382632542,
+            0.8879310610603358
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 2462,
+          "meshes": 61,
+          "vertices": 2523,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.44396553053016796
+            ],
+            "max": [
+              0.5,
+              1.29741382632542,
+              0.44396553053016785
+            ]
+          },
+          "size": [
+            1,
+            1.29741382632542,
+            0.8879310610603358
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 1688,
+          "meshes": 58,
+          "vertices": 2055,
+          "materials": 11,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.44396553053016796
+            ],
+            "max": [
+              0.5,
+              1.29741382632542,
+              0.44396553053016785
+            ]
+          },
+          "size": [
+            1,
+            1.29741382632542,
+            0.8879310610603358
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/expedition.webp",
+      "icon": "./assets/facilities/icons/expedition.png"
+    },
+    {
+      "type": "scout",
+      "name": "球探",
+      "accent": "#5F7B60",
+      "palette": [
+        "#5F7B60",
+        "#DAA127",
+        "#E8D9BB"
+      ],
+      "signature": "砂金罗盘棋座、绿斗篷宽檐帽、大地图与双筒镜",
+      "assetId": "scout",
+      "kind": "unit",
+      "level": null,
+      "change": "砂金罗盘棋座、绿斗篷宽檐帽、大地图与双筒镜",
+      "files": [
+        {
+          "lod": 0,
+          "url": "./assets/facilities/models/scout.glb",
+          "bytes": 92168,
+          "sha256": "2de5ac20423c78e2b61bcb80ab45416ae9afa22ddcf1021071198104544e8d10"
+        },
+        {
+          "lod": 1,
+          "url": "./assets/facilities/models/lod1/scout.glb",
+          "bytes": 72816,
+          "sha256": "6eb3acdd02d3a3a68891f35320ce46404f255b5a70840dfeb90f53d22dae49c3"
+        },
+        {
+          "lod": 2,
+          "url": "./assets/facilities/models/lod2/scout.glb",
+          "bytes": 60472,
+          "sha256": "674303ed0d921649f54d71bc3697a189bb192bfb57aaacaf636b2f2c263ae3f3"
+        }
+      ],
+      "levels": [
+        {
+          "lod": 0,
+          "triangles": 2156,
+          "meshes": 31,
+          "vertices": 2105,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              1.0759464301128625,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            1.0759464301128625,
+            1
+          ]
+        },
+        {
+          "lod": 1,
+          "triangles": 1368,
+          "meshes": 31,
+          "vertices": 1497,
+          "materials": 13,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              1.0759464301128625,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            1.0759464301128625,
+            1
+          ]
+        },
+        {
+          "lod": 2,
+          "triangles": 930,
+          "meshes": 30,
+          "vertices": 1125,
+          "materials": 12,
+          "bounds": {
+            "min": [
+              -0.5,
+              0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              1.0759464301128625,
+              0.5
+            ]
+          },
+          "size": [
+            1,
+            1.0759464301128625,
+            1
+          ]
+        }
+      ],
+      "thumbnail": "./assets/facilities/thumbnails/scout.webp",
+      "icon": "./assets/facilities/icons/scout.png"
+    }
+  ]
+}

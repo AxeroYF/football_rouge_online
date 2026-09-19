@@ -1,0 +1,92 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {CampaignService} from '../campaign-service.mjs';
+import {DRAFT_VERSION} from '../shared/config/draft.mjs';
+const require=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs');
+const {chromium}=require('playwright');
+const root=process.cwd(),out=path.join(root,'outputs/s4-bond-display-20260910'),data=fs.mkdtempSync(path.join(os.tmpdir(),'ydl-v21-review-'));
+const read=f=>JSON.parse(fs.readFileSync(path.join(root,f),'utf8'));
+const index=read('assets/data/territory-index.json'),geo=read('assets/data/campaign-territories.geojson'),resources=read('assets/data/territory-resources.json'),catalog=read('assets/data/s4-player-catalog.json');
+const byId=new Map(index.territories.map(t=>[t.territoryId,t]));
+const has=(id,terrain)=>resources.territories[id].terrain.includes(terrain);
+const home=process.argv[2]?.includes('scotland')?byId.get('adm1:region-gbr-f9c96ad579'):index.territories.find(t=>t.countryCode==='FRA'&&has(t.territoryId,'plains')&&t.landNeighbors.some(id=>has(id,'hills')||has(id,'mountain'))&&t.landNeighbors.some(id=>has(id,'plains'))&&t.landNeighbors.length>=3);
+assert.ok(home);
+const hill=home.landNeighbors.find(id=>has(id,'hills')||has(id,'mountain'))??home.landNeighbors[0],plain=home.landNeighbors.find(id=>id!==hill&&has(id,'plains'));
+const owned=[home.territoryId,...home.landNeighbors];
+const s=new CampaignService({dataPath:path.join(data,'campaign-accounts.json'),catalog,territoryIndex:index,territoryGeoJson:geo,territoryResources:resources});
+const base=[['GK',4],['DEF',10],['MID',10],['ATT',9]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX).slice(0,n));
+const pt=catalog.filter(p=>p.nationality==='葡萄牙').slice(0,3);const roster=[...base.filter(p=>p.nationality!=='葡萄牙'),...pt,{...pt[0],id:'pt-duplicate',cardDefinitionId:pt[0].id}];
+const actor={id:'wonder-browser',nickname:'奇观验收',token:'isolated-wonder-token',createdAt:Date.now(),setupComplete:true,homeTerritoryId:home.territoryId,gold:2000000,mapColor:'#5d7d9e',draft:{version:DRAFT_VERSION,teamName:'奇观验收',totalPicks:roster.length,roster},resources:{fans:50000}};
+s.accounts.set(actor.id,actor);s.world.players[actor.id]={playerId:actor.id,territoryIds:owned,capitalTerritoryId:home.territoryId};
+for(const id of owned)Object.assign(s.world.territories[id],{ownerType:'player',ownerId:actor.id,capitalOf:id===home.territoryId?actor.id:null,buildings:[]});
+s.buildings.ensureCapitalStadium(actor,s.world,home.territoryId);s.world.territories[home.territoryId].buildings.push(s.buildings.createRecord('club-shop'));
+const chosen=[];
+for(const role of ['GK','LB','RB','CB','CB','DM','AM','LM','ST','ST','RW'])chosen.push(catalog.find(p=>p.role===role&&!p.isX&&!chosen.some(v=>v.id===p.id)));
+assert.ok(chosen.every(Boolean));
+const reserve=[['GK',1],['DEF',4],['MID',3],['ATT',3]].flatMap(([pool,n])=>catalog.filter(p=>p.pool===pool&&!p.isX&&!chosen.some(v=>v.id===p.id)).slice(0,n));
+actor.draft.roster=[...chosen,...reserve];actor.draft.totalPicks=22;
+actor.playerSquads={schemaVersion:2,assignments:Object.fromEntries(actor.draft.roster.map(p=>[p.id,chosen.includes(p)?'expedition':'garrison']))};
+const coords=[[50,90],[15,62],[85,62],[40,68],[60,68],[40,48],[60,40],[15,44],[40,20],[60,20],[85,20]];
+const positions=Object.fromEntries(chosen.map((p,i)=>[p.id,{x:coords[i][0],y:coords[i][1]}]));
+const lines={attack:20,midfield:44,defense:68,goalkeeper:90},starters=chosen.map(p=>p.id);
+s.saveTactics(actor,{activeSquadId:'expedition',playerSquads:actor.playerSquads,squads:{expedition:{starters,positions,formationLines:lines,planSnapshots:{__s4V2:{starters,positionPresets:{position1:positions,position2:positions,position3:positions},formationLinePresets:{position1:lines,position2:lines,position3:lines}}}}}});
+
+for(const p of chosen){p.nationality='法国';p.club='巴黎圣日耳曼';p.upgradeLevel=1;p.heightCm=180;p.traits=[];}chosen[0].traits=['shadow-marker'];
+s.save();fs.mkdirSync(out,{recursive:true});
+let child,browser,stdout='',stderr='';const errors=[],shots=[];
+try{
+ child=spawn(process.execPath,['server.mjs'],{cwd:root,windowsHide:true,env:{...process.env,PORT:'0',HOST:'127.0.0.1',DATA_DIR:data,ADMIN_BOOTSTRAP_PASSWORD:'isolated-scale-review'},stdio:['ignore','pipe','pipe']});child.stderr.on('data',c=>stderr+=c);
+ const url=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('server timeout '+stderr)),45000);child.once('exit',code=>{clearTimeout(timer);reject(Error('server exit '+code));});child.stdout.on('data',c=>{stdout+=c;const m=stdout.match(/game: (http:\/\/127\.0\.0\.1:\d+)\/versus\//);if(m){clearTimeout(timer);resolve(m[1]);}});});
+ browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+ const context=await browser.newContext({viewport:{width:1600,height:1050}});await context.addInitScript(()=>localStorage.setItem('yellowdogs-chronicles-token','isolated-wonder-token'));
+ await context.route('**/app.js?*',async route=>{const response=await route.fetch();await route.fulfill({response,body:(await response.text())+'\nwindow.__scaleReview={map,territoryLayersById,state:()=>campaignState,openTactics:()=>fullTacticsController.open(),closeTactics:()=>fullTacticsController.close()};'});});
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));console.log('Isolated server ready');await page.goto(url+'/game');await page.waitForFunction(()=>window.__scaleReview?.state()?.playerId==='wonder-browser',null,{timeout:60000});
+ await page.waitForFunction(()=>!document.querySelector('#campaign-map')?.classList.contains('is-loading'),null,{timeout:60000});
+
+ const requests=[];page.on('request',request=>{if(request.method()!=='GET')requests.push(request.method()+' '+request.url());});
+ await page.evaluate(()=>{
+  const state=window.__scaleReview.state();let i=0;
+  for(const p of state.draft.roster){
+   p.nationality=i<5?'法国':'测试无国籍';p.club=i<5?'巴黎圣日耳曼':'测试无俱乐部';p.upgradeLevel=0;p.heightCm=180;p.traits=[];
+   p.attributes=Object.fromEntries(Object.keys(p.attributes).map(k=>[k,70]));p.effectiveAttributes={...p.attributes};p.overall=70;p.effectiveOverall=70;p.baseOverall=70;i++;
+  }
+  window.__scaleReview.openTactics();
+ });
+ const toggle=page.locator('[data-league-bond-bonus-toggle]');
+ await page.waitForSelector('.league-bond-ready');assert.equal(await toggle.isChecked(),false);
+ console.log('Tactics loaded');const bonds=await page.locator('[data-active-bond-id]').allTextContents();assert.equal(bonds.length,3,JSON.stringify(bonds));
+ const ratings=()=>page.locator('[data-league-magnet] > i').allTextContents();
+ const baseRatings=await ratings();assert.ok(baseRatings.every(x=>x==='70'),JSON.stringify(baseRatings));
+ assert.equal(await page.locator('.league-magnet-bond').count(),0);
+ const rosterBefore=await page.evaluate(()=>JSON.stringify(window.__scaleReview.state().draft.roster));
+ const first=page.locator('[data-league-magnet]').first();
+ await first.hover();assert.match(await page.locator('.league-magnet-tooltip').textContent(),/综合能力：70/);
+ await page.screenshot({path:path.join(out,'desktop-preview-off.png')});
+ await toggle.check();assert.deepEqual(await page.locator('[data-active-bond-id]').allTextContents(),bonds);
+ const boosted=await ratings();assert.equal(boosted.filter(x=>x==='74').length,5,JSON.stringify(boosted));assert.equal(boosted.filter(x=>x==='72').length,6);
+ await first.hover();const tip=await page.locator('.league-magnet-tooltip').textContent();assert.match(tip,/综合能力：74/);assert.match(tip,/守门 74/);
+ await page.screenshot({path:path.join(out,'desktop-preview-on.png')});
+ // Use the real display settings controller without opening unrelated menus.
+ await page.locator('#account-tactics-display [data-tactics-piece-display="cards"]').evaluate(el=>el.click());
+ assert.equal(await page.locator('.league-magnet-card').count(),11);
+ const cardRatings=()=>page.locator('.league-magnet-card .shield-card-information > text:first-child').allTextContents();
+ assert.deepEqual(await cardRatings(),boosted);
+ await toggle.uncheck();assert.deepEqual(await ratings(),baseRatings);assert.deepEqual(await cardRatings(),baseRatings);
+ await first.hover();assert.match(await page.locator('.league-magnet-tooltip').textContent(),/守门 70/);
+ assert.deepEqual(await page.locator('[data-active-bond-id]').allTextContents(),bonds);
+ await toggle.check();assert.deepEqual(await cardRatings(),boosted);
+ await page.screenshot({path:path.join(out,'desktop-cards-on.png')});
+ await toggle.uncheck();await toggle.check();assert.deepEqual(await cardRatings(),boosted);
+ assert.equal(await page.evaluate(()=>JSON.stringify(window.__scaleReview.state().draft.roster)),rosterBefore);
+ await page.setViewportSize({width:780,height:360});
+ await page.locator('[data-mobile-tactics-tab="controls"]').count().then(async n=>{if(n)await page.locator('[data-mobile-tactics-tab="controls"]').click();});
+ await page.screenshot({path:path.join(out,'landscape-cards.png')});
+ assert.equal(await toggle.isChecked(),true);assert.deepEqual(await cardRatings(),boosted);assert.deepEqual(await page.locator('[data-active-bond-id]').allTextContents(),bonds);
+ assert.deepEqual(requests,[]);assert.deepEqual(errors,[]);
+ fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({bonds,baseRatings,boosted,tip,requests,errors,checks:['default preview off','all three eligible bonds always visible','only strongest two applied','magnet rating and tooltip agree','card ratings follow toggle','repeated toggles do not accumulate','roster unchanged','no write requests','landscape rendering','no browser errors']},null,2));
+ console.log('S4 bond display browser review passed: '+out);
+}finally{await browser?.close();child?.kill();}

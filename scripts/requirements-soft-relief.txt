@@ -1,0 +1,4 @@
+# Versions verified with Python 3.12 for the offline terrain builder.
+numpy==2.3.5
+scipy==1.16.2
+Pillow==11.1.0

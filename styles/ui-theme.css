@@ -1,0 +1,457 @@
+/* Club UI v1. Load after module styles. Every rule is opt-in so ?ui=legacy
+   restores the original presentation. Layout, game art and content palettes
+   belong to their modules; this file owns application chrome and controls. */
+html[data-ui-theme="club"] {
+  color-scheme: dark;
+  --ui-font: "Segoe UI", "Microsoft YaHei", sans-serif;
+  --ui-base: #111916;
+  --ui-surface: #1a241f;
+  --ui-raised: #24312a;
+  --ui-inset: #141e18;
+  --ui-hover: #2e3d33;
+  --ui-border: #3a473e;
+  --ui-border-strong: #617063;
+  --ui-text: #ede9dd;
+  --ui-muted: #b6beb0;
+  --ui-subtle: #93a092;
+  --ui-gold: #d4b365;
+  --ui-gold-hover: #e1c581;
+  --ui-on-gold: #141b16;
+  --ui-gold-soft: rgba(212, 179, 101, .12);
+  --ui-success: #8cbd96;
+  --ui-danger: #e88d86;
+  --ui-info: #87bbb7;
+  --ui-scout: #b4a1ca;
+  --ui-training: #9dbb91;
+  --ui-enhancement: #b5a5c9;
+  --ui-radius-control: 8px;
+  --ui-radius-panel: 12px;
+  --ui-radius-window: 16px;
+  --ui-shadow-float: 0 8px 24px rgba(0, 0, 0, .28);
+  --ui-shadow-window: 0 24px 64px rgba(0, 0, 0, .4);
+  --ui-scrim: rgba(8, 13, 10, .78);
+  --ink: var(--ui-text);
+  --ink-soft: var(--ui-muted);
+  --ink-dim: var(--ui-subtle);
+  --paper: var(--ui-text);
+  --paper-ink: var(--ui-on-gold);
+  --shell: var(--ui-base);
+  --header: var(--ui-inset);
+  --surface: var(--ui-surface);
+  --surface-strong: var(--ui-raised);
+  --line: var(--ui-border);
+  --line-strong: var(--ui-border-strong);
+  --gold: var(--ui-gold);
+  --green: var(--ui-success);
+  --red: var(--ui-danger);
+  --radius-control: var(--ui-radius-control);
+  --radius-small: var(--ui-radius-control);
+  --radius-panel: var(--ui-radius-panel);
+}
+
+html[data-ui-theme="club"] body {
+  color: var(--ui-text);
+  background: var(--ui-base);
+  font-family: var(--ui-font);
+  font-variant-numeric: tabular-nums;
+}
+/* Reset the imported modules' shell variables at their original scope. Do not
+   replace pitch/grade/team/accent variables used by cards and match graphics. */
+html[data-ui-theme="club"] :is(#campaign-tactics, .broadcast-overlay, .enhancement-window, .admin-ui) {
+  --bg: var(--ui-base);
+  --panel: var(--ui-surface);
+  --panel2: var(--ui-raised);
+  --line: var(--ui-border);
+  --ink: var(--ui-text);
+  --muted: var(--ui-muted);
+  font-family: var(--ui-font);
+}
+html[data-ui-theme="club"] :is(button:not(.enhancement-trigger), input, select, textarea) { font-family: var(--ui-font); }
+html[data-ui-theme="club"] :is(button:not(.enhancement-trigger), a[href], input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--ui-gold);
+  outline-offset: 3px;
+}
+
+/* Shared surfaces. Existing window sizes and independent scrolling stay in
+   standard-window, wide-window, small-window and the module layout files. */
+html[data-ui-theme="club"] :is(.entry-panel, .team-management-shell, .yoogle-window-shell,
+  .inventory-window-surface, .enhancement-window-surface, .training-picker,
+  .team-player-detail-dialog, .small-window__dialog, .enhancement-dialog, .battle-result-panel) {
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-window);
+  box-shadow: var(--ui-shadow-window);
+}
+html[data-ui-theme="club"] :is(.territory-inspector, .home-selection-panel, .training-window,
+  .scouting-window > .scouting-surface, .account-menu-popover, .yoogle-dropdown,
+  .yoogle-preview, .campaign-territory-tooltip, .campaign-fog-status, .map-layer-toggles) {
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-panel);
+  box-shadow: var(--ui-shadow-float);
+}
+html[data-ui-theme="club"] :is(.team-management-header, .inventory-window-header,
+  .enhancement-window-header, .training-header, .scouting-window .scouting-header,
+  .team-player-detail-dialog > header, .enhancement-dialog > header,
+  .battle-result-panel > header,  .yoogle-preview-head) {
+  min-height: 64px;
+  padding: 14px 20px;
+  gap: 16px;
+  color: var(--ui-text);
+  background: var(--ui-inset);
+  border-bottom: 1px solid var(--ui-border);
+  box-shadow: none;
+}
+html[data-ui-theme="club"] :is(.team-management-header h2, .inventory-window-header h2,
+  .enhancement-window-header h2, .training-header h2, .team-player-detail-dialog > header h2,
+  .enhancement-dialog h2, .battle-result-panel > header h2, 
+  .draft-header h1) {
+  margin: 0;
+  font: 700 22px/1.35 var(--ui-font);
+  letter-spacing: 0;
+  color: var(--ui-text);
+}
+html[data-ui-theme="club"] :is(.scouting-window .scouting-header, .training-window .training-header) {
+  min-height: 60px;
+  padding: 12px 16px;
+  gap: 12px;
+}
+html[data-ui-theme="club"] :is(.scouting-window .scouting-header h2,
+  .training-window .training-header h2, .territory-inspector-heading strong,
+  .home-selection-panel header h2, .yoogle-preview-head h2) {
+  font: 700 18px/1.4 var(--ui-font);
+  letter-spacing: 0;
+}
+html[data-ui-theme="club"] :is(.team-management-header > button, .inventory-window-header > button,
+  .enhancement-window-header > button, .training-header > button, .scouting-window .scouting-header > button,
+  .team-player-detail-dialog > header > button, .enhancement-dialog > header > button,
+  .battle-result-panel > header > button, .yoogle-window-close, .yoogle-preview-head > button) {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-control);
+  color: var(--ui-muted);
+  background: var(--ui-raised);
+  font: 400 24px/1 var(--ui-font);
+  cursor: pointer;
+}
+html[data-ui-theme="club"] :is(.team-management-header > button, .inventory-window-header > button,
+  .enhancement-window-header > button, .training-header > button, .scouting-window .scouting-header > button,
+  .team-player-detail-dialog > header > button, .enhancement-dialog > header > button,
+  .battle-result-panel > header > button, .yoogle-window-close, .yoogle-preview-head > button):hover {
+  color: var(--ui-text);
+  background: var(--ui-hover);
+  border-color: var(--ui-border-strong);
+}
+
+/* Explicit action controls only. Card faces, selection tiles, pitch magnets
+   and player rows are deliberately excluded from generic button styling. */
+html[data-ui-theme="club"] :is(.entry-primary, .home-selection-panel > button,
+  .territory-challenge-actions button, .building-build-option > button, .building-scout-open,
+  .training-result-actions button, 
+  .scouting-window .scout-primary, .scout-notice > button, .training-notice > button,
+  .inventory-showcase-action, .enhancement-window .button,
+  .enhancement-window .enhancement-bind-trait, .enhancement-dialog footer button,
+  .enhancement-mini-ranking > header button, .broadcast-overlay .button,
+  .account-menu-popover button, .yoogle-page-state button, .ui-button) {
+  min-height: 40px;
+  padding: 9px 16px;
+  border: 1px solid var(--ui-button-border, var(--ui-border-strong));
+  border-radius: var(--ui-radius-control);
+  color: var(--ui-button-text, var(--ui-text));
+  background: var(--ui-button-bg, var(--ui-raised));
+  font: 600 14px/1.4 var(--ui-font);
+  box-shadow: none;
+  text-shadow: none;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+html[data-ui-theme="club"] :is(.entry-primary, .home-selection-panel > button,
+  .territory-challenge-actions button:not(.is-secondary), .building-build-option > button,
+  .training-result-actions .training-finish,  .scouting-window .scout-primary,
+  .inventory-showcase-action,
+  .enhancement-window .enhancement-bind-trait, .enhancement-dialog [data-batch-submit], .ui-button--primary) {
+  --ui-button-bg: var(--ui-gold);
+  --ui-button-text: var(--ui-on-gold);
+  --ui-button-border: var(--ui-gold);
+  --ui-button-hover: var(--ui-gold-hover);
+  font-weight: 750;
+}
+html[data-ui-theme="club"] :is(.entry-primary, .home-selection-panel > button,
+  .territory-challenge-actions button, .building-build-option > button, .building-scout-open,
+  .training-result-actions button, 
+  .scouting-window .scout-primary, .scout-notice > button, .training-notice > button,
+  .inventory-showcase-action, .enhancement-window .button,
+  .enhancement-window .enhancement-bind-trait, .enhancement-dialog footer button,
+  .enhancement-mini-ranking > header button, .broadcast-overlay .button,
+  .account-menu-popover button, .yoogle-page-state button, .ui-button):hover:not(:disabled) {
+  color: var(--ui-button-text, var(--ui-text));
+  background: var(--ui-button-hover, var(--ui-hover));
+  border-color: var(--ui-button-border, var(--ui-gold));
+  filter: none;
+}
+html[data-ui-theme="club"] :is(.entry-primary, .home-selection-panel > button,
+  .territory-challenge-actions button, .building-build-option > button,
+  .training-result-actions button,  .scouting-window .scout-primary,
+  .inventory-showcase-action, .enhancement-window .button,
+  .enhancement-dialog footer button, .ui-button):disabled {
+  color: var(--ui-subtle);
+  background: var(--ui-raised);
+  border-color: var(--ui-border);
+  opacity: .6;
+  box-shadow: none;
+  cursor: not-allowed;
+  filter: none;
+}
+html[data-ui-theme="club"] :is(.scout-notice > button, .training-notice > button,
+  .building-scout-open, .enhancement-mini-ranking > header button) {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Inputs use one focus treatment. Checkboxes, ranges and pitch interaction
+   inputs retain their geometry and only inherit the keyboard focus outline. */
+html[data-ui-theme="club"] :is(.entry-form, .team-management-toolbar, .enhancement-tools,
+  .batch-enhancement-form,  .admin-ui, #campaign-tactics)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  min-height: 40px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-inset);
+  color: var(--ui-text);
+  padding: 8px 12px;
+  font: 400 14px/1.4 var(--ui-font);
+  box-shadow: none;
+}
+html[data-ui-theme="club"] :is(.entry-form, .team-management-toolbar, .enhancement-tools,
+  .batch-enhancement-form,  .admin-ui, #campaign-tactics)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea):focus {
+  border-color: var(--ui-gold);
+  box-shadow: 0 0 0 3px var(--ui-gold-soft);
+  background: var(--ui-inset);
+}
+html[data-ui-theme="club"] :is(.entry-form, .team-management-toolbar, .enhancement-tools,
+  .batch-enhancement-form,  .admin-ui) input::placeholder { color: var(--ui-subtle); }
+html[data-ui-theme="club"] :is(.entry-form label > span, .team-management-toolbar label,
+  .batch-enhancement-form label, .territory-inspector dt) { color: var(--ui-muted); font-size: 12px; }
+html[data-ui-theme="club"] :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--ui-gold); }
+
+/* Navigation, filters and list selection. */
+html[data-ui-theme="club"] .topbar { background: var(--ui-inset); border-color: var(--ui-border); }
+html[data-ui-theme="club"] :is(.nav-item, .account-menu-trigger) {
+  min-height: 40px;
+  border-radius: var(--ui-radius-control);
+  color: var(--ui-muted);
+  background: var(--ui-surface);
+  border-color: var(--ui-border);
+}
+html[data-ui-theme="club"] :is(.nav-item, .account-menu-trigger):hover { background: var(--ui-hover); border-color: var(--ui-border-strong); color: var(--ui-text); }
+html[data-ui-theme="club"] .nav-item.is-active { background: var(--ui-gold-soft); border-color: var(--ui-gold); color: var(--ui-gold); }
+html[data-ui-theme="club"] :is(.team-management-toolbar, .inventory-filter-bar,
+  .enhancement-window .enhancement-tools, .team-list-columns, .yoogle-results-head,
+  .training-result-actions, .team-view-switch, .training-squad-filters) {
+  background: var(--ui-inset);
+  border-color: var(--ui-border);
+}
+html[data-ui-theme="club"] :is(.team-management-header .team-view-switch button,
+  .training-squad-filters button, .inventory-filter-tab, .entry-tabs button) {
+  min-height: 32px;
+  color: var(--ui-muted);
+  font: 600 13px/1.4 var(--ui-font);
+}
+html[data-ui-theme="club"] :is(.team-management-header .team-view-switch button.is-active,
+  .training-squad-filters button.is-active) { color: var(--ui-on-gold); background: var(--ui-gold); }
+html[data-ui-theme="club"] :is(.entry-tabs button.is-active, .inventory-filter-tab.is-active) { color: var(--ui-gold); border-bottom-color: var(--ui-gold); }
+html[data-ui-theme="club"] :is(.team-player-list, .team-management-shell > .team-empty,
+  .inventory-showcase, .yoogle-window-main) { background: var(--ui-surface); border-color: var(--ui-border); }
+html[data-ui-theme="club"] :is(.team-player-list-row, .yoogle-result):hover { background: var(--ui-hover); }
+html[data-ui-theme="club"] .team-position-row h3 { font-family: var(--ui-font); letter-spacing: 0; }
+html[data-ui-theme="club"] :is(.inventory-pack-slot, .inventory-showcase-art) { background: var(--ui-inset); border-color: var(--ui-border); box-shadow: none; }
+html[data-ui-theme="club"] .inventory-pack-card:hover .inventory-pack-slot { border-color: var(--ui-border-strong); background: var(--ui-raised); }
+html[data-ui-theme="club"] .inventory-pack-card.is-selected .inventory-pack-slot { border-color: var(--ui-gold); box-shadow: 0 0 0 1px var(--ui-gold); }
+html[data-ui-theme="club"] .inventory-showcase-owned strong { color: var(--ui-gold); }
+html[data-ui-theme="club"] .inventory-showcase-quality { color: var(--ui-muted); background: var(--ui-raised); border-color: var(--ui-border); }
+html[data-ui-theme="club"] .entry-panel { border-top: 3px solid var(--ui-gold); }
+html[data-ui-theme="club"] :is(.entry-copy h1, .draft-round b) { font-family: var(--ui-font); }
+html[data-ui-theme="club"] .draft-progress i { background: var(--ui-gold); }
+
+/* Context panels and small, consistent module markers. */
+html[data-ui-theme="club"] .territory-inspector.is-own-territory {
+  background: #33291f;
+  border-color: #80694a;
+}
+html[data-ui-theme="club"] .territory-inspector.is-own-territory .territory-inspector-heading { background: #403325; }
+html[data-ui-theme="club"] .territory-inspector.is-own-territory dt { color: #cfbfa5; }
+html[data-ui-theme="club"] .training-window { border-top: 2px solid var(--ui-training); }
+html[data-ui-theme="club"] .scouting-window > .scouting-surface { border-top: 2px solid var(--ui-scout); }
+html[data-ui-theme="club"] .enhancement-window-surface { border-top: 2px solid var(--ui-enhancement); }
+html[data-ui-theme="club"] :is(.training-group, .training-seat, .scout-cost > span,
+  .team-player-detail-facts, .team-player-attributes, .team-player-attributes dl > div,
+  .team-player-detail-traits, .yoogle-preview-facts, .yoogle-preview-attributes,
+  .yoogle-preview-attributes dl > div) { background: var(--ui-inset); border-color: var(--ui-border); }
+html[data-ui-theme="club"] :is(.training-group h3, .scout-cost strong) { color: var(--ui-text); }
+html[data-ui-theme="club"] :is(.training-rule, .training-picker-hint, .training-group header small,
+  .scout-overview p, .scout-overview small, .scout-work-area p, .scout-working > small,
+  .inventory-showcase-description, .inventory-showcase-owned, .inventory-empty-state) { color: var(--ui-muted); }
+html[data-ui-theme="club"] :is(.scouting-window .scout-work-area h3, .scout-eyebrow) { color: var(--ui-scout); }
+html[data-ui-theme="club"] .training-seat:hover:not(:disabled) { border-color: var(--ui-gold); background: var(--ui-gold-soft); }
+html[data-ui-theme="club"] :is(.team-player-attributes > header, .yoogle-preview-attributes > header) { background: var(--ui-raised); border-color: var(--ui-border); }
+html[data-ui-theme="club"] :is(.team-player-detail-facts dt, .team-player-attributes dt,
+  .team-player-detail-traits p, .team-player-detail-level small, .yoogle-preview-facts dt,
+  .yoogle-preview-attributes dt, .yoogle-result > span small) { font-size: 12px; line-height: 1.5; }
+html[data-ui-theme="club"] :is(.team-player-attributes dl > div.core, .yoogle-preview-attributes dl > div.core) { background: var(--ui-gold-soft); border-color: var(--ui-gold); }
+
+/* Enhancement work areas use the same neutral depth hierarchy; special card
+   upgrades, scanning and celebration layers keep their authored visual art. */
+html[data-ui-theme="club"] .enhancement-window :is(.enhancement-composer, .enhancement-warehouse,
+  .enhancement-mini-ranking, .enhancement-history-entry) {
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius-panel);
+  background: var(--ui-surface);
+  box-shadow: none;
+}
+html[data-ui-theme="club"] .enhancement-window :is(.enhancement-composer > header,
+  .enhancement-warehouse > header, .enhancement-mini-ranking > header,
+  .enhancement-action > label, .enhancement-history-scroll) { border-color: var(--ui-border); background: var(--ui-inset); }
+html[data-ui-theme="club"] .enhancement-window .enhancement-flow { background: var(--ui-inset); }
+html[data-ui-theme="club"] .enhancement-window :is(.enhancement-card-slot, .enhancement-result-frame) { border-color: var(--ui-border-strong); background: var(--ui-raised); box-shadow: none; }
+html[data-ui-theme="club"] .enhancement-window :is(.enhancement-card-slot.empty > span, .enhancement-result-empty > span) { color: var(--ui-subtle); border-color: var(--ui-border-strong); background: var(--ui-surface); }
+html[data-ui-theme="club"] .enhancement-window :is(.enhancement-card-status, .enhancement-action > label, .enhancement-result-status) { color: var(--ui-muted); }
+html[data-ui-theme="club"] .enhancement-window :is(.enhancement-composer h2, .enhancement-warehouse h2) { font-size: 18px; }
+html[data-ui-theme="club"] .enhancement-window .enhancement-result-status h3 { color: var(--ui-success); }
+html[data-ui-theme="club"] .enhancement-window .phase-failure .enhancement-result-status h3 { color: var(--ui-danger); }
+
+/* Task cards share a calm shell; status and module identity remain explicit. */
+html[data-ui-theme="club"] :is(.campaign-live-card, .scout-notice, .training-notice) {
+  padding: 14px 16px;
+  gap: 8px;
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-panel);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-float);
+}
+html[data-ui-theme="club"] .scout-notice { border-left: 3px solid var(--ui-scout); }
+html[data-ui-theme="club"] .training-notice { border-left: 3px solid var(--ui-training); }
+html[data-ui-theme="club"] .campaign-live-card { border-left: 3px solid var(--ui-info); }
+html[data-ui-theme="club"] :is(.scout-countdown, .training-notice small, .campaign-live-card small) { color: var(--ui-muted); font-size: 12px; }
+html[data-ui-theme="club"] :is(.training-progress, .scout-progress) { background: var(--ui-border); }
+html[data-ui-theme="club"] :is(.training-progress > i, .scout-progress > i) { background: var(--ui-gold); }
+
+/* Tactics and broadcast chrome. Pitch geometry, team colours, magnets,
+   stamina bands and event legends are intentionally outside these selectors. */
+html[data-ui-theme="club"] #campaign-tactics :is(.league-board-panel, .league-bench, .league-tactics-detail,
+  .league-next-match, .league-bench-summary, .league-match-plans, .league-match-plan,
+  .league-autosave-footer, .league-tactical-shape-preview-list, .league-mobile-duty-sheet) {
+  border-color: var(--ui-border);
+  background: var(--ui-surface);
+  border-radius: var(--ui-radius-panel);
+  box-shadow: none;
+}
+html[data-ui-theme="club"] #campaign-tactics :is(.league-board-heading, .league-bench > header,
+  .league-tactics-detail > header, .league-match-plans > header, .league-next-match) { background: var(--ui-inset); border-color: var(--ui-border); }
+html[data-ui-theme="club"] #campaign-tactics :is(.button, .league-bench-guidance button,
+  .league-position-tabs button, .league-lineup-squad-tabs button, .league-mobile-plan-tabs button) {
+  min-height: 32px;
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-control);
+  background: var(--ui-raised);
+  color: var(--ui-text);
+  padding: 6px 12px;
+  font: 600 12px/1.4 var(--ui-font);
+  box-shadow: none;
+}
+html[data-ui-theme="club"] #campaign-tactics :is(.league-position-tabs button.active,
+  .league-lineup-squad-tabs button.active, .league-mobile-plan-tabs button.active) { background: var(--ui-gold); border-color: var(--ui-gold); color: var(--ui-on-gold); }
+html[data-ui-theme="club"] #campaign-tactics :is(.league-captain-controls, .league-tactical-node-controls, .league-board-fitness) :is(input, select) { min-height: 32px; padding: 4px 8px; font-size: 12px; }
+html[data-ui-theme="club"] .broadcast-overlay :is(.broadcast-toolbar, .scoreboard,
+  .broadcast-v2-field-column, .broadcast-v2-commentary, .broadcast-v2-data-panel,
+  .match-event, .live-stats) { border-color: var(--ui-border); background: var(--ui-surface); box-shadow: none; }
+html[data-ui-theme="club"] .broadcast-overlay :is(.broadcast-toolbar, .scoreboard > span,
+  .broadcast-v2-commentary > header) { background: var(--ui-inset); }
+
+/* Modal scrims and operator UI share the palette, while the operator table
+   keeps its compact density. This also covers the old admin entry URL. */
+html[data-ui-theme="club"] :is(.team-player-detail-overlay, .enhancement-dialog-overlay,
+  .inventory-window.small-window, .admin-ui .modal) { background: var(--ui-scrim); }
+html[data-ui-theme="club"] .admin-ui { --lime: var(--ui-gold); --cyan: var(--ui-info); --purple: var(--ui-scout); --red: var(--ui-danger); }
+html[data-ui-theme="club"] .admin-ui :is(.login-card, .login-panel, .login-brand,
+  .sidebar, .panel, .modal > section, .pack-grant-panel, .pack-selected-player, .pack-balance-card) {
+  color: var(--ui-text);
+  border-color: var(--ui-border);
+  background: var(--ui-surface);
+  border-radius: var(--ui-radius-panel);
+}
+html[data-ui-theme="club"] .admin-ui :is(.login-brand, .sidebar, .topbar) { background: var(--ui-inset); }
+html[data-ui-theme="club"] .admin-ui button:not(.nav):not(.pack-account-row) {
+  min-height: 32px;
+  border-radius: var(--ui-radius-control);
+  color: var(--ui-text);
+  background: var(--ui-raised);
+  border-color: var(--ui-border-strong);
+}
+html[data-ui-theme="club"] .admin-ui :is(.primary, .primary-button) { background: var(--ui-gold); color: var(--ui-on-gold); border-color: var(--ui-gold); }
+html[data-ui-theme="club"] .admin-ui .danger { color: var(--ui-danger); }
+html[data-ui-theme="club"] .admin-ui :is(.nav.active, .pack-account-row.active) { background: var(--ui-gold-soft); color: var(--ui-gold); }
+
+@media (max-width: 650px) {
+  html[data-ui-theme="club"] :is(.team-player-detail-dialog, .small-window__dialog) { border-radius: 0; }
+  html[data-ui-theme="club"] :is(.team-management-header, .inventory-window-header,
+    .enhancement-window-header, .training-header, .team-player-detail-dialog > header) { padding: 12px; gap: 12px; }
+  html[data-ui-theme="club"] :is(.team-management-header h2, .inventory-window-header h2,
+    .enhancement-window-header h2, .training-header h2, .team-player-detail-dialog > header h2) { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-ui-theme="club"] :is(.ui-button, .entry-primary, .inventory-showcase-action,
+    .scout-primary) { transition: none; }
+}
+
+html[data-ui-theme="club"] :is(.yoogle-input-shell, .yoogle-window-input-shell) {
+  color: var(--ui-muted);
+  border-color: var(--ui-border-strong);
+  background: var(--ui-inset);
+  box-shadow: none;
+}
+html[data-ui-theme="club"] :is(.yoogle-input-shell, .yoogle-window-input-shell):focus-within {
+  border-color: var(--ui-gold);
+  box-shadow: 0 0 0 3px var(--ui-gold-soft);
+}
+/* The rounded shell already exposes both pointer and keyboard focus. */
+html[data-ui-theme="club"] :is(.yoogle-input-shell, .yoogle-window-input-shell) > input:focus {
+  outline: none;
+  box-shadow: none;
+}
+html[data-ui-theme="club"] .yoogle-window.has-query .yoogle-window-search { background: var(--ui-inset); border-color: var(--ui-border); }
+html[data-ui-theme="club"] .yoogle-full-result { background: var(--ui-surface); border-color: var(--ui-border); box-shadow: none; }
+html[data-ui-theme="club"] .yoogle-full-result.is-active { border-color: var(--ui-gold); box-shadow: 0 0 0 1px var(--ui-gold); }
+html[data-ui-theme="club"] .yoogle-full-result .player-detail-inline-header { background: var(--ui-inset); border-color: var(--ui-border); }
+html[data-ui-theme="club"] .yoogle-window-input-shell > span { color: var(--ui-gold); }
+
+html[data-ui-theme="club"] :is(.campaign-expedition-card, .expedition-move-confirm, .toast) {
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  border-color: var(--ui-border-strong);
+  border-radius: var(--ui-radius-panel);
+  box-shadow: var(--ui-shadow-float);
+}
+html[data-ui-theme="club"] .campaign-expedition-card { border-left: 3px solid var(--ui-info); }
+html[data-ui-theme="club"] .campaign-expedition-progress > i { background: var(--ui-gold); }
+html[data-ui-theme="club"] .admin-ui :is(.dialog, .kpi, .attribute-grid label, .savebar) {
+  border-color: var(--ui-border);
+  background: var(--ui-surface);
+  border-radius: var(--ui-radius-panel);
+}
+html[data-ui-theme="club"] .admin-ui .login-shell { background: var(--ui-base); }
+html[data-ui-theme="club"] .admin-ui :is(.player-row, .pack-account-row):hover { background: var(--ui-hover); }
+html[data-ui-theme="club"] .admin-ui .player-row.active { background: var(--ui-gold-soft); }
+/* The original admin .primary uses !important; keep that contract localized. */
+html[data-ui-theme="club"] .admin-ui .primary { color: var(--ui-on-gold) !important; }
+html[data-ui-theme="club"] .admin-ui .player-row .grade { background: #c9f05c; }
+html[data-ui-theme="club"] .admin-ui .player-row .grade.grade-s { background: #f0c75e; }
+html[data-ui-theme="club"] .admin-ui .player-row .grade.grade-a { background: #71d9d0; }
+html[data-ui-theme="club"] .admin-ui .player-row .grade.grade-c { background: #708091; color: #fff; }

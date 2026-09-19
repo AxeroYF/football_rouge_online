@@ -120,15 +120,29 @@ export function normalizePosition(role, preferredFoot = "right", salt = 0) {
   return LEGACY_POSITIONS[role] ?? "DM";
 }
 
+export function positionFamilyRoles(role) {
+  if (role === "LB" || role === "LWB") return ["LB", "LWB"];
+  if (role === "RB" || role === "RWB") return ["RB", "RWB"];
+  return role ? [role] : [];
+}
+
+// Fullbacks retain their normal proficiency when deployed as same-side wingbacks.
+export function positionFamiliarity(player, assignedRole) {
+  if (positionFamilyRoles(player?.role).includes(assignedRole)) return "primary";
+  if (positionFamilyRoles(player?.secondaryRole).includes(assignedRole)) return "secondary";
+  return "unfamiliar";
+}
+
 export function positionFitScore(player, assignedRole) {
   const assigned = normalizePosition(assignedRole, player?.preferredFoot);
   const primary = normalizePosition(player?.role, player?.preferredFoot);
   const secondary = player?.secondaryRole ? normalizePosition(player.secondaryRole, player?.preferredFoot) : null;
   const assignedGroup = roleGroup(assigned);
   const primaryGroup = roleGroup(primary);
-  let fit = assigned === primary
+  const familiarity = positionFamiliarity({role:primary, secondaryRole:secondary}, assigned);
+  let fit = familiarity === "primary"
     ? 1
-    : assigned === secondary
+    : familiarity === "secondary"
       ? 0.9
       : assignedGroup === primaryGroup
         ? 0.8

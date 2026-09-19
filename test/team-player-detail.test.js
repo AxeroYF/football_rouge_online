@@ -19,7 +19,7 @@ test("team roster sorts attack first, goalkeeper last, then by effective overall
   assert.deepEqual(sortTeamPlayers(players).map((player) => player.id),["st-high","st-low","cb","gk-high","gk-low"]);
 });
 
-test("team management defaults to a continuous position list and can switch to player cards", () => {
+test("squad management uses a continuous position list without a card view", () => {
   const markup = teamPlayerListMarkup([
     { id:"gk", name:"门将", sourceName:"Goalkeeper", role:"GK", grade:"A", overall:86, club:"黄狗", nationality:"中国", attributes },
     { id:"st", name:"中锋", sourceName:"Striker", role:"ST", secondaryRole:"RW", grade:"S", overall:92, club:"黄狗", nationality:"中国", attributes },
@@ -47,9 +47,7 @@ test("team management defaults to a continuous position list and can switch to p
   assert.match(markup,/team-list-positions"><b>ST<\/b><i>\/<\/i><span>RW<\/span>/);
   assert.match(markup,/data-player-card-action="team-detail"/);
   assert.match(markup,/守门|反应|射门|无球/);
-  assert.match(teamSource,/let viewMode = "list"/);
-  assert.match(teamSource,/data-team-view="list"/);
-  assert.match(teamSource,/data-team-view="cards"/);
+  assert.doesNotMatch(teamSource,/viewMode|data-team-view|team-player-grid/);
   assert.match(teamSource,/let filters = \{ squad:"all"/);
   assert.match(teamSource,/data-team-filter="squad"/);
   assert.doesNotMatch(teamSource,/未编队|value="unassigned"|filters\.squad === "unassigned"/);
@@ -114,7 +112,8 @@ test("shared player detail body supports readable inline previews without duplic
   assert.match(markup, /黄狗竞技 · 中国/);
   assert.match(markup, /data-player-card-action="yoogle-detail"/);
   assert.doesNotMatch(markup, /YDL PLAYER PROFILE|当前 26 项能力值|浅金色项目为该位置的关键属性/);
-  assert.equal((markup.match(/<dt>/g) ?? []).length, 30);
+  assert.equal((markup.match(/<dt>/g) ?? []).length, 31);
+  assert.match(markup,/基础工资<\/dt><dd>15 金币\/小时/);
   assert.equal((markup.match(/player-detail-inline-identity/g) ?? []).length, 1);
   assert.doesNotMatch(markup, /class="team-player-detail-facts"/);
   assert.doesNotMatch(markup, /team-player-detail-overlay|team-player-detail-level|team-player-detail-traits/);

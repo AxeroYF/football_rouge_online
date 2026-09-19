@@ -59,7 +59,7 @@ export function activateStageWindow(element) {
   mapStageFor(element)?.classList.add("has-stage-window");
   queueMicrotask(() => {
     if (activeElement !== element || element.hidden) return;
-    element.querySelector("[data-stage-window-initial-focus], [data-stage-window-close], button, input, select, textarea")?.focus?.();
+    element.querySelector("[data-stage-window-initial-focus], [data-stage-window-close], button, input, select, textarea")?.focus?.({preventScroll:true});
   });
 }
 
@@ -70,5 +70,5 @@ export function deactivateStageWindow(element, { restoreFocus = true } = {}) {
   if (activeElement === element) activeElement = null;
   syncMapStage(element);
   const previousFocus = registration?.previousFocus;
-  if (restoreFocus && previousFocus?.isConnected) queueMicrotask(() => previousFocus.focus?.());
+  if (restoreFocus && previousFocus?.isConnected) queueMicrotask(() => previousFocus.focus?.({preventScroll:true}));
 }

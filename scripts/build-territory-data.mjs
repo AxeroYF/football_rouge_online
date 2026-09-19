@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import {buildMergedRegions} from "./lib/merged-territories.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
@@ -113,7 +114,7 @@ function mergeSmallCountryTerritories(sourceFeatures, countryByCode) {
       continue;
     }
 
-    const countryTopology = topology({ territories:{ type:"FeatureCollection", features:members } }, 100000);
+    const countryTopology = topology({ territories:{ type:"FeatureCollection", features:members } });
     const geometry = topologyMerge(countryTopology, countryTopology.objects.territories.geometries);
     const country = countryByCode.get(countryCode) ?? {};
     const territoryId = `adm1:country-${countryCode.toLowerCase()}`;
@@ -187,7 +188,10 @@ const normalizedFeatures = [
   ...europe.features.map((feature) => normalizedTerritoryFeature(feature, "europe", countryByCode)),
   ...southAmerica.features.map((feature) => normalizedTerritoryFeature(feature, "south-america", countryByCode)),
 ];
-const { features, territoryIdAliases, mergedCountrySourceCounts } = mergeSmallCountryTerritories(normalizedFeatures, countryByCode);
+const baseTerritories = mergeSmallCountryTerritories(normalizedFeatures, countryByCode);
+const mergePlan=await readJson("territory-merge-plan.json");
+const {features,territoryIdAliases,mapVersion}=buildMergedRegions(baseTerritories.features,mergePlan,{aliases:baseTerritories.territoryIdAliases,cities:[...europeCities,...southAmericaCities]});
+const {mergedCountrySourceCounts}=baseTerritories;
 
 const ids = features.map((feature) => feature.properties.territoryId);
 if (new Set(ids).size !== ids.length) throw new Error("duplicate territory ids detected");
@@ -268,7 +272,7 @@ const greaterLondonTerritories = metadata.filter((territory) => {
     && longitude <= 0.35
     && latitude >= 51.25
     && latitude <= 51.7
-    && (territory.type.startsWith("London Borough") || territory.nameEn === "London");
+    && (territory.cityIds.includes("london") || territory.type.startsWith("London Borough") || territory.nameEn === "London");
 });
 for (const territory of greaterLondonTerritories) {
   territory.spawnAllowed = false;
@@ -295,7 +299,8 @@ const mappingMethods = Object.values(cityMappings).reduce((counts, mapping) => {
   return counts;
 }, {});
 const report = {
-  schemaVersion: 2,
+  schemaVersion: 3,
+  mapVersion,
   territoryCount: metadata.length,
   adjacencyEdges: metadata.reduce((sum, territory) => sum + territory.neighbors.length, 0) / 2,
   maritimeEdges: metadata.reduce((sum, territory) => sum + territory.maritimeNeighbors.length, 0) / 2,
@@ -308,7 +313,8 @@ const report = {
   mergedCountrySourceCounts,
 };
 const index = {
-  schemaVersion: 2,
+  schemaVersion: 3,
+  mapVersion,
   source: "Natural Earth ne_10m_admin_1_states_provinces",
   territoryCount: metadata.length,
   territoryIdAliases,

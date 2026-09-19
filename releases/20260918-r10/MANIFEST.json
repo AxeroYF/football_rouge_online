@@ -1,0 +1,2077 @@
+{
+  "kind": "rougelite-hot-update",
+  "version": "20260918-r10",
+  "builtAt": "2026-09-18T04:34:59.685294+08:00",
+  "baseline": "20260918-r9",
+  "scope": "R9 incremental: automatic one-time approved downtime recovery, server downtime economy pause, airport gameplay, increased wages and facility upkeep",
+  "dependencies": [
+    {
+      "path": "node_modules/@turf/boolean-point-in-polygon",
+      "version": "7.4.0"
+    },
+    {
+      "path": "node_modules/@turf/helpers",
+      "version": "7.4.0"
+    },
+    {
+      "path": "node_modules/@turf/invariant",
+      "version": "7.4.0"
+    },
+    {
+      "path": "node_modules/@types/geojson",
+      "version": "7946.0.16"
+    },
+    {
+      "path": "node_modules/point-in-polygon-hao",
+      "version": "1.2.4"
+    },
+    {
+      "path": "node_modules/robust-predicates",
+      "version": "3.0.3"
+    },
+    {
+      "path": "node_modules/three",
+      "version": "0.185.1"
+    },
+    {
+      "path": "node_modules/tslib",
+      "version": "2.8.1"
+    }
+  ],
+  "requiredBaseFiles": [
+    {
+      "path": "admin-v2.css",
+      "sha256": "7fa689bda5776cc64272f30664c6d2210dc81e0d23f83f253d8ffbc5675f2b42"
+    },
+    {
+      "path": "admin-v2.html",
+      "sha256": "d302a5912085fe200773f9714b7b1626791c67a2814ec58a7ab3bc909c31c5e2"
+    },
+    {
+      "path": "admin-v2.js",
+      "sha256": "1d061a6c1ff54e2cdce39e67fea6c03e2bc87872a60629aa442a6960fbe0c57a"
+    },
+    {
+      "path": "admin.css",
+      "sha256": "7f57987dd5d1b96bfefb91e5dad90e53d54dcde1664340d4fec753e8d84aa1ca"
+    },
+    {
+      "path": "admin.html",
+      "sha256": "73eb2bf4081c403d05866045a58a84c51d309b4c025132e388c8b9e34df0ecde"
+    },
+    {
+      "path": "admin.js",
+      "sha256": "cd7c95ea4ef9dab67f5f2647603e302d6c2466393db520023b72c496d6f01b20"
+    },
+    {
+      "path": "app.js",
+      "sha256": "cf5dfefab2f5c7e82fe4beae6bfb08d0509a3eb60f5f27ad30f079c684de2da0"
+    },
+    {
+      "path": "assets/facilities/catalog.json",
+      "sha256": "f45e0cb83f01eae953e857e3b490feb61dc105b6c688653487e1fbdbb4f6bb76"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-blue.png",
+      "sha256": "bbf135774ceaca66c51f6d7083d52279b750a86829ecae1327883bec0daf8155"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-green.png",
+      "sha256": "0dfdcf6cb501af090cef99da44fdc52d042c34a9487ab25734bb630e07180c2c"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-1.png",
+      "sha256": "3832019eb00eb794fdc683fd713d4271d3ba0fceeb27f933b0560126b36f5cfa"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-10.png",
+      "sha256": "331d7763650634e3a8dc8bf4eaa7f8dc8172077c52ec00d47f380ebe1ac7e1a4"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-11.png",
+      "sha256": "376b71ad80841cf1cc7caa5b6c0ae015707f0beaff069bf96cc086034b449875"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-12.png",
+      "sha256": "fcfe54b0fc8500863161cb54c17dc391d6b4b74deb9a886dbca8672354370815"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-3.png",
+      "sha256": "cea2b3da7bc62eeaf69c3259dbe4fa622374e94cb28e90faa0e6c7c4151deb3c"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-4.png",
+      "sha256": "48e39c2563adfe49d3e82335c763cf097513b83dca281e3285fd439c72ca7860"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-5.png",
+      "sha256": "5bed80a898b3ff2ca6d01af38b4efe04aeec26a8f846740daa020859fd92a011"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-6.png",
+      "sha256": "2b61fc7991309545027d5c86440d3e59ca7214d928bed018ea27040b71eda32b"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-7.png",
+      "sha256": "3ea86e448e8a42a86ac3d7e92e0f4235ca3d7da2d076acc19c552f1261fe4c16"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-8.png",
+      "sha256": "1238a3a05d70a665bf1c11d7fe1fe84e94202d56b2dd6a34dd23dc892cf6ab3f"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-map-9.png",
+      "sha256": "1746e76e306f0a4ee79bd10e4e9333444bac276b6e2ef1cf8d2a481821b4d27d"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-purple.png",
+      "sha256": "59396b01761b1705eaab46dc6e710aafb9150c2ba1968b188e15e08a6315fe30"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1-red.png",
+      "sha256": "dd7dc04f32ef901919eaf059406fa93648154c8059b9c93fc9a795a484f6fa13"
+    },
+    {
+      "path": "assets/facilities/icons/airport-lv1.png",
+      "sha256": "bbf135774ceaca66c51f6d7083d52279b750a86829ecae1327883bec0daf8155"
+    },
+    {
+      "path": "assets/facilities/icons/factory-lv1.png",
+      "sha256": "2602db48669b6bc114678e620299d18dd022c6f32c726452441a5f54b44b42c9"
+    },
+    {
+      "path": "assets/facilities/icons/factory-lv2.png",
+      "sha256": "7bc93e8a0723fc5ef48af160a16a1a66a3aa0936b84da51f3a0bac29fe542629"
+    },
+    {
+      "path": "assets/facilities/icons/factory-lv3.png",
+      "sha256": "f71eee7407ef0426f52d5eae0c4c34529116566c95cce44b70f01dc85b67d01c"
+    },
+    {
+      "path": "assets/facilities/icons/factory-lv4.png",
+      "sha256": "7b97fcbae60fbb8ad7999f2d8f225061b95623fbfface2c4d3632264eb1e5bb6"
+    },
+    {
+      "path": "assets/facilities/icons/factory-lv5.png",
+      "sha256": "0bde9a6363f7e6d761435970abe520585ff34abb6ed72ed57ad2eb661ceb0f99"
+    },
+    {
+      "path": "assets/facilities/icons/oil-well-lv1.png",
+      "sha256": "131b4ee5d40ba8a8bda7510d41059675974d60a21c43b8f2ceda0f741afa32bf"
+    },
+    {
+      "path": "assets/facilities/icons/university-lv1.png",
+      "sha256": "33ac350849c0ca56fe646bacda32037624edc0be38c24bea6ab78690706a268b"
+    },
+    {
+      "path": "assets/facilities/icons/university-lv2.png",
+      "sha256": "e702d45e1c33b5ca35ad652bc6a046344a62fe242f38d4b51541b5a46dee99bd"
+    },
+    {
+      "path": "assets/facilities/icons/university-lv3.png",
+      "sha256": "c42071fe726f47146545759bbffc27360b52fb700ef409ae3e085859012bb887"
+    },
+    {
+      "path": "assets/facilities/icons/university-lv4.png",
+      "sha256": "8b73980717f9e73925b89a1824e7623e2fc737e5ae040672d5a4da9a72d8d6d6"
+    },
+    {
+      "path": "assets/facilities/icons/university-lv5.png",
+      "sha256": "6147e01090a5e55ded4eaa99b6a01363d3abc3e22bf380051b272e56aedc6c21"
+    },
+    {
+      "path": "assets/facilities/models/airport-lv1.glb",
+      "sha256": "3885a42c3ae84f957b84a98bfcced9b072bc384a387bca642e465bec5e287270"
+    },
+    {
+      "path": "assets/facilities/models/factory-lv1.glb",
+      "sha256": "0796ea2e6b6f777f0b4d10953baf2ca5e5186aafbb4ce3aa46267c4215a1de12"
+    },
+    {
+      "path": "assets/facilities/models/factory-lv2.glb",
+      "sha256": "c6af311c6fcdc449b80395b459af7120956e49a7e086cd58e417e4e8c6004a76"
+    },
+    {
+      "path": "assets/facilities/models/factory-lv3.glb",
+      "sha256": "60139a07e721cc158b3757c80ae2d5339402a9ea9e3070e6deb00448a1664511"
+    },
+    {
+      "path": "assets/facilities/models/factory-lv4.glb",
+      "sha256": "0d1fc7238982ca74df8fde234d2f615407e19d038ee366e697a71e7edbc7a685"
+    },
+    {
+      "path": "assets/facilities/models/factory-lv5.glb",
+      "sha256": "b7e6c273a4e2fafdbc8a07e7994e27fa5a865162879c72e2654069217432a581"
+    },
+    {
+      "path": "assets/facilities/models/lod1/airport-lv1.glb",
+      "sha256": "feee390aa42926ef38d1f1d2a47691ffca5a26ac56a94c7dbc6a53f0979a1108"
+    },
+    {
+      "path": "assets/facilities/models/lod1/factory-lv1.glb",
+      "sha256": "7089129d400a5f6cc41103a32897307dfe2c38fbcae044dd916e582388490500"
+    },
+    {
+      "path": "assets/facilities/models/lod1/factory-lv2.glb",
+      "sha256": "13195086ae4f92b5934eb8dbacc6608894d2d3ca9f1b11dbd1cfc83db81b8ec6"
+    },
+    {
+      "path": "assets/facilities/models/lod1/factory-lv3.glb",
+      "sha256": "8b62843ab17e64b1d54d61c39d545c86f7aec9fdcb21d6a460f0a44831f1563f"
+    },
+    {
+      "path": "assets/facilities/models/lod1/factory-lv4.glb",
+      "sha256": "b6faef6f0f14470265d21e39c5c36f5fe111a483671283b30f1e438793691f83"
+    },
+    {
+      "path": "assets/facilities/models/lod1/factory-lv5.glb",
+      "sha256": "30e84046ae98e47055e8e8bbda199f47ec776a6adcf60d651f05622317b46fb7"
+    },
+    {
+      "path": "assets/facilities/models/lod1/oil-well-lv1.glb",
+      "sha256": "e1b7f3213c399bb9cd22a06be686b6defd31b437dbbb50d5248018375d716fb0"
+    },
+    {
+      "path": "assets/facilities/models/lod1/university-lv1.glb",
+      "sha256": "37248c4767f979cccf63ab3e3d01bf86b60ce7726126456f54f34206263c6637"
+    },
+    {
+      "path": "assets/facilities/models/lod1/university-lv2.glb",
+      "sha256": "8b96b34dd3dc0b57540dca200798d8007842bef10acf7540dafd9a37793726ea"
+    },
+    {
+      "path": "assets/facilities/models/lod1/university-lv3.glb",
+      "sha256": "9990cdcbae768e8626a3a35daa929c46d5e4443f2ffdc2b18b990ddda52160d2"
+    },
+    {
+      "path": "assets/facilities/models/lod1/university-lv4.glb",
+      "sha256": "153b8ae43425a4415b25cc88092462ee26bf168e68e2f86eda47eaa1a2d5eac5"
+    },
+    {
+      "path": "assets/facilities/models/lod1/university-lv5.glb",
+      "sha256": "ce516e02e35a00148c859e0e9c4bc5c0b3c799c46c2398ec9daaa39a717b07d9"
+    },
+    {
+      "path": "assets/facilities/models/lod2/airport-lv1.glb",
+      "sha256": "81156e11aace5b63cf611537e90a6c7d695cda43d3a15b4c73cab4d1b6915043"
+    },
+    {
+      "path": "assets/facilities/models/lod2/factory-lv1.glb",
+      "sha256": "1b50ba5cdf3f569467f8258ac3b76163a85bfafd0d8c4b25d5be678608c7cba7"
+    },
+    {
+      "path": "assets/facilities/models/lod2/factory-lv2.glb",
+      "sha256": "83b776e4606851b405cfde030bebeedea63d632bee20ba3843916e2c69a9b19c"
+    },
+    {
+      "path": "assets/facilities/models/lod2/factory-lv3.glb",
+      "sha256": "19ad89454cf61a90ebd557c5d02ef3f1b1a37854e1b4a81fb531c31df9a57a07"
+    },
+    {
+      "path": "assets/facilities/models/lod2/factory-lv4.glb",
+      "sha256": "5477058b36c74f6d1bd5e02540ca05af526a3df44172fc365ed47ffa4fd4dcc3"
+    },
+    {
+      "path": "assets/facilities/models/lod2/factory-lv5.glb",
+      "sha256": "e3cf54430ff36cac9bf96fbfc5f1ddfa5c2d4c1cf3004c7fd3031ab15bc6fee8"
+    },
+    {
+      "path": "assets/facilities/models/lod2/oil-well-lv1.glb",
+      "sha256": "051e0a69d5057aea4880618f9dc4e5d0d345a4300afe246cddd5516c1990c36f"
+    },
+    {
+      "path": "assets/facilities/models/lod2/university-lv1.glb",
+      "sha256": "b25ebf6c51fc731f7ee9be077c4260411a262876563b763c8c093f77c1d7ae1e"
+    },
+    {
+      "path": "assets/facilities/models/lod2/university-lv2.glb",
+      "sha256": "1dbe741e97f9c946e2b1fd4ef6679ea70983bd6dd2e7d7f62874e39a2593da0b"
+    },
+    {
+      "path": "assets/facilities/models/lod2/university-lv3.glb",
+      "sha256": "79eacbceebdd367525ffdacf7f4f359d38a620d0019cef9b0082e71d976b17c4"
+    },
+    {
+      "path": "assets/facilities/models/lod2/university-lv4.glb",
+      "sha256": "36b1a790bb86d1b05779eb79f62d8764a30f394c8ffaf1323fe365281e858ea6"
+    },
+    {
+      "path": "assets/facilities/models/lod2/university-lv5.glb",
+      "sha256": "971a983efcd2fce617f2ef8f815b98472a18ff503e20a3a2181620cc496e4842"
+    },
+    {
+      "path": "assets/facilities/models/oil-well-lv1.glb",
+      "sha256": "b0afb143f5936b4299f583d59bf8a162ee67ab08fe9cec1e73c704546815c4f4"
+    },
+    {
+      "path": "assets/facilities/models/university-lv1.glb",
+      "sha256": "9308f6e2e481194f62c253808e56baba0cceea52a5decaf46ed5d264b0a24376"
+    },
+    {
+      "path": "assets/facilities/models/university-lv2.glb",
+      "sha256": "f6a952e15b0448b881aff974469be472524af1a5b5e946f770107cc6e457236c"
+    },
+    {
+      "path": "assets/facilities/models/university-lv3.glb",
+      "sha256": "925f4705acef05c76b1f927afc2ce0fc9e19a8c005d95e242caa663b5b8a0daf"
+    },
+    {
+      "path": "assets/facilities/models/university-lv4.glb",
+      "sha256": "b8e474d5510d10f8b8861d245d36ad8fc16ef42e6a3b11bb8769ec3ba95a80a5"
+    },
+    {
+      "path": "assets/facilities/models/university-lv5.glb",
+      "sha256": "2543d2727d119f467c152d6d5ed83c63a0a9574c796708a5bb4f18ff6eda22d4"
+    },
+    {
+      "path": "assets/facilities/thumbnails/airport-lv1.png",
+      "sha256": "c6f0128bd8f166f9f38d2bcd27c6b8a0379b2920f47bbeabe1dc3991657e1ee5"
+    },
+    {
+      "path": "assets/facilities/thumbnails/airport-lv1.webp",
+      "sha256": "c9209b14d5b9c010aa5bb00ec597d85de68e1310589dcabe56dfcd5ca31087f8"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv1.png",
+      "sha256": "616be011506ac548f0785599302d5cdaf532e0862d2f2de0edea267bae112688"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv1.webp",
+      "sha256": "6e5d4c46733a3c7154924cdaf4ce7da9b23ad0b75905ae4efd8587e6397a6d0a"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv2.png",
+      "sha256": "036b543d27e6b63331eb5f25d5ac08fcce421f7ca420c2791b03409e123ad1e1"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv2.webp",
+      "sha256": "94f7b28468d2bcd5b0e66581d5400584840f8d8cb12fe5ca71d89f3fe9794d15"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv3.png",
+      "sha256": "8b3513dd6520ad979b490797d839e860520302264d56743f2c2bc1f8935217f8"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv3.webp",
+      "sha256": "797fa740b6843e2c47b61e10f19a40342671a9bc90ce76c2b35724691ff2dba2"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv4.png",
+      "sha256": "9df1bfdfd841a39edf46e35272a5f3906ad0f17b9336fd65371c6d5b011cce01"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv4.webp",
+      "sha256": "de085ae2586eca61efc35aa8b8664fec754f883b74205732ef4953bc2a691d21"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv5.png",
+      "sha256": "9840414bc1e78ea1cca22a10d0c316b317d33af711fc6141cd99840869f45220"
+    },
+    {
+      "path": "assets/facilities/thumbnails/factory-lv5.webp",
+      "sha256": "101090de55b56a97a21d2aa55926d3afac57ffc074e81dc05fafc79fc8f04e5d"
+    },
+    {
+      "path": "assets/facilities/thumbnails/oil-well-lv1.png",
+      "sha256": "ab197a5515749768f4efbae9cc599c1458d075cfe49c4809bee81b94439bd523"
+    },
+    {
+      "path": "assets/facilities/thumbnails/oil-well-lv1.webp",
+      "sha256": "d086bb671d9469bcb462eb3083348cd69b5e3d7e7fd96b71d3d1d61f838fec8b"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv1.png",
+      "sha256": "0de056f08258fa4d3bf07547100a48c1db072db6486f54701664753678f7da77"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv1.webp",
+      "sha256": "c1227e10511088597575ba8759d84f783c8181fbff0753e82017eeebb65fafb1"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv2.png",
+      "sha256": "ce1bc780c9061b73c8c1ba3476346166b3e6d037212b449a86d6a9bc24407e40"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv2.webp",
+      "sha256": "aa211611ea548402f548654594588ca8142193b0b7b0ecd7994d523863115ab1"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv3.png",
+      "sha256": "d5adce339adf8317174662f861693dd8d8ab0dd4a842cc803acfe28f3c2f4100"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv3.webp",
+      "sha256": "1084d140b5b8c8dde0696c130b4a0edb42749c91d3e21fee726e1c39f684910d"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv4.png",
+      "sha256": "f811d4733f13e35e0231dcb5f49574d46e8ebdebf0faae5cc45cf47435ac9aa2"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv4.webp",
+      "sha256": "26d08446a2b733bd7ecd35a6da3dfdf81d647d624d01b6921777062aeff8216e"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv5.png",
+      "sha256": "750bfa0bed781659d4b5e5a7984e4c01be566337cac450ab39eb1c9093fd6afa"
+    },
+    {
+      "path": "assets/facilities/thumbnails/university-lv5.webp",
+      "sha256": "9f59e4f51c25282928b247a0cd3b2850ddd06177698ca11cabc2e3336b740b1f"
+    },
+    {
+      "path": "assets/icons/coalition.svg",
+      "sha256": "abf2dfc1155e1d4d3d557c053033651ddca0e312c667193490b4bb959887c9e5"
+    },
+    {
+      "path": "assets/player-packs/elite-ac-milan.webp",
+      "sha256": "786a248180e0dedc917b9bde5b6fc0c2829086013dec181abfadd2258b5c19c2"
+    },
+    {
+      "path": "assets/player-packs/elite-arsenal.webp",
+      "sha256": "8d8909b290b90684666a5517bcab0e8c073ad08b788d1b2112d19d97c9c69771"
+    },
+    {
+      "path": "assets/player-packs/elite-atletico-madrid.webp",
+      "sha256": "d23c7be656a58da586d04b26947f93f1d2758c2a0fc5447c4c837570a257fe98"
+    },
+    {
+      "path": "assets/player-packs/elite-barcelona.webp",
+      "sha256": "9c0c76a400b3d0fd44e4ba1fff34ea8c0dfbaf64ddd5a62eab67a81e7734696f"
+    },
+    {
+      "path": "assets/player-packs/elite-bayern-munich.webp",
+      "sha256": "c05e936c88ab793ac6cb7759eb221b58c9ed2d475240326fbb3a3c5428f94b62"
+    },
+    {
+      "path": "assets/player-packs/elite-benfica.webp",
+      "sha256": "b22149224670be69af063f925e5f329e2bf2e7f1eefecf8b89616b7c9ff4d436"
+    },
+    {
+      "path": "assets/player-packs/elite-borussia-dortmund.webp",
+      "sha256": "09a81d40c63ddc2a57e91ea8b339e4a532f99b27465234fbaf2b3918e3fb75de"
+    },
+    {
+      "path": "assets/player-packs/elite-chelsea.webp",
+      "sha256": "97aa40c19f5cf99c2af24b23272d0dd638a1acbb6978d6e9cc549bbc984cb2a5"
+    },
+    {
+      "path": "assets/player-packs/elite-inter-milan.webp",
+      "sha256": "ad42efb835fcdcceb81dfb2e0a479291781dbaf104e21bbbe7564eb13cc1e66c"
+    },
+    {
+      "path": "assets/player-packs/elite-juventus.webp",
+      "sha256": "058b4edc620b6f781306770306842056a2297c7781ef668cc41da1a053cc3fe9"
+    },
+    {
+      "path": "assets/player-packs/elite-liverpool.webp",
+      "sha256": "903d116bd076a3628a04134907dbf1376a0009305b5465c56a61aae200df084b"
+    },
+    {
+      "path": "assets/player-packs/elite-manchester-city.webp",
+      "sha256": "f348f0b57aadce9ff87188131ab0d996ec5406d4ee64da3d0fa474984b7a534e"
+    },
+    {
+      "path": "assets/player-packs/elite-manchester-united.webp",
+      "sha256": "a9c9b634db4d90e6be02111dd63d9ccab54a32d44883c50d324e91cca6fe0235"
+    },
+    {
+      "path": "assets/player-packs/elite-napoli.webp",
+      "sha256": "38aaf2db20fa305603b9098f07d95c809198e7e5171c8072cfbc9854286855f5"
+    },
+    {
+      "path": "assets/player-packs/elite-newcastle-united.webp",
+      "sha256": "c55d5378197d18b5fc9992f976844d440a02ac1437da4ff4e062b0955ad2490f"
+    },
+    {
+      "path": "assets/player-packs/elite-paris-saint-germain.webp",
+      "sha256": "08a159ea7e68c6a3f15c848a3d9f600ddf8debae0225d29bed2ba10b24dc1cb8"
+    },
+    {
+      "path": "assets/player-packs/elite-real-madrid.webp",
+      "sha256": "3c70182832f3e8dbd78717f6796c320665f39f2b899b8f10db1d93b291e894ac"
+    },
+    {
+      "path": "assets/player-packs/elite-tottenham-hotspur.webp",
+      "sha256": "72212b8eba27aecef8361fb8a0901b6cef4e49da5aa9e979e24adf682917f2a4"
+    },
+    {
+      "path": "assets/ui/resources/oil.svg",
+      "sha256": "1efa181715b28218cb5846138c133b7f1458f64a25a2c84380937e35f6dece34"
+    },
+    {
+      "path": "campaign-broadcast.js",
+      "sha256": "07cf418626a7480ee0a864527c3a48db311fa9299890861fa00793be4c7b2049"
+    },
+    {
+      "path": "campaign-entry.js",
+      "sha256": "88f0888ba8d35a7581e4c291db19eebffde54e06389b735d0eb9ee3ea0829240"
+    },
+    {
+      "path": "campaign-service.mjs",
+      "sha256": "8f61679e781fd32831eff7de8ac698afe63e7549200307b8df9c865027ee7308"
+    },
+    {
+      "path": "client/buildings/building-marker-controller.js",
+      "sha256": "cb647d9412fb45dcaef33aaeffeea58cf5a33bb2846ef349cf52cccc0296b296"
+    },
+    {
+      "path": "client/buildings/building-panel-controller.js",
+      "sha256": "6fa573c65bdc95c58e5798fd2f96bdc535770359fe3cd6818200af7bb8efa068"
+    },
+    {
+      "path": "client/buildings/construction-notifications.js",
+      "sha256": "e73dfc5cfc1bd888aa20d607db77fa0990741299451b9e279e62a5365f4e022f"
+    },
+    {
+      "path": "client/buildings/district-yield-markup.js",
+      "sha256": "3827cca80ff500bcbe7069dc87aec2d198ac023ff5c2cff76884f401b85b0eb4"
+    },
+    {
+      "path": "client/buildings/facility-actions-controller.js",
+      "sha256": "57fb50b6f0da6b7b03b27def14024521cee16481ec829d34205f5eb49dac32d4"
+    },
+    {
+      "path": "client/buildings/notification-center.js",
+      "sha256": "e9cc965f9f0b4e83755143b651b7b848665fa23b627785e08e690423f057d187"
+    },
+    {
+      "path": "client/buildings/port-map-anchor.js",
+      "sha256": "228e998edc76ad060cedf4cc9fb473d1ee89072d6e83efaa6ae56d9c215877ff"
+    },
+    {
+      "path": "client/buildings/scouting-controller.js",
+      "sha256": "6394414d3ea1873c21030c883e87cca7085f2cbe9bbf9bf07c120c9b3a2ac61e"
+    },
+    {
+      "path": "client/buildings/training-controller.js",
+      "sha256": "f3718092052c66c090b50ebc423335b3a41d0ff0ad7e4d344c51017184b9879d"
+    },
+    {
+      "path": "client/buildings/wonder-hover-controller.js",
+      "sha256": "2987bdcc575267499551772ff7c40df28a8d8ae72c9d74ac65eea144471bc27d"
+    },
+    {
+      "path": "client/cards/admin-card-management.js",
+      "sha256": "49e983c207b415c3b2716883a7088f07951336239a039de3276640be311b6a3a"
+    },
+    {
+      "path": "client/cards/card-management-controller.js",
+      "sha256": "343a31da2414d2a5a40a483c31a88161d9ec45d4d672d9fbbf2939ea3c747280"
+    },
+    {
+      "path": "client/cards/card-market-view.js",
+      "sha256": "02659a9706e15236991578da0dd7f1a87f822c2d55207df2040ef1cde2dcdb6c"
+    },
+    {
+      "path": "client/cards/card-trade-up-animation.js",
+      "sha256": "b9f50bbcbb39a9cc31f23920b68a4e49b28ec496f86289c5d8d75947b22ed506"
+    },
+    {
+      "path": "client/cards/card-trade-up-view.js",
+      "sha256": "3ca09549fcaae8fab04ffdcb1ad5a6e4afba06c429e5db8047546a32b2c14b65"
+    },
+    {
+      "path": "client/challenge/challenge-controller.js",
+      "sha256": "1b0b92e14c1631040b378ec3bb83b4cf7d611ae3a0f1151a8bc2234f066bbefb"
+    },
+    {
+      "path": "client/challenge/conquest-hud.js",
+      "sha256": "fcdd8915b6177aa6fcdef29ecd3a1bd455ca685ba0eae449831052f47d68e7c5"
+    },
+    {
+      "path": "client/core/campaign-api-client.js",
+      "sha256": "db2abe00a0b4175e3e39cdfbfe7d56d1cfcf5c29b8926464838e4027a4ac4ceb"
+    },
+    {
+      "path": "client/core/campaign-store.js",
+      "sha256": "2bc273c4108a277182ad11ae33efeee487a44b65abfb3bde60fb7e85a4e75b68"
+    },
+    {
+      "path": "client/core/request-id.js",
+      "sha256": "265da1c96c24ae753944097c196c344f1d3315ec999f7514ed38020c811af5b0"
+    },
+    {
+      "path": "client/draft/draft-controller.js",
+      "sha256": "cb6befa52bd2ec940dace26ca10f77c9abca8bfa0b7ca348a8dff5fa7ea2e5e1"
+    },
+    {
+      "path": "client/draft/draft-reveal.js",
+      "sha256": "b2af801fa00d11d34d8f80bb5d69c18c4af368c1a55e90fe65242e51701ffe51"
+    },
+    {
+      "path": "client/elite/elite-controller.js",
+      "sha256": "83162d945f5b353f670b89f12f5563cfb4a526395b2e10e27cfdc272a739b7cd"
+    },
+    {
+      "path": "client/elite/raid-controller.js",
+      "sha256": "ba83f98ca4da4c0290cb865f21c7733bcfa82af2d197dd0aa1e1aecd15e5ec37"
+    },
+    {
+      "path": "client/enhancement/enhancement-controller.js",
+      "sha256": "e994ffa8766b390506eb7215fba24bbe8d1a27aed4f1443a837e5095b21c874e"
+    },
+    {
+      "path": "client/expedition-models/athlete-geometry.js",
+      "sha256": "3405da065523ccf940ae4e3c322488b3d83e73c37dbdb1fad2beef09f2719f86"
+    },
+    {
+      "path": "client/expedition-models/athlete-heads.js",
+      "sha256": "cfc794d52f23e8907e97199f631315f1c5d6628a26fbee465ffe00a0cd65f700"
+    },
+    {
+      "path": "client/expedition-models/athlete-surfaces.js",
+      "sha256": "fe1eb62092e73cb89fae77bbf905e6b12c45989012b19009418d80dadc9007ca"
+    },
+    {
+      "path": "client/expedition-models/expedition-models.js",
+      "sha256": "ea97f258390a0a1102dbcf305ad0e99165c44b99084885205b6873d3502e35dc"
+    },
+    {
+      "path": "client/expedition-models/expedition-preview.js",
+      "sha256": "636feb84c14947b01065fc5dea7c78f76d9a3dda97426fc830a91c5dd387cad7"
+    },
+    {
+      "path": "client/facility-models/airport-identity.js",
+      "sha256": "8254a9d2e5ecb2da5ebc5ca9afbe68702301969e450c62dd1aa94a3a9867c703"
+    },
+    {
+      "path": "client/facility-models/airport-model.js",
+      "sha256": "97e7d759db57ed161fd103981503d3f6b0478d2aa88057e5d3fb611773a392b9"
+    },
+    {
+      "path": "client/facility-models/facility-kit.js",
+      "sha256": "fa5071f8e0e0a92c4d2776ef424203c8fdedc921f1a1c37ac3a26f1488f18ea7"
+    },
+    {
+      "path": "client/facility-models/facility-models.js",
+      "sha256": "aea4cc1df18872a4b44d1ee6b3adb2cabad32298636e7322eafa98107919dac2"
+    },
+    {
+      "path": "client/facility-models/facility-preview.js",
+      "sha256": "ec5dcd16af78dc7a8786f89701d9fe2a0bef1491bd889d2eaa24b8269adfebe8"
+    },
+    {
+      "path": "client/facility-models/industry-academy-models.js",
+      "sha256": "f5a2655fee5024db25e63fc7ee76d4caef8d73b327e08fe673560a5ebff2de84"
+    },
+    {
+      "path": "client/facility-models/oil-well-model.js",
+      "sha256": "5a38633043dde9433373d4bb601b023465407fe76cc6026a668e4369f4bba96c"
+    },
+    {
+      "path": "client/facility-models/unit-models.js",
+      "sha256": "4c47b378aee5c5e80b83d0a5d7b8fae6b54da92000466b4ceb10f3b04f733b08"
+    },
+    {
+      "path": "client/inventory/inventory-controller.js",
+      "sha256": "f09f8dad04f63132b03b22bb6293efae71332ce351a760fc4a572f474f2cbc23"
+    },
+    {
+      "path": "client/map-style-demo/main.js",
+      "sha256": "28b02cfea3e7ca152e63e24690e4402416f3e22c237307561fb863eefd81e07d"
+    },
+    {
+      "path": "client/map-style-demo/world.js",
+      "sha256": "c65e2d80c4505a69bc10976f93361b216f7eb0dfce86eb20cbd1a986b8abcb93"
+    },
+    {
+      "path": "client/map-three/atlas-environment.js",
+      "sha256": "c3e2860458a33a3f29f3cdc61db0cf185146179df45945119a257544808f6f92"
+    },
+    {
+      "path": "client/map-three/atlas-mountains.js",
+      "sha256": "8dd4ecc37826d1863784cd2a5877648d7f071694e4518b0afc9256c1159278d0"
+    },
+    {
+      "path": "client/map-three/atlas-nature-model.js",
+      "sha256": "21106356a73390841717893a7421c2b62ced6ebfe17eef78c52eb1d08030ac60"
+    },
+    {
+      "path": "client/map-three/atlas-nature.js",
+      "sha256": "5555ac59463133f4c072b8ba69598764378d03681f058e77cecb347575497bb2"
+    },
+    {
+      "path": "client/map-three/atlas-oil.js",
+      "sha256": "75b1ddb6c8554839e62ffaeb864ffa88e736573c1c872b31abc8f0782a954119"
+    },
+    {
+      "path": "client/map-three/atlas-ribbons.js",
+      "sha256": "ebc3d8c1e9cb5cba12d87baad42b30f27d4f07d54c1523db7cc1fe24a5c445ba"
+    },
+    {
+      "path": "client/map-three/atlas-shore.js",
+      "sha256": "d76838be0f8d4bc9ca3a4e7c937f468aaa29e39ec1b4b8a21b72556ef2d916fb"
+    },
+    {
+      "path": "client/map-three/atlas-style.js",
+      "sha256": "36f3e89aa9d93ff868c752727946bca6a6c234246dd321e86b8c968de82a1a08"
+    },
+    {
+      "path": "client/map-three/atlas-terrain.js",
+      "sha256": "e399b61b113eaf8d6088f9d787bcd8bec21914827f4e694c98167a124e789c7c"
+    },
+    {
+      "path": "client/map-three/campaign-borders.js",
+      "sha256": "60bb381e7c348c91a94507a89e01052bf61e902eb4ef7fa5ece2a3b6c2344940"
+    },
+    {
+      "path": "client/map-three/campaign-facilities.js",
+      "sha256": "675fddc780bb20245e776b12bd0ba8c0977723027b657a97e8a149fb37dd0cc1"
+    },
+    {
+      "path": "client/map-three/campaign-layer.js",
+      "sha256": "7aa63a88397d9cf5d9b0b1ebc580542488ec0bc6da917ef39ddb6665ae7f94d6"
+    },
+    {
+      "path": "client/map-three/environment.js",
+      "sha256": "3787e9b939f27ee613d7ec0c965316298ae6e5438c0bea797ff4ca41b487a9be"
+    },
+    {
+      "path": "client/map-three/facility-layout.js",
+      "sha256": "b501a8bdddd9429429f6689b2647a6fdd932b3568bc2367f16af7e09c42465ba"
+    },
+    {
+      "path": "client/map-three/geometry.js",
+      "sha256": "1b3a6336d369e24f206c4484891ad224426646ede159aa1d7c3c627c07731c22"
+    },
+    {
+      "path": "client/map-three/preview.js",
+      "sha256": "ec808acb84ac525a3023b794ed7399d57670050f0c99b5f6151b03c8f4a650be"
+    },
+    {
+      "path": "client/map-three/projection.js",
+      "sha256": "163f95fcd89b009e064488f18dd538d34088e90759ec84a0f90beba32e37c4d8"
+    },
+    {
+      "path": "client/map-three/relief-field.js",
+      "sha256": "fc32e5423a676c0c709c8b92fe29c341016a5d1fc3ac0c2845ead7931160bb3a"
+    },
+    {
+      "path": "client/map-three/relief-terrain.js",
+      "sha256": "923cb1be67238aa278ac591f20acbd406e68d29b61aa5caf57c0e434c1537e37"
+    },
+    {
+      "path": "client/map-three/settings.js",
+      "sha256": "a17cd7906f1e5fb2f833ac754a76aadf0b2e02fa5d4379965235138a3c06cd38"
+    },
+    {
+      "path": "client/map-three/shore.js",
+      "sha256": "e7527305a0e4f56cf6ad0f51e104981ccf9173fcb2d9500249baee78654ffa9c"
+    },
+    {
+      "path": "client/map-three/terrain-material.js",
+      "sha256": "352fca94a5fbbedadb1a0dacefbd323a1c66f1c167c6679c0bb1a720f8b9b8cc"
+    },
+    {
+      "path": "client/map-three/terrain-profile.js",
+      "sha256": "ec185e006348e9a66539bc17d5cf467591c318d58f7abafca759965db4c300e4"
+    },
+    {
+      "path": "client/map-three/tiles.js",
+      "sha256": "e244d06ff09d45fb0a6c736daa4c8819f48a000b9b762abbbcba9cc2cb4962d5"
+    },
+    {
+      "path": "client/map/campaign-fog-controller.js",
+      "sha256": "dda63bc2eb9bdd0903792c86731825bb97c7e68749b81d36f894d1cf70988911"
+    },
+    {
+      "path": "client/map/campaign-map-data.js",
+      "sha256": "d106bcc8b2b8044fad0d6c53c445b52f13053306a9211ee3f3e0fd4a9220e045"
+    },
+    {
+      "path": "client/map/campaign-map-geometry.js",
+      "sha256": "640ef8e3a266d199c5322a517970730f318210461893a70014925c0867ccefa6"
+    },
+    {
+      "path": "client/map/campaign-minimap-controller.js",
+      "sha256": "dc8ab4a73922bf9ba1b6e88727fdfa30ef78c41eda9307c6006c2bcbe935e4bc"
+    },
+    {
+      "path": "client/map/coastline-lod.js",
+      "sha256": "883bdc0ac639054bd2d703407220a3e16efac4408e478f6483430765f709aa65"
+    },
+    {
+      "path": "client/map/development-fog-controller.js",
+      "sha256": "aed3d88814ba971574e1b5400217b572642870864b6193500fadfe823a1a17f0"
+    },
+    {
+      "path": "client/map/expedition-appearance-controller.js",
+      "sha256": "bad126f428e562c17035eb8eb2e2c1559593ae0ee325d4f47f19391cc7f4852a"
+    },
+    {
+      "path": "client/map/expedition-panel-controller.js",
+      "sha256": "3ea705bf8574820c3df4ef00d2d32dbd532ce0d7cd23ebb079263da8f025feb5"
+    },
+    {
+      "path": "client/map/expedition-piece-controller.js",
+      "sha256": "3aec058e55676e16b7074cc905cd4913118d57a829a4c0756455d91d8ec871b1"
+    },
+    {
+      "path": "client/map/fog-geometry.js",
+      "sha256": "426e165d2b3812833f21db70eddb2dc2d312c8391856e7644d085f839c44e01e"
+    },
+    {
+      "path": "client/map/fog-raster.js",
+      "sha256": "439becc744343d7dfa9d8a87393b53a48c90a2770300952c7d96b139d3bbbd46"
+    },
+    {
+      "path": "client/map/fog-state.js",
+      "sha256": "43b8e5aee8a141999812d901459d45a7031f6a5b95a3b786938ac28184dae85a"
+    },
+    {
+      "path": "client/map/foreign-unit-controller.js",
+      "sha256": "6d9dc9a0a7e5cce469e2f3f9325c2141e865c905bea9016a42ecc3fa0a2c8077"
+    },
+    {
+      "path": "client/map/inertial-wheel-zoom.js",
+      "sha256": "84b4bfabe5711d9e74302a5d15d912b07b27537f5170cbaba1c98a4aa752dd38"
+    },
+    {
+      "path": "client/map/map-unit-color.js",
+      "sha256": "3a44a042ad342d6dbf0264e0c02d48829dd55a774fd9d904092985a0eb06d463"
+    },
+    {
+      "path": "client/map/recovery-range-controller.js",
+      "sha256": "dd71fec434f9927855a682e31ad62006cd6760deb71b7835bb1f97685edbbdf3"
+    },
+    {
+      "path": "client/map/scout-unit-controller.js",
+      "sha256": "dd9d909171766f17e7cb286ed6567cb7a5ce7de95439dc5e27b606b728190401"
+    },
+    {
+      "path": "client/map/territory-interaction.js",
+      "sha256": "27027c80f799d8eb92b30b8fa7999236dd183f3916ab4046939f2bbe7050b9ed"
+    },
+    {
+      "path": "client/map/territory-presentation.js",
+      "sha256": "1058c63f0cccfb7d67513a8d1528c1997740a4d9d5cb28d7a238afebc50918d4"
+    },
+    {
+      "path": "client/map/territory-weather-layer-controller.js",
+      "sha256": "511badb03cdd26492a5fc5bf926f3cc4d1f3186960c5196f9f09235bc24d3620"
+    },
+    {
+      "path": "client/maritime/maritime-controller.js",
+      "sha256": "8248e7eefd689f7efac37e04f06d5001046ad26c1d693bc20f2114ccb2bee3a5"
+    },
+    {
+      "path": "client/player-card/broadcast-card.js",
+      "sha256": "b18dcbf598502a538de108e1b58f42fb229825ce9d562e802136f51a0859ced7"
+    },
+    {
+      "path": "client/player-card/card-identities.js",
+      "sha256": "193bbb749881c894413380ab4d2c5ac8b5f05f137d4d97b6c0040f24e7efd7a9"
+    },
+    {
+      "path": "client/player-card/card-motion-controller.js",
+      "sha256": "e6a49db50e4741ea59d287d4538234f681788caa4df741923d9079c22ee9ebd9"
+    },
+    {
+      "path": "client/player-card/card-motion-model.js",
+      "sha256": "cbab7ae28a95bfdb32299c3296d8f8a7a5d0a0ffa1126fd2298b2a2a5253264b"
+    },
+    {
+      "path": "client/player-card/card-shield-markup.js",
+      "sha256": "45e1fe99eceea71d12da6a23d9905da21c1c29c84f6134906381ff4540e2d023"
+    },
+    {
+      "path": "client/player-card/deferred-card-controller.js",
+      "sha256": "e8c48071c2e077deea4a73df3a51afa70076ebf51ccd7e64e8860b4d6a47f7d3"
+    },
+    {
+      "path": "client/player-card/player-card.js",
+      "sha256": "ec5c83917a8ff375331dc414c725393bad52cd0d03d744fb3053906a0c25acc1"
+    },
+    {
+      "path": "client/player-card/player-detail-window.js",
+      "sha256": "98ac6e2ffafba73aee36d65a3ad08877f848ee7067889049fa68dbb4c6aa2a2f"
+    },
+    {
+      "path": "client/research/formation-import-markup.js",
+      "sha256": "8ec2bcbe412e70eea8568d1756b10b533f9ea85af502d47f346be1d2da723d3a"
+    },
+    {
+      "path": "client/research/formation-import-state.js",
+      "sha256": "55374b94ff36fadb21063c7a5e47986d7637d85c25e9744da268e7980baa2a19"
+    },
+    {
+      "path": "client/research/formation-research-controller.js",
+      "sha256": "bd6a1ac8995daf20bc565916be1b94a2361542608562e1330ed63cf5372872bb"
+    },
+    {
+      "path": "client/research/research-art.js",
+      "sha256": "5fbc756055b0bf3dc7f95384f6fe933f1d907a96bf35d61c8092670391952672"
+    },
+    {
+      "path": "client/research/research-controller.js",
+      "sha256": "da2c872a01fe43b9b93a37517a49aa651b0d293f8300e576f53130ee559d8e22"
+    },
+    {
+      "path": "client/research/research-layout.js",
+      "sha256": "f1aff6359d691fcc607fb146758c0a71be742a49dd185d6ebeee4438b4fe37f7"
+    },
+    {
+      "path": "client/research/topic-research-controller.js",
+      "sha256": "9d9a3928ede29398a19d001cd47bed2bf03e8d4cbc26780dd3458a08899975e5"
+    },
+    {
+      "path": "client/resources/neutral-reward-controller.js",
+      "sha256": "3ea5504842855e72d1678bef0ee8f017ff259809c7834e973450e7dce227b3dc"
+    },
+    {
+      "path": "client/resources/neutral-reward-markup.js",
+      "sha256": "47e98652f8c227067b3c444f6d9f201572365c7b1cae8fece8bcc2b5b6b99ac2"
+    },
+    {
+      "path": "client/resources/oil-market-controller.js",
+      "sha256": "b663be30df597173e43b4942dbf788b9cc9634e580f51f89b7d856b6f2e7f66b"
+    },
+    {
+      "path": "client/resources/oil-movement.js",
+      "sha256": "2711adbc79f05cb88f63d259b6faf4c824a5d688e54a0d434cbfa572db2a960f"
+    },
+    {
+      "path": "client/resources/resource-controller.js",
+      "sha256": "daed3d70cb714ec8d9a873d95a434dc773ca387db6b4c9d5b8205db2af95a7f1"
+    },
+    {
+      "path": "client/resources/resource-markup.js",
+      "sha256": "8f1409f8e182adef7a1a7cbc310f5941fe532f57e1dede8537bfc81f91039109"
+    },
+    {
+      "path": "client/settings/tv-appearance.js",
+      "sha256": "03cb425d3ee53ebd3e835b5d8388eb9608be43b2c23679176154bfa48f81e0fc"
+    },
+    {
+      "path": "client/settings/tv-settings-controller.js",
+      "sha256": "31eec0f9ab42c36886641394f112dfe557009128c002ef4f12c4f8957e3bc68e"
+    },
+    {
+      "path": "client/shop/shop-controller.js",
+      "sha256": "22cbdac2c11ad9f5729bfa50ea97f95dd2b5f3a2b933509d5085fd2212ff7bbd"
+    },
+    {
+      "path": "client/social/coalition-controller.js",
+      "sha256": "88a362f24714af501b12b046cf678f30ccb947b40ee3f58ab6ca1c36721d14d6"
+    },
+    {
+      "path": "client/social/interaction-controller.js",
+      "sha256": "240e247097856bffbe2d6d0bff59c85ddd4c2153e3f2fe5d4d099f5137784026"
+    },
+    {
+      "path": "client/sponsorship/sponsor-markup.js",
+      "sha256": "093e7c183b98993c6c92b85d566db46f21d5247161ef4bf4a2ee4f0461709af6"
+    },
+    {
+      "path": "client/sponsorship/sponsorship-controller.js",
+      "sha256": "8f94f11f19f3d3d771414822bed296c23627cef662eacbd2ead7ea058567865a"
+    },
+    {
+      "path": "client/tactics/bond-display.js",
+      "sha256": "599ea231e6818e2a056b7faa39300259a30a0d1f2f3cd31018838713577f5aaf"
+    },
+    {
+      "path": "client/tactics/card-display-controller.js",
+      "sha256": "698231279afd8c9e4ad7f552ae7a0c3f6fe500b9a50efb42a20157db418ae901"
+    },
+    {
+      "path": "client/tactics/shape-preview-controller.js",
+      "sha256": "4e6c6523b94f7b51874931f58ddd337b2ac3fda4ac7f3c94eb40313109e3239f"
+    },
+    {
+      "path": "client/team/team-controller-ydl.js",
+      "sha256": "485cda2521f2fb9f3011d9e170d4aaa5afed36914ba1ccaddefb729d0b0a1c23"
+    },
+    {
+      "path": "client/team/team-controller.js",
+      "sha256": "ccf73534cb2d97eda9d37b17e899e9ef5d193255c8cb4141754a7eb6cd9b1034"
+    },
+    {
+      "path": "client/territory-merge-review.js",
+      "sha256": "611c45d20bfcff13e4cb4079863140f0b7b8f68adc924b9a8a99d655e80faef9"
+    },
+    {
+      "path": "client/territory/territory-controller.js",
+      "sha256": "5adac21ce4f92ee3ab2cc4bbd4753fc53b3282cf849d4e90d7afd58c6ebab909"
+    },
+    {
+      "path": "client/ui/card-stage-performance.js",
+      "sha256": "c4c1c864d21336d0012b9d94c05b8afb8f6451ebbd87ec21e82ce0bfe6c598f9"
+    },
+    {
+      "path": "client/ui/currency.js",
+      "sha256": "1041f0c354a0d3c4b793b1726c6ae7ad9986993dce22d33c2a913bfba8b3e91b"
+    },
+    {
+      "path": "client/ui/meteor-background.js",
+      "sha256": "4e0aed5f5cf4a0fafbddd966fedd0115773f5db2173b284f0076d4a7377f20ff"
+    },
+    {
+      "path": "client/ui/mobile-landscape.js",
+      "sha256": "5ce5a22aec6b9bbae244d1378efa4813395b799eaa52ecb9dd94d23c429d2dac"
+    },
+    {
+      "path": "client/ui/small-window.js",
+      "sha256": "12b12d12705c29d8db5821599570173e830d69b357c95f20624aadab839d1226"
+    },
+    {
+      "path": "client/ui/stage-window-manager.js",
+      "sha256": "a465786d66d18660c0c91427a0f14480ab7c175457d39bb6c171e359f58f6527"
+    },
+    {
+      "path": "client/ui/standard-window.js",
+      "sha256": "a68e0bbdf7d18148e906981211d4f48e33b2a52ae4eaa3f2c24ae44144c5f0e9"
+    },
+    {
+      "path": "client/ui/ui-theme.js",
+      "sha256": "e343ff6c946e17a3c1f67fb15fe934c5a8aba4734974e46e74afe0e6b2c80e27"
+    },
+    {
+      "path": "client/ui/warp-background.js",
+      "sha256": "c55dfc413439524d26039d88c436b0c20e2f89260e39de176eb99350090d95b4"
+    },
+    {
+      "path": "client/ui/wide-window.js",
+      "sha256": "7e6b88ac415c24f9454c37e2526f6f6eb2888ca5f6edc76a8ae2328da2a2b085"
+    },
+    {
+      "path": "client/wonders/admin-wonder-conditions.js",
+      "sha256": "a3d77248a86cba66ed0769a8608d43d059c4010cab557b3004a9af519e3e33d8"
+    },
+    {
+      "path": "client/wonders/admin-wonder-management.js",
+      "sha256": "297e40e2c886778626482e690679eb30cbdfc50f5abc2723827ea41a2713922e"
+    },
+    {
+      "path": "client/wonders/model-kit.js",
+      "sha256": "6de22c71b50ad3969a9a80f9dfe86625d5930251daf2ccb35e884f14a2dd6365"
+    },
+    {
+      "path": "client/wonders/wonder-catalog-controller.js",
+      "sha256": "c191f887715fa57641635199e632b6b7f16d94913c8fafc1e2a04346b9b10742"
+    },
+    {
+      "path": "client/wonders/wonder-materials.js",
+      "sha256": "a6d9cde415453c591379fcb6ff0e4e6262f1fc295145e891c5b2d40763edfb75"
+    },
+    {
+      "path": "client/wonders/wonder-model-viewer.js",
+      "sha256": "d4949c7999c8f1cf2a1373ae6890dbea1692b90ea9877f62c08856ad5a01124e"
+    },
+    {
+      "path": "client/wonders/wonder-models.js",
+      "sha256": "657efc2a9b314ca0552d5b1c40beca2430ea28eb5ce66ba366a225281ba6729f"
+    },
+    {
+      "path": "client/wonders/wonder-preview.js",
+      "sha256": "38a7298b67a2a92eb24b628b44efb0604138cfbc5f66e4b06c72e54985fc16c8"
+    },
+    {
+      "path": "client/yoogle/yoogle-controller.js",
+      "sha256": "c21311d8afad00ed312281d91686dffcb5db86dce6327ea4f24cca7277061116"
+    },
+    {
+      "path": "engine/campaign-match-engine.mjs",
+      "sha256": "a58bcf9bab8818bf48f61ed186578d2ef7eeddf7033817b7aa5ad5bdb6682ead"
+    },
+    {
+      "path": "engine/campaign-weather.mjs",
+      "sha256": "2dce01514a5eaca8bced600a7ccc598522dddb679a408acdbb37afc7f3f164bb"
+    },
+    {
+      "path": "engine/s4-v2.1/game/public/schema.js",
+      "sha256": "68d54c6bc08946de9e452228241d94ccfb8a0654eb5f2d20671f32deb30c45a2"
+    },
+    {
+      "path": "engine/s4-v2.1/game/public/trait-runtime.js",
+      "sha256": "621873d2325a36581374672aa07f5bfd43118680aa094891a960c7365974b0cb"
+    },
+    {
+      "path": "engine/s4-v2.1/src/new-trait-batch.js",
+      "sha256": "9e97e146c4a8d4578dd3ff6bcc1e72948931e417bf0caaf1fbca64fe25c37b72"
+    },
+    {
+      "path": "engine/s4-v2.1/src/random.js",
+      "sha256": "dafbf98c2d005465cff1033da2c7f2d03026b22d477ca08cf5726186a8df1aac"
+    },
+    {
+      "path": "engine/s4-v2.1/src/traits.js",
+      "sha256": "b839d05a257a08dff6552f9151b554ab15798fbb0bac50c79ab9cb5055a3354d"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/automatic-substitution.js",
+      "sha256": "5dd937554244c56a0905144a27ec3435fac27b5c1cc8416dcf0c73b5082acee8"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/new-trait-batch.js",
+      "sha256": "f3c6c073bf894e08a1915002d139f914dc3f723ffc91b9e08a09d63f6f111619"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/offline-attribute-settings.js",
+      "sha256": "737bb25d07e76ad1bb15fe7f0e1238a5ad0c7ad558a80612f1910b853aa20c56"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/public/bond-rules.js",
+      "sha256": "497c04a87ac93dd90deeda96fcfedad3d2bd706400ec3ae07a8cbb4618ff3929"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/public/captain-rules.js",
+      "sha256": "099504ea50236cf353f5b5c6960099ea173784ba0f4378fab7117656152ae557"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/public/formation-rules.js",
+      "sha256": "3a9320b4b1581b882802f4d17505c9c8adb529038b79be5d586c27cbcda28b1f"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/public/v2-player-duty-options.js",
+      "sha256": "c94dae1cb180857202bfb8298575f51466590081694b09845f122dd0166db544"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/public/v2-tactical-fit.js",
+      "sha256": "fba62af947f951c8b0605091c810be7baf38b6d765c46e4ee800f26fbed32ee2"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/public/v2-tactical-profiles.js",
+      "sha256": "55aaa6d51ab2d48255902d46e33bba4a5a63da66c1354d7ba16b9aee7b0d30ef"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/trait-pool.js",
+      "sha256": "840ea4943b432e2082278c5c5c808f64863696f98727a9852bc61ddb4d60ea51"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/biology-research-v2.js",
+      "sha256": "cd14475e36549ad63e827b887f74bb9cd0cba4dcffeafb81560a0d74536b3a80"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/dynamic-shape-v2.js",
+      "sha256": "26efd714ba9b67b020b6122308fe5953645e6a984edfdd4a40d0be98f2294b9b"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/formation-research-v2.js",
+      "sha256": "792ab0430997eaf54f165dadc5adcdec43eedd2026cf0a134303b5ef4a909986"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/match-engine-v2.js",
+      "sha256": "8793fbea75df2f639112fd447bf163c6c3d6c814c3bb00f55ed3a57416f91bda"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/match-parameters-v2.js",
+      "sha256": "fa57f3ed2bbdcd23d9064deaeb6f3a34d562ecd82fbbbfe3972df0f55c416b44"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/match-parameters-v2.json",
+      "sha256": "eec876a248124dcd7dff9c79837041a9348832c12bf54712d130285b0b9f7403"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/penalty-shootout-v2.js",
+      "sha256": "9b5e3c121f2803a9aef3dc809703bb5cbcf52816b1f6e27914a62e03e4e989fc"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/player-duties-v2.js",
+      "sha256": "55859fefdbf48ada6a754bb0d73da2a42cb8dfdef08b7d43185ba5999efe2fa5"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/possession-chain-v2.js",
+      "sha256": "17a4788f1ee983ae39ccce1ee3dc4ecf0ea3a0b041da888aa65ab07328541fae"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/spatial-model-v2.js",
+      "sha256": "e6df2151d6a40128f9b9d5889931d6c230a599f75f984ec78adb6b44265d0cf0"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/tactical-balance-v2.js",
+      "sha256": "15bb21a97d0a43003a5fea1cf7d006f24b913fef0f587c024f09c71a4e9b220f"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/tactical-shape-preview-v2.js",
+      "sha256": "94288643717c207afc354882de9a9a3377f188700ca0c1da7866b72f8d151493"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/team-player-effects.js",
+      "sha256": "9f381a0949a1583f50747664cedfb77b83c65a7ebea5ac55a80cdfd1763813ec"
+    },
+    {
+      "path": "engine/s4-v2.1/versus/v2/team-snapshot-v2.js",
+      "sha256": "6cef470847df8f835e21725da09aa79e4b291937e702c861359c13b0372a5174"
+    },
+    {
+      "path": "engine/territory-ai.mjs",
+      "sha256": "c2b80ebdedcb8a5ebbd983b82d0468063609d57f3f265257e40f79ea0f42eac9"
+    },
+    {
+      "path": "expedition-preview.html",
+      "sha256": "02640e03a940bd7c890a968b6057dc710a988004f5cafa0e08e2a048a7fcd9a6"
+    },
+    {
+      "path": "facility-preview.html",
+      "sha256": "f31898f6b8697e420bf730b5fe23c211ef576f724ba146566933dc798fec1fec"
+    },
+    {
+      "path": "formation-rules.js",
+      "sha256": "3a9320b4b1581b882802f4d17505c9c8adb529038b79be5d586c27cbcda28b1f"
+    },
+    {
+      "path": "index.html",
+      "sha256": "8829a4202fc303ee578ba51a4f95daf5f16e87e34cf065d4b5a3269ed7be954b"
+    },
+    {
+      "path": "map-style-demo.html",
+      "sha256": "929f94a6f63a10a801727bf1b7dfaef2acdfe272b112377febef507c85d82d7e"
+    },
+    {
+      "path": "maritime-routes.mjs",
+      "sha256": "2cae032eaf26224a90fa47cd184b4f3e8a6c719076614ecf32eea97066d782ad"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "3eeca9264fdbd8ad062c2b53fad783de377ba74f990a2fce99feb0f2ad2625b7"
+    },
+    {
+      "path": "package.json",
+      "sha256": "8eaca19fc3fb8e9651eddb341725d37c73db16535291a069ae0966b06aa4ab2e"
+    },
+    {
+      "path": "s4-tactics-original.css",
+      "sha256": "c30ae5c77a289431e187c1f76950b13591f0bd5b4b0e852bbf11e346703f1c83"
+    },
+    {
+      "path": "server.mjs",
+      "sha256": "0da8d75d5635fdab711892775b29d49f58cd6f8d4090b197d4607bc91e5fcd9c"
+    },
+    {
+      "path": "server/application/admin-service.mjs",
+      "sha256": "eb2a0de44a553c43e20fe13d9f2afb7d9d578b7bdc24959b9fd40e139bbc2efc"
+    },
+    {
+      "path": "server/application/building-service.mjs",
+      "sha256": "a1eb652f181730b47ae25bca6dd961fac13b84a490d958bb14ea83b38e3170c2"
+    },
+    {
+      "path": "server/application/card-management-service.mjs",
+      "sha256": "07ce28a904b66e7d09d9b67b799705ff9f1fc505e3c77d55538a3aef1d79cede"
+    },
+    {
+      "path": "server/application/challenge-service.mjs",
+      "sha256": "a2402835ed9edb4d55894372843d6a3dd59d2720689a383b5c416f138a0e89fb"
+    },
+    {
+      "path": "server/application/coalition-service.mjs",
+      "sha256": "da1d34bd9e46b5252cb732c8108070a616a415610e4d1d8557f551a6f2a8cb56"
+    },
+    {
+      "path": "server/application/coalition-tactics.mjs",
+      "sha256": "3258c53e04b95aec4c0c4a513184dca97e1c1601ff02c046cd1d9b7894586ea8"
+    },
+    {
+      "path": "server/application/construction-production-service.mjs",
+      "sha256": "11234e3d64a18f9d07c2c8ab8c245faa1a38cfa1401938b8f0223ee25335b015"
+    },
+    {
+      "path": "server/application/diplomacy-service.mjs",
+      "sha256": "8ee038cc10d3d230151b5c85f58ac1bd15e16dc1e3c2e196d302594347b8e5fb"
+    },
+    {
+      "path": "server/application/draft-service.mjs",
+      "sha256": "2393bbf3dbd71902c5475feb03e3720140360ee9f66e55a2f397dd46b2f40e77"
+    },
+    {
+      "path": "server/application/economy-service.mjs",
+      "sha256": "93d8f53c3ae5f3ae621d81673295e3a8b55fba82a95ced6451689c53b6a655b0"
+    },
+    {
+      "path": "server/application/elite-challenge-service.mjs",
+      "sha256": "f72e0db60c1eabcf439d9f246707888ed18034809da41e87b0d898a9034a636f"
+    },
+    {
+      "path": "server/application/elite-raid-service.mjs",
+      "sha256": "be4701fcc36c5c216d0aa572b65d5448fcebc248bbd3cea8f58d12c6c902044a"
+    },
+    {
+      "path": "server/application/enhancement-service.mjs",
+      "sha256": "f87995b485d33efabb7994c9e4684814492f463caa0fd4d02af01ad98469a6bd"
+    },
+    {
+      "path": "server/application/expedition-fitness-service.mjs",
+      "sha256": "67576168437046e3788b491fe72468e7b8d3b6b56c85ff001b72554fed096902"
+    },
+    {
+      "path": "server/application/fog-service.mjs",
+      "sha256": "c91281bb6746afaffc6f1948fca89aceba378dbe31b715f804a19eba0975eeb7"
+    },
+    {
+      "path": "server/application/formation-research-service.mjs",
+      "sha256": "2a581846243aea3393d44d3569b0cd38c4d4ac33057f9c4dbcb39bcca01b12cb"
+    },
+    {
+      "path": "server/application/launch-reward-service.mjs",
+      "sha256": "585856c79efb8f5a6ab026bd88fe47eb3825a251c173419190306356c635c30e"
+    },
+    {
+      "path": "server/application/map-unit-visibility.mjs",
+      "sha256": "7b6a05480dc0b57d5e59d343788ddd4af0fe8ce165618abb0c6e22d5564da79c"
+    },
+    {
+      "path": "server/application/match-consequences.mjs",
+      "sha256": "45694ea20f55355939edfe8c6ec8357cf1a97cd606fcd474af43887460f707c4"
+    },
+    {
+      "path": "server/application/medical-service.mjs",
+      "sha256": "c93028cc14539689443a84b1afd9d64233873e962dc90f662ec94735ab8449bc"
+    },
+    {
+      "path": "server/application/neutral-reward-service.mjs",
+      "sha256": "6a5c86791da267d726ca8b4c6eab8a487f8b5c955b6578c3726f7174d90602f6"
+    },
+    {
+      "path": "server/application/oil-service.mjs",
+      "sha256": "8ecfa62e119c6ffc3aa9309466fee9a4626cab01979fbe4208a7e8fd3b3334d9"
+    },
+    {
+      "path": "server/application/operating-cost-service.mjs",
+      "sha256": "6f9fc4a785c1c56b0f145a6ea6fd2581fa1733aa0b0ae7b7e58bca281d8dad25"
+    },
+    {
+      "path": "server/application/player-library-service.mjs",
+      "sha256": "6a95ee6391e0200980ae0c4309070ccfd4f98f9a018dd87129f8691d1cb8bf02"
+    },
+    {
+      "path": "server/application/player-pack-service.mjs",
+      "sha256": "f364bf0648e8875522c93b9abf224e966e1d020430ca2e754ce9a61e92a4347c"
+    },
+    {
+      "path": "server/application/raid-suppression.mjs",
+      "sha256": "915413ca29afa4180b2340cf0b5a334d3f3ffc1b85b6f38383fe480bf1792189"
+    },
+    {
+      "path": "server/application/scouting-service.mjs",
+      "sha256": "10e8612b757aaefd316f724a207b23603d2c5430ce90da79a352e3b594adcdfb"
+    },
+    {
+      "path": "server/application/shop-service.mjs",
+      "sha256": "331dd855a048161d00de0c82e39c0afb3dd1643addb1887562d5369c7a42f34a"
+    },
+    {
+      "path": "server/application/sponsorship-service.mjs",
+      "sha256": "e01c2c79bda45f0885a35c6fb016145bae7768023c0f6ef66b3d9960699e5c15"
+    },
+    {
+      "path": "server/application/tactical-preview.mjs",
+      "sha256": "a6058f34686930852e7c8a855f79bbb16db0258ce59ca232b56d207043db955c"
+    },
+    {
+      "path": "server/application/territory-production-service.mjs",
+      "sha256": "a4bc3a711882ca6747d90e57e31330882b6a4af4e7cca6975ff6aaf45e9da11e"
+    },
+    {
+      "path": "server/application/training-service.mjs",
+      "sha256": "93f701b5f9d6791c716854e4e3e1066d3fb31a8907919d25433d18416c3d1608"
+    },
+    {
+      "path": "server/application/war-settlement.mjs",
+      "sha256": "aa13242c25733708214839a8085fa819198e90e9261374e55b5284f7667b2c97"
+    },
+    {
+      "path": "server/application/wonder-service.mjs",
+      "sha256": "35e4eddf3debb12eeabbc4db63972cd006792ce237da2ac84e2338fe991dcdc1"
+    },
+    {
+      "path": "server/application/world-news.mjs",
+      "sha256": "dbbe4141f26b8edf837deb933389746c72b3d20e3acdf73bbf8f084140279385"
+    },
+    {
+      "path": "server/domain/account-password.mjs",
+      "sha256": "f0cc85899a9527cfe87c5e860bc92f67f4388c27775e95ed56845d29f1b41168"
+    },
+    {
+      "path": "server/domain/expedition-piece.mjs",
+      "sha256": "6c2f3aa9c24abe6df65ab47d03f5fbf889df9c4c3bd65b30d76bd078ebc74c94"
+    },
+    {
+      "path": "server/domain/player-card-instance.mjs",
+      "sha256": "0c3cdc87cfec70346906e8bd3d92b4a4f328125d228ab3d5cce0c1c94ae4a4be"
+    },
+    {
+      "path": "server/domain/player-map-colors.mjs",
+      "sha256": "31eea71cf4da0cc432f3d20cc542b07bf3ad01ed003dbac3e325cca20694375f"
+    },
+    {
+      "path": "server/http/admin-api-handler.mjs",
+      "sha256": "e9c6fa2aabbaee470808e7cdb8e5fef7440e8e8ab33d6e5e6cd7cb7b66a77c55"
+    },
+    {
+      "path": "server/http/campaign-api-handler.mjs",
+      "sha256": "ad116461116a1326f67624143492dadf2f33e455beb71a86366e0e7152f9b999"
+    },
+    {
+      "path": "server/http/public-entry.mjs",
+      "sha256": "bf26f10620765f576557c625d75aa9266344b6f27515eaba45fcbb3c3ae2ec18"
+    },
+    {
+      "path": "server/http/static-asset-cache.mjs",
+      "sha256": "c99fb2c9a8a885861e1343e24461daa8d888d2b880f08a74abaf520da791b5ca"
+    },
+    {
+      "path": "server/http/static-handler.mjs",
+      "sha256": "c44f49c6c3f5cf53021bbb891d49fee33b6002a6790deaf49938f843cc5985ab"
+    },
+    {
+      "path": "server/infrastructure/campaign-save-migrations.mjs",
+      "sha256": "d8e2d8c8015021567278934b728469c97ee23289770701c5d394757740869aee"
+    },
+    {
+      "path": "server/infrastructure/json-campaign-repository.mjs",
+      "sha256": "9e6666c6d16e9df4b82a3b2fae2b08760309a833c26ad61eed7977d74b950586"
+    },
+    {
+      "path": "server/infrastructure/map-version-migration.mjs",
+      "sha256": "fe71421fd024426f97983c1110b7a4708b9625628ada6847487eed026873e69a"
+    },
+    {
+      "path": "server/scheduler/challenge-scheduler.mjs",
+      "sha256": "2a9cc045636525def0a26c868bc8a5bd0d7980cfccbcbe59e4df9f5a5cf31531"
+    },
+    {
+      "path": "shared/account-import/s4-accounts.mjs",
+      "sha256": "aaae152f33593baeb9a813cf191bc0eaa34b047b059758a201b2cb9ea7940eac"
+    },
+    {
+      "path": "shared/buildings/building-visibility.mjs",
+      "sha256": "a0b4190e120a20007c7b281ec6e978cbff568f00ff4be9a6ba77e731c479bac7"
+    },
+    {
+      "path": "shared/buildings/construction-limit.mjs",
+      "sha256": "1ebf0503a21cdaaa944f8a8627bf2229dfc843ab6b9f901a835f7abb404af5b9"
+    },
+    {
+      "path": "shared/buildings/construction-production.mjs",
+      "sha256": "0d2260512a1d942f172acc35910fb41c53ed4c5e4453b086ad6a907a7ac3119c"
+    },
+    {
+      "path": "shared/buildings/district-yields.mjs",
+      "sha256": "2cc1ec3322ef900ab4a1890a8a6c821842d93de092012c988ef7d44584b5dc70"
+    },
+    {
+      "path": "shared/buildings/oil-extraction.mjs",
+      "sha256": "c91dd6c0c167fb542b3a7fbcb2ea07502b3917652189feda14ee6e01f308070b"
+    },
+    {
+      "path": "shared/config/advanced-research.mjs",
+      "sha256": "45a3e33b5a3048d03fd8cd664d777f6c22c16ea0555ee443cc884d311289ed64"
+    },
+    {
+      "path": "shared/config/airport-identity.mjs",
+      "sha256": "f9846edc572c9db13c1cac1f4d1e06418aa5a3ecebd31e14e66a3eaa1b4999f7"
+    },
+    {
+      "path": "shared/config/buildings.mjs",
+      "sha256": "c6a2c4e6949c7374a4c9a95f6755bb408b331c5220dec995c0a9194daa61b180"
+    },
+    {
+      "path": "shared/config/card-management.mjs",
+      "sha256": "df63a8371329213189fdbc3a5f40096d54424d6179a83c188cbbccf34151ed54"
+    },
+    {
+      "path": "shared/config/challenge.mjs",
+      "sha256": "a021baaea2b1e8e8c8201fc4438855f05abd0ada12aaa43e25b8f331ac7108d1"
+    },
+    {
+      "path": "shared/config/coalition.mjs",
+      "sha256": "84c66fa7d50e7f7b9d3d80d553312824f4377bf84d5c7bebb3958d17d52c8e3c"
+    },
+    {
+      "path": "shared/config/conquest.mjs",
+      "sha256": "5fa40c2a48b1cd6e147d19693ea34872f14a69742103899b4a3134ec28fe567c"
+    },
+    {
+      "path": "shared/config/countries.mjs",
+      "sha256": "6c28237932190c30daac54f56be9842352f922f4d9f6a4f346a358c748812932"
+    },
+    {
+      "path": "shared/config/diplomacy.mjs",
+      "sha256": "4600de2927fa841f32f4c32c96a7cce23252eaba6e5c965cfb961ef9564eb7f2"
+    },
+    {
+      "path": "shared/config/draft.mjs",
+      "sha256": "64468e1cb8b81effc52687f2a10a84d9e2fcc44c22f24553bff1b9fbd9e88843"
+    },
+    {
+      "path": "shared/config/economy.mjs",
+      "sha256": "6ae92fb4f325f6958547ab5c824829aa204775be69a84bcd5ab43e9efd7526af"
+    },
+    {
+      "path": "shared/config/elite-clubs.mjs",
+      "sha256": "9f536c69c2533ab22008e1e644cdad87fa1e62cfb24f6ec1846be60944a777f9"
+    },
+    {
+      "path": "shared/config/elite-raids.mjs",
+      "sha256": "0aafd65bd66203a7e0fa51253d402c7a283a7870a4d521d2f58b557a0625e6c1"
+    },
+    {
+      "path": "shared/config/enhancement.mjs",
+      "sha256": "3fa5b5aeac62bcc98801853948cbae02c480c6c4bb3bdf7aaa4e8135af897998"
+    },
+    {
+      "path": "shared/config/expedition-art.mjs",
+      "sha256": "a896d1d196951551f94c4d4def3069dbe2387384a2025ffd67c326b6d907123f"
+    },
+    {
+      "path": "shared/config/facility-art.mjs",
+      "sha256": "443149db6c7e473f5005187f9f368ae1b15249c34954c70ce83436ae523c6e8c"
+    },
+    {
+      "path": "shared/config/facility-levels.mjs",
+      "sha256": "18b6bfcf0d1731105a11924d2318b920b63f23e71ba2664eb346047a4707c6a1"
+    },
+    {
+      "path": "shared/config/fans.mjs",
+      "sha256": "1a39e45a6056a94cd5b0b0431531ac948134ffec7efde06ac011f36afe1174e0"
+    },
+    {
+      "path": "shared/config/fitness.mjs",
+      "sha256": "823dc17973d3df6a0a754bbd50b9858abfc4f0f33ebc8adcde7eed57594c738b"
+    },
+    {
+      "path": "shared/config/fog.mjs",
+      "sha256": "4974f142d0f54aaf5b4249dac4ecfa354c7a9bfa450972c646f75ff2ecaec7ce"
+    },
+    {
+      "path": "shared/config/formation-research.mjs",
+      "sha256": "baa5c47a5378f1cc4c09338c8f602c793de40d4057507d2958367b5b3250fd20"
+    },
+    {
+      "path": "shared/config/launch-rewards.mjs",
+      "sha256": "9a0df2ce9a87502d33a35f0bc36b23d017898b08449eb39dc9c910220939a1c3"
+    },
+    {
+      "path": "shared/config/map-assets.mjs",
+      "sha256": "413948664083eebccd9189562db89c71c690cbc6f26d04de677f4b143f14478e"
+    },
+    {
+      "path": "shared/config/map-relief-regions.json",
+      "sha256": "1a83af2c6e032658dce94a42f8d4bb50ba5287a5e2a89024fd39d45716582dc1"
+    },
+    {
+      "path": "shared/config/map.mjs",
+      "sha256": "033dbe24c78afc7a0fc9a1f23802012309009120835c0fbe8d090e6899bf2527"
+    },
+    {
+      "path": "shared/config/maritime.mjs",
+      "sha256": "2ef915b2175bff1821588753fe83455f8d88acc3cc5d7bf62517ca10430bb793"
+    },
+    {
+      "path": "shared/config/movement-oil.mjs",
+      "sha256": "9ba4e632872d0168e392b4e0695f3e8d53f48a7e4674a2bf143171790b99c067"
+    },
+    {
+      "path": "shared/config/neutral-rewards.mjs",
+      "sha256": "1eee79421ca8907f773d35572d11e9f4011aed63873343c57ce57a5ef4479db3"
+    },
+    {
+      "path": "shared/config/oil-deposits.mjs",
+      "sha256": "e335679a0ac376672735b9cd7568b6d87befe79e38028e42ea001d42f47fda28"
+    },
+    {
+      "path": "shared/config/oil-economy.mjs",
+      "sha256": "0eaa8efa252f43e2cb96ebc4a75345570cd8842afc038b10a1138a8632155c2d"
+    },
+    {
+      "path": "shared/config/operating-costs.mjs",
+      "sha256": "2561259b8112e6cc228797a6c9e4e36f7e7ffd5f46ffe556af34c998b583b6f4"
+    },
+    {
+      "path": "shared/config/player-attributes.mjs",
+      "sha256": "979e928cdb1e49dbee20cb74664df0439b6ecb8b030f1dfd135a2c5c89a2387f"
+    },
+    {
+      "path": "shared/config/player-packs.mjs",
+      "sha256": "7e3cb4aa3064e011afecd29317c6acbfd8b1282be75327e930e5211efcd55ef5"
+    },
+    {
+      "path": "shared/config/player-squads.mjs",
+      "sha256": "28d1e5c5cd5f6484231c0f0f9bb02ceaf39baacb25b64d1cb98f4ea145b0f1db"
+    },
+    {
+      "path": "shared/config/player-trait-presentation.mjs",
+      "sha256": "20a33a5767cfac8f59da0d9db10b9515011e8717ca7dba46aba1e9c9b214378d"
+    },
+    {
+      "path": "shared/config/position-inheritance.mjs",
+      "sha256": "0b9811ccd406f703a8c08b9dc9db874c594f6081e9df72656adf0d070cb8bf66"
+    },
+    {
+      "path": "shared/config/representative-players.mjs",
+      "sha256": "40ba28e3277b1211ab1da9f39236ebce3c0972984d42d6de5542acd9b9c730c6"
+    },
+    {
+      "path": "shared/config/research-preview.mjs",
+      "sha256": "613691dd24fcc2ec8e19c6d7d05f6f725e456b54e7bde01cbb693730fb75e6fc"
+    },
+    {
+      "path": "shared/config/resources.mjs",
+      "sha256": "ac3f6914ced84e1c3f448f27de5896e06353f10d52e7ec69bedca7e9b098af1b"
+    },
+    {
+      "path": "shared/config/scouting.mjs",
+      "sha256": "0be3eda89c6dde3077363a2e99ff2467d03ffad6a5d8903027772c7c4da8cc73"
+    },
+    {
+      "path": "shared/config/shop.mjs",
+      "sha256": "8e67668546e64e54cb045ec42391ba93a29875642ca632215d95dc0d842be166"
+    },
+    {
+      "path": "shared/config/sponsorship.mjs",
+      "sha256": "b2bb49c4170001e1e0b1e072edc968f75521b841c377037b2022e1d999392ca1"
+    },
+    {
+      "path": "shared/config/tactics-repair.mjs",
+      "sha256": "b4f67604df82f576204b0e09bcf4802de9d247fa651f764471e2b7ce4005b4ce"
+    },
+    {
+      "path": "shared/config/training.mjs",
+      "sha256": "a8a5706074a622bb3702546f60a5a4198ec5d3f6242453f06f4413a417e98e85"
+    },
+    {
+      "path": "shared/config/wonder-construction.mjs",
+      "sha256": "cca543d2c43f5e6dce0a4540e681153087a4a2997938e2a423b9586b4e40feb0"
+    },
+    {
+      "path": "shared/config/wonder-design-drafts.json",
+      "sha256": "a14097e88e321dd6ed08ea1263f7a77372c168018d9e33958de16d7ab3672c4d"
+    },
+    {
+      "path": "shared/config/wonders.mjs",
+      "sha256": "e20563807a5f5dea8432ec883cb976bccad0a5045494cc1df389f461dd13300d"
+    },
+    {
+      "path": "shared/football/account-match-seat.mjs",
+      "sha256": "c16d76e8e702915c558f3a23358cb7795b7531111a1884f1bdbc5d605aa76af5"
+    },
+    {
+      "path": "shared/football/campaign-bonds.mjs",
+      "sha256": "993bbee77f7a509acdc80aa14cccdda15cdc2f790c2f79052ad37221d3749add"
+    },
+    {
+      "path": "shared/football/elite-lineup.mjs",
+      "sha256": "541d8a5c2fab60943aa66cc30520168d6d1a65ff2213b7b4b496399656db0e70"
+    },
+    {
+      "path": "shared/football/fitness-lineup.mjs",
+      "sha256": "4487f62e11a59878751d5618124979e1a72f9a0d87a85cfc892376ebce8d4f4b"
+    },
+    {
+      "path": "shared/football/labels.js",
+      "sha256": "faae2d69b49baa701caa397cad378eb894aa779ba58a035d1204eb367a865b11"
+    },
+    {
+      "path": "shared/football/match-availability.mjs",
+      "sha256": "a76643d0b2c98c80860b523bb83c0bfcbdedc88274738006faeeb07a9159c234"
+    },
+    {
+      "path": "shared/football/training-growth.mjs",
+      "sha256": "987ce7ffad9be4771e3f63b02c102d54c5cb2c864c1826daa5ebfc9fe7f1a390"
+    },
+    {
+      "path": "shared/map/fog-spatial.mjs",
+      "sha256": "7785e89a8f528efd65c84fec715c08906d73da5901b4870f7048b6347abd9e59"
+    },
+    {
+      "path": "shared/map/object-display-scale.mjs",
+      "sha256": "c8dae0c3d3d7cd544f49cf1fdcb95adee22c72f75d91fc30be5aca584a93518e"
+    },
+    {
+      "path": "shared/map/recovery-aura.mjs",
+      "sha256": "8ce93c5c9f7770e428c444bf5e2fb99ecc24e48ca749203a019ed8edf6f34105"
+    },
+    {
+      "path": "shared/map/unit-territory-layout.mjs",
+      "sha256": "76f5c756504fd4db3c727e767cc399e1b78c3aae78d47dc842b6863d471c7390"
+    },
+    {
+      "path": "shared/map/unit-travel.mjs",
+      "sha256": "d771f1ad667602df73c222560f52cb9af04ef08802048899b87f8b38c8e65175"
+    },
+    {
+      "path": "shared/player-card/player-card-contract.js",
+      "sha256": "eb4f712709960b30fd9689478faf9a0e38250876a2675237c2d9bc1bcd4e99b2"
+    },
+    {
+      "path": "shared/scouting/scout-units.mjs",
+      "sha256": "794500423ca6660a5f8fef59f7536d23557e3f7652cdf62cd2a69d9fc751422b"
+    },
+    {
+      "path": "styles.css",
+      "sha256": "b795adc32b8e8aa2adacf65f7f686e3ec4601f9589c02c454d5f5f43693044ca"
+    },
+    {
+      "path": "styles/buildings.css",
+      "sha256": "20cf0dbda2b53b150249060879e49d08d450b87a6dbac351b482294603a66374"
+    },
+    {
+      "path": "styles/campaign-broadcast.css",
+      "sha256": "75c00b8850a747c9e85f0059fef1ce58c164108ccb7a9b60f747e6e863e4c48f"
+    },
+    {
+      "path": "styles/campaign-facilities.css",
+      "sha256": "b693b8fc3f963263703ae18f1dacffc357d4ad4a0fec035206c667c19988b794"
+    },
+    {
+      "path": "styles/campaign-fog.css",
+      "sha256": "fae2c73584df6c0dacbb94186626dcc1712e3bc682ba947036a8abe9c9cd3522"
+    },
+    {
+      "path": "styles/campaign-three.css",
+      "sha256": "eae57ea8bdf1d9d3ae2df044623d8b15e870eac110f8bed3739a3f0dfc34ba46"
+    },
+    {
+      "path": "styles/card-management.css",
+      "sha256": "0ec84796673a9f7ca392c533d5290d0402740d36d7fc3e525816563ca1c9cca8"
+    },
+    {
+      "path": "styles/coalition.css",
+      "sha256": "a386c204ba444a32e73ad3ef8073196ba09af5a94d79d10a6d7370456944ed02"
+    },
+    {
+      "path": "styles/conquest.css",
+      "sha256": "d0664612b35e1319173128d15006d80591ff06c051cc2f0bbe7e7700b9028804"
+    },
+    {
+      "path": "styles/construction.css",
+      "sha256": "86576c1af0de8d035d10e6fa82c85886892c9c87f64383ee7de1498935a5287b"
+    },
+    {
+      "path": "styles/currency.css",
+      "sha256": "8567fc9c4db4055209b2cab2ede8c0b763abcb9863489a600d09eb1ca0343531"
+    },
+    {
+      "path": "styles/draft.css",
+      "sha256": "c5e8b45dd3de596f09d8d15d66426b4551ce61651ad7df095e6858fec3eb7549"
+    },
+    {
+      "path": "styles/elite-raids.css",
+      "sha256": "80c1934d37f3b4bc4b20d1587f8bda3b5cab4a4465853ddd2455040f63598c02"
+    },
+    {
+      "path": "styles/elite.css",
+      "sha256": "6991bc8ea6f1b41347801ed1cfa7be29de3d5cdc5068c3ebed83e9ade644b8a1"
+    },
+    {
+      "path": "styles/enhancement.css",
+      "sha256": "eb338ac58ebbf94f3736d2dc3a286356aa2593470bda8dd479e0207ed4cb38a6"
+    },
+    {
+      "path": "styles/expedition-appearance.css",
+      "sha256": "08ed0c40050c54bc365f1d7f27f7fad74a1ac8e1a0a72808184ca54d33f1c55c"
+    },
+    {
+      "path": "styles/expedition-panel.css",
+      "sha256": "10405f902b95061a99eaff530e0bd279baeed43edee84e24e25f5ced7566a659"
+    },
+    {
+      "path": "styles/expedition-preview.css",
+      "sha256": "7b8980f38e21dfab68604216627b94bf3bb573a9f1297caaffc559f40796b194"
+    },
+    {
+      "path": "styles/facility-actions.css",
+      "sha256": "6b834809609ad9bafd87d7be2ea4a94cba3c0f6a6db715e6de7ed3a458aa9989"
+    },
+    {
+      "path": "styles/facility-preview.css",
+      "sha256": "8684a2649e4b6492da6cd43fcb45b2002b634d5a7fd428a86659ab2e0c2fea85"
+    },
+    {
+      "path": "styles/interactions.css",
+      "sha256": "3c18eb182dd081155b62d2bc09519838b4ace712b5860ee483048d1a04c8d8f6"
+    },
+    {
+      "path": "styles/inventory.css",
+      "sha256": "50d1aa33e734a2eab5641cb21595a77f5806527364d119961539722ef37be494"
+    },
+    {
+      "path": "styles/login.css",
+      "sha256": "fccef57a8d56abc34e6a9cfcf18dd1a3bce0dcd0acd492e94f39564c3602b0a1"
+    },
+    {
+      "path": "styles/map-style-demo.css",
+      "sha256": "51dfeb5e893cc44d3a8ada1709a7b9b18e0c6eddf0f6637807881ad0eae4d04f"
+    },
+    {
+      "path": "styles/mobile-landscape.css",
+      "sha256": "57b4e7493e6ac09e05ac3dc892bb870d015c0e2d1689df66648cca69d200b5de"
+    },
+    {
+      "path": "styles/neutral-rewards.css",
+      "sha256": "400195c742265edca3550ae1caea73747cde7831d23395fcf19d414d28428ba8"
+    },
+    {
+      "path": "styles/oil.css",
+      "sha256": "7e8fb7695c56688bffbdb25f0e3921a7cd133a0170ea664d235efc35e7bb1954"
+    },
+    {
+      "path": "styles/player-card-shield.css",
+      "sha256": "b819d312625e061865e728b35c7371525887009bef3a75902c9dad1b9b713c75"
+    },
+    {
+      "path": "styles/player-card.css",
+      "sha256": "4f0ec1d2e31b7faac2b0f8e8aeb420903e204017f1679047fba4bb5199826187"
+    },
+    {
+      "path": "styles/research-import.css",
+      "sha256": "8ec1786bd560af2ed4bc3e402449c74a071cb405b83495e4f43d390e8315f6a6"
+    },
+    {
+      "path": "styles/research.css",
+      "sha256": "b304632dfe610c44ea7940af037ddac5cb456060188f624bc6ed92d35bb4d8eb"
+    },
+    {
+      "path": "styles/resources.css",
+      "sha256": "31ba02a27da31c490192d4c2f54d62b14b2f1a83d289708bbb16e4024d3e3b3b"
+    },
+    {
+      "path": "styles/scouting.css",
+      "sha256": "374e34dbb67c9e547a80b9bfe72bafe2f9e6ff1549dc5bbe9877ffb38b27b76c"
+    },
+    {
+      "path": "styles/shop.css",
+      "sha256": "938994656108284baae160149dcf17212ab029901aa248686ef68237057fd620"
+    },
+    {
+      "path": "styles/small-window.css",
+      "sha256": "30b3eb0fc9d00525519305c42b3fd8096be30c6652941adcaf78614a26b7f968"
+    },
+    {
+      "path": "styles/sponsorship.css",
+      "sha256": "d7f4ac4c9b462c374f4b9cf0b1b17918ddee38dcf913cc672fc54e3466eefd60"
+    },
+    {
+      "path": "styles/standard-window.css",
+      "sha256": "6ab69837f2d4029aa01bfefdcadcfad62fa1222bd721c2d994fb0c9e7f8859e9"
+    },
+    {
+      "path": "styles/tactics-cards.css",
+      "sha256": "46903cd328c1e3dfa1029cc20865669324ed39d3559ad2d84e06dd80cc8d76e8"
+    },
+    {
+      "path": "styles/team-player-detail.css",
+      "sha256": "6bca2fe71fd96b94ecbea7e38692705642bf1005ec6e75357bea9146112aadb2"
+    },
+    {
+      "path": "styles/three-preview.css",
+      "sha256": "e92034faca314042e84bffbd51decc28a2032a730e6c1955eda15c9f7c43d047"
+    },
+    {
+      "path": "styles/topbar.css",
+      "sha256": "a9308a0960e44905b21010b15d178f9a2f503841683633ae6e4230c85091e630"
+    },
+    {
+      "path": "styles/training.css",
+      "sha256": "951f872374d9ce9e82b750ba36ac376847ef67af12a44db5f438fc79f1c0c616"
+    },
+    {
+      "path": "styles/tv-settings.css",
+      "sha256": "d80c7a95bc7675779beeb9506c59d0130ffb3b0af580a7b8ecb0ba71314e5160"
+    },
+    {
+      "path": "styles/ui-theme.css",
+      "sha256": "78a556f2434fcd0b4e216dc94be7b07fefe9b2a9ad5c3c238efe5addf44c9e45"
+    },
+    {
+      "path": "styles/wide-window.css",
+      "sha256": "3a548a4c4096cf542ab575c79ecf1a7b2972143b89f12dd7f650892d02b3f897"
+    },
+    {
+      "path": "styles/wonder-catalog.css",
+      "sha256": "93e6b711801f1c9af6ea6f646abded9bb9e2d8c36bd58d873a4142f8719c847c"
+    },
+    {
+      "path": "styles/wonder-preview.css",
+      "sha256": "9f061de4d74b725bbc7eb8e351951e9391d2184ecc977e12affddfc396a1e1bc"
+    },
+    {
+      "path": "styles/yoogle.css",
+      "sha256": "06dfb147be21ca012a598bbb47e8c1744e3d3f02150b7b2a61986206db092a39"
+    },
+    {
+      "path": "tactics-lineup-rules.js",
+      "sha256": "9a56d922dda55d66babad02fc324824371b363d8e2c2c17ddc1c7baaaac8efbc"
+    },
+    {
+      "path": "tactics-page.js",
+      "sha256": "9ea2b4404470df4c477799c7cb7a5b76cf4941d48d3fabc61d2c71b6fa09647f"
+    },
+    {
+      "path": "territory-merge-preview.html",
+      "sha256": "e3b082a118587dfb4cedd8f06811629e362b4964d406a62ba27ebaa1cd721648"
+    },
+    {
+      "path": "territory-model.js",
+      "sha256": "40b052d56bfceb1c978e5fac5b6e0d1e5814c83debd5158ceb0b223d53fdf98a"
+    },
+    {
+      "path": "three-preview.html",
+      "sha256": "139158a76057c98946151bde7d5bfa9a0ead2b2175aecb07f306c7020b2d2cad"
+    },
+    {
+      "path": "wonder-preview.html",
+      "sha256": "20e627be8f0c4f5b92ce94cf99f84ee7dd2a15374e587f50377ad48c1b5be4b3"
+    }
+  ],
+  "files": [
+    {
+      "path": "app.js",
+      "sha256": "ae0d131d5ee16ef1aadc1106ab32ad96584d7c39d30ec45f7b3d7d57105d71b7",
+      "bytes": 75869,
+      "baselineSha256": "cf5dfefab2f5c7e82fe4beae6bfb08d0509a3eb60f5f27ad30f079c684de2da0"
+    },
+    {
+      "path": "assets/facilities/catalog.json",
+      "sha256": "80489771a18113da98b22ddf63c2c629a931daff1a04fb964993faeda22dd2a1",
+      "bytes": 161588,
+      "baselineSha256": "f45e0cb83f01eae953e857e3b490feb61dc105b6c688653487e1fbdbb4f6bb76"
+    },
+    {
+      "path": "campaign-service.mjs",
+      "sha256": "6fd7f6e89e4ba007e6dcec595f93e9817d5736a266b5184b85c24de7161857e3",
+      "bytes": 72866,
+      "baselineSha256": "8f61679e781fd32831eff7de8ac698afe63e7549200307b8df9c865027ee7308"
+    },
+    {
+      "path": "client/buildings/airport-controller.js",
+      "sha256": "3e63aca7a6aa561404b4417f13a90ee03f33a58ead29e478dd8303ac88443bc5",
+      "bytes": 3909,
+      "baselineSha256": null
+    },
+    {
+      "path": "client/buildings/building-panel-controller.js",
+      "sha256": "c1fcb43e8e3b6d2e6b827774fae97eaad2d231bbb8b4d36dc27d2a25f82d5f31",
+      "bytes": 27233,
+      "baselineSha256": "6fa573c65bdc95c58e5798fd2f96bdc535770359fe3cd6818200af7bb8efa068"
+    },
+    {
+      "path": "client/map-three/campaign-facilities.js",
+      "sha256": "c54ac3630796c1c46e4cf04055b00e1242b17cdccf44363811e869d45bdb0714",
+      "bytes": 9656,
+      "baselineSha256": "675fddc780bb20245e776b12bd0ba8c0977723027b657a97e8a149fb37dd0cc1"
+    },
+    {
+      "path": "client/resources/resource-controller.js",
+      "sha256": "42ffc2bdfde25a02ee6805fd1e66f6034517269fad70fdc9c63e02a5d269b59d",
+      "bytes": 13303,
+      "baselineSha256": "daed3d70cb714ec8d9a873d95a434dc773ca387db6b4c9d5b8205db2af95a7f1"
+    },
+    {
+      "path": "index.html",
+      "sha256": "e26da95fe4a631408a4cc39204ede397337652033586681e43182013c06514bb",
+      "bytes": 66790,
+      "baselineSha256": "8829a4202fc303ee578ba51a4f95daf5f16e87e34cf065d4b5a3269ed7be954b"
+    },
+    {
+      "path": "server/application/airport-service.mjs",
+      "sha256": "78ccc412be04ef0357d6cbbd893d43fac9ae105713924465f05b0666ef426099",
+      "bytes": 6045,
+      "baselineSha256": null
+    },
+    {
+      "path": "server/application/building-service.mjs",
+      "sha256": "d3f5532e31ff16caac9ef821289f4a3d681b231167ce74865e8756b58696f321",
+      "bytes": 27513,
+      "baselineSha256": "a1eb652f181730b47ae25bca6dd961fac13b84a490d958bb14ea83b38e3170c2"
+    },
+    {
+      "path": "server/application/coalition-service.mjs",
+      "sha256": "5ed4bf0ac99e49c0819dc00e88cb304a1886ec18c4eb94cae37ec266f035f677",
+      "bytes": 20992,
+      "baselineSha256": "da1d34bd9e46b5252cb732c8108070a616a415610e4d1d8557f551a6f2a8cb56"
+    },
+    {
+      "path": "server/application/downtime-recovery-plan.mjs",
+      "sha256": "fa6261d313d5f6f6f5f1f7e8d8c03ca6a74d56c0488cd331de270d064b61a22b",
+      "bytes": 1963,
+      "baselineSha256": null
+    },
+    {
+      "path": "server/application/downtime-recovery-service.mjs",
+      "sha256": "e7c7ee9b156d42d7de3a0175c49a1876e4bdd30c9c2757d8a7f782a680ad8758",
+      "bytes": 3014,
+      "baselineSha256": null
+    },
+    {
+      "path": "server/application/operating-cost-service.mjs",
+      "sha256": "154f1f94f1a5bf328b530df349c5b694b8fa10c7daf0ea49274b60e52c2444b4",
+      "bytes": 3254,
+      "baselineSha256": "6f9fc4a785c1c56b0f145a6ea6fd2581fa1733aa0b0ae7b7e58bca281d8dad25"
+    },
+    {
+      "path": "server/application/sponsorship-service.mjs",
+      "sha256": "15153dbffdea7f667e6cc14d2cdb5546fb3b1ada7bb1cef633fe1f283a906e30",
+      "bytes": 8970,
+      "baselineSha256": "e01c2c79bda45f0885a35c6fb016145bae7768023c0f6ef66b3d9960699e5c15"
+    },
+    {
+      "path": "server/domain/expedition-piece.mjs",
+      "sha256": "c9c17ad025aaa41b2dd28681c09f2890d5c4a1aba31598fea84054025fe1949a",
+      "bytes": 7396,
+      "baselineSha256": "6c2f3aa9c24abe6df65ab47d03f5fbf889df9c4c3bd65b30d76bd078ebc74c94"
+    },
+    {
+      "path": "server/http/campaign-api-handler.mjs",
+      "sha256": "30be4f9b6662c177598ea5c98dcd808fb7162f6473b4bac42272cbc055422cad",
+      "bytes": 19832,
+      "baselineSha256": "ad116461116a1326f67624143492dadf2f33e455beb71a86366e0e7152f9b999"
+    },
+    {
+      "path": "server/infrastructure/campaign-save-migrations.mjs",
+      "sha256": "9f38eab748ccb12099c407e065c7d25a1f37b6ebe9e3aab09603ff79fbfb5f78",
+      "bytes": 12404,
+      "baselineSha256": "d8e2d8c8015021567278934b728469c97ee23289770701c5d394757740869aee"
+    },
+    {
+      "path": "server/infrastructure/server-economy-clock.mjs",
+      "sha256": "42a4e1e5fcbaf1245f03123f730ebc8f5dc1159c6ee382d130eab176bacfcfa8",
+      "bytes": 4071,
+      "baselineSha256": null
+    },
+    {
+      "path": "shared/config/airport-identity.mjs",
+      "sha256": "b052afd0b461f9b7fb1f4cf3b83c72a31fff76a0485e76863e5106c92ca6f931",
+      "bytes": 1338,
+      "baselineSha256": "f9846edc572c9db13c1cac1f4d1e06418aa5a3ecebd31e14e66a3eaa1b4999f7"
+    },
+    {
+      "path": "shared/config/buildings.mjs",
+      "sha256": "0bcf8d19a6c5d4c2cbe79d96cc6f59b0ee8c7e50ff6c502076994bb5de3a3100",
+      "bytes": 6615,
+      "baselineSha256": "c6a2c4e6949c7374a4c9a95f6755bb408b331c5220dec995c0a9194daa61b180"
+    },
+    {
+      "path": "shared/config/facility-art.mjs",
+      "sha256": "96e6a559aee30b0fcbd3062106ea3337c39a24b6c52aebeb79017711790d9af8",
+      "bytes": 6546,
+      "baselineSha256": "443149db6c7e473f5005187f9f368ae1b15249c34954c70ce83436ae523c6e8c"
+    },
+    {
+      "path": "shared/config/facility-levels.mjs",
+      "sha256": "9dd7a447d6012e15420174f86219d888b93544a498a0d501d807eb7e533dd583",
+      "bytes": 6458,
+      "baselineSha256": "18b6bfcf0d1731105a11924d2318b920b63f23e71ba2664eb346047a4707c6a1"
+    },
+    {
+      "path": "shared/config/operating-costs.mjs",
+      "sha256": "153f33616a591e7d4f3374229a8edc5923be2bc555346c9f6f6f5215582458f6",
+      "bytes": 2452,
+      "baselineSha256": "2561259b8112e6cc228797a6c9e4e36f7e7ffd5f46ffe556af34c998b583b6f4"
+    },
+    {
+      "path": "shared/scouting/scout-units.mjs",
+      "sha256": "430a84f4d362001d2a85a2b03e5135998cb16e3863f324337f61849fc285768d",
+      "bytes": 4503,
+      "baselineSha256": "794500423ca6660a5f8fef59f7536d23557e3f7652cdf62cd2a69d9fc751422b"
+    },
+    {
+      "path": "styles/buildings.css",
+      "sha256": "9e87a4a6c105ecf0b8f25329924336bdae054a304204d04594c670b24a234f71",
+      "bytes": 9983,
+      "baselineSha256": "20cf0dbda2b53b150249060879e49d08d450b87a6dbac351b482294603a66374"
+    }
+  ]
+}

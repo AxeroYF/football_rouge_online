@@ -9,7 +9,7 @@ import {
   CHALLENGE_SECOND_LEG_COOLDOWN_MS,
   CHALLENGE_TOTAL_DURATION_MS,
 } from "../shared/config/challenge.mjs";
-import { DRAFT_SIZE, LINE_KEYS, MINIMUM_PLAYERS_PER_LINE } from "../shared/config/draft.mjs";
+import { DRAFT_SIZE, LINE_KEYS, MINIMUM_GOALKEEPERS } from "../shared/config/draft.mjs";
 import { GOLD_LEDGER_LIMIT, STARTING_GOLD } from "../shared/config/economy.mjs";
 import {
   MARITIME_ANGULAR_SECTOR_DEGREES,
@@ -29,12 +29,12 @@ import {
 import { SECOND_LEG_COOLDOWN_MS as BROADCAST_SECOND_LEG_COOLDOWN_MS } from "../campaign-broadcast.js";
 
 test("refactored gameplay parameters preserve legacy exports from one source", () => {
-  assert.equal(STARTING_GOLD, 1_000_000);
+  assert.equal(STARTING_GOLD, 20_000);
   assert.equal(GOLD_LEDGER_LIMIT, 200);
-  assert.equal(DRAFT_SIZE, 22);
-  assert.equal(MINIMUM_PLAYERS_PER_LINE, 2);
+  assert.equal(DRAFT_SIZE, 33);
+  assert.equal(MINIMUM_GOALKEEPERS, 3);
   assert.deepEqual(LINE_KEYS, ["GK", "DEF", "MID", "ATT"]);
-  assert.equal(MARITIME_MAX_RANGE_KM, 900);
+  assert.equal(MARITIME_MAX_RANGE_KM, 600);
   assert.equal(MARITIME_ANGULAR_SECTOR_DEGREES, 12);
   assert.equal(SERVICE_STARTING_GOLD, STARTING_GOLD);
   assert.equal(SERVICE_DRAFT_SIZE, DRAFT_SIZE);
@@ -73,7 +73,7 @@ test("campaign API client owns token persistence and authenticated requests", as
   assert.equal(values.size, 0);
 });
 
-test("JSON campaign repository round-trips saves and tolerates invalid legacy files", () => {
+test("JSON campaign repository round-trips saves and rejects corrupt existing files", () => {
   const directory = mkdtempSync(path.join(tmpdir(), "yellowdogs-repository-"));
   const dataPath = path.join(directory, "campaign.json");
   const repository = new JsonCampaignRepository({ dataPath });
@@ -86,7 +86,7 @@ test("JSON campaign repository round-trips saves and tolerates invalid legacy fi
     assert.equal(saved.world.schemaVersion, 4);
 
     writeFileSync(dataPath, "{not-json");
-    assert.equal(repository.load(), null);
+    assert.throws(() => repository.load(), /账号存档读取失败/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
