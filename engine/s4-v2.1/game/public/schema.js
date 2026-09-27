@@ -1,3 +1,4 @@
+import {offlineAttributeMaximum} from "../../versus/offline-attribute-settings.js";
 export const SEVEN_A_SIDE = Object.freeze({
   starters: 7,
   outfielders: 6,
@@ -271,7 +272,7 @@ function legacyAttributeSource(player) {
 export function normalizeAttributes(player = {}) {
   const input = player.attributes ?? {};
   const legacy = legacyAttributeSource(player);
-  return Object.fromEntries(ATTRIBUTE_NAMES.map((name) => [name, Math.round(clampValue(input[name] ?? legacy[name]))]));
+  return Object.fromEntries(ATTRIBUTE_NAMES.map((name) => [name, Math.round(clampValue(input[name] ?? legacy[name],1,offlineAttributeMaximum()))]));
 }
 
 export function normalizePlayerSchema(player = {}, options = {}) {

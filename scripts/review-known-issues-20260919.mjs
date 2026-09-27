@@ -1,0 +1,78 @@
+import fs from 'node:fs';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {createStaticHandler} from '../server/http/static-handler.mjs';
+const require=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs');
+const {chromium}=require('playwright');
+const serve=createStaticHandler(process.cwd()),out='outputs/performance-20260919';
+const server=http.createServer((req,res)=>{if(req.url==='/__ui'){res.setHeader('Content-Type','text/html');res.end('<html><head></head><body><nav id="primary-navigation"></nav></body></html>');}else serve(req,res);});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const page=await browser.newPage({viewport:{width:1500,height:1000}}),errors=[],report={};page.on('pageerror',e=>errors.push(e.message));
+try{
+ await page.goto('http://127.0.0.1:'+server.address().port+'/__ui');
+ for(const path of ['styles.css','styles/enhancement.css','styles/card-management.css','styles/coalition.css','styles/social-card-warehouse.css','assets/vendor/leaflet.css'])await page.addStyleTag({url:'/'+path});
+ report.cards=await page.evaluate(async()=>{
+  const {createEnhancementController}=await import('/client/enhancement/enhancement-controller.js');
+  const {createCampaignStore}=await import('/client/core/campaign-store.js');
+  const {S4_ENHANCEMENT}=await import('/shared/config/enhancement.mjs');
+  const {CARD_MANAGEMENT_DEFAULTS}=await import('/shared/config/card-management.mjs');
+  const {createCardManagementController}=await import('/client/cards/card-management-controller.js');
+  const cards=Array.from({length:60},(_,i)=>({id:'c'+i,playerId:'c'+i,cardDefinitionId:'family',name:'球员'+i,grade:'C',overall:70,baseOverall:70,role:'ST',pool:'ATT',upgradeLevel:0,traits:[],labels:[],attributes:{},squad:'garrison',recycleValue:80}));
+  cards.push({...cards[0],id:'upgraded-single',playerId:'upgraded-single',cardDefinitionId:'unique',upgradeLevel:8});
+  const state={playerId:'p',setupComplete:true,wallet:{gold:100000},draft:{roster:cards}};
+  const store=createCampaignStore(state),root=document.createElement('section');root.hidden=true;document.body.append(root);
+  const tick=()=>new Promise(r=>setTimeout(r,100));
+  const enhancement=createEnhancementController({root,getCampaignState:store.getState,campaignStore:store,getCampaignRequest:()=>async()=>({...S4_ENHANCEMENT,cards,history:[],traitOffers:[]})});
+  enhancement.open();await tick();
+  const card=root.querySelector('[data-enhancement-card="c2"]'),grid=root.querySelector('.enhancement-card-grid');
+  grid.style.height='250px';grid.style.overflow='auto';grid.scrollTop=200;
+  const before=grid.scrollTop;
+  root.querySelector('[data-enhancement-card="c0"]').click();
+  const upgradedVisible=!!root.querySelector('[data-enhancement-card="upgraded-single"]');
+  const retained=card===root.querySelector('[data-enhancement-card="c2"]')&&grid===root.querySelector('.enhancement-card-grid');
+  const enhancedScroll=grid.scrollTop;
+  enhancement.close();
+  const cmRoot=document.createElement('section');cmRoot.hidden=true;document.body.append(cmRoot);let reads=0;
+  const cm=createCardManagementController({root:cmRoot,getCampaignState:store.getState,campaignStore:store,getCampaignRequest:()=>async()=>{reads++;return {cards,config:structuredClone(CARD_MANAGEMENT_DEFAULTS),listings:[],history:[]};}});
+  cm.open();await tick();cmRoot.querySelector('[data-cm-screen="trade-up"]').click();await tick();
+  const scroll=cmRoot.querySelector('[data-cmu-scroll]');scroll.style.height='250px';scroll.style.overflow='auto';scroll.scrollTop=180;
+  const cmBefore=scroll.scrollTop,unchanged=cmRoot.querySelector('[data-cmu-select="c2"]');
+  cmRoot.querySelector('[data-cmu-select="c0"]').click();
+  const tradeRetained=unchanged===cmRoot.querySelector('[data-cmu-select="c2"]')&&scroll===cmRoot.querySelector('[data-cmu-scroll]');
+  const selected=cmRoot.querySelector('[data-cmu-select="c0"]').getAttribute('aria-pressed');
+  const after=scroll.scrollTop;store.setState({...store.getState(),wallet:{gold:99999}});await tick();cm.close();
+  return {upgradedVisible,retained,before,enhancedScroll,tradeRetained,cmBefore,after,selected,reads};
+ });
+ assert.equal(report.cards.upgradedVisible,true);assert.equal(report.cards.retained,true);assert.equal(report.cards.tradeRetained,true);assert.equal(report.cards.selected,'true');assert.equal(report.cards.before,report.cards.enhancedScroll);assert.equal(report.cards.cmBefore,report.cards.after);assert.equal(report.cards.reads,1);
+ report.coalition=await page.evaluate(async()=>{
+  const {createCoalitionController}=await import('/client/social/coalition-controller.js');const {createCampaignStore}=await import('/client/core/campaign-store.js');
+  const store=createCampaignStore({playerId:'p',setupComplete:true,coalition:{army:{revision:1}},expeditionFitness:{serverNow:Date.parse('2026-09-19T02:00:00Z')}});
+  let reads=0,writes=0;const view={serverNow:Date.parse('2026-09-19T02:00:00Z'),members:[{id:'p',name:'自己'},{id:'q',name:'盟友'}],army:{id:'a',name:'联军',revision:1,loans:[],roster:[],contributors:['p','q'],canCommand:true,commanderId:'p',commanderName:'自己'},myCards:Array.from({length:100},(_,i)=>({id:'p'+i,name:'球员'+i,role:'ST',overall:70}))};
+  const c=createCoalitionController({getState:store.getState,campaignStore:store,getRequest:()=>async(url,options)=>{if(options?.method==='POST'){writes++;view.army.revision++;view.myCards.find(p=>p.id===options.body.playerId).blocked='已借调';return {view:structuredClone(view),state:{...store.getState(),coalition:{army:{revision:view.army.revision}}}};}reads++;return {view:structuredClone(view)};},metadata:new Map(),showToast:()=>{}});
+  await c.open();const list=c.root.querySelector('[data-warehouse="coalition-mine"] [data-warehouse-scroll]'),row=list.querySelectorAll('.social-warehouse-card')[10];list.scrollTop=500;const before=list.scrollTop;
+  for(let i=0;i<10;i++)store.setState({...store.getState(),wallet:{gold:i}});
+  await new Promise(r=>setTimeout(r,40));list.querySelector('[data-player-id="p10"]').click();await new Promise(r=>setTimeout(r,40));
+  const result={reads,writes,before,after:list.scrollTop,retained:list===c.root.querySelector('[data-warehouse="coalition-mine"] [data-warehouse-scroll]')&&row===list.querySelectorAll('.social-warehouse-card')[10],disabled:list.querySelector('[data-player-id="p10"]').disabled};c.close();return result;
+ });
+ assert.equal(report.coalition.reads,1);assert.equal(report.coalition.writes,1);assert.equal(report.coalition.retained,true);assert.equal(report.coalition.before,report.coalition.after);assert.equal(report.coalition.disabled,true);
+ await page.addScriptTag({url:'/assets/vendor/leaflet.js'});
+ report.map=await page.evaluate(async()=>{
+  const {createRaidController}=await import('/client/elite/raid-controller.js');const {createCampaignStore}=await import('/client/core/campaign-store.js');
+  const el=document.createElement('div');el.id='probe-map';Object.assign(el.style,{position:'fixed',inset:'0',zIndex:'9000'});document.body.append(el);
+  const map=L.map(el,{preferCanvas:true,zoomControl:false}).setView([50,0],4);map.createPane('territoryPane');map.getPane('territoryPane').style.zIndex='215';map.createPane('expeditionPane');Object.assign(map.getPane('expeditionPane').style,{zIndex:'655',pointerEvents:'none'});
+  window.mapProbe=map;window.landClicks=0;L.polygon([[46,-5],[54,-5],[54,5],[46,5]],{pane:'territoryPane',renderer:L.canvas({pane:'territoryPane'})}).addTo(map).on('click',()=>window.landClicks++);
+  const now=Date.now(),state={playerId:'p',setupComplete:true,eliteRaids:{day:'today',noticeDismissed:true,serverNow:now,raids:[{clubId:'r',name:'豪门',badge:'',status:'moving',index:0,sourceTerritoryId:'from',route:[{territoryId:'to'}],movement:{fromTerritoryId:'from',toTerritoryId:'to',startedAt:now,arrivesAt:now+600000}}]}};
+  const store=createCampaignStore(state),controller=createRaidController({getState:store.getState,campaignStore:store,getRequest:()=>async()=>({}),showToast:()=>{}});
+  controller.attachMap({Leaflet:L,map,layer:L.layerGroup().addTo(map),metadata:new Map([['from',{centroid:[-8,50],region:'europe'}],['to',{centroid:[8,50],region:'europe'}]])});
+  const point=map.latLngToContainerPoint([49,0]);return {x:point.x,y:point.y,defaultCanvas:!!map.getPane('overlayPane').querySelector('canvas'),routePointer:getComputedStyle(map.getPane('raidRoutePane')).pointerEvents};
+ });
+ await page.mouse.click(report.map.x,report.map.y);report.map.clicks=await page.evaluate(()=>window.landClicks);assert.equal(report.map.clicks,1);assert.equal(report.map.defaultCanvas,false);assert.equal(report.map.routePointer,'none');
+ // Reproduce the former default Canvas path on the same map and same click.
+ await page.evaluate(()=>L.polyline([[50,-8],[50,8]],{interactive:false}).addTo(window.mapProbe));
+ await page.mouse.click(report.map.x,report.map.y);
+ report.map.legacyRouteBlocksClick=(await page.evaluate(()=>window.landClicks))===1;
+ assert.equal(report.map.legacyRouteBlocksClick,true);
+ assert.deepEqual(errors,[]);report.passed=true;console.log(JSON.stringify(report));
+}finally{fs.writeFileSync(out+'/known-issues-browser.json',JSON.stringify({...report,errors},null,2));await browser.close();await new Promise(r=>server.close(r));}

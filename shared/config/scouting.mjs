@@ -3,7 +3,7 @@ export const SCOUTING_RULES = Object.freeze({
   scoutCapacity: 2,
   recruitBatchLimit: 2,
   recruitCostGold: 0,
-  costGold: 700,
+  costGold: 1200,
   maxQueueRounds: 20,
   durationMs: 10 * 60_000,
   choiceCount: 3,

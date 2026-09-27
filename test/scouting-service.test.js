@@ -28,11 +28,11 @@ function fixture({ recruit = true } = {}) {
 test("paid scouting hides fixed candidates until ten minutes, persists and issues only one independent card", () => {
   const f = fixture(), before = f.account.draft.roster.length;
   const task = f.start();
-  assert.equal(f.account.gold, 9300);
+  assert.equal(f.account.gold, 8800);
   assert.equal(task.completesAt - task.startedAt, 600_000);
   assert.deepEqual(task.cards, []);
   assert.equal(f.start().id, task.id);
-  assert.equal(f.account.gold, 9300);
+  assert.equal(f.account.gold, 8800);
   assert.throws(() => f.start("request-two"), /选择球员/);
   const stored = f.saved().scouting.tasks[task.id];
   assert.equal(new Set(stored.candidates.map((p) => p.cardDefinitionId)).size, 3);
@@ -52,7 +52,7 @@ test("paid scouting hides fixed candidates until ten minutes, persists and issue
   assert.throws(() => f.service.choose(f.account, task.id, stored.candidates[1].id), /已经选择/);
   assert.equal(f.service.publicState(f.account).tasks.length, 0);
   f.start("request-next");
-  assert.equal(f.account.gold, 8600);
+  assert.equal(f.account.gold, 7600);
 });
 
 test("recruitment validates center ownership and construction; discovery validates wallet and identity", () => {
@@ -70,7 +70,7 @@ test("recruitment validates center ownership and construction; discovery validat
   f.account.gold = 499;
   assert.throws(()=>start("request-one"),/金币不足/);
   assert.equal(f.account.gold,499);
-  f.account.gold = 1000; assert.throws(()=>start("x"),/请求编号/);
+  f.account.gold = 1200; assert.throws(()=>start("x"),/请求编号/);
   start("request-one");
   assert.throws(()=>f.service.start(f.account,f.world,{scoutId:"other",requestId:"request-one"}),/另一名/);
   assert.throws(()=>f.service.start(f.account,f.world,{territoryId:"home",buildingId:"scout-1",requestId:"old-api-call"}),/先招募/);
@@ -104,7 +104,7 @@ test("facility grade ranges, rare legends and independent +1 through +3 enhancem
     f.service.random = () => rolls[index++ % rolls.length];
     const cards = f.service.draw(1, "ESP");
     assert.ok(cards.every((p) => p.grade === "S" && p.upgradeLevel === expected));
-    assert.ok(cards.every((p) => p.overall === 80 + expected && p.attributes.passing === 99 && p.attributes.finishing === 80 + expected));
+    assert.ok(cards.every((p) => p.overall === 80 + expected && p.attributes.passing === 98 + expected && p.attributes.finishing === 80 + expected));
     assert.equal(f.catalog[0].attributes.passing, 98);
   }
 });
@@ -192,8 +192,36 @@ test("enhancement roll intervals yield configured 94/4.5/1.2/0.3 distribution th
 test('upgrading the center updates existing scouts on their next task, with frozen current tasks and dynamic capacity',()=>{
  const f=fixture();const first=f.start();f.building.level=5;
  assert.equal(f.service.publicState(f.account,f.world).capacity,4);
- assert.equal(f.service.unitDetails(f.account,f.world,f.scoutId).rules.costGold,700);
+ assert.equal(f.service.unitDetails(f.account,f.world,f.scoutId).rules.costGold,1200);
  assert.equal(f.service.publicTask(f.account.scouting.tasks[first.id]).level,1);
  f.setTime(first.completesAt);const existing=f.account.scouting.tasks[first.id];f.service.choose(f.account,first.id,existing.candidates[0].id);
- const second=f.start('upgraded-scouting-task');assert.equal(second.level,5);assert.equal(f.account.scouting.units[f.scoutId].level,5);assert.equal(f.account.gold,8600);
+ const second=f.start('upgraded-scouting-task');assert.equal(second.level,5);assert.equal(f.account.scouting.units[f.scoutId].level,5);assert.equal(f.account.gold,7600);
+});
+
+
+test('legacy paid discovery keeps its recorded cost and can be claimed after price adjustment',()=>{
+ const f=fixture(),task=f.start();
+ f.account.scouting.tasks[task.id].costGold=700;
+ const balance=f.account.gold;
+ f.setTime(task.completesAt);
+ f.service.choose(f.account,task.id,f.account.scouting.tasks[task.id].candidates[0].id);
+ assert.equal(f.account.gold,balance);
+ assert.equal(f.account.scouting.tasks[task.id].costGold,700);
+});
+
+test('twenty-round claim saves once, assigns all new cards and keeps compact retry receipts',()=>{const f=fixture();f.account.gold=100000;const task=f.service.start(f.account,f.world,{scoutId:f.scoutId,requestId:'twenty-round-test',rounds:20});f.setTime(task.completesAt);const stored=f.account.scouting.tasks[task.id],ids=stored.rounds.map(r=>r.candidates[0].id),before=f.account.draft.roster.length;const publicA=f.service.publicTask(stored),publicB=f.service.publicTask(stored);assert.equal(publicA.rounds[0].cards,publicB.rounds[0].cards);let saves=0;const save=f.service.save;f.service.save=()=>{saves++;save();};const result=f.service.claimQueue(f.account,task.id,ids);assert.equal(saves,1);assert.equal(result.length,20);assert.equal(f.account.draft.roster.length,before+20);for(const id of ids)assert.equal(f.account.playerSquads.assignments[id],'garrison');assert.equal(stored.candidates.length,0);assert.equal(stored.rounds.length,0);assert.deepEqual(f.service.claimQueue(f.account,task.id,ids),result);assert.deepEqual(f.service.claimQueue(structuredClone(f.saved()),task.id,ids),result);assert.equal(saves,1);assert.throws(()=>f.service.claimQueue(f.account,task.id,[...ids].reverse()),/其他球员/);});
+test('twenty-round claim failure restores candidates, roster and assignments',()=>{const f=fixture();f.account.gold=100000;const task=f.service.start(f.account,f.world,{scoutId:f.scoutId,requestId:'twenty-failure-test',rounds:20});f.setTime(task.completesAt);const ids=f.account.scouting.tasks[task.id].rounds.map(r=>r.candidates[0].id),before=structuredClone(f.account);f.failSave(true);assert.throws(()=>f.service.claimQueue(f.account,task.id,ids),/disk failure/);assert.deepEqual(f.account,before);});
+
+
+test('batch scouting index preserves seeded draws at every center level',()=>{
+ const f=fixture();
+ const rng=()=>{let seed=12345;return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};};
+ const signature=cards=>cards.map(p=>({definition:p.cardDefinitionId,upgrade:p.upgradeLevel,attributes:p.attributes}));
+ for(let level=1;level<=5;level++)for(const country of ['ESP','CHN']){
+  const database=f.catalog,weights=scoutingLevel(level).gradeWeights;
+  const prepared={database,normal:database.filter(p=>weights[p.grade]>0),grades:Object.fromEntries(['C','B','A','S'].map(g=>[g,database.filter(p=>p.grade===g)]))};
+  f.service.random=rng();const original=Array.from({length:20},()=>signature(f.service.draw(level,country)));
+  f.service.random=rng();const indexed=Array.from({length:20},()=>signature(f.service.draw(level,country,3,prepared)));
+  assert.deepEqual(indexed,original);
+ }
 });

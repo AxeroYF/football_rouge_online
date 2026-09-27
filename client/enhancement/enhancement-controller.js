@@ -1,3 +1,4 @@
+import {patchMarkup} from '../ui/patch-markup.js';
 import {researchedEnhancementChance} from '../../shared/config/advanced-research.mjs';
 import { createRequestId } from "../core/request-id.js?v=20260906-release-v01";
 import { playerCardMarkup, escapePlayerCardHtml as escapeHtml } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
@@ -6,7 +7,19 @@ import { goldAmountMarkup } from "../ui/currency.js";
 import { registerWideWindow, activateWideWindow, deactivateWideWindow } from "../ui/wide-window.js";
 
 export function enhancementCardEntries(cards = []) {
-  return duplicateEnhancementCards(cards).map((card) => ({ player: { ...card, id: enhancementFamily(card) }, card: { ...card, id: card.playerId } }));
+  const duplicates=new Set(duplicateEnhancementCards(cards));
+  return cards.filter(card=>duplicates.has(card)||Number(card.upgradeLevel)>0).map((card) => ({ player: { ...card, id: enhancementFamily(card) }, card: { ...card, id: card.playerId } }));
+}
+// Group presentation only: card IDs and enhancement compatibility stay independent.
+export function sortEnhancementEntries(entries, mode='upgrade') {
+  const groups=new Map(),grade=p=>{const i=['X','S','A','B','C'].indexOf(p.grade);return i<0?5:i;};
+  for(const entry of entries){const key=String(entry.player.name??entry.player.id).trim();if(!groups.has(key))groups.set(key,[]);groups.get(key).push(entry);}
+  const stats=([name,cards])=>({name,cards,grade:Math.min(...cards.map(e=>grade(e.player))),level:Math.max(...cards.map(e=>Number(e.card.upgradeLevel)||0)),overall:Math.max(...cards.map(e=>Number(e.player.overall)||0))});
+  return [...groups].map(stats).sort((a,b)=>{
+    if(mode==='name')return a.name.localeCompare(b.name,'zh-CN');
+    if(mode==='overall')return b.overall-a.overall||a.name.localeCompare(b.name,'zh-CN');
+    return a.grade-b.grade||b.level-a.level||b.overall-a.overall||a.name.localeCompare(b.name,'zh-CN');
+  }).flatMap(g=>g.cards.slice().sort((a,b)=>(Number(b.card.upgradeLevel)||0)-(Number(a.card.upgradeLevel)||0)||String(a.player.id).localeCompare(String(b.player.id))||String(a.card.id).localeCompare(String(b.card.id))));
 }
 export function createEnhancementController({ root, getCampaignState, getCampaignRequest, campaignStore, onState = () => {}, onOpen = () => {}, onClose = () => {}, showToast = () => {}, delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   let view = null, league = { enhancement: {}, wallet: { balance: 0 } }, pending = false, version = 0, readVersion = 0;
@@ -15,7 +28,6 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
   let leagueBackpackSearch = "", leagueBackpackPosition = "ALL", leagueBackpackUpgrade = "ALL", leagueBackpackSort = "upgrade", leagueEnhancementListingFilter = "ALL";
   let draggedCardId = null, refreshAfterDrag = false;
   const retryIds = new Map();
-  const comparePlayerGrade = (a,b) => ["X","S","A","B","C"].indexOf(a.player.grade) - ["X","S","A","B","C"].indexOf(b.player.grade);
   const leagueEnhancementCardEntries = () => enhancementCardEntries(view?.cards);
   const leagueEnhancementCardEntry = (id) => {
     const card = view?.cards.find((card) => card.playerId === id);
@@ -49,7 +61,7 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
     const historyList = area.querySelector('[data-enhancement-history-list]');
     const historyScroll = historyList?.scrollTop ?? 0;
     const latestHistoryId = historyList?.dataset.enhancementHistoryLatest;
-    area.innerHTML = view ? leagueEnhancementMarkup() : '<p class="enhancement-loading">正在读取球员卡…</p>';
+    patchMarkup(area, view ? leagueEnhancementMarkup() : '<p class="enhancement-loading">正在读取球员卡…</p>');
     const grid = area.querySelector('.enhancement-card-grid'); if (grid) grid.scrollTop = scroll;
     const nextHistory = area.querySelector('[data-enhancement-history-list]');
     if (nextHistory && nextHistory.dataset.enhancementHistoryLatest === latestHistoryId) nextHistory.scrollTop = historyScroll;
@@ -84,7 +96,7 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
     root.append(overlay); return overlay;
   }
   function assign(cardId, slot = null) {
-    if (pending || !duplicateEnhancementCards(view?.cards).some((card) => card.playerId === cardId)) return;
+    if (pending || !enhancementCardEntries(view?.cards).some(({card}) => card.id === cardId)) return;
     const entry = leagueEnhancementCardEntry(cardId); if (!entry) return;
     slot ??= leagueEnhancementMainCardId ? 'material' : 'main';
     const reason = slot === 'main' ? entry.card.mainBlocked : entry.card.materialBlocked;
@@ -100,7 +112,9 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
       const material = leagueEnhancementCardEntry(leagueEnhancementMaterialCardId);
       if (material?.card.id === cardId || material?.player.id !== entry.player.id) leagueEnhancementMaterialCardId = null;
     }
-    if (leagueEnhancementResult?.card.id === cardId) leagueEnhancementResult = null;
+    // A completed result is already owned; selecting the next card only returns its presentation.
+    const offer = leagueEnhancementResult?.traitOffer ?? view?.traitOffers?.find(entry => entry.cardId === leagueEnhancementResult?.card.id);
+    if (!offer) leagueEnhancementResult = null;
     leagueEnhancementTraitSelectionOpen = false; if (!leagueEnhancementResult) leagueEnhancementPhase = 'idle'; renderLeagueEnhancementInPlace();
   }
   function returnResultToWarehouse(cardId) {
@@ -115,10 +129,12 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
     const accountId = getCampaignState()?.playerId;
     const key = JSON.stringify([accountId, action, body]);
     if (requestId && !retryIds.has(key)) retryIds.set(key, createRequestId());
-    const response = await getCampaignRequest()(`/api/campaign/enhancement/${action}`, { method: 'POST', body: { ...body, ...(requestId ? { requestId: retryIds.get(key) } : {}) } });
+    const response = await getCampaignRequest()(`/api/campaign/enhancement/${action}`, { method: 'POST', body: { ...body, compact:true, ...(requestId ? { requestId: retryIds.get(key) } : {}) } });
     if (getCampaignState()?.playerId !== accountId) return null;
     retryIds.delete(key); readVersion++;
-    campaignStore.setState(response.state, { source: 'enhancement' }); onState(response.state);
+    const state=response.state??{...getCampaignState(),...response.statePatch};
+    campaignStore.setState(state, { source: 'enhancement' });
+    onState(state,{compact:!response.state});
     syncView(response.view); return response.result;
   }
   async function perform() {
@@ -131,7 +147,6 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
     try {
       const result = await mutate('enhance', { mainCardId: main.card.id, materialCardId: material.card.id, useProtection: leagueEnhancementUseProtection });
       if (!result || opened !== version || root.hidden) return;
-      await delay(result.afterLevel < 4 ? 420 : 1440 + Math.min(4, result.afterLevel - 4) * 360);
       if (opened !== version || root.hidden) return;
       leagueEnhancementResult = { ...result, player: result.card, card: { ...result.card, id: result.card.playerId } };
       leagueEnhancementMainCardId = null; leagueEnhancementMaterialCardId = null;
@@ -197,7 +212,8 @@ function leagueEnhancementMarkup() {
   if (!material) leagueEnhancementMaterialCardId = null;
   const search = leagueBackpackSearch.trim().toLocaleLowerCase("zh-CN");
   const heldIds = new Set([leagueEnhancementMainCardId, leagueEnhancementMaterialCardId, leagueEnhancementResult?.card.id ?? league.enhancement?.traitOffer?.cardId]);
-  const warehouseCards = allCards.filter(({ player, card }) => {
+  // Held cards still anchor their family rank; selection only hides instances.
+  const warehouseCards = sortEnhancementEntries(allCards, leagueBackpackSort).filter(({ player, card }) => {
     if (heldIds.has(card.id)) return false;
     const matchesSearch = !search || [player.name, player.club, player.nationality].some((value) => String(value ?? "").toLocaleLowerCase("zh-CN").includes(search));
     const matchesPosition = leagueBackpackPosition === "ALL" || player.pool === leagueBackpackPosition;
@@ -210,16 +226,6 @@ function leagueEnhancementMarkup() {
     const listed = leagueEnhancementCardListed(player.id, card.id);
     const matchesListing = leagueEnhancementListingFilter === "ALL" || !listed;
     return matchesSearch && matchesPosition && matchesUpgrade && matchesListing;
-  }).sort((left, right) => {
-    if (leagueBackpackSort === "upgrade") {
-      const gradeDifference = comparePlayerGrade(left, right);
-      if (gradeDifference) return gradeDifference;
-    }
-    const upgradeDifference = right.card.upgradeLevel - left.card.upgradeLevel;
-    if (upgradeDifference) return upgradeDifference;
-    if (leagueBackpackSort === "overall") return right.player.overall - left.player.overall || left.player.name.localeCompare(right.player.name, "zh-CN");
-    if (leagueBackpackSort === "name") return left.player.name.localeCompare(right.player.name, "zh-CN") || right.player.overall - left.player.overall;
-    return right.player.overall - left.player.overall || left.player.name.localeCompare(right.player.name, "zh-CN");
   });
   const mainLevel = Number(main?.card.upgradeLevel ?? 0);
   const materialLevel = Number(material?.card.upgradeLevel ?? 0);
@@ -263,9 +269,9 @@ function leagueEnhancementMarkup() {
       const pendingTrait = view.traitOffers?.some((offer) => offer.cardId === card.id);
       const attributes = `draggable="true" data-enhancement-card="${escapeHtml(card.id)}" data-enhancement-player="${escapeHtml(player.id)}"`;
       const status = [pendingTrait ? "待绑定特性" : "", card.mainBlocked || card.materialBlocked || ""].filter(Boolean).join(" · ");
-      return `<div class="enhancement-warehouse-card">${s4PlayerCardMarkup(player, { card, compact:true, attributes, deferred:true })}${status ? `<span class="enhancement-card-status">${escapeHtml(status)}</span>` : ""}</div>`;
+      return `<div class="enhancement-warehouse-card" data-ui-key="${escapeHtml(card.id)}">${s4PlayerCardMarkup(player, { card, compact:true, attributes, deferred:true })}${status ? `<span class="enhancement-card-status">${escapeHtml(status)}</span>` : ""}</div>`;
     }).join("")
-    : `<div class="enhancement-warehouse-empty">没有符合条件的同名重复卡</div>`;
+    : `<div class="enhancement-warehouse-empty">没有符合条件的同名重复卡或强化卡</div>`;
   return `<section class="league-enhancement phase-${leagueEnhancementPhase}">
     <div class="enhancement-left-column"><section class="enhancement-composer">
       <header><h2>球员强化</h2><b>${goldAmountMarkup(league.wallet.balance)}</b></header>
@@ -284,7 +290,7 @@ function leagueEnhancementMarkup() {
     </section>${leagueEnhancementHistoryMarkup()}</div>
     <section class="enhancement-warehouse" data-enhancement-warehouse>
       <header><h2>同名球员卡仓库</h2><div class="enhancement-warehouse-header-actions"><button type="button" class="button secondary" data-enhancement-batch-open>批量合卡</button><b>${warehouseCards.length}/${allCards.length}</b></div></header>
-      <div class="backpack-card-tools enhancement-tools"><input type="search" value="${escapeHtml(leagueBackpackSearch)}" placeholder="输入后按回车搜索球员、俱乐部或国家队" data-backpack-search><select data-backpack-position><option value="ALL" ${leagueBackpackPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueBackpackPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPosition === "GK" ? "selected" : ""}>门将</option></select><select data-backpack-upgrade><option value="ALL" ${leagueBackpackUpgrade === "ALL" ? "selected" : ""}>全部强化</option><option value="BASE" ${leagueBackpackUpgrade === "BASE" ? "selected" : ""}>未强化</option><option value="MID" ${leagueBackpackUpgrade === "MID" ? "selected" : ""}>+1 ～ +4</option><option value="HIGH" ${leagueBackpackUpgrade === "HIGH" ? "selected" : ""}>+5 ～ +7</option><option value="MAX" ${leagueBackpackUpgrade === "MAX" ? "selected" : ""}>+8</option></select><select data-backpack-sort><option value="upgrade" ${leagueBackpackSort === "upgrade" ? "selected" : ""}>强化等级</option><option value="overall" ${leagueBackpackSort === "overall" ? "selected" : ""}>能力值</option><option value="name" ${leagueBackpackSort === "name" ? "selected" : ""}>姓名</option></select></div>
+      <div class="backpack-card-tools enhancement-tools"><input type="search" value="${escapeHtml(leagueBackpackSearch)}" placeholder="输入后按回车搜索球员、俱乐部或国家队" data-backpack-search><select data-backpack-position><option value="ALL" ${leagueBackpackPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueBackpackPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPosition === "GK" ? "selected" : ""}>门将</option></select><select data-backpack-upgrade><option value="ALL" ${leagueBackpackUpgrade === "ALL" ? "selected" : ""}>全部强化</option><option value="BASE" ${leagueBackpackUpgrade === "BASE" ? "selected" : ""}>未强化</option><option value="MID" ${leagueBackpackUpgrade === "MID" ? "selected" : ""}>+1 ～ +4</option><option value="HIGH" ${leagueBackpackUpgrade === "HIGH" ? "selected" : ""}>+5 ～ +7</option><option value="MAX" ${leagueBackpackUpgrade === "MAX" ? "selected" : ""}>+8</option></select><select data-backpack-sort><option value="upgrade" ${leagueBackpackSort === "upgrade" ? "selected" : ""}>同名分组 · 强化</option><option value="overall" ${leagueBackpackSort === "overall" ? "selected" : ""}>能力值</option><option value="name" ${leagueBackpackSort === "name" ? "selected" : ""}>姓名</option></select></div>
       <div class="backpack-card-grid compact enhancement-card-grid">${warehouseMarkup}</div>
     </section>
   </section>`;
@@ -480,7 +486,10 @@ function showLeagueEnhancementCelebration(result) {
   });
   campaignStore.subscribe(({ state, previousState }) => {
     if (state?.playerId !== previousState?.playerId) { close(); retryIds.clear(); view = null; return; }
-    if (!root.hidden && !pending && JSON.stringify([state?.draft?.roster,state?.enhancement,state?.wallet,state?.playerSquads,state?.tactics]) !== JSON.stringify([previousState?.draft?.roster,previousState?.enhancement,previousState?.wallet,previousState?.playerSquads,previousState?.tactics])) load();
+    if (!root.hidden && !pending) {
+      if (JSON.stringify([state?.draft?.roster,state?.enhancement,state?.playerSquads,state?.tactics]) !== JSON.stringify([previousState?.draft?.roster,previousState?.enhancement,previousState?.playerSquads,previousState?.tactics])) load();
+      else if(view && state?.wallet?.gold!==previousState?.wallet?.gold){league.wallet.balance=state?.wallet?.gold??0;renderLeagueEnhancementInPlace();}
+    }
   });
   registerWideWindow(root, { onRequestClose: close });
   return { open, close };

@@ -1,0 +1,41 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import os from 'node:os';import path from 'node:path';import crypto from 'node:crypto';
+import {ResourceCache,validateManifest,ORIGIN} from '../resource-cache.mjs';
+const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
+async function fixture(t){const root=await fs.mkdtemp(path.join(os.tmpdir(),'ydl-cache-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));const seed=path.join(root,'seed'),directory=path.join(root,'cache');await fs.mkdir(path.join(seed,'objects'),{recursive:true});const bytes=Buffer.from('map fixture'),e={path:'assets/data/test.json',sha256:digest(bytes),bytes:bytes.length,core:true},manifest={schemaVersion:1,version:'test',entries:[e]};await fs.writeFile(path.join(seed,'manifest.json'),JSON.stringify(manifest));let downloads=0,fail=false;const cache=new ResourceCache({seed,directory,fetchImpl:async url=>{if(url.endsWith('desktop-resources.json'))return Response.json(manifest);downloads++;return new Response(fail?'bad':bytes);}});await cache.init();return {cache,e,bytes,manifest,seed,directory,get downloads(){return downloads},fail:()=>fail=true};}
+test('bundled hash matched maps work before server manifest deployment',async t=>{const f=await fixture(t);await fs.writeFile(path.join(f.seed,'objects',f.e.sha256),f.bytes);assert.ok(f.cache.entry(ORIGIN+'/versus/'+f.e.path+'?v=sha256-'+f.e.sha256));assert.equal(f.cache.entry(ORIGIN+'/'+f.e.path),null);assert.deepEqual(await f.cache.get(f.e),f.bytes);assert.equal(f.downloads,0);});
+test('downloads deduplicate, validate and persist across restarts',async t=>{const f=await fixture(t);await Promise.all([f.cache.get(f.e),f.cache.get(f.e)]);assert.equal(f.downloads,1);await f.cache.update();assert.ok(f.cache.entry(ORIGIN+'/'+f.e.path));const next=new ResourceCache({directory:f.directory,seed:f.seed,fetchImpl:()=>{throw Error('network should not run');}});await next.init();assert.deepEqual(await next.get(f.e),f.bytes);});
+test('corrupt downloads do not activate a new manifest or leave partial objects',async t=>{const f=await fixture(t);f.fail();await assert.rejects(f.cache.update(),/校验|大小/);assert.equal(f.cache.entries.size,0);assert.deepEqual(await fs.readdir(path.join(f.directory,'objects')),[]);});
+test('corrupt cache is repaired and redownloaded',async t=>{const f=await fixture(t);await fs.writeFile(path.join(f.directory,'objects',f.e.sha256),'bad');assert.equal(await f.cache.repair(),1);assert.deepEqual(await f.cache.get(f.e),f.bytes);});
+test('never handles API, unrelated origins or unrecognized versions',async t=>{const f=await fixture(t);await f.cache.update();for(const url of [ORIGIN+'/api/campaign/state','https://evil.example/'+f.e.path,ORIGIN+'/'+f.e.path+'?v=sha256-'+'0'.repeat(64)])assert.equal(f.cache.entry(url),null);});
+test('rejects unsafe manifest paths and invalid hashes',()=>{for(const p of ['assets/../secret.json','server/private.json','assets/.env','assets/data/test.js'])assert.throws(()=>validateManifest({schemaVersion:1,entries:[{path:p,sha256:'a'.repeat(64),bytes:1}]}));});
+test('a failed new version preserves the previously activated resource set',async t=>{const f=await fixture(t);await f.cache.update();const old=await fs.readFile(path.join(f.directory,'manifest.json'),'utf8');f.manifest.entries=[{...f.e,sha256:'f'.repeat(64)}];f.fail();await assert.rejects(f.cache.update());assert.equal(f.cache.entry(ORIGIN+'/'+f.e.path).sha256,f.e.sha256);assert.equal(await fs.readFile(path.join(f.directory,'manifest.json'),'utf8'),old);});
+test('newly downloaded version hashes remain known after restart without trusting stale unversioned assets',async t=>{const f=await fixture(t);const e={...f.e,path:'assets/data/new-map.json'};f.manifest.entries=[e];await f.cache.update();const next=new ResourceCache({directory:f.directory,seed:f.seed,fetchImpl:()=>{throw Error('offline');}});await next.init();assert.ok(next.entry(ORIGIN+'/'+e.path+'?v=sha256-'+e.sha256));assert.equal(next.entry(ORIGIN+'/'+e.path),null);assert.deepEqual(await next.get(e),f.bytes);});
+test('clearing downloaded resources preserves bundled maps and unrelated files',async t=>{const f=await fixture(t);await f.cache.get(f.e);await fs.writeFile(path.join(f.directory,'objects','unrelated.txt'),'keep');await fs.writeFile(path.join(f.seed,'objects',f.e.sha256),f.bytes);await f.cache.clear();assert.deepEqual(await fs.readdir(path.join(f.directory,'objects')),['unrelated.txt']);assert.deepEqual(await f.cache.get(f.e),f.bytes);assert.equal(f.downloads,1);});
+
+test('bundled card art and versioned code avoid downloads; legacy mutable admin art bypasses manifest',async t=>{
+ const f=await fixture(t);const entries=['assets/player-profiles/球员.webp','assets/player-profiles/admin/old.webp','client/card.js','styles/cards.css'].map(path=>({...f.e,path,core:false}));
+ f.manifest.entries=entries;f.cache.remember(f.manifest);await fs.writeFile(path.join(f.seed,'objects',f.e.sha256),f.bytes);await f.cache.update();
+ for(const e of entries.filter(e=>!e.path.includes('/admin/'))){const query=/\.(js|css)$/.test(e.path)?'?v=sha256-'+e.sha256.slice(0,20):'';const found=f.cache.entry(ORIGIN+'/versus/'+encodeURI(e.path)+query);assert.ok(found);assert.deepEqual(await f.cache.get(found),f.bytes);}
+ assert.equal(f.downloads,0);assert.equal(f.cache.entry(ORIGIN+'/assets/player-profiles/admin/old.webp'),null);
+ assert.equal(f.cache.entry(ORIGIN+'/assets/player-profiles/球员.webp?v=changed'),null);
+});
+test('new content-version scripts download once, survive restart, and change with the version',async t=>{
+ const f=await fixture(t);let count=0;let content=Buffer.from('export const version=1;');f.cache.fetchImpl=async()=>{count++;return new Response(content)};
+ const url=()=>ORIGIN+'/versus/client/new.js?v=sha256-'+digest(content).slice(0,20);
+ const first=f.cache.entry(url());await Promise.all([f.cache.get(first),f.cache.get(first)]);assert.equal(count,1);
+ const next=new ResourceCache({seed:f.seed,directory:f.directory,fetchImpl:()=>{throw Error('offline')}});await next.init();assert.deepEqual(await next.get(next.entry(url())),content);
+ content=Buffer.from('export const version=2;');assert.deepEqual(await f.cache.get(f.cache.entry(url())),content);assert.equal(count,2);
+});
+test('content-version mismatch never poisons the executable cache',async t=>{
+ const f=await fixture(t),entry=f.cache.entry(ORIGIN+'/client/new.js?v=sha256-'+'a'.repeat(20));await assert.rejects(f.cache.get(entry),/校验/);assert.deepEqual(await fs.readdir(path.join(f.directory,'objects')),[]);
+});
+test('query variants, non-versioned code, private paths and malformed URLs bypass custom cache',async t=>{
+ const f=await fixture(t);for(const url of ['/client/new.js','/client/new.js?v=release1','/client/new.js?v=sha256-'+'a'.repeat(20)+'&account=other','/shared/account-import/private.js?v=sha256-'+'a'.repeat(20),'/server.mjs?v=sha256-'+'a'.repeat(20),'/%ZZ'])assert.equal(f.cache.entry(ORIGIN+url),null);
+});
+test('memory cache is bounded and clear/repair evict retained bytes',async t=>{
+ const f=await fixture(t);for(let n=0;n<40;n++)f.cache.retain(String(n),Buffer.alloc(1024*1024));assert.equal(f.cache.memoryBytes,32*1024*1024);assert.equal(f.cache.memory.has('0'),false);
+ await f.cache.get(f.e);await fs.writeFile(path.join(f.directory,'objects',f.e.sha256),'bad');assert.equal(await f.cache.repair(),1);assert.equal(f.cache.memoryBytes,0);await f.cache.get(f.e);await f.cache.clear();assert.equal(f.cache.memoryBytes,0);
+});
+test('repair validates dynamically cached scripts too',async t=>{
+ const f=await fixture(t);await fs.writeFile(path.join(f.directory,'objects','a'.repeat(20)),'wrong code');assert.equal(await f.cache.repair(),1);
+});

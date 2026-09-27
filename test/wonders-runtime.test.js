@@ -73,9 +73,9 @@ test('pack choice count survives migration and theater fans are limited and exac
  const f=fixture();f.activate('sagrada-familia');f.activate('teatro-colon');f.s.playerPacks.addPacks(f.a,'exotic-player-pack',1);const o=f.s.playerPacks.open(f.a,'exotic-player-pack');assert.equal(o.cards.length,4);f.s.playerPacks.migrateAccount(f.a);assert.equal(f.a.inventory.pendingOpening.candidateIds.length,4);
  const before=f.a.resources.fans;for(let i=0;i<6;i++)f.s.wonders.packChosen(f.a,{id:'paid-'+i},{grade:'S'});assert.equal(f.a.resources.fans,before+1000);f.s.wonders.packChosen(f.a,{id:'paid-0'},{grade:'S'});assert.equal(f.a.resources.fans,before+1000);
 });
-test('training adds a point and assigns one within total; capped attributes and unauthorized selection rejected',()=>{
+test('training adds a point and assigns one within total; growth past 99 allowed and unauthorized selection rejected',()=>{
  const f=fixture(),p={attributes:Object.fromEntries(Object.keys(PLAYER_ATTRIBUTE_LABELS).map(k=>[k,50]))};f.activate('colosseum');f.activate('alhambra');
- const m=f.s.wonders.modifiers(f.a),g=f.s.training.gains(p,m.trainingPoints,'passing');assert.equal(Object.values(g).reduce((a,b)=>a+b,0),6);assert.ok(g.passing>=1);p.attributes.passing=99;assert.throws(()=>f.s.training.gains(p,6,'passing'),/上限/);
+ const m=f.s.wonders.modifiers(f.a),g=f.s.training.gains(p,m.trainingPoints,'passing');assert.equal(Object.values(g).reduce((a,b)=>a+b,0),6);assert.ok(g.passing>=1);p.attributes.passing=99;assert.ok(f.s.training.gains(p,6,'passing').passing>=1);
 });
 test('scouting, sponsorship and protection modifiers match the approved effects',()=>{
  const f=fixture();for(const id of ['british-museum','eiffel-tower','versailles-palace','leaning-tower-pisa'])f.activate(id);
@@ -86,7 +86,7 @@ test('sea bonuses apply only to sea travel; deferred hooks exclude wrong systems
  const f=fixture();for(const id of ['belem-tower','brandenburg-gate','acropolis','santiago-bernabeu','la-moneda','maracana'])f.activate(id);
  assert.equal(f.s.wonders.seaTravel(f.a,{durationMs:1000,fitnessCost:10}).durationMs,700);assert.equal(f.s.wonders.seaTravel(f.a,{durationMs:1000,fitnessCost:10}).fitnessCost,7);
  assert.equal(f.s.wonders.researchRequirement(f.a,'formation',100),80);assert.equal(f.s.wonders.researchRequirement(f.a,'enhancement',100),100);assert.equal(f.s.wonders.recurringExpense(f.a,'wages',100),80);assert.equal(f.s.wonders.recurringExpense(f.a,'purchase',100),100);
- assert.equal(f.s.wonders.ticketIncome(f.a,{kind:'league',homeAccountId:f.a.id},100),150);assert.equal(f.s.wonders.ticketIncome(f.a,{kind:'challenge',homeAccountId:f.a.id},100),100);assert.equal(f.s.wonders.modifiers(f.a).neutralAttacksBonus,1);
+ assert.equal(f.s.wonders.ticketIncome(f.a,{kind:'league',homeAccountId:f.a.id},100),150);assert.equal(f.s.wonders.ticketIncome(f.a,{kind:'challenge',homeAccountId:f.a.id},100),100);assert.equal(f.s.wonders.modifiers(f.a).neutralAttacksBonus,1);assert.equal(f.s.challenges.conquestState(f.a).limit,9);
  const before=f.a.resources.fans;for(let i=0;i<4;i++)f.s.wonders.homeMatchCompleted(f.a,{id:'home-'+i,kind:'league',homeAccountId:f.a.id,result:i===0?'loss':'win'});assert.equal(f.a.resources.fans,before+1000);f.s.wonders.homeMatchCompleted(f.a,{id:'home-1',kind:'league',homeAccountId:f.a.id,result:'win'});assert.equal(f.a.resources.fans,before+1000);
 });
 test('challenge recovery includes real starters and substitutes, excludes injured and unused bench, and never repeats',()=>{

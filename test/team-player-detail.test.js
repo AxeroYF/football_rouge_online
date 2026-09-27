@@ -33,7 +33,7 @@ test("squad management uses a continuous position list without a card view", () 
   assert.equal((markup.match(/team-position-empty/g) ?? []).length,9);
   assert.match(markup,/<h3>LW<\/h3><\/div><div class="team-position-empty">暂无球员<\/div>/);
   assert.doesNotMatch(markup,/team-position-group|team-position-players|<h3>GK<\/h3><b>/);
-  assert.match(markup,/<div class="team-position-row"[^>]*><h3>ST<\/h3><\/div><div class="team-player-list-row(?: [^"]+)?">/);
+  assert.match(markup,/<div class="team-position-row"[^>]*><h3>ST<\/h3><\/div><div data-ui-key="team-player-st" class="team-player-list-row(?: [^"]+)?">/);
   assert.match(markup,/中锋<\/strong><em>Striker<\/em>/);
   assert.equal((markup.match(/data-team-squad-player=/g) ?? []).length,2);
   assert.match(markup,/data-team-squad-player="st"[^>]*>[\s\S]*?<option value="expedition" selected>远征<\/option>/);

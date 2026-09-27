@@ -165,3 +165,5 @@
 
 .broadcast-report-legs{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.broadcast-report-legs [aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
 #battle-result-details{display:block;margin:0 auto 12px}#battle-result-details[hidden]{display:none}
+
+#campaign-defence-notices{display:grid;gap:8px}#campaign-defence-notices[hidden]{display:none}.defence-alert{border:2px solid #f56a58;background:linear-gradient(125deg,#541f20,#251b15)}.defence-alert .campaign-live-kicker{color:#ffb5a2;font-weight:800}.defence-report{text-align:left}

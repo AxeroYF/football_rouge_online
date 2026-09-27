@@ -1,4 +1,5 @@
 // Shared by movement previews and authoritative server settlement.
+export const movementOilRequired=(distanceKm,kind='expedition')=>Math.max(1,Math.ceil(distanceKm/250))*(kind==='scout'?1:2);
 export function movementUseOil(value = true) {
   if (typeof value !== 'boolean') throw Object.assign(new Error('移动用油选项无效'), {statusCode:400});
   return value;

@@ -103,6 +103,11 @@ export async function createCampaignThreeLayer({ map, element, territories, coas
     tileTimer = setTimeout(updateTiles, delay);
   }
   function draw() {
+    // Leaflet commits mapPane movement inside its animation-frame callback.
+    // Camera-driven drawing must finish in that callback too: queueing another
+    // RAF leaves terrain one frame behind borders, markers and the fog canvas.
+    // Cancel any asset-triggered redraw already queued for the same view.
+    if (frameId !== null) cancelAnimationFrame(frameId);
     frameId = null;
     if (suspended || disposed || contextLost || document.hidden || !renderer) return;
     const size = map.getSize();
@@ -142,7 +147,7 @@ export async function createCampaignThreeLayer({ map, element, territories, coas
     if (disposed) return;
     disposed = true;
     events.abort();
-    map.off("move zoom resize viewreset", invalidate);
+    map.off("move resize viewreset", draw);
     map.off("unload", destroy);
     observer?.disconnect();
     if (frameId !== null) cancelAnimationFrame(frameId);
@@ -191,7 +196,8 @@ export async function createCampaignThreeLayer({ map, element, territories, coas
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.shadowMap.autoUpdate = false;
     element.classList.add("has-three-terrain");
-    map.on("move zoom resize viewreset", invalidate);
+    // Leaflet emits move after zoom has committed; do not draw twice for zoom.
+    map.on("move resize viewreset", draw);
     map.on("unload", destroy);
     observer = new ResizeObserver(invalidate);
     observer.observe(element);

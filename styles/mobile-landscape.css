@@ -1,6 +1,6 @@
 /* Short landscape screens share this layout in Chrome and Android WebView. */
 .mobile-only{display:none!important}
-@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
  html,body{height:100%;overflow:clip;overscroll-behavior:none}
  body{position:fixed;inset:0;width:100%}
  .mobile-only{display:inline-flex!important;align-items:center;justify-content:center;gap:6px}
@@ -80,7 +80,7 @@
  .toast{max-width:calc(100% - 24px);bottom:8px}
 }
 
-@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
  html.is-compact-landscape #campaign-tactics .league-squad-page{height:100%!important;display:flex;flex-direction:column;overflow:hidden!important}
  .mobile-tactics-nav{flex:none;min-height:40px;gap:6px;padding:2px 6px;border-radius:8px;background:#14271f}
  .mobile-tactics-nav button{height:36px;padding:0 12px;border:1px solid #506953;border-radius:6px;background:transparent;color:#cedccb;font-family:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
@@ -124,7 +124,7 @@
  .league-mobile-duty-backdrop{padding:6px;align-items:center}.league-mobile-duty-sheet{max-height:calc(var(--mobile-viewport-height,100dvh) - 12px);overflow:auto}
 }
 
-@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
  .team-management-shell>header .mobile-filter-toggle{width:auto!important;min-width:68px;height:36px!important;padding:6px 12px!important;font-size:13px!important;line-height:1.2;white-space:nowrap;margin-left:auto!important}
  .team-management-toolbar .team-search{max-width:300px}.team-squad-summary{flex:none}.team-squad-summary>span{min-width:92px!important;white-space:nowrap;flex:none}.team-squad-summary strong{white-space:nowrap;font-size:15px!important}.team-squad-limit{padding:4px 12px;font-size:12px}
  .team-player-list-table{min-width:0;width:100%;padding:0 8px 12px}.team-list-columns,.team-player-list-row{grid-template-columns:minmax(140px,1.4fr) 110px 88px 94px minmax(90px,1fr);gap:10px;padding-left:8px;padding-right:8px}
@@ -137,7 +137,7 @@
  #scouting-window.is-scout-center .scouting-content{gap:8px}#scouting-window .scout-roster-heading h3{font-size:14px;margin:0}#scouting-window .scout-unit-roster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#scouting-window .scout-unit-slot{min-height:64px}
 }
 
-@media(max-width:1100px) and (max-height:600px) and (orientation:landscape){
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
  html.is-compact-landscape .training-window .training-header,html.is-compact-landscape .scouting-window .scouting-header{min-height:44px;height:44px;padding:4px 12px}
  html.is-compact-landscape .training-window .training-header h2,html.is-compact-landscape .scouting-window .scouting-header h2{font-size:18px}
  html.is-compact-landscape .training-content{gap:6px;padding:8px 12px}
@@ -147,4 +147,76 @@
  html.is-compact-landscape #campaign-tactics .league-tactics-detail-title>.league-tactical-node-controls{width:auto;grid-column:auto;transform:none}
  html.is-compact-landscape #campaign-tactics .league-ai-training-actions{grid-column:1/-1;display:flex;justify-content:flex-end;margin:0}
  html.is-compact-landscape #campaign-tactics .league-tactics-detail-scroll{overflow:visible;max-height:none}
+}
+
+/* Android v3 and current campaign features: preserve height, keep actions reachable. */
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
+ .coalition-window,.coalition-window.coalition-action-window,.airport-window{
+  inset:48px 4px auto!important;transform:none;width:auto;max-width:none;
+  height:calc(var(--mobile-viewport-height,100dvh) - 52px);max-height:calc(var(--mobile-viewport-height,100dvh) - 52px);
+  padding:0;border-radius:8px;display:flex;flex-direction:column;overflow:hidden;font-size:14px;
+ }
+ .coalition-window[hidden],.airport-window[hidden]{display:none}
+ .coalition-window>header,.airport-window>header{padding:4px 12px;min-height:44px;flex:none;gap:8px}
+ .coalition-window>header small{display:none}.coalition-window h2,.airport-window h2{font-size:18px;margin:0}
+ .coalition-window button,.coalition-window select,.coalition-window input,.airport-window button,.airport-window select{min-height:40px;padding:6px 10px;font-size:14px}
+ .coalition-window>nav{padding:4px 10px;gap:6px;flex-wrap:nowrap;overflow-x:auto;flex:none}
+ .coalition-window>nav button{flex:1;white-space:nowrap}
+ .coalition-window>.coalition-status{padding:4px 12px;gap:4px 12px;flex:none;font-size:12px;line-height:1.4}
+ .coalition-status span{margin:0}.coalition-window h3{margin:6px 0;font-size:15px}
+ .coalition-window main,.airport-window main,.coalition-window>section{overflow:auto;min-height:0;flex:1;overscroll-behavior:contain}
+ .coalition-window section{padding:6px 10px}.coalition-window p{margin:4px 0 8px;line-height:1.45}
+ .coalition-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .coalition-buttons{padding:4px 0;gap:6px}.coalition-action-window>footer.coalition-buttons{padding:4px 10px;flex:none}
+ .coalition-quote{margin:8px 0}.coalition-shares{padding:4px 0;gap:8px}
+ .coalition-window table{font-size:12px;table-layout:fixed;overflow-wrap:anywhere}.coalition-window td,.coalition-window th{padding:6px 4px}
+ .social-warehouse-filters{gap:6px;margin:6px 0}.social-warehouse-filters>input{flex:1 1 140px;min-width:100px}
+ .social-warehouse-filters select{min-width:72px;flex:1}.social-warehouse-filters label{min-height:36px}
+ .social-warehouse-count{margin:4px 0}.social-warehouse-scroll{max-height:none;overflow:visible}
+ .social-warehouse-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;padding:2px}
+ .social-warehouse-card{padding:5px;gap:4px}.social-card-action button{width:100%;min-height:40px}
+ .airport-window main{padding:6px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;align-content:start}
+ .airport-window main>p,.airport-window .airport-ticket,.airport-window main>button{grid-column:1/-1}
+ .airport-window label{margin:0;gap:4px;min-width:0}.airport-window select{width:100%;min-width:0}
+ .airport-ticket{margin:0;padding:8px;gap:4px}.airport-ticket strong{font-size:20px}
+ .airport-window main>button{position:sticky;bottom:0;min-height:44px}
+ .pvp-attack-confirmation{padding:6px!important;backdrop-filter:blur(4px)}
+ .pvp-attack-confirmation .small-window__dialog{max-width:720px!important;height:100%!important;max-height:100%;padding:10px 14px!important;display:flex;flex-direction:column;overflow:hidden}
+ .pvp-attack-confirmation h2{font-size:18px;margin:0 0 6px;flex:none}
+ .pvp-confirmation-copy{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;font-size:14px;line-height:1.5}
+ .pvp-confirmation-copy p{margin:6px 0}.pvp-confirmation-copy ul{margin:6px 0;padding-left:22px}
+ .pvp-attack-confirmation footer{display:flex;justify-content:flex-end;gap:10px;padding-top:8px;flex:none}
+ .pvp-attack-confirmation footer button{min-height:44px;min-width:100px;padding:8px 12px;border:1px solid #68785f;border-radius:7px;background:#223b30;color:#efe7cd;font:inherit}
+ .pvp-attack-confirmation [data-pvp-confirm]{background:#e3c569;color:#17251d;font-weight:700}
+ .primary-nav .nav-item[hidden]{display:none!important}
+ .research-header,.card-management-header{flex-wrap:wrap}.research-body{min-height:0}
+ .formation-editor-columns{grid-template-columns:minmax(200px,.8fr) minmax(260px,1.2fr);gap:14px;align-items:start}
+ .research-formation-board{width:100%;min-width:0;max-width:260px}
+ .formation-editor-header{gap:8px;margin-bottom:10px}.formation-editor-header input{font-size:18px}
+ .formation-directions-panel h2,.formation-detail-heading h3{font-size:18px}.formation-direction-group>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .formation-direction-group button{min-height:40px;font-size:13px;padding:6px}.formation-research-detail{padding-top:10px;margin-top:10px}
+}
+/* Keyboard-sized landscape: only the scroll area shrinks; focused controls remain usable. */
+@media(max-width:1280px) and (max-height:260px) and (orientation:landscape){
+ #campaign-entry .auth-identity{display:none}
+ #campaign-entry .auth-panel{grid-template-columns:1fr;max-width:560px;padding:8px 12px;gap:0}
+ #campaign-entry,#campaign-entry.is-auth{padding:4px 12px;overflow:auto}
+ .team-management-shell.mobile-filters-open .team-management-toolbar{max-height:80px}
+ .coalition-window>.coalition-status{display:none}
+ .pvp-attack-confirmation h2{font-size:16px}.pvp-attack-confirmation footer{padding-top:4px}
+}
+
+.coalition-roster-tabs,.social-warehouse-expand{display:none}
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
+ .coalition-roster-tabs{display:flex;gap:6px;padding:4px 10px;position:sticky;top:0;background:#14291f;z-index:2}
+ .coalition-roster-tabs button{flex:1;min-height:36px}
+ .coalition-roster-tabs [aria-pressed=true]{background:#dfbd67;color:#17251d}
+ .coalition-roster-workspace .coalition-columns{display:block}
+ .coalition-roster-workspace:not([data-roster-pane=allies])>.coalition-loans,
+ .coalition-roster-workspace:not([data-roster-pane=lineup]) .coalition-lineup,
+ .coalition-roster-workspace:not([data-roster-pane=mine]) .coalition-mine{display:none}
+ .coalition-mine>h3,.coalition-mine>p,.coalition-lineup>h3{display:none}
+ .social-warehouse-filters .social-warehouse-expand{display:block;flex:none}
+ .social-warehouse-filters:not(.is-expanded)>:not([data-warehouse-filter=search]):not([data-warehouse-expand]){display:none!important}
+ .coalition-window main{padding:0}
 }

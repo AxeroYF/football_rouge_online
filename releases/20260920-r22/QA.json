@@ -1,0 +1,79 @@
+{
+  "passed": true,
+  "version": "20260920-r22",
+  "checks": [
+    "Complete 20260920-r16 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r22 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 23,
+  "newFiles": 0,
+  "requiredBaseFiles": 1216,
+  "imports": 138,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "regressionTests": 139,
+  "browser": {
+    "checks": [
+      {
+        "name": "old world news absent",
+        "pass": true
+      },
+      {
+        "name": "read persisted",
+        "pass": true
+      },
+      {
+        "name": "news stays dismissed after reload",
+        "pass": true
+      },
+      {
+        "name": "upgrade same-name contiguous",
+        "pass": true
+      },
+      {
+        "name": "upgrade upgrades descending",
+        "pass": true
+      },
+      {
+        "name": "upgrade all card instances retained",
+        "pass": true
+      },
+      {
+        "name": "overall same-name contiguous",
+        "pass": true
+      },
+      {
+        "name": "overall upgrades descending",
+        "pass": true
+      },
+      {
+        "name": "overall all card instances retained",
+        "pass": true
+      },
+      {
+        "name": "name same-name contiguous",
+        "pass": true
+      },
+      {
+        "name": "name upgrades descending",
+        "pass": true
+      },
+      {
+        "name": "name all card instances retained",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "priorCumulativeQA": "releases/20260920-r21/QA.json"
+}

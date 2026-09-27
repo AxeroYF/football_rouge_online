@@ -1,3 +1,6 @@
+import {restoreArchivedFields} from '../infrastructure/history-archive.mjs';
+import {receipt} from './receipt-retention.mjs';
+import {territoryTradeIds,territoryTradeContext,territoryTradeSelection,transferTradedTerritory} from './territory-trade.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import {publishWorldNews,publicWorldNews} from './world-news.mjs';
 import { normalizeExpeditionPiece } from '../domain/expedition-piece.mjs';
@@ -33,9 +36,10 @@ export class DiplomacyService {
  relationship(a,b){return playerRelationship(this.c.world,a,b) ?? {players:[a,b].sort(),state:'neutral',locations:{},condemnations:{}};}
  pair(a,b){return this.data().relationships[relationKey(a,b)] ??= structuredClone(this.relationship(a,b));}
  other(account,id){const other=this.c.accounts.get(id);if(!this.c.world||!account.setupComplete||!account.homeTerritoryId)fail('请先完成建队并选择总部');if(!other||other.id===account.id||!other.setupComplete||!other.homeTerritoryId)fail('请选择已建立俱乐部的其他玩家',404);return other;}
- transaction(accounts,action) {
-  const snapshots=accounts.map(a=>[a,structuredClone(a)]),before=clone(this.data()),newsBefore=structuredClone(this.c.world.news);
-  try{const result=action();this.c.save();return result;}catch(error){for(const [a,s]of snapshots)restore(a,s);this.c.world.diplomacy=before;if(newsBefore===undefined)delete this.c.world.news;else this.c.world.news=newsBefore;for(const match of Object.values(before.matches))if(!match.battle)restoreCampaignLiveLeg(match.leg);throw error;}
+ transaction(accounts,action,territoryIds=[],persistOnly=false) {
+  const lands=territoryIds.map(id=>[id,structuredClone(this.c.world.territories[id])]),players=territoryIds.length?structuredClone(this.c.world.players):null,revision=this.c.world.revision;
+  const snapshots=accounts.map(a=>[a,structuredClone(a)]),before={...clone({...this.data(),matches:undefined}),matches:{...this.data().matches}},newsBefore=structuredClone(this.c.world.news);
+  try{const result=action();if(persistOnly&&this.c.persist)this.c.persist();else this.c.save();return result;}catch(error){for(const [id,t]of lands)this.c.world.territories[id]=t;if(players){this.c.world.players=players;this.c.world.revision=revision;}for(const [a,s]of snapshots)restore(a,s);this.c.world.diplomacy=before;if(newsBefore===undefined)delete this.c.world.news;else this.c.world.news=newsBefore;for(const match of Object.values(before.matches))if(!match.battle)restoreCampaignLiveLeg(match.leg);throw error;}
  }
  event(a,b,type){const events=this.data().events;events.push({id:crypto.randomUUID(),from:a,to:b,type,createdAt:this.c.now()});if(events.length>1000)events.splice(0,events.length-1000);}
  status(request){return request.status==='pending'&&request.expiresAt<=this.c.now()?'expired':request.status;}
@@ -45,7 +49,7 @@ export class DiplomacyService {
   const pending=Object.values(this.data().requests).filter(r=>this.status(r)==='pending'&&r.to===account.id);
   const readIds=new Set(account.interactionReadEventIds??[]);
   const events=this.data().events.filter(e=>e.to===account.id&&e.createdAt>(account.interactionRead?.[e.from]??0)&&!readIds.has(e.id)&&!['location','friendship','alliance','conquest-access','trade','friendly','peace'].includes(e.type));
-  return {news:publicWorldNews(this.c.world,account),requests:pending.map(r=>this.publicRequest(r)).sort((a,b)=>b.createdAt-a.createdAt),events:[...events].reverse(),players:[...this.c.accounts.values()].filter(a=>a.setupComplete).map(a=>({id:a.id,nickname:a.nickname,teamName:name(a),color:a.mapColor,ready:Boolean(a.setupComplete&&a.homeTerritoryId),self:a.id===account.id,state:a.id===account.id?'self':playersAllied(this.c.world,account.id,a.id)?'alliance':this.relationship(account.id,a.id).state,pending:pending.filter(r=>r.from===a.id).length,unread:events.filter(e=>e.from===a.id).length})).sort((a,b)=>Number(b.self)-Number(a.self)||b.pending-a.pending||a.teamName.localeCompare(b.teamName,'zh-CN')),incomingCount:pending.length,activeMatchId:this.active(account)?.id??null};
+  return {news:publicWorldNews(this.c.world,account,this.c.now()),requests:pending.map(r=>this.publicRequest(r)).sort((a,b)=>b.createdAt-a.createdAt),events:[...events].reverse(),players:[...this.c.accounts.values()].filter(a=>a.setupComplete).map(a=>({id:a.id,nickname:a.nickname,teamName:name(a),color:a.mapColor,ready:Boolean(a.setupComplete&&a.homeTerritoryId),self:a.id===account.id,state:a.id===account.id?'self':playersAllied(this.c.world,account.id,a.id)?'alliance':this.relationship(account.id,a.id).state,pending:pending.filter(r=>r.from===a.id).length,unread:events.filter(e=>e.from===a.id).length})).sort((a,b)=>Number(b.self)-Number(a.self)||b.pending-a.pending||a.teamName.localeCompare(b.teamName,'zh-CN')),incomingCount:pending.length,activeMatchId:this.active(account)?.id??null};
  }
  publicRequest(r){const payload=r.payload?{...r.payload}:null;if(payload){delete payload.giveSignatures;delete payload.takeSignatures;}return {...r,payload,status:this.status(r)};}
  publicSquad(account){
@@ -72,19 +76,23 @@ export class DiplomacyService {
   const amount=v=>{if(!Number.isSafeInteger(v)||v<0||v>RULES.maxTradeGold)fail('交易金币必须是有效的非负整数',400);return v;};
   const oilAmount=v=>{if(!Number.isSafeInteger(v)||v<0||v>RULES.maxTradeOil)fail('交易石油必须是有效的非负整数',400);return v;};
   const ids=v=>{if(!Array.isArray(v)||v.length>RULES.maxTradeCards||v.some(id=>typeof id!=='string')||new Set(v).size!==v.length)fail('每方最多选择 10 张不同球员卡',400);return [...v].sort();};
-  const terms={giveOil:oilAmount(input.giveOil??0),takeOil:oilAmount(input.takeOil??0),giveGold:amount(input.giveGold??0),takeGold:amount(input.takeGold??0),giveCardIds:ids(input.giveCardIds??[]),takeCardIds:ids(input.takeCardIds??[])};
-  if(!terms.giveGold&&!terms.takeGold&&!terms.giveOil&&!terms.takeOil&&!terms.giveCardIds.length&&!terms.takeCardIds.length)fail('请填写交易内容',400);
+  const terms={giveTerritoryIds:territoryTradeIds(input.giveTerritoryIds),takeTerritoryIds:territoryTradeIds(input.takeTerritoryIds),giveOil:oilAmount(input.giveOil??0),takeOil:oilAmount(input.takeOil??0),giveGold:amount(input.giveGold??0),takeGold:amount(input.takeGold??0),giveCardIds:ids(input.giveCardIds??[]),takeCardIds:ids(input.takeCardIds??[])};
+  if(!terms.giveGold&&!terms.takeGold&&!terms.giveOil&&!terms.takeOil&&!terms.giveCardIds.length&&!terms.takeCardIds.length&&!terms.giveTerritoryIds.length&&!terms.takeTerritoryIds.length)fail('请填写交易内容',400);
   if(input.mode!=null&&!['trade','gift'].includes(input.mode))fail('交易模式无效',400);
-  if(input.mode==='gift'&&(terms.takeGold||terms.takeOil||terms.takeCardIds.length))fail('赠送不能要求对方付出资源或球员',400);
-  const kind=terms.takeGold||terms.takeOil||terms.takeCardIds.length?'trade':'gift';
+  if(input.mode==='gift'&&(terms.takeGold||terms.takeOil||terms.takeCardIds.length||terms.takeTerritoryIds.length))fail('赠送不能要求对方付出资源或球员',400);
+  const kind=terms.takeGold||terms.takeOil||terms.takeCardIds.length||terms.takeTerritoryIds.length?'trade':'gift';
   if((this.c.oil?.view(account).balance??account.oil?.balance??0)<terms.giveOil||(this.c.oil?.view(other).balance??other.oil?.balance??0)<terms.takeOil)fail('一方石油不足，无法发起交易');
   const give=this.selectCards(account,terms.giveCardIds),take=this.selectCards(other,terms.takeCardIds);
   if(account.gold<terms.giveGold||other.gold<terms.takeGold)fail('一方金币不足，无法发起交易');
-  return {...terms,kind,giveCards:give.map(createPlayerCardViewModel),takeCards:take.map(createPlayerCardViewModel),giveSignatures:give.map(cardSignature),takeSignatures:take.map(cardSignature)};
+  const context=terms.giveTerritoryIds.length||terms.takeTerritoryIds.length?territoryTradeContext(this.c):{wars:new Set(),busy:new Set()},giveTerritories=territoryTradeSelection(this.c,account,terms.giveTerritoryIds,context),takeTerritories=territoryTradeSelection(this.c,other,terms.takeTerritoryIds,context);
+  if((giveTerritories.length||takeTerritories.length)&&(context.wars.has(account.id)||context.wars.has(other.id)))fail('交战玩家暂不能交易地块');
+  return {...terms,kind,giveTerritories,takeTerritories,giveCards:give.map(createPlayerCardViewModel),takeCards:take.map(createPlayerCardViewModel),giveSignatures:give.map(cardSignature),takeSignatures:take.map(cardSignature)};
  }
  selectCards(account,ids){return ids.length?this.c.cardManagement.select(account,ids):[];}
  executeTrade(request) {
   const from=this.c.accounts.get(request.from),to=this.c.accounts.get(request.to),p=request.payload;
+  const landIds=[...(p.giveTerritoryIds??[]),...(p.takeTerritoryIds??[])];
+  if(landIds.length){const context=territoryTradeContext(this.c);if(context.wars.has(from.id)||context.wars.has(to.id))fail('交战玩家暂不能交易地块');for(const [side,owner]of [['give',from],['take',to]]){const current=territoryTradeSelection(this.c,owner,p[side+'TerritoryIds']??[],context);if(JSON.stringify(current)!==JSON.stringify(p[side+'Territories']??[]))fail('交易地块已变化，请重新报价');}}
   const give=this.selectCards(from,p.giveCardIds),take=this.selectCards(to,p.takeCardIds);
   if(JSON.stringify(give.map(cardSignature))!==JSON.stringify(p.giveSignatures)||JSON.stringify(take.map(cardSignature))!==JSON.stringify(p.takeSignatures))fail('交易球员已发生变化，请重新发起报价');
   if(from.gold<p.giveGold||to.gold<p.takeGold)fail('一方金币不足，交易尚未完成');
@@ -103,6 +111,8 @@ export class DiplomacyService {
   if(p.takeGold)this.c.economy.adjust(from,p.takeGold,'diplomacy-trade');
   if(fromOil){fromOil.balance+=takeOil-giveOil;toOil.balance+=giveOil-takeOil;}
   this.c.cardManagement.remove(from,new Set(p.giveCardIds));this.c.cardManagement.remove(to,new Set(p.takeCardIds));
+  for(const id of p.giveTerritoryIds??[])transferTradedTerritory(this.c,from,to,id);
+  for(const id of p.takeTerritoryIds??[])transferTradedTerritory(this.c,to,from,id);
   giveCopies.forEach(p=>this.c.cardManagement.receive(to,p));takeCopies.forEach(p=>this.c.cardManagement.receive(from,p));
  }
  beginFriendly(from,to) {
@@ -165,7 +175,7 @@ export class DiplomacyService {
   if(!['read','read-news'].includes(action))fail('已读操作无效',400);
   if(!/^[a-zA-Z0-9:_-]{8,128}$/.test(String(requestId??'')))fail('请求标识无效',400);
   if(!account.setupComplete)fail('请先完成建队');
-  const signature=JSON.stringify([targetId,action,null,null,eventId??null]),key=JSON.stringify([account.id,requestId]),prior=this.data().receipts[key];
+  const signature=JSON.stringify([targetId,action,null,null,eventId??null]),key=JSON.stringify([account.id,requestId]),prior=receipt(this.data(),'receipts',requestId,this.c.now(),key);
   if(prior){if(prior.signature!==signature)fail('请求标识已用于其他操作');return prior.result;}
   if(action==='read-news'){
    if(!(this.c.world.news??[]).some(e=>e.id===eventId))fail('动态不存在',404);
@@ -178,7 +188,7 @@ export class DiplomacyService {
    if(action==='read-news')account.worldNewsReadIds=[...new Set([...(account.worldNewsReadIds??[]),eventId])].slice(-200);
    else if(eventId)account.interactionReadEventIds=[...new Set([...(account.interactionReadEventIds??[]),eventId])].slice(-1000);
    else {account.interactionRead??={};account.interactionRead[targetId]=this.c.now();}
-   const result={};this.data().receipts[key]={signature,result};
+   const result={};this.data().receipts[key]={signature,result,recordedAt:this.c.now()};
    if(this.c.persist)this.c.persist();else this.c.save();
    return result;
   }catch(error){for(const k of fields){if(before[k]===undefined)delete account[k];else account[k]=before[k];}delete this.data().receipts[key];throw error;}
@@ -188,11 +198,14 @@ export class DiplomacyService {
   const {targetId,action,requestId}=input,other=this.other(account,targetId);
   if(!/^[a-zA-Z0-9:_-]{8,128}$/.test(String(requestId??'')))fail('请求标识无效',400);
   if(!['read-news','conquest-access','revoke-conquest-access','location','friendship','alliance','leave-alliance','condemn','withdraw-condemnation','trade','friendly','war','peace','revoke-location','accept','reject','cancel','read'].includes(action))fail('互动方式不存在',400);
-  const signature=JSON.stringify([targetId,action,input.proposalId??null,input.trade??null,input.eventId??null]),key=JSON.stringify([account.id,requestId]),prior=this.data().receipts[key];
+  const signature=JSON.stringify([targetId,action,input.proposalId??null,input.trade??null,input.eventId??null]),key=JSON.stringify([account.id,requestId]),prior=receipt(this.data(),'receipts',requestId,this.c.now(),key);
   if(prior){if(prior.signature!==signature)fail('请求标识已用于其他操作');return prior.result;}
   // Settle accrued income and factory fuel before ownership of the resources changes.
-  if(action==='trade'||(action==='accept'&&this.data().requests[input.proposalId]?.type==='trade'))this.c.save();
-  return this.transaction([...this.c.accounts.values()],()=>{
+  if((action==='trade'&&(!this.c.economyDue||this.c.economyDue(this.c.now())))||(action==='accept'&&this.data().requests[input.proposalId]?.type==='trade'))this.c.save();
+  const tradePayload=action==='accept'?this.data().requests[input.proposalId]?.payload:null;
+  const territoryIds=[...new Set([...(tradePayload?.giveTerritoryIds??[]),...(tradePayload?.takeTerritoryIds??[])])];
+  const scoped=action==='trade'||(['accept','reject','cancel'].includes(action)&&this.data().requests[input.proposalId]?.type==='trade');
+  return this.transaction(scoped?[account,other]:[...this.c.accounts.values()],()=>{
    const relation=this.pair(account.id,targetId);let result={};
    if(['accept','reject','cancel'].includes(action)) {
     const request=this.data().requests[input.proposalId];
@@ -240,25 +253,26 @@ export class DiplomacyService {
     const id='interaction:'+crypto.randomUUID();this.data().requests[id]={id,from:account.id,to:targetId,type:action,status:'pending',payload,createdAt:this.c.now(),expiresAt:this.c.now()+RULES.requestLifetimeMs};
     result.proposalId=id;this.event(account.id,targetId,action);
    }
-   relation.updatedAt=this.c.now();this.data().receipts[key]={signature,result};return result;
-  });
+   relation.updatedAt=this.c.now();this.data().receipts[key]={signature,result,recordedAt:this.c.now()};return result;
+  },territoryIds,action==='trade');
  }
  advance(now=this.c.now(),{maximumMatches=1,maximumChainsPerMatch=1}={}) {
   const active=Object.values(this.data().matches).filter(m=>!m.battle);let changed=false;
   for(let i=0;i<Math.min(maximumMatches,active.length);i++) {
-   const match=active[(this.cursor+i)%active.length],before=match.leg.match.nextChainIndex;
+   let match=active[(this.cursor+i)%active.length];const before=match.leg.match.nextChainIndex;
    advanceCampaignLiveLeg(match.leg,now,{maximumChains:maximumChainsPerMatch});changed=changed||before!==match.leg.match.nextChainIndex;
    if(match.leg.match.finished)this.transaction([],()=>{
+    match={...match,leg:clone(match.leg)};restoreCampaignLiveLeg(match.leg);this.data().matches[match.id]=match;
     advanceCampaignLiveLeg(match.leg,now,{maximumChains:0});
     const broadcast=publicCampaignLiveLeg(match.leg);
     match.battle={id:match.id,challengeId:match.id,format:'friendly-single',outcome:match.leg.match.score[0]===match.leg.match.score[1]?'draw':match.leg.match.score[0]>match.leg.match.score[1]?'win':'loss',score:[...match.leg.match.score],captured:false,settledAt:now,teams:[{name:match.leg.home.name},{name:match.leg.away.name}],broadcasts:[broadcast]};
-    this.event(match.from,match.to,'friendly-finished');changed=true;
+    delete match.leg;this.event(match.from,match.to,'friendly-finished');changed=true;
    });
   }
   this.cursor=(this.cursor+maximumMatches)%Math.max(1,active.length);return changed;
  }
  snapshot(account,id) {
   const match=this.data().matches[id];if(!match||![match.from,match.to].includes(account.id))fail('友谊赛不存在或无权查看',404);
-  return match.battle?{completed:true,challenge:null,live:null,battle:match.battle}:{completed:false,challenge:{id:match.id,phase:'first-leg',format:'friendly-single'},live:{key:match.id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(match.leg)},battle:null};
+  return match.battle?{completed:true,challenge:null,live:null,battle:restoreArchivedFields(match.battle)}:{completed:false,challenge:{id:match.id,phase:'first-leg',format:'friendly-single'},live:{key:match.id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(match.leg)},battle:null};
  }
 }

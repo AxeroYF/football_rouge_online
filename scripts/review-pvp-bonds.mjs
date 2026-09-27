@@ -1,0 +1,17 @@
+import fs from 'node:fs';import http from 'node:http';import assert from 'node:assert/strict';import {createRequire} from 'node:module';import {createStaticHandler} from '../server/http/static-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const serve=createStaticHandler(process.cwd()),styles=fs.readFileSync('index.html','utf8').match(/<link[^>]+rel="stylesheet"[^>]*>/g).join('');
+const server=http.createServer((req,res)=>{if(req.url==='/review'){res.setHeader('content-type','text/html;charset=utf-8');res.end(`<html><head>${styles}</head><body><div id="campaign-notifications"><section id="campaign-defence-notices"></section></div></body></html>`);}else serve(req,res);});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];page.on('pageerror',e=>errors.push(e.message));fs.mkdirSync('outputs/pvp-review',{recursive:true});
+try{
+ await page.goto(`http://127.0.0.1:${server.address().port}/review`);
+ await page.evaluate(async()=>{window.confirmPvpAttack=(await import('/client/challenge/pvp-confirmation.js')).confirmPvpAttack;window.confirmed=null;confirmPvpAttack({}).then(v=>confirmed=v);});
+ await page.locator('[data-pvp-confirm]').waitFor();assert.match(await page.locator('.pvp-attack-confirmation').innerText(),/30,000/);await page.locator('[data-small-window-close]').click();assert.equal(await page.evaluate(()=>confirmed),false);
+ await page.evaluate(()=>{confirmed=null;confirmPvpAttack({shares:[{name:'盟友甲',amount:15000},{name:'盟友乙',amount:15000}]}).then(v=>confirmed=v);});
+ assert.equal(await page.locator('.pvp-attack-confirmation li').count(),2);await page.screenshot({path:'outputs/pvp-review/coalition-confirmation.png'});await page.locator('[data-pvp-confirm]').click();assert.equal(await page.evaluate(()=>confirmed),true);
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{confirmPvpAttack({}).then(v=>confirmed=v);});
+ assert.ok(await page.locator('[data-pvp-confirm]').isVisible());assert.ok(await page.locator('[data-small-window-dialog]').evaluate(el=>el.getBoundingClientRect().right<=innerWidth));await page.keyboard.press('Escape');assert.equal(await page.locator('.pvp-attack-confirmation').count(),0);
+ await page.evaluate(async()=>{const {createCampaignStore}=await import('/client/core/campaign-store.js'),{createDefenceNotifications}=await import('/client/challenge/defence-notifications.js');window.store=createCampaignStore({playerId:'a',pvpNotices:[{id:'1',text:'进攻失败，损失本次保证金 15000 金币，已转给防守方；休整20分钟。',createdAt:Date.now()},{id:'2',text:'防守成功，收到进攻方保证金 30000 金币。',createdAt:Date.now()}]});createDefenceNotifications({root:document.querySelector('#campaign-defence-notices'),getState:store.getState,store,request:()=>{},territoryName:id=>id,showToast:()=>{},showBroadcast:()=>{}});});
+ assert.equal(await page.locator('#campaign-defence-notices article').count(),2);assert.match(await page.locator('#campaign-defence-notices').innerText(),/30000/);assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({cancel:true,confirm:true,coalitionShares:true,mobile:true,escape:true,notices:true,errors}));
+}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

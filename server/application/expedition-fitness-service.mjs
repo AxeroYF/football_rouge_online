@@ -1,3 +1,4 @@
+import {leagueLiveForAccount} from './daily-league-service.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import {coalitionPlayerId} from '../../shared/config/coalition.mjs';
 import { strongestRecoveryCenter } from '../../shared/map/recovery-aura.mjs';
@@ -6,7 +7,7 @@ import { effectiveFitness, setFitness } from '../../shared/football/fitness-line
 
 const MINUTE=60_000;
 export function activeExpeditionPlayerIds(world,accountId) {
-  return new Set([...Object.values(world?.activeChallenges ?? {}).filter(c=>c.attackerId===accountId&&!c.coalitionId)
+  return new Set([...(leagueLiveForAccount(world,accountId)?.leg.match.teams.find(t=>t.id===accountId)?.players??[]).map(p=>p.id),...Object.values(world?.activeChallenges ?? {}).filter(c=>c.attackerId===accountId&&!c.coalitionId)
     .flatMap(c=>c.live?.attacker?.players?.map(p=>p.id) ?? []),...(world?.eliteChallenges?.[accountId]?.leg?.away?.players??[]).map(p=>p.id)]);
 }
 
@@ -19,13 +20,15 @@ export class ExpeditionFitnessService {
     const territoryId=movement?.toTerritoryId ?? piece?.territoryId;
     const center=strongestRecoveryCenter(this.world,account.id,territoryId,this.metadata);
     const boostFrom=center ? Math.max(at,Number(movement?.arrivesAt ?? at),Number(center.builtAt ?? at)) : null;
+    const raid=Boolean(raidMatchForAccount(this.world,account.id)),armyPlans=new Map();
     return Object.fromEntries((account.draft?.roster ?? []).map(p=>{
       const army=p.coalitionLoan?this.world.coalitions?.[p.coalitionLoan.armyId]:null;
-      const coalitionChallenge=army?Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===army.id):null;
-      const inMatch=locked.has(p.id)||Boolean(coalitionChallenge)||Boolean(raidMatchForAccount(this.world,account.id));
+      if(army&&!armyPlans.has(army.id))armyPlans.set(army.id,{challenge:Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===army.id),center:strongestRecoveryCenter(this.world,account.id,army.movement?.toTerritoryId??army.territoryId,this.metadata)});
+      const coalitionChallenge=army?armyPlans.get(army.id).challenge:null;
+      const inMatch=locked.has(p.id)||Boolean(coalitionChallenge)||raid;
       const match=coalitionChallenge??challenge;
       const loanMovement=army?.movement;
-      const loanCenter=army?strongestRecoveryCenter(this.world,account.id,loanMovement?.toTerritoryId??army.territoryId,this.metadata):null;
+      const loanCenter=army?armyPlans.get(army.id).center:null;
       // Intermission ends at its saved deadline even if the server resumes later.
       const stopAt=inMatch ? (match?.phase==='intermission' ? match.secondLegStartsAt : at) : null;
       const boosted=!inMatch && !army && account.playerSquads?.assignments?.[p.id]==='expedition';
@@ -78,8 +81,9 @@ export class ExpeditionFitnessService {
     if(account.fitnessRecovery) account.fitnessRecovery.plans=this.plans(account,at);
   }
   currentFitness(account,player) {
+    const league=leagueLiveForAccount(this.world,account.id)?.leg.match.teams.find(t=>t.id===account.id)?.players.find(p=>p.id===player.id);if(league)return effectiveFitness(league);
     const raid=raidMatchForAccount(this.world,account.id);if(raid){const team=raid.leg.match.teams.find(t=>t.id===(raid.armyId??account.id)),id=raid.armyId?coalitionPlayerId(account.id,player.id):player.id,current=team?.players?.find(p=>p.id===id);if(current)return effectiveFitness(current);}
-    if(player.coalitionLoan){const ch=Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===player.coalitionLoan.armyId),leg=ch?.phase==='first-leg'?ch.live.firstLeg:ch?.phase==='second-leg'?ch.live.secondLeg:null;const current=leg?.match?.teams?.find(t=>t.id===ch.coalitionId)?.players?.find(p=>p.id===coalitionPlayerId(account.id,player.id));return effectiveFitness(current??player);}
+    if(player.coalitionLoan){const ch=Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===player.coalitionLoan.armyId),leg=ch?.phase==='first-leg'?ch.live.firstLeg:ch?.phase==='second-leg'?ch.live.secondLeg:null;const current=leg?.match?.teams?.find(t=>t.id===player.coalitionLoan.armyId)?.players?.find(p=>p.id===coalitionPlayerId(account.id,player.id));return effectiveFitness(current??player);}
     const challenge=Object.values(this.world?.activeChallenges ?? {}).find(c=>c.attackerId===account.id&&!c.coalitionId);
     const leg=this.world?.eliteChallenges?.[account.id]?.leg ?? (challenge?.phase==='first-leg'?challenge.live?.firstLeg:challenge?.phase==='second-leg'?challenge.live?.secondLeg:null);
     const current=leg?.match?.teams?.find(t=>t.id===account.id)?.players?.find(p=>p.id===player.id);

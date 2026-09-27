@@ -47,7 +47,7 @@ function filtersMarkup(view, state) {
 }
 export function tradeUpCardMarkup(card, view, state) {
   const chosen = state.selected.includes(card.id), reason = tradeUpBlocked(card, tradeUpCards(view, state));
-  return '<article class="cm-card cmm-card' + (chosen ? ' is-selected' : '') + '"><button type="button" class="cm-card-art" data-cmu-select="' + esc(card.id) + '" aria-pressed="' + chosen + '" aria-label="' +
+  return '<article data-ui-key="' + esc(card.id) + '" class="cm-card cmm-card' + (chosen ? ' is-selected' : '') + '"><button type="button" class="cm-card-art" data-cmu-select="' + esc(card.id) + '" aria-pressed="' + chosen + '" aria-label="' +
     esc((chosen ? "移除素材 " : "加入素材 ") + card.name + " +" + card.upgradeLevel + (reason ? "，" + reason : "")) + '"' + (reason ? ' disabled' : '') + '>' + shield(card, true) +
     '<span class="cm-selection-mark" aria-hidden="true"' + (chosen ? '' : ' hidden') + '>✓</span>' + (card.listingId ? '<span class="cmm-listed-badge">已挂牌</span>' : '') + '</button>' +
     '<button type="button" class="cmm-card-name" data-cmu-detail="' + esc(card.id) + '" title="查看详情">' + name(card) + '</button>' +

@@ -56,12 +56,13 @@ export function researchNoticeMarkup(research){
 
 export function createConstructionNotifications({
   notifications, campaignStore, getCampaignState = campaignStore.getState,
-  getTerritoryLabel = id => id, onLocate = () => {}, onDismissWonder = () => {}, onUseProduction = () => {}, onCancelResearch = () => {}, now = Date.now,
+  getTerritoryLabel = id => id, onLocate = () => {}, onDismissWonder = () => {}, showToast = () => {}, onUseProduction = () => {}, onCancelResearch = () => {}, now = Date.now,
   setIntervalImpl = setInterval, clearIntervalImpl = clearInterval,
 } = {}) {
   let playerId = null, offset = 0, serverSample = null, timer = null, renderKey = null, destroyed = false;
   let items = [], previous = new Map();
-  const completed = new Map();
+  const completed = new Map(), dismissedWonders = new Map();
+  let accountEpoch=0;
   const clock = () => now() + offset;
   function paintProgress() {
     const job=getCampaignState()?.formationResearch?.active,researchValue=researchProgress(job,clock()),bar=job?notifications.querySelector('[data-research-notice-progress]'):null;
@@ -91,7 +92,7 @@ export function createConstructionNotifications({
     if (destroyed) return;
     const state = getCampaignState();
     if (playerId !== (state?.playerId ?? null)) {
-      playerId = state?.playerId ?? null; previous.clear(); completed.clear(); offset = 0; serverSample = null;
+      playerId = state?.playerId ?? null; accountEpoch++; dismissedWonders.clear(); previous.clear(); completed.clear(); offset = 0; serverSample = null;
     }
     if (syncClock) {
       const serverNow = Number(state?.formationResearch?.serverNow ?? state?.scouting?.serverNow ?? state?.training?.serverNow);
@@ -107,7 +108,7 @@ export function createConstructionNotifications({
     items = buildings.filter(item => item.status === "constructing" || completed.has(item.id))
       .sort((a, b) => Number(a.completesAt) - Number(b.completesAt) || a.id.localeCompare(b.id));
     const pending=new Set((state?.neutralRewards?.pending??[]).map(r=>r.id));
-    const notices=(state?.wonders?.competitionNotices??[]).map(n=>({...n,rewardAvailable:pending.has(n.rewardId)}));
+    const notices=(state?.wonders?.competitionNotices??[]).filter(n=>!dismissedWonders.has(n.id)).map(n=>({...n,rewardAvailable:pending.has(n.rewardId)}));
     const research=state?.formationResearch,job=research?.active;
     const key = JSON.stringify({items,notices,job,slots:job?research.slots:undefined});
     notifications.hidden = !items.length&&!notices.length&&!job;
@@ -119,7 +120,13 @@ export function createConstructionNotifications({
   function locate(event) {
     const researchId=event.target.closest("[data-cancel-research]")?.dataset.cancelResearch;if(researchId){onCancelResearch(researchId);return;}
     const dismiss=event.target.closest('[data-wonder-race-dismiss]')?.dataset.wonderRaceDismiss;
-    if(dismiss){onDismissWonder(dismiss);return;}
+    if(dismiss){
+      if(dismissedWonders.has(dismiss))return;
+      const epoch=accountEpoch;dismissedWonders.set(dismiss,true);
+      event.target.closest('.wonder-race-notice')?.remove();notifications.hidden=!notifications.children.length;renderKey=null;
+      Promise.resolve().then(()=>onDismissWonder(dismiss)).catch(error=>{if(!destroyed&&epoch===accountEpoch){dismissedWonders.delete(dismiss);refresh();showToast(error.message||'通知操作失败，请重试');}});
+      return;
+    }
     const reward=event.target.closest('[data-wonder-race-reward]')?.dataset.wonderRaceReward;
     if(reward){onUseProduction(reward);return;}
     const id = event.target.closest("[data-construction-locate]")?.dataset.constructionLocate;

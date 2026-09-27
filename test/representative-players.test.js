@@ -81,7 +81,7 @@ test("squad list renders only the best instance before applying level filters",(
   assert.doesNotMatch(panel.innerHTML,/data-team-view|team-player-grid|ydl-player-card/);
   assert.match(panel.innerHTML,/data-player-card-id="best"/);
   assert.doesNotMatch(panel.innerHTML,new RegExp(`data-player-card-id="${old.id}"`));
-  nodes.filter[0].change();
+  nodes.filter[0].onchange();
   assert.doesNotMatch(panel.innerHTML,/data-player-card-id="best"/);
   assert.doesNotMatch(panel.innerHTML,new RegExp(`data-player-card-id="${old.id}"`));
 });

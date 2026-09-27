@@ -1,3 +1,5 @@
+import {startStallMonitor} from './server/infrastructure/stall-monitor.mjs';
+import {observeRuntime} from './server/infrastructure/runtime-observer.mjs';
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,6 +73,8 @@ const server = http.createServer(async (request, response) => {
 });
 
 const scheduler = createChallengeScheduler({ campaign });
+const runtimeObserver = observeRuntime(campaign);
+const stallMonitor = startStallMonitor(campaign);
 server.requestTimeout = 30_000;
 server.headersTimeout = 15_000;
 server.keepAliveTimeout = 5_000;
@@ -79,7 +83,8 @@ let closing = false;
 function shutdown() {
   if (closing) return;
   closing = true;
-  try { scheduler.stop(); campaign.save(); } catch (error) { console.error("Final save failed:", error.message); process.exitCode = 1; }
+  try { runtimeObserver.stop(); scheduler.stop(); campaign.save(); } catch (error) { console.error("Final save failed:", error.message); process.exitCode = 1; }
+  void stallMonitor.stop();
   server.close(() => process.exit(process.exitCode ?? 0));
   setTimeout(() => process.exit(1), 10_000).unref();
 }

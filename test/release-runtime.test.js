@@ -56,8 +56,9 @@ test('HTTP request IDs use secure random bytes when randomUUID is unavailable', 
   const source = { getRandomValues: bytes => crypto.webcrypto.getRandomValues(bytes) };
   const ids = new Set(Array.from({ length:100 }, () => createRequestId(source)));
   assert.equal(ids.size, 100);
-  for (const id of ids) assert.match(id, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
-  assert.equal(createRequestId({ randomUUID:() => 'native' }), 'native');
+  for (const id of ids) assert.match(id, /^[a-f0-9]{8}-[a-f0-9]{4}-7[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+  const native='12345678-1234-4321-8123-123456789abc',stamp=(1800000000000).toString(16).padStart(12,'0');
+  assert.equal(createRequestId({randomUUID:()=>native},1800000000000),`${stamp.slice(0,8)}-${stamp.slice(8)}-7321-8123-123456789abc`);
 });
 
 test('static routes expose game assets but reject data, backend, archives, encoded traversal and hidden files', () => {

@@ -1,3 +1,4 @@
+import {trainingAttributeHeadroom} from "../../shared/config/training.mjs";
 import { goldAmountMarkup } from "../ui/currency.js";
 import { facilityArtIcon } from '../../shared/config/facility-art.mjs';
 import { facilityActionsMarkup } from "./facility-actions-controller.js?v=20260909-infrastructure-v1";
@@ -244,7 +245,7 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     if (selection?.taskId && !view.tasks.some((task) => task.id === selection.taskId)) selection = null;
     view.players = (state.draft?.roster ?? []).map((player) => {
       const card = createPlayerCardViewModel(player);
-      const headroom = Object.keys(PLAYER_ATTRIBUTE_LABELS).reduce((sum, key) => sum + (Number.isFinite(card.attributes[key]) ? Math.max(0, Math.floor(TRAINING_RULES.attributeMaximum - card.attributes[key])) : 0), 0);
+      const headroom = Object.keys(PLAYER_ATTRIBUTE_LABELS).reduce((sum, key) => sum + (Number.isFinite(card.attributes[key]) ? Math.max(0, Math.floor(trainingAttributeHeadroom(card.attributes[key]))) : 0), 0);
       return { ...card, costGold: trainingCostGold(card), canAfford: view.gold == null || view.gold >= trainingCostGold(card), training: player.training, expedition: state.playerSquads?.assignments?.[card.playerId] === "expedition", canTrain: !player.medical && headroom >= (view.rules?.attributePoints ?? TRAINING_RULES.attributePoints) };
     });
     render();

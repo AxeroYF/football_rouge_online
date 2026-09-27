@@ -1,0 +1,50 @@
+{
+  "name": "yellowdogs-desktop",
+  "version": "0.1.5",
+  "private": true,
+  "type": "module",
+  "main": "main.mjs",
+  "description": "YellowDogs Windows client",
+  "author": "YellowDogs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.mjs",
+    "build": "node build-resources.mjs && electron-builder --win nsis --x64 --publish never",
+    "postinstall": "node node_modules/electron/install.js"
+  },
+  "devDependencies": {
+    "electron": "44.4.3",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "online.yellowdogsleague.desktop",
+    "productName": "YellowDogs",
+    "directories": {
+      "output": "../outputs/windows-client"
+    },
+    "files": [
+      "main.mjs",
+      "resource-cache.mjs",
+      "preload.cjs",
+      "ui/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "seed",
+        "to": "seed"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "artifactName": "YellowDogs-Setup-${version}-${arch}.${ext}"
+  }
+}

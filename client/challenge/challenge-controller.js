@@ -1,3 +1,6 @@
+import {confirmPvpAttack} from './pvp-confirmation.js';
+import {createLiberationController} from "./liberation-controller.js";
+import {createDefenceNotifications} from "./defence-notifications.js";
 import { sponsorRewardMarkup } from '../sponsorship/sponsor-markup.js?v=20260908-sponsorship-v1';
 import { neutralRewardMarkup } from '../resources/neutral-reward-markup.js';
 import { goldAmountMarkup } from "../ui/currency.js";
@@ -20,6 +23,13 @@ export function createChallengeController({
   showCampaignBroadcast,
   showToast,
 }) {
+  createDefenceNotifications({root:documentRef.querySelector('#campaign-defence-notices'),getState:getCampaignState,
+    store:campaignStore,request:getCampaignRequest,territoryName:id=>territoryMetadataById.get(id)?.name,
+    showToast,showBroadcast:showCampaignBroadcast});
+  const liberation=createLiberationController({documentRef,getState:getCampaignState,store:campaignStore,request:getCampaignRequest,
+    territoryName:id=>territoryMetadataById.get(id)?.name,showToast,onWorldChanged:()=>{
+      applyCampaignWorldSnapshot(getCampaignState().world);refreshTerritoryDisplay();renderTerritoryInspector(getSelectedTerritoryId());
+    }});
   let territoryChallengePending = false;
   let activeCampaignMatch = null;
   let campaignLiveResumePending = false;
@@ -57,6 +67,7 @@ export function createChallengeController({
     if (sponsorReward) { sponsorReward.hidden = !battle.captured || !battle.rewards?.sponsorship; sponsorReward.innerHTML = sponsorReward.hidden ? "" : sponsorRewardMarkup(battle.rewards.sponsorship); }
     const details=documentRef.querySelector('#battle-result-details');
     if(details){details.hidden=!battle.broadcasts?.length;details.onclick=()=>showCampaignBroadcast({snapshot:{completed:true,battle},opened:true});}
+    liberation.showBattle(battle);
     panel.hidden = false;
   }
 
@@ -122,10 +133,14 @@ export function createChallengeController({
     territoryChallengePending = true;
     renderTerritoryInspector(selectedTerritoryId);
     try {
+      const target=campaignState?.world?.territories?.[selectedTerritoryId],pvp=target?.ownerType==='player';
+      if(pvp&&!await confirmPvpAttack({documentRef,conquest:campaignState.conquest}))return;
+      if(getCampaignState()?.playerId!==campaignState?.playerId)return;
       const value = await getCampaignRequest()("/api/campaign/territory/challenge", {
         method: "POST",
         body: {
           territoryId: selectedTerritoryId,
+          ...(pvp?{pvpConfirmed:true,expectedOwnerId:target.ownerId}:{}),
           ...(maritimeRoute ? {
             maritimeRoute: {
               sourceTerritoryId: maritimeMode.sourceTerritoryId,

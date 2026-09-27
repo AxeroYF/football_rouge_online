@@ -219,7 +219,7 @@ test("formal game enables Three by default without replacing campaign bootstrap 
     "createBuildingMarkerController", "createCampaignMinimap", "createTerritoryWeatherLayerController"]) assert.match(app, new RegExp(controller));
   assert.match(layer, /element.prepend\(canvas\)/);
   assert.match(layer, /if \(viewChanged\) scheduleTiles\(\)/, "Texture completion must not create an idle loading/render loop");
-  assert.match(layer, /map.off\("move zoom resize viewreset", invalidate\)/);
+  assert.match(layer, /map.off\("move resize viewreset", draw\)/);
   assert.match(layer, /tiles\?\.dispose\(\)/);
   assert.match(tiles, /stencilFunc: THREE.EqualStencilFunc/);
   assert.doesNotMatch(layer, /\/api\/campaign|localStorage/);

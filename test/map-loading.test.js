@@ -62,7 +62,7 @@ test('failed map downloads can retry and explicit content versions never reuse a
 test('all three elevation binaries start before any metadata finishes', async () => {
   const gate = deferred(), urls = [], controller = new AbortController();
   const pending = loadReliefFields({ signal: controller.signal, fetchImpl: async (url, options) => {
-    urls.push(url); assert.equal(options.signal, controller.signal); assert.equal(options.cache, 'default');
+    urls.push(url); assert.equal(options.signal.aborted, false); assert.equal(options.cache, 'default');
     if (url.includes('.json?')) await gate.promise;
     return { ok: true,
       json: async () => ({ schemaVersion: 1, width: 2, height: 2, step: 1, origin: [0, 0], file: 'https://invalid.test/redirect.bin' }),

@@ -77,7 +77,7 @@ test("full squad disables additions, keeps removals available, and does not shri
   assert.match(panel.innerHTML,/<strong>22 \/ 22<\/strong>/);
   assert.match(panel.innerHTML,/远征队最多 22 人（含首发与替补）/);
   assert.match(panel.innerHTML,/<option value="expedition" selected>远征<\/option>/);
-  filters[0].change();
+  filters[0].onchange();
   assert.doesNotMatch(panel.innerHTML,/data-team-squad-player="expedition-/);
   assert.match(panel.innerHTML,/<option value="expedition" disabled>远征 · 已满 22 人<\/option>/);
   assert.match(panel.innerHTML,/<strong>22 \/ 22<\/strong>/);

@@ -1,3 +1,5 @@
+import { YDL_TRAIT_BY_ID } from "../../engine/s4-v2.1/versus/trait-pool.js";
+
 export const PLAYER_CARD_SCHEMA_VERSION = 1;
 
 export const PLAYER_CARD_VARIANTS = Object.freeze(["mini", "compact", "standard", "detail", "art-only"]);
@@ -28,8 +30,8 @@ function publicAssetUrl(value) {
 }
 
 function traitNames(player) {
-  return (Array.isArray(player?.traits) ? player.traits : [])
-    .map((trait) => typeof trait === "string" ? trait : trait?.name)
+  return (Array.isArray(player?.traits) ? player.traits : Array.isArray(player?.card?.traits) ? player.card.traits : [])
+    .map((trait) => typeof trait === "string" ? (YDL_TRAIT_BY_ID[trait]?.name ?? trait) : (trait?.name ?? YDL_TRAIT_BY_ID[trait?.id]?.name))
     .map((trait) => text(trait))
     .filter(Boolean);
 }

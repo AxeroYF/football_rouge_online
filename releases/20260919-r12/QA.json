@@ -1,0 +1,124 @@
+{
+  "passed": true,
+  "version": "20260919-r12",
+  "baseline": "20260918-r11",
+  "preflight": {
+    "passed": true,
+    "version": "20260919-r12",
+    "checks": [
+      "Complete 20260918-r11 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260919-r12 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload"
+    ],
+    "changedFiles": 12,
+    "newFiles": 1,
+    "requiredBaseFiles": 1202,
+    "imports": 19,
+    "scope": "Isolated file-baseline and integrity checks only; no Linux service upgrade rehearsal",
+    "remoteDeployed": false
+  },
+  "regression": {
+    "passed": 52,
+    "failed": 0,
+    "logSha256": "f61e94045155807effd559371c50d46d3048bb85ca1ab099dddf7d413531d6ac"
+  },
+  "repositoryCleanup": {
+    "passed": true,
+    "logSha256": "17792efdad1293772a2d8efb7b94c23d376c772e4ac6c796ccfa1b03f4b31569"
+  },
+  "browser": {
+    "scope": "Isolated fixture; normal Chrome without GPU bypass flags; mobile is emulated on this PC, not a physical phone.",
+    "cases": [
+      {
+        "mode": "desktop",
+        "territoryRequests": 0,
+        "elapsedMs": 6972,
+        "ready": true,
+        "loaderText": "已下载 map-nature.json",
+        "authForm": false,
+        "bootstrap": true,
+        "recoveryVisible": false,
+        "sessionRetained": true,
+        "retryButton": false,
+        "entryText": "正在连接服务器…",
+        "entryChildren": 1,
+        "errors": [],
+        "failed": []
+      },
+      {
+        "mode": "slow-compatible",
+        "territoryRequests": 1,
+        "elapsedMs": 39784,
+        "ready": true,
+        "loaderText": "已下载 campaign-territories.geojson",
+        "authForm": false,
+        "bootstrap": true,
+        "recoveryVisible": false,
+        "sessionRetained": true,
+        "retryButton": false,
+        "entryText": "正在连接服务器…",
+        "entryChildren": 1,
+        "errors": [],
+        "failed": []
+      },
+      {
+        "mode": "stalled-bootstrap-state",
+        "territoryRequests": 0,
+        "elapsedMs": 32290,
+        "ready": false,
+        "loaderText": "",
+        "authForm": false,
+        "bootstrap": false,
+        "recoveryVisible": true,
+        "sessionRetained": true,
+        "retryButton": true,
+        "entryText": "连接服务器超时，请稍后重试重新连接",
+        "entryChildren": 1,
+        "errors": [],
+        "failed": [
+          "/api/campaign/state"
+        ]
+      },
+      {
+        "mode": "blocked-entry-dependency",
+        "territoryRequests": 0,
+        "elapsedMs": 32291,
+        "ready": false,
+        "loaderText": "",
+        "authForm": false,
+        "bootstrap": false,
+        "recoveryVisible": true,
+        "sessionRetained": true,
+        "retryButton": false,
+        "entryText": "连接或页面资源加载较慢，请重新加载\n重新加载\n打开兼容地图",
+        "entryChildren": 1,
+        "errors": [],
+        "failed": [
+          "/versus/client/core/campaign-api-client.js"
+        ]
+      },
+      {
+        "mode": "webgl-disabled",
+        "territoryRequests": 0,
+        "elapsedMs": 504,
+        "ready": false,
+        "loaderText": "地图加载失败，请重试或切换兼容地图\n重新加载\n打开兼容地图",
+        "authForm": false,
+        "bootstrap": true,
+        "recoveryVisible": true,
+        "sessionRetained": true,
+        "retryButton": false,
+        "entryText": "正在连接服务器…",
+        "entryChildren": 1,
+        "errors": [],
+        "failed": [],
+        "compatibleRecovered": true
+      }
+    ]
+  },
+  "remoteDeployed": false,
+  "limitations": "Isolated browser and file preflight checks; no Linux service upgrade rehearsal. Does not prove all production network faults are resolved. Browser test preceded final label/error wording adjustments; final source passed targeted regression and module version verification."
+}

@@ -1,4 +1,4 @@
-import {attackCurfewState,DAILY_NEUTRAL_CONQUEST_LIMIT} from '../../shared/config/conquest.mjs';
+import {attackCurfewState} from '../../shared/config/conquest.mjs';
 export function createConquestHud({ root, store, now = Date.now }) {
   let state = null, receivedAt = now();
   const count = root.querySelector('[data-conquest-count]');
@@ -10,7 +10,7 @@ export function createConquestHud({ root, store, now = Date.now }) {
     const remaining = time >= state.resetsAt ? state.limit : state.remaining;
     count.textContent = `${remaining}/${state.limit}`;
     root.classList.toggle('is-exhausted', remaining === 0);
-    root.title = `今日还可征服 ${remaining} 个中立地块；北京时间 08:00 刷新。每日 00:00–08:00 宵禁，禁止进攻。失败不扣次数，远征队休整 20 分钟。${state.limit > DAILY_NEUTRAL_CONQUEST_LIMIT ? '含奇观额外次数。' : ''}`;
+    root.title = `今日还可征服 ${remaining} 个地块（其中玩家领土还可攻占 ${time>=state.resetsAt?(state.playerLimit??4):state.playerRemaining??4} 块）；北京时间 08:00 刷新${state.limit>8?'，含奇观额外次数':''}。每日 00:00–08:00 宵禁，禁止进攻。失败不扣次数，远征队休整 20 分钟。`;
     const seconds = Math.max(0, Math.ceil((state.cooldownUntil - time) / 1000));
     const curfew=attackCurfewState(time);
     cooldown.hidden = !seconds&&!curfew.active;

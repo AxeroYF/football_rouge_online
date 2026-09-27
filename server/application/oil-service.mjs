@@ -1,4 +1,4 @@
-import {applyMovementOilChoice} from '../../shared/config/movement-oil.mjs';
+import {applyMovementOilChoice,movementOilRequired} from '../../shared/config/movement-oil.mjs';
 import {activeOilExtractor,oilExtractorLabel} from '../../shared/buildings/oil-extraction.mjs';
 import {FACTORY_OIL_PER_HOUR,factoryOilSupply} from '../../shared/config/oil-economy.mjs';
 import crypto from 'node:crypto';
@@ -52,7 +52,7 @@ export class OilService{
   }return {rollback};}catch(e){rollback();throw e;}
  }
  estimate(a,base,kind='expedition',{useOil=true}={}){
-  const oilRequired=Math.max(1,Math.ceil(base.distanceKm/250))*(kind==='scout'?1:2),oilAvailable=this.view(a).balance,oilShortage=oilAvailable<oilRequired;
+  const oilRequired=movementOilRequired(base.distanceKm,kind),oilAvailable=(a.oil?.balance??(a.setupComplete?INITIAL:0)),oilShortage=oilAvailable<oilRequired;
   return applyMovementOilChoice({...base,oilRequired,oilAvailable,oilShortage},useOil,kind);
  }
  spend(a,estimate){const oil=this.initialize(a);if(oil.balance<estimate.oilSpent)fail('石油库存已变化，请重新预览行程',409);a.oil={...oil,balance:oil.balance-estimate.oilSpent};}

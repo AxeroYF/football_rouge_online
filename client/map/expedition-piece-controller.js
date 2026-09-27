@@ -40,6 +40,7 @@ export function createExpeditionPieceController({
   refreshTerritoryDisplay,
   beforeBegin=()=>{},
   onInspect=()=>{},
+  onState=()=>{},
   showToast=()=>{},
   escapeHtml=String,
   now = Date.now,
@@ -243,13 +244,17 @@ export function createExpeditionPieceController({
   async function confirmMovement() {
     if (!pendingEstimate||requestPending) return;
     requestPending=true;
+    const accountId=getCampaignState()?.playerId;
     if (confirmButton) confirmButton.disabled=true;
     renderEstimate();
     try {
-      const value=await getCampaignRequest()("/api/campaign/expedition/move",{method:"POST",body:{territoryId:pendingEstimate.territoryId,useOil:pendingEstimate.useOil!==false}});
-      campaignStore.setState(value.state,{source:"expedition-move"});
+      const value=await getCampaignRequest()("/api/campaign/expedition/move",{method:"POST",body:{compact:true,territoryId:pendingEstimate.territoryId,useOil:pendingEstimate.useOil!==false}});
+      if(accountId!==getCampaignState()?.playerId)return;
+      const state=value.state??{...getCampaignState(),...value.statePatch};
+      campaignStore.setState(state,{source:"expedition-move"});
+      onState(state);
       setSelectingDestination(false);
-      applyCampaignWorldSnapshot(value.state.world);
+      if(value.state)applyCampaignWorldSnapshot(value.state.world);
       showToast(`远征队开始移动，预计 ${Math.ceil(Number(value.expeditionPiece?.movement?.durationMs)/60_000)} 分钟抵达`);
     } catch(error) {
       showToast(error.message||"远征队移动失败");
@@ -262,12 +267,14 @@ export function createExpeditionPieceController({
 
   async function abortMovement() {
     if (requestPending||!getCampaignState()?.expeditionPiece?.moving) return;
+    const owner=getCampaignState()?.playerId,movementId=getCampaignState()?.expeditionPiece?.movement?.id;
     requestPending=true;
     renderMovementWidget();
     try {
-      const value=await getCampaignRequest()("/api/campaign/expedition/cancel",{method:"POST"});
-      campaignStore.setState(value.state,{source:"expedition-cancel"});
-      applyCampaignWorldSnapshot(value.state.world);
+      const value=await getCampaignRequest()("/api/campaign/expedition/cancel",{method:"POST",body:{compact:true,movementId}});
+      if(owner!==getCampaignState()?.playerId)return;
+      campaignStore.setState(value.statePatch?{...getCampaignState(),...value.statePatch}:value.state,{source:"expedition-cancel"});
+      if(value.state)applyCampaignWorldSnapshot(value.state.world);
       showToast(`远征队已中止移动，返回 ${territoryName(value.expeditionPiece?.territoryId)}`);
     } catch(error) {
       showToast(error.message||"无法中止远征队移动");

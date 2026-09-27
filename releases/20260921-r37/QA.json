@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "version": "20260921-r37",
+  "checks": [
+    "Complete 20260921-r35 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260921-r37 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 6,
+  "newFiles": 0,
+  "requiredBaseFiles": 1233,
+  "imports": 23,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "testsPassed": 18,
+  "intermediateUpgrades": {
+    "passed": true,
+    "results": [
+      {
+        "version": "20260921-r36",
+        "applyAndRollback": true
+      }
+    ]
+  }
+}

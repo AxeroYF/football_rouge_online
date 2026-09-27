@@ -1,3 +1,4 @@
+import {patchMarkup} from '../ui/patch-markup.js';
 import { createRequestId } from "../core/request-id.js?v=20260906-release-v01";
 import { playerCardMarkup, escapePlayerCardHtml as esc } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
 import { playerDetailBodyMarkup } from "../player-card/player-detail-window.js";
@@ -30,6 +31,13 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   let view = null, screen = "home", filters = defaultFilters(), visibleCount = 24, batch = false, selected = new Set();
   let pending = null, version = 0, readVersion = 0, session = 0, activeDialog = null, loadError = "";
   const retries = new Map(), batchSize = 24;
+  const scrollHandlers=new WeakMap();
+  function bindScrollHandler(container,handler){
+    let entry=scrollHandlers.get(container);
+    if(entry){entry.handler=handler;return;}
+    entry={handler};scrollHandlers.set(container,entry);
+    container.addEventListener('scroll',()=>entry.handler(),{passive:true});
+  }
   let tradeUp = createTradeUpState(), tradeUpRevealCleanup = null;
   let scrollResizeObserver = null, market = createMarketState(), listingEditor = null, draggedMarketCard = "", marketDragPreview = null;
   const request = (path, options) => getCampaignRequest()(path, options);
@@ -163,7 +171,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   function bindScroll(container) {
     scrollResizeObserver?.disconnect(); scrollResizeObserver = null;
     if (screen !== "recycle") return;
-    container.addEventListener("scroll", () => loadMore(container), { passive: true });
+    bindScrollHandler(container, () => loadMore(container));
     const Observer = root.ownerDocument.defaultView?.ResizeObserver;
     if (Observer) { scrollResizeObserver = new Observer(() => loadMore(container)); scrollResizeObserver.observe(container); }
     queueMicrotask(() => loadMore(container));
@@ -180,11 +188,11 @@ export function createCardManagementController({ root, getCampaignState, getCamp
     const contractScroll = root.querySelector("[data-cmu-contract-scroll]")?.scrollTop ?? 0;
     const historyList = root.querySelector("[data-cmu-history-scroll]");
     const historyScroll = historyList?.scrollTop ?? 0, historyLatest = historyList?.dataset.cmuHistoryLatest;
-    root.innerHTML = '<div class="cm-surface standard-window__surface' + (screen === "home" ? ' is-menu' : screen === "sell" ? ' is-market' : screen === "trade-up" ? ' is-trade-up' : '') + '" role="dialog" aria-modal="true" aria-labelledby="cm-title"><header class="cm-header">' +
+    patchMarkup(root, '<div class="cm-surface standard-window__surface' + (screen === "home" ? ' is-menu' : screen === "sell" ? ' is-market' : screen === "trade-up" ? ' is-trade-up' : '') + '" role="dialog" aria-modal="true" aria-labelledby="cm-title"><header class="cm-header">' +
       (screen !== "home" ? '<button type="button" class="cm-back" data-cm-screen="home">返回</button>' : "") +
       '<div class="cm-heading"><h2 id="cm-title">' + (screen === "home" ? "球员卡管理" : screen === "sell" ? "出售" : screen === "trade-up" ? "汰换" : "回收") + '</h2></div><span class="cm-wallet">' +
       gold(getCampaignState()?.wallet?.gold ?? 0) + '</span>' + actionsMarkup() + '<button type="button" class="cm-close" data-stage-window-close aria-label="关闭球员卡管理">×</button></header>' +
-      (screen === "recycle" ? filterMarkup() + restrictionMarkup() : "") + '<div class="cm-content" data-cm-content>' + content() + "</div></div>";
+      (screen === "recycle" ? filterMarkup() + restrictionMarkup() : "") + '<div class="cm-content" data-cm-content>' + content() + "</div></div>");
     if (pending) root.querySelectorAll("button:not([data-stage-window-close]),input,select").forEach(node => { node.disabled = true; });
     const container = root.querySelector("[data-cm-content]"); container.scrollTop = scroll; bindScroll(container);
     if (screen === "sell") bindMarketScroll(paneScroll);
@@ -338,7 +346,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
     if (Observer) scrollResizeObserver = new Observer(() => containers.forEach(([pane, container]) => loadMarketMore(container, pane)));
     for (const [pane, container] of containers) {
       container.scrollTop = scrolls[pane];
-      container.addEventListener("scroll", () => loadMarketMore(container, pane), { passive: true });
+      bindScrollHandler(container, () => loadMarketMore(container, pane));
       scrollResizeObserver?.observe(container);
       queueMicrotask(() => loadMarketMore(container, pane));
     }
@@ -441,7 +449,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   function bindTradeUpScroll(scrollTop) {
     const container = root.querySelector("[data-cmu-scroll]");
     container.scrollTop = scrollTop;
-    container.addEventListener("scroll", () => loadTradeUpMore(container), { passive: true });
+    bindScrollHandler(container, () => loadTradeUpMore(container));
     const Observer = root.ownerDocument.defaultView?.ResizeObserver;
     if (Observer) { scrollResizeObserver = new Observer(() => loadTradeUpMore(container)); scrollResizeObserver.observe(container); }
     queueMicrotask(() => loadTradeUpMore(container));
@@ -686,7 +694,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   root.addEventListener("input", filterChanged);
   campaignStore.subscribe(({ state, previousState }) => {
     if (state?.playerId !== previousState?.playerId) { session++; close(); pending = null; retries.clear(); selected.clear(); view = null; return; }
-    if (!root.hidden && !pending && !activeDialog && JSON.stringify([state?.draft?.roster, state?.wallet, state?.tactics, state?.playerSquads]) !== JSON.stringify([previousState?.draft?.roster, previousState?.wallet, previousState?.tactics, previousState?.playerSquads])) load();
+    if (!root.hidden && !pending && !activeDialog && JSON.stringify([state?.draft?.roster, screen === "sell" ? state?.wallet : null, state?.tactics, state?.playerSquads]) !== JSON.stringify([previousState?.draft?.roster, screen === "sell" ? previousState?.wallet : null, previousState?.tactics, previousState?.playerSquads])) load();
   });
   registerStandardWindow(root, { onRequestClose: close });
   return { open, close };

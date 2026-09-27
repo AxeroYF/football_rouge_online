@@ -391,3 +391,35 @@ test('research reward API binds the authenticated player and current job',async(
  const response=responseRecorder(),url='/api/campaign/rewards/research';await handler(postRequest(body,{authorization:'Bearer token'}),response,url,url);
  assert.equal(response.statusCode,200);assert.deepEqual(JSON.parse(response.body),result);
 });
+
+
+test('liberation and coalition card browsing use the authenticated account',async()=>{
+ const account={id:'a'},calls=[];
+ const campaign={authenticate:()=>account,resolveTerritoryLiberation:(a,body)=>{calls.push([a.id,body.action]);return {result:{action:body.action}};},coalitions:{loanCards:(a,id)=>{calls.push([a.id,id]);return {cards:[]};}}};
+ const handler=createCampaignApiHandler({campaign});
+ for(const [path,body] of [['/api/campaign/territory/liberation',{accountId:'forged',action:'liberate'}],['/api/campaign/coalition',{action:'loan-cards',ownerId:'b'}]]){
+  const response=responseRecorder();await handler(postRequest(body,{authorization:'Bearer token'}),response,path,path);assert.equal(response.statusCode,200);
+ }
+ assert.deepEqual(calls,[['a','liberate'],['a','b']]);
+});
+
+test('management mutations return a partial response without building full world state',async()=>{
+ const account={id:'a'},calls=[];const campaign={authenticate:()=>account,state:()=>{throw Error('full world response must not run');},actionState:(a,options)=>{calls.push(options);return {playerId:a.id,draft:{roster:[]}};},coalitions:{mutate:()=>({ok:true}),isManagementAction:()=>true,view:()=>({army:{id:'army',revision:2}}),loanNotices:()=>[],commandNotices:()=>[],targetNotices:()=>[]}};
+ const handler=createCampaignApiHandler({campaign}),response=responseRecorder();await handler(postRequest({action:'lend',view:'management',requestId:'request-123'},{authorization:'Bearer token'}),response,'/api/campaign/coalition','/api/campaign/coalition');const value=JSON.parse(response.body);assert.equal(value.state,undefined);assert.equal(value.statePatch.playerId,'a');assert.deepEqual(calls,[{includeRoster:true}]);
+});
+
+test('raid notice dismissal rejects stale day and restores state on persistence failure',async()=>{
+ const account={id:'a',setupComplete:true,raidNoticeDay:'old'},campaign={authenticate:()=>account,eliteRaids:{day:()=>({id:'today'})},persist:()=>{throw Error('disk failure');}},handler=createCampaignApiHandler({campaign});
+ await assert.rejects(()=>handler(postRequest({action:'dismiss',day:'yesterday'}),responseRecorder(),'/api/campaign/raids'),e=>e.statusCode===409);assert.equal(account.raidNoticeDay,'old');
+ await assert.rejects(()=>handler(postRequest({action:'dismiss',day:'today'}),responseRecorder(),'/api/campaign/raids'),/disk failure/);assert.equal(account.raidNoticeDay,'old');campaign.persist=()=>{};const response=responseRecorder();await handler(postRequest({action:'dismiss',day:'today'}),response,'/api/campaign/raids');assert.equal(account.raidNoticeDay,'today');assert.equal(response.statusCode,200);
+});
+
+
+test('opt-in tactics responses avoid full state for personal and both allied boards',async()=>{
+ const account={id:'a',setupComplete:true},summary={army:{id:'army',revision:3}};
+ const campaign={authenticate:()=>account,state:()=>{throw Error('unexpected full state');},saveTactics:(_a,_body,{compact})=>{assert.equal(compact,true);return {tactics:{},playerSquads:{}};},coalitions:{mutate:()=>({ok:true}),view:()=>summary},eliteRaids:{mutate:()=>({ok:true}),touch:()=>{},view:()=>summary,armyView:()=>summary}};
+ const handler=createCampaignApiHandler({campaign});
+ for(const path of ['/api/campaign/tactics','/api/campaign/coalition','/api/campaign/raids']){
+  const response=responseRecorder();await handler(postRequest({action:'tactics',responseMode:'tactics'}),response,path,path);const value=JSON.parse(response.body);assert.equal(response.statusCode,200);assert.ok(value.tacticsUpdate);assert.equal(value.state,undefined);
+ }
+});

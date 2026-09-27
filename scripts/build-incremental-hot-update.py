@@ -12,6 +12,7 @@ baseline=pathlib.Path(args.baseline).resolve()
 bundle=pathlib.Path(args.output).resolve()/('yellowdogs-hot-update-'+args.version)
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def read(p): return json.loads(p.read_text(encoding='utf-8'))
+subprocess.run(['node',str(ROOT/'windows-client/build-resources.mjs'),'--manifest-only'],check=True)
 subprocess.run([sys.executable,str(ROOT/'scripts/build-browser-module-versions.py'),'--check'],check=True)
 previous=read(baseline/'MANIFEST.json')
 assert read(baseline/'QA.json')['passed'] is True
@@ -60,7 +61,7 @@ for f in entries:
     target=bundle/'payload'/f['path'];target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/f['path'],target)
 manifest={'kind':'rougelite-hot-update','version':args.version,'builtAt':datetime.datetime.now().astimezone().isoformat(),'baseline':previous['version'],'scope':args.scope,'dependencies':previous['dependencies'],'requiredBaseFiles':[{'path':rel,'sha256':value} for rel,value in sorted(expected.items())],'files':entries}
 (bundle/'MANIFEST.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-for name in ['update.sh','hot-update.mjs','updater.mjs']:
+for name in ['update.sh','hot-update.mjs','updater.mjs','health.mjs']:
     source=ROOT/'deploy/hot-update'/name
     (bundle/name).write_bytes(source.read_bytes().replace(b'\r\n',b'\n') if name.endswith('.sh') else source.read_bytes())
 print(json.dumps({'bundle':str(bundle),'files':[f['path'] for f in entries],'newFiles':[f['path'] for f in entries if f['baselineSha256'] is None],'bytes':sum(f['bytes'] for f in entries)},ensure_ascii=False))

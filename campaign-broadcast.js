@@ -1,3 +1,4 @@
+import {firstLegScoreText} from "./client/challenge/first-leg-score.js";
 import { syncTvBackground } from './client/settings/tv-appearance.js?v=20260908-tv-v1';
 import { broadcastSponsorMarkup } from './client/sponsorship/sponsor-markup.js?v=20260908-sponsorship-v1';
 import { broadcastCardFace, captureBroadcastCardFaces, restoreBroadcastCardFaces } from "./client/player-card/broadcast-card.js?v=20260905-broadcast-cards-v1";
@@ -13,7 +14,8 @@ const EVENT_MARKS = { kickoff:"开",duel:"对抗",attack:"推进",counter:"反�
 const EVENT_ICONS = { goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",blackWhistle:"⚖",brawl:"!",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",save:"◆",block:"◆",tackle:"◆",interception:"◆",setPiece:"◆",setPieceDuel:"◆",clearance:"◇",corner:"◇",miss:"○",tactical:"↔",halftime:"Ⅱ",extraTimeStart:"Ⅱ",extraTimeHalfTime:"Ⅱ",extraTimeEnd:"Ⅱ",fulltime:"■",abandoned:"!" };
 export const SECOND_LEG_COOLDOWN_MS = CHALLENGE_SECOND_LEG_COOLDOWN_MS;
 
-const escapeHtml = (value) => String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const escapeHtml = (value) => String(value ?? "").replaceAll("〔豪门〕","[AI]").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const teamLabel=team=>`${escapeHtml(team.name)}${team.leagueAi?' <span class="league-ai-badge" aria-label="AI 球队">AI</span>':''}`;
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, Number(value) || 0));
 const weatherProfile = (environment = {}) => ({ key:environment.weather ?? environment.key ?? "sunny", name:{sunny:"晴朗",rain:"雨天",storm:"雷暴",snow:"雪天",superStorm:"超级雷暴"}[environment.weather ?? environment.key] ?? "晴朗" });
 const weatherIcon = (weather) => ({ sunny:"☀️",rain:"🌧️",storm:"⛈️",snow:"🌨️",superStorm:"⚡" }[weather?.key] ?? "🌤️");
@@ -51,7 +53,7 @@ function combinedPosition(position = { x:50,y:50 }, teamIndex = 0) {
 
 export function combinedPitchMarkup(teams) {
   const magnets = teams.flatMap((team,teamIndex)=>(team.players??[]).filter((player)=>player.active||player.sentOff||player.injury).map((player)=>broadcastMagnet({ ...player,position:combinedPosition(player.position,teamIndex),broadcastTeamIndex:teamIndex }))).join("");
-  const labels = `<span class="broadcast-v2-half-label away">${escapeHtml(teams[1].name)} · ${escapeHtml(teams[1].formation)}</span><span class="broadcast-v2-half-label home">${escapeHtml(teams[0].name)} · ${escapeHtml(teams[0].formation)}</span>`;
+  const labels = `<span class="broadcast-v2-half-label away">${teamLabel(teams[1])} · ${escapeHtml(teams[1].formation)}</span><span class="broadcast-v2-half-label home">${teamLabel(teams[0])} · ${escapeHtml(teams[0].formation)}</span>`;
   return pitchMarkup(`${labels}${magnets}`);
 }
 
@@ -75,7 +77,7 @@ function phaseLabel(match) {
 }
 
 function strategiesMarkup(teams) {
-  return `<footer class="broadcast-v2-team-strategies">${teams.map((team)=>`<div><i></i><span><b>${escapeHtml(team.name)}</b><small>${escapeHtml(TACTICS[team.tactic]??team.tactic)} · ${escapeHtml(STYLES[team.style]??team.style)} · ${escapeHtml(team.formation)} · 适配 ${Math.round(Number(team.tacticalFit??100))}%</small></span></div>`).join("")}</footer>`;
+  return `<footer class="broadcast-v2-team-strategies">${teams.map((team)=>`<div><i></i><span><b>${teamLabel(team)}</b><small>${escapeHtml(TACTICS[team.tactic]??team.tactic)} · ${escapeHtml(STYLES[team.style]??team.style)} · ${escapeHtml(team.formation)} · 适配 ${Math.round(Number(team.tacticalFit??100))}%</small></span></div>`).join("")}</footer>`;
 }
 
 function dockBroadcastTeamStrategies(root) {
@@ -113,10 +115,10 @@ function matchLayoutMarkup(match) {
 function screenMarkup(broadcast) {
   const { match } = broadcast;
   const center = match.segment === "penalties" ? `${match.penalties?.[0]??0}:${match.penalties?.[1]??0}` : `${match.minute}'`;
-  return `<div class="broadcast-v2-content"><section class="broadcast-screen"><header class="broadcast-toolbar"><button class="button secondary" data-leave-broadcast>${broadcast.actionLabel}</button><div><i>${broadcast.live ? "LIVE" : "FT"}</i><b>黄狗风云比赛电视台</b><small>地块争夺赛 · 第 ${broadcast.legNumber} 回合${broadcast.live ? "" : " · 回合结束"}</small>${broadcast.live ? "" : `<em class="broadcast-toolbar-result">最终详情 · ${escapeHtml(match.teams[0].name)} ${match.score[0]} : ${match.score[1]} ${escapeHtml(match.teams[1].name)}</em>`}</div><span><b>S4 V2.1 ENGINE</b><small>服务器实时转播</small></span></header><section class="match-shell broadcast-match-shell"><header class="scoreboard"><div><small title="${escapeHtml(match.teams[0].name)}">${escapeHtml(match.teams[0].name)}</small><b>${match.score[0]}</b></div><span><small>${phaseLabel(match)}</small><strong>${center}</strong><em>${weatherIcon(match.weather)} ${escapeHtml(match.weather.name)}</em></span><div><small title="${escapeHtml(match.teams[1].name)}">${escapeHtml(match.teams[1].name)}</small><b>${match.score[1]}</b></div></header>${matchLayoutMarkup(match)}</section></section></div>`;
+  return `<div class="broadcast-v2-content"><section class="broadcast-screen"><header class="broadcast-toolbar"><button class="button secondary" data-leave-broadcast>${broadcast.actionLabel}</button><div><i>${broadcast.live ? "LIVE" : "FT"}</i><b>黄狗风云比赛电视台</b><small>${broadcast.competition==='daily-league'?'每日联赛':`地块争夺赛 · 第 ${broadcast.legNumber} 回合`}${broadcast.live ? "" : " · 比赛结束"}</small>${broadcast.firstLeg ? `<em class="broadcast-toolbar-result">${escapeHtml(broadcast.firstLeg)}</em>` : ""}${broadcast.live ? "" : `<em class="broadcast-toolbar-result">最终详情 · ${escapeHtml(match.teams[0].name)} ${match.score[0]} : ${match.score[1]} ${escapeHtml(match.teams[1].name)}</em>`}</div>${broadcast.competition==='daily-league'?`<span class="broadcast-audience"><b>${broadcast.live?`${broadcast.spectators?.length??0} 人观看`:'比赛已结束'}</b><small>${broadcast.live?(broadcast.spectators?.length?broadcast.spectators.map(p=>escapeHtml(p.name)).join('、'):'暂无观众'):'当日战报'}</small></span>`:'<span><b>S4 V2.1 ENGINE</b><small>服务器实时转播</small></span>'}</header><section class="match-shell broadcast-match-shell"><header class="scoreboard"><div><small title="${escapeHtml(match.teams[0].name)}">${teamLabel(match.teams[0])}</small><b>${match.score[0]}</b></div><span><small>${phaseLabel(match)}</small><strong>${center}</strong><em>${weatherIcon(match.weather)} ${escapeHtml(match.weather.name)}</em></span><div><small title="${escapeHtml(match.teams[1].name)}">${teamLabel(match.teams[1])}</small><b>${match.score[1]}</b></div></header>${matchLayoutMarkup(match)}</section></section></div>`;
 }
 
-function liveMatch(broadcast) {
+function liveMatch(broadcast,competition) {
   const latest=broadcast?.events?.at(-1);
   const minute=Math.ceil(Number(broadcast?.minute ?? latest?.minute ?? 0));
   const shootout=Boolean(broadcast?.penalties)||["penaltyShootoutStart","penaltyShootoutEqualise","penaltyShootoutKick","penalties"].includes(latest?.type);
@@ -130,7 +132,7 @@ function liveMatch(broadcast) {
     weather:weatherProfile(broadcast?.environment),
     venue:broadcast?.venue ?? null,
     events:broadcast?.events ?? [],
-    teams:(broadcast?.teams ?? []).map((team)=>({ ...team,activeCount:team.activeCount??team.players?.filter((player)=>player.active).length??0 })),
+    teams:(broadcast?.teams ?? []).map((team)=>({ ...team,...(competition==='daily-league'&&team.name?.endsWith('〔豪门〕')?{name:team.name.slice(0,-4),leagueAi:true}:{}),activeCount:team.activeCount??team.players?.filter((player)=>player.active).length??0 })),
   };
 }
 
@@ -149,10 +151,15 @@ export function campaignReportBroadcast(controller) {
     : controller?.snapshot?.live?.broadcast;
 }
 
+let activeBroadcastViewer=null;
 export function showCampaignBroadcast(controller, { onClose } = {}) {
   const overlay=document.querySelector("#campaign-broadcast");
   if (!campaignReportBroadcast(controller)) { onClose?.(); return; }
+  if(activeBroadcastViewer&&activeBroadcastViewer!==controller){activeBroadcastViewer.renderOverlay=null;activeBroadcastViewer.opened=false;activeBroadcastViewer.onSuperseded?.();}
+  activeBroadcastViewer=controller;
   const close=()=>{
+    if(activeBroadcastViewer!==controller)return;
+    activeBroadcastViewer=null;
     if (controller.renderOverlay===render) controller.renderOverlay=null;
     overlay.hidden=true;
     deactivateStandardWindow(overlay);
@@ -170,7 +177,7 @@ export function showCampaignBroadcast(controller, { onClose } = {}) {
     const legNumber=Number(broadcast.legNumber ?? controller.snapshot.live?.legNumber ?? 1);
     overlay.hidden=false;
     const template=document.createElement('template');
-    template.innerHTML=screenMarkup({match:liveMatch(broadcast),live:!broadcast.finished,legNumber,actionLabel:"退出观赛"});
+    template.innerHTML=screenMarkup({competition:controller.snapshot.competition,spectators:controller.snapshot.spectators,firstLeg:legNumber===2?firstLegScoreText(controller.snapshot):"",match:liveMatch(broadcast,controller.snapshot.competition),live:!broadcast.finished,legNumber,actionLabel:"退出观赛"});
     const content=overlay.querySelector(':scope > .broadcast-v2-content');
     if(content)content.replaceChildren(...template.content.firstElementChild.childNodes);
     else overlay.append(template.content);
@@ -228,7 +235,7 @@ export function startCampaignBroadcastBackground(initialSnapshot, { fetchSnapsho
       : Math.ceil(Number(match.minute??0))+"\' · 第 "+Number(snapshot.live.legNumber??1)+" 回合";
     if (widget) {
       widget.hidden=false;
-      widget.innerHTML=`<button type="button" class="campaign-live-card"><span class="campaign-live-kicker">${status}</span><strong>${escapeHtml(match.teams?.[0]?.name??"我方")} <b>${match.score[0]} : ${match.score[1]}</b> ${escapeHtml(match.teams?.[1]?.name??"守军")}</strong><small>${timing}</small></button>`;
+      widget.innerHTML=`<button type="button" class="campaign-live-card"><span class="campaign-live-kicker">${status}</span><strong>${escapeHtml(match.teams?.[0]?.name??"我方")} <b>${match.score[0]} : ${match.score[1]}</b> ${escapeHtml(match.teams?.[1]?.name??"守军")}</strong><small>${timing}</small>${Number(snapshot.live.legNumber)===2?`<small>${escapeHtml(firstLegScoreText(snapshot))}</small>`:""}</button>`;
       widget.querySelector("button").onclick=()=>{state.opened=true;onOpen?.(state);};
     }
     state.renderOverlay?.({reset:state.pendingLegReset});

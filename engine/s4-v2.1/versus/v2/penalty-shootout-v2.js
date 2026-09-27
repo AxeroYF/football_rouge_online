@@ -14,7 +14,7 @@ const shootoutAbility = (player) => Number(player?.attributes?.finishing ?? play
 
 const shootoutEnginePlayer = (match, teamIndex, player) => match.snapshotTeams?.[teamIndex]?.players?.find((entry) => entry.id === player?.id) ?? {
   ...player,
-  attributes:Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [key, v2EngineAttributeValue(value, match.parameters)])),
+  attributes:Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [key, v2EngineAttributeValue(value, match.parameters) * (match.internalAbilityMultipliers?.[teamIndex] ?? 1)])),
 };
 
 export function v2PenaltyShootout(match) {

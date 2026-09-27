@@ -116,15 +116,18 @@ function renderNext() {
 }
 
 async function boot() {
-  stage.classList.add("is-blocked");
+  stage.classList.add('is-blocked');
   if (!campaignApi.hasToken()) return renderAuth();
+  entry.hidden = false;
+  entry.innerHTML = '<section class="entry-panel"><strong>正在连接服务器…</strong></section>';
   try {
-    state = (await api("/api/campaign/state")).state;
+    state = (await api('/api/campaign/state')).state;
     renderNext();
-  } catch {
-    campaignApi.clearToken();
-    renderAuth();
+  } catch (error) {
+    if (error.status === 401) { campaignApi.clearToken(); renderAuth(authMode, error.message); return; }
+    entry.hidden = false;
+    entry.innerHTML = `<section class="entry-panel"><strong>${escapeHtml(error.message)}</strong><button class="entry-primary" id="entry-retry" type="button">重新连接</button></section>`;
+    entry.querySelector('#entry-retry').onclick = boot;
   }
 }
-
 boot();

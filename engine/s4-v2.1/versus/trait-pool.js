@@ -41,47 +41,47 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
     { hook: "height", addCm: 20 },
     { hook: "position", familiarRoles: ["ST"] },
     { hook: "attribute", add: { heading: 5, jumping: 5 } },
-  ], { name: "打点激素" }),
+  ], { name: "打点激素", eligibleRoleGroups: ["ANY"] }),
   versusTrait("touchline-flywheel", "该球员在场上时，全队在雷暴天气不会被雷击。", [
     { hook: "teamLightningProtection", immune: true },
-  ], { name: "避雷针" }),
+  ], { name: "避雷针", eligibleRoleGroups: ["ANY"] }),
   versusTrait("shadow-marker", "该球员在场上时，自动和周围球员获得满值默契线。", [
     { hook: "chemistry", linkNearby: true, value: 100 },
-  ], { name: "都是哥们" }),
+  ], { name: "都是哥们", eligibleRoleGroups: ["DEF", "MID", "ATT"] }),
   versusTrait("set-piece-toolbox", "该球员在场上时，如果遇到黑哨事件，本队视为拥有11名阿根廷球员。", [
     { hook: "argentinaCount", minimum: 11 },
-  ], { name: "因凡蒂诺救救我" }),
+  ], { name: "因凡蒂诺救救我", eligibleRoleGroups: ["DEF", "MID", "ATT"] }),
   versusTrait("rain-boots", "该球员在雨天、雷暴、雪天比赛时，综合能力值提升12%。", [
     { hook: "allAttributes", multiply: 1.12, when: { weather: ["rain", "storm", "snow"] } },
-  ], { name: "反向晴天娃娃" }),
+  ], { name: "反向晴天娃娃", eligibleRoleGroups: ["ANY"] }),
   versusTrait("sweeper-keeper", "该球员在比赛第60分钟后，综合能力值提升10%。", [
     { hook: "allAttributes", multiply: 1.1, when: { minuteGte: 60 } },
-  ], { name: "本质大心脏" }),
+  ], { name: "本质大心脏", eligibleRoleGroups: ["ANY"] }),
   versusTrait("lone-finisher", "该球员可以适配任何国家队或俱乐部羁绊。", [
     { hook: "affinityWildcard", nationality: true, club: true },
-  ], { name: "变色龙" }),
+  ], { name: "变色龙", eligibleRoleGroups: ["ANY"] }),
   versusTrait("big-stage", "该球员造点球的概率提升。", [
     { hook: "penaltyDraw", foulMultiplier: 1.35, penaltyMultiplier: 1.75 },
-  ], { name: "跳水王子" }),
+  ], { name: "跳水王子", eligibleRoleGroups: ["ANY"] }),
   versusTrait("opening-sprint", "该球员所在球队使用伐木战术时，综合能力提升10%。", [
     { hook: "allAttributes", multiply: 1.1, when: { teamStyle: "roughPlay" } },
-  ], { name: "铁血蓝白" }),
+  ], { name: "铁血蓝白", eligibleRoleGroups: ["ANY"] }),
   versusTrait("stoppage-time-expert", "该球员的体力值固定为94，不会随着比赛消耗变化。", [
     { hook: "fixedFitness", value: 94 },
-  ], { name: "996" }),
+  ], { name: "996", eligibleRoleGroups: ["ANY"] }),
   versusTrait("double-edged-core", "该球员的边路相关属性获得提升，并解锁LW/RW位置熟练度。", [
     { hook: "attribute", add: { pace: 5, acceleration: 5, dribbling: 4, crossing: 5, offBall: 3 } },
     { hook: "position", familiarRoles: ["LW", "RW"] },
-  ], { name: "借过一下" }),
+  ], { name: "借过一下", eligibleRoleGroups: ["ANY"] }),
   versusTrait("utility-player", "除门将外，出任任何陌生位置都不受位置不熟惩罚。", [
     { hook: "position", ignoreOutOfPositionPenalty: true, eligibleRoleGroups: ["DEF", "MID", "ATT"] },
-  ], { name: "全能战士", tags: ["position", "flexibility"] }),
+  ], { name: "全能战士", eligibleRoleGroups: ["DEF", "MID", "ATT"], tags: ["position", "flexibility"] }),
   versusTrait("muddy-knees", "该球员在比赛中一定会扑出对方主罚的第一粒点球。", [
     { hook: "firstPenaltySave", guaranteed: true },
-  ], { name: "一夫当关" }),
+  ], { name: "一夫当关", eligibleRoleGroups: ["GK"] }),
   versusTrait("pace-budget", "该球员不会被红牌罚下。", [
     { hook: "redCardImmune", immune: true },
-  ], { name: "普拉蒂尼是我爹" }),
+  ], { name: "普拉蒂尼是我爹", eligibleRoleGroups: ["ANY"] }),
   versusTrait("clean-tackle", "抢断+3。", [
     { hook: "attribute", add: { tackling: 3 } },
   ]),

@@ -1,3 +1,4 @@
+import {leaguePlayerLocked} from './daily-league-service.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import crypto from "node:crypto";
 import { CARD_MANAGEMENT_DEFAULTS, MAX_CARD_PRICE, TRADE_UP_GRADES, TRADE_UP_HISTORY_LIMIT, recycleValue, minimumListingPrice } from "../../shared/config/card-management.mjs";
@@ -41,6 +42,7 @@ export class CardManagementService {
   }
 
   blocked(account, card) {
+    if(leaguePlayerLocked(this.world,account.id,card.id))return '联赛进行中，结束后才能转出参赛球员';
     if(raidMatchForAccount(this.world,account.id))return '豪门远征比赛进行中';
     if(card.coalitionLoan)return "已借调联军，归队后才能操作";
     if(card.medical)return "治疗中，请先完成或取消治疗";

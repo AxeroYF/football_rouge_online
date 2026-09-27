@@ -70,7 +70,7 @@ test("ownership, position, construction, cross-center duplicates and per-level s
   assert.equal(f.account.playerSquads.assignments["MID-4"], "garrison");
 });
 
-test("random points can reach all 26 attributes and redistribute away from capped attributes", () => {
+test("random points can reach all 26 attributes including values above 99", () => {
   const f = fixture(), player = f.account.draft.roster[0], seen = new Set();
   for (let i = 0; i < 26; i++) {
     f.service.random = () => (i + .5) / 26;
@@ -82,7 +82,7 @@ test("random points can reach all 26 attributes and redistribute away from cappe
   player.attributes = Object.fromEntries(Object.keys(PLAYER_ATTRIBUTE_LABELS).map((key) => [key, 99]));
   player.attributes.reflexes = 94;
   assert.deepEqual(f.service.gains(player), { reflexes: 5 });
-  player.attributes.reflexes = 95; assert.throws(() => f.service.gains(player), /不足 5/);
+  player.attributes.reflexes = 109; assert.deepEqual(f.service.gains(player), {reflexes:5});
 });
 
 test("failed persistence rolls back starts and rewards without duplicating growth", () => {
@@ -366,16 +366,16 @@ test("training before or after enhancement produces the same growth and downgrad
   assert.deepEqual(cards[0].attributes,cards[1].attributes);assert.deepEqual(cards[0].trainingBonuses,cards[1].trainingBonuses);
 });
 
-test("enhancement during training cannot create phantom points at 99 and unused points are refunded", () => {
+test("enhancement during training preserves all paid growth across 99 without duplicate rewards", () => {
   const f=fixture(),p=f.account.draft.roster.find(p=>p.id==='MID-0');
   p.attributes.passing=92;const task=f.start({pool:'MID',playerId:p.id});
   new EnhancementService({economy:new EconomyService()}).applyLevel(p,4);
   f.setTime(task.completesAt);f.service.settle(f.account);
   const done=f.service.publicState(f.account).tasks[0];
-  assert.equal(p.attributes.passing,99);assert.deepEqual(done.gains,{passing:2});assert.equal(p.trainingBonuses.passing,2);
-  assert.equal(done.refundedGold,300);assert.equal(f.account.gold,99800);
-  f.service.settle(f.account);assert.equal(f.account.gold,99800);
-  new EnhancementService({economy:new EconomyService()}).applyLevel(p,0);assert.equal(p.attributes.passing,94);
+  assert.equal(p.attributes.passing,102);assert.deepEqual(done.gains,{passing:5});assert.equal(p.trainingBonuses.passing,5);
+  assert.equal(done.refundedGold,0);assert.equal(f.account.gold,99500);
+  f.service.settle(f.account);assert.equal(f.account.gold,99500);
+  new EnhancementService({economy:new EconomyService()}).applyLevel(p,0);assert.equal(p.attributes.passing,97);
 });
 
 test("old trained cards repair ratings and survive two reloads without extra growth", () => {

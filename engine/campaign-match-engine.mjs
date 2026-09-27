@@ -148,7 +148,7 @@ function publicBroadcast(match, seats, { legNumber, extraTimePlayed = false, pen
   };
 }
 
-export function createCampaignLiveLeg({ home, away, seed, legNumber, startedAt, aggregateBaseScore = null, knockout = false, weather = null, venue = null }) {
+export function createCampaignLiveLeg({ home, away, seed, legNumber, startedAt, aggregateBaseScore = null, knockout = false, weather = null, venue = null, internalAbilityMultipliers = null }) {
   const environment = matchWeatherOptions(weather, knockout);
   const match = createV2Match([home,away], {
     seed,
@@ -159,6 +159,7 @@ export function createCampaignLiveLeg({ home, away, seed, legNumber, startedAt, 
   match.regulationChainCount = CAMPAIGN_REGULATION_CHAINS;
   match.scheduledDurationMinutes=knockout?120:90;
   match.campaignForfeit=true;
+  if(internalAbilityMultipliers)match.internalAbilityMultipliers=[...internalAbilityMultipliers];
   return {
     legNumber:Number(legNumber),
     seed:String(seed),
@@ -291,6 +292,7 @@ function simulateLeg({ home, away, seed, legNumber, aggregateBaseScore = null, k
   match.regulationChainCount=180;
   match.scheduledDurationMinutes=120;
   match.campaignForfeit=true;
+  if(internalAbilityMultipliers)match.internalAbilityMultipliers=[...internalAbilityMultipliers];
   advanceV2Match(match,180);
   const regulationScore=[...match.score];
   const aggregate=regulationScore.map((score,index)=>score+Number(aggregateBaseScore?.[index]??0));

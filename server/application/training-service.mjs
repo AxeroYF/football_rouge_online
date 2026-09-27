@@ -1,3 +1,5 @@
+import {leaguePlayerLocked} from './daily-league-service.mjs';
+import {trainingAttributeHeadroom} from "../../shared/config/training.mjs";
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import { ensureTrainingBases, refreshTrainingGrowth } from "../../shared/football/training-growth.mjs";
 import { facilityEffects } from '../../shared/config/facility-levels.mjs';
@@ -40,7 +42,7 @@ export class TrainingService {
         task.gains = {};
         for (const [key, gain] of Object.entries(task.plannedGains)) {
           const current = Math.max(Number(player.attributes[key]), Number(player.effectiveAttributes[key]));
-          const applied = Number.isFinite(current) ? Math.max(0, Math.min(gain, Math.floor(TRAINING_RULES.attributeMaximum - current))) : 0;
+          const applied = Number.isFinite(current) ? Math.max(0, Math.min(gain, Math.floor(trainingAttributeHeadroom(current)))) : 0;
           if (applied > 0) {
             task.gains[key] = applied;
             player.trainingBonuses[key] = Number(player.trainingBonuses[key] ?? 0) + applied;
@@ -88,7 +90,7 @@ export class TrainingService {
   headroom(player) {
     return Object.keys(PLAYER_ATTRIBUTE_LABELS).reduce((sum, key) => {
       const value = Math.max(Number(player.attributes?.[key]), Number(player.effectiveAttributes?.[key] ?? player.attributes?.[key]));
-      return sum + (Number.isFinite(value) ? Math.max(0, Math.floor(TRAINING_RULES.attributeMaximum - value)) : 0);
+      return sum + (Number.isFinite(value) ? Math.max(0, Math.floor(trainingAttributeHeadroom(value))) : 0);
     }, 0);
   }
   gains(player, points = TRAINING_RULES.attributePoints, attribute = null, coreBias = 0) {
@@ -96,13 +98,13 @@ export class TrainingService {
     if(attribute){
       if(!Object.hasOwn(PLAYER_ATTRIBUTE_LABELS,attribute))fail("请选择有效训练属性");
       const value=Math.max(Number(player.attributes?.[attribute]),Number(player.effectiveAttributes?.[attribute]??player.attributes?.[attribute]));
-      if(!Number.isFinite(value)||value>=TRAINING_RULES.attributeMaximum)fail("指定属性已达到上限");
+      if(!Number.isFinite(value)||trainingAttributeHeadroom(value)<1)fail("指定属性已达到上限");
       gains[attribute]=1;
     }
     for (let i = attribute?1:0; i < points; i += 1) {
       const keys = Object.keys(PLAYER_ATTRIBUTE_LABELS).filter((key) => {
         const value = Math.max(Number(player.attributes?.[key]), Number(player.effectiveAttributes?.[key] ?? player.attributes?.[key]));
-        return Number.isFinite(value) && value + (gains[key] ?? 0) + 1 <= TRAINING_RULES.attributeMaximum;
+        return Number.isFinite(value) && trainingAttributeHeadroom(value) >= (gains[key] ?? 0) + 1;
       });
       if (!keys.length) fail(`该球员可提升的能力不足 ${points} 点`);
       const roll = Math.max(0, Math.min(.999999999, Number(this.random()) || 0));
@@ -163,6 +165,7 @@ export class TrainingService {
     if (!Object.hasOwn(TRAINING_POOLS, pool) || !Number.isInteger(slot) || slot < 0 || slot >= view.capacity) fail("无效的训练席位");
     const player = account.draft.roster.find((entry) => playerId(entry) === id);
     if (!player || player.pool !== pool) fail("请选择对应位置的本队球员");
+    if(leaguePlayerLocked(world,account.id,id))fail('联赛进行中，结束后才能安排参赛球员训练',409);
     if(player.coalitionLoan)fail("已借调联军，归队后才能训练",409);
     if(player.medical)fail("治疗中的球员不能训练",409);
     if (player.training || this.tasks(account).some((task) => task.playerId === id && task.completedAt == null && task.cancelledAt == null)) fail("该球员正在训练", 409);

@@ -1,3 +1,4 @@
+import {ownedCardLevels,ownedCardText} from './owned-card-summary.js';
 import { PLAYER_PACK_DEFINITIONS } from "../../shared/config/player-packs.mjs";
 import { meteorLayer } from "../ui/meteor-background.js";
 import { playerCardMarkup } from "../player-card/player-card.js?v=20260905-shield-v1";
@@ -158,10 +159,11 @@ export function createInventoryController({
 
 
   function renderOpening(opening, reveal) {
+    const levels=ownedCardLevels(getCampaignState()?.draft?.roster);
     return `${meteorLayer()}
       <main class="inventory-opening-stage">
         <div class="inventory-choice-grid" data-choice-count="${opening.cards.length}">${opening.cards.map((card,index) => `
-          <article class="inventory-choice-card ${reveal ? "is-revealing" : "is-revealed"}" style="--reveal-index:${index}" data-choice-player="${escapeHtml(card.playerId ?? card.id)}">${playerCardMarkup(card,{interactive:true,variant:"standard",action:"pack-choice",ariaPrefix:"选择",eager:true})}</article>`).join("")}</div>
+          <article class="inventory-choice-card ${reveal ? "is-revealing" : "is-revealed"}" style="--reveal-index:${index}" data-choice-player="${escapeHtml(card.playerId ?? card.id)}">${playerCardMarkup(card,{interactive:true,variant:"standard",action:"pack-choice",ariaPrefix:"选择",eager:true})}<p class="inventory-owned-status" data-owned-choice="${index}">${ownedCardText(card,levels)}</p></article>`).join("")}</div>
       </main>`;
   }
 
@@ -309,6 +311,10 @@ export function createInventoryController({
   });
   registerStageWindow(windowRoot,{kind:"inventory",onRequestClose:closeWindow,documentRef});
   campaignStore.subscribe(({ state, previousState, source }) => {
+    if(!windowRoot.hidden&&state?.draft?.roster!==previousState?.draft?.roster&&state?.playerId===previousState?.playerId){
+      const opening=externalReward?.opening??inventory()?.pendingOpening;
+      if(opening){const levels=ownedCardLevels(state?.draft?.roster);for(const node of windowRoot.querySelectorAll('[data-owned-choice]')){const card=opening.cards[Number(node.dataset.ownedChoice)];if(card)node.textContent=ownedCardText(card,levels);}}
+    }
     if(source!=="subscribe"&&state?.playerId!==previousState?.playerId){closeWindow("account");}
     if (source === "subscribe" || state?.playerId !== previousState?.playerId ||
         JSON.stringify(state?.inventory) !== JSON.stringify(previousState?.inventory)) render();

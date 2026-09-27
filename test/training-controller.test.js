@@ -263,12 +263,12 @@ test("completed training result scroll survives live player updates",async()=>{
  f.store.setState({...structuredClone(f.store.getState()),training:{tasks:[task],serverNow:2000}});
  assert.match(f.pickerContent.innerHTML,/26 项能力/);assert.equal(dom.scroller.scrollTop,160);f.controller.close();
 });
-test("live training eligibility uses the current wonder-adjusted points requirement",async()=>{
+test("live training allows wonder-adjusted growth even when most attributes are 99",async()=>{
  const f=fixture(),player={...players[0],attributes:Object.fromEntries(Object.keys(PLAYER_ATTRIBUTE_LABELS).map(key=>[key,99]))};player.attributes.passing=94;
  f.controller.open({territoryId:"t",buildingId:"b"});f.requests[0].resolve({...structuredClone(baseView),players:[player]});await flush();
  f.click(f.windowRoot,"[data-training-pool]",{trainingPool:"ATT",trainingSlot:"0"});
  f.store.setState({...f.store.getState(),draft:{roster:[player]},training:{tasks:[],rules:{attributePoints:6}}});
- assert.match(f.pickerContent.innerHTML,/data-training-player="ATT" disabled/);f.controller.close();
+ assert.doesNotMatch(f.pickerContent.innerHTML,/data-training-player="ATT" disabled/);f.controller.close();
 });
 
 

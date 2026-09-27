@@ -234,7 +234,7 @@ function effectiveMetric(match, teamIndex, player, weights) {
   if (snapshot) return metric(snapshot, weights);
   return metric({
     ...player,
-    attributes:Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [key, v2EngineAttributeValue(value, match.parameters)])),
+    attributes:Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [key, v2EngineAttributeValue(value, match.parameters) * (match.internalAbilityMultipliers?.[teamIndex] ?? 1)])),
   }, weights);
 }
 
@@ -2189,6 +2189,7 @@ function runV2Chain(match, chainIndex, options = {}) {
   maybeOwnGoal(match, chainIndex);
   match.snapshotTeams = buildV2TeamSnapshots(match.teams, {
     parameters:match.parameters,
+    internalAbilityMultipliers:match.internalAbilityMultipliers,
     state:{ minute:match.minute, score:match.teams.map((team) => team.score) },
     environment:match.environment,
   });

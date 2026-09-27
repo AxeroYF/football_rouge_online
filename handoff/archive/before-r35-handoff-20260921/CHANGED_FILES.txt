@@ -1,0 +1,38 @@
+当前交接：2026-09-21，R34 已交付未确认部署，最后确认 R31。
+本文件不是 git 全量差异；工作树包含大量前序未提交修改，实际差异请用 git status/diff 查看。
+
+本次仅修改 handoff 入口，旧六份文件已复制至 archive/before-r34-handoff-20260921/：
+handoff/README.md
+handoff/CURRENT_STATE.md
+handoff/NEW_CHAT_PROMPT.md
+handoff/MANIFEST.md
+handoff/README_UPDATE.md
+handoff/CHANGED_FILES.txt
+
+R34 相对 R31 的 13 个已交付运行负载文件：
+campaign-service.mjs
+client/player-card/card-shield-markup.js
+client/player-card/player-card.js
+index.html
+package.json
+server/application/building-service.mjs
+server/application/elite-raid-service.mjs
+server/application/medical-service.mjs
+server/http/campaign-api-handler.mjs
+server/infrastructure/json-campaign-repository.mjs
+shared/player-card/player-card-contract.js
+styles/player-card-shield.css
+tactics-page.js
+
+相关本地验证与工具（非全部发布负载）：
+deploy/hot-update/updater.mjs
+test/tactics-performance-r34.test.js
+test/campaign-api-handler.test.js
+test/player-card.test.js
+scripts/review-tactics-performance-r34.mjs
+scripts/review-card-traits.mjs
+scripts/verify-r34-release.mjs
+releases/20260921-r34/
+
+交付哈希与状态：releases/CURRENT.json、releases/20260921-r34/ARCHIVE.sha256。
+历史 GitHub 合并记录不证明本轮修改已推送。真实存档、账号、秘密配置和审计原件不可发布。

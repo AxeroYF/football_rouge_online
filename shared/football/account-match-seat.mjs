@@ -96,7 +96,7 @@ function replaceTrainingStarters(planned, roster, squadId) {
   return replacements;
 }
 
-export function buildAccountMatchSeat(account, squadId = PLAYER_SQUAD_IDS.EXPEDITION, now = Date.now(), { fitness = false, allowShortHanded = false, bondCatalog = [] } = {}) {
+export function buildAccountMatchSeat(account, squadId = PLAYER_SQUAD_IDS.EXPEDITION, now = Date.now(), { fitness = false, allowShortHanded = false, bondCatalog = [], fullFitness = squadId === PLAYER_SQUAD_IDS.GARRISON } = {}) {
   const fullRoster = account?.draft?.roster ?? [];
   const completed = autoCompletePlayerSquads(account?.playerSquads,fullRoster,{allowTransfers:!account.tactics?.squads});
   if (squadId === PLAYER_SQUAD_IDS.EXPEDITION) assertExpeditionCapacity(completed.playerSquads, fullRoster);
@@ -169,7 +169,7 @@ export function buildAccountMatchSeat(account, squadId = PLAYER_SQUAD_IDS.EXPEDI
   };
   if (!fitness) return seat;
   seat.substitutes=roster.filter(p=>!sourcePlayers.some(s=>s.id===p.id)&&!isPlayerTraining(p)).map(p=>({...clonePlayer(p),active:false}));
-  const prepared=prepareFitnessSeat(seat,{full:squadId===PLAYER_SQUAD_IDS.GARRISON,allowShortHanded});
+  const prepared=prepareFitnessSeat(seat,{full:fullFitness,allowShortHanded});
   prepared.selectionSource=structuredClone(seat);
   return prepared;
 }

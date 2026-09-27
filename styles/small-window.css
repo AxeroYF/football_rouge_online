@@ -38,3 +38,9 @@
   .small-window,.team-player-detail-overlay{padding:0}
   .small-window__dialog,.team-player-detail-dialog{width:100%;height:100%;max-height:none;border-radius:0}
 }
+
+/* A body-level attack confirmation must sit above every map pane and stage window. */
+dialog.pvp-attack-confirmation{position:fixed;inset:0;margin:0;width:100%;height:100%;max-width:none;max-height:none;box-sizing:border-box;border:0;color:inherit;pointer-events:auto}
+dialog.pvp-attack-confirmation::backdrop{background:transparent}
+.pvp-attack-confirmation footer{display:flex;justify-content:flex-end;gap:12px}
+.pvp-attack-confirmation footer button{min-height:44px;cursor:pointer}

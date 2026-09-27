@@ -313,15 +313,17 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
       body = kind === "recruit" ? { ...current, count, requestId }
         : { ...(kind==="start"?{rounds:queueRounds}:kind==="move"?{useOil:movementPlan.useOil!==false}:{}),scoutId: current.scoutId, territoryId: kind === "move" ? movementPlan.toTerritoryId : view.territoryId, requestId };
     }
+    if(['claim-queue','choose'].includes(kind))body.view='compact';
     pending = true; render();
     try {
       const result = await getCampaignRequest()(`/api/campaign/scouting/${kind}`, { method: "POST", body });
       if (getCampaignState()?.playerId !== accountId) return;
       requestIds.delete(operationKey);
-      campaignStore.setState(result.state, { source: `scouting-${kind}` }); onState(result.state);
+      const next=result.statePatch?{...getCampaignState(),...result.statePatch}:result.state;
+      campaignStore.setState(next, { source: `scouting-${kind}` }); onState(next, { compact: Boolean(result.statePatch) });
       showToast(kind === "claim-queue" ? `${result.players.length} 名球员已加入球队` : kind === "choose" ? `${result.player.name} 已加入球队`
         : ({ start: "已开始发掘", recruit: "球探已招募", move: "球探开始移动", "cancel-move": "球探已停止移动" })[kind]);
-      if (keyFor(target) === currentKey) { selectedCardId = null; movementPlan = null; await load(); }
+      if (keyFor(target) === currentKey) { selectedCardId = null; movementPlan = null; if(!result.statePatch)await load(); }
     } catch (error) {
       if (getCampaignState()?.playerId === accountId) { showToast(error.message || "操作失败，请重试"); if (keyFor(target) === currentKey) await load(); }
     } finally { pending = false; render(); }
@@ -354,9 +356,10 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
     const accountId = getCampaignState()?.playerId;
     pending = true; render();
     try {
-      const result = await getCampaignRequest()("/api/campaign/scouting/cancel-move", { method:"POST", body:{scoutId, movementId} });
+      const result = await getCampaignRequest()("/api/campaign/scouting/cancel-move", { method:"POST", body:{scoutId, movementId,compact:true} });
       if (getCampaignState()?.playerId !== accountId) return;
-      campaignStore.setState(result.state, {source:"scouting-cancel-move"}); onState(result.state);
+      const state=result.statePatch?{...getCampaignState(),...result.statePatch}:result.state;
+      campaignStore.setState(state, {source:"scouting-cancel-move"}); if(result.state)onState(state);
       showToast("球探已停止移动");
       if (target?.scoutId === scoutId) await load();
     } catch (error) {

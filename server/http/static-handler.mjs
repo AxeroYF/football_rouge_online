@@ -46,7 +46,7 @@ export function createStaticHandler(root) {
       if (!details.isFile()) { response.writeHead(404); response.end('Not found'); return; }
       const extension = path.extname(target).toLowerCase();
       const relativePath = canonical.replaceAll('\\', '/');
-      const asset = Object.hasOwn(MAP_ASSET_HASHES, relativePath) ? await mapAssets.get(target, details) : null;
+      const asset = (Object.hasOwn(MAP_ASSET_HASHES, relativePath) || relativePath === 'assets/data/desktop-resources.json') ? await mapAssets.get(target, details) : null;
       const compressed = asset?.gzip && acceptsGzip(request.headers['accept-encoding']) ? asset.gzip : null;
       const version = new URL(request.url, 'http://localhost').searchParams.get('v');
       // Check the real bytes, so stale manifests cannot lock changed content into cache.

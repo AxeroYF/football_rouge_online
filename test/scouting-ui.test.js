@@ -8,7 +8,7 @@ import { meteorLayer } from "../client/ui/meteor-background.js";
 const view = { kind:"unit", canDiscover:true, scout:{id:"u",name:"Oliver Reed",level:1,status:"idle",movableTerritoryIds:["b"]}, building: { level: 1, status: "active" }, rules: SCOUTING_RULES, levelRules: scoutingLevel(1), coreCountry: true, country: "西班牙", territoryLabel: "西班牙 · 马德里", ownedCenters: 1 };
 test("scout detail shows price, time and location and disables unavailable actions", () => {
   const idle = scoutingDetailMarkup(view, { gold: SCOUTING_RULES.costGold });
-  assert.match(idle, /700 金币/); assert.match(idle, /10 分钟/); assert.match(idle, /西班牙 · 马德里/);
+  assert.match(idle, /1,200 金币|1200 金币/); assert.match(idle, /10 分钟/); assert.match(idle, /西班牙 · 马德里/);
   assert.doesNotMatch(idle, /普通候选|强化概率|设施升级|下一位新成员|独立卡片/);
   assert.doesNotMatch(idle, /data-scout-start disabled/);
   assert.match(scoutingDetailMarkup(view, { gold: SCOUTING_RULES.costGold - 1 }), /data-scout-start disabled/);
@@ -99,5 +99,5 @@ test("active discovery country forecast uses its paid task snapshot after a unit
 
 test('compact scout controls keep queue totals and clearly disable neutral excavation without explanatory paragraphs',()=>{
  const html=scoutingDetailMarkup({...view,neutralTerritory:true,canDiscover:false},{gold:20000,queueRounds:20});
- assert.doesNotMatch(html,/一次预付|全部完成后|可继续移动|scout-queue-note/);assert.match(html,/中立地块不可发掘/);assert.match(html,/data-scout-start disabled/);assert.match(html,/200 分钟/);assert.match(html,/14,000 金币/);assert.match(html,/value="20" selected/);
+ assert.doesNotMatch(html,/一次预付|全部完成后|可继续移动|scout-queue-note/);assert.match(html,/中立地块不可发掘/);assert.match(html,/data-scout-start disabled/);assert.match(html,/200 分钟/);assert.match(html,/24,000 金币/);assert.match(html,/value="20" selected/);
 });

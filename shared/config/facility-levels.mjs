@@ -1,4 +1,4 @@
-import {scoutingLevel,scoutingGradeProbabilities} from './scouting.mjs';
+import {SCOUTING_RULES,scoutingLevel,scoutingGradeProbabilities} from './scouting.mjs';
 export const facilityLevel = value => Math.max(1,Math.min(5,Math.trunc(Number(value)||1)));
 const row = (values, level) => values[facilityLevel(level)-1];
 export const HEADQUARTERS_FANS = Object.freeze([0,6500,9000,14000,22000]);
@@ -27,7 +27,7 @@ export function facilityEffects(type,level=1){
  case 'club-headquarters':return {facilityLevelLimit:L,fanGrowth:row([100,120,140,170,200],L)};
  case 'main-stadium':return {seatingCapacity:row(STADIUM_CAPACITIES,L)};
  case 'training-center':return {capacityPerPool:L,totalCapacity:L*4,coreBias:row([0,.1,.2,.3,.4],L),durationMs:600000,attributePoints:5};
- case 'scout-center':return {scoutCapacity:row([2,2,3,3,4],L),costGold:700};
+ case 'scout-center':return {scoutCapacity:row([2,2,3,3,4],L),costGold:SCOUTING_RULES.costGold};
  case 'medical-center':return {capacity:L,durationMs:row([20,16,12,10,8],L)*60000,costGold:row([800,700,600,500,400],L),injuryRoundsReduced:1};
  case 'recovery-center':return {recoveryPerMinute:row([1,1.25,1.5,1.75,2],L),recoveryRadiusKm:row([150,225,300,375,450],L)};
  case 'port':return {rangeKm:row([1200,1500,1800,2200,2600],L),timeMultiplier:row([.9,.85,.8,.75,.7],L)};

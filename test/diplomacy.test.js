@@ -291,6 +291,7 @@ test('alliance accepted after a new external war joins that war; enemy members c
 });
 test('headquarters capture ends both alliance blocs, retains other wars and blocks already running captures',()=>{
  const f=fixture();extraPlayer(f,'d');extraPlayer(f,'e');ally(f,'a','c');ally(f,'b','d');f.action('a','b','war');f.action('a','e','war');
+ f.c.world.territories.reserve={...structuredClone(f.c.world.territories.b),territoryId:'reserve',capitalOf:null};f.c.world.players.b.territoryIds.push('reserve');
  const peace=f.action('a','b','peace'),main=winningChallenge(f),other=winningChallenge(f,{attackerId:'d',defenderId:'a',territoryId:'a',id:'other-live'}),service=challengeService(f);
  const before=JSON.stringify({world:f.c.world,accounts:[...f.c.accounts]});f.broken(true);assert.throws(()=>service.settleChallenge(main),/disk failure/);assert.equal(JSON.stringify({world:f.c.world,accounts:[...f.c.accounts]}),before);f.broken(false);
  const battle=service.settleChallenge(main);assert.equal(battle.captured,true);assert.equal(battle.warEnded.loserId,'b');
@@ -300,7 +301,7 @@ test('headquarters capture ends both alliance blocs, retains other wars and bloc
  f.action('a','b','war');const second=service.settleChallenge(other);assert.equal(second.captured,false);assert.match(second.captureBlockedReason,/战争已结束/);assert.equal(f.c.world.territories.a.ownerId,'a');
 });
 test('ordinary land capture does not end war and a lost headquarters match transfers no land',()=>{
- const f=fixture();f.action('a','b','war');f.c.world.players.b.capitalTerritoryId='remote';f.b.homeTerritoryId='remote';f.c.world.territories.b.capitalOf=null;
+ const f=fixture();f.action('a','b','war');f.c.world.players.b.capitalTerritoryId='remote';f.b.homeTerritoryId='remote';f.c.world.territories.b.capitalOf=null;f.c.world.territories.remote={...structuredClone(f.c.world.territories.b),territoryId:'remote',capitalOf:'b'};f.c.world.players.b.territoryIds.push('remote');
  assert.equal(challengeService(f).settleChallenge(winningChallenge(f)).captured,true);assert.ok(playersAtWar(f.c.world,'a','b'));
  const g=fixture();g.action('a','b','war');const c=winningChallenge(g);c.battle.outcome='loss';assert.equal(challengeService(g).settleChallenge(c).captured,false);assert.ok(playersAtWar(g.c.world,'a','b'));
 });
@@ -375,4 +376,13 @@ test('resource forms and both quote views show oil, gifting and the correct tran
  assert.match(form,/data-trade-oil="give" value="7"/);assert.match(form,/data-trade-oil="take"/);assert.match(form,/30 石油/);assert.match(form,/金币、石油、球员/);
  const gift=interactionWindowMarkup(f.d.details(f.a,'b'),{tradeOpen:true,trade:{mode:'gift',giveOil:5}});assert.match(gift,/无需付出/);assert.doesNotMatch(gift,/data-trade-oil="take"/);assert.match(gift,/发送赠送申请/);
  f.action('a','b','trade',{trade:{giveOil:7,takeGold:800}});const html=interactionNoticesMarkup({playerId:'b',interactions:f.d.summary(f.b)});assert.match(html,/你获得：0 金币 · 7 石油/);assert.match(html,/你付出：800 金币/);assert.match(interactionWindowMarkup(f.d.details(f.b,'a')),/7 石油/);
+});
+
+test('finished friendly runtime is discarded only after a successful durable settlement',()=>{
+ const f=fixture(),result=accept(f,f.action('a','b','friendly'));
+ f.tick(300000);f.broken(true);assert.throws(()=>f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000}),/disk failure/);
+ const restored=f.d.data().matches[result.matchId];assert.ok(restored.leg);assert.equal(restored.battle,undefined);
+ f.broken(false);f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000});
+ assert.equal(f.d.data().matches[result.matchId].leg,undefined);assert.ok(f.d.snapshot(f.a,result.matchId).battle.broadcasts.length);
+ f.reload();assert.ok(f.d.snapshot(f.a,result.matchId).completed);
 });

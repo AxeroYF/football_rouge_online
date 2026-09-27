@@ -1,6 +1,6 @@
 // Keep lightweight, correctly sized card nodes in the grid; only nearby card bodies exist.
 const SELECTOR = '[data-card-render]';
-const SCROLL_ROOTS = '.enhancement-card-grid,.enhancement-history-scroll,[data-cmu-scroll],[data-cmu-pool-scroll],[data-cmm-scroll],[data-cm-content],.cm-dialog-body,.training-card-list,.backpack-card-grid';
+const SCROLL_ROOTS = '[data-warehouse-scroll],.enhancement-card-grid,.enhancement-history-scroll,[data-cmu-scroll],[data-cmu-pool-scroll],[data-cmm-scroll],[data-cm-content],.cm-dialog-body,.training-card-list,.backpack-card-grid';
 
 export function createDeferredCardController({ document:doc, window:win=doc.defaultView, renderContent, chunkSize=6 } = {}) {
   const nodes=new Map(), groups=new Map(), queue=new Set();

@@ -1,3 +1,5 @@
+import {restoreArchivedFields} from '../infrastructure/history-archive.mjs';
+import {normalizePlayerSquads} from '../../shared/config/player-squads.mjs';
 import {movementUseOil} from '../../shared/config/movement-oil.mjs';
 import { facilityEffects } from '../../shared/config/facility-levels.mjs';
 import crypto from "node:crypto";
@@ -36,6 +38,7 @@ function boundedInsert(records, id, value, limit = 20) {
 export class ScoutingService {
   constructor({ playerDatabase, buildings, economy, territoryIndex, now = Date.now, random = Math.random, save = () => {} }) {
     Object.assign(this, { playerDatabase, buildings, economy, territoryIndex, now, random, save });
+    this.candidateViews = new WeakMap();
     this.metadataById = new Map((territoryIndex?.territories ?? []).map(entry => [entry.territoryId, entry]));
   }
   roll() { return Math.max(0, Math.min(0.999999999, Number(this.random()) || 0)); }
@@ -51,6 +54,7 @@ export class ScoutingService {
     return unit;
   }
   unitTask(account, id) { return this.tasks(account).filter(task => task.scoutId === id).at(-1) ?? null; }
+  cardViews(candidates){let views=this.candidateViews.get(candidates);if(!views){views=Object.freeze(candidates.map(createPlayerCardViewModel));this.candidateViews.set(candidates,views);}return views;}
   publicTask(task) {
     const status = task.claimedAt != null ? "claimed" : this.now() >= task.completesAt ? "ready" : "working";
     return {
@@ -59,9 +63,9 @@ export class ScoutingService {
       territoryLabel: task.territoryLabel, level: task.level, countryCode: task.countryCode,
       raidPause: task.raidPause ? {...task.raidPause} : null, coreCountry: task.coreCountry, startedAt: task.startedAt, completesAt: task.completesAt,
       roundCount:task.roundCount??1,completedRounds:Math.min(task.roundCount??1,Math.max(0,Math.floor((Math.max(this.now(),task.raidPause?.until??0)-task.startedAt)/(task.roundDurationMs??(task.completesAt-task.startedAt))))),
-      rounds:status==='ready'&&task.rounds?task.rounds.map((r,index)=>({index,cards:r.candidates.map(createPlayerCardViewModel)})):[],
+      rounds:status==='ready'&&task.rounds?task.rounds.map((r,index)=>({index,cards:this.cardViews(r.candidates)})):[],
       costGold:task.costGold,
-      status, cards: status === "ready" ? task.candidates.map(createPlayerCardViewModel) : [],
+      status, cards: status === "ready" ? this.cardViews(task.candidates) : [],
       selectedCardId: task.selectedCardId ?? null,
     };
   }
@@ -262,20 +266,21 @@ export class ScoutingService {
       return this.publicUnit(account, unit, world);
     });
   }
-  cancelMove(account, world, scoutId, movementId) {
+  cancelMove(account, world, scoutId, movementId, {save=this.save}={}) {
     this.settle(account, world);
     const unit = this.unit(account, scoutId);
     if (!unit.movement) return this.publicUnit(account, unit, world);
+    if(unit.movement.transport==='airport')fail('航班已起飞，不能中途取消',409);
     if (!movementId || movementId !== unit.movement.id) fail("球探行程已变化，请刷新后重试", 409);
     return this.transaction(account, () => {
       unit.movement = null;
       return this.publicUnit(account, unit, world);
-    });
+    },save);
   }
-  draw(level, countryCode, choiceCount = SCOUTING_RULES.choiceCount) {
+  draw(level, countryCode, choiceCount = SCOUTING_RULES.choiceCount, prepared = null) {
     const rules = scoutingLevel(level);
-    const database = this.playerDatabase.filter((player) => player?.id && player.isX !== true && ["C", "B", "A", "S"].includes(player.grade));
-    const normal = database.filter((player) => rules.gradeWeights[player.grade] > 0);
+    const database = prepared?.database ?? this.playerDatabase.filter((player) => player?.id && player.isX !== true && ["C", "B", "A", "S"].includes(player.grade));
+    const normal = prepared?.normal ?? database.filter((player) => rules.gradeWeights[player.grade] > 0);
     if (normal.length < choiceCount) fail("当前球员库不足以提供三名候选，请稍后再试");
     const selected = [];
     const core = CORE_COUNTRY_CODES.includes(countryCode);
@@ -283,7 +288,7 @@ export class ScoutingService {
       const unused = (player) => !selected.some((card) => card.cardDefinitionId === (player.cardDefinitionId ?? player.id));
       const legendary = this.roll() < rules.legendaryChance;
       const grade = legendary ? "S" : weighted(rules.gradeWeights, this.roll());
-      let pool = database.filter((player) => player.grade === grade && unused(player));
+      let pool = prepared ? prepared.grades[grade].filter(unused) : database.filter((player) => player.grade === grade && unused(player));
       if (!pool.length) pool = normal.filter(unused);
       if (!pool.length) fail("当前球员库无法提供三名不同的候选球员");
       const preferred = (player) => core ? coreCountryForNationality(player.nationality) === countryCode : !coreCountryForNationality(player.nationality);
@@ -297,9 +302,9 @@ export class ScoutingService {
     return selected;
   }
 
-  transaction(account, action) {
+  transaction(account, action, save=this.save) {
     const before = structuredClone(account);
-    try { const result = action(); this.save(); return result; }
+    try { const result = action(); save(); return result; }
     catch (error) {
       for (const key of Object.keys(account)) delete account[key];
       Object.assign(account, before);
@@ -327,7 +332,11 @@ export class ScoutingService {
     if (Number(account.gold) < rules.costGold*rounds) fail("金币不足");
     const metadata = this.metadataById.get(unit.territoryId);
     if (!metadata) fail("球探所在地信息不存在", 404);
-    const queue=Array.from({length:rounds},()=>({candidates:this.draw(rules.level,metadata.countryCode,this.wonders?.modifiers(account).scoutChoices??SCOUTING_RULES.choiceCount)}));
+    // Index once per batch; no persistent catalogue cache, so admin edits remain immediate.
+    const database=this.playerDatabase.filter(p=>p?.id&&p.isX!==true&&['C','B','A','S'].includes(p.grade));
+    const weights=scoutingLevel(rules.level).gradeWeights,prepared={database,normal:database.filter(p=>weights[p.grade]>0),grades:Object.fromEntries(['C','B','A','S'].map(g=>[g,database.filter(p=>p.grade===g)]))};
+    const choices=this.wonders?.modifiers(account).scoutChoices??SCOUTING_RULES.choiceCount;
+    const queue=Array.from({length:rounds},()=>({candidates:this.draw(rules.level,metadata.countryCode,choices,prepared)}));
     const candidates=queue[0].candidates,roundDurationMs=SCOUTING_RULES.durationMs*(this.wonders?.nearby(account,"eiffel-tower",unit.territoryId)?.6:1);
     return this.transaction(account, () => {
       this.economy.spend(account, rules.costGold*rounds, "scouting-start");
@@ -346,13 +355,21 @@ export class ScoutingService {
   }
   claimQueue(account,taskId,cardIds){
     const task=this.tasks(account).find(t=>t.id===taskId);if(!task)fail('发掘任务不存在',404);
+    if(task.claimedAt!=null){
+      if(JSON.stringify(task.selectedCardIds??[task.selectedCardId])!==JSON.stringify(cardIds))fail('本队列已经领取了其他球员',409);
+      return restoreArchivedFields(task).claimedPlayers??(task.rounds??[{candidates:task.candidates}]).map((r,i)=>createPlayerCardViewModel(r.candidates.find(c=>c.id===cardIds[i])));
+    }
     const rounds=task.rounds??[{candidates:task.candidates}];
     if(!Array.isArray(cardIds)||cardIds.length!==rounds.length||cardIds.some(id=>typeof id!=='string'))fail('每轮必须选择一名球员');
     const cards=rounds.map((r,i)=>r.candidates.find(c=>c.id===cardIds[i]));if(cards.some(c=>!c))fail('所选球员不属于对应轮次');
-    if(task.claimedAt!=null){if(JSON.stringify(task.selectedCardIds??[task.selectedCardId])!==JSON.stringify(cardIds))fail('本队列已经领取了其他球员',409);return cards.map(createPlayerCardViewModel);}
     if(this.now()<task.completesAt)fail('发掘队列尚未全部完成',409);
     if(!account.setupComplete||!account.draft?.roster)fail('球队状态异常');
-    return this.transaction(account,()=>{account.draft.roster.push(...structuredClone(cards));task.selectedCardIds=[...cardIds];task.selectedCardId=cardIds.length===1?cardIds[0]:null;task.claimedAt=this.now();return cards.map(createPlayerCardViewModel);});
+    return this.transaction(account,()=>{
+      account.draft.roster.push(...structuredClone(cards));account.playerSquads=normalizePlayerSquads(account.playerSquads,account.draft.roster);
+      task.selectedCardIds=[...cardIds];task.selectedCardId=cardIds.length===1?cardIds[0]:null;task.claimedAt=this.now();
+      task.claimedPlayers=cards.map(createPlayerCardViewModel);task.rounds=[];task.candidates=[];
+      return task.claimedPlayers;
+    });
   }
   choose(account, taskId, cardId) {
     const task = this.tasks(account).find((entry) => entry.id === taskId);
@@ -360,7 +377,7 @@ export class ScoutingService {
     if((task.roundCount??1)>1)fail('请为每一轮选择球员后统一领取',409);
     if (task.claimedAt != null) {
       if (task.selectedCardId !== cardId) fail("本次发掘已经选择了其他球员", 409);
-      return createPlayerCardViewModel(task.candidates.find((card) => card.id === cardId));
+      return restoreArchivedFields(task).claimedPlayers?.[0]??createPlayerCardViewModel(task.candidates.find((card) => card.id === cardId));
     }
     if (this.now() < task.completesAt) fail("球员发掘尚未完成", 409);
     const card = task.candidates.find((entry) => entry.id === cardId);
@@ -368,9 +385,11 @@ export class ScoutingService {
     if (!account.setupComplete || !account.draft?.roster) fail("球队状态异常");
     return this.transaction(account, () => {
       account.draft.roster.push(structuredClone(card));
+      account.playerSquads=normalizePlayerSquads(account.playerSquads,account.draft.roster);
       task.selectedCardId = card.id;
       task.claimedAt = this.now();
-      return createPlayerCardViewModel(card);
+      task.claimedPlayers=[createPlayerCardViewModel(card)];task.candidates=[];task.rounds=[];
+      return task.claimedPlayers[0];
     });
   }
 }

@@ -139,6 +139,8 @@ export function createBuildingPanelController({
   let refreshPending = null;
   let selectionVersion = 0;
   let timer = null;
+  let detailVersion = null;
+  let lastMarkup = null;
   const wonderHover = createWonderHoverController({documentRef, content,
     getWonders:()=>currentView?.canManage ? [...(currentView.availableWonders ?? []).filter(w=>w.canBuild),...catalog().filter(e=>e.buildable&&(currentView.availableTypes??[]).includes(e.type)).map(e=>({...e,wonderId:'facility:'+e.type,hoverKind:'facility',iconPath:facilityArtIcon(e.type,1)||e.iconPath}))] : [], escapeHtml});
 
@@ -161,7 +163,7 @@ export function createBuildingPanelController({
     const cancelFocusId=cancelFocus?.closest?.('[data-building-card]')?.dataset?.buildingCard;
     const cancelFocusAction=cancelFocus&&['data-cancel-wonder','data-keep-wonder','data-confirm-cancel-wonder'].find(key=>documentRef.activeElement?.hasAttribute?.(key));
     wonderHover.beforeRender();
-    content.innerHTML = buildingPanelMarkup({
+    const markup = buildingPanelMarkup({
       view: currentView,
       catalog: catalog(),
       territoryLabel: territoryLabel(openTerritoryId),
@@ -171,6 +173,7 @@ export function createBuildingPanelController({
       cancelWonderId,
       escapeHtml,
     });
+    if(markup!==lastMarkup){content.innerHTML=markup;lastMarkup=markup;}
     for (const node of content.querySelectorAll?.("[data-wonder-id]") ?? []) {
       if (focusSelector && node.dataset.wonderId === focused.dataset.wonderId) node.querySelector(focusSelector)?.focus({preventScroll:true});
     }
@@ -181,12 +184,13 @@ export function createBuildingPanelController({
 
   async function refresh() {
     if (!openTerritoryId || refreshPending?.version === selectionVersion) return;
-    const request = {territoryId:openTerritoryId,version:selectionVersion};
+    const request = {territoryId:openTerritoryId,version:selectionVersion,detailVersion:getCampaignState()?.buildings?.detailVersion};
     refreshPending = request;
     try {
       const view = await getCampaignRequest()(`/api/campaign/territory/buildings?id=${encodeURIComponent(request.territoryId)}`);
       if (selectionVersion === request.version && openTerritoryId === request.territoryId) {
         currentView = view;
+        detailVersion=request.detailVersion;
         render();
       }
     } catch (error) {
@@ -262,6 +266,7 @@ export function createBuildingPanelController({
     if (!territoryId || territoryId === openTerritoryId) return;
     selectionVersion += 1;
     openTerritoryId = territoryId;
+    detailVersion=null;
     cancelWonderId = null;
     currentView = getCampaignState()?.buildings?.territories?.[territoryId] ?? null;
     panel.hidden = false;
@@ -302,7 +307,8 @@ export function createBuildingPanelController({
       currentView={...view,buildPreviews:view.canManage?(view.buildPreviews??currentView?.buildPreviews):undefined,buildings:(view.buildings??[]).map(b=>{const old=previous.get(b.id);return view.canManage&&old?.level===b.level?{...b,siteYield:b.siteYield??old.siteYield,nextSiteYield:b.nextSiteYield??old.nextSiteYield}:b;}),availableWonders:view.canManage?(view.availableWonders??currentView?.availableWonders):[]};
     }
     render();
-    if (!buildPending) refresh();
+    const nextVersion=getCampaignState()?.buildings?.detailVersion;
+    if (!buildPending && (nextVersion==null || nextVersion!==detailVersion)) refresh();
   }
 
   content.addEventListener("click", (event) => {

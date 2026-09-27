@@ -170,3 +170,11 @@ test('non-allied building views hide exact construction and upgrade schedules',(
  const value=service.territoryView(viewer,world,'home').buildings[0];assert.equal(value.progressHidden,true);for(const key of ['productionWork','completesAt','constructionStartedAt','remainingConstructionMs','upgradeStartedAt'])assert.equal(Object.hasOwn(value,key),false);
  world.diplomacy={relationships:{pair:{players:['owner','viewer'],state:'alliance'}}};assert.equal(service.territoryView(viewer,world,'home').buildings[0].completesAt,2000);assert.equal(service.territoryView(owner,world,'home').buildings[0].productionWork.completed,123);
 });
+
+test('account building projection matches individual views while computing capacity only once',()=>{
+ const account={id:'player',homeTerritoryId:'home',draft:{roster:[]}},world=playerWorld();let calls=0;
+ const service=new BuildingService({economy:new EconomyService(),getProduction:()=>{calls++;return 20;}});
+ world.territories.home.buildings=[{id:'scout',type:'scout-center',level:1,status:'active'}];
+ const expected=Object.fromEntries(world.players.player.territoryIds.map(id=>[id,service.territoryView(account,world,id,false)]));
+ calls=0;const actual=service.accountView(account,world);assert.deepEqual(actual.territories,expected);assert.equal(calls,1);
+});

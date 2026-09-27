@@ -1,0 +1,170 @@
+{
+  "passed": true,
+  "version": "20260920-r31",
+  "checks": [
+    "Complete 20260920-r30 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r31 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 16,
+  "newFiles": 4,
+  "requiredBaseFiles": 1225,
+  "imports": 164,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "tests": {
+    "full": {
+      "pretest": 82,
+      "main": 1147,
+      "posttest": 161
+    },
+    "finalStartupTargeted": 60,
+    "finalHistoryTargeted": 8,
+    "note": "Full suite preceded moving compaction earlier in startup; final targeted suites cover that change."
+  },
+  "memoryAudit": {
+    "note": "Synthetic history workload; identical input in separate processes, not the production save or a production capacity guarantee.",
+    "rows": [
+      {
+        "mode": "native",
+        "inputBytes": 88623831,
+        "outputBytes": 88623831,
+        "migrationMs": 0,
+        "before": {
+          "rss": 422924288,
+          "heapTotal": 408186880,
+          "heapUsed": 370285096,
+          "external": 2186041,
+          "arrayBuffers": 18635
+        },
+        "resident": {
+          "rss": 254664704,
+          "heapTotal": 240451584,
+          "heapUsed": 202296048,
+          "external": 2186081,
+          "arrayBuffers": 18635
+        },
+        "after": {
+          "rss": 256847872,
+          "heapTotal": 240451584,
+          "heapUsed": 202308536,
+          "external": 2186081,
+          "arrayBuffers": 18635
+        },
+        "peakHeapAtWrite": 372446568,
+        "peakRssAtWrite": 424759296,
+        "maxRssKiB": 676492,
+        "saveMs": [
+          438.8593000000001,
+          442.16240000000016,
+          453.7743999999998
+        ]
+      },
+      {
+        "mode": "chunked",
+        "inputBytes": 88623831,
+        "outputBytes": 88623831,
+        "migrationMs": 0,
+        "before": {
+          "rss": 438665216,
+          "heapTotal": 408186880,
+          "heapUsed": 370285264,
+          "external": 2186041,
+          "arrayBuffers": 18635
+        },
+        "resident": {
+          "rss": 270733312,
+          "heapTotal": 240189440,
+          "heapUsed": 202295976,
+          "external": 2186081,
+          "arrayBuffers": 18635
+        },
+        "after": {
+          "rss": 274153472,
+          "heapTotal": 240189440,
+          "heapUsed": 202377992,
+          "external": 2188129,
+          "arrayBuffers": 18635
+        },
+        "peakHeapAtWrite": 221710792,
+        "peakRssAtWrite": 276869120,
+        "maxRssKiB": 428824,
+        "saveMs": [
+          1250.0262,
+          1217.2305000000001,
+          1221.6209000000003
+        ]
+      },
+      {
+        "mode": "compact",
+        "inputBytes": 88623831,
+        "outputBytes": 22187463,
+        "migrationMs": 680.1669,
+        "before": {
+          "rss": 438800384,
+          "heapTotal": 408449024,
+          "heapUsed": 370285256,
+          "external": 2186041,
+          "arrayBuffers": 18635
+        },
+        "resident": {
+          "rss": 295837696,
+          "heapTotal": 101777408,
+          "heapUsed": 27920424,
+          "external": 10989000,
+          "arrayBuffers": 26827
+        },
+        "after": {
+          "rss": 295993344,
+          "heapTotal": 63504384,
+          "heapUsed": 27993968,
+          "external": 2196321,
+          "arrayBuffers": 26827
+        },
+        "peakHeapAtWrite": 48044944,
+        "peakRssAtWrite": 315641856,
+        "maxRssKiB": 479276,
+        "saveMs": [
+          60.066299999999956,
+          70.54030000000012,
+          62.06320000000005
+        ]
+      }
+    ]
+  },
+  "httpAudit": {
+    "note": "Local synthetic 12-account large-history HTTP smoke under a 512MiB V8 old-space limit; not a production soak.",
+    "originalBytes": 89455704,
+    "compactedBytes": 23245428,
+    "startupMs": 2983.5547,
+    "home": {
+      "count": 20,
+      "maxMs": 1034.4737000000005,
+      "p95Ms": 1034.4737000000005,
+      "meanMs": 71.5621149999989
+    },
+    "health": {
+      "count": 20,
+      "maxMs": 34.89469999999983,
+      "p95Ms": 34.89469999999983,
+      "meanMs": 7.668035000000918
+    },
+    "state": {
+      "count": 240,
+      "maxMs": 1028.0064000000002,
+      "p95Ms": 140.20080000000053,
+      "meanMs": 50.942644166666824
+    },
+    "errors": [],
+    "runtime": [
+      "[campaign-runtime] {\"at\":\"2026-09-20T12:28:12.544Z\",\"memory\":{\"rss\":443539456,\"heapTotal\":386203648,\"heapUsed\":352207096,\"external\":3929077,\"arrayBuffers\":290118},\"accounts\":12,\"receipts\":{\"airportRequests\":0,\"coalitionRequests\":0,\"raidRequests\":0,\"facilityUpgradeRequests\":0,\"elite\":0,\"diplomacy\":0},\"diplomacyRequests\":0,\"friendlyMatches\":0,\"activeMatches\":0,\"save\":{\"bytes\":23244168,\"durationMs\":63.99,\"at\":1789907287708},\"eventLoopMs\":{\"p95\":32.243711,\"max\":1032.323071}}"
+    ],
+    "stderr": ""
+  },
+  "unresolved": "Exact long main-thread stall trigger remains unconfirmed; independent stall phase diagnostics added."
+}

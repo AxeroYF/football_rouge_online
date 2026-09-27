@@ -224,7 +224,7 @@ test('allied travel and discovery use the scout owner level and fixed price, the
  f.world.diplomacy.relationships[relationKey('p','ally')].state='alliance';f.building.level=5;
  const moved=f.service.move(f.account,f.world,{scoutId:unit.id,territoryId:'b',requestId:'allied-move'});f.setTime(moved.movement.arrivesAt);f.service.settle(f.account,f.world);
  assert.equal(f.account.scouting.units[unit.id].territoryId,'b');const gold=f.account.gold;
- const task=f.service.start(f.account,f.world,{scoutId:unit.id,territoryId:'b',requestId:'allied-discover'});assert.equal(task.level,5);assert.equal(f.account.gold,gold-700);
+ const task=f.service.start(f.account,f.world,{scoutId:unit.id,territoryId:'b',requestId:'allied-discover'});assert.equal(task.level,5);assert.equal(f.account.gold,gold-1200);
  f.world.diplomacy.relationships[relationKey('p','ally')].state='friendship';f.service.settle(f.account,f.world);
  assert.equal(f.account.scouting.units[unit.id].territoryId,'center');assert.equal(f.account.scouting.tasks[task.id].territoryId,'b');
  f.setTime(task.completesAt);const chosen=f.service.choose(f.account,task.id,f.account.scouting.tasks[task.id].candidates[0].id);assert.ok(chosen);
@@ -232,8 +232,8 @@ test('allied travel and discovery use the scout owner level and fixed price, the
 
 test('twenty-round prepaid queue survives reload, hides unfinished results and grants all choices atomically once',()=>{
  const f=fixture();f.account.gold=50000;const scout=f.recruit()[0];const input={scoutId:scout.id,territoryId:'center',requestId:'twenty-rounds',rounds:20};
- const result=f.service.start(f.account,f.world,input),task=f.account.scouting.tasks[result.id];assert.equal(f.account.gold,36000);assert.equal(result.roundCount,20);assert.deepEqual(result.rounds,[]);assert.deepEqual(result.cards,[]);
- assert.equal(f.service.start(f.account,f.world,input).id,result.id);assert.equal(f.account.gold,36000);assert.throws(()=>f.service.start(f.account,f.world,{...input,rounds:19}),/请求编号/);
+ const result=f.service.start(f.account,f.world,input),task=f.account.scouting.tasks[result.id];assert.equal(f.account.gold,26000);assert.equal(result.roundCount,20);assert.deepEqual(result.rounds,[]);assert.deepEqual(result.cards,[]);
+ assert.equal(f.service.start(f.account,f.world,input).id,result.id);assert.equal(f.account.gold,26000);assert.throws(()=>f.service.start(f.account,f.world,{...input,rounds:19}),/请求编号/);
  const selections=task.rounds.map(r=>r.candidates[0].id);f.setTime(task.startedAt+task.roundDurationMs*19);assert.equal(f.service.publicTask(task).completedRounds,19);assert.throws(()=>f.service.claimQueue(f.account,task.id,selections),/尚未全部完成/);
  f.setTime(task.completesAt);Object.assign(f.account,JSON.parse(JSON.stringify(f.account)));assert.equal(f.service.publicTask(f.account.scouting.tasks[task.id]).rounds.length,20);
  assert.throws(()=>f.service.choose(f.account,task.id,selections[0]),/统一领取/);assert.throws(()=>f.service.claimQueue(f.account,task.id,[...selections.slice(1),selections[0]]),/对应轮次/);

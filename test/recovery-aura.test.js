@@ -17,7 +17,7 @@ function fixture(){
 }
 test('all five radii increase, prices stay 700, and every animation boundary matches the geodesic radius',()=>{
  for(let level=1;level<=5;level++){
-  const e=facilityEffects('recovery-center',level);assert.equal(e.recoveryRadiusKm,150+(level-1)*75);assert.equal(e.recoveryPerMinute,1+(level-1)*.25);assert.equal(facilityEffects('scout-center',level).costGold,700);
+  const e=facilityEffects('recovery-center',level);assert.equal(e.recoveryRadiusKm,150+(level-1)*75);assert.equal(e.recoveryPerMinute,1+(level-1)*.25);assert.equal(facilityEffects('scout-center',level).costGold,1200);
   for(const p of recoveryRing([2,48],e.recoveryRadiusKm))assert.ok(Math.abs(geoDistanceKm([2,48],p)-e.recoveryRadiusKm)<1e-6);
  }
 });

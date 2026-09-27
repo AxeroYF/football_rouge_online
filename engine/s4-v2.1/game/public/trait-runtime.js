@@ -1,3 +1,4 @@
+import {offlineDisplayAttributeValue} from "../../versus/offline-attribute-settings.js";
 import { roleGroup } from "./schema.js";
 
 const PHYSICAL_ATTRIBUTES = new Set(["pace", "acceleration", "strength", "stamina", "agility", "jumping", "workRate"]);
@@ -117,7 +118,7 @@ export function traitAdjustedAttribute(player, attribute, baseValue, context = {
     if (rule.hook === "afterGoalBuff" && player.matchTraitState?.scored && Number.isFinite(Number(rule.multiplyAllAttributes))) value *= Number(rule.multiplyAllAttributes);
     if (rule.hook === "campaignDeparture" && Number.isFinite(Number(rule.multiplyAllAttributes))) value *= Number(rule.multiplyAllAttributes);
   }
-  return Math.max(1, Math.min(99, value));
+  return offlineDisplayAttributeValue(value);
 }
 
 export function traitPositionFit(player, originalFit, assignedRole = player?.assignedRole ?? player?.role) {

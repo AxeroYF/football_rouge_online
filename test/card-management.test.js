@@ -1,3 +1,4 @@
+import {migrateRecycleBalance} from '../server/infrastructure/campaign-save-migrations.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { CardManagementService } from "../server/application/card-management-service.mjs";
@@ -32,11 +33,11 @@ function fixture() {
 }
 
 test("confirmed recycling prices and enhancement multipliers use integer arithmetic", () => {
-  for (const [grade, base] of [["C", 80], ["B", 400], ["A", 2000], ["S", 10000], ["X", 10000]]) {
+  for (const [grade, base] of [["C", 40], ["B", 200], ["A", 1000], ["S", 5000], ["X", 5000]]) {
     assert.equal(recycleValue(card("x", grade)), base);
     assert.equal(recycleValue(card("x", grade, { upgradeLevel: 8, trainingBonuses: { passing: 500 } })), base * 1.8);
   }
-  assert.equal(recycleValue(card("x", "C", { upgradeLevel: 4 })), 112);
+  assert.equal(recycleValue(card("x", "C", { upgradeLevel: 4 })), 56);
   assert.equal(recycleValue(card("x", "C", { upgradeLevel: 9 })), 0);
 });
 
@@ -62,7 +63,7 @@ test("recycling removes exact independent instances, credits gold once and rejec
   const f = fixture(); f.seller.draft.roster[1].cardDefinitionId = "c0";
   const q = f.preview("recycle"); const input = { cardIds: ["c0"], quote: q.quote, requestId: "recycle-once" };
   const result = f.service.consume(f.seller, input, "recycle");
-  assert.equal(f.seller.gold, 100080); assert.ok(f.seller.draft.roster.some(card => card.id === "c1"));
+  assert.equal(f.seller.gold, 100040); assert.ok(f.seller.draft.roster.some(card => card.id === "c1"));
   assert.deepEqual(f.service.consume(f.seller, input, "recycle"), result); assert.equal(f.seller.goldLedger.length, 1);
   assert.throws(() => f.service.consume(f.seller, { ...input, cardIds: ["c1"] }, "recycle"), /另一项/);
 });
@@ -214,9 +215,9 @@ test("admin transfer is atomic, restricted to operation roles, logged and retrya
 
 test("config changes invalidate recycling previews and failed saves restore previous settings", () => {
   const f = fixture(), q = f.preview("recycle");
-  const config = structuredClone(CARD_MANAGEMENT_DEFAULTS); config.recycleRatioBps = 1000;
+  const config = structuredClone(CARD_MANAGEMENT_DEFAULTS); config.recycleRatioBps = 500;
   f.service.updateConfig(config);
-  assert.equal(f.preview("recycle").amount, 40);
+  assert.equal(f.preview("recycle").amount, 20);
   assert.throws(() => f.service.consume(f.seller, { cardIds: ["c0"], quote: q.quote, requestId: "old-quote-1" }, "recycle"), /变化/);
   f.fail(true); assert.throws(() => f.service.updateConfig({ ...config, recycleEnabled: false }), /disk failure/);
   assert.equal(f.service.config().recycleEnabled, true);
@@ -486,4 +487,24 @@ test('trade-up quote validation is identical without preparing candidate display
  const f=fixture(),input={kind:'trade-up',cardIds:['c0','c1','c2','c3','c4']};
  const full=f.service.preview(f.seller,input),lean=f.service.preview(f.seller,input,{includeCandidates:false});
  assert.equal(lean.quote,full.quote);assert.ok(full.candidates.length);assert.deepEqual(lean.candidates,[]);
+});
+
+
+test('recycle balance migration updates saved rates once, preserving valuations and history',()=>{
+ const world={cardManagement:{config:{...structuredClone(CARD_MANAGEMENT_DEFAULTS),recycleRatioBps:2000,upgradeBonusBps:1500,recycleEnabled:false},history:[{amount:80}]}};
+ assert.equal(migrateRecycleBalance({world}),true);
+ assert.equal(world.cardManagement.config.recycleRatioBps,1000);
+ assert.equal(world.cardManagement.config.upgradeBonusBps,1500);
+ assert.equal(world.cardManagement.config.recycleEnabled,false);
+ assert.deepEqual(world.cardManagement.history,[{amount:80}]);
+ const restarted=JSON.parse(JSON.stringify(world));restarted.cardManagement.config.recycleRatioBps=800;
+ assert.equal(migrateRecycleBalance({world:restarted}),false);
+ assert.equal(restarted.cardManagement.config.recycleRatioBps,800);
+});
+test('balance migration invalidates a previously quoted old recycle payout',()=>{
+ const f=fixture();f.world.cardManagement={config:{...structuredClone(CARD_MANAGEMENT_DEFAULTS),recycleRatioBps:2000}};
+ const old=f.preview('recycle');assert.equal(old.amount,80);
+ migrateRecycleBalance({world:f.world});assert.equal(f.preview('recycle').amount,40);
+ assert.throws(()=>f.service.consume(f.seller,{cardIds:old.cardIds,quote:old.quote,requestId:'old-balance-quote'},'recycle'),/变化/);
+ assert.equal(f.seller.gold,100000);assert.ok(f.seller.draft.roster.some(c=>c.id==='c0'));
 });

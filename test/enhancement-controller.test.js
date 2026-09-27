@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { enhancementCardEntries, createEnhancementController } from "../client/enhancement/enhancement-controller.js";
+import { enhancementCardEntries, sortEnhancementEntries, createEnhancementController } from "../client/enhancement/enhancement-controller.js";
 import { createCampaignStore } from "../client/core/campaign-store.js";
 import { S4_ENHANCEMENT } from "../shared/config/enhancement.mjs";
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
@@ -76,20 +76,21 @@ test("pending trait card occupies the result frame and is not also shown in ware
  assert.match(f.content.innerHTML,/data-enhancement-submit >强化/);f.controller.close();
 });
 
-test("result is held outside warehouse until explicitly returned, then can be used again", async () => {
+test("selecting the next card automatically returns the completed result to warehouse", async () => {
  const f=fixture(),third={...cards[1],playerId:'third'};f.controller.open();
  f.requests[0].resolve({...structuredClone(view),cards:[cards[0],cards[1],third]});await flush();
  f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'two'});f.click('[data-enhancement-submit]');
  const resultCard={...cards[0],upgradeLevel:1};
  f.requests[1].resolve({result:{id:'result',success:true,beforeLevel:0,afterLevel:1,card:resultCard},state:{...f.store.getState(),draft:{roster:[resultCard,third]}},view:{...view,cards:[resultCard,third]}});await flush();
  assert.match(f.content.innerHTML,/强化成功/);assert.doesNotMatch(f.content.innerHTML,/data-enhancement-card="one"/);assert.match(f.content.innerHTML,/data-enhancement-card="third"/);assert.doesNotMatch(f.content.innerHTML,/data-enhancement-card="two"/);
+ f.click('[data-enhancement-card]',{enhancementCard:'missing'});
+ assert.match(f.content.innerHTML,/data-enhancement-result-card="one"/);
  f.click('[data-enhancement-card]',{enhancementCard:'third'});
- assert.match(f.content.innerHTML,/data-enhancement-result-card="one"/);
- assert.doesNotMatch(f.content.innerHTML,/data-enhancement-card="one"/);
- f.click('[data-enhancement-slot-card]',{enhancementSlotCard:'main'});
- assert.match(f.content.innerHTML,/data-enhancement-result-card="one"/);
- f.events.dblclick({preventDefault(){},target:{closest:s=>s==='[data-enhancement-result-card]'?{dataset:{enhancementResultCard:'one'}}:null}});
+ assert.doesNotMatch(f.content.innerHTML,/data-enhancement-result-card="one"/);
  assert.match(f.content.innerHTML,/data-enhancement-card="one"/);
+ assert.match(f.content.innerHTML,/data-enhancement-slot-card="main" data-enhancement-card-id="third"/);
+ assert.equal(f.requests.length,2,'returning the result does not mutate server inventory');
+ f.click('[data-enhancement-slot-card]',{enhancementSlotCard:'main'});
  f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'third'});
  assert.match(f.content.innerHTML,/data-enhancement-submit >强化/);f.controller.close();
 });
@@ -255,18 +256,70 @@ test('slot swap rejects a material that cannot be a main without partially movin
 
 test('polling and an already in-flight read cannot rebuild cards during native dragging',async()=>{
  const f=fixture();f.controller.open();f.requests[0].resolve(structuredClone(view));await flush();
- f.store.setState({...f.store.getState(),wallet:{gold:9999}});assert.equal(f.requests.length,2);
+ f.store.setState({...f.store.getState(),wallet:{gold:9999},enhancement:{revision:1}});assert.equal(f.requests.length,2);
  f.events.dragstart(dragEvent('one'));const before=f.content.innerHTML;
  f.requests[1].resolve({...structuredClone(view),cards:[...cards,{...cards[1],playerId:'third'}]});await flush();assert.equal(f.content.innerHTML,before);
- f.store.setState({...f.store.getState(),wallet:{gold:9998}});assert.equal(f.requests.length,2);
+ f.store.setState({...f.store.getState(),wallet:{gold:9998},enhancement:{revision:2}});assert.equal(f.requests.length,2);
  f.events.dragend();assert.equal(f.requests.length,3);f.requests[2].resolve({...structuredClone(view),cards:[...cards,{...cards[1],playerId:'third'}]});await flush();assert.match(f.content.innerHTML,/data-enhancement-card="third"/);f.controller.close();
 });
 
 test('a stale pre-enhancement inventory read cannot resurrect a consumed material or downgrade the result',async()=>{
  const f=fixture();f.controller.open();f.requests[0].resolve(structuredClone(view));await flush();
  f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'two'});
- f.store.setState({...f.store.getState(),wallet:{gold:9999}});const stale=f.requests[1];
+ f.store.setState({...f.store.getState(),wallet:{gold:9999},enhancement:{revision:1}});const stale=f.requests[1];
  f.click('[data-enhancement-submit]');const next={...cards[0],upgradeLevel:1};
  f.requests[2].resolve({result:{id:'result',success:true,beforeLevel:0,afterLevel:1,card:next},state:{...f.store.getState(),draft:{roster:[next]}},view:{...view,cards:[next]}});await flush();const result=f.content.innerHTML;
  stale.resolve(structuredClone(view));await flush();assert.equal(f.content.innerHTML,result);assert.doesNotMatch(result,/data-enhancement-card="two"/);f.controller.close();
+});
+
+test('wallet-only updates refresh enhancement balance without another inventory request',async()=>{
+ const f=fixture();f.controller.open();f.requests[0].resolve(structuredClone(view));await flush();
+ f.store.setState({...f.store.getState(),wallet:{gold:9990}});await flush();assert.equal(f.requests.length,1);f.controller.close();
+});
+
+
+test('warehouse includes every upgraded singleton, including max level, without exposing base singletons',()=>{
+ const list=[...cards,{...cards[2],playerId:'upgraded',upgradeLevel:4},{...cards[2],playerId:'max',cardDefinitionId:'max',upgradeLevel:8}];
+ assert.deepEqual(enhancementCardEntries(list).map(e=>e.card.id),['one','two','single','upgraded','max']);
+ assert.deepEqual(enhancementCardEntries([{...cards[2],upgradeLevel:1}]).map(e=>e.card.id),['single']);
+ assert.equal(enhancementCardEntries([cards[2]]).length,0);
+});
+test('upgraded singleton remains selectable as main but cannot use an unrelated material',async()=>{
+ const f=fixture();f.controller.open();f.requests[0].resolve({...view,cards:[{...cards[2],upgradeLevel:1},...cards.slice(0,2)]});await flush();
+ assert.match(f.content.innerHTML,/data-enhancement-card="single"/);
+ f.click('[data-enhancement-card]',{enhancementCard:'single'});
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});
+ assert.ok(f.toasts.some(t=>t.includes('同名')));assert.equal(f.requests.length,1);
+});
+
+test('every sort keeps same-name cards adjacent and sorts their levels without merging instances',()=>{
+ const make=(id,name,level,overall,definition=name)=>({card:{id,upgradeLevel:level},player:{id:definition,name,overall,grade:'S'}});
+ const entries=[make('a0','亨利',0,90),make('b4','齐达内',4,96),make('a7','亨利',7,95),make('b0','齐达内',0,90),make('a2','亨利',2,91,'another-definition')];
+ const original=structuredClone(entries);
+ for(const mode of ['upgrade','overall','name']){const sorted=sortEnhancementEntries(entries,mode),names=sorted.map(e=>e.player.name);const start=names.indexOf('亨利');assert.deepEqual(sorted.slice(start,start+3).map(e=>e.card.id),['a7','a2','a0']);assert.equal(new Set(sorted.map(e=>e.card.id)).size,5);}
+ assert.deepEqual(entries,original);
+});
+
+for (const pendingTrait of [false,true]) test(`next selection handles failed results and pending traits: ${pendingTrait}`,async()=>{
+ const f=fixture(),third={...cards[1],playerId:'third'};f.controller.open();
+ f.requests[0].resolve({...structuredClone(view),cards:[cards[0],cards[1],third]});await flush();
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'two'});f.click('[data-enhancement-submit]');
+ const resultCard={...cards[0],upgradeLevel:1},offer=pendingTrait?{id:'offer',cardId:'one',traits:[]}:null;
+ f.requests[1].resolve({result:{id:'result',success:false,beforeLevel:1,afterLevel:1,card:resultCard,traitOffer:offer},state:f.store.getState(),view:{...view,cards:[resultCard,third],traitOffers:offer?[offer]:[]}});await flush();
+ f.click('[data-enhancement-card]',{enhancementCard:'third'});
+ if(pendingTrait){assert.match(f.content.innerHTML,/data-enhancement-result-pending/);assert.doesNotMatch(f.content.innerHTML,/data-enhancement-card="one"/);}
+ else{assert.doesNotMatch(f.content.innerHTML,/data-enhancement-result-card="one"/);assert.match(f.content.innerHTML,/data-enhancement-card="one"/);}
+ f.controller.close();
+});
+
+for(const mode of ['upgrade','overall','name'])test(`selected same-name card keeps remaining warehouse order: ${mode}`,async()=>{
+ const f=fixture();f.controller.open();
+ const own=[{...cards[0],upgradeLevel:7,overall:99},{...cards[1],upgradeLevel:0,overall:90},{...cards[0],playerId:'other',cardDefinitionId:'zidane',name:'齐达内',upgradeLevel:4,overall:95}];
+ f.requests[0].resolve({...structuredClone(view),cards:own});await flush();
+ f.events.change({target:{matches:s=>s==='[data-backpack-sort]',value:mode}});
+ const order=()=>[...f.content.innerHTML.split('<section class="enhancement-warehouse"')[1].matchAll(/data-enhancement-card="([^"]+)"/g)].map(m=>m[1]);
+ const before=order();assert.ok(before.includes('one')&&before.includes('two')&&before.includes('other'));
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});assert.deepEqual(order(),before.filter(id=>id!=='one'));
+ f.click('[data-enhancement-slot-card]',{enhancementSlotCard:'main'});assert.deepEqual(order(),before);
+ assert.equal(f.requests.length,1,'selection and return must stay entirely local');f.controller.close();
 });

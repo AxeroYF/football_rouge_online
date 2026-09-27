@@ -1,3 +1,4 @@
+import {POSITION_GROUPS,roleGroup} from '../../engine/s4-v2.1/game/public/schema.js';
 // Enhancement rules ported from S4 versus/s4-balance.js.
 export const S4_ENHANCEMENT = Object.freeze({
   maxLevel:8,
@@ -53,4 +54,15 @@ export function duplicateEnhancementCards(roster = []) {
   const counts = new Map();
   for (const player of roster) { const key = enhancementFamily(player); counts.set(key, (counts.get(key) ?? 0) + 1); }
   return roster.filter((player) => counts.get(enhancementFamily(player)) > 1);
+}
+
+
+// Base role determines eligibility; pool may be stale after a card import.
+export function enhancementTraitEligible(trait,player) {
+  const groups=trait?.eligibleRoleGroups??[];
+  if(groups.includes('ANY'))return true;
+  const role=String(player?.role??'').toUpperCase();
+  const known=[...Object.values(POSITION_GROUPS).flat(),'DEF','MID','ATT','FB','WB','CM','CF','WM'];
+  const group=known.includes(role)?roleGroup(role):!role?player?.pool:null;
+  return Boolean(group)&&groups.includes(group);
 }

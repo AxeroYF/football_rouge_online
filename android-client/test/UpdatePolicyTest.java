@@ -20,6 +20,12 @@ public final class UpdatePolicyTest {
         for(String digest:new String[]{"", "bad", new String(new char[64]).replace('\0','z')})rejects(()->UpdatePolicy.requireRelease(origin,1,2,good,digest,100));
         rejects(()->UpdatePolicy.requireRelease(origin,1,2,"https://other.test/a.apk",sha,100));
         check(UpdatePolicy.hex(new byte[]{0,1,15,16,-1}).equals("00010f10ff"));
+        check(LocalArtPolicy.request(origin,"https://yellowdogsleague.online/assets/player-profiles/Alan%20Shearer.webp")[0].endsWith("Alan Shearer.webp"));
+        String art="https://yellowdogsleague.online/assets/player-profiles/Adriano.webp";
+        check(LocalArtPolicy.request(origin,art)[0].equals("assets/player-profiles/Adriano.webp"));
+        check(LocalArtPolicy.request(origin,art+"?v=sha256-"+sha)[1].equals(sha));
+        check(LocalArtPolicy.request(origin,art.replace("/assets/","/versus/assets/"))[0].equals("assets/player-profiles/Adriano.webp"));
+        for(String bad:new String[]{art+"?v=old",art+"?v=sha256-"+sha+"&x=1",art.replace("https:","http:"),art.replace(".online/",".online.evil/"),art.replace("Adriano","admin/Adriano"),art.replace("Adriano","../Adriano"),art.replace("Adriano","%2e%2e/Adriano"),"https://yellowdogsleague.online/api/campaign/state","https://yellowdogsleague.online/index.html"})check(LocalArtPolicy.request(origin,bad)==null);
         System.out.println("Update policy: "+checks+" checks passed");
     }
 }

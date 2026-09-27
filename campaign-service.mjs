@@ -1,10 +1,17 @@
+import {prepareHistoryCompaction} from './server/application/history-compaction.mjs';
+import {battleSummary} from './server/infrastructure/history-archive.mjs';
+import {prepareOrphanBondRefunds} from './server/application/pvp-attack-bond.mjs';
 import {prepareDowntimeRecovery} from './server/application/downtime-recovery-service.mjs';
 import {resumeServerEconomy,economicCheckpoint,SERVER_ECONOMY_HEARTBEAT_MS} from './server/infrastructure/server-economy-clock.mjs';
 import {AirportService} from './server/application/airport-service.mjs';
+import {DailyLeagueService} from './server/application/daily-league-service.mjs';
 import {EliteRaidService} from './server/application/elite-raid-service.mjs';
 import {suppressionBoundary,expireSuppressions} from './server/application/raid-suppression.mjs';
 import {raidMatchForAccount} from './shared/config/elite-raids.mjs';
 import {CoalitionService} from './server/application/coalition-service.mjs';
+import {unitTravelEstimate} from './server/application/unit-travel.mjs';
+import {createUnitMovement} from './server/domain/expedition-piece.mjs';
+import {pendingLiberations,resolveLiberation,migrateOriginalOwners} from './server/application/territory-liberation.mjs';
 import {repairHeadquartersWars} from './server/application/war-settlement.mjs';
 import {OilService} from './server/application/oil-service.mjs';
 import {OperatingCostService} from './server/application/operating-cost-service.mjs';
@@ -79,7 +86,6 @@ import {
   cancelExpeditionMovement,
   estimateExpeditionMove,
   expeditionAttackSource,
-  moveExpeditionPiece,
   normalizeExpeditionPiece,
   placeExpeditionPiece,
   publicExpeditionPiece,
@@ -198,6 +204,7 @@ export class CampaignService {
     this.launchRewards = new LaunchRewardService({ economy: this.economy, playerPacks: this.playerPacks });
     this.drafting = new DraftService({ catalog: this.playerDatabase, random: this.random, save: () => this.save() });
     const saved = this.repository.load();
+    if(saved)prepareHistoryCompaction({accounts:new Map(Object.entries(saved.accounts??{})),world:saved.world},{maxRecords:Infinity});
     this.economyResume = this.pauseEconomyWhenStopped ? resumeServerEconomy(saved, this.now()) : null;
     const migration = migrateCampaignSave({
       saved,
@@ -267,6 +274,7 @@ export class CampaignService {
     this.fitness=new ExpeditionFitnessService({world:this.world,accounts:this.accounts,territoryIndex:this.territoryIndex,now:this.now});
     this.challenges.fitness=this.fitness;
     this.eliteRaids=new EliteRaidService(this);
+    this.dailyLeague=new DailyLeagueService(this);
     this.airports=new AirportService(this);
     this.scouting.oil=this.oil;
     this.buildings.getRuntimeEffect=(account,territoryId,building)=>{
@@ -284,6 +292,7 @@ export class CampaignService {
       return '';
     };
     this.enhancement.world=this.world;
+    migrateOriginalOwners({world:this.world,accounts:this.accounts});
     repairHeadquartersWars(this.world,this.accounts,this.now());
     this.challenges.restoreActiveChallenges();
     const fogChanged = this.fog.refreshAll(this.accounts, this.world);
@@ -409,6 +418,7 @@ export class CampaignService {
           rollbacks.push(this.constructionProduction.prepare(this.world,now,Object.fromEntries(Object.entries(rates).map(([id,r])=>[id,r.production]))).rollback);
         }
       }
+      rollbacks.push(prepareOrphanBondRefunds(this.world,this.accounts,now).rollback);
       this.fog?.refreshAll(this.accounts,this.world);
       this.persist();
     }catch(error){for(const rollback of rollbacks.reverse())rollback();throw error;}
@@ -469,6 +479,7 @@ export class CampaignService {
     const account = this.accountByNickname(nicknameValue) ?? this.accountByNickname(nicknameValue.trim());
     const password = String(account?.passwordHash).startsWith("scrypt$") ? passwordValue : passwordValue.trim();
     if (!account || !accountPasswordMatches(password, account)) throw new Error("昵称或密码错误");
+    if(account.eliminatedAt!=null){this.economy.migrateAccount(account);this.playerPacks.migrateAccount(account);}
     account.token = crypto.randomBytes(24).toString("base64url");
     account.lastSeenAt = Date.now();
     this.eliteRaids?.touch(account,{foreground:true});
@@ -505,7 +516,7 @@ export class CampaignService {
   challengeStatus(account, challengeIdValue) {
     const challenge = Object.values(this.world?.activeChallenges ?? {}).find((entry) => entry.id === challengeIdValue);
     let spectatorFog = null;
-    if (challenge && challenge.attackerId !== account.id && challenge.defenderId !== account.id && !challenge.coalitionContributors?.includes(account.id)) {
+    if (challenge && challenge.attackerId !== account.id && challenge.defenderId !== account.id && !challenge.coalitionContributors?.includes(account.id) && !challenge.defenderCoalitionContributors?.includes(account.id)) {
       this.assertTerritoryVisible(account, challenge.territoryId);
       spectatorFog = this.fogView(account);
       const playerDefender = challenge.previousOwner?.type === OWNER_TYPES.PLAYER || this.accounts.has(challenge.defenderId);
@@ -515,6 +526,8 @@ export class CampaignService {
       }
     }
     const result = this.challenges.status(account, challengeIdValue);
+    if(result.challenge&&!challenge?.coalitionContributors?.includes(account.id))delete result.challenge.coalitionContributors;
+    if(result.challenge&&!challenge?.defenderCoalitionContributors?.includes(account.id))delete result.challenge.defenderCoalitionContributors;
     if (result.challenge && spectatorFog?.enabled && !spectatorFog.visibleTerritoryIds.includes(result.challenge.sourceTerritoryId)) {
       result.challenge.sourceTerritoryId = null;
     }
@@ -522,11 +535,12 @@ export class CampaignService {
   }
 
   advanceActiveChallenges(now = this.now(), { maximumMatches = 1, maximumChainsPerMatch = 1 } = {}) {
+    const leagueChanged=this.dailyLeague?.advance(now,{maximumChainsPerMatch})??false;
     const raidChanged=this.eliteRaids?.advance(now,{maximumChainsPerMatch})??false;
     const coalitionChanged=this.coalitions?.advance()??false;
     const friendlyChanged=this.diplomacy?.advance(now,{maximumMatches,maximumChainsPerMatch})??false;
     const eliteChanged=this.eliteChallenges?.advance(now,{maximumMatches,maximumChainsPerMatch})??false;
-    return this.challenges.advance(now, { maximumMatches, maximumChainsPerMatch })||eliteChanged||friendlyChanged||coalitionChanged||raidChanged;
+    return this.challenges.advance(now, { maximumMatches, maximumChainsPerMatch })||eliteChanged||friendlyChanged||coalitionChanged||raidChanged||leagueChanged;
   }
 
   completeTerritoryChallenge(account, challengeIdValue) {
@@ -657,6 +671,25 @@ export class CampaignService {
     }
   }
 
+  dismissPvpNotice(account,noticeId) {
+    const notices=account.pvpNotices??[];
+    if(typeof noticeId!=='string'||!notices.some(n=>n.id===noticeId))throw Object.assign(new Error('保证金通知不存在或无权处理'),{statusCode:404});
+    const previous=account.pvpNoticeReadIds,valid=new Set(notices.map(n=>n.id));
+    account.pvpNoticeReadIds=[...new Set([...(previous??[]),noticeId])].filter(id=>valid.has(id));
+    try{this.persist();}catch(error){if(previous===undefined)delete account.pvpNoticeReadIds;else account.pvpNoticeReadIds=previous;throw error;}
+    return {pvpNoticeReadIds:account.pvpNoticeReadIds};
+  }
+
+  dismissBattleReport(account,challengeId) {
+    const history=account.battleHistory??[];
+    if(typeof challengeId!=='string'||!history.some(b=>(b.challengeId??b.id)===challengeId))throw Object.assign(new Error('战报不存在或无权处理'),{statusCode:404});
+    const previous=account.battleReportReadIds;
+    const valid=new Set(history.map(b=>b.challengeId??b.id));
+    account.battleReportReadIds=[...new Set([...(previous??[]),challengeId])].filter(id=>valid.has(id));
+    try{this.persist();}catch(error){if(previous===undefined)delete account.battleReportReadIds;else account.battleReportReadIds=previous;throw error;}
+    return {battleReportReadIds:account.battleReportReadIds};
+  }
+
   publicWorld(account = null, fog = account ? this.fogView(account) : null) {
     if (!this.world) return null;
     const now = this.now();
@@ -684,12 +717,16 @@ export class CampaignService {
       }];
     }));
     const activeChallenges = Object.fromEntries(Object.entries(this.world.activeChallenges ?? {})
-      .filter(([id, challenge]) => canSee(id) || challenge.attackerId === account?.id || challenge.defenderId === account?.id)
+      .filter(([id, challenge]) => canSee(id) || challenge.attackerId === account?.id || challenge.defenderId === account?.id || challenge.coalitionContributors?.includes(account?.id) || challenge.defenderCoalitionContributors?.includes(account?.id))
       .map(([id, challenge]) => {
         const view = publicChallengeView(challenge, now);
+        if(!challenge.coalitionContributors?.includes(account?.id))delete view.coalitionContributors;
+        if(!challenge.defenderCoalitionContributors?.includes(account?.id))delete view.defenderCoalitionContributors;
         if (!canSee(view.sourceTerritoryId)) view.sourceTerritoryId = null;
-        if (!knows(challenge.attackerId)) { view.attackerId = null; view.attackerTeamName = "未相遇球队"; view.id = null; }
-        if ((challenge.previousOwner?.type === OWNER_TYPES.PLAYER || this.accounts.has(challenge.defenderId)) && !knows(challenge.defenderId)) { view.defenderId = null; view.defenderName = "未相遇球队"; view.id = null; }
+        const participant=challenge.attackerId===account?.id||challenge.defenderId===account?.id||challenge.coalitionContributors?.includes(account?.id)||challenge.defenderCoalitionContributors?.includes(account?.id);
+        if(view.firstLeg&&!participant)view.firstLeg.teams=view.firstLeg.teams.map(team=>knows(team.id)?team:{id:null,name:"未相遇球队"});
+        if (!participant && !knows(challenge.attackerId)) { view.attackerId = null; view.attackerTeamName = "未相遇球队"; view.id = null; }
+        if (!participant && (challenge.previousOwner?.type === OWNER_TYPES.PLAYER || this.accounts.has(challenge.defenderId)) && !knows(challenge.defenderId)) { view.defenderId = null; view.defenderName = "未相遇球队"; view.id = null; }
         return [id, view];
       }));
     const weather = this.campaignWeather(now);
@@ -756,7 +793,7 @@ export class CampaignService {
     return { catalogVersion: PLAYER_CATALOG_VERSION, total: players.length, players };
   }
 
-  assignPlayerSquad(account, playerIdValue, squadIdValue) {
+  assignPlayerSquad(account, playerIdValue, squadIdValue, options = {}) {
     if(account.draft?.roster?.find(p=>p.id===playerIdValue)?.coalitionLoan)throw new Error("球员已借调联军，归队后才能调动");
     this.training.settle(account);
     if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
@@ -782,7 +819,7 @@ export class CampaignService {
       account.tactics = previousTactics;
       throw error;
     }
-    return this.state(account);
+    return options.compact === true ? this.actionState(account) : this.state(account);
   }
 
   cardManagementDetails(account) {
@@ -817,7 +854,7 @@ export class CampaignService {
     const result = action === "trait" ? this.enhancement.chooseTrait(account, options)
       : action === "batch" ? this.enhancement.batch(account, this.world, options)
       : this.enhancement.enhance(account, this.world, options);
-    return { result, state: this.state(account), view: this.enhancementDetails(account) };
+    return { result, ...(options.compact === true ? {statePatch:this.actionState(account)} : {state:this.state(account)}), view: this.enhancementDetails(account) };
   }
 
   trainingDetails(account, territoryId, buildingId) {
@@ -860,9 +897,10 @@ export class CampaignService {
     const scout = this.scouting.move(account, this.world, options);
     return { scout, state: this.state(account) };
   }
-  cancelScoutMove(account, scoutId, movementId) {
-    const scout = this.scouting.cancelMove(account, this.world, scoutId, movementId);
-    return { scout, state: this.state(account) };
+  cancelScoutMove(account, scoutId, movementId, {compact=false}={}) {
+    if(this.economyDue(this.now()))this.save();
+    const scout = this.scouting.cancelMove(account, this.world, scoutId, movementId, {save:()=>this.persist()});
+    return compact?{scout,statePatch:{scouting:this.scouting.publicState(account,this.world)}}:{ scout, state: this.state(account) };
   }
 
   startScouting(account, options) {
@@ -871,11 +909,11 @@ export class CampaignService {
     return { task, state: this.state(account) };
   }
 
-  claimScoutingQueue(account,taskId,cardIds){const players=this.scouting.claimQueue(account,taskId,cardIds);return {players,state:this.state(account)};}
+  claimScoutingQueue(account,taskId,cardIds,options={}){const players=this.scouting.claimQueue(account,taskId,cardIds);return {players,...(options.compact?{statePatch:{...this.actionState(account),scouting:this.scouting.publicState(account,this.world)}}:{state:this.state(account)})};}
 
-  chooseScoutingPlayer(account, taskId, cardId) {
+  chooseScoutingPlayer(account, taskId, cardId, options = {}) {
     const player = this.scouting.choose(account, taskId, cardId);
-    return { player, state: this.state(account) };
+    return { player, ...(options.compact?{statePatch:{...this.actionState(account),scouting:this.scouting.publicState(account,this.world)}}:{state:this.state(account)}) };
   }
 
   startMedical(account,options){this.save();const task=this.medical.start(account,options);return {task,state:this.state(account),territory:this.buildings.territoryView(account,this.world,options.territoryId)};}
@@ -892,8 +930,8 @@ export class CampaignService {
     return { state: this.state(account), ...result };
   }
 
-  acknowledgeWonderCompetition(account,id) {
-    this.wonders.acknowledgeCompetition(account,String(id??''));return {state:this.state(account)};
+  acknowledgeWonderCompetition(account,id,{compact=false}={}) {
+    this.wonders.acknowledgeCompetition(account,String(id??''));return compact?{ok:true}:{state:this.state(account)};
   }
 
   cancelWonderConstruction(account, territoryId, buildingId) {
@@ -970,6 +1008,7 @@ export class CampaignService {
       wallet:{ gold:Number(account.gold ?? 0) },
       ...(resources ? { resources } : {}),
       sponsorship:this.sponsorship.publicState(account, now),
+      dailyLeague:this.dailyLeague?.summary(account)??null,
       eliteChallenge:{activeId:this.eliteChallenges?.active(account)?.id??null,pendingReward:Boolean(account.elite?.reward&&!account.elite.reward.claimedId)},
       neutralRewards:this.neutralRewards.publicState(account),
       conquest:this.challenges.conquestState(account, now),
@@ -985,6 +1024,8 @@ export class CampaignService {
         ? this.buildings.accountView(account, this.world)
         : { rules:null, catalog:this.buildings.catalog(), territories:{} },
       setupComplete,
+      pvpNotices:account.pvpNotices??[],
+      pvpNoticeReadIds:account.pvpNoticeReadIds??[],
       homeSelectionRequired: Boolean(this.world && setupComplete && !account.homeTerritoryId),
       homeTerritoryId: account.homeTerritoryId ?? null,
       expeditionPiece,
@@ -999,12 +1040,17 @@ export class CampaignService {
       activeChallengeId:activeChallenge?.id ?? null,
       attackableTerritoryIds: canExpand ? listAttackableTerritoriesFrom(this.territoryIndex, this.world, account.id, expeditionTerritoryId, now).filter((territoryId) => canSee(territoryId) && !this.world.activeChallenges?.[territoryId]) : [],
       coastalTerritoryIds: (this.maritimePlanner?.coastalTerritoryIds ?? []).filter(canSee),
-      battleHistory: (account.battleHistory ?? []).slice(-20).reverse().map(({broadcasts,...battle})=>({...battle,hasDetailedReport:Boolean(broadcasts?.length)})),
+      coalitionLoanRequests: this.coalitions.loanNotices(account),
+      coalitionTargetRequests: this.coalitions.targetNotices(account),
+      coalitionCommandRequests: this.coalitions.commandNotices(account),
+      pendingLiberations: pendingLiberations(this.world,this.accounts,account),
+      battleReportReadIds: account.battleReportReadIds??[],
+      battleHistory: (account.battleHistory ?? []).slice(-20).reverse().map(battleSummary),
       primaryMatchEngine: CAMPAIGN_ENGINE,
     };
   }
 
-  saveTactics(account, value = {}) {
+  saveTactics(account, value = {}, { compact=false } = {}) {
     this.training.settle(account);
     if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
     const submittedPlayerSquads = value.playerSquads && typeof value.playerSquads === "object" ? value.playerSquads : account.playerSquads;
@@ -1075,7 +1121,7 @@ export class CampaignService {
     account.playerSquads = nextPlayerSquads;
     account.tactics = { schemaVersion:2,activeSquadId,squads,...squads[PLAYER_SQUAD_IDS.EXPEDITION],updatedAt:Date.now() };
     try{this.save();}catch(error){account.playerSquads=previousPlayerSquads;account.tactics=previousTactics;throw error;}
-    return this.state(account);
+    return compact ? {tactics:account.tactics,playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))}} : this.state(account);
   }
 
   beginDraft(account, teamNameValue) {
@@ -1136,6 +1182,20 @@ export class CampaignService {
     return { ...result, state: this.state(account) };
   }
 
+  // Mutations return affected account fields; regular polling owns world refreshes.
+  actionState(account,{includeRoster=true}={}) {
+    const now=this.now();
+    const base={playerId:account.id,wallet:{gold:Number(account.gold??0)},resources:this.resourceState(account,now),expeditionPiece:publicExpeditionPiece(account,this.world,now)};
+    if(!includeRoster)return base;
+    return {
+      ...base,
+      draft:account.draft?{...this.fitness.draftView(account,publicDraft(account)),baseTeamName:account.draft.teamName,teamName:sponsoredTeamName(account,now)}:null,
+      playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))},
+      tactics:account.tactics??null, enhancement:this.enhancement.publicState(account),
+      training:this.training.publicState(account), expeditionFitness:this.fitness.publicState(account),
+    };
+  }
+
   ensureExpeditionCanMove(account) {
     if (!this.world || !this.territoryIndex) throw new Error("共享世界尚未初始化");
     if (!account.setupComplete || !account.homeTerritoryId) throw new Error("请先完成建队并选择总部所在地");
@@ -1158,11 +1218,7 @@ export class CampaignService {
   estimateExpedition(account, territoryIdValue, options = {}) {
     this.ensureExpeditionCanMove(account);
     const base=estimateExpeditionMove({account,world:this.world,territoryIndex:this.territoryIndex,targetTerritoryId:territoryIdValue,now:this.now()});
-    if(!this.wonders.isSeaJourney(base.fromTerritoryId,base.toTerritoryId))return {estimate:this.oil.estimate(account,{...base,mode:'land'},'expedition',options)};
-    const territory=this.world.territories[base.fromTerritoryId];
-    const port=territory.ownerId===account.id?territory.buildings?.find(b=>b.type==='port'&&b.status==='active'):null;
-    const sea=this.wonders.seaTravel(account,base);
-    return {estimate:this.oil.estimate(account,{...sea,durationMs:Math.max(60000,Math.ceil(sea.durationMs*(port?facilityEffects('port',port.level).timeMultiplier:1))),mode:'sea'},'expedition',options)};
+    return {estimate:this.oil.estimate(account,unitTravelEstimate(this,account,base),'expedition',options)};
   }
 
   moveExpedition(account, territoryIdValue, options = {}) {
@@ -1171,26 +1227,30 @@ export class CampaignService {
     const before=structuredClone(account);
     try {
     const estimate=this.estimateExpedition(account,territoryIdValue,options).estimate;
-    moveExpeditionPiece({
-      account,
-      world: this.world,
-      territoryIndex: this.territoryIndex,
-      targetTerritoryId: territoryIdValue,
-      now: this.now(),
-    });
+    // The estimate just validated ownership and current position.
+    account.expeditionPiece.movement=createUnitMovement(estimate,this.now());
     this.oil.spend(account,estimate);
-    account.expeditionPiece.movement={...account.expeditionPiece.movement,...estimate,arrivesAt:this.now()+estimate.durationMs};
     const expeditionPiece=publicExpeditionPiece(account,this.world,this.now());
     this.save();
-    return { state: this.state(account), expeditionPiece };
+    return { ...(options.compact === true ? {statePatch:{...this.actionState(account,{includeRoster:false}),attackableTerritoryIds:[]}} : {state:this.state(account)}), expeditionPiece };
     }catch(e){for(const key of Object.keys(account))delete account[key];Object.assign(account,before);throw e;}
   }
 
-  cancelExpedition(account) {
+  cancelExpedition(account,{compact=false,movementId}={}) {
     if (!this.world) throw new Error("共享世界尚未初始化");
-    const result=cancelExpeditionMovement(account,this.world,this.now());
-    this.save();
-    return {state:this.state(account),expeditionPiece:result.piece,canceledMovement:result.canceledMovement};
+    if(movementId&&account.expeditionPiece?.movement?.id!==movementId)throw Object.assign(Error('远征行程已变化，请刷新后重试'),{statusCode:409});
+    if(this.economyDue(this.now()))this.save();
+    const before=structuredClone(account.expeditionPiece);
+    try{const result=cancelExpeditionMovement(account,this.world,this.now());this.persist();
+      return {...(compact?{statePatch:{expeditionPiece:result.piece}}:{state:this.state(account)}),expeditionPiece:result.piece,canceledMovement:result.canceledMovement};
+    }catch(error){account.expeditionPiece=before;throw error;}
+  }
+
+  resolveTerritoryLiberation(account, body = {}) {
+    const result=resolveLiberation({world:this.world,accounts:this.accounts,account,
+      territoryId:String(body.territoryId??''),challengeId:String(body.challengeId??''),action:body.action,
+      save:()=>this.save(),now:this.now()});
+    return {result,state:this.state(account)};
   }
 
   challengeTerritory(account, territoryIdValue, options = {}) {

@@ -129,3 +129,18 @@ test("enhancement level uses matching S4 metallic badge and frame bands", () => 
   else assert.doesNotMatch(html,/s4-player-card-upgrade/);
  }
 });
+
+
+test("trait labels survive nested card data and deferred rendering", async () => {
+  const { renderDeferredCardContent } = await import("../client/player-card/player-card.js");
+  const { YDL_TRAIT_CARDS } = await import("../engine/s4-v2.1/versus/trait-pool.js");
+  const trait=YDL_TRAIT_CARDS[0];
+  const card=createPlayerCardViewModel({id:"traits",card:{traits:[trait.id,{id:trait.id},"<长特性>"]}});
+  assert.deepEqual(card.traits,[trait.name,trait.name,"<长特性>"]);
+  const markup=renderDeferredCardContent({card,options:{animated:false}});
+  assert.match(markup,/shield-card-traits/);
+  assert.match(markup,/shield-card-trait-more">\+1/);
+  assert.match(markup,/&lt;长特性&gt;/);
+  assert.doesNotMatch(markup,/<长特性>/);
+  assert.doesNotMatch(playerCardMarkup({id:"empty",traits:[]}),/class="shield-card-traits"/);
+});

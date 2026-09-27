@@ -96,7 +96,7 @@ test("selecting a result directly locks the claim and permits retry", async () =
   clickCard("card-1");clickCard("card-2");
   assert.equal(f.requests.length, 2);
   assert.equal(f.requests[1].url, "/api/campaign/scouting/choose");
-  assert.deepEqual(f.requests[1].options.body, { taskId: "task", cardId: "card-1" });
+  assert.deepEqual(f.requests[1].options.body, { taskId: "task", cardId: "card-1", view: "compact" });
   assert.equal((f.content.innerHTML.match(/ disabled/g) ?? []).length, 3);
   f.requests[1].reject(new Error("temporary network error")); await flush();
   f.requests[2].resolve(detail); await flush();
@@ -222,7 +222,7 @@ test("two closed-panel movement notices keep separate identities and cancellatio
   notifyClick("[data-scout-cancel-move]",{scoutCancelMove:"scout-a",scoutMovementId:"trip-a"});
   notifyClick("[data-scout-cancel-move]",{scoutCancelMove:"scout-a",scoutMovementId:"trip-a"});
   assert.equal(f.requests.length,1);
-  assert.deepEqual(f.requests[0].options.body,{scoutId:"scout-a",movementId:"trip-a"});
+  assert.deepEqual(f.requests[0].options.body,{scoutId:"scout-a",movementId:"trip-a",compact:true});
   f.requests[0].resolve({state:{...f.store.getState(),scouting:{...f.store.getState().scouting,scouts:[{...units[0],status:"idle",movement:null},units[1]]}}});await flush();
   assert.doesNotMatch(f.notifications.innerHTML,/data-scout-move-progress="scout-a"/);
   assert.match(f.notifications.innerHTML,/data-scout-move-progress="scout-b"/);
@@ -318,4 +318,17 @@ test('scout mode switches update preview without compounding and submit the sele
  choose('fuel');assert.match(f.content.innerHTML,/消耗 1 石油/);assert.match(f.content.innerHTML,/01:00/);
  choose('slow');f.click('[data-scout-confirm-move]');assert.equal(f.requests[2].options.body.useOil,false);
  f.controller.close();f.requests[2].reject(Error('closed'));await flush();
+});
+
+
+test('compact scouting claim preserves world and closes results without another detail fetch',async()=>{
+ const f=fixture(),world={territories:{a:{ownerId:'p'}}};
+ const task={id:'compact-task',scoutId:'scout-a',territoryId:'a',status:'ready',cards:[{playerId:'card-0',name:'球员',grade:'C',overall:70}]};
+ f.store.setState({...f.store.getState(),world,scouting:{rules:SCOUTING_RULES,tasks:[task],serverNow:1000}});
+ f.controller.openUnit('scout-a',{showResults:true});f.requests[0].resolve({...f.unit(),task});await flush();
+ f.selectionRoot.events.click({target:{closest:selector=>selector==='[data-scout-select]'?{dataset:{scoutSelect:'card-0'}}:null}});
+ assert.equal(f.requests.length,2);
+ f.requests[1].resolve({player:task.cards[0],statePatch:{roster:[task.cards[0]],scouting:{rules:SCOUTING_RULES,tasks:[],scouts:[f.unit().scout],serverNow:1000}}});await flush();
+ assert.equal(f.requests.length,2);assert.equal(f.store.getState().world,world);assert.equal(f.selectionRoot.hidden,true);
+ assert.equal(f.store.getState().roster.length,1);f.controller.close();
 });

@@ -1,3 +1,4 @@
+import {fetchMapAsset} from '../map/map-asset-fetch.js';
 import { decodeSnowMask } from "./environment.js";
 import { mapAssetUrl } from "../../shared/config/map-assets.mjs";
 import { unproject } from "./projection.js";
@@ -103,7 +104,5 @@ export function natureSites(field) {
 }
 
 export async function loadMapNature({signal,fetchImpl=fetch}={}) {
-  const response=await fetchImpl(mapAssetUrl("./assets/data/map-nature.json"),{signal,cache:"default"});
-  if(!response.ok)throw new Error("自然地貌资源读取失败");
-  return response.json();
+  return fetchMapAsset(mapAssetUrl('./assets/data/map-nature.json'),{fetchImpl,signal,errorMessage:'自然地貌资源读取失败'});
 }

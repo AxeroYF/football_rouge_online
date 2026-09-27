@@ -1,3 +1,4 @@
+import {fetchMapAsset} from '../map/map-asset-fetch.js';
 import { MAP_THREE_SETTINGS } from "./settings.js";
 import { mapAssetUrl } from "../../shared/config/map-assets.mjs";
 
@@ -92,14 +93,8 @@ export async function loadReliefFields({signal,fetchImpl=fetch}={}) {
     // request or redirect it to an arbitrary URL.
     const prefix = "./assets/map-relief/relief-mesh/" + region;
     const [meta, buffer] = await Promise.all([
-      fetchImpl(mapAssetUrl(prefix + ".json"), { signal, cache: "default" }).then(response => {
-        if (!response.ok) throw new Error("立体地形清单加载失败：" + region);
-        return response.json();
-      }),
-      fetchImpl(mapAssetUrl(prefix + ".bin"), { signal, cache: "default" }).then(response => {
-        if (!response.ok) throw new Error("立体地形高程加载失败：" + region);
-        return response.arrayBuffer();
-      }),
+      fetchMapAsset(mapAssetUrl(prefix + ".json"), {fetchImpl,signal,errorMessage:'立体地形清单加载失败'}),
+      fetchMapAsset(mapAssetUrl(prefix + ".bin"), {fetchImpl,signal,type:'arrayBuffer',errorMessage:'立体地形高程加载失败'}),
     ]);
     return new ReliefField(meta, buffer);
   }));
