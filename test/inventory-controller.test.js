@@ -109,7 +109,7 @@ test("pack opening and card choice show cards only with reveal and selection mot
   assert.match(inventoryStyles,/\.inventory-opening-surface\{position:absolute;inset:0/);
   assert.match(inventoryStyles,/\.inventory-opening-surface\{[^}]*grid-template-rows:1fr!important[^}]*border:0[^}]*border-radius:0/);
   assert.match(inventoryStyles,/\.inventory-opening-stage\{position:absolute;[^}]*inset:0;[^}]*place-items:center;[^}]*overflow:visible/);
-  assert.match(inventorySource,/selectedPlayer && windowRoot\.querySelector\("\.inventory-acquired-card"\)\) return/);
+  assert.match(inventorySource,/selectedPlayer && windowRoot\.querySelector\("\.inventory-acquired-card"\)\) \{/);
 });
 
 test("pack shelf uses item slots and quality framing for all four pack tiers", () => {
@@ -129,7 +129,7 @@ test("pack shelf uses item slots and quality framing for all four pack tiers", (
 
 test("team and inventory window headers contain only their Chinese titles", () => {
   assert.doesNotMatch(teamSource,/YELLOWDOGS CHRONICLES|CLUB MANAGEMENT|点击球员卡查看详细数值/);
-  assert.match(teamSource,/<header class="team-management-header"><div class="team-management-title"><h2>编队<\/h2>/);
+  assert.match(teamSource,/mode==='menu'\?'编队':mode==='list'\?'编队 · 列表':mode==='league'\?'编队 · 联赛注册':'编队 · 批量操作'/);
   assert.match(inventorySource,/<header class="inventory-window-header"><h2>/);
   assert.doesNotMatch(inventorySource,/YELLOWDOGS CHRONICLES|INVENTORY|管理你在征程/);
 });
@@ -242,4 +242,29 @@ test('external elite reward shares reveal/choice/acquired flow and never consume
  assert.equal(claims,1);assert.equal(packRequests,0);assert.equal(state.inventory.pendingOpening.id,'pack-waiting');assert.match(root.innerHTML,/inventory-acquired-card/);
  listeners.click({target:{closest:()=>null}});await Promise.resolve();assert.equal(returned,1);assert.equal(root.hidden,true);
  controller.open();assert.match(root.innerHTML,/背包球员/);controller.close();
+});
+
+test('consecutive packs stay on the acquired result during requests, reject duplicate clicks, retry and exit at zero stock',async()=>{
+ const {createCampaignStore}=await import('../client/core/campaign-store.js');
+ const documentRef={activeElement:null,addEventListener(){}},trigger=fixtureElement(documentRef,{textContent:''}),root=fixtureElement(documentRef),listeners={},requests=[];
+ root.addEventListener=(type,fn)=>listeners[type]=fn;root.querySelectorAll=()=>[];
+ const type='exotic-player-pack',card={id:'first',name:'第一名',role:'ST',grade:'A'};
+ const opening={id:'opening-first',packType:type,cards:[card]};
+ const store=createCampaignStore({playerId:'p',inventory:{totalPacks:1,packs:[{type,count:1}],pendingOpening:opening}});
+ const controller=createInventoryController({trigger,windowRoot:root,documentRef,getCampaignState:store.getState,campaignStore:store,getCampaignRequest:()=> (path,options)=>new Promise((resolve,reject)=>requests.push({path,options,resolve,reject}))});
+ const click=(selector,dataset={})=>listeners.click({target:{closest:s=>s===selector?{dataset}:null}});
+ controller.open();const choose=click('[data-player-card-action="pack-choice"]',{playerCardId:'first'});
+ requests[0].resolve({player:card,state:{...store.getState(),inventory:{...store.getState().inventory,pendingOpening:null}}});await choose;
+ assert.match(root.innerHTML,/开下一包/);assert.match(root.innerHTML,/剩余 1 包/);
+ click('background');assert.match(root.innerHTML,/inventory-acquired-card/);
+ const failed=click('[data-inventory-next-pack]');click('[data-inventory-next-pack]');click('[data-inventory-exit-opening]');
+ assert.equal(requests.length,2);assert.match(root.innerHTML,/开启中/);assert.match(root.innerHTML,/inventory-acquired-card/);
+ requests[1].reject(new Error('temporary'));await failed;assert.match(root.innerHTML,/开下一包/);
+ const retry=click('[data-inventory-next-pack]');assert.equal(requests[2].options.body.packType,type);
+ const next={id:'second',name:'第二名',role:'GK',grade:'B'};
+ requests[2].resolve({state:{...store.getState(),inventory:{totalPacks:0,packs:[{type,count:0}],pendingOpening:{id:'opening-second',packType:type,cards:[next]}}}});await retry;
+ assert.doesNotMatch(root.innerHTML,/inventory-acquired-card/);
+ const chosen=click('[data-player-card-action="pack-choice"]',{playerCardId:'second'});requests[3].resolve({player:next,state:{...store.getState(),inventory:{...store.getState().inventory,pendingOpening:null}}});await chosen;
+ assert.match(root.innerHTML,/该卡包已开完/);click('[data-inventory-next-pack]');assert.equal(requests.length,4);
+ click('[data-inventory-exit-opening]');assert.doesNotMatch(root.innerHTML,/inventory-acquired-card/);assert.match(root.innerHTML,/inventory-pack-grid/);controller.close();
 });

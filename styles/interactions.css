@@ -55,3 +55,9 @@
 .relation-alliance{color:#88d7ff!important}.interaction-alliance-summary{padding:12px;border:1px solid #5394ad;border-radius:8px;line-height:1.7;background:#102d36;color:#c7ebf3}
 
 .interaction-trade-mode{display:flex;gap:8px;margin:12px 0}.interaction-trade-mode button:disabled{opacity:1;background:var(--ui-gold,#d6b65d);color:#18241d}.interaction-gift-recipient p{color:var(--ui-muted,#adb8ad)}
+
+.joint-scout-form{display:grid;gap:12px}.joint-scout-form label{display:grid;gap:6px}.joint-scout-form select,.joint-scout-form input{width:100%;min-height:40px;background:#182e24;color:#f1f5e9;border:1px solid #738676;border-radius:6px;padding:8px}.joint-scout-form footer{display:flex;gap:10px;flex-wrap:wrap}.joint-scout-form small{line-height:1.6;color:#bdcdbf}
+
+.joint-scout-site-marker{display:grid;place-items:center;background:#173d38;color:#ffe18c;border:2px solid #ddbd68;border-radius:50%;font-size:27px;font-weight:bold;box-shadow:0 2px 8px #0008}
+
+.joint-scout-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;gap:10px}.interaction-surface .joint-scout-header h2{font-size:18px;margin:0}.joint-scout-form{align-content:start;gap:10px;padding:14px;border-color:#ddbd6855;background:#24433444}.joint-scout-form h3,.joint-scout-form p{margin:0}.joint-scout-form p{color:#c4d5c7}.joint-scout-form small{font-size:12px}.joint-scout-form>button{justify-self:start}

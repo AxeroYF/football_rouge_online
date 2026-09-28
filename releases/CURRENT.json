@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20260921-r39",
-  "lastUserConfirmedDeployed": "20260921-r37",
-  "sourceState": "R37 deployment user-confirmed; R39 locally verified, deployment unconfirmed",
+  "latestPublished": "20260928-r41",
+  "lastUserConfirmedDeployed": "20260928-r41",
+  "sourceState": "R41 deployment user-confirmed; R40-R41 source and release records prepared for GitHub synchronization",
   "releases": [
     {
       "version": "20260918-r9",
@@ -253,7 +253,23 @@
       "bundleSha256": "067ab9142026aa62279c6373b4dd93a551209bc2339065247cdf0329aa19fc69",
       "baselineFiles": 1233,
       "changedFiles": 5,
-      "deployment": "not-confirmed"
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260927-r40",
+      "parent": "20260921-r39",
+      "bundleSha256": "32ee636334fa7de1cc6c7581fa054141a3fbc0e3397a97aa23e59570995c3c6c",
+      "baselineFiles": 1249,
+      "changedFiles": 49,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260928-r41",
+      "parent": "20260927-r40",
+      "bundleSha256": "4ea16b049290c3de75784a72d977d6b4ea5540e6666a8b9a8777d4c17458d962",
+      "baselineFiles": 1249,
+      "changedFiles": 6,
+      "deployment": "user-confirmed"
     }
   ]
 }

@@ -17,15 +17,15 @@ test('09:50 reset keeps final standings overnight and removes yesterday reports 
  f.tick(1000);assert.equal(t.league.ensureDay(),true);assert.deepEqual(t.league.day.stats,{});assert.ok(t.league.day.fixtures.every(g=>!g.broadcast));assert.equal(f.a.leagueRewardDay,'2026-09-22');
  t.league.day.rewarded=false;f.tick(86400000);assert.equal(t.league.ensureDay(),false,'unsettled day must survive rollover');
 });
-test('players use garrison fitness, both sides persist fatigue; defence remains full without mutating roster',()=>{
+test('league fatigue and injuries settle separately from the original roster',()=>{
  const t=leagueFixture();t.start();const {f}=t,aPlayer=f.a.draft.roster.find(p=>p.id.includes('garrison')),bPlayer=f.b.draft.roster.find(p=>p.id.includes('garrison'));
- setFitness(aPlayer,80);setFitness(bPlayer,79);t.league.advance(f.now);const fixture=t.league.day.fixtures[0],leg=t.league.day.live[fixture.id].leg;
+ setFitness(aPlayer,80);setFitness(bPlayer,79);f.a.leagueRegistration.conditions[aPlayer.id]={state:{fitness:80},at:f.now};f.b.leagueRegistration.conditions[bPlayer.id]={state:{fitness:79},at:f.now};t.league.advance(f.now);const fixture=t.league.day.fixtures[0],leg=t.league.day.live[fixture.id].leg;
  assert.equal(leg.home.players.find(p=>p.id===aPlayer.id).state.fitness,80);assert.equal(leg.away.players.find(p=>p.id===bPlayer.id).state.fitness,79);
  assert.ok(leaguePlayerLocked(f.s.world,f.a.id,aPlayer.id));assert.match(f.s.cardManagement.blocked(f.a,aPlayer),/联赛/);
  const defence=buildAccountMatchSeat(f.a,'garrison',f.now,{fitness:true});assert.equal(defence.players.find(p=>p.id===aPlayer.id).state.fitness,100);assert.equal(aPlayer.state.fitness,80);
  leg.match.teams[0].players.find(p=>p.id===aPlayer.id).state.fitness=42;leg.match.teams[1].players.find(p=>p.id===bPlayer.id).state.fitness=38;
  leg.match.score=[2,1];leg.match.finished=true;leg.match.postMatchConsequences={injuries:[{teamIndex:1,playerId:bPlayer.id,matches:2}],suspensions:[]};
- t.league.settle(fixture,f.now);assert.equal(aPlayer.state.fitness,42);assert.equal(bPlayer.state.fitness,38);assert.equal(absenceMatches(bPlayer,'injury'),2);assert.equal(leaguePlayerLocked(f.s.world,f.a.id,aPlayer.id),false);
+ t.league.settle(fixture,f.now);assert.equal(aPlayer.state.fitness,80);assert.equal(bPlayer.state.fitness,79);assert.equal(absenceMatches(bPlayer,'injury'),0);assert.equal(f.a.leagueRegistration.conditions[aPlayer.id].state.fitness,42);assert.equal(f.b.leagueRegistration.conditions[bPlayer.id].state.fitness,38);assert.equal(absenceMatches(f.b.leagueRegistration.conditions[bPlayer.id],'injury'),2);assert.equal(leaguePlayerLocked(f.s.world,f.a.id,aPlayer.id),false);
  assert.equal(t.league.settle(fixture,f.now),false);assert.equal(f.a.leagueNotices.length,1);assert.equal(f.b.leagueNotices.length,1);
  assert.ok(t.league.snapshot(fixture.id).battle.broadcasts.length);assert.ok(!JSON.stringify(t.league.view(f.a)).includes('archivedFields'));
 });
@@ -41,7 +41,7 @@ test('match restart restores deterministic RNG and league data survives world hy
  assert.equal(f.s.dailyLeague.day.live[id].leg.match.nextChainIndex,chain);assert.equal(typeof f.s.dailyLeague.day.live[id].leg.match.rng,'function');assert.equal(f.s.dailyLeague.day.fixtures.length,2);
 });
 test('injured keeper with no reserve forfeits without blocking the next game or producing tickets',()=>{
- const t=leagueFixture();t.start();const p=t.f.a.draft.roster.find(p=>p.id.includes('garrison')&&p.pool==='GK');setAbsence(p,'injury',2);t.league.advance(t.f.now);
+ const t=leagueFixture();t.start();const p=t.f.a.draft.roster.find(p=>p.id.includes('garrison')&&p.pool==='GK');setAbsence(t.f.a.leagueRegistration.conditions[p.id],'injury',2);t.league.advance(t.f.now);
  assert.equal(t.league.day.fixtures[0].forfeit,true);assert.deepEqual(t.league.day.fixtures[0].score,[0,3]);assert.equal(t.league.day.fixtures[0].tickets,undefined);assert.deepEqual(t.league.day.live,{});
 });
 test('ten-team production roster resolves exact usernames, preserves NPC markers and plays bounded live set',()=>{
@@ -123,4 +123,16 @@ test('league does not sell seats from an enemy stadium on the former headquarter
  const t=leagueFixture();t.start();const {f}=t;f.a.resources={fans:10000};f.s.world.territories.a.ownerId=f.b.id;
  f.s.world.territories.a.buildings=[{id:'lost-stadium',type:'main-stadium',status:'active',level:1}];
  t.league.advance(f.now);const live=Object.values(t.league.day.live)[0];assert.equal(live.tickets.attendance,0);assert.equal(live.tickets.gold,0);
+});
+
+test('league live health and recovery never replace expedition fitness views',()=>{
+ const t=leagueFixture();t.start();const {f}=t;t.league.advance(f.now);
+ const fixture=t.league.day.fixtures[0],leg=t.league.day.live[fixture.id].leg;
+ const team=leg.match.teams.find(team=>team.id===f.a.id),live=team.players.find(p=>p.startedMatch);
+ f.s.save();const stored=f.a.draft.roster.find(p=>p.id===live.id);setFitness(stored,80);setFitness(live,42);
+ let state=f.s.state(f.a);assert.equal(state.draft.roster.find(p=>p.id===live.id).state.fitness,80);assert.equal(state.expeditionFitness.players[live.id].fitness,80);
+ assert.equal(state.leagueRegistration.conditions[live.id].state.fitness,42);assert.equal(state.leagueRegistration.conditions[live.id].recoveryPerMinute,0);
+ leg.match.finished=true;leg.match.score=[1,0];t.league.settle(fixture,f.now);
+ assert.equal(stored.state.fitness,80);assert.equal(f.a.leagueRegistration.conditions[live.id].state.fitness,42);
+ f.tick(2*60000);state=f.s.state(f.a);assert.equal(state.leagueRegistration.conditions[live.id].state.fitness,43);
 });

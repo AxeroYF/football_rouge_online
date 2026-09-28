@@ -112,6 +112,7 @@ export function createInventoryController({
   let pending = false;
   let selectedPlayer = null;
   let selectedPackType = null;
+  let continuationPackType = null;
   let activeTab = "all";
   let revealedOpeningId = null;
   let externalReward = null, choiceEpoch = 0;
@@ -167,10 +168,17 @@ export function createInventoryController({
       </main>`;
   }
 
+  function acquiredActionsMarkup() {
+    const count = Number(inventory()?.packs?.find(pack=>pack.type===continuationPackType)?.count ?? 0);
+    const canContinue = Boolean(PACK_META[continuationPackType]) && count > 0 && !inventory()?.pendingOpening;
+    return `<p>${escapeHtml(PACK_META[continuationPackType]?.name ?? '当前卡包')} · 剩余 ${count} 包</p><div><button type="button" data-inventory-next-pack ${pending || !canContinue ? 'disabled' : ''} aria-busy="${pending}">${pending ? '开启中…' : count > 0 ? '开下一包' : '该卡包已开完'}</button><button type="button" data-inventory-exit-opening ${pending ? 'disabled' : ''}>退出</button></div>`;
+  }
+
   function renderSelected(player) {
     return `${meteorLayer()}
-      <main class="inventory-opening-stage inventory-acquired">
+      <main class="inventory-opening-stage inventory-acquired ${externalReward ? '' : 'inventory-acquired-with-actions'}">
         <div class="inventory-acquired-card">${playerCardMarkup(player,{variant:"standard",eager:true})}</div>
+        ${externalReward ? '' : `<div class="inventory-acquired-actions" data-inventory-acquired-actions aria-live="polite">${acquiredActionsMarkup()}</div>`}
       </main>`;
   }
 
@@ -179,7 +187,11 @@ export function createInventoryController({
     if (!opened) return;
     const value = inventory();
     const opening = externalReward?.opening ?? value?.pendingOpening;
-    if (selectedPlayer && windowRoot.querySelector(".inventory-acquired-card")) return;
+    if (selectedPlayer && windowRoot.querySelector(".inventory-acquired-card")) {
+      const actions = windowRoot.querySelector('[data-inventory-acquired-actions]');
+      if (actions) { const html=acquiredActionsMarkup(); if(actions.innerHTML!==html)actions.innerHTML=html; }
+      return;
+    }
     if (!selectedPlayer && opening && windowRoot.dataset.inventoryOpeningId === opening.id && windowRoot.querySelector(".inventory-opening-stage")) return;
     const reveal = Boolean(opening && opening.id !== revealedOpeningId);
     const smallShelf = !selectedPlayer && !opening;
@@ -211,13 +223,14 @@ export function createInventoryController({
     choiceEpoch++;
     opened = true;
     selectedPlayer = null;
-    selectedPackType = null;
+    selectedPackType = null; continuationPackType = null;
     activateStageWindow(windowRoot);
     render();
   }
 
   function openReward({id,cards,claim,onClose}={}) {
     if(pending||!id||!cards?.length||typeof claim!=='function')return false;
+    continuationPackType=null;
     externalReward={opening:{id:'reward:'+id,cards},claim,onClose};
     choiceEpoch++;opened=true;selectedPlayer=null;
     activateStageWindow(windowRoot);render();return true;
@@ -228,7 +241,7 @@ export function createInventoryController({
     externalReward=null;choiceEpoch++;
     windowRoot.dataset.inventoryOpeningId="";
     opened = false;
-    selectedPlayer = null;
+    selectedPlayer = null; continuationPackType = null;
     windowRoot.hidden = true;
     deactivateStageWindow(windowRoot);
     if(back&&reason!=="superseded"&&reason!=="account")queueMicrotask(back);
@@ -238,11 +251,15 @@ export function createInventoryController({
     const value = inventory();
     const pack = value?.packs?.find((item) => item.type === packType);
     if (pending || value?.pendingOpening || !PACK_META[packType] || !(Number(pack?.count) > 0)) return;
+    const epoch=choiceEpoch, account=getCampaignState()?.playerId;
+    selectedPackType=packType;
     pending = true;
     render();
     try {
       const value = await getCampaignRequest()("/api/campaign/inventory/packs/open", { method:"POST", body:{ packType } });
+      if(account!==getCampaignState()?.playerId)return;
       pending = false;
+      if(epoch===choiceEpoch && opened)selectedPlayer=null;
       campaignStore.setState(value.state,{source:"pack-open"});
     } catch (error) {
       showToast(error.message || "卡包开启失败");
@@ -267,7 +284,7 @@ export function createInventoryController({
       const claim = reward ? reward.claim(playerId) : getCampaignRequest()("/api/campaign/inventory/packs/choose", { method:"POST", body:{ openingId:opening.id, playerId } });
       const [value] = await Promise.all([claim, animateChoice(playerId)]);
       if(account!==getCampaignState()?.playerId)return;
-      if(epoch===choiceEpoch&&opened)selectedPlayer=value.player;
+      if(epoch===choiceEpoch&&opened){selectedPlayer=value.player;if(!reward)continuationPackType=opening.packType ?? selectedPackType;}
       pending=false;
       campaignStore.setState(value.state,{source:reward?"reward-choose":"pack-choose"});
       render();
@@ -292,8 +309,12 @@ export function createInventoryController({
     if (selectedPlayer) {
       if (event.target.closest(".inventory-acquired-card")) return;
       if(externalReward)return closeWindow("complete");
-      selectedPlayer = null;
-      render();
+      if(pending)return;
+      if(event.target.closest('[data-inventory-next-pack]'))return openPack(continuationPackType);
+      if(event.target.closest('[data-inventory-exit-opening]')){
+        selectedPlayer = null; continuationPackType = null;
+        render();
+      }
       return;
     }
     const select = event.target.closest("[data-select-pack]");

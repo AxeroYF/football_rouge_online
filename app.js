@@ -1,3 +1,4 @@
+import {createJointScoutSites} from './client/map/joint-scout-sites.js';
 import {createDailyLeagueController} from './client/league/daily-league-controller.js';
 import {createFrameRefresh} from './client/core/frame-refresh.js';
 import {createFogAreaVisibility} from './client/map/fog-area-visibility.js';
@@ -127,6 +128,7 @@ let expeditionPieceController = null;
 let expeditionPanelController = null;
 let foreignUnitController=null;
 let scoutUnitController = null;
+let jointScoutSitesController = null;
 const EMPTY_TERRITORY_IDS = new Set();
 
 const map = L.map(mapElement, {
@@ -259,6 +261,7 @@ function territoryVisible(territoryId) {
 
 const mapFrameRefresh=createFrameRefresh();
 function applyCampaignWorldSnapshot(snapshot) {
+  jointScoutSitesController?.refresh(snapshot?.jointScoutSites);
   if (campaignState?.fog?.preview && campaignState.fog.preview.id !== maritimeController?.getMode()?.previewId) {
     campaignStore.setState(withoutNavalPreview(campaignState), {source:"inactive-sea-preview"});
     snapshot = campaignState.world;
@@ -1126,6 +1129,8 @@ async function loadMap() {
     escapeHtml,
   });
   expeditionPieceController.refresh();
+  jointScoutSitesController=createJointScoutSites({L,map,sourcePointToDisplay,metadata:territoryMetadataById,onSelect:id=>{if(!scoutUnitController?.handleTerritoryClick(id))selectTerritory(id);}});
+  jointScoutSitesController.refresh(campaignState?.world?.jointScoutSites);
   scoutUnitController = createScoutUnitController({
     Leaflet:L, map, mapElement, layer:scoutLayer, territoryMetadataById, sourcePointToDisplay,
     getDisplayMetrics:(unit,fallback)=>unitDisplayMetrics(unit?.id,unit,fallback),

@@ -74,6 +74,8 @@ export function hydrateCampaignWorld(index, savedWorld) {
   if(Array.isArray(savedWorld.news))world.news=structuredClone(savedWorld.news.slice(-200));
   if(savedWorld.pvpBonds){world.pvpBonds=structuredClone(savedWorld.pvpBonds);remapTerritoryReferences(world.pvpBonds,index.territoryIdAliases??{});}
   if(savedWorld.coalitions){world.coalitions=structuredClone(savedWorld.coalitions);remapTerritoryReferences(world.coalitions,index.territoryIdAliases??{});}
+  if(savedWorld.jointScoutingSeed)world.jointScoutingSeed=savedWorld.jointScoutingSeed;
+  if(savedWorld.jointScoutSites)world.jointScoutSites=structuredClone(savedWorld.jointScoutSites);
   if(savedWorld.diplomacy)world.diplomacy=structuredClone(savedWorld.diplomacy);
   if(savedWorld.dailyLeague)world.dailyLeague=structuredClone(savedWorld.dailyLeague);
   if(savedWorld.eliteChallenges)world.eliteChallenges=structuredClone(savedWorld.eliteChallenges);

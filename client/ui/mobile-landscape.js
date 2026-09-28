@@ -26,6 +26,8 @@ menu?.addEventListener('click',()=>{const open=!root.classList.contains('mobile-
 nav?.addEventListener('click',e=>{if(e.target.closest('.nav-item'))closeMenu();});
 toolsButton?.addEventListener('click',()=>{const open=!tools.classList.contains('mobile-tools-open');closeTools();if(open){tools.classList.add('mobile-tools-open');toolsButton.setAttribute('aria-expanded','true');collapsePlayers();collapseNotices();closeMenu();}});
 document.addEventListener('click',e=>{
+ const toggle=e.target.closest('[data-mobile-filter-toggle]');
+ if(toggle){const shell=toggle.closest('.team-management-shell');const open=shell.classList.toggle('mobile-filters-open');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'收起筛选':'筛选';}
  if(!media.matches)return;
  if(e.isTrusted&&!e.target.closest('.primary-nav,#mobile-menu-toggle'))closeMenu();
  if(e.target.closest('[data-players-toggle]')?.getAttribute('aria-expanded')==='true'){collapseNotices();closeTools();}
@@ -34,13 +36,11 @@ document.addEventListener('click',e=>{
  if(tab){tacticsTab=tab.dataset.mobileTacticsTab;decorate();}
  if(e.target.closest('[data-mobile-pitch-zoom]')){pitchExpanded=!pitchExpanded;decorate();}
  if(e.target.closest('[data-mobile-tactics-close]'))document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
- const toggle=e.target.closest('[data-mobile-filter-toggle]');
- if(toggle){const shell=toggle.closest('.team-management-shell');const open=shell.classList.toggle('mobile-filters-open');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'收起筛选':'筛选';}
 },false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(media.matches&&(root.classList.contains('mobile-menu-open')||tools?.classList.contains('mobile-tools-open')))e.preventDefault();closeMenu();closeTools();}});
 function decorate(){
  scheduled=false;
- const shell=document.querySelector('.team-management-shell'),heading=shell?.querySelector('header');
+ const shell=document.querySelector('.team-management-shell:not(.team-mode-shell):not(.team-batch-shell):not(.league-registration-shell)'),heading=shell?.querySelector('header');
  if(heading&&!heading.querySelector('[data-mobile-filter-toggle]')){const b=document.createElement('button');b.type='button';b.className='mobile-only mobile-filter-toggle';b.dataset.mobileFilterToggle='';b.setAttribute('aria-expanded','false');b.textContent='筛选';heading.insertBefore(b,heading.lastElementChild);}
  const tactics=document.querySelector('#campaign-tactics .league-squad-page');
  if(tactics){

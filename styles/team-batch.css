@@ -1,0 +1,141 @@
+#campaign-team .team-management-header .team-mode-back{width:auto!important;flex:0 0 auto!important;padding:0 12px!important;margin-left:auto;font-size:13px!important}
+#campaign-team .team-batch-shell{position:relative;grid-template-rows:auto auto auto minmax(0,1fr) auto;font-size:13px}
+.team-batch-shell button,.team-batch-shell select,.team-batch-shell input{font:inherit;color:inherit;accent-color:#d7bf80}
+.team-batch-shell button{min-height:36px;border:1px solid #516d5c;border-radius:6px;background:#1a3529;padding:6px 10px;cursor:pointer}
+.team-batch-shell button:disabled{opacity:.45;cursor:default}.team-batch-shell button:focus-visible,.team-mode-home button:focus-visible{outline:2px solid #edcf83;outline-offset:2px}
+.team-batch-toolbar{position:relative;z-index:3;display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #466351}
+.team-batch-toolbar>input{width:240px;max-width:50%;min-width:0;min-height:36px;padding:6px 9px;background:#10251c;border:1px solid #567462;border-radius:5px}
+.team-batch-toolbar>button{margin-left:auto}.team-batch-toolbar summary{cursor:pointer;padding:8px}
+.team-batch-toolbar details>div{position:absolute;left:8px;right:8px;top:100%;display:flex;flex-wrap:wrap;gap:10px;padding:14px;background:#173427;border:1px solid #8b946b;box-shadow:0 8px 22px #0008;max-height:40dvh;overflow:auto}
+.team-batch-toolbar label{display:grid;gap:4px;flex:1 1 120px;min-width:0}.team-batch-toolbar select,.team-batch-toolbar label input{width:100%;min-width:0;min-height:36px;background:#10251c;border:1px solid #567462;border-radius:5px;padding:5px}
+.team-batch-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 12px}.team-batch-summary button{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left}.team-batch-summary small{color:#b5c9b9}.team-batch-summary [aria-pressed=true]{border-color:#bda66b;background:#30432c}
+.team-batch-board{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px;min-height:0;overflow:hidden}
+.team-batch-column{display:flex;flex-direction:column;min-height:0;min-width:0;border:1px solid #44634f;border-radius:7px;overflow:hidden}.team-batch-column>header{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;gap:6px;background:#213d2e;flex:none}
+.team-batch-list{overflow:auto;min-height:0;flex:1;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));align-content:start;gap:10px;padding:10px}
+.team-batch-card{min-width:0;display:flex;flex-direction:column;gap:6px;padding:7px;border:1px solid #46604d;border-radius:9px;background:#152c22;cursor:pointer;touch-action:pan-y}
+.team-batch-card-top{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:24px;font-size:11px;color:#c1d1bd}.team-batch-card input{width:22px;height:22px;margin:0;cursor:pointer;flex:none}
+#campaign-team .team-batch-card-art{width:100%;height:auto;min-height:0!important;aspect-ratio:26/35;flex:none;margin:auto;pointer-events:none;transform:none;box-shadow:none}
+.team-batch-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:3px}.team-batch-card-bottom>[data-batch-detail]{display:flex;flex-direction:column;align-items:flex-start;min-width:0;padding:2px;border:0;background:none;gap:2px;flex:1}.team-batch-card-bottom strong{font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.team-batch-card-bottom small{font-size:10px;color:#b5c8b8}.team-batch-card-bottom>[data-batch-revert]{font-size:11px;min-height:30px;padding:3px 5px}
+.team-batch-card.is-selected{background:#34503b;border-color:#ead08c;box-shadow:inset 0 0 0 1px #ead08c}.team-batch-card.is-changed .team-batch-card-top{color:#f0ce7e}.team-batch-card.is-locked{border-style:dashed;cursor:default}.team-batch-card.is-locked .team-batch-card-art{opacity:.55}.team-batch-card:hover{border-color:#b4c699}
+
+.team-batch-footer{padding:8px 12px;background:#13291f;border-top:1px solid #607657;position:relative}.team-batch-selection,.team-batch-savebar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.team-batch-savebar{margin-top:7px}.team-batch-savebar>span{flex:1}.team-batch-savebar [data-batch-preview],.team-batch-modal [data-batch-save]{background:#cbb271;color:#162117;border-color:#ddc98e;font-weight:700}
+.team-batch-error{color:#f2be92;margin:6px 0}.team-batch-changes{margin-top:6px}.team-batch-changes>summary{cursor:pointer}.team-batch-changes[open]{max-height:160px;overflow:auto}.team-batch-changes p{margin:5px 0}.team-batch-loading,.team-batch-empty{padding:24px;text-align:center}
+.team-batch-modal{position:absolute;inset:0;z-index:10;background:#000a;display:grid;place-items:center;padding:12px}.team-batch-modal>section{width:min(560px,100%);max-height:100%;overflow:auto;border:1px solid #9d9e76;background:#163324;border-radius:10px;padding:20px;box-sizing:border-box}.team-batch-modal h3{margin:0 0 14px}.team-batch-modal p{line-height:1.8;overflow-wrap:anywhere}.team-batch-modal small{color:#b9c9b8}.team-batch-modal footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:16px}
+@media(max-width:700px){.team-mode-home{grid-template-columns:1fr;gap:16px;padding:18px}.team-mode-home>button{min-height:160px;padding:22px}.team-batch-board{grid-template-columns:1fr}.team-batch-board[data-active-squad=expedition] [data-batch-column=garrison],.team-batch-board[data-active-squad=garrison] [data-batch-column=expedition]{display:none}.team-batch-summary button{flex-direction:column;gap:4px;align-items:flex-start}.team-batch-summary small{font-size:10px}.team-batch-toolbar{gap:3px;padding:6px}.team-batch-toolbar>input{flex:1;width:120px}.team-batch-toolbar>button{font-size:11px;padding:6px}.team-batch-footer{padding:6px}.team-batch-selection,.team-batch-savebar{gap:4px;font-size:11px}.team-batch-footer button{font-size:12px;min-height:36px;padding:5px 7px}.team-batch-savebar>span{flex-basis:100%}.team-batch-summary{padding:6px}.team-batch-board{padding:0 6px}}
+@media(max-height:600px) and (orientation:landscape){.team-mode-home{padding:16px;gap:16px}.team-mode-home>button{min-height:130px;padding:18px;gap:10px}.team-batch-toolbar{padding:3px 8px}.team-batch-summary{padding:3px 8px}.team-batch-summary button{padding:3px 8px;min-height:30px}.team-batch-column>header{padding:2px 6px}.team-batch-column>header button{min-height:28px;padding:2px 6px}.team-batch-footer{padding:4px 8px}.team-batch-footer button{min-height:30px;padding:3px 7px}.team-batch-savebar{margin-top:3px}.team-batch-changes{position:absolute;right:8px;bottom:100%;background:#173427;border:1px solid #688362;border-radius:5px;padding:4px}.team-batch-changes[open]{width:min(400px,90vw);max-height:180px}}
+
+@media(max-width:700px){.team-batch-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:8px}.team-batch-card{padding:5px}.team-batch-card-top{font-size:10px}}
+@media(max-height:600px) and (orientation:landscape) and (min-width:701px){
+ #campaign-team .team-batch-shell{grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:44px auto minmax(0,1fr)}
+ .team-batch-shell>.team-management-header{grid-column:1/-1;grid-row:1}
+ .team-batch-toolbar{grid-column:2;grid-row:2;flex-wrap:wrap;z-index:4;padding:3px 5px}.team-batch-toolbar>input{max-width:none;width:100%;flex:1}.team-batch-toolbar>button{display:none}
+ .team-batch-toolbar details>div{left:auto;width:min(370px,calc(100vw - 30px));right:0;max-height:55dvh}
+ .team-batch-summary{grid-column:1;grid-row:2;padding:3px 8px}.team-batch-summary small{font-size:10px}.team-batch-summary button{gap:3px}
+ .team-batch-board{grid-column:1;grid-row:3;padding:0 8px 5px;gap:8px}
+ .team-batch-list{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:5px;padding:5px}
+ .team-batch-card{padding:4px;gap:3px}.team-batch-card-top{font-size:9px;min-height:20px}.team-batch-card input{width:18px;height:18px}
+ #campaign-team .team-batch-card-art{max-width:90px}.team-batch-card-bottom strong{font-size:11px}.team-batch-card-bottom small{font-size:9px}.team-batch-card-bottom>[data-batch-revert]{padding:2px;font-size:10px}
+ .team-batch-column>header{font-size:11px;flex-wrap:wrap;gap:2px}.team-batch-column>header button{font-size:10px}
+ .team-batch-footer{grid-column:2;grid-row:3;min-height:0;overflow:auto;padding:5px;border-top:0;border-left:1px solid #607657}
+ .team-batch-selection,.team-batch-savebar{font-size:11px;gap:5px}.team-batch-savebar>span{flex-basis:100%;line-height:1.6}.team-batch-changes{position:static;margin-top:8px;padding:5px}.team-batch-changes[open]{width:auto;max-height:130px}
+ .team-batch-footer button{min-height:32px}.team-batch-savebar [data-batch-preview]{width:100%}
+}
+
+@media(max-height:600px) and (orientation:landscape) and (min-width:701px){.team-batch-shell:has(.team-batch-error) .team-batch-toolbar>button{display:block;width:100%;font-size:11px}}
+
+/* The entry chooser sizes to its content; management views retain their full workspace. */
+html #campaign-team:has(>.team-mode-shell){align-items:center!important}
+html #campaign-team>.team-mode-shell{width:min(620px,100%)!important;height:auto!important;max-height:100%!important;grid-template-rows:auto minmax(0,1fr);border:1px solid #708570;border-radius:16px;background:#15271e;box-shadow:0 18px 60px #0009}
+html #campaign-team .team-mode-shell>.team-management-header{height:58px;min-height:58px;padding:8px 20px;border-bottom:1px solid #405747;background:#122219}
+html #campaign-team .team-mode-shell h2{margin:0;font-size:20px}
+html #campaign-team .team-mode-home{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:14px;padding:20px;overflow:auto}
+html #campaign-team .team-mode-home>button{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0;min-height:206px;padding:20px;border:1px solid #5f7d69;border-radius:12px;background:linear-gradient(145deg,#284735,#1b3226);color:#f4f5e9;text-align:left;cursor:pointer;font:inherit}
+html #campaign-team .team-mode-home>button[data-team-mode=batch]{border-color:#94845a;background:linear-gradient(145deg,#3c4029,#292f22)}
+html #campaign-team .team-mode-home .team-mode-icon{display:grid;place-items:center;width:48px;height:48px;border:1px solid #718e77;border-radius:12px;background:#142c20;color:#bcdfc6}
+html #campaign-team [data-team-mode=batch] .team-mode-icon{color:#f2d58a;border-color:#998353;background:#302b19}
+.team-mode-icon svg{width:32px;height:32px}
+html #campaign-team .team-mode-home strong{font-size:22px;line-height:1.3}
+html #campaign-team .team-mode-description{font-size:14px;line-height:1.5;color:#d1dccc}
+html #campaign-team .team-mode-enter{display:flex;align-items:center;justify-content:space-between;align-self:stretch;margin-top:auto;padding-top:8px;font-size:13px;color:#e5cf97}
+.team-mode-enter b{font-size:20px;font-weight:400}
+html #campaign-team .team-mode-draft{position:absolute;top:14px;right:12px;padding:4px 7px;border-radius:5px;background:#514329;color:#ffe2a0;font-size:11px}
+@media(hover:hover){html #campaign-team .team-mode-home>button:hover{border-color:#f0d48b;box-shadow:inset 0 0 0 1px #f0d48b;background:#354d35}}
+@media(max-width:480px){
+ html #campaign-team .team-mode-home{grid-template-columns:1fr;padding:14px;gap:12px}
+ html #campaign-team .team-mode-home>button{display:grid;grid-template-columns:48px minmax(0,1fr) 22px;gap:5px 14px;min-height:106px;padding:16px}
+ html #campaign-team .team-mode-icon{grid-row:1/3;align-self:center}
+ html #campaign-team .team-mode-home strong{font-size:20px;align-self:end}
+ html #campaign-team .team-mode-description{grid-column:2;font-size:12px}
+ html #campaign-team .team-mode-enter{grid-column:3;grid-row:1/3;align-self:center;padding:0;font-size:0}
+ html #campaign-team .team-mode-draft{position:static;grid-column:2;justify-self:start}
+}
+@media(max-height:450px) and (orientation:landscape){
+ html #campaign-team .team-mode-shell>.team-management-header{height:44px;min-height:44px;padding:2px 14px}
+ html #campaign-team .team-mode-home{padding:12px;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+ html #campaign-team .team-mode-home>button{min-height:156px;padding:14px;gap:6px}
+ html #campaign-team .team-mode-home .team-mode-icon{width:36px;height:36px;border-radius:9px}
+ .team-mode-icon svg{width:28px;height:28px}
+ html #campaign-team .team-mode-home strong{font-size:20px}
+}
+
+html #campaign-team>.team-mode-shell{width:min(900px,100%)!important}
+html #campaign-team .team-mode-home{grid-template-columns:repeat(3,minmax(0,1fr))}
+html #campaign-team [data-team-mode=league]{background:linear-gradient(145deg,#28404d,#1b2c36);border-color:#64899d}
+html #campaign-team [data-team-mode=league] .team-mode-icon{background:#172c38;border-color:#6a93a8;color:#bce5f7}
+#campaign-team .league-registration-shell{grid-template-rows:auto auto auto minmax(0,1fr) auto;position:relative}
+.league-registration-toolbar{display:flex;gap:8px;padding:10px 14px;flex-wrap:wrap}.league-registration-toolbar input,.league-registration-toolbar select{min-width:0;flex:1 1 110px;width:110px;min-height:36px;background:#14271d;border:1px solid #68856d;color:#edf3e8;padding:5px}
+.league-registration-shell button{color:inherit;cursor:pointer;background:#263f2e;border:1px solid #68856d;border-radius:5px;padding:6px 10px;min-height:36px}.league-registration-shell button:disabled{opacity:.5;cursor:default}
+.league-registration-status{display:flex;justify-content:space-between;gap:8px;padding:6px 14px;font-size:13px}.league-registration-status strong{color:#e9cc82}
+#campaign-team .league-registration-shell .team-batch-card-art{width:100%;height:auto;min-height:0!important;aspect-ratio:26/35;pointer-events:none;transform:none;box-shadow:none}
+.league-registration-list{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));background:#12241b}
+.league-registration-shell .team-batch-card-bottom>button{min-width:0;border:0;background:none;padding:2px;text-align:left;display:grid;gap:4px}
+.league-registration-shell .team-batch-card-bottom small{font-size:11px;color:#bcd0bc}
+@media(max-width:600px){html #campaign-team .team-mode-home{grid-template-columns:1fr}html #campaign-team .team-mode-home>button{min-height:106px}.league-registration-toolbar{gap:5px;padding:6px}.league-registration-status{font-size:11px;padding:6px}.league-registration-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-height:450px) and (orientation:landscape){html #campaign-team .team-mode-home{grid-template-columns:repeat(3,minmax(0,1fr))}.league-registration-toolbar{padding:3px 8px;flex-wrap:nowrap}.league-registration-toolbar input,.league-registration-toolbar select{flex:1;width:75px}.league-registration-list{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}.league-registration-shell .team-batch-footer{padding:4px 8px;font-size:11px}.league-registration-shell .team-batch-savebar{margin-top:0}.league-registration-status{padding:3px 8px}}
+
+.team-transfer-ghost{position:fixed;left:0;top:0;z-index:20000;pointer-events:none;background:#e9cd87;color:#18271d;border:1px solid #fff0b6;border-radius:7px;padding:12px 18px;font-weight:700;box-shadow:0 6px 20px #0008;will-change:transform}
+#campaign-team [data-card-drag]{touch-action:none;cursor:grab;font-size:20px;line-height:1;min-width:32px;min-height:30px;padding:2px 6px;flex:none}
+#campaign-team .is-drop-target{border-color:#f3d38a;box-shadow:inset 0 0 0 2px #f3d38a;background:#2d4932}
+.league-registration-board{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px;min-height:0;overflow:hidden}
+@media(max-width:700px){.league-registration-board{gap:6px;padding:0 6px}.league-registration-list{grid-template-columns:minmax(0,1fr);padding:5px;gap:6px}.league-registration-board .team-batch-column>header{flex-wrap:wrap;padding:4px;font-size:11px;gap:3px}.league-registration-board .team-batch-column>header button{font-size:10px;min-height:28px;padding:3px}.league-registration-shell .team-batch-savebar>span{flex-basis:auto}}
+/* Keep both destinations reachable on narrow screens; each list scrolls independently. */
+@media(max-width:700px){.team-batch-board{grid-template-columns:1fr 1fr;gap:6px}.team-batch-board[data-active-squad=expedition] [data-batch-column=garrison],.team-batch-board[data-active-squad=garrison] [data-batch-column=expedition]{display:flex}.team-batch-board .team-batch-list{grid-template-columns:minmax(0,1fr);gap:6px;padding:5px}.team-batch-board .team-batch-column>header{font-size:11px;flex-wrap:wrap;gap:3px;padding:4px}.team-batch-board .team-batch-column>header button{font-size:10px;padding:3px}.team-batch-board .team-batch-card-top span{font-size:9px}}
+
+#campaign-team .league-registration-shell{grid-template-columns:minmax(0,1fr)}
+#campaign-team .league-registration-shell>.team-management-header{grid-column:1;grid-row:1}
+#campaign-team .league-registration-shell>.league-registration-toolbar{grid-column:1;grid-row:2}
+#campaign-team .league-registration-shell>.league-registration-status{grid-column:1;grid-row:3}
+#campaign-team .league-registration-shell>.league-registration-board{grid-column:1;grid-row:4}
+#campaign-team .league-registration-shell>.team-batch-footer{grid-column:1;grid-row:5}
+@media(max-height:600px) and (orientation:landscape) and (min-width:701px){
+ #campaign-team .league-registration-shell{grid-template-columns:minmax(0,1fr) 200px;grid-template-rows:44px auto minmax(0,1fr)}
+ #campaign-team .league-registration-shell>.team-management-header{grid-column:1/-1;grid-row:1}
+ #campaign-team .league-registration-shell>.league-registration-toolbar{grid-column:2;grid-row:2;flex-wrap:wrap;padding:3px 6px;gap:3px}
+ .league-registration-toolbar input,.league-registration-toolbar select{min-height:30px;font-size:11px}
+ #campaign-team .league-registration-shell>.league-registration-status{grid-column:1;grid-row:2;align-items:center;flex-wrap:wrap;padding:5px 8px;font-size:11px}
+ #campaign-team .league-registration-shell>.league-registration-board{grid-column:1;grid-row:3;padding:0 8px 5px;gap:6px}
+ #campaign-team .league-registration-shell>.team-batch-footer{grid-column:2;grid-row:3;overflow:auto;padding:5px;border-top:0}
+ .league-registration-list{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));padding:5px;gap:5px}
+ #campaign-team .league-registration-shell .team-batch-card-art{max-width:90px}
+ .league-registration-board .team-batch-column>header{font-size:11px;flex-wrap:wrap;gap:2px;padding:3px}
+ .league-registration-board .team-batch-column>header button{min-height:28px;padding:3px;font-size:10px}
+ .league-registration-shell .team-batch-selection,.league-registration-shell .team-batch-savebar{font-size:11px;gap:4px}
+}
+.league-lineup-squad-tabs{grid-template-columns:repeat(3,minmax(55px,1fr))}
+
+@media(max-height:600px) and (orientation:landscape) and (min-width:701px){
+ #campaign-team .league-registration-shell>.league-registration-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #campaign-team .league-registration-toolbar input,#campaign-team .league-registration-toolbar select{width:100%;min-width:0}
+}
+
+@media(max-height:600px) and (orientation:landscape) and (min-width:701px){
+ #campaign-team .league-registration-shell>.league-registration-status{display:none}
+ #campaign-team .league-registration-shell>.league-registration-board{grid-row:2/4}
+}
+
+/* Use a single static copy of the visible card while dragging. */
+.team-transfer-ghost{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;filter:drop-shadow(0 8px 10px #0008)}
+.team-transfer-ghost>.s4-player-card{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;pointer-events:none;transform:none!important}
+.is-transfer-dragging{opacity:.45}
+[data-batch-row],[data-registration-card],[data-league-magnet],[data-league-bench-magnet]{user-select:none;-webkit-user-select:none}
+html.team-card-drag-active,html.team-card-drag-active *{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}

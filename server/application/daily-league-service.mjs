@@ -1,3 +1,5 @@
+import {normalizeLeagueRegistration,LEAGUE_ROSTER_LIMIT,leagueRoster,leaguePlayerView} from '../../shared/config/league-registration.mjs';
+import {enhancementFamily} from '../../shared/config/enhancement.mjs';
 import {archiveFields,restoreArchivedFields} from '../infrastructure/history-archive.mjs';
 import {DAILY_LEAGUE,LEAGUE_REWARDS,leagueDate,leagueDayStart,leagueSchedule,leagueStandings,leagueTicket} from '../../shared/config/daily-league.mjs';
 import {ELITE_CLUB_BY_ID} from '../../shared/config/elite-clubs.mjs';
@@ -11,13 +13,40 @@ import {createCampaignLiveLeg,advanceCampaignLiveLeg,restoreCampaignLiveLeg,publ
 const LEAGUE_USERNAMES=Object.freeze(['皇马','小黄','AuI','ZH','Axero','罗哥']);
 const copy=value=>JSON.parse(JSON.stringify(value));
 const fail=(message,statusCode=409)=>{throw Object.assign(Error(message),{statusCode});};
-const accountFields=['gold','goldLedger','inventory','resources','wonderHomeEvents','leagueNotices','leagueRewardDay','fitnessRecovery'];
+const accountFields=['gold','goldLedger','inventory','resources','wonderHomeEvents','leagueNotices','leagueRewardDay','fitnessRecovery','leagueRegistration'];
 export function leagueLiveForAccount(world,id){return Object.values(world?.dailyLeague?.live??{}).find(f=>f.leg.home.id===id||f.leg.away.id===id)??null;}
 export function leaguePlayerLocked(world,id,playerId){const live=leagueLiveForAccount(world,id);return Boolean(live?.leg.match.teams.find(t=>t.id===id)?.players.some(p=>p.id===playerId));}
 
 export class DailyLeagueService {
  constructor(campaign,{rules=DAILY_LEAGUE}={}){this.c=campaign;this.viewers=new Map();this.rules={...rules,usernames:rules.usernames??LEAGUE_USERNAMES};this.cursor=0;this.nextCheck=0;this.lastCheckpoint=this.c.now();this.restore();}
  get day(){return this.c.world?.dailyLeague??null;}
+ liveFor(account){return leagueLiveForAccount(this.c.world,account.id);}
+ registrationLocked(now=this.c.now()){
+  const day=this.day;
+  return Boolean(day&&!day.rewarded&&day.fixtures?.some(f=>f.status!=='completed')&&now>=Math.min(...day.fixtures.map(f=>f.startsAt)));
+ }
+ registrationView(account){
+  const now=this.c.now(),value=account.leagueRegistration??normalizeLeagueRegistration(account,now);if(!value)return null;
+  const live=this.liveFor(account),current=new Map((live?.leg.match.teams.find(t=>t.id===account.id)?.players??[]).map(p=>[p.id,p]));
+  const conditions=Object.fromEntries(leagueRoster(account,value).map(p=>{const inMatch=current.has(p.id),view=leaguePlayerView(p,value.conditions?.[p.id],now,{pauseAt:inMatch?live.leg.startedAt??this.day.fixtures.find(f=>this.day.live[f.id]===live)?.actualStartedAt:null,livePlayer:current.get(p.id)});setFitness(view,effectiveFitness(view));const fixed=effectiveFitness({...view,state:{...view.state,fitness:0}})===effectiveFitness({...view,state:{...view.state,fitness:100}});return [p.id,{state:view.state,fixed,recoveryPerMinute:inMatch||fixed?0:0.5}];}));
+  return {...value,conditions,limit:LEAGUE_ROSTER_LIMIT,locked:this.registrationLocked(),inMatch:Boolean(live)};
+ }
+ saveRegistration(account,{playerIds,version}={}){
+  if(!account.setupComplete)fail('请先完成建队',400);
+  if(this.registrationLocked())fail('联赛进行期间不能修改注册名单');
+  const current=normalizeLeagueRegistration(account,this.c.now());
+  if(!Array.isArray(playerIds)||playerIds.length>LEAGUE_ROSTER_LIMIT||new Set(playerIds).size!==playerIds.length)fail('联赛最多注册23名球员，名单不能重复',400);
+  const all=new Map(account.draft.roster.map(p=>[String(p.id),p]));
+  if(playerIds.some(id=>typeof id!=='string'||!all.has(id)))fail('名单包含已离队球员，请刷新后重试');
+  if(new Set(playerIds.map(id=>enhancementFamily(all.get(id)))).size!==playerIds.length)fail('同名球员只能注册一张卡',400);
+  if(JSON.stringify(current.playerIds)===JSON.stringify(playerIds))return this.registrationView(account);
+  if(version!==JSON.stringify(current.playerIds))fail('注册名单已变化，请刷新后重试');
+  const previous=account.leagueRegistration;
+  account.leagueRegistration={...current,playerIds:[...playerIds]};
+  try{this.c.persist();}catch(error){account.leagueRegistration=previous;throw error;}
+  return this.registrationView(account);
+ }
+
  restore(){for(const live of Object.values(this.day?.live??{}))restoreCampaignLiveLeg(live.leg);}
  participants(){
   const accounts=[...this.c.accounts.values()],teams=[],missing=[];
@@ -49,7 +78,7 @@ export class DailyLeagueService {
   if(team.kind==='elite'){const seat=structuredClone(this.c.eliteChallenges.team(team.clubId).seat);seat.id=team.id;seat.name=team.name;return seat;}
   const account=this.c.accounts.get(team.id);
   if(!account?.setupComplete)fail('参赛账号尚未建队');
-  const seat=buildAccountMatchSeat(account,'garrison',now,{fitness:true,fullFitness:false,allowShortHanded:true,bondCatalog:campaignBondCatalog(this.c.playerDatabase)});
+  const seat=buildAccountMatchSeat(account,'league',now,{fitness:true,fullFitness:false,allowShortHanded:true,bondCatalog:campaignBondCatalog(this.c.playerDatabase)});
   if(seat.players.filter(p=>p.active!==false).length<7||!seat.players.some(p=>p.active!==false&&p.pool==='GK'))fail('可用首发不足7人或缺少门将');
   return seat;
  }
@@ -80,10 +109,14 @@ export class DailyLeagueService {
   const accounts=[fixture.homeId,fixture.awayId].map(id=>this.c.accounts.get(id)).filter(Boolean);
   return this.transaction(accounts,()=>{
    const {leg,tickets}=live;
-   for(const a of accounts){const team=leg.match.teams.find(t=>t.id===a.id),byId=new Map(a.draft.roster.map(p=>[p.id,p]));
-    for(const result of team?.players??[]){const p=byId.get(result.id);if(p){setFitness(p,result.state?.fitness);setFitness(p,effectiveFitness(p));}if(a.fitnessRecovery?.plans?.[result.id])a.fitnessRecovery.plans[result.id].stopAt=a.fitnessRecovery.at;}
-   }
-   applyLegConsequences(this.c.accounts,{id:fixture.id,live:{attacker:leg.home,defender:leg.away}},leg);
+   const projections=new Map(accounts.map(a=>{
+    const registration=normalizeLeagueRegistration(a,now),roster=leagueRoster(a,registration).map(p=>leaguePlayerView(p,registration.conditions?.[p.id],now));
+    const team=leg.match.teams.find(t=>t.id===a.id),byId=new Map(roster.map(p=>[p.id,p]));
+    for(const result of team?.players??[]){const p=byId.get(result.id);if(p){setFitness(p,result.state?.fitness);setFitness(p,effectiveFitness(p));}}
+    return [a.id,{draft:{roster}}];
+   }));
+   applyLegConsequences(projections,{id:fixture.id,live:{attacker:leg.home,defender:leg.away}},leg);
+   for(const a of accounts){const registration=normalizeLeagueRegistration(a,now);for(const p of projections.get(a.id).draft.roster)registration.conditions[p.id]={state:structuredClone(p.state),at:now};a.leagueRegistration=registration;}
    fixture.status='completed';fixture.score=[...leg.match.score];fixture.settledAt=now;
    const broadcast=publicCampaignLiveLeg(leg),ratings=new Map(broadcast.teams.flatMap((t,index)=>t.players.map(p=>[JSON.stringify([leg.match.teams[index].id,p.id]),p.rating])));
    Object.assign(fixture,archiveFields({broadcast},['broadcast']));fixture.tickets=tickets;

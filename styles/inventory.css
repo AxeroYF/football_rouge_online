@@ -118,3 +118,14 @@
 @media(max-width:760px){.inventory-choice-grid[data-choice-count="4"]{grid-template-columns:repeat(2,minmax(0,220px));width:calc(100% - 20px);gap:12px;overflow:auto;max-height:calc(100dvh - 130px)}.inventory-choice-grid[data-choice-count="4"] .inventory-choice-card{width:100%}}
 
 .inventory-owned-status{margin:8px 0 0;text-align:center;color:#e2d7b6;font-size:13px;line-height:1.5;pointer-events:none}
+
+/* Keep the acquired card mounted while continuing the same pack type. */
+#inventory-window .inventory-acquired-with-actions{container-type:size;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:16px;overflow:auto}
+#inventory-window .inventory-acquired-with-actions .inventory-acquired-card{flex:none;width:min(300px,calc((100cqh - 112px)*.72),calc(100% - 32px));min-width:70px}
+#inventory-window .inventory-acquired-with-actions .s4-player-card{min-height:0!important;width:100%;height:auto}
+#inventory-window .inventory-acquired-actions{position:relative;z-index:5;flex:none;width:min(360px,100%);text-align:center;color:#e2d7b6}
+#inventory-window .inventory-acquired-actions p{margin:0 0 8px;font-size:13px;line-height:1.5}
+#inventory-window .inventory-acquired-actions>div{display:flex;justify-content:center;gap:10px}
+#inventory-window .inventory-acquired-actions button{flex:1;min-height:42px;padding:8px 12px;border:1px solid #bba363;border-radius:8px;background:#263c2e;color:#f0e6c8;font:inherit;font-size:14px;cursor:pointer;touch-action:manipulation}
+#inventory-window .inventory-acquired-actions button:disabled{opacity:.5;cursor:default}
+#inventory-window .inventory-acquired-actions button:focus-visible{outline:2px solid #f4d778;outline-offset:2px}

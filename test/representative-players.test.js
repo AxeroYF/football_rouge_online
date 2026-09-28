@@ -69,15 +69,19 @@ test("squad list renders only the best instance before applying level filters",(
   const account=fixture(), old=account.draft.roster[8];
   account.draft.roster.push({...old,id:"best",upgradeLevel:3});
   const nodes={filter:[]};
+  const menuButton={dataset:{teamMode:"list"}};
   const panel={dataset:{},classList:{add(){},remove(){}},setAttribute(){},ownerDocument:{addEventListener(){}},closest:()=>null,querySelector:()=>null,querySelectorAll:selector=>{
+    if(selector==='[data-team-mode]')return [menuButton];
     if(selector==='[data-team-filter]') return nodes.filter=[{tagName:"SELECT",dataset:{teamFilter:"upgradeLevel"},value:"0",addEventListener(type,fn){this.change=fn;}}];
     return [];
   }};
   const controller=createTeamController({panel,getCampaignState:()=>account});
   controller.render();
+  assert.match(panel.innerHTML,/data-team-mode="batch"/);
+  menuButton.onclick();
   assert.match(panel.innerHTML,/data-team-squad-player="best"/);
   assert.doesNotMatch(panel.innerHTML,new RegExp(`data-team-squad-player="${old.id}"`));
-  assert.match(panel.innerHTML,/<h2>编队<\/h2>/);
+  assert.match(panel.innerHTML,/<h2>编队 · 列表<\/h2>/);
   assert.doesNotMatch(panel.innerHTML,/data-team-view|team-player-grid|ydl-player-card/);
   assert.match(panel.innerHTML,/data-player-card-id="best"/);
   assert.doesNotMatch(panel.innerHTML,new RegExp(`data-player-card-id="${old.id}"`));

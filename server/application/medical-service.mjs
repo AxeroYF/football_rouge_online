@@ -1,4 +1,3 @@
-import {leagueLiveForAccount} from './daily-league-service.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import crypto from 'node:crypto';
 import {facilityEffects} from '../../shared/config/facility-levels.mjs';
@@ -9,7 +8,7 @@ export class MedicalService{
  constructor({world,accounts,buildings,economy,now=Date.now,save=()=>{},wonders}){Object.assign(this,{world,accounts,buildings,economy,now,save,wonders});}
  tasks(a){return Object.values(a.medicalTasks??{});}
  due(at=this.now()){return [...this.accounts.values()].some(a=>this.tasks(a).some(t=>!t.closedAt&&t.completesAt<=at&&!(t.raidPause&&this.world.territories[t.territoryId]?.buildings?.some(b=>b.id===t.buildingId&&b.raidSuppressed))));}
- locked(a){return Boolean(leagueLiveForAccount(this.world,a.id))|| Boolean(raidMatchForAccount(this.world,a.id))||Boolean(this.world.eliteChallenges?.[a.id])||Object.values(this.world.activeChallenges??{}).some(c=>c.attackerId===a.id||c.defenderId===a.id);}
+ locked(a){return Boolean(raidMatchForAccount(this.world,a.id))||Boolean(this.world.eliteChallenges?.[a.id])||Object.values(this.world.activeChallenges??{}).some(c=>c.attackerId===a.id||c.defenderId===a.id);}
  prepare(at=this.now()){
   const snapshots=[];
   const rewind=()=>{for(const [a,b]of snapshots){if(b.tasks===undefined)delete a.medicalTasks;else a.medicalTasks=b.tasks;a.gold=b.gold;a.goldLedger=b.goldLedger;for(const [p,state,medical]of b.players){if(state===undefined)delete p.state;else p.state=state;if(medical===undefined)delete p.medical;else p.medical=medical;}}};

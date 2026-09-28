@@ -3,11 +3,11 @@ import {normalizePlayerSquads} from '../../shared/config/player-squads.mjs';
 import {movementUseOil} from '../../shared/config/movement-oil.mjs';
 import { facilityEffects } from '../../shared/config/facility-levels.mjs';
 import crypto from "node:crypto";
-import { SCOUTING_RULES, scoutingLevel } from "../../shared/config/scouting.mjs";
+import { SCOUTING_RULES, scoutingLevel, scoutingProductionTiming } from "../../shared/config/scouting.mjs";
 import { CORE_COUNTRY_CODES, coreCountryForNationality } from "../../shared/config/countries.mjs";
 import { BUILDING_DEFINITIONS } from "../../shared/config/buildings.mjs";
 import { territoryTravelEstimate } from "../domain/expedition-piece.mjs";
-import { SCOUT_TOKEN_URL, normalizeScoutName, scoutEnglishName, scoutMoveTargets, ownsScoutTerritory, canDiscoverScoutTerritory, canVisitScoutTerritory, settleScoutUnits } from "../../shared/scouting/scout-units.mjs";
+import { SCOUT_TOKEN_URL, isJointScoutSite, normalizeScoutName, scoutEnglishName, scoutMoveTargets, ownsScoutTerritory, canDiscoverScoutTerritory, canVisitScoutTerritory, settleScoutUnits } from "../../shared/scouting/scout-units.mjs";
 import { createPlayerCardViewModel } from "../../shared/player-card/player-card-contract.js";
 import { createPlayerCardInstance } from "../domain/player-card-instance.mjs";
 
@@ -36,8 +36,8 @@ function boundedInsert(records, id, value, limit = 20) {
 }
 
 export class ScoutingService {
-  constructor({ playerDatabase, buildings, economy, territoryIndex, now = Date.now, random = Math.random, save = () => {} }) {
-    Object.assign(this, { playerDatabase, buildings, economy, territoryIndex, now, random, save });
+  constructor({ playerDatabase, buildings, economy, territoryIndex, now = Date.now, random = Math.random, save = () => {}, getProduction = () => 0 }) {
+    Object.assign(this, { playerDatabase, buildings, economy, territoryIndex, now, random, save, getProduction });
     this.candidateViews = new WeakMap();
     this.metadataById = new Map((territoryIndex?.territories ?? []).map(entry => [entry.territoryId, entry]));
   }
@@ -55,23 +55,23 @@ export class ScoutingService {
   }
   unitTask(account, id) { return this.tasks(account).filter(task => task.scoutId === id).at(-1) ?? null; }
   cardViews(candidates){let views=this.candidateViews.get(candidates);if(!views){views=Object.freeze(candidates.map(createPlayerCardViewModel));this.candidateViews.set(candidates,views);}return views;}
-  publicTask(task) {
+  publicTask(task,{summary=false}={}) {
     const status = task.claimedAt != null ? "claimed" : this.now() >= task.completesAt ? "ready" : "working";
     return {
-      id: task.id, scoutId: task.scoutId ?? null, scoutName: task.scoutName ?? null,
+      candidatesDeferred:summary, joint:task.joint??null, id: task.id, scoutId: task.scoutId ?? null, scoutName: task.scoutName ?? null,
       buildingId: task.buildingId, territoryId: task.territoryId,
       territoryLabel: task.territoryLabel, level: task.level, countryCode: task.countryCode,
       raidPause: task.raidPause ? {...task.raidPause} : null, coreCountry: task.coreCountry, startedAt: task.startedAt, completesAt: task.completesAt,
       roundCount:task.roundCount??1,completedRounds:Math.min(task.roundCount??1,Math.max(0,Math.floor((Math.max(this.now(),task.raidPause?.until??0)-task.startedAt)/(task.roundDurationMs??(task.completesAt-task.startedAt))))),
-      rounds:status==='ready'&&task.rounds?task.rounds.map((r,index)=>({index,cards:this.cardViews(r.candidates)})):[],
-      costGold:task.costGold,
-      status, cards: status === "ready" ? this.cardViews(task.candidates) : [],
+      rounds:status==='ready'&&!summary&&task.rounds?task.rounds.map((r,index)=>({index,cards:this.cardViews(r.candidates)})):[],
+      costGold:task.costGold, productionTiming:task.productionTiming??null, roundDurationMs:task.roundDurationMs??(task.completesAt-task.startedAt),
+      status, cards: status === "ready" && !summary ? this.cardViews(task.candidates) : [],
       selectedCardId: task.selectedCardId ?? null,
     };
   }
   publicUnit(account, unit, world) {
     const task = this.unitTask(account, unit.id);
-    const activeTask = task && task.claimedAt == null ? this.publicTask(task) : null;
+    const activeTask = task && task.claimedAt == null ? this.publicTask(task,{summary:Boolean(task.joint)}) : null;
     const status = activeTask?.status ?? (unit.movement ? "moving" : unit.territoryId ? "idle" : "stranded");
     return {
       id: unit.id, name: unit.name, level: activeTask?.level??this.activeCenter(account,world)?.level??unit.level, tokenUrl: SCOUT_TOKEN_URL,
@@ -87,7 +87,7 @@ export class ScoutingService {
     return {
       rules: {...this.levelRules(account,world),choiceCount:this.wonders?.modifiers(account).scoutChoices??SCOUTING_RULES.choiceCount}, capacity: this.levelRules(account,world).scoutCapacity,
       scouts: this.units(account).map(unit => this.publicUnit(account, unit, world)),
-      tasks: this.tasks(account).filter(task => task.claimedAt == null).map(task => this.publicTask(task)),
+      tasks: this.tasks(account).filter(task => task.claimedAt == null).map(task => this.publicTask(task,{summary:Boolean(task.joint)})),
       serverNow: this.now(),
     };
   }
@@ -138,6 +138,7 @@ export class ScoutingService {
     return changed;
   }
   settle(account, world) {
+    this.siteProvider?.();
     if (!this.units(account).length || !world) return false;
     const before = structuredClone(account.scouting.units);
     if (!settleScoutUnits(account, world, this.now())) return false;
@@ -165,6 +166,10 @@ export class ScoutingService {
       legacyTasks: state.tasks.filter(task => !task.scoutId), serverNow: this.now(),
     };
   }
+  timing(account, world, territoryId) {
+    const base=SCOUTING_RULES.durationMs*(this.wonders?.nearby(account,"eiffel-tower",territoryId)?.6:1);
+    return scoutingProductionTiming(this.getProduction(account,world),base);
+  }
   unitDetails(account, world, scoutId) {
     this.settle(account, world);
     const unit = this.unit(account, scoutId);
@@ -174,7 +179,7 @@ export class ScoutingService {
       territoryId: unit.territoryId, territoryLabel: this.label(unit.territoryId),
       neutralTerritory:world.territories[unit.territoryId]?.ownerType==='neutral',
       countryCode: metadata?.countryCode ?? null, coreCountry: CORE_COUNTRY_CODES.includes(metadata?.countryCode),
-      rules: {...this.levelRules(account,world),choiceCount:this.wonders?.modifiers(account).scoutChoices??SCOUTING_RULES.choiceCount,durationMs:SCOUTING_RULES.durationMs*(this.wonders?.nearby(account,"eiffel-tower",unit.territoryId)?.6:1)}, levelRules: scoutingLevel(this.levelRules(account,world).level),
+      rules: {...this.levelRules(account,world),choiceCount:this.wonders?.modifiers(account).scoutChoices??SCOUTING_RULES.choiceCount,...this.timing(account,world,unit.territoryId)}, levelRules: scoutingLevel(this.levelRules(account,world).level),
       task: this.unitTask(account, scoutId) ? this.publicTask(this.unitTask(account, scoutId)) : null,
       canDiscover: this.levelRules(account,world).available && canDiscoverScoutTerritory(account, world, unit.territoryId), serverNow: this.now(),
     };
@@ -232,8 +237,9 @@ export class ScoutingService {
     if (unit.movement) fail("球探正在移动，抵达后才能操作", 409);
   }
   moveTargets(account,world,sourceId) {
+    this.siteProvider?.();
     const visible=new Set(this.fog?.update(account,world).view.visibleTerritoryIds??[]);
-    return scoutMoveTargets(account,world,sourceId).filter(id=>world.territories[id].ownerType!=="neutral"||visible.has(id));
+    return scoutMoveTargets(account,world,sourceId).filter(id=>isJointScoutSite(world,id)||world.territories[id].ownerType!=="neutral"||visible.has(id));
   }
   estimate(account, world, { scoutId, territoryId, useOil = true } = {}) {
     movementUseOil(useOil);
@@ -277,8 +283,8 @@ export class ScoutingService {
       return this.publicUnit(account, unit, world);
     },save);
   }
-  draw(level, countryCode, choiceCount = SCOUTING_RULES.choiceCount, prepared = null) {
-    const rules = scoutingLevel(level);
+  draw(level, countryCode, choiceCount = SCOUTING_RULES.choiceCount, prepared = null, overrides = null) {
+    const rules = {...scoutingLevel(level),...overrides};
     const database = prepared?.database ?? this.playerDatabase.filter((player) => player?.id && player.isX !== true && ["C", "B", "A", "S"].includes(player.grade));
     const normal = prepared?.normal ?? database.filter((player) => rules.gradeWeights[player.grade] > 0);
     if (normal.length < choiceCount) fail("当前球员库不足以提供三名候选，请稍后再试");
@@ -296,7 +302,7 @@ export class ScoutingService {
       const regional = pool.filter((player) => preferred(player) === usePreferred);
       if (regional.length) pool = regional;
       const source = pool[Math.floor(this.roll() * pool.length)];
-      const enhancement = Number(weighted(SCOUTING_RULES.enhancementWeights, this.roll()));
+      const enhancement = Number(weighted(overrides?.enhancementWeights??SCOUTING_RULES.enhancementWeights, this.roll()));
       selected.push(createPlayerCardInstance(source, enhancement));
     }
     return selected;
@@ -337,7 +343,8 @@ export class ScoutingService {
     const weights=scoutingLevel(rules.level).gradeWeights,prepared={database,normal:database.filter(p=>weights[p.grade]>0),grades:Object.fromEntries(['C','B','A','S'].map(g=>[g,database.filter(p=>p.grade===g)]))};
     const choices=this.wonders?.modifiers(account).scoutChoices??SCOUTING_RULES.choiceCount;
     const queue=Array.from({length:rounds},()=>({candidates:this.draw(rules.level,metadata.countryCode,choices,prepared)}));
-    const candidates=queue[0].candidates,roundDurationMs=SCOUTING_RULES.durationMs*(this.wonders?.nearby(account,"eiffel-tower",unit.territoryId)?.6:1);
+    const productionTiming=this.timing(account,world,unit.territoryId);
+    const candidates=queue[0].candidates,roundDurationMs=productionTiming.durationMs;
     return this.transaction(account, () => {
       this.economy.spend(account, rules.costGold*rounds, "scouting-start");
       unit.level=rules.level;
@@ -346,7 +353,7 @@ export class ScoutingService {
         territoryId: unit.territoryId, buildingId: unit.originBuildingId,
         territoryLabel: this.label(unit.territoryId), countryCode: metadata.countryCode,
         coreCountry: CORE_COUNTRY_CODES.includes(metadata.countryCode),
-        costGold:rules.costGold*rounds,roundCount:rounds,roundDurationMs,rounds:queue,level: rules.level, startedAt: this.now(), completesAt: this.now() + roundDurationMs*rounds,
+        costGold:rules.costGold*rounds,roundCount:rounds,roundDurationMs,productionTiming,rounds:queue,level: rules.level, startedAt: this.now(), completesAt: this.now() + roundDurationMs*rounds,
         candidates, claimedAt: null,
       };
       initialize(account).tasks[task.id] = task;

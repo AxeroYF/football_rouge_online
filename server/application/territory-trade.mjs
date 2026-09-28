@@ -3,9 +3,24 @@ const fail=message=>{throw Object.assign(Error(message),{statusCode:409});};
 export function territoryTradeIds(value=[]){if(!Array.isArray(value)||value.length>3||value.some(x=>typeof x!=='string')||new Set(value).size!==value.length)fail('每方最多交易3块不同地块');return [...value].sort();}
 export function territoryTradeContext(c){
  const busy=new Set(),wars=new Set(),buildingTerritories=new Map(Object.entries(c.world.territories).flatMap(([id,t])=>(t.buildings??[]).map(b=>[b.id,id])));
- const collect=value=>{if(typeof value==='string'){if(c.world.territories[value])busy.add(value);if(buildingTerritories.has(value))busy.add(buildingTerritories.get(value));}else if(Array.isArray(value))value.forEach(collect);else if(value&&typeof value==='object')Object.values(value).forEach(collect);};
- for(const a of c.accounts.values()){collect(a.expeditionPiece);collect(a.scouting?.units);for(const tasks of [a.scouting?.tasks,a.training?.tasks,a.medicalTasks])for(const task of Object.values(tasks??{}))if(!task.claimedAt&&!task.completedAt&&!task.cancelledAt&&!task.closedAt)collect(task);}
- collect(c.world.activeChallenges);collect(Object.values(c.world.coalitions??{}).filter(a=>!a.disbandedAt));collect(c.world.eliteRaids);
+ const add=id=>{if(typeof id==='string'&&c.world.territories[id])busy.add(id);};
+ // Only current locations and live routes reserve land. Receipts, origins and
+ // battle history can contain old territory IDs indefinitely.
+ const location=value=>{if(!value)return;for(const key of ['territoryId','fromTerritoryId','toTerritoryId','sourceTerritoryId','targetTerritoryId'])add(value[key]);for(const key of ['path','fromTerritoryIds'])for(const id of value[key]??[])add(id);};
+ const unit=value=>{if(!value)return;add(value.territoryId);location(value.movement);};
+ for(const a of c.accounts.values()){
+  unit(a.expeditionPiece);for(const scout of Object.values(a.scouting?.units??{}))unit(scout);
+  for(const tasks of [a.scouting?.tasks,a.training?.tasks,a.medicalTasks])for(const task of Object.values(tasks??{}))if(task.claimedAt==null&&task.completedAt==null&&task.cancelledAt==null&&task.closedAt==null){location(task);add(buildingTerritories.get(task.buildingId));}
+ }
+ for(const challenge of Object.values(c.world.activeChallenges??{})){location(challenge);location(challenge.maritimeRoute);}
+ for(const army of Object.values(c.world.coalitions??{}))if(!army.disbandedAt){unit(army);location(army.order);location(army.order?.maritimeRoute);}
+ const raids=c.world.eliteRaids;
+ for(const match of Object.values(raids?.matches??{}))location(match);
+ for(const day of Object.values(raids?.days??{}))for(const raid of day.raids??[]){
+  if(!['moving','waiting','battle'].includes(raid.status))continue;
+  if(day.endsAt<=c.now()&&raid.status!=='battle')continue;
+  location(raid.movement);location(raid.route?.[raid.index??0]);
+ }
  for(const r of Object.values(c.world.diplomacy?.relationships??{}))if(r.state==='war')for(const id of r.players)wars.add(id);
  return {busy,wars};
 }

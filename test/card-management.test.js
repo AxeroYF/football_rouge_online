@@ -489,6 +489,18 @@ test('trade-up quote validation is identical without preparing candidate display
  assert.equal(lean.quote,full.quote);assert.ok(full.candidates.length);assert.deepEqual(lean.candidates,[]);
 });
 
+test('trade-up delta returns only the changed card, repaired squads and replay-safe receipt',()=>{
+ const f=fixture(),q=f.preview('trade-up',['c0','c1','c2','c3','c4']);
+ const campaign={settleDueChallenges(){},cardManagement:f.service,state(){throw Error('full state forbidden');},actionState(a,options){assert.equal(options.includeRoster,false);return {playerId:a.id,wallet:{gold:a.gold}};},dailyLeague:{registrationView:()=>null},training:{publicState:()=>({})},fitness:{publicState:()=>({})}};
+ f.service.details=()=>{throw Error('full warehouse forbidden');};
+ const input={cardIds:q.cardIds,quote:q.quote,requestId:'delta-trade-up',resultOnly:true,warehouseDelta:true};
+ const response=CampaignService.prototype.mutateCardManagement.call(campaign,f.seller,'trade-up',input);
+ assert.deepEqual(response.cardDelta.removedIds,q.cardIds);assert.equal(response.cardDelta.cards.length,1);assert.equal(response.cardDelta.cards[0].id,response.result.card.id);
+ assert.equal(response.cardDelta.cards[0].squad,'garrison');assert.equal(typeof response.cardDelta.cards[0].recycleValue,'number');
+ assert.equal(response.rosterDelta.cards.length,1);assert.equal(response.statePatch.playerSquads.assignments[response.result.card.id],'garrison');assert.equal(response.state,undefined);assert.equal(response.view,undefined);
+ assert.deepEqual(CampaignService.prototype.mutateCardManagement.call(campaign,f.seller,'trade-up',input),response);
+});
+
 
 test('recycle balance migration updates saved rates once, preserving valuations and history',()=>{
  const world={cardManagement:{config:{...structuredClone(CARD_MANAGEMENT_DEFAULTS),recycleRatioBps:2000,upgradeBonusBps:1500,recycleEnabled:false},history:[{amount:80}]}};

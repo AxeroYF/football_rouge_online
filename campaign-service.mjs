@@ -1,3 +1,7 @@
+import {CardPurchaseService} from './server/application/card-purchase-service.mjs';
+import {JointScoutingService} from './server/application/joint-scouting-service.mjs';
+import {normalizeLeagueRegistration,leagueRoster,leaguePlayerView} from './shared/config/league-registration.mjs';
+import {squadBatchSnapshot,previewSquadBatch,saveSquadBatch} from './server/application/squad-batch-service.mjs';
 import {prepareHistoryCompaction} from './server/application/history-compaction.mjs';
 import {battleSummary} from './server/infrastructure/history-archive.mjs';
 import {prepareOrphanBondRefunds} from './server/application/pvp-attack-bond.mjs';
@@ -247,10 +251,13 @@ export class CampaignService {
     this.enhancement = new EnhancementService({ economy: this.economy, now: this.now, random: this.random, save: () => this.save() });
     this.shop=new ShopService({world:this.world,oil:this.oil,playerDatabase:this.playerDatabase,economy:this.economy,playerPacks:this.playerPacks,enhancement:this.enhancement,now:this.now,random:this.random,save:()=>this.save()});
     this.cardManagement = new CardManagementService({ accounts: this.accounts, world: this.world, catalog: this.playerLibrary, economy: this.economy, now: this.now, random: this.random, save: () => this.save() });
+    this.cardPurchases = new CardPurchaseService(this);
     const cardHistoryChanged = this.cardManagement.migrateHistory();
     this.training = new TrainingService({ economy: this.economy, buildings: this.buildings, territoryIndex: this.territoryIndex, now: this.now, random: this.random, save: () => this.save() });
-    this.scouting = new ScoutingService({ playerDatabase: this.playerDatabase, buildings: this.buildings, economy: this.economy, territoryIndex: this.territoryIndex, now: this.now, random: this.random, save: () => this.save() });
+    this.scouting = new ScoutingService({ getProduction:(account,world)=>this.territoryProduction?.allocation(account,world).rates.production??0, playerDatabase: this.playerDatabase, buildings: this.buildings, economy: this.economy, territoryIndex: this.territoryIndex, now: this.now, random: this.random, save: () => this.save() });
     this.scouting.fog=this.fog;
+    this.jointScouting=new JointScoutingService(this);
+    this.scouting.siteProvider=()=>this.jointScouting.sites();
     const scoutingChanged = this.scouting.migrate(this.accounts, this.world);
     this.challenges = challenges ?? new ChallengeService({
       world: this.world,
@@ -348,11 +355,14 @@ export class CampaignService {
 
   persist() {
     const previous=this.world?.serverEconomyClock;
+    const registrations=[...this.accounts.values()].map(a=>[a,a.leagueRegistration]);
     try{
       if(this.pauseEconomyWhenStopped&&this.world)this.world.serverEconomyClock=economicCheckpoint(this.world,this.now());
+      for(const [a] of registrations)if(a.setupComplete)a.leagueRegistration=normalizeLeagueRegistration(a,this.now());
       this.repository.save({accounts:Object.fromEntries(this.accounts),world:this.world});
     }catch(error){
       if(this.world){if(previous===undefined)delete this.world.serverEconomyClock;else this.world.serverEconomyClock=previous;}
+      for(const [a,value] of registrations){if(value===undefined)delete a.leagueRegistration;else a.leagueRegistration=value;}
       error.campaignPersistenceFailure=true;throw error;
     }
   }
@@ -730,7 +740,7 @@ export class CampaignService {
         return [id, view];
       }));
     const weather = this.campaignWeather(now);
-    return { units:visibleMapUnits({account,world:this.world,accounts:this.accounts,territoryIndex:this.territoryIndex,fog,spatial:this.fog.spatial,now}), revision: this.world.revision, territories, players, activeChallenges, viewerId:account?.id,conquestHostIds:allianceMembers(this.world,account?.id).filter(id=>this.diplomacy.relationship(account?.id,id).conquestPermissions?.[id]),alliedPlayerIds:allianceMembers(this.world,account?.id).filter(id=>id!==account?.id),
+    return { jointScoutSites:this.jointScouting?.sites(), units:visibleMapUnits({account,world:this.world,accounts:this.accounts,territoryIndex:this.territoryIndex,fog,spatial:this.fog.spatial,now}), revision: this.world.revision, territories, players, activeChallenges, viewerId:account?.id,conquestHostIds:allianceMembers(this.world,account?.id).filter(id=>this.diplomacy.relationship(account?.id,id).conquestPermissions?.[id]),alliedPlayerIds:allianceMembers(this.world,account?.id).filter(id=>id!==account?.id),
       weather: { ...weather, territories: Object.fromEntries(Object.entries(weather.territories).filter(([id]) => canSee(id))) } };
   }
 
@@ -793,6 +803,10 @@ export class CampaignService {
     return { catalogVersion: PLAYER_CATALOG_VERSION, total: players.length, players };
   }
 
+  squadBatchDetails(account) { return squadBatchSnapshot(account,this.world); }
+  previewSquadBatch(account,body) { return previewSquadBatch(account,this.world,body); }
+  saveSquadBatch(account,body) { return saveSquadBatch(this,account,body); }
+
   assignPlayerSquad(account, playerIdValue, squadIdValue, options = {}) {
     if(account.draft?.roster?.find(p=>p.id===playerIdValue)?.coalitionLoan)throw new Error("球员已借调联军，归队后才能调动");
     this.training.settle(account);
@@ -838,7 +852,13 @@ export class CampaignService {
       : action === "cancel" ? this.cardManagement.cancel(account, options)
       : this.cardManagement.consume(account, options, action);
     // The committed reveal does not wait for the full map and warehouse snapshots.
-    if (action === "trade-up" && options.resultOnly === true) return { result };
+    if (action === "trade-up" && options.resultOnly === true) {
+      if (options.warehouseDelta !== true) return { result };
+      const card=account.draft.roster.find(p=>p.id===result.card.id),added=card?[card]:[];
+      return {result,cardDelta:{removedIds:result.cards.map(p=>p.id),cards:added.map(p=>this.cardManagement.managedCard(account,p))},
+        rosterDelta:{removedIds:result.cards.map(p=>p.id),cards:added.map(p=>({...p,card:createPlayerCardViewModel(p)})),counts:rosterCounts(account.draft.roster),positionCounts:draftPositionCounts(account.draft.roster),pickNumber:account.draft.roster.length},
+        statePatch:{...this.actionState(account,{includeRoster:false}),playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))},tactics:account.tactics,leagueRegistration:this.dailyLeague.registrationView(account),training:this.training.publicState(account),expeditionFitness:this.fitness.publicState(account)}};
+    }
     return { result, state: this.state(account), view: this.cardManagement.details(account) };
   }
 
@@ -1009,6 +1029,7 @@ export class CampaignService {
       ...(resources ? { resources } : {}),
       sponsorship:this.sponsorship.publicState(account, now),
       dailyLeague:this.dailyLeague?.summary(account)??null,
+      leagueRegistration:this.dailyLeague?.registrationView(account)??null,
       eliteChallenge:{activeId:this.eliteChallenges?.active(account)?.id??null,pendingReward:Boolean(account.elite?.reward&&!account.elite.reward.claimedId)},
       neutralRewards:this.neutralRewards.publicState(account),
       conquest:this.challenges.conquestState(account, now),
@@ -1053,26 +1074,28 @@ export class CampaignService {
   saveTactics(account, value = {}, { compact=false } = {}) {
     this.training.settle(account);
     if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
-    const submittedPlayerSquads = value.playerSquads && typeof value.playerSquads === "object" ? value.playerSquads : account.playerSquads;
+    const leagueOnly=value.leagueOnly===true;
+    if(leagueOnly&&this.dailyLeague?.liveFor(account))throw Object.assign(Error('本场联赛进行中，结束后可调整战术'),{statusCode:409});
+    const submittedPlayerSquads = !leagueOnly&&value.playerSquads && typeof value.playerSquads === "object" ? value.playerSquads : account.playerSquads;
     for (const player of account.draft.roster.filter((entry) => entry.training || entry.medical || entry.coalitionLoan)) {
       if ((submittedPlayerSquads?.assignments?.[player.id] ?? "garrison") !== (account.playerSquads?.assignments?.[player.id] ?? "garrison")) throw new Error("训练、治疗或联军借调结束后才能变更该球员的编队");
     }
     for(const id of activeExpeditionPlayerIds(this.world,account.id))if(submittedPlayerSquads?.assignments?.[id]!==account.playerSquads?.assignments?.[id])throw Object.assign(new Error("远征比赛进行中，参赛球员暂时不能变更编队"),{statusCode:409});
-    const completed = autoCompletePlayerSquads(submittedPlayerSquads,account.draft.roster,{allowTransfers:!account.tactics?.squads});
-    assertExpeditionCapacity(completed.playerSquads, account.draft.roster);
-    if (!completed.ready) throw new Error("远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋");
+    const completed = autoCompletePlayerSquads(submittedPlayerSquads,account.draft.roster,{allowTransfers:!leagueOnly&&!account.tactics?.squads});
+    if(!leagueOnly)assertExpeditionCapacity(completed.playerSquads, account.draft.roster);
+    if (!leagueOnly&&!completed.ready) throw new Error("远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋");
     const nextPlayerSquads = completed.playerSquads;
     for(const id of activeExpeditionPlayerIds(this.world,account.id))if(nextPlayerSquads.assignments[id]!==account.playerSquads?.assignments?.[id])throw Object.assign(new Error("远征比赛进行中，参赛球员暂时不能变更编队"),{statusCode:409});
-    value = representativeTactics(value,account.draft.roster);
+    if(!leagueOnly)value = representativeTactics(value,account.draft.roster);
     const providedSquads = value.squads && typeof value.squads === "object" ? value.squads : null;
     const existingSquads = repairTacticsLineups(account.tactics,account.draft.roster,nextPlayerSquads)?.squads ?? {};
     const sanitizeSquad = (squadId,sourceValue = {}) => {
-      const eligible = representativePlayers(account.draft.roster).filter((player) => nextPlayerSquads.assignments[player.id] === squadId);
+      const eligible = leagueOnly?leagueRoster(account,normalizeLeagueRegistration(account,this.now())).map(p=>leaguePlayerView(p,account.leagueRegistration?.conditions?.[p.id],this.now())):representativePlayers(account.draft.roster).filter((player) => nextPlayerSquads.assignments[player.id] === squadId);
       sourceValue = repairSquadTactics(sourceValue, eligible, { previousRoster:account.draft.roster });
       const eligibleIds = new Set(eligible.map((player) => player.id));
       const requested = [...new Set((Array.isArray(sourceValue.starters) ? sourceValue.starters : []).map(String).filter((id) => eligibleIds.has(id)))];
       const starters = requested.length ? requested : defaultTacticsStarters(eligible);
-      if (starters.length !== 11) throw new Error(`${squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : "留守"}编队必须选择恰好11名首发球员`);
+      if (starters.length !== 11) throw new Error(`${squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : squadId === "league" ? "联赛" : "留守"}编队必须选择恰好11名首发球员`);
       const players = starters.map((id) => eligible.find((player) => player.id === id));
       const planSnapshots = sourceValue.planSnapshots && typeof sourceValue.planSnapshots === "object" ? structuredClone(sourceValue.planSnapshots) : {};
       const embedded = planSnapshots.__s4V2 && typeof planSnapshots.__s4V2 === "object" ? planSnapshots.__s4V2 : {};
@@ -1095,7 +1118,7 @@ export class CampaignService {
         const validOutfieldLines = [formation.counts.DEF,formation.counts.MID,formation.counts.ATT].every((count) => count >= 1);
         if (formation.counts.GK !== 1 || (key === "position1" && !validOutfieldLines)) {
           const planLabel = key === "position1" ? "默认站位" : key === "position2" ? "领先站位" : "落后站位";
-          const squadLabel = squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : "留守";
+          const squadLabel = squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : squadId === "league" ? "联赛" : "留守";
           throw new Error(`${squadLabel}${planLabel}：门将必须且只能有一人${key === "position1" ? "，并保留前场、中场、后场三条外场线" : ""}`);
         }
         return [key,sanitized];
@@ -1112,6 +1135,12 @@ export class CampaignService {
       const openingFormation = analyzeElevenBoardFormation(players,positionPresets.position1,formationLinePresets.position1);
       return { formation:openingFormation.name,attackStyle:String(sourceValue.attackStyle || "balanced"),defenseStyle:String(sourceValue.defenseStyle || "possession"),starters,bench,positions:positionPresets.position1,formationLines:formationLinePresets.position1,tacticalBars:sourceValue.tacticalBars && typeof sourceValue.tacticalBars === "object" ? sourceValue.tacticalBars : {},planSnapshots,activePlan:String(sourceValue.activePlan || "opening"),updatedAt:Date.now() };
     };
+    if(leagueOnly){
+      const previous=account.leagueRegistration;
+      account.leagueRegistration={...normalizeLeagueRegistration(account,this.now()),tactics:sanitizeSquad('league',value.squads?.league??{})};
+      try{this.save();}catch(error){account.leagueRegistration=previous;throw error;}
+      return compact?{leagueRegistration:this.dailyLeague.registrationView(account)}:this.state(account);
+    }
     const squads = Object.fromEntries(PLAYER_SQUAD_DEFINITIONS.map((squad) => {
       const fallback = squad.id === PLAYER_SQUAD_IDS.EXPEDITION ? value : {};
       return [squad.id,sanitizeSquad(squad.id,providedSquads?.[squad.id] ?? existingSquads[squad.id] ?? fallback)];

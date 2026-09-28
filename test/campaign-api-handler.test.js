@@ -423,3 +423,22 @@ test('opt-in tactics responses avoid full state for personal and both allied boa
   const response=responseRecorder();await handler(postRequest({action:'tactics',responseMode:'tactics'}),response,path,path);const value=JSON.parse(response.body);assert.equal(response.statusCode,200);assert.ok(value.tacticsUpdate);assert.equal(value.state,undefined);
  }
 });
+
+test("batch squad read, preview and commit always use the authenticated account",async()=>{
+ const account={id:'owner'},calls=[];
+ const campaign={authenticate:token=>{assert.equal(token,'session-token');return account;},squadBatchDetails:a=>{assert.equal(a,account);return {version:'v'};},previewSquadBatch:(a,b)=>{assert.equal(a,account);calls.push(['preview',b]);return {lineupChanges:[]};},saveSquadBatch:(a,b)=>{assert.equal(a,account);calls.push(['save',b]);return {statePatch:{}};}};
+ const handler=createCampaignApiHandler({campaign}),headers={authorization:'Bearer session-token'};
+ const response=responseRecorder();await handler({method:'GET',headers},response,'/api/campaign/squads/batch','/api/campaign/squads/batch');assert.equal(JSON.parse(response.body).snapshot.version,'v');
+ const body={accountId:'someone-else',version:'v',changes:[{playerId:'p',squadId:'garrison'}],requestId:'request-one'};
+ for(const route of ['batch-preview','batch'])await handler(postRequest(body,headers),responseRecorder(),'/api/campaign/squads/'+route,'/api/campaign/squads/'+route);
+ assert.deepEqual(calls,[['preview',body],['save',body]]);
+});
+
+
+test('league registration GET and POST are authenticated and return only registration data',async()=>{
+ const account={id:'owner'},calls=[];const campaign={authenticate:token=>{assert.equal(token,'league-token');return account;},dailyLeague:{registrationView:a=>{assert.equal(a,account);return {playerIds:[]};},saveRegistration:(a,body)=>{assert.equal(a,account);calls.push(body);return {playerIds:body.playerIds};}}};
+ const handler=createCampaignApiHandler({campaign});let response=responseRecorder();
+ await handler({method:'GET',headers:{authorization:'Bearer league-token'}},response,'/api/campaign/league/registration','/api/campaign/league/registration');assert.deepEqual(JSON.parse(response.body),{registration:{playerIds:[]}});
+ response=responseRecorder();await handler(postRequest({playerIds:['p'],version:'[]'},{authorization:'Bearer league-token'}),response,'/api/campaign/league/registration','/api/campaign/league/registration');assert.deepEqual(calls,[{playerIds:['p'],version:'[]'}]);
+ campaign.authenticate=()=>{throw Error('unauthorized');};await assert.rejects(()=>handler(postRequest({playerIds:[]}),responseRecorder(),'/api/campaign/league/registration','/api/campaign/league/registration'),/unauthorized/);assert.equal(calls.length,1);
+});

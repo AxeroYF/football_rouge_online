@@ -1,0 +1,160 @@
+{
+  "passed": true,
+  "version": "20260927-r40",
+  "checks": [
+    "Complete 20260921-r39 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260927-r40 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 49,
+  "newFiles": 16,
+  "requiredBaseFiles": 1233,
+  "imports": 313,
+  "scope": "R39-to-R40 isolated Windows upgrade and rollback, actual Node HTTP process tests, browser checks; Linux systemd not executed",
+  "remoteDeployed": false,
+  "tests": {
+    "pretest": 85,
+    "main": 1230,
+    "three": 161,
+    "total": 1476,
+    "failed": 0
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R39 account login, wallet and roster preserved; league registration initialized",
+      "Packaged purchase API accepts and persists an order",
+      "New browser modules and styles served from installed payload",
+      "Purchase survives actual server-process restart",
+      "Protected uploaded content preserved",
+      "Matched R39 code/save restored and old server starts successfully"
+    ],
+    "remoteDeployed": false,
+    "scope": "Real Windows Node server starts and HTTP requests; updater service hooks mocked; no Linux systemd deployment"
+  },
+  "cardPurchaseBrowser": {
+    "published": true,
+    "mixedPayment": true,
+    "delivered": true,
+    "resolutions": 3,
+    "tacticsControlsRemoved": true,
+    "errors": [],
+    "requests": 14
+  },
+  "leagueAndBatchDragBrowser": {
+    "report": [
+      {
+        "size": {
+          "width": 1440,
+          "height": 900
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      },
+      {
+        "size": {
+          "width": 390,
+          "height": 844
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      },
+      {
+        "size": {
+          "width": 780,
+          "height": 360
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      },
+      {
+        "size": {
+          "width": 768,
+          "height": 1024
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      }
+    ],
+    "dragChecks": [
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 6.103515625e-05
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "maxError": 1.52587890625e-05
+      },
+      {
+        "viewport": {
+          "width": 780,
+          "height": 360
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 780,
+          "height": 360
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        },
+        "maxError": 1.2207031261368684e-05
+      }
+    ],
+    "errors": []
+  }
+}

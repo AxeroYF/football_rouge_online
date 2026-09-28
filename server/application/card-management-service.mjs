@@ -270,12 +270,16 @@ export class CardManagementService {
     });
   }
 
+  managedCard(account, card, config = this.config()) {
+    return { ...publicCard(card), blocked: this.blocked(account, card), recycleValue: recycleValue(card, config), minimumListingPrice: minimumListingPrice(card, config), squad: account.playerSquads?.assignments?.[cardId(card)] ?? "garrison" };
+  }
+
   details(account) {
     this.ready(account);
     const config = this.config();
     return {
       config, maxPrice: MAX_CARD_PRICE,
-      cards: account.draft.roster.map(card => ({ ...publicCard(card), blocked: this.blocked(account, card), recycleValue: recycleValue(card, config), minimumListingPrice: minimumListingPrice(card, config), squad: account.playerSquads?.assignments?.[cardId(card)] ?? "garrison" })),
+      cards: account.draft.roster.map(card => this.managedCard(account, card, config)),
       listings: [...this.accounts.values()].flatMap(owner => Object.values(this.data(owner).listings).filter(listing => listing.status === "active").map(listing => this.publicListing(listing, account.id))).sort((a, b) => b.createdAt - a.createdAt),
       history: [...this.data(account).history].reverse().map(clone),
     };

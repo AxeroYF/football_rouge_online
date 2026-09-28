@@ -48,30 +48,31 @@ export class DiplomacyService {
  summary(account){
   const pending=Object.values(this.data().requests).filter(r=>this.status(r)==='pending'&&r.to===account.id);
   const readIds=new Set(account.interactionReadEventIds??[]);
-  const events=this.data().events.filter(e=>e.to===account.id&&e.createdAt>(account.interactionRead?.[e.from]??0)&&!readIds.has(e.id)&&!['location','friendship','alliance','conquest-access','trade','friendly','peace'].includes(e.type));
+  const events=this.data().events.filter(e=>e.to===account.id&&e.createdAt>(account.interactionRead?.[e.from]??0)&&!readIds.has(e.id)&&!['location','friendship','alliance','conquest-access','trade','friendly','peace','joint-scout'].includes(e.type));
   return {news:publicWorldNews(this.c.world,account,this.c.now()),requests:pending.map(r=>this.publicRequest(r)).sort((a,b)=>b.createdAt-a.createdAt),events:[...events].reverse(),players:[...this.c.accounts.values()].filter(a=>a.setupComplete).map(a=>({id:a.id,nickname:a.nickname,teamName:name(a),color:a.mapColor,ready:Boolean(a.setupComplete&&a.homeTerritoryId),self:a.id===account.id,state:a.id===account.id?'self':playersAllied(this.c.world,account.id,a.id)?'alliance':this.relationship(account.id,a.id).state,pending:pending.filter(r=>r.from===a.id).length,unread:events.filter(e=>e.from===a.id).length})).sort((a,b)=>Number(b.self)-Number(a.self)||b.pending-a.pending||a.teamName.localeCompare(b.teamName,'zh-CN')),incomingCount:pending.length,activeMatchId:this.active(account)?.id??null};
  }
  publicRequest(r){const payload=r.payload?{...r.payload}:null;if(payload){delete payload.giveSignatures;delete payload.takeSignatures;}return {...r,payload,status:this.status(r)};}
  publicSquad(account){
   // Build a read-only projection; never repair or expose the stored account itself.
   try {
-   const seat=buildAccountMatchSeat(structuredClone(account),'expedition',this.c.now());
+   const seat=buildAccountMatchSeat(structuredClone({id:account.id,nickname:account.nickname,draft:{teamName:account.draft?.teamName,roster:account.draft?.roster??[]},playerSquads:account.playerSquads,tactics:account.tactics,formationResearch:account.formationResearch,sponsorship:account.sponsorship}),'expedition',this.c.now());
    const players=seat.players.map(p=>({player:createPlayerCardViewModel(p),position:seat.positions[p.id]}));
    return {formation:seat.formation,style:seat.style,tactic:seat.tactic,players,average:Number((players.reduce((n,p)=>n+(p.player.overall??0),0)/players.length).toFixed(1)),unavailable:false};
   } catch {
    return {formation:null,players:[],average:null,unavailable:true};
   }
  }
- details(account,id){
+ details(account,id,{profile=false}={}){
   const other=this.other(account,id),relation=this.relationship(account.id,id);
   const location=relation.state!=='war'&&(relation.locations?.[id]||playersAllied(this.c.world,account.id,id))?this.c.world.players?.[id]?.capitalTerritoryId:null;
   const metadata=location?this.c.territoryIndex?.territories.find(t=>t.territoryId===location):null;
   const requests=Object.values(this.data().requests).filter(r=>relationKey(r.from,r.to)===relationKey(account.id,id)).sort((a,b)=>Number(this.status(b)==='pending')-Number(this.status(a)==='pending')||b.createdAt-a.createdAt).slice(0,50).map(r=>this.publicRequest(r));
   const cards=a=>(a.draft?.roster??[]).map(p=>({...createPlayerCardViewModel(p),blocked:this.c.cardManagement.blocked(a,p)}));
-  return {player:{id:other.id,nickname:other.nickname,teamName:name(other),color:other.mapColor},selfId:account.id,gold:account.gold,oil:this.c.oil?.view(account).balance??account.oil?.balance??0,relationship:playersAllied(this.c.world,account.id,id)?'alliance':relation.state,allianceMembers:allianceMembers(this.c.world,account.id).map(id=>({id,teamName:name(this.c.accounts.get(id)??{id})})),targetAllianceMembers:allianceMembers(this.c.world,id).map(id=>({id,teamName:name(this.c.accounts.get(id)??{id})})),condemnedByMe:Boolean(relation.condemnations?.[account.id]),condemnedMe:Boolean(relation.condemnations?.[id]),location:metadata?{territoryId:location,label:`${metadata.country} · ${metadata.name}`}:null,canUseTheirConquestLand:Boolean(playersAllied(this.c.world,account.id,id)&&relation.conquestPermissions?.[id]),allowTheirConquest:Boolean(playersAllied(this.c.world,account.id,id)&&relation.conquestPermissions?.[account.id]),sharingLocation:Boolean(relation.locations?.[account.id]),requests,myCards:cards(account),theirCards:cards(other),squad:this.publicSquad(other),
+  return {player:{id:other.id,nickname:other.nickname,teamName:name(other),color:other.mapColor},selfId:account.id,gold:account.gold,oil:this.c.oil?.view(account).balance??account.oil?.balance??0,relationship:playersAllied(this.c.world,account.id,id)?'alliance':relation.state,allianceMembers:allianceMembers(this.c.world,account.id).map(id=>({id,teamName:name(this.c.accounts.get(id)??{id})})),targetAllianceMembers:allianceMembers(this.c.world,id).map(id=>({id,teamName:name(this.c.accounts.get(id)??{id})})),condemnedByMe:Boolean(relation.condemnations?.[account.id]),condemnedMe:Boolean(relation.condemnations?.[id]),location:metadata?{territoryId:location,label:`${metadata.country} · ${metadata.name}`}:null,canUseTheirConquestLand:Boolean(playersAllied(this.c.world,account.id,id)&&relation.conquestPermissions?.[id]),allowTheirConquest:Boolean(playersAllied(this.c.world,account.id,id)&&relation.conquestPermissions?.[account.id]),sharingLocation:Boolean(relation.locations?.[account.id]),requests,cardCount:other.draft?.roster?.length??0,myCards:profile?null:cards(account),theirCards:profile?null:cards(other),squad:this.publicSquad(other),
    events:this.data().events.filter(e=>relationKey(e.from,e.to)===relationKey(account.id,id)).slice(-12).reverse(),
    matches:Object.values(this.data().matches).filter(m=>relationKey(m.from,m.to)===relationKey(account.id,id)).sort((a,b)=>b.startedAt-a.startedAt).slice(0,10).map(m=>({id:m.id,from:m.from,to:m.to,startedAt:m.startedAt,completed:Boolean(m.battle),score:m.battle?.score??m.leg.match.score,minute:m.leg?.match.minute??90})),serverNow:this.c.now(),rules:RULES};
  }
+ cards(account,id){const other=this.other(account,id);const cards=a=>(a.draft?.roster??[]).map(p=>({...createPlayerCardViewModel(p),blocked:this.c.cardManagement.blocked(a,p)}));return {myCards:cards(account),theirCards:cards(other)};}
  tradeTerms(account,other,input={}) {
   const amount=v=>{if(!Number.isSafeInteger(v)||v<0||v>RULES.maxTradeGold)fail('交易金币必须是有效的非负整数',400);return v;};
   const oilAmount=v=>{if(!Number.isSafeInteger(v)||v<0||v>RULES.maxTradeOil)fail('交易石油必须是有效的非负整数',400);return v;};
@@ -197,14 +198,14 @@ export class DiplomacyService {
   if(['read-news','read'].includes(input.action))return this.acknowledge(account,input);
   const {targetId,action,requestId}=input,other=this.other(account,targetId);
   if(!/^[a-zA-Z0-9:_-]{8,128}$/.test(String(requestId??'')))fail('请求标识无效',400);
-  if(!['read-news','conquest-access','revoke-conquest-access','location','friendship','alliance','leave-alliance','condemn','withdraw-condemnation','trade','friendly','war','peace','revoke-location','accept','reject','cancel','read'].includes(action))fail('互动方式不存在',400);
-  const signature=JSON.stringify([targetId,action,input.proposalId??null,input.trade??null,input.eventId??null]),key=JSON.stringify([account.id,requestId]),prior=receipt(this.data(),'receipts',requestId,this.c.now(),key);
+  if(!['joint-scout','read-news','conquest-access','revoke-conquest-access','location','friendship','alliance','leave-alliance','condemn','withdraw-condemnation','trade','friendly','war','peace','revoke-location','accept','reject','cancel','read'].includes(action))fail('互动方式不存在',400);
+  const signature=JSON.stringify([targetId,action,input.proposalId??null,input.trade??null,input.eventId??null,...(input.joint||input.scoutId?[input.joint??null,input.scoutId??null]:[])]),key=JSON.stringify([account.id,requestId]),prior=receipt(this.data(),'receipts',requestId,this.c.now(),key);
   if(prior){if(prior.signature!==signature)fail('请求标识已用于其他操作');return prior.result;}
   // Settle accrued income and factory fuel before ownership of the resources changes.
   if((action==='trade'&&(!this.c.economyDue||this.c.economyDue(this.c.now())))||(action==='accept'&&this.data().requests[input.proposalId]?.type==='trade'))this.c.save();
   const tradePayload=action==='accept'?this.data().requests[input.proposalId]?.payload:null;
   const territoryIds=[...new Set([...(tradePayload?.giveTerritoryIds??[]),...(tradePayload?.takeTerritoryIds??[])])];
-  const scoped=action==='trade'||(['accept','reject','cancel'].includes(action)&&this.data().requests[input.proposalId]?.type==='trade');
+  const scoped=!['war','leave-alliance','alliance','peace'].includes(action)&&!(['accept','reject','cancel'].includes(action)&&['alliance','peace'].includes(this.data().requests[input.proposalId]?.type));
   return this.transaction(scoped?[account,other]:[...this.c.accounts.values()],()=>{
    const relation=this.pair(account.id,targetId);let result={};
    if(['accept','reject','cancel'].includes(action)) {
@@ -224,6 +225,7 @@ export class DiplomacyService {
       if(request.type==='conquest-access'){if(!playersAllied(this.c.world,account.id,targetId))fail('只有盟友可以获得借地征服授权');relation.conquestPermissions??={};relation.conquestPermissions[account.id]=true;}
       if(request.type==='alliance')this.mergeAlliance(account.id,targetId,request.payload);
       if(request.type==='trade')this.executeTrade(request);
+      if(request.type==='joint-scout')Object.assign(result,this.c.jointScouting.accept(request,input.scoutId));
       if(request.type==='friendly')result.matchId=this.beginFriendly(this.c.accounts.get(request.from),this.c.accounts.get(request.to));
      }
      request.status='accepted';request.matchId=result.matchId??null;
@@ -249,12 +251,12 @@ export class DiplomacyService {
     if(action==='friendship'&&['friendship','alliance'].includes(relation.state))fail('双方已经是朋友');
     if(action==='location'&&relation.locations[targetId])fail('对方已向你公开位置');
     if(this.pending(account.id,targetId,action))fail('双方已有同类申请待处理');
-    const payload=action==='trade'?this.tradeTerms(account,other,input.trade):action==='alliance'?this.allianceProposal(account.id,targetId):null;
-    const id='interaction:'+crypto.randomUUID();this.data().requests[id]={id,from:account.id,to:targetId,type:action,status:'pending',payload,createdAt:this.c.now(),expiresAt:this.c.now()+RULES.requestLifetimeMs};
+    const payload=action==='joint-scout'?this.c.jointScouting.propose(account,other,input.joint):action==='trade'?this.tradeTerms(account,other,input.trade):action==='alliance'?this.allianceProposal(account.id,targetId):null;
+    const id='interaction:'+crypto.randomUUID();this.data().requests[id]={id,from:account.id,to:targetId,type:action,status:'pending',payload,createdAt:this.c.now(),expiresAt:action==='joint-scout'?payload.expiresAt:this.c.now()+RULES.requestLifetimeMs};
     result.proposalId=id;this.event(account.id,targetId,action);
    }
    relation.updatedAt=this.c.now();this.data().receipts[key]={signature,result,recordedAt:this.c.now()};return result;
-  },territoryIds,action==='trade');
+  },territoryIds,scoped);
  }
  advance(now=this.c.now(),{maximumMatches=1,maximumChainsPerMatch=1}={}) {
   const active=Object.values(this.data().matches).filter(m=>!m.battle);let changed=false;

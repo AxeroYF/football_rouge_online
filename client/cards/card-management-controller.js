@@ -1,3 +1,4 @@
+import {createCardPurchaseController} from './card-purchase-controller.js';
 import {patchMarkup} from '../ui/patch-markup.js';
 import { createRequestId } from "../core/request-id.js?v=20260906-release-v01";
 import { playerCardMarkup, escapePlayerCardHtml as esc } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
@@ -41,6 +42,12 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   let tradeUp = createTradeUpState(), tradeUpRevealCleanup = null;
   let scrollResizeObserver = null, market = createMarketState(), listingEditor = null, draggedMarketCard = "", marketDragPreview = null;
   const request = (path, options) => getCampaignRequest()(path, options);
+  const purchases = createCardPurchaseController({ request, showToast, onChanged: async value => {
+    if (value.result?.status !== 'filled') return;
+    const accountSession = session;
+    try { const snapshot = await request('/api/campaign/state'); if (accountSession !== session) return; campaignStore.setState(snapshot.state, { source: 'card-purchase' }); onState(snapshot.state); }
+    catch { showToast('交割已完成，状态将在下次同步时更新'); }
+  } });
   const owned = () => view?.cards ?? [];
   const selectedCards = () => owned().filter(card => selected.has(card.id));
   const entries = () => filterManagedCards(owned(), filters);
@@ -52,6 +59,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
     if (redraw && !root.hidden) render();
   }
   function close() {
+    purchases.close();
     version++; readVersion++; scrollResizeObserver?.disconnect(); clearMarketDrag();
     if (pending?.kind === "preview") pending = null;
     root.hidden = true; closeDialog({ redraw: false });
@@ -96,6 +104,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
     const options = [
       { kind: "recycle", name: "回收", action: "进入回收" },
       { kind: "sell", name: "出售", action: "进入市场" },
+      { kind: "purchase", name: "求购", action: "求购广场" },
       { kind: "trade-up", name: "汰换", action: "进入汰换" },
     ];
     const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>';
@@ -136,6 +145,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   }
   function content() {
     if (screen === "home") return homeMarkup();
+    if (screen === "purchase") return '<div data-purchase-root></div>';
     if (screen === "trade-up") return tradeUpPageMarkup(view, tradeUp, { loadError });
     if (screen === "sell") return marketPageMarkup(view, market, { wallet: getCampaignState()?.wallet?.gold ?? 0, loadError });
     if (loadError) return '<p class="cm-empty">' + esc(loadError) + '</p><button type="button" data-cm-action="refresh">重新加载</button>';
@@ -188,13 +198,14 @@ export function createCardManagementController({ root, getCampaignState, getCamp
     const contractScroll = root.querySelector("[data-cmu-contract-scroll]")?.scrollTop ?? 0;
     const historyList = root.querySelector("[data-cmu-history-scroll]");
     const historyScroll = historyList?.scrollTop ?? 0, historyLatest = historyList?.dataset.cmuHistoryLatest;
-    patchMarkup(root, '<div class="cm-surface standard-window__surface' + (screen === "home" ? ' is-menu' : screen === "sell" ? ' is-market' : screen === "trade-up" ? ' is-trade-up' : '') + '" role="dialog" aria-modal="true" aria-labelledby="cm-title"><header class="cm-header">' +
+    patchMarkup(root, '<div class="cm-surface standard-window__surface' + (screen === "home" ? ' is-menu' : screen === "purchase" ? ' is-purchase' : screen === "sell" ? ' is-market' : screen === "trade-up" ? ' is-trade-up' : '') + '" role="dialog" aria-modal="true" aria-labelledby="cm-title"><header class="cm-header">' +
       (screen !== "home" ? '<button type="button" class="cm-back" data-cm-screen="home">返回</button>' : "") +
-      '<div class="cm-heading"><h2 id="cm-title">' + (screen === "home" ? "球员卡管理" : screen === "sell" ? "出售" : screen === "trade-up" ? "汰换" : "回收") + '</h2></div><span class="cm-wallet">' +
+      '<div class="cm-heading"><h2 id="cm-title">' + (screen === "home" ? "球员卡管理" : screen === "sell" ? "出售" : screen === "purchase" ? "求购" : screen === "trade-up" ? "汰换" : "回收") + '</h2></div><span class="cm-wallet">' +
       gold(getCampaignState()?.wallet?.gold ?? 0) + '</span>' + actionsMarkup() + '<button type="button" class="cm-close" data-stage-window-close aria-label="关闭球员卡管理">×</button></header>' +
       (screen === "recycle" ? filterMarkup() + restrictionMarkup() : "") + '<div class="cm-content" data-cm-content>' + content() + "</div></div>");
     if (pending) root.querySelectorAll("button:not([data-stage-window-close]),input,select").forEach(node => { node.disabled = true; });
     const container = root.querySelector("[data-cm-content]"); container.scrollTop = scroll; bindScroll(container);
+    if (screen === "purchase") purchases.mount(root.querySelector("[data-purchase-root]"));
     if (screen === "sell") bindMarketScroll(paneScroll);
     if (screen === "trade-up") {
       bindTradeUpScroll(tradeScroll);
@@ -272,12 +283,28 @@ export function createCardManagementController({ root, getCampaignState, getCamp
     activeDialog?.querySelectorAll("button,input").forEach(node => { node.disabled = true; });
     const errorNode = activeDialog?.querySelector("[data-cm-dialog-error]"); if (errorNode) errorNode.textContent = "";
     try {
-      const response = await request("/api/campaign/cards/" + kind, { method: "POST", body: { ...body, ...(kind === "trade-up" ? {resultOnly:true} : {}), requestId: retries.get(retryKey) } });
+      const response = await request("/api/campaign/cards/" + kind, { method: "POST", body: { ...body, ...(kind === "trade-up" ? {resultOnly:true,warehouseDelta:true} : {}), requestId: retries.get(retryKey) } });
       if (operation.session !== session) return;
       retries.delete(retryKey);
       if (kind === "trade-up" && !response.state) {
+        if(response.cardDelta&&response.rosterDelta){
+          const merge=(cards,delta)=>{const removed=new Set([...delta.removedIds,...delta.cards.map(p=>p.id)]);return [...cards.filter(p=>!removed.has(p.id)),...delta.cards];};
+          const state=getCampaignState(),delta=response.rosterDelta;
+          const next={...state,...response.statePatch,draft:{...state.draft,roster:merge(state.draft.roster,delta),counts:delta.counts,positionCounts:delta.positionCounts,pickNumber:delta.pickNumber}};
+          campaignStore.setState(next,{source:'card-management'});onState(next);
+          if(!currentOperation(operation))return;
+          if(!view){load();return;}
+          let historyCount=0;
+          view={...view,cards:merge(view.cards,response.cardDelta),history:[response.result,...(view.history??[]).filter(e=>e.id!==response.result.id)].filter(e=>e.kind!=='trade-up'||++historyCount<=20)};
+          tradeUp.selected=[];tradeUp.error='';loadError='';pending=null;
+          reconcileMarketSelection();reconcileRecycleSelection();
+          closeDialog({redraw:false});
+          const node=dialog('汰换完成',tradeUpResultMarkup(response.result.card,{materials:response.result.cards??tradeMaterials}));
+          tradeUpRevealCleanup=playTradeUpReveal(node,()=>showToast('汰换成功，获得 '+response.result.card.name));
+          return;
+        }
         if (!currentOperation(operation)) { load(); return; }
-        tradeUp.selected = []; tradeUp.count = batchSize; tradeUp.error = "";
+        tradeUp.selected = []; tradeUp.error = "";
         view = null; loadError = ""; pending = null;
         closeDialog({ redraw: false });
         const node = dialog("汰换完成", tradeUpResultMarkup(response.result.card, { materials: response.result.cards ?? tradeMaterials }));
@@ -296,7 +323,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
       if (!currentOperation(operation)) return;
       if (kind === "recycle") { selected.clear(); batch = false; }
       if (kind === "list") { market.selectedId = ""; market.price = ""; }
-      if (kind === "trade-up") { tradeUp.selected = []; tradeUp.count = batchSize; tradeUp.error = ""; }
+      if (kind === "trade-up") { tradeUp.selected = []; tradeUp.error = ""; }
       view = response.view; loadError = ""; reconcileMarketSelection(); reconcileRecycleSelection(); reconcileTradeUpSelection();
       closeDialog({ redraw: false });
       if (kind === "trade-up") {
@@ -661,7 +688,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   root.addEventListener("click", event => {
     if (pending || root.hidden) return;
     const target = event.target.closest("button"); if (!target || target.disabled) return;
-    if (target.dataset.cmScreen && ["home", "recycle", "sell", "trade-up"].includes(target.dataset.cmScreen)) { screen = target.dataset.cmScreen; render(); return; }
+    if (target.dataset.cmScreen && ["home", "recycle", "sell", "trade-up", "purchase"].includes(target.dataset.cmScreen)) { purchases.close(); screen = target.dataset.cmScreen; render(); if(screen === "purchase") purchases.open(); return; }
     if (screen === "sell" && marketClick(target.dataset)) return;
     if (screen === "trade-up" && tradeUpClick(target.dataset)) return;
     const action = target.dataset.cmAction;
@@ -693,8 +720,8 @@ export function createCardManagementController({ root, getCampaignState, getCamp
   root.addEventListener("change", filterChanged);
   root.addEventListener("input", filterChanged);
   campaignStore.subscribe(({ state, previousState }) => {
-    if (state?.playerId !== previousState?.playerId) { session++; close(); pending = null; retries.clear(); selected.clear(); view = null; return; }
-    if (!root.hidden && !pending && !activeDialog && JSON.stringify([state?.draft?.roster, screen === "sell" ? state?.wallet : null, state?.tactics, state?.playerSquads]) !== JSON.stringify([previousState?.draft?.roster, screen === "sell" ? previousState?.wallet : null, previousState?.tactics, previousState?.playerSquads])) load();
+    if (state?.playerId !== previousState?.playerId) { session++; close(); purchases.reset(); pending = null; retries.clear(); selected.clear(); view = null; return; }
+    if (screen !== "purchase" && !root.hidden && !pending && !activeDialog && JSON.stringify([state?.draft?.roster, screen === "sell" ? state?.wallet : null, state?.tactics, state?.playerSquads]) !== JSON.stringify([previousState?.draft?.roster, screen === "sell" ? previousState?.wallet : null, previousState?.tactics, previousState?.playerSquads])) load();
   });
   registerStandardWindow(root, { onRequestClose: close });
   return { open, close };

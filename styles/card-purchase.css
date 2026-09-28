@@ -1,0 +1,78 @@
+.cm-menu { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.cm-surface button.cm-menu-option[data-cm-kind="purchase"] { --cm-accent:#a5cfb9; background:radial-gradient(ellipse at 50% 10%,#70b59325,transparent 68%),linear-gradient(155deg,#293b30,#18251e 74%); }
+.standard-window>.cm-surface.is-purchase { width:min(1120px,100%)!important; height:auto; max-height:min(860px,100%); align-self:center; }
+.cm-surface.is-purchase>.cm-content { flex:0 1 auto; min-height:0; padding:20px 24px; }
+.standard-window>.cm-surface.is-purchase:is([data-purchase-mode="confirm"],[data-purchase-mode="publish-review"],[data-purchase-mode="detail"]) { width:min(880px,100%)!important; }
+.cpo-body { max-width:1200px; margin:auto; color:var(--ui-text,#ede9dd); }
+.cpo-empty { display:grid; justify-items:center; align-content:center; min-height:240px; padding:24px; text-align:center; border:1px dashed #52685a; border-radius:12px; }
+.cpo-empty strong { font-size:20px; }
+.cpo-empty p { color:#b5c4b9; }
+.cpo-toolbar,.cpo-pagination { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+.cpo-toolbar [aria-pressed=true] { border-color:#e3c580!important; color:#e3c580!important; }
+.cpo-toolbar .cm-primary { margin-left:auto; }
+.cpo-note { color:#b5c4b9; font-size:13px; line-height:1.6; }
+.cpo-orders { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:16px; margin:16px 0; }
+.cpo-order { min-width:0; padding:18px; border:1px solid #52685a; background:#213229; border-radius:12px; }
+.cpo-order header { display:flex; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.cpo-order header span { color:#a5cfb9; font-size:13px; }
+.cpo-price { display:block; color:#efcf89; line-height:1.7; overflow-wrap:anywhere; margin:14px 0; }
+.cpo-compose { display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,320px); gap:24px; }
+.cpo-compose>section { min-width:0; }
+.cpo-search { display:flex; align-items:center; gap:12px; }
+.cpo-search b { color:#b1d6c3; font-size:20px; letter-spacing:1px; }
+.cpo-search input { flex:1; width:100%; }
+.cpo-card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); align-items:start; gap:12px; margin:16px 0; }
+.cpo-requested-card { width:100%; max-width:144px; min-width:0; justify-self:center; }
+.cpo-requested-card .s4-player-card,.cpo-card-button .s4-player-card { width:100%; height:auto; min-height:0!important; }
+.cm-surface button.cpo-card-button { display:flex; flex-direction:column; align-items:center; width:100%; max-width:144px; justify-self:center; padding:5px; border:1px solid transparent; background:transparent; }
+.cm-surface button.cpo-card-button:hover,.cm-surface button.cpo-card-button[aria-pressed=true] { border-color:#e5c27b; background:#e5c27b14; }
+.cpo-card-button>span { font-size:12px; line-height:1.5; padding:6px 0 0; }
+.cpo-search-results { max-height:300px; overflow:auto; padding:4px; border-bottom:1px solid #52685a; }
+.cpo-search-results:empty { display:none; }
+.cpo-order>.cpo-card-grid { max-height:360px; overflow:auto; padding:4px; }
+.cpo-selected { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:16px; margin:16px 0; }
+.cpo-selected article { min-width:0; max-width:166px; width:100%; margin:auto; }
+.cpo-selected .s4-player-card,.cpo-delivery-card .s4-player-card { width:100%; margin:auto; }
+.cpo-selected label { display:flex; align-items:center; justify-content:space-between; gap:4px; font-size:13px; margin:8px 0; }
+.cpo-selected article>button { width:100%; }
+.cpo-payment { background:#213229; padding:18px; border:1px solid #52685a; border-radius:12px; align-self:start; }
+.cpo-payment h3 { margin:0 0 16px; }
+.cpo-payment>label { display:grid; grid-template-columns:50px 1fr; align-items:center; gap:8px; margin:12px 0; }
+.cpo-payment input { width:100%; }
+.cpo-payment fieldset { margin:16px 0; border:1px solid #52685a; border-radius:8px; max-height:200px; overflow:auto; }
+.cpo-payment .cpo-land { display:flex; gap:8px; align-items:center; padding:8px 0; }
+.cpo-payment .cpo-land input { width:18px; height:18px; flex:none; }
+.cpo-delivery { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:16px; margin:16px 0; }
+.cpo-delivery section { min-width:0; padding:14px; border:1px solid #52685a; border-radius:10px; }
+.cpo-delivery-target { display:flex; align-items:center; gap:16px; padding-bottom:12px; border-bottom:1px solid #52685a; }
+.cpo-delivery-target>.cpo-requested-card { max-width:100px; }
+.cpo-match-cards { max-height:320px; overflow:auto; }
+.cpo-delivery h3 { font-size:16px; margin-top:0; }
+.cpo-delivery-card { max-width:166px; margin:12px auto 0; }
+.cpo-error { margin:16px 0; padding:12px; background:#612f2a; border:1px solid #c97b67; color:#ffe2d8; border-radius:8px; }
+.cpo-pagination { justify-content:center; margin-top:20px; }
+@media(max-width:900px) { .cm-menu { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:640px) {
+ .cm-surface.is-purchase>.cm-content { padding:14px; }
+ .cm-surface.is-purchase>.cm-header { padding:10px 14px; gap:10px; }
+ .cpo-empty { min-height:180px; padding:16px; }
+ .cpo-compose { grid-template-columns:1fr; gap:16px; }
+ .cpo-toolbar { gap:6px; }
+ .cpo-toolbar button { flex:1; white-space:nowrap; padding:8px!important; }
+ .cpo-search { flex-direction:column; align-items:stretch; gap:8px; }
+ .cpo-selected { grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:12px; }
+ .cpo-selected article,.cpo-delivery-card { max-width:140px; }
+ .cpo-order,.cpo-payment { padding:14px; }
+ .cpo-body>button { margin:4px; }
+ .cpo-requested-card,.cm-surface button.cpo-card-button { max-width:118px; }
+ .cpo-search-results { max-height:250px; }
+}
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape) {
+ .cm-surface.is-purchase>.cm-header { padding:8px 14px; }
+ .cm-surface.is-purchase>.cm-content { padding:12px 16px; }
+ .cpo-toolbar { margin-bottom:10px; }
+ .cpo-requested-card,.cm-surface button.cpo-card-button { max-width:104px; }
+ .cpo-selected { grid-template-columns:repeat(auto-fill,minmax(108px,1fr)); }
+ .cpo-selected article,.cpo-delivery-card { max-width:118px; }
+ .cpo-search-results { max-height:210px; }
+}

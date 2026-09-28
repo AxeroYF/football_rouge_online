@@ -225,3 +225,31 @@ test('batch scouting index preserves seeded draws at every center level',()=>{
   assert.deepEqual(indexed,original);
  }
 });
+
+
+test("production gently accelerates a queue, snapshots timing and composes with Eiffel", () => {
+  const f=fixture();let production=300;f.service.getProduction=()=>production;
+  const preview=f.service.unitDetails(f.account,f.world,f.scoutId).rules;
+  assert.equal(preview.durationMs,Math.ceil(600000/1.1));
+  const task=f.service.start(f.account,f.world,{scoutId:f.scoutId,requestId:'production-queue',rounds:2});
+  assert.equal(task.completesAt-task.startedAt,preview.durationMs*2);
+  assert.equal(f.account.gold,7600);
+  production=1200;
+  assert.deepEqual(f.service.start(f.account,f.world,{scoutId:f.scoutId,requestId:'production-queue',rounds:2}),task);
+  const saved=structuredClone(f.saved());
+  assert.equal(f.service.publicState(saved).tasks[0].completesAt,task.completesAt);
+  f.setTime(task.completesAt-1);assert.equal(f.service.publicTask(saved.scouting.tasks[task.id]).status,'working');
+  f.setTime(task.completesAt);assert.equal(f.service.publicTask(saved.scouting.tasks[task.id]).status,'ready');
+  f.service.wonders={nearby:()=>true,modifiers:()=>({})};production=300;
+  assert.equal(f.service.unitDetails(f.account,f.world,f.scoutId).rules.durationMs,Math.ceil(360000/1.1));
+});
+
+test("production benefit has diminishing returns without a hard cap", async () => {
+  const {scoutingProductionTiming:timing}=await import('../shared/config/scouting.mjs');
+  for(const value of [0,-1,NaN,Infinity])assert.equal(timing(value).durationMs,600000);
+  const points=[0,300,600,900,1200,3000,30000].map(p=>timing(p));
+  for(let i=1;i<points.length;i++)assert.ok(points[i].durationMs<points[i-1].durationMs);
+  assert.ok(points[1].reductionPercent<10);assert.ok(points[4].reductionPercent<20);
+  assert.ok(points[0].durationMs-points[1].durationMs>points[1].durationMs-points[2].durationMs);
+  assert.ok(points[1].durationMs-points[2].durationMs>points[2].durationMs-points[3].durationMs);
+});

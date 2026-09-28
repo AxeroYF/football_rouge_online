@@ -41,6 +41,10 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, campaign.login(body.nickname, body.password));
     }
     const account = campaign.authenticate(bearerToken(request));
+    if(pathname==='/api/campaign/league/registration'&&['GET','POST'].includes(request.method)){
+      const registration=request.method==='POST'?campaign.dailyLeague.saveRegistration(account,body):campaign.dailyLeague.registrationView(account);
+      return sendJson(response,200,{registration});
+    }
     if(request.method==='GET'&&pathname==='/api/campaign/league')return sendJson(response,200,{league:campaign.dailyLeague.view(account)});
     if(request.method==='GET'&&pathname==='/api/campaign/league/match')return sendJson(response,200,campaign.dailyLeague.snapshot(new URL(url,'http://localhost').searchParams.get('id')));
     if(request.method==='POST'&&pathname==='/api/campaign/league/watch')return sendJson(response,200,campaign.dailyLeague.watch(account,body.id,body.session));
@@ -85,14 +89,18 @@ export function createCampaignApiHandler({ campaign } = {}) {
     }
     if(request.method==='GET'&&pathname==='/api/campaign/interactions/territories'){const other=campaign.diplomacy.other(account,new URL(url,'http://localhost').searchParams.get('playerId'));return sendJson(response,200,territoryTradeChoices(campaign,account,other));}
     if(request.method==='GET'&&pathname==='/api/campaign/players')return sendJson(response,200,{interactions:campaign.diplomacy.summary(account)});
-    if(request.method==='GET'&&pathname==='/api/campaign/interactions')return sendJson(response,200,{view:campaign.diplomacy.details(account,new URL(url,'http://localhost').searchParams.get('playerId'))});
+    if(request.method==='GET'&&pathname==='/api/campaign/interactions/cards')return sendJson(response,200,campaign.diplomacy.cards(account,new URL(url,'http://localhost').searchParams.get('playerId')));
+    if(request.method==='GET'&&pathname==='/api/campaign/interactions/joint-scout'){const other=campaign.diplomacy.other(account,new URL(url,'http://localhost').searchParams.get('playerId'));return sendJson(response,200,campaign.jointScouting.options(account,other));}
+    if(request.method==='GET'&&pathname==='/api/campaign/interactions')return sendJson(response,200,{view:campaign.diplomacy.details(account,new URL(url,'http://localhost').searchParams.get('playerId'),{profile:new URL(url,'http://localhost').searchParams.get('view')==='profile'})});
     if(request.method==='GET'&&pathname==='/api/campaign/interactions/match')return sendJson(response,200,campaign.diplomacy.snapshot(account,new URL(url,'http://localhost').searchParams.get('id')));
     if(request.method==='POST'&&pathname==='/api/campaign/interactions') {
       if(['read-news','read'].includes(body.action))return sendJson(response,200,{...campaign.diplomacy.mutate(account,body),acknowledged:true});
       campaign.settleDueChallenges();
+      const proposal=campaign.world?.diplomacy?.requests?.[body.proposalId];
       const result=campaign.diplomacy.mutate(account,body);
       if(body.action==='trade'&&body.compact===true)return sendJson(response,200,{...result,proposal:campaign.diplomacy.publicRequest(campaign.world.diplomacy.requests[result.proposalId]),statePatch:{interactions:campaign.diplomacy.summary(account)}});
-      return sendJson(response,200,{...result,view:campaign.diplomacy.details(account,body.targetId),state:campaign.state(account)});
+      if(body.compact===true&&(['joint-scout','reject','cancel','condemn','withdraw-condemnation','friendship'].includes(body.action)||body.action==='accept'&&['joint-scout','trade','friendship'].includes(proposal?.type)&&!(proposal.payload?.giveTerritoryIds?.length||proposal.payload?.takeTerritoryIds?.length)))return sendJson(response,200,{...result,view:campaign.diplomacy.details(account,body.targetId,{profile:true}),statePatch:{interactions:campaign.diplomacy.summary(account),...(body.action==='accept'&&['joint-scout','trade'].includes(proposal?.type)?{...campaign.actionState(account,{includeRoster:proposal?.type!=='joint-scout'}),scouting:campaign.scouting.publicState(account,campaign.world)}:{})}});
+      return sendJson(response,200,{...result,view:campaign.diplomacy.details(account,body.targetId,{profile:body.compact===true}),state:campaign.state(account)});
     }
 
     if(request.method==='GET'&&pathname==='/api/campaign/elite')return sendJson(response,200,{elite:campaign.eliteChallenges.view(account,new URL(url,'http://localhost').searchParams.get('clubId'))});
@@ -107,6 +115,17 @@ export function createCampaignApiHandler({ campaign } = {}) {
     if (request.method === 'POST' && pathname === '/api/campaign/development/fog') return sendJson(response,200,campaign.setDevelopmentFog(account,body.enabled));
     if (request.method === 'POST' && pathname === '/api/campaign/rewards/research') return sendJson(response,200,campaign.assignNeutralResearch(account,body));
     if (request.method === 'POST' && pathname === '/api/campaign/rewards/production') return sendJson(response,200,campaign.assignNeutralProduction(account,body));
+    if (pathname === '/api/campaign/card-purchases' && request.method === 'GET') {
+      const params=new URL(url,'http://localhost').searchParams;
+      return sendJson(response,200,campaign.cardPurchases.list(account,{mine:params.get('mine')==='1',page:params.get('page')}));
+    }
+    if (pathname === '/api/campaign/card-purchases/options' && request.method === 'GET') return sendJson(response,200,campaign.cardPurchases.options(account));
+    if (pathname === '/api/campaign/card-purchases/detail' && request.method === 'GET') return sendJson(response,200,campaign.cardPurchases.detail(account,new URL(url,'http://localhost').searchParams.get('id')));
+    if (pathname === '/api/campaign/card-purchases/preview' && request.method === 'POST') return sendJson(response,200,campaign.cardPurchases.preview(account,body));
+    if (pathname === '/api/campaign/card-purchases' && request.method === 'POST') {
+      const result=campaign.cardPurchases.mutate(account,body);
+      return sendJson(response,200,{result});
+    }
     if (request.method === "GET" && pathname === "/api/campaign/cards") return sendJson(response, 200, campaign.cardManagementDetails(account));
     if (request.method === "POST" && pathname === "/api/campaign/cards/preview") return sendJson(response, 200, campaign.previewCardManagement(account, body));
     const cardAction = { "/api/campaign/cards/recycle": "recycle", "/api/campaign/cards/trade-up": "trade-up", "/api/campaign/cards/list": "list", "/api/campaign/cards/buy": "buy", "/api/campaign/cards/cancel": "cancel" }[pathname];
@@ -190,6 +209,9 @@ export function createCampaignApiHandler({ campaign } = {}) {
     if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/choose") {
       return sendJson(response, 200, campaign.choosePlayerPackCard(account, body.openingId, body.playerId));
     }
+    if (request.method === "GET" && pathname === "/api/campaign/squads/batch") return sendJson(response,200,{snapshot:campaign.squadBatchDetails(account)});
+    if (request.method === "POST" && pathname === "/api/campaign/squads/batch-preview") return sendJson(response,200,campaign.previewSquadBatch(account,body));
+    if (request.method === "POST" && pathname === "/api/campaign/squads/batch") return sendJson(response,200,campaign.saveSquadBatch(account,body));
     if (request.method === "POST" && pathname === "/api/campaign/squads/assign") {
       return sendJson(response, 200, { [body.compact === true ? "statePatch" : "state"]:campaign.assignPlayerSquad(account, body.playerId, body.squadId, {compact:body.compact}) });
     }

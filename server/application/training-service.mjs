@@ -1,4 +1,3 @@
-import {leaguePlayerLocked} from './daily-league-service.mjs';
 import {trainingAttributeHeadroom} from "../../shared/config/training.mjs";
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import { ensureTrainingBases, refreshTrainingGrowth } from "../../shared/football/training-growth.mjs";
@@ -165,7 +164,6 @@ export class TrainingService {
     if (!Object.hasOwn(TRAINING_POOLS, pool) || !Number.isInteger(slot) || slot < 0 || slot >= view.capacity) fail("无效的训练席位");
     const player = account.draft.roster.find((entry) => playerId(entry) === id);
     if (!player || player.pool !== pool) fail("请选择对应位置的本队球员");
-    if(leaguePlayerLocked(world,account.id,id))fail('联赛进行中，结束后才能安排参赛球员训练',409);
     if(player.coalitionLoan)fail("已借调联军，归队后才能训练",409);
     if(player.medical)fail("治疗中的球员不能训练",409);
     if (player.training || this.tasks(account).some((task) => task.playerId === id && task.completedAt == null && task.cancelledAt == null)) fail("该球员正在训练", 409);

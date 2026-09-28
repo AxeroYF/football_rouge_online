@@ -1,3 +1,4 @@
+import {leagueRoster,normalizeLeagueRegistration,leaguePlayerView} from '../config/league-registration.mjs';
 import {biologyReduction} from '../config/advanced-research.mjs';
 import { initializePositionInheritance } from '../config/position-inheritance.mjs';
 import { prepareFitnessSeat } from './fitness-lineup.mjs';
@@ -100,10 +101,11 @@ export function buildAccountMatchSeat(account, squadId = PLAYER_SQUAD_IDS.EXPEDI
   const fullRoster = account?.draft?.roster ?? [];
   const completed = autoCompletePlayerSquads(account?.playerSquads,fullRoster,{allowTransfers:!account.tactics?.squads});
   if (squadId === PLAYER_SQUAD_IDS.EXPEDITION) assertExpeditionCapacity(completed.playerSquads, fullRoster);
-  const roster = representativePlayers(fullRoster).filter((player) => completed.playerSquads.assignments[String(player.id)] === squadId);
+  const registration=squadId==='league'?normalizeLeagueRegistration(account,now):null;
+  const roster = registration?leagueRoster(account,registration).map(p=>leaguePlayerView(p,registration.conditions?.[p.id],now)):representativePlayers(fullRoster).filter((player) => completed.playerSquads.assignments[String(player.id)] === squadId);
   if (roster.length < 11) throw new Error("球队阵容不足，无法参加地块比赛");
   const tacticsRoot = repairTacticsLineups(account.tactics ?? {},fullRoster,completed.playerSquads);
-  const tactics = tacticsRoot.squads?.[squadId] ?? tacticsRoot;
+  const tactics = registration?registration.tactics:tacticsRoot.squads?.[squadId] ?? tacticsRoot;
   const embedded = tactics.planSnapshots?.__s4V2 ?? {};
   const savedIds = embedded.starters ?? tactics.starters;
   const plannedPlayers = Array.isArray(savedIds) ? validSavedStarters(roster, savedIds) : defaultStartingEleven(roster);

@@ -145,7 +145,6 @@
  html.is-compact-landscape #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{display:grid;grid-template-columns:minmax(190px,1fr) auto minmax(200px,1fr);gap:8px;align-items:end}
  html.is-compact-landscape #campaign-tactics .league-captain-controls{width:auto;grid-column:auto;grid-template-columns:1fr 1fr}
  html.is-compact-landscape #campaign-tactics .league-tactics-detail-title>.league-tactical-node-controls{width:auto;grid-column:auto;transform:none}
- html.is-compact-landscape #campaign-tactics .league-ai-training-actions{grid-column:1/-1;display:flex;justify-content:flex-end;margin:0}
  html.is-compact-landscape #campaign-tactics .league-tactics-detail-scroll{overflow:visible;max-height:none}
 }
 
@@ -219,4 +218,80 @@
  .social-warehouse-filters .social-warehouse-expand{display:block;flex:none}
  .social-warehouse-filters:not(.is-expanded)>:not([data-warehouse-filter=search]):not([data-warehouse-expand]){display:none!important}
  .coalition-window main{padding:0}
+}
+
+/* Compact roster windows on phones and tablets; keep desktop geometry unchanged. */
+@media(max-width:1024px), (max-width:1280px) and (max-height:600px) and (orientation:landscape){
+ html #enhancement-window .enhancement-window-header,
+ html #campaign-team .team-management-header{box-sizing:border-box;min-height:44px;height:44px;padding:2px 10px;gap:8px;flex:none}
+ html #enhancement-window .enhancement-window-header h2,
+ html #campaign-team .team-management-header h2{margin:0;font-size:17px;line-height:1.25}
+ html #enhancement-window .enhancement-window-header>button,
+ html #campaign-team .team-management-header>button{box-sizing:border-box;flex:0 0 40px;width:40px;height:40px;min-height:40px;padding:0;font-size:22px}
+ html #campaign-team .team-management-header>.mobile-filter-toggle{display:block!important;flex:0 0 auto;width:auto!important;min-width:64px;height:40px!important;margin-left:auto!important;padding:0 10px!important;font-size:12px!important;line-height:1.2;white-space:nowrap}
+ html #enhancement-window .enhancement-composer>header,
+ html #enhancement-window .enhancement-warehouse>header,
+ html #enhancement-window .enhancement-mini-ranking>header{box-sizing:border-box;min-height:44px;padding:4px 10px;gap:6px;flex-wrap:nowrap}
+ html #enhancement-window .enhancement-composer h2,
+ html #enhancement-window .enhancement-warehouse h2{font-size:16px;line-height:1.25}
+ #enhancement-window .enhancement-warehouse-header-actions{gap:6px;flex:none;font-size:12px}
+ #enhancement-window .enhancement-warehouse-header-actions .button{min-height:36px;padding:4px 8px;font-size:12px;white-space:nowrap}
+ #enhancement-window .enhancement-tools{padding:6px 8px;gap:6px}
+ #campaign-team .team-management-toolbar{padding:6px 10px;gap:6px;align-items:center;flex-wrap:wrap}
+ #campaign-team .team-management-toolbar label{gap:4px;min-width:0}
+ #campaign-team .team-management-toolbar label.team-search{flex:1 1 170px;width:auto;min-width:0}
+ #campaign-team .team-management-toolbar label.team-squad-filter{flex:0 1 120px;min-width:100px}
+ #campaign-team .team-management-shell:not(.mobile-filters-open) .team-management-toolbar>label:not(.team-search):not(.team-squad-filter){display:none}
+ #campaign-team .team-management-toolbar label>span:not(.team-range){display:none}
+ #campaign-team .team-management-toolbar input,#campaign-team .team-management-toolbar select{min-height:36px;height:36px;font-size:13px}
+ #campaign-team .team-management-shell.mobile-filters-open .team-management-toolbar{max-height:180px;overflow:auto;overscroll-behavior:contain}
+ #campaign-team .team-management-shell.mobile-filters-open .team-management-toolbar>label:not(.team-search):not(.team-squad-filter){flex:1 1 130px}
+ #campaign-team .team-squad-summary{width:auto;flex:1 0 auto;gap:6px;margin-left:auto}
+ #campaign-team .team-squad-summary>span{min-width:0!important;flex:1;height:32px;padding:0 8px;gap:6px;font-size:12px}
+ #campaign-team .team-squad-summary strong{font-size:16px!important;white-space:nowrap}
+ #campaign-team .team-squad-limit{padding:4px 10px;font-size:12px;line-height:1.4}
+}
+@media(max-width:560px){
+ #campaign-team .team-squad-summary{flex-basis:100%}
+}
+/* Keep the warehouse beside the composer on short screens, with separate scrolling. */
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
+ #enhancement-window [data-enhancement-content]{padding:6px;overflow:hidden}
+ #enhancement-window .league-enhancement{height:100%;min-height:0;grid-template-columns:minmax(0,1fr) minmax(260px,.9fr);gap:8px}
+ #enhancement-window .enhancement-left-column{min-height:0;overflow:auto;overscroll-behavior:contain;grid-template-rows:max-content 150px}
+ #enhancement-window .enhancement-warehouse{height:100%;min-height:0}
+ #enhancement-window .enhancement-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:4px 6px}
+ #enhancement-window .enhancement-tools>input{grid-column:1/-1;width:100%}
+ #enhancement-window .enhancement-tools>select{width:100%;padding:4px;font-size:11px}
+ #enhancement-window .enhancement-card-grid{min-height:0;overflow:auto;overscroll-behavior:contain;grid-template-columns:repeat(2,minmax(0,1fr));padding:8px;gap:10px}
+ #enhancement-window .enhancement-flow{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto;padding:12px 8px 90px;gap:12px 8px;min-height:0}
+ #enhancement-window .enhancement-action{grid-column:1;grid-row:2;max-width:104px}
+ #enhancement-window .enhancement-result-column{grid-column:2;grid-row:2}
+ #enhancement-window .enhancement-card-slot,#enhancement-window .enhancement-result-frame{min-height:180px;padding:24px 6px 8px}
+}
+
+/* Bench filters occupy their own row; the player list retains its scroll area. */
+#campaign-tactics #league-squad-form .league-bench{grid-template-rows:auto auto minmax(0,1fr) auto}
+#campaign-tactics .league-bench-filters{min-width:0;flex:none;padding:0 8px;border-bottom:1px solid var(--line);color:var(--ink)}
+#campaign-tactics .league-bench-filters>summary{min-height:34px;padding:6px 2px;cursor:pointer;font-size:12px;line-height:22px}
+#campaign-tactics .league-bench-filters>summary>span{float:right;color:var(--muted);font-variant-numeric:tabular-nums}
+#campaign-tactics .league-bench-filter-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+#campaign-tactics .league-bench-filter-controls label{min-width:0;display:grid;gap:3px;font-size:11px}
+#campaign-tactics .league-bench-filter-controls select{width:100%;min-width:0;height:34px;padding:3px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink);font:inherit}
+#campaign-tactics .league-bench-filter-footer{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:4px 0}
+#campaign-tactics .league-bench-filter-footer small{font-size:10px;color:var(--muted)}
+#campaign-tactics .league-bench-filter-footer button{min-height:30px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink);font:inherit;font-size:11px;cursor:pointer}
+#campaign-tactics .league-bench-filter-empty{grid-column:1/-1;padding:12px 4px;text-align:center;color:var(--muted);font-size:12px}
+
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
+ html #campaign-tactics #league-squad-form .league-bench-filters>summary{min-height:28px;line-height:24px;padding:2px}
+ html #campaign-tactics #league-squad-form .league-bench-filter-controls label{gap:2px;font-size:10px;line-height:12px}
+ html #campaign-tactics #league-squad-form .league-bench-filter-controls select{height:32px;min-height:32px;padding:2px;font-size:11px}
+ html #campaign-tactics #league-squad-form .league-bench-filter-footer{padding:2px 0;min-height:28px}
+ html #campaign-tactics #league-squad-form .league-bench-filter-footer small{font-size:9px}
+ html #campaign-tactics #league-squad-form .league-bench-filter-footer button{height:28px;min-height:28px;padding:2px 4px;font-size:10px}
+}
+
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){
+ html #campaign-tactics #league-squad-form .league-bench:has(>.league-bench-filters[open])>header>.league-bench-guidance{display:none!important}
 }
