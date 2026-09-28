@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "latestPublished": "20260928-r41",
   "lastUserConfirmedDeployed": "20260928-r41",
-  "sourceState": "R41 deployment user-confirmed; R40-R41 committed locally as c7487cb; remote push blocked by automatic approval review pending explicit repository/branch authorization",
+  "sourceState": "R41 deployment user-confirmed; R40-R41 source pushed to codex/rougelite and PR #2 updated; main not merged",
   "releases": [
     {
       "version": "20260918-r9",

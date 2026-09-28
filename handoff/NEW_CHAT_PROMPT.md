@@ -10,4 +10,4 @@ GitHub 整理见 [2026-09-28 同步记录](GITHUB_SYNC_20260928.md)，沿用 PR 
 
 先读 CURRENT_STATE.md、R41_UPDATE_20260928.md 和 releases/CURRENT.json。已封存 R40/R41 不覆盖重打；本轮按用户要求整理并同步 GitHub；服务器 R41 已由用户自行部署。
 
-Git 主提交 c7487cb 已完成，自动审批拒绝推送；远端仍为 68dd793，PR #2 尚未更新。等待用户明确授权具体仓库分支，不绕过拒绝。
+Git 主提交 c7487cb 及交接提交已在用户明确授权后推送至 codex/rougelite，PR #2 已更新为 R41 累计范围，尚未合并 main。
