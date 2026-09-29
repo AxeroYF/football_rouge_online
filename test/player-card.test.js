@@ -72,7 +72,7 @@ test("active business entry points use the shared player card renderer", () => {
   }
 });
 
-test("all nine late S4 legendary profiles stay bound to real card art", () => {
+test("all nine late S4 legendary profiles retain catalog artwork bindings", async (t) => {
   const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const registry = JSON.parse(fs.readFileSync(path.join(root, "assets/data/s4-player-profile-registry.json"), "utf8"));
   const catalog = JSON.parse(fs.readFileSync(path.join(root, "assets/data/s4-player-catalog.json"), "utf8"));
@@ -93,11 +93,15 @@ test("all nine late S4 legendary profiles stay bound to real card art", () => {
     const player = catalog.find((entry) => entry.id === playerId);
     assert.equal(profile?.profileKey, profileKey, `${playerId} registry profile`);
     assert.equal(profile?.fileName, fileName, `${playerId} registry asset`);
-    assert.ok(fs.existsSync(path.join(root, "assets/player-profiles", fileName)), `${fileName} exists`);
     assert.equal(player?.portrait, `./assets/player-profiles/${fileName}`, `${playerId} catalog portrait`);
     assert.deepEqual(player?.portraitPosition, { x:profile.x, y:profile.y, width:profile.width }, `${playerId} catalog position`);
     assert.ok(positions.profiles[profileKey], `${profileKey} position preset`);
   }
+  await t.test("private portrait files exist when the local art library is installed", {
+    skip:fs.existsSync(path.join(root,"assets/player-profiles"))?false:"Private card art is not distributed in Git; catalog bindings are still checked above",
+  },()=>{
+    for(const [,fileName] of Object.values(expected))assert.ok(fs.existsSync(path.join(root,"assets/player-profiles",fileName)),`${fileName} exists`);
+  });
 });
 
 test("production catalog keeps an English name for every player and shares Messi's source name", () => {

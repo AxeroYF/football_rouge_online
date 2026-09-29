@@ -1,11 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import { resourceBudget, validateTerritoryResources, RESOURCE_DEFINITIONS, YIELD_RESOURCE_IDS } from '../shared/config/resources.mjs';
 import { territoryResourceMarkup } from '../client/resources/resource-markup.js';
 import { createTerritoryPresentation } from '../client/map/territory-presentation.js';
 const read=f=>JSON.parse(fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'));
-const catalog=read('assets/data/territory-resources.json'),index=read('assets/data/territory-index.json'),survey=read('outputs/territory-resources-20260908/survey.json');
+const catalog=read('assets/data/territory-resources.json'),index=read('assets/data/territory-index.json');
+const sampling=read('test/fixtures/territory-resource-sampling.json');
+const records=index.territories.map(t=>{
+ const profile=catalog.territories[t.territoryId];
+ return {...t,...profile,budget:resourceBudget(profile.yields),mode:profile.yields.gold===0&&profile.yields.production===0?'science':'economic',survey:{sampling:sampling.sampling[t.territoryId]}};
+});
+const regions=Object.fromEntries(['europe','south-america'].map(region=>{
+ const rows=records.filter(t=>t.region===region);
+ return [region,{totalHourly:Object.fromEntries(YIELD_RESOURCE_IDS.map(id=>[id,rows.reduce((sum,t)=>sum+t.yields[id],0)])),meanBudget:rows.reduce((sum,t)=>sum+t.budget,0)/rows.length}];
+}));
+const survey={records,regions};
+
+test('terrain sampling fixture is complete and matches the published resource catalog',()=>{
+ assert.equal(sampling.version,catalog.version);
+ assert.equal(sampling.catalogSha256,createHash('sha256').update(fs.readFileSync(new URL('../assets/data/territory-resources.json',import.meta.url))).digest('hex'));
+ assert.deepEqual(Object.keys(sampling.sampling).sort(),index.territories.map(t=>t.territoryId).sort());
+ for(const method of Object.values(sampling.sampling))assert.ok(['polygon-grid','small-polygon-nearest-land','small-island-no-dem'].includes(method));
+});
 test('all 598 merged territories have valid stable one/two/three-resource profiles',()=>{
  assert.equal(validateTerritoryResources(catalog,index),catalog);assert.equal(Object.keys(catalog.territories).length,598);
  const counts={1:0,2:0,3:0};for(const p of Object.values(catalog.territories)){counts[Object.values(p.yields).filter(Boolean).length]++;assert.ok(resourceBudget(p.yields)>=8&&resourceBudget(p.yields)<=12);}
