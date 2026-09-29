@@ -66,7 +66,8 @@ export class TrainingService {
     // Select latest first so dismissed results never reveal an older session.
     const latest = new Map();
     for (const task of this.tasks(account)) latest.set(`${task.buildingId}:${task.pool}:${task.slot}`, task);
-    return { rules: {...TRAINING_RULES,attributePoints:this.wonders?.modifiers(account).trainingPoints??TRAINING_RULES.attributePoints,canSelectAttribute:this.wonders?.modifiers(account).trainingSelection??false}, tasks: [...latest.values()].filter((task) => task.cancelledAt == null && task.finishedAt == null).map((task) => this.publicTask(task)), serverNow: this.now() };
+    const modifiers=this.wonders?.modifiers(account);
+    return { rules: {...TRAINING_RULES,attributePoints:modifiers?.trainingPoints??TRAINING_RULES.attributePoints,canSelectAttribute:modifiers?.trainingSelection??false}, tasks: [...latest.values()].filter((task) => task.cancelledAt == null && task.finishedAt == null).map((task) => this.publicTask(task)), serverNow: this.now() };
   }
   details(account, world, territoryId, buildingId) {
     this.settle(account);
@@ -75,14 +76,15 @@ export class TrainingService {
     const building = territory.buildings.find((entry) => entry.id === buildingId && entry.type === "training-center");
     if (!building) fail("训练中心不存在", 404);
     const metadata = this.territoryIndex?.territories.find((entry) => entry.territoryId === territoryId);
+    const trainingState=this.publicState(account);
     return { building: this.buildings.publicBuilding(building), territoryId, gold: account.gold ?? 0,
       territoryLabel: metadata ? `${metadata.country} · ${metadata.name}` : territoryId,
-      capacity: trainingCapacity(building.level), ...this.publicState(account),
+      capacity: trainingCapacity(building.level), ...trainingState,
       players: (account.draft?.roster ?? []).map((player) => ({ ...createPlayerCardViewModel(player),
         training: player.training ?? null,
         costGold: trainingCostGold(player), canAfford: (account.gold ?? 0) >= trainingCostGold(player),
         expedition: account.playerSquads?.assignments?.[playerId(player)] === "expedition",
-        canTrain: !player.medical && this.headroom(player) >= (this.wonders?.modifiers(account).trainingPoints??TRAINING_RULES.attributePoints),
+        canTrain: !player.medical && this.headroom(player) >= trainingState.rules.attributePoints,
       })),
     };
   }

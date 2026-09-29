@@ -1,3 +1,5 @@
+import {createPlayerLadderController} from './client/cards/player-ladder-controller.js';
+import {createAdaptivePoller} from './client/core/adaptive-poller.js';
 import {createJointScoutSites} from './client/map/joint-scout-sites.js';
 import {createDailyLeagueController} from './client/league/daily-league-controller.js';
 import {createFrameRefresh} from './client/core/frame-refresh.js';
@@ -995,8 +997,10 @@ async function syncCampaignWorldState() {
     if (selectedTerritoryId) renderTerritoryInspector(selectedTerritoryId);
     buildingPanelController?.refreshFromState();
     resumeOwnActiveChallenge();
+    return true;
   } catch {
-    // 临时网络错误不打断地图操作，下个轮询周期自动重试。
+    // 临时网络错误不打断地图操作，由轮询器退避后自动重试。
+    return false;
   } finally {
     campaignStateSyncPending = false;
   }
@@ -1004,8 +1008,8 @@ async function syncCampaignWorldState() {
 
 function startCampaignStatePolling() {
   if (campaignStatePollTimer) return;
-  campaignStatePollTimer = setInterval(syncCampaignWorldState, 5000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncCampaignWorldState(); });
+  campaignStatePollTimer = createAdaptivePoller({run:syncCampaignWorldState,isBusy:()=>Boolean(campaignState?.activeChallengeId||campaignState?.expeditionPiece?.moving)});
+  campaignStore.subscribe(({source})=>{if(source!=="world-poll"&&source!=="subscribe")campaignStatePollTimer.refresh();});
 }
 
 function finishMapLoading() {
@@ -1222,7 +1226,7 @@ const sponsorshipController = createSponsorshipController({
   root:document.querySelector('#sponsorship-window'),trigger:document.querySelector('#topbar-sponsorship'),
   getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,
   territoryLabel:id=>{const t=territoryMetadataById.get(id);return t?t.country+' · '+t.name:'中立地块';},
-  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(6);},
+  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(navItems.indexOf(document.querySelector('#topbar-sponsorship')));},
   onClose:()=>selectNav(0),
   onState:state=>{updateTopbarWallet(state);applyCampaignWorldSnapshot(state.world);buildingPanelController?.refreshFromState();},
 });
@@ -1391,10 +1395,10 @@ const navItems = [...document.querySelectorAll(".nav-item:not(#topbar-television
 navItems.forEach(item => item.addEventListener("click", () => expeditionPanelController?.close()));
 function selectNav(index) { navItems.forEach((item,i) => { item.classList.toggle("is-active", i === index); if (i === index) item.setAttribute("aria-current", "page"); else item.removeAttribute("aria-current"); }); }
 const wonderCatalogController = createWonderCatalogController({root:document.querySelector('#wonder-catalog-window'),trigger:document.querySelector('#topbar-wonders'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,
-  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(7);},onClose:()=>selectNav(0)});
+  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(navItems.indexOf(document.querySelector('#topbar-wonders')));},onClose:()=>selectNav(0)});
 L.DomEvent.disableClickPropagation(document.querySelector('#wonder-catalog-window'));
 L.DomEvent.disableScrollPropagation(document.querySelector('#wonder-catalog-window'));
-navItems.slice(0,7).forEach(item=>item.addEventListener('click',()=>{if(!document.querySelector('#wonder-catalog-window').hidden)wonderCatalogController.close();}));
+navItems.filter(item=>item.id!=='topbar-wonders').forEach(item=>item.addEventListener('click',()=>{if(!document.querySelector('#wonder-catalog-window').hidden)wonderCatalogController.close();}));
 
 const eliteController=createEliteController({root:document.querySelector('#elite-window'),trigger:document.querySelector('#topbar-elite'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,openPlayerReward:options=>inventoryController.openReward(options),
  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();clearTerritorySelection();selectNav(navItems.indexOf(document.querySelector('#topbar-elite')));},onClose:()=>selectNav(0)});
@@ -1424,7 +1428,7 @@ const cardManagementController = createCardManagementController({
 L.DomEvent.disableClickPropagation(document.querySelector("#card-management-window"));
 L.DomEvent.disableScrollPropagation(document.querySelector("#card-management-window"));
 document.querySelector("#topbar-card-management")?.addEventListener("click", () => { cardManagementController.open(); if (campaignState?.setupComplete) selectNav(5); });
-navItems.slice(0,6).forEach(item => item.addEventListener("click", () => sponsorshipController.close()));
+navItems.filter(item=>item.id!=='topbar-sponsorship').forEach(item => item.addEventListener("click", () => sponsorshipController.close()));
 navItems.slice(0,5).forEach(item => item.addEventListener("click", () => cardManagementController.close()));
 L.DomEvent.disableClickPropagation(document.querySelector("#enhancement-window"));
 L.DomEvent.disableScrollPropagation(document.querySelector("#enhancement-window"));
@@ -1433,6 +1437,13 @@ navItems[1]?.addEventListener("click", () => { enhancementController.close(); fu
 navItems[2]?.addEventListener("click", () => { enhancementController.close(); fullTacticsController.open(); selectNav(2); });
 navItems[3]?.addEventListener("click", () => { enhancementController.open(); if (campaignState?.setupComplete) selectNav(3); });
 navItems[4]?.addEventListener("click", () => { enhancementController.close(); fullTacticsController.close(); teamController.close(); selectNav(4); });
+
+const playerLadderController=createPlayerLadderController({root:document.querySelector('#player-ladder-window'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,
+ onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();enhancementController.close();inventoryController.close();cardManagementController.close();fullTacticsController.close();teamController.close();selectNav(navItems.indexOf(document.querySelector('#topbar-player-ladder')));},onClose:()=>selectNav(0)});
+document.querySelector('#topbar-player-ladder').addEventListener('click',()=>playerLadderController.open());
+navItems.filter(item=>item.id!=='topbar-player-ladder').forEach(item=>item.addEventListener('click',()=>{if(!document.querySelector('#player-ladder-window').hidden)playerLadderController.close({silent:true});}));
+L.DomEvent.disableClickPropagation(document.querySelector('#player-ladder-window'));
+L.DomEvent.disableScrollPropagation(document.querySelector('#player-ladder-window'));
 
 const dailyLeagueController=createDailyLeagueController({root:document.querySelector('#daily-league-window'),trigger:document.querySelector('#daily-league-toggle'),tvTrigger:document.querySelector('#topbar-television'),notices:document.querySelector('#league-notifications'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast});
 for(const id of ['daily-league-window','daily-league-sidebar']){L.DomEvent.disableClickPropagation(document.getElementById(id));L.DomEvent.disableScrollPropagation(document.getElementById(id));}

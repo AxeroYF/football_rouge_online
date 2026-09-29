@@ -1,3 +1,4 @@
+import {PlayerLadderService} from '../application/player-ladder-service.mjs';
 import {stateDelta} from './state-delta.mjs';
 import {territoryTradeChoices} from '../application/territory-trade.mjs';
 import { campaignTacticalPreview } from "../application/tactical-preview.mjs";
@@ -32,6 +33,7 @@ export function bearerToken(request) {
 
 export function createCampaignApiHandler({ campaign } = {}) {
   if (!campaign) throw new Error("Campaign API handler requires a campaign service");
+  const ladder=new PlayerLadderService({accounts:campaign.accounts,now:()=>campaign.now?.()??Date.now()});
   return async function handleCampaignApi(request, response, pathname, url) {
     const body = request.method === "POST" ? await readJsonBody(request) : {};
     if (request.method === "POST" && pathname === "/api/campaign/register") {
@@ -41,6 +43,10 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, campaign.login(body.nickname, body.password));
     }
     const account = campaign.authenticate(bearerToken(request));
+    if(request.method==='GET'&&pathname==='/api/campaign/player-ladder'){
+      if(!account.setupComplete)throw Object.assign(Error('请先完成建队'),{statusCode:403});
+      return sendJson(response,200,{ladder:ladder.get(),serverNow:campaign.now?.()??Date.now()});
+    }
     if(pathname==='/api/campaign/league/registration'&&['GET','POST'].includes(request.method)){
       const registration=request.method==='POST'?campaign.dailyLeague.saveRegistration(account,body):campaign.dailyLeague.registrationView(account);
       return sendJson(response,200,{registration});

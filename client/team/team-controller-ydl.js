@@ -1,3 +1,4 @@
+import {openRosterPoster} from '../share/roster-poster.js';
 import {createLeagueRegistrationController} from './league-registration-controller.js';
 import {createTeamBatchController} from "./team-batch-controller.js";
 import {patchMarkup} from "../ui/patch-markup.js";
@@ -115,14 +116,16 @@ export function createTeamController({ panel, getCampaignState, mapElement, getC
   const batch=createTeamBatchController({panel,getCampaignState,getCampaignRequest,campaignStore,showToast,renderHost:()=>render(),onDetail:id=>{selectedPlayerId=id;render();}});
   const league=createLeagueRegistrationController({panel,getCampaignState,getCampaignRequest,campaignStore,showToast,renderHost:()=>render(),onDetail:id=>{selectedPlayerId=id;render();}});
   let leagueRenderKey='';
-  campaignStore?.subscribe?.(()=>{if(!openState||mode!=='league')return;const value=getCampaignState(),r=value?.leagueRegistration;const key=JSON.stringify([value?.playerId,r?.playerIds,r?.locked,(value?.draft?.roster??[]).map(p=>[p.id,p.upgradeLevel])]);if(key!==leagueRenderKey){leagueRenderKey=key;render();}});
+  const registrationRenderKey=()=>{const value=getCampaignState(),r=value?.leagueRegistration;return JSON.stringify([value?.playerId,r?.playerIds,r?.locked,(value?.draft?.roster??[]).map(p=>[p.id,p.upgradeLevel])]);};
+  campaignStore?.subscribe?.(()=>{if(!openState||mode!=='league')return;const key=registrationRenderKey();if(key!==leagueRenderKey){leagueRenderKey=key;render();}});
   function enterMode(next){
     if(assignmentPending||batch.pending||league.pending)return showToast('正在保存，请稍候');
     const apply=()=>{mode=next;selectedPlayerId=null;render();if(next==='batch'&&!batch.dirty)batch.load();};
     if(mode==='batch')batch.requestLeave(apply);else if(mode==='league')league.requestLeave(apply);else apply();
   }
-  function headerMarkup(){return `<header class="team-management-header"><div class="team-management-title"><h2>${mode==='menu'?'编队':mode==='list'?'编队 · 列表':mode==='league'?'编队 · 联赛注册':'编队 · 批量操作'}</h2></div>${mode!=='menu'?'<button class="team-mode-back" type="button" data-team-back>返回</button>':''}<button type="button" data-team-close aria-label="关闭编队">×</button></header>`;}
+  function headerMarkup(){return `<header class="team-management-header"><div class="team-management-title"><h2>${mode==='menu'?'编队':mode==='list'?'编队 · 列表':mode==='league'?'编队 · 联赛注册':'编队 · 批量操作'}</h2></div><button type="button" class="club-share-button" data-team-poster>▧ 分享阵容</button>${mode!=='menu'?'<button class="team-mode-back" type="button" data-team-back>返回</button>':''}<button type="button" data-team-close aria-label="关闭编队">×</button></header>`;}
   function bindCommon(){
+    const share=panel.querySelector('[data-team-poster]');if(share)share.onclick=()=>openRosterPoster(getCampaignState());
     const back=panel.querySelector('[data-team-back]');if(back)back.onclick=()=>enterMode('menu');
     const closeButton=panel.querySelector('[data-team-close]');if(closeButton)closeButton.onclick=()=>close();
     panel.querySelectorAll('[data-team-mode]').forEach(b=>b.onclick=()=>enterMode(b.dataset.teamMode));
@@ -155,6 +158,7 @@ export function createTeamController({ panel, getCampaignState, mapElement, getC
       patchMarkup(panel,`<div class="team-management-shell team-mode-shell">${headerMarkup()}<div class="team-mode-home"><button type="button" data-team-mode="list"><span class="team-mode-icon">${listIcon}</span><strong>列表</strong><span class="team-mode-description">逐人调整，即时生效</span><span class="team-mode-enter" aria-hidden="true">进入 <b>→</b></span></button><button type="button" data-team-mode="batch"><span class="team-mode-icon">${batchIcon}</span><strong>批量操作</strong><span class="team-mode-description">卡片多选，统一保存</span>${batch.dirty?'<small class="team-mode-draft">有未保存草稿</small>':''}<span class="team-mode-enter" aria-hidden="true">${batch.dirty?'继续编辑':'进入'} <b>→</b></span></button><button type="button" data-team-mode="league"><span class="team-mode-icon">${icon('<path d="M9 4h14v8a7 7 0 0 1-14 0V4ZM9 7H4v3a6 6 0 0 0 6 6m13-9h5v3a6 6 0 0 1-6 6M16 19v7m-6 2h12"/>')}</span><strong>联赛注册</strong><span class="team-mode-description">23 人名单，独立出战</span><span class="team-mode-enter" aria-hidden="true">进入 <b>→</b></span></button></div></div>`);bindCommon();return;
     }
     if(mode==='league'){
+      leagueRenderKey=registrationRenderKey();
       const source=getCampaignState()?.draft?.roster?.find(p=>String(p.id)===String(selectedPlayerId));
       const player=source?{...source,state:getCampaignState()?.leagueRegistration?.conditions?.[source.id]?.state??{fitness:100},status:{},medical:null,training:null,coalitionLoan:null,injury:null}:null;
       patchMarkup(panel,`<div class="team-management-shell league-registration-shell">${headerMarkup()}${league.markup()}${teamPlayerDetailMarkup(player)}</div>`);league.bind();bindCommon();

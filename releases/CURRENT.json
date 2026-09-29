@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20260928-r41",
-  "lastUserConfirmedDeployed": "20260928-r41",
-  "sourceState": "R41 deployment user-confirmed; R40-R41 source pushed to codex/rougelite and PR #2 updated; main not merged",
+  "latestPublished": "20260928-r43",
+  "lastUserConfirmedDeployed": "20260928-r43",
+  "sourceState": "R43 deployment user-confirmed on 2026-09-29; Git synchronization and refactor assessment recorded in handoff/GITHUB_SYNC_20260929.md",
   "releases": [
     {
       "version": "20260918-r9",
@@ -269,6 +269,22 @@
       "bundleSha256": "4ea16b049290c3de75784a72d977d6b4ea5540e6666a8b9a8777d4c17458d962",
       "baselineFiles": 1249,
       "changedFiles": 6,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260928-r42",
+      "parent": "20260928-r41",
+      "bundleSha256": "2039d6ed97f7ff0616f5ffbf3fa428c594513c796e2f678a1d53a7f531bafb6e",
+      "baselineFiles": 1257,
+      "changedFiles": 15,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260928-r43",
+      "parent": "20260928-r42",
+      "bundleSha256": "201ff6ebc6a6c7c7a2eccd23058db09c619eabbb742efa8ba6d50f85782f8965",
+      "baselineFiles": 1257,
+      "changedFiles": 4,
       "deployment": "user-confirmed"
     }
   ]

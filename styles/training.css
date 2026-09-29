@@ -105,3 +105,29 @@
 .training-price .gold-icon,.training-growth-hint .gold-icon{width:18px;height:18px}
 .training-overall{margin:12px 0 6px;color:#d2ecae;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
 .training-growth-hint{margin:6px 0;color:#afbeac;font-size:12px;line-height:1.6}
+
+/* High-capacity centers use one scroll area, not four nested card columns. */
+#training-window{width:min(1120px,calc(100% - 24px));max-height:none}
+#training-window .training-header{padding:10px 18px}
+#training-window .training-content{display:block;padding:14px 18px;overflow:auto;scrollbar-gutter:stable}
+#training-window .training-overview{gap:10px}#training-window .training-overview img{width:44px;height:44px}#training-window .training-overview div{gap:2px}#training-window .training-overview strong{font-size:14px}
+#training-window .training-rule{margin:8px 0 10px;font-size:11px}
+.training-summary{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:#afc0b6;margin-bottom:12px}.training-summary b{font-size:18px;color:#ead499;font-variant-numeric:tabular-nums;margin-right:3px}
+.training-pool-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;position:sticky;top:-14px;z-index:10;background:var(--ui-surface,#1b2620);padding:8px 0;margin-bottom:10px;border-bottom:1px solid #63736366}
+.training-pool-tabs button{min-width:0;min-height:42px;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #6b7b6655;border-radius:6px;background:#ffffff05;color:#c7d1c8;font:inherit;font-size:13px;cursor:pointer}.training-pool-tabs small{font-size:11px;color:#a9b8ac}.training-pool-tabs button[aria-pressed=true]{background:#d8c18a;color:#202c24;border-color:#d8c18a}.training-pool-tabs button[aria-pressed=true] small{color:#455240}.training-pool-tabs button:focus-visible{outline:2px solid #e6d39e;outline-offset:2px}
+#training-window .training-groups{display:grid;grid-template-columns:1fr;grid-template-rows:none;gap:16px;min-height:0}
+#training-window .training-group{padding:12px;min-height:0;background:#ffffff03}
+#training-window .training-group>header{margin-bottom:12px}
+#training-window .training-seats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;overflow:visible;min-height:0;flex:none;align-items:stretch}
+#training-window .training-seat{min-height:90px;flex:none;gap:5px;padding:8px;overflow:hidden}
+#training-window .training-seat.is-occupied{min-height:0;padding:8px 6px;border-style:solid;background:#21392e}
+#training-window .training-seat.is-completed{border-color:#a5c68b;background:#2f442e}
+#training-window .training-seat>.training-seat-card{width:min(100%,128px);height:auto;aspect-ratio:auto;box-shadow:none}
+#training-window .training-seat-name{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:16px;color:#eceddf}
+#training-window .training-progress{margin-top:3px;max-width:120px;height:5px}
+#training-window .training-seat>small{font-size:10px;line-height:15px}
+#training-window .facility-actions{grid-template-columns:1fr 1fr;padding:10px 18px}
+@media(max-width:760px){#training-window{left:6px;top:6px;bottom:6px;width:calc(100% - 12px);max-height:none}#training-window .training-content{padding:10px}#training-window .training-header{padding:9px 12px}#training-window .training-header h2{font-size:17px}#training-window .training-group{padding:10px}#training-window .training-seats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#training-window .training-seat>.training-seat-card{width:min(100%,94px)}#training-window .training-seat{padding:6px;min-height:76px}.training-pool-tabs{top:-10px;gap:4px}.training-pool-tabs button{flex-direction:column;gap:0;font-size:12px;padding:4px 0;min-height:44px}.training-pool-tabs small{font-size:10px}.training-summary{gap:12px;margin-bottom:4px}.training-summary b{font-size:16px}#training-window .facility-actions{padding:8px 10px;gap:8px}#training-window .facility-actions button{font-size:12px;min-height:36px}}
+@media(max-height:520px) and (min-width:600px){#training-window{max-height:none;top:4px;bottom:4px}#training-window .training-overview{float:left;margin-right:18px}#training-window .training-rule{margin:2px 0 5px}.training-summary{margin-bottom:6px}.training-pool-tabs{clear:both}#training-window .training-seats{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+.training-load-more{display:block;margin:16px auto;padding:10px 24px;border:1px solid #bba56c;border-radius:6px;background:#263d31;color:#e9dbb5;cursor:pointer;font:inherit;font-size:13px}

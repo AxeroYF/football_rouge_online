@@ -408,3 +408,13 @@ test("offline paid training raises overall on restart and is neither charged nor
     assert.equal(account.gold,99500);assert.equal(account.goldLedger.filter(e=>e.reason==='player-training').length,1);
   }
 });
+
+
+test("large training roster computes wonder modifiers once per details read",()=>{
+ const f=fixture();let calls=0;
+ f.service.wonders={modifiers:()=>{calls++;return {trainingPoints:6,trainingSelection:true};}};
+ f.account.draft.roster=Array.from({length:1000},(_,i)=>({...f.catalog[i%f.catalog.length],id:'large-'+i}));
+ const view=f.service.details(f.account,f.world,'home',f.building.id);
+ assert.equal(view.players.length,1000);assert.equal(view.rules.attributePoints,6);assert.equal(view.rules.canSelectAttribute,true);assert.equal(calls,1);
+ assert.ok(view.players.every(p=>p.canTrain&&p.costGold===500));
+});

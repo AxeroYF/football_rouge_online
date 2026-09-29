@@ -1,0 +1,72 @@
+{
+  "passed": true,
+  "version": "20260928-r43",
+  "baseline": "20260928-r42",
+  "fullTests": {
+    "passed": 1481,
+    "failed": 0,
+    "groups": [
+      85,
+      1235,
+      161
+    ]
+  },
+  "focusedTrainingTests": 45,
+  "preflight": {
+    "passed": true,
+    "version": "20260928-r43",
+    "checks": [
+      "Complete 20260928-r42 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260928-r43 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 4,
+    "newFiles": 0,
+    "requiredBaseFiles": 1257,
+    "imports": 17,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R42 account login, wallet and roster preserved after upgrade",
+      "Leaderboard requires authenticated access",
+      "Installed training details, start and cancel return authoritative state and refund exactly",
+      "Installed ladder endpoint returns owned cards in descending order and reuses cache",
+      "New browser modules and styles served from installed payload",
+      "Server restarts successfully and reconstructs leaderboard",
+      "Protected uploaded content preserved",
+      "Matched R42 code/save restored and old server starts successfully"
+    ],
+    "remoteDeployed": false,
+    "scope": "Real Windows Node server starts and HTTP requests; updater service hooks mocked; no Linux systemd deployment"
+  },
+  "browser": {
+    "passed": true,
+    "reads": 1,
+    "errors": [],
+    "viewports": [
+      1440,
+      390,
+      768,
+      780
+    ],
+    "seats": 20
+  },
+  "performanceChecks": [
+    "Training picker initially renders 24 cards; local append preserves existing nodes",
+    "Successful start returns to center without an extra center GET",
+    "Position filters do not request center; unchanged polling retains card nodes",
+    "1000-player training details computes wonder modifiers once"
+  ],
+  "remoteDeployed": false,
+  "scope": "Windows isolated Node/Chrome and upgrade/rollback checks; system service hooks mocked; no remote Linux deployment"
+}

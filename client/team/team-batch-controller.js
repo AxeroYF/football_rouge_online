@@ -5,10 +5,10 @@ import {createRequestId} from '../core/request-id.js';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const names={expedition:'远征',garrison:'留守'};
 export function createTeamBatchController({panel,getCampaignState,getCampaignRequest,campaignStore,showToast,renderHost,onDetail}){
- let unbindDrag=()=>{};
+ let unbindDrag=()=>{},limits={expedition:36,garrison:36};
  let draft=null,pending=false,error='',selected=new Set(),tab='expedition',filters={search:'',position:'',club:'',nationality:'',min:'',upgrade:''},filtersOpen=false,review=null,leave=null,requestId=null,owner=null,epoch=0;
  const identity=()=>getCampaignState()?.playerId??getCampaignState()?.world?.viewerId??null;
- const reset=()=>{epoch++;draft=null;pending=false;error='';selected.clear();review=null;leave=null;requestId=null;};
+ const reset=()=>{limits={expedition:36,garrison:36};epoch++;draft=null;pending=false;error='';selected.clear();review=null;leave=null;requestId=null;};
  const ensureOwner=()=>{if(owner!==identity()){reset();owner=identity();}};
  const changed=()=>draft?.changes()??[];
  const invalidate=()=>{review=null;requestId=null;error='';};
@@ -42,10 +42,10 @@ export function createTeamBatchController({panel,getCampaignState,getCampaignReq
   const options=(key,values,label)=>`<label>${label}<select data-batch-filter="${key}"><option value="">全部</option>${values.map(v=>`<option value="${esc(v)}" ${filters[key]===v?'selected':''}>${esc(v)}</option>`).join('')}</select></label>`;
   const values=key=>[...new Set(draft.base.players.map(p=>p[key]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'zh-CN'));
   const summaries=['expedition','garrison'].map(s=>{const list=draft.base.players.filter(p=>squadOf(draft.assignments,p.id)===s);return `<button data-batch-tab="${s}" aria-pressed="${tab===s}"><b>${names[s]} ${list.length}${s==='expedition'?'/22':''}</b><small>${['GK','DEF','MID','ATT'].map((pool,i)=>`${['门','后','中','前'][i]} ${list.filter(p=>p.pool===pool).length}`).join(' · ')}</small></button>`;}).join('');
-  const columns=['expedition','garrison'].map(s=>`<section class="team-batch-column" data-batch-column="${s}"><header><b>${names[s]}球员</b><button data-batch-select-all="${s}" ${pending?'disabled':''}>选择筛选结果 ${visible(s).filter(p=>!draft.base.locks[p.id]).length} 人</button></header><div class="team-batch-list" data-ui-key="batch-list-${s}">${visible(s).map(p=>{
+  const columns=['expedition','garrison'].map(s=>`<section class="team-batch-column" data-batch-column="${s}"><header><b>${names[s]}球员</b><button data-batch-select-all="${s}" ${pending?'disabled':''}>选择筛选结果 ${visible(s).filter(p=>!draft.base.locks[p.id]).length} 人</button></header><div class="team-batch-list" data-ui-key="batch-list-${s}">${visible(s).slice(0,limits[s]).map(p=>{
    const changed=squadOf(draft.base.assignments,p.id)!==s,lock=draft.base.locks[p.id];
    return `<article class="team-batch-card ${selected.has(p.id)?'is-selected':''} ${changed?'is-changed':''} ${lock?'is-locked':''}" data-batch-row="${esc(p.id)}" data-ui-key="batch-${s}-${esc(p.id)}"><div class="team-batch-card-top"><input type="checkbox" data-batch-select="${esc(p.id)}" aria-label="选择${esc(p.name)}" ${selected.has(p.id)?'checked':''} ${pending||lock?'disabled':''}><button type="button" data-card-drag aria-label="拖动${esc(p.name)}调队" ${pending||lock?'disabled':''}>⠿</button><span>${lock?esc(lock):changed?'待调入'+names[s]:names[s]+' · '+(starters(squadOf(draft.base.assignments,p.id)).includes(p.id)?'首发':'替补')}</span></div>${playerCardMarkup(p,{variant:'mini',animated:false,deferred:true,className:'team-batch-card-art'})}<div class="team-batch-card-bottom"><button data-batch-detail="${esc(p.id)}" aria-label="查看${esc(p.name)}详情"><strong>${esc(p.name)}</strong><small>${esc(p.role)}${p.secondaryRole?' / '+esc(p.secondaryRole):''} · 详情</small></button>${changed?`<button data-batch-revert="${esc(p.id)}" ${pending?'disabled':''}>撤销</button>`:''}</div></article>`;
-  }).join('')||'<p class="team-batch-empty">没有符合条件的球员</p>'}</div></section>`).join('');
+  }).join('')||'<p class="team-batch-empty">没有符合条件的球员</p>'}${visible(s).length>limits[s]?`<button data-batch-more="${s}" style="grid-column:1/-1">继续显示（${limits[s]} / ${visible(s).length}）</button>`:''}</div></section>`).join('');
   const warning=['expedition','garrison'].flatMap(s=>{const players=draft.base.players.filter(p=>squadOf(draft.assignments,p.id)===s);return players.length<11?[`${names[s]}不足 11 人`]:!players.some(p=>p.pool==='GK')?[`${names[s]}没有门将`]:[];}).join('；');
   const name=id=>esc(draft.base.players.find(p=>p.id===id)?.name??id);
   let dialog='';
@@ -61,11 +61,12 @@ export function createTeamBatchController({panel,getCampaignState,getCampaignReq
    modal.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();if(!pending){review=null;leave=null;draw();}}else if(e.key==='Tab'){const buttons=[...modal.querySelectorAll('button:not(:disabled)')];if(!buttons.length){e.preventDefault();return;}const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
    if(!modal.contains(panel.ownerDocument.activeElement))queueMicrotask(()=>modal.querySelector('button:not(:disabled)')?.focus());
   }
-  panel.querySelectorAll('[data-batch-filter]').forEach(el=>{el[el.tagName==='SELECT'?'onchange':'oninput']=()=>{filters[el.dataset.batchFilter]=el.value;draw();};});
+  panel.querySelectorAll('[data-batch-filter]').forEach(el=>{el[el.tagName==='SELECT'?'onchange':'oninput']=()=>{filters[el.dataset.batchFilter]=el.value;limits={expedition:36,garrison:36};draw();};});
   const detail=panel.querySelector('[data-batch-filters]');if(detail)detail.querySelector('summary').onclick=e=>{e.preventDefault();filtersOpen=!filtersOpen;draw();};
   panel.querySelectorAll('[data-batch-select]').forEach(el=>el.onchange=()=>{if(pending)return;el.checked?selected.add(el.dataset.batchSelect):selected.delete(el.dataset.batchSelect);draw();});
   panel.querySelectorAll('[data-batch-row]').forEach(el=>el.onclick=e=>{if(e.target.closest('button,input')||pending)return;const input=el.querySelector('input');if(!input.disabled){input.checked=!input.checked;input.onchange();}});
   panel.querySelectorAll('button').forEach(el=>{const d=el.dataset;if(d.batchDetail)el.onclick=()=>onDetail(d.batchDetail);
+   else if(d.batchMore)el.onclick=()=>{limits[d.batchMore]+=36;draw();};
    else if(d.batchTab)el.onclick=()=>{tab=d.batchTab;draw();};
    else if('batchLoad'in d)el.onclick=load;
    else if(d.batchSelectAll)el.onclick=()=>{if(pending)return;visible(d.batchSelectAll).filter(p=>!draft.base.locks[p.id]).forEach(p=>selected.add(p.id));draw();};

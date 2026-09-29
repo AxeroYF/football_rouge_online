@@ -80,7 +80,12 @@ try{
   await page.screenshot({path:path.join(out,`${size.width}-batch.png`),scale:'css'});await page.locator('[data-team-back]').click();
   await page.locator('[data-team-mode="league"]').click();await page.locator('[data-registration-card]').first().waitFor();
   const all=page.locator('[data-registration-column="all"]'),registered=page.locator('[data-registration-column="registered"]'),initial=[...actor.leagueRegistration.playerIds],before=writes;
-  assert.equal(await all.locator('[data-registration-card]').count(),reps.length-initial.length,'registered families excluded from available cards');
+  assert.ok((await all.locator('[data-registration-card]').count())<=36,'first batch bounded');
+  await all.locator('[data-registration-select-all]').click();
+  assert.match(await page.locator('.team-batch-selection').innerText(),new RegExp('已选 '+(reps.length-initial.length)+' 人'),'select all includes unloaded cards');
+  await page.locator('[data-registration-clear]').click();
+  while(await page.locator('[data-registration-more]').count())await page.locator('[data-registration-more]').click();
+  assert.equal(await all.locator('[data-registration-card]').count(),reps.length-initial.length,'all batches exclude registered families');
   const candidate=(await all.locator('[data-registration-card]').evaluateAll(es=>es.map(e=>e.dataset.registrationCard))).find(id=>!initial.includes(id));
   await drag(all.locator(`[data-registration-card="${candidate}"] [data-card-drag]`),registered,size.width<1000);
   assert.equal(await registered.locator(`[data-registration-card="${candidate}"]`).count(),1);assert.equal(writes,before,'drag must remain local');assert.equal(await all.locator(`[data-registration-card="${candidate}"]`).count(),0,'added card leaves available column');
@@ -94,7 +99,7 @@ try{
   await page.locator('[data-registration-save]').click();await page.waitForFunction(()=>document.querySelector('[data-registration-save]')?.disabled);
   await page.locator('[data-registration-filter="position"]').selectOption('GK');assert.ok((await all.locator('[data-registration-card]').count())<reps.length);assert.equal(await registered.locator('[data-registration-card]').count(),initial.length,'position filter only affects available cards');await page.locator('[data-registration-filter="position"]').selectOption('');
   for(const key of ['club','nationality']){const filter=page.locator(`[data-registration-filter="${key}"]`),value=await filter.locator('option').nth(1).getAttribute('value');await filter.selectOption(value);assert.equal(await registered.locator('[data-registration-card]').count(),initial.length,key+' does not filter registered cards');await filter.selectOption('');}
-  await drag(registered.locator('[data-registration-card]').first().locator('[data-card-drag]'),all,size.width<1000);assert.equal(await registered.locator('[data-registration-card]').count(),initial.length-1);assert.equal(await all.locator('[data-registration-card]').count(),reps.length-initial.length+1);await page.locator('[data-registration-reset]').click();
+  await drag(registered.locator('[data-registration-card]').first().locator('[data-card-drag]'),all,size.width<1000);assert.equal(await registered.locator('[data-registration-card]').count(),initial.length-1);assert.equal(await all.locator('[data-registration-card]').count(),Math.min(36,reps.length-initial.length+1));await page.locator('[data-registration-reset]').click();
   await page.screenshot({path:path.join(out,`${size.width}-registration.png`),scale:'css'});
   for(const column of [all,registered]){const b=await column.boundingBox();assert.ok(b.width>100&&b.height>80);}
   const local=actor.draft.roster.find(p=>initial.includes(p.id));actor.leagueRegistration.conditions[local.id]={state:{fitness:42},at:clock};local.state={...local.state,fitness:87};s.persist();
