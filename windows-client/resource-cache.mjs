@@ -45,18 +45,19 @@ export class ResourceCache{
    catch(error){if(error.code!=='ENOENT')throw error;}
   }return null;
  }
- async get(e){const cached=await this.local(e);if(cached){this.hits++;return cached;}if(this.pending.has(e.sha256))return this.pending.get(e.sha256);
- const task=(async()=>{let error;for(let attempt=0;attempt<2;attempt++){try{
-  const response=await this.fetchImpl(ORIGIN+'/'+e.path+'?v=sha256-'+e.sha256,{signal:AbortSignal.timeout(120000),redirect:'error',cache:'no-store'});if(!response.ok)throw Error('资源下载 HTTP '+response.status);
+ async get(e,{signal,timeoutMs=15000}={}){signal?.throwIfAborted();const cached=await this.local(e);signal?.throwIfAborted();if(cached){this.hits++;return cached;}const existing=this.pending.get(e.sha256);if(existing&&!existing.signal.aborted)return existing;
+ const downloadSignal=signal?AbortSignal.any([signal,AbortSignal.timeout(timeoutMs)]):AbortSignal.timeout(timeoutMs);
+ const task=(async()=>{try{
+  const response=await this.fetchImpl(ORIGIN+'/'+e.path+'?v=sha256-'+e.sha256,{signal:downloadSignal,redirect:'error',cache:'no-store'});if(!response.ok)throw Error('资源下载 HTTP '+response.status);
   const chunks=[];let size=0;for await(const chunk of response.body){size+=chunk.length;if(size>(e.bytes??16*1024*1024))throw Error('资源大小超出清单');chunks.push(chunk);this.report({phase:'download',path:e.path,bytes:size,total:e.bytes});}
-  const b=Buffer.concat(chunks);if((e.bytes!==null&&b.length!==e.bytes)||!hash(b).startsWith(e.sha256))throw Error('资源校验失败：'+e.path);
+  downloadSignal.throwIfAborted();const b=Buffer.concat(chunks);if((e.bytes!==null&&b.length!==e.bytes)||!hash(b).startsWith(e.sha256))throw Error('资源校验失败：'+e.path);
   const dest=path.join(this.directory,'objects',e.sha256),temp=dest+'.'+crypto.randomUUID()+'.part';await fs.writeFile(temp,b);try{await fs.rename(temp,dest);}finally{await fs.rm(temp,{force:true});}this.verified.add(dest);this.downloads++;this.retain(e.sha256,b);return b;
- }catch(e){error=e;}}throw error;})().finally(()=>this.pending.delete(e.sha256));this.pending.set(e.sha256,task);return task;
+ }catch(error){throw error;}})().finally(()=>{if(this.pending.get(e.sha256)===task)this.pending.delete(e.sha256);});task.signal=downloadSignal;this.pending.set(e.sha256,task);return task;
  }
- async update(){
+ async update({prefetch=true}={}){
   const response=await this.fetchImpl(ORIGIN+'/assets/data/desktop-resources.json',{cache:'no-cache',signal:AbortSignal.timeout(15000),redirect:'error'});if(!response.ok)throw Error('线上资源清单尚未就绪（HTTP '+response.status+'）');
   const m=validateManifest(await response.json());this.remember(m);const core=m.entries.filter(e=>e.core);let done=0,index=0;
-  const workers=await Promise.allSettled(Array.from({length:3},async()=>{while(index<core.length){const e=core[index++];await this.get(e);this.report({phase:'prepare',done:++done,total:core.length});}}));
+  const workers=prefetch?await Promise.allSettled(Array.from({length:3},async()=>{while(index<core.length){const e=core[index++];await this.get(e);this.report({phase:'prepare',done:++done,total:core.length});}})):[];
   const failed=workers.find(r=>r.status==='rejected');if(failed)throw failed.reason;
   const next=path.join(this.directory,'manifest.next.json');await fs.writeFile(next,JSON.stringify(m));await fs.rename(next,path.join(this.directory,'manifest.json'));this.entries=new Map(m.entries.map(e=>[e.path,e]));await this.prune();return m;
  }

@@ -1,6 +1,6 @@
 {
   "name": "yellowdogs-desktop",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "main": "main.mjs",
@@ -25,6 +25,8 @@
     "files": [
       "main.mjs",
       "resource-cache.mjs",
+      "navigation.mjs",
+      "window-layout.mjs",
       "preload.cjs",
       "ui/**",
       "package.json"
