@@ -1,6 +1,6 @@
 import {allianceMembers} from '../../shared/config/diplomacy.mjs';
-import { territoryPointToDisplay } from '../../client/map/campaign-map-geometry.js';
-import { project, unproject } from '../../client/map-three/projection.js';
+import { territoryPointToDisplay } from '../../shared/geo/campaign-map-geometry.js';
+import { project, unproject } from '../../shared/geo/projection.js';
 import { unitTravelFrame } from '../../shared/map/unit-travel.mjs';
 import { sponsoredTeamName } from '../../shared/config/sponsorship.mjs';
 

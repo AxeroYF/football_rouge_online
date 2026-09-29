@@ -1,3 +1,4 @@
+import {createPlayerFilter} from '../player-card/player-filter.js';
 import {bindCardTransferDrag} from './card-transfer-drag.js';
 import {representativePlayers} from '../../shared/config/representative-players.mjs';
 import {playerCardMarkup} from '../player-card/player-card.js';
@@ -29,7 +30,7 @@ export function createLeagueRegistrationController({panel,getCampaignState,getCa
  function markup(){unbindDrag();ensure();if(!ids)return '<p class="team-batch-loading">正在读取联赛注册名单…</p>';
   if(!dirty()&&base!==JSON.stringify(registration()?.playerIds??[]))reset();
   const locked=registration()?.locked||pending,all=uniquePlayers(),owned=new Set(all.map(p=>p.id)),missing=[...ids].filter(id=>!owned.has(id));
-  const available=all.filter(p=>!ids.has(p.id)),eligible=available.filter(p=>(!search||`${p.name} ${p.club} ${p.nationality}`.toLowerCase().includes(search.toLowerCase()))&&(!position||p.role===position||p.secondaryRole===position)&&(!club||p.club===club)&&(!nationality||p.nationality===nationality));
+  const available=all.filter(p=>!ids.has(p.id)),eligible=available.filter(createPlayerFilter({search,position,club,nationality},{includeSourceName:false}));
   filteredIds=eligible.map(p=>p.id);
   const select=(key,label,value,values)=>`<select data-registration-filter="${key}" aria-label="${label}"><option value="">全部${label}</option>${[...new Set(values.filter(Boolean))].sort().map(v=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
   const card=(p,side)=>`<article class="team-batch-card ${selected.has(p.id)?'is-selected':''}" data-registration-card="${esc(p.id)}" data-ui-key="registration-${side}-${esc(p.id)}"><div class="team-batch-card-top"><input type="checkbox" data-registration-select="${esc(p.id)}" aria-label="选择${esc(p.name)}" ${selected.has(p.id)?'checked':''} ${locked?'disabled':''}><button type="button" data-card-drag aria-label="拖动${esc(p.name)}" ${locked?'disabled':''}>⠿</button><span>${ids.has(p.id)?'已注册':esc(p.role)}</span></div>${playerCardMarkup(p,{variant:'mini',animated:false,deferred:true,className:'team-batch-card-art'})}<div class="team-batch-card-bottom"><button data-registration-detail="${esc(p.id)}"><strong>${esc(p.name)}</strong><small>${esc(p.role)} · +${p.upgradeLevel??0} · 详情</small></button></div></article>`;

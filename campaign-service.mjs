@@ -1,38 +1,40 @@
-import {CardPurchaseService} from './server/application/card-purchase-service.mjs';
-import {JointScoutingService} from './server/application/joint-scouting-service.mjs';
-import {normalizeLeagueRegistration,leagueRoster,leaguePlayerView} from './shared/config/league-registration.mjs';
-import {squadBatchSnapshot,previewSquadBatch,saveSquadBatch} from './server/application/squad-batch-service.mjs';
-import {prepareHistoryCompaction} from './server/application/history-compaction.mjs';
-import {battleSummary} from './server/infrastructure/history-archive.mjs';
-import {prepareOrphanBondRefunds} from './server/application/pvp-attack-bond.mjs';
-import {prepareDowntimeRecovery} from './server/application/downtime-recovery-service.mjs';
-import {resumeServerEconomy,economicCheckpoint,SERVER_ECONOMY_HEARTBEAT_MS} from './server/infrastructure/server-economy-clock.mjs';
-import {AirportService} from './server/application/airport-service.mjs';
-import {DailyLeagueService} from './server/application/daily-league-service.mjs';
-import {EliteRaidService} from './server/application/elite-raid-service.mjs';
-import {suppressionBoundary,expireSuppressions} from './server/application/raid-suppression.mjs';
-import {raidMatchForAccount} from './shared/config/elite-raids.mjs';
-import {CoalitionService} from './server/application/coalition-service.mjs';
-import {unitTravelEstimate} from './server/application/unit-travel.mjs';
-import {createUnitMovement} from './server/domain/expedition-piece.mjs';
-import {pendingLiberations,resolveLiberation,migrateOriginalOwners} from './server/application/territory-liberation.mjs';
-import {repairHeadquartersWars} from './server/application/war-settlement.mjs';
-import {OilService} from './server/application/oil-service.mjs';
-import {OperatingCostService} from './server/application/operating-cost-service.mjs';
+import { persistCampaign } from './server/application/campaign-persistence.mjs';
+import { composeCampaignState } from './server/application/campaign-state-view.mjs';
+import { publicDraft, rosterCounts } from './server/application/draft-view.mjs';
+import { settleAndPersistCampaign } from './server/application/campaign-settlement.mjs';
+import { maintainCampaignState } from './server/application/campaign-state-maintenance.mjs';
+import { CardPurchaseService } from './server/application/card-purchase-service.mjs';
+import { JointScoutingService } from './server/application/joint-scouting-service.mjs';
+import { normalizeLeagueRegistration, leagueRoster, leaguePlayerView } from './shared/config/league-registration.mjs';
+import { squadBatchSnapshot, previewSquadBatch, saveSquadBatch } from './server/application/squad-batch-service.mjs';
+import { prepareHistoryCompaction } from './server/application/history-compaction.mjs';
+
+import { resumeServerEconomy, SERVER_ECONOMY_HEARTBEAT_MS } from './server/infrastructure/server-economy-clock.mjs';
+import { AirportService } from './server/application/airport-service.mjs';
+import { DailyLeagueService } from './server/application/daily-league-service.mjs';
+import { EliteRaidService } from './server/application/elite-raid-service.mjs';
+
+import { CoalitionService } from './server/application/coalition-service.mjs';
+import { unitTravelEstimate } from './server/application/unit-travel.mjs';
+import { createUnitMovement } from './server/domain/expedition-piece.mjs';
+import { resolveLiberation, migrateOriginalOwners } from './server/application/territory-liberation.mjs';
+import { repairHeadquartersWars } from './server/application/war-settlement.mjs';
+import { OilService } from './server/application/oil-service.mjs';
+import { OperatingCostService } from './server/application/operating-cost-service.mjs';
 import { visibleMapUnits } from './server/application/map-unit-visibility.mjs';
 import { buildingVisibility } from './shared/buildings/building-visibility.mjs';
-import { allianceMembers, playerRelationship } from './shared/config/diplomacy.mjs';
+import { allianceMembers } from './shared/config/diplomacy.mjs';
 import { initializePositionInheritance } from './shared/config/position-inheritance.mjs';
 import { DiplomacyService } from "./server/application/diplomacy-service.mjs";
-import {EliteChallengeService} from './server/application/elite-challenge-service.mjs';
-import {ShopService} from './server/application/shop-service.mjs';
-import { campaignBondCatalog } from './shared/football/campaign-bonds.mjs';
+import { EliteChallengeService } from './server/application/elite-challenge-service.mjs';
+import { ShopService } from './server/application/shop-service.mjs';
+
 import { MedicalService } from './server/application/medical-service.mjs';
-import { facilityEffects } from './shared/config/facility-levels.mjs';
+
 import { FormationResearchService } from './server/application/formation-research-service.mjs';
 import { confirmedResearchFormation, matchesResearchFormation } from './shared/config/formation-research.mjs';
 import { WonderService } from "./server/application/wonder-service.mjs";
-import { fanIncomeIntervals } from "./shared/config/fans.mjs";
+
 import { validFanPreference } from './shared/config/fans.mjs';
 import { SponsorshipService } from './server/application/sponsorship-service.mjs';
 import { sponsoredTeamName, sponsoredStadiumName, sponsorById, activeSponsorContracts } from './shared/config/sponsorship.mjs';
@@ -47,54 +49,25 @@ import { TrainingService } from "./server/application/training-service.mjs";
 import { ScoutingService } from "./server/application/scouting-service.mjs";
 import crypto from "node:crypto";
 import { accountPasswordMatches } from "./server/domain/account-password.mjs";
-import {
-  canChooseHome,
-  claimHome,
-  listAttackableTerritoriesFrom,
-  OWNER_TYPES,
-} from "./territory-model.js";
-import { CAMPAIGN_ENGINE } from "./engine/campaign-match-engine.mjs";
+import { canChooseHome, claimHome, OWNER_TYPES } from "./territory-model.js";
+
 import { campaignWeatherHour, createCampaignWeatherSnapshot } from "./engine/campaign-weather.mjs";
 import { createTerritoryAiGarrison, publicTerritoryAiIntel, TERRITORY_AI_SCHEMA_VERSION } from "./engine/territory-ai.mjs";
 import { analyzeElevenBoardFormation, sanitizeFormationLines } from "./formation-rules.js";
-import {
-  CAMPAIGN_EXTRA_TIME_LIVE_MS,
-  CAMPAIGN_REGULATION_LIVE_MS,
-  CHALLENGE_FIRST_LEG_MS,
-  CHALLENGE_SECOND_LEG_COOLDOWN_MS,
-  CHALLENGE_SECOND_LEG_MS,
-  CHALLENGE_TOTAL_DURATION_MS,
-} from "./shared/config/challenge.mjs";
-import { DRAFT_VERSION, DRAFT_SIZE, LINE_KEYS, draftPositionCounts, draftTargetSize, availableDraftPools, hasCurrentDraftOffer } from "./shared/config/draft.mjs";
+import { CHALLENGE_FIRST_LEG_MS, CHALLENGE_SECOND_LEG_COOLDOWN_MS, CHALLENGE_SECOND_LEG_MS, CHALLENGE_TOTAL_DURATION_MS } from "./shared/config/challenge.mjs";
+import { DRAFT_SIZE, LINE_KEYS, draftPositionCounts } from "./shared/config/draft.mjs";
 import { DraftService } from "./server/application/draft-service.mjs";
 import { STARTING_GOLD } from "./shared/config/economy.mjs";
-import {
-  PLAYER_PACK_DEFINITIONS,
-} from "./shared/config/player-packs.mjs";
+import { PLAYER_PACK_DEFINITIONS } from "./shared/config/player-packs.mjs";
 import { LINE_LABELS } from "./shared/football/labels.js";
-import {
-  assertExpeditionCapacity,
-  autoCompletePlayerSquads,
-  isPlayerSquadId,
-  normalizePlayerSquads,
-  PLAYER_SQUAD_DEFINITIONS,
-  PLAYER_SQUAD_IDS,
-} from "./shared/config/player-squads.mjs";
+import { assertExpeditionCapacity, autoCompletePlayerSquads, isPlayerSquadId, normalizePlayerSquads, PLAYER_SQUAD_DEFINITIONS, PLAYER_SQUAD_IDS } from "./shared/config/player-squads.mjs";
 import { createPlayerCardViewModel } from "./shared/player-card/player-card-contract.js";
 import { ChallengeService, publicChallengeView } from "./server/application/challenge-service.mjs";
 import { BuildingService } from "./server/application/building-service.mjs";
 import { EconomyService } from "./server/application/economy-service.mjs";
 import { PlayerPackService } from "./server/application/player-pack-service.mjs";
 import { nextAvailablePlayerMapColor } from "./server/domain/player-map-colors.mjs";
-import {
-  cancelExpeditionMovement,
-  estimateExpeditionMove,
-  expeditionAttackSource,
-  normalizeExpeditionPiece,
-  placeExpeditionPiece,
-  publicExpeditionPiece,
-  selectExpeditionStyle,
-} from "./server/domain/expedition-piece.mjs";
+import { cancelExpeditionMovement, estimateExpeditionMove, placeExpeditionPiece, publicExpeditionPiece, selectExpeditionStyle } from "./server/domain/expedition-piece.mjs";
 import { migrateCampaignSave } from "./server/infrastructure/campaign-save-migrations.mjs";
 import { JsonCampaignRepository } from "./server/infrastructure/json-campaign-repository.mjs";
 
@@ -152,29 +125,6 @@ function safeAccount(account) {
 
 function passwordDigest(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString("hex");
-}
-
-function rosterCounts(roster) {
-  return Object.fromEntries(LINE_KEYS.map((line) => [line, roster.filter((player) => player.pool === line).length]));
-}
-
-function publicDraft(account) {
-  const draft = account.draft;
-  if (!draft) return null;
-  const playerWithCard = (player) => ({ ...player, card:createPlayerCardViewModel(player) });
-  return {
-    teamName: draft.teamName,
-    roster: draft.roster.map(playerWithCard),
-    offer: (hasCurrentDraftOffer(draft) ? draft.offer : []).map(playerWithCard),
-    offerId: hasCurrentDraftOffer(draft) ? draft.offerId : null,
-    offerPool: hasCurrentDraftOffer(draft) ? draft.offerPool : null,
-    availablePools: account.setupComplete ? [] : availableDraftPools(draft),
-    positionCounts: draftPositionCounts(draft.roster),
-    pickNumber: draft.roster.length + (account.setupComplete ? 0 : 1),
-    totalPicks: account.setupComplete ? draft.totalPicks ?? 22 : draftTargetSize(draft),
-    counts: rosterCounts(draft.roster),
-    complete: account.setupComplete === true,
-  };
 }
 
 import { ConstructionProductionService } from './server/application/construction-production-service.mjs';
@@ -306,7 +256,6 @@ export class CampaignService {
     if (rewardsChanged || sponsorsChanged || migration.changed || inventoriesChanged || buildingsChanged || fogChanged || cardHistoryChanged || scoutingChanged || this.territoryProduction || this.fitness) this.save();
   }
 
-
   economyDue(now = this.now()) {
     return Boolean((this.pauseEconomyWhenStopped && now-(this.world?.serverEconomyClock?.lastPersistedAt??0)>=SERVER_ECONOMY_HEARTBEAT_MS) || this.airports?.due(now) || this.oil?.due(this.accounts,now) || this.operatingCosts?.due(this.accounts,now) || this.medical?.due(now) || this.fitness?.due(now) || this.territoryProduction?.due(this.world, now) || this.sponsorship.due(this.accounts, now));
   }
@@ -354,84 +303,11 @@ export class CampaignService {
   }
 
   persist() {
-    const previous=this.world?.serverEconomyClock;
-    const registrations=[...this.accounts.values()].map(a=>[a,a.leagueRegistration]);
-    try{
-      if(this.pauseEconomyWhenStopped&&this.world)this.world.serverEconomyClock=economicCheckpoint(this.world,this.now());
-      for(const [a] of registrations)if(a.setupComplete)a.leagueRegistration=normalizeLeagueRegistration(a,this.now());
-      this.repository.save({accounts:Object.fromEntries(this.accounts),world:this.world});
-    }catch(error){
-      if(this.world){if(previous===undefined)delete this.world.serverEconomyClock;else this.world.serverEconomyClock=previous;}
-      for(const [a,value] of registrations){if(value===undefined)delete a.leagueRegistration;else a.leagueRegistration=value;}
-      error.campaignPersistenceFailure=true;throw error;
-    }
+    return persistCampaign(this);
   }
 
   save() {
-    const rollbacks=[];
-    try {
-      const now=this.now();
-      if(this.airports)rollbacks.push(this.airports.prepare(now).rollback);
-      if(this.coalitions)rollbacks.push(this.coalitions.prepare(now).rollback);
-      if(this.territoryProduction){
-        let cursor=this.world?.resourceEconomy?.settledAt??now;
-        let first=true;
-        while(first||cursor<now){
-          first=false;
-          // Probe construction against the saved production plan, then rewind.
-          // Settle at each actual completion so new auras never affect earlier hours.
-          const candidates=Object.values(this.world?.territories??{}).flatMap(t=>(t.buildings??[]).filter(b=>(b.status==='constructing'||b.upgradeTo)&&!b.productionWork?.paused));
-          let boundary=suppressionBoundary(this.world,cursor,this.oil.nextSupplyBoundary(this.accounts,cursor,now));
-          if(candidates.length&&cursor<now){
-            const economy=this.world.resourceEconomy;
-            const intervals=Object.fromEntries(Object.entries(economy?.fanPlans??{}).map(([id,plan])=>[id,fanIncomeIntervals(plan,cursor,now)]));
-            const capacities=Object.fromEntries(Object.entries(economy?.rates??{}).map(([id,r])=>[id,r.production]));
-            const probe=this.constructionProduction.prepare(this.world,now,capacities,intervals);
-            try{for(const b of candidates)if(b.status==='active'){const completedAt=b.upgradeCompletedAt??b.builtAt;if(completedAt>cursor)boundary=Math.min(boundary,completedAt);};}finally{probe.rollback();}
-          }
-          rollbacks.push(this.oil.prepare(this.accounts,this.world,boundary).rollback);
-          if(this.fitness)rollbacks.push(this.fitness.prepare(boundary).rollback);
-          const production=this.territoryProduction.prepare(this.accounts,this.world,boundary);rollbacks.push(production.rollback);
-          const research=this.formationResearch.prepare(this.accounts,production.capacityIntervals,boundary);rollbacks.push(research.rollback);
-          const rates=this.world.resourceEconomy.rates;
-          const construction=this.constructionProduction.prepare(this.world,boundary,Object.fromEntries(Object.entries(rates).map(([id,r])=>[id,r.production])),production.capacityIntervals);rollbacks.push(construction.rollback);
-          const sponsorship=this.sponsorship.prepare(this.accounts,boundary);rollbacks.push(sponsorship.rollback);
-          rollbacks.push(this.operatingCosts.prepare(this.accounts,this.world,boundary).rollback);
-          const beforeAccounts=new Map([...this.accounts.values()].map(a=>[a,{gold:a.gold,goldLedger:structuredClone(a.goldLedger),wonderRewards:structuredClone(a.wonderRewards),pendingNeutralRewards:structuredClone(a.pendingNeutralRewards),wonderCompetitionNotices:structuredClone(a.wonderCompetitionNotices)}]));
-          const beforeBuildings=Object.values(this.world.territories??{}).flatMap(t=>(t.buildings??[]).filter(b=>b.wonderId).map(b=>[b,structuredClone(b)]));
-          const versions=Object.values(this.world.territories??{}).map(t=>[t,t.version,[...(t.buildings??[])]]);const revision=this.world.revision;
-          rollbacks.push(()=>{for(const [a,b] of beforeAccounts)for(const [k,v]of Object.entries(b)){if(v===undefined)delete a[k];else a[k]=v;}for(const [b,v]of beforeBuildings){for(const k of Object.keys(b))delete b[k];Object.assign(b,v);}for(const [t,v,buildings]of versions){t.version=v;t.buildings=buildings;}this.world.revision=revision;});
-          this.wonders.synchronize(boundary);
-          rollbacks.push(expireSuppressions(this,boundary).rollback);
-          // Refresh plans and forecasts after completion, without accruing time twice.
-          rollbacks.push(this.oil.prepare(this.accounts,this.world,boundary).rollback);
-          const refreshed=this.territoryProduction.prepare(this.accounts,this.world,boundary);rollbacks.push(refreshed.rollback);
-          const current=this.world.resourceEconomy.rates;
-          const forecast=this.constructionProduction.prepare(this.world,boundary,Object.fromEntries(Object.entries(current).map(([id,r])=>[id,r.production])));rollbacks.push(forecast.rollback);
-          rollbacks.push(this.oil.prepare(this.accounts,this.world,boundary).rollback);
-          if(this.fitness)rollbacks.push(this.fitness.prepare(boundary).rollback);
-          rollbacks.push(this.operatingCosts.prepare(this.accounts,this.world,boundary).rollback);
-          if(boundary<=cursor)break;cursor=boundary;
-        }
-      }else{const sponsorship=this.sponsorship.prepare(this.accounts,now);rollbacks.push(sponsorship.rollback);rollbacks.push(this.operatingCosts.prepare(this.accounts,this.world,now).rollback);}
-      rollbacks.push(expireSuppressions(this,now).rollback);
-      rollbacks.push(this.oil.prepare(this.accounts,this.world,now).rollback);
-      if(this.fitness)rollbacks.push(this.fitness.prepare(now).rollback);
-      if(this.medical)rollbacks.push(this.medical.prepare(now).rollback);
-      rollbacks.push(this.launchRewards.prepare(this.accounts,this.world,now).rollback);
-      const recovery=prepareDowntimeRecovery({accounts:this.accounts,world:this.world,economy:this.economy,now});rollbacks.push(recovery.rollback);
-      if(recovery.changed){
-        rollbacks.push(this.oil.prepare(this.accounts,this.world,now).rollback);
-        if(this.territoryProduction){
-          rollbacks.push(this.territoryProduction.prepare(this.accounts,this.world,now).rollback);
-          const rates=this.world.resourceEconomy.rates;
-          rollbacks.push(this.constructionProduction.prepare(this.world,now,Object.fromEntries(Object.entries(rates).map(([id,r])=>[id,r.production]))).rollback);
-        }
-      }
-      rollbacks.push(prepareOrphanBondRefunds(this.world,this.accounts,now).rollback);
-      this.fog?.refreshAll(this.accounts,this.world);
-      this.persist();
-    }catch(error){for(const rollback of rollbacks.reverse())rollback();throw error;}
+    return settleAndPersistCampaign(this);
   }
 
   adjustGold(account, deltaValue, reasonValue = "system") {
@@ -987,88 +863,8 @@ export class CampaignService {
   }
 
   state(account) {
-    if (account.draft && !account.setupComplete && account.draft.version !== DRAFT_VERSION) {
-      this.drafting.start(account, account.draft.teamName);
-    }
-    this.settleDueChallenges();
-    this.buildings.settleConstructions(this.world);
-    const now = this.now();
-    if (this.economyDue(now)) this.save();
-    this.scouting.settle(account, this.world);
-    const expeditionNormalization = normalizeExpeditionPiece(account, this.world, now);
-    if (expeditionNormalization.changed) this.save();
-    const setupComplete = account.setupComplete === true;
-    const normalizedPlayerSquads = normalizePlayerSquads(account.playerSquads, account.draft?.roster ?? []);
-    if (JSON.stringify(account.playerSquads ?? null) !== JSON.stringify(normalizedPlayerSquads)) {
-      account.playerSquads = normalizedPlayerSquads;
-      this.save();
-    }
-    const repairedTactics = repairTacticsLineups(account.tactics, account.draft?.roster ?? [], account.playerSquads);
-    if (JSON.stringify(repairedTactics) !== JSON.stringify(account.tactics)) {
-      account.tactics = repairedTactics;
-      this.save();
-    }
-    const activeChallenge=Object.values(this.world?.activeChallenges ?? {}).find((challenge)=>challenge.attackerId===account.id&&!challenge.coalitionId) ?? null;
-    const expeditionPiece = setupComplete ? publicExpeditionPiece(account, this.world, now) : null;
-    const fog = this.fogView(account);
-    const visible = new Set(fog.visibleTerritoryIds);
-    const canSee = (id) => !fog.enabled || visible.has(id);
-    const resources = this.resourceState(account, now);
-    const canExpand = Boolean(this.world && setupComplete && account.homeTerritoryId && this.world.players[account.id] && !activeChallenge && !expeditionPiece?.moving);
-    const expeditionTerritoryId = canExpand ? expeditionAttackSource(account, this.world, now) : null;
-    return {
-      modeName: "黄狗风云",
-      bondCatalog:campaignBondCatalog(this.playerDatabase),
-      interactions:this.diplomacy.summary(account),
-      eliteRaids:setupComplete?this.eliteRaids?.view(account):null,
-      coalition:this.coalitions?.view(account,{detail:false}),
-      playerId: account.id,
-      nickname: account.nickname,
-      playerColor: account.mapColor,
-      wallet:{ gold:Number(account.gold ?? 0) },
-      ...(resources ? { resources } : {}),
-      sponsorship:this.sponsorship.publicState(account, now),
-      dailyLeague:this.dailyLeague?.summary(account)??null,
-      leagueRegistration:this.dailyLeague?.registrationView(account)??null,
-      eliteChallenge:{activeId:this.eliteChallenges?.active(account)?.id??null,pendingReward:Boolean(account.elite?.reward&&!account.elite.reward.claimedId)},
-      neutralRewards:this.neutralRewards.publicState(account),
-      conquest:this.challenges.conquestState(account, now),
-      development:{enabled:this.developmentTools,fogEnabled:!this.developmentTools || !account.developmentFogDisabled},
-      inventory: this.playerPacks.publicInventory(account),
-      scouting: this.scouting.publicState(account, this.world),
-      training: this.training.publicState(account),
-      enhancement: this.enhancement.publicState(account),
-      wonders: this.wonders.publicState(account),
-      formationResearch:this.formationResearch.publicState(account),
-      expeditionFitness:this.fitness.publicState(account),
-      buildings: setupComplete && this.world
-        ? this.buildings.accountView(account, this.world)
-        : { rules:null, catalog:this.buildings.catalog(), territories:{} },
-      setupComplete,
-      pvpNotices:account.pvpNotices??[],
-      pvpNoticeReadIds:account.pvpNoticeReadIds??[],
-      homeSelectionRequired: Boolean(this.world && setupComplete && !account.homeTerritoryId),
-      homeTerritoryId: account.homeTerritoryId ?? null,
-      expeditionPiece,
-      draft: account.draft ? { ...this.fitness.draftView(account,publicDraft(account)), baseTeamName:account.draft.teamName, teamName:sponsoredTeamName(account, now) } : null,
-      playerSquads: {
-        ...normalizedPlayerSquads,
-        squads:PLAYER_SQUAD_DEFINITIONS.map((squad) => ({ ...squad })),
-      },
-      tactics: account.tactics ?? null,
-      fog,
-      world: setupComplete ? this.publicWorld(account, fog) : null,
-      activeChallengeId:activeChallenge?.id ?? null,
-      attackableTerritoryIds: canExpand ? listAttackableTerritoriesFrom(this.territoryIndex, this.world, account.id, expeditionTerritoryId, now).filter((territoryId) => canSee(territoryId) && !this.world.activeChallenges?.[territoryId]) : [],
-      coastalTerritoryIds: (this.maritimePlanner?.coastalTerritoryIds ?? []).filter(canSee),
-      coalitionLoanRequests: this.coalitions.loanNotices(account),
-      coalitionTargetRequests: this.coalitions.targetNotices(account),
-      coalitionCommandRequests: this.coalitions.commandNotices(account),
-      pendingLiberations: pendingLiberations(this.world,this.accounts,account),
-      battleReportReadIds: account.battleReportReadIds??[],
-      battleHistory: (account.battleHistory ?? []).slice(-20).reverse().map(battleSummary),
-      primaryMatchEngine: CAMPAIGN_ENGINE,
-    };
+    const {now, setupComplete, normalizedPlayerSquads} = maintainCampaignState(this, account);
+    return composeCampaignState(this, account, {now, setupComplete, normalizedPlayerSquads});
   }
 
   saveTactics(account, value = {}, { compact=false } = {}) {

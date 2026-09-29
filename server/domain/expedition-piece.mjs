@@ -1,4 +1,4 @@
-import {territoryPointToDisplay} from '../../client/map/campaign-map-geometry.js';
+import {territoryPointToDisplay} from '../../shared/geo/campaign-map-geometry.js';
 import { canUseTerritory } from '../../shared/config/diplomacy.mjs';
 import { expeditionArtIcon, expeditionStyle, isExpeditionStyle } from '../../shared/config/expedition-art.mjs';
 export const EXPEDITION_TOKEN_ID = "default";

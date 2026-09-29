@@ -1,3 +1,4 @@
+import {reviewRefactorNavigation} from './lib/refactor-browser-checks.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -12,7 +13,8 @@ import {createPlayerCardInstance} from '../server/domain/player-card-instance.mj
 import {DRAFT_VERSION} from '../shared/config/draft.mjs';
 const require=createRequire(process.env.PLAYWRIGHT_REQUIRE_FROM ?? path.join(os.homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs'));
 const {chromium}=require('playwright');
-const root=process.cwd(),out=path.join(root,'outputs/training-capacity-review'),data=fs.mkdtempSync(path.join(os.tmpdir(),'ydl-interactions-'));
+const refactorReview=process.argv.includes('--refactor');
+const root=process.cwd(),out=path.join(root,refactorReview?'outputs/refactor-browser-review':'outputs/training-capacity-review'),data=fs.mkdtempSync(path.join(os.tmpdir(),'ydl-interactions-'));
 const read=f=>JSON.parse(fs.readFileSync(path.join(root,f),'utf8'));
 const index=read('assets/data/territory-index.json'),geo=read('assets/data/campaign-territories.geojson'),resources=read('assets/data/territory-resources.json'),catalog=read('assets/data/s4-player-catalog.json');
 const byId=new Map(index.territories.map(t=>[t.territoryId,t]));
@@ -78,6 +80,7 @@ try{
 
 
 
+ const navigation=refactorReview?await reviewRefactorNavigation(page,out):null;
  let reads=0;page.on('request',r=>{if(r.url().includes('/training/center'))reads++;});
  await page.evaluate(value=>window.__audit.training(value),{territoryId:home.territoryId,buildingId:trainingBuilding.id});
  await page.locator('.training-summary').waitFor();
@@ -104,5 +107,5 @@ try{
  await page.locator('[data-training-filter="MID"]').click();await page.locator('[data-training-pool="MID"][data-training-slot="4"]').click();await page.locator('[data-training-picker-close]').click();await page.locator('[data-training-filter="ATT"]').click();assert.equal(await page.locator('[data-training-filter="ATT"]').getAttribute('aria-pressed'),'true');
  await page.locator('.training-content').evaluate(e=>{e.scrollTop=80;window.__panelCard=e.querySelector('.training-seat-card');});
  await page.waitForTimeout(6000);assert.ok(await page.evaluate(()=>window.__panelCard===document.querySelector('.training-seat-card')),'Unchanged polling retains card nodes');
- assert.deepEqual(errors,[]);const result={passed:true,reads,errors,viewports:[1440,390,768,780],seats:20};fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+ assert.deepEqual(errors,[]);const result={passed:true,reads,errors,viewports:[1440,390,768,780],seats:20,navigation};fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

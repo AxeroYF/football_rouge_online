@@ -1,3 +1,4 @@
+import {createPlayerFilter} from '../player-card/player-filter.js';
 import {bindCardTransferDrag} from './card-transfer-drag.js';
 import {playerCardMarkup} from '../player-card/player-card.js';
 import {createBatchDraft,squadOf} from './team-batch-model.js';
@@ -20,8 +21,7 @@ export function createTeamBatchController({panel,getCampaignState,getCampaignReq
   }catch(e){if(token===epoch)error=e.message||'读取编队失败';}finally{if(token===epoch){pending=false;draw();}}
  }
  const starters=squad=>{const value=draft?.base.tactics?.squads?.[squad]??(squad==='expedition'?draft?.base.tactics:null);return value?.planSnapshots?.__s4V2?.starters??value?.starters??[];};
- const matches=p=>{const text=`${p.name} ${p.sourceName??''} ${p.club??''} ${p.nationality??''}`.toLowerCase();return (!filters.search||text.includes(filters.search.toLowerCase()))&&(!filters.position||p.role===filters.position||p.secondaryRole===filters.position)&&(!filters.club||p.club===filters.club)&&(!filters.nationality||p.nationality===filters.nationality)&&(!filters.min||Number(p.effectiveOverall??p.overall)>=Number(filters.min))&&(filters.upgrade===''||Number(p.upgradeLevel??0)===Number(filters.upgrade));};
- const visible=squad=>(draft?.base.players??[]).filter(p=>squadOf(draft.assignments,p.id)===squad&&matches(p));
+ const visible=squad=>{const matches=createPlayerFilter(filters);return (draft?.base.players??[]).filter(p=>squadOf(draft.assignments,p.id)===squad&&matches(p));};
  const displayed=()=>['expedition','garrison'].flatMap(visible);
  const count=squad=>draft.base.players.filter(p=>squadOf(draft.assignments,p.id)===squad).length;
  function body(){return {version:draft.base.version,changes:changed()};}
