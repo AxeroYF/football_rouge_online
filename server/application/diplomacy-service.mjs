@@ -11,7 +11,7 @@ import { INTERACTION_RULES as RULES, INTERACTION_LABELS, relationKey, playerRela
 import { createPlayerCardViewModel } from "../../shared/player-card/player-card-contract.js";
 import { buildAccountMatchSeat } from "../../shared/football/account-match-seat.mjs";
 import { campaignBondCatalog } from "../../shared/football/campaign-bonds.mjs";
-import { createCampaignLiveLeg, advanceCampaignLiveLeg, restoreCampaignLiveLeg, publicCampaignLiveLeg } from "../../engine/campaign-match-engine.mjs";
+import { createLeagueLiveLeg as createCampaignLiveLeg, advanceLeagueLiveLeg as advanceCampaignLiveLeg, restoreLeagueLiveLeg as restoreCampaignLiveLeg, publicLeagueLiveLeg as publicCampaignLiveLeg, leagueBroadcastDelta } from "../../engine/league-match-engine.mjs";
 const fail=(message,statusCode=409)=>{throw Object.assign(new Error(message),{statusCode});};
 const clone=value=>JSON.parse(JSON.stringify(value));
 const restore=(target,value)=>{for(const key of Object.keys(target))delete target[key];Object.assign(target,value);};
@@ -70,7 +70,7 @@ export class DiplomacyService {
   const cards=a=>(a.draft?.roster??[]).map(p=>({...createPlayerCardViewModel(p),blocked:this.c.cardManagement.blocked(a,p)}));
   return {player:{id:other.id,nickname:other.nickname,teamName:name(other),color:other.mapColor},selfId:account.id,gold:account.gold,oil:this.c.oil?.view(account).balance??account.oil?.balance??0,relationship:playersAllied(this.c.world,account.id,id)?'alliance':relation.state,allianceMembers:allianceMembers(this.c.world,account.id).map(id=>({id,teamName:name(this.c.accounts.get(id)??{id})})),targetAllianceMembers:allianceMembers(this.c.world,id).map(id=>({id,teamName:name(this.c.accounts.get(id)??{id})})),condemnedByMe:Boolean(relation.condemnations?.[account.id]),condemnedMe:Boolean(relation.condemnations?.[id]),location:metadata?{territoryId:location,label:`${metadata.country} · ${metadata.name}`}:null,canUseTheirConquestLand:Boolean(playersAllied(this.c.world,account.id,id)&&relation.conquestPermissions?.[id]),allowTheirConquest:Boolean(playersAllied(this.c.world,account.id,id)&&relation.conquestPermissions?.[account.id]),sharingLocation:Boolean(relation.locations?.[account.id]),requests,cardCount:other.draft?.roster?.length??0,myCards:profile?null:cards(account),theirCards:profile?null:cards(other),squad:this.publicSquad(other),
    events:this.data().events.filter(e=>relationKey(e.from,e.to)===relationKey(account.id,id)).slice(-12).reverse(),
-   matches:Object.values(this.data().matches).filter(m=>relationKey(m.from,m.to)===relationKey(account.id,id)).sort((a,b)=>b.startedAt-a.startedAt).slice(0,10).map(m=>({id:m.id,from:m.from,to:m.to,startedAt:m.startedAt,completed:Boolean(m.battle),score:m.battle?.score??m.leg.match.score,minute:m.leg?.match.minute??90})),serverNow:this.c.now(),rules:RULES};
+   matches:Object.values(this.data().matches).filter(m=>relationKey(m.from,m.to)===relationKey(account.id,id)).sort((a,b)=>b.startedAt-a.startedAt).slice(0,10).map(m=>({id:m.id,from:m.from,to:m.to,startedAt:m.startedAt,completed:Boolean(m.battle),engine:m.battle?.engine??m.leg?.engine??'v2.1',score:m.battle?.score??m.leg.match.score,minute:m.leg?.match.minute??90})),serverNow:this.c.now(),rules:RULES};
  }
  cards(account,id){const other=this.other(account,id);const cards=a=>(a.draft?.roster??[]).map(p=>({...createPlayerCardViewModel(p),blocked:this.c.cardManagement.blocked(a,p)}));return {myCards:cards(account),theirCards:cards(other)};}
  tradeTerms(account,other,input={}) {
@@ -125,7 +125,7 @@ export class DiplomacyService {
    return buildAccountMatchSeat(squad,'expedition',this.c.now(),{fitness:true,bondCatalog:campaignBondCatalog(this.c.playerDatabase)});
   };
   const home=makeSeat(from),away=makeSeat(to),id='friendly:'+crypto.randomUUID(),startedAt=this.c.now();
-  const leg=createCampaignLiveLeg({home,away,seed:id,legNumber:1,startedAt,knockout:false,weather:null});
+  const leg=createCampaignLiveLeg({home,away,seed:id,legNumber:1,startedAt,knockout:false,weather:null},{engine:'v2.2',liveDurationMs:360000});
   this.data().matches[id]={id,from:from.id,to:to.id,startedAt,leg};return id;
  }
  allianceGroup(a,b){return [...new Set([...allianceMembers(this.c.world,a),...allianceMembers(this.c.world,b)])].sort();}
@@ -267,14 +267,14 @@ export class DiplomacyService {
     match={...match,leg:clone(match.leg)};restoreCampaignLiveLeg(match.leg);this.data().matches[match.id]=match;
     advanceCampaignLiveLeg(match.leg,now,{maximumChains:0});
     const broadcast=publicCampaignLiveLeg(match.leg);
-    match.battle={id:match.id,challengeId:match.id,format:'friendly-single',outcome:match.leg.match.score[0]===match.leg.match.score[1]?'draw':match.leg.match.score[0]>match.leg.match.score[1]?'win':'loss',score:[...match.leg.match.score],captured:false,settledAt:now,teams:[{name:match.leg.home.name},{name:match.leg.away.name}],broadcasts:[broadcast]};
+    match.battle={id:match.id,challengeId:match.id,format:'friendly-single',engine:match.leg.engine??'v2.1',outcome:match.leg.match.score[0]===match.leg.match.score[1]?'draw':match.leg.match.score[0]>match.leg.match.score[1]?'win':'loss',score:[...match.leg.match.score],captured:false,settledAt:now,teams:[{name:match.leg.home.name},{name:match.leg.away.name}],broadcasts:[broadcast]};
     delete match.leg;this.event(match.from,match.to,'friendly-finished');changed=true;
    });
   }
   this.cursor=(this.cursor+maximumMatches)%Math.max(1,active.length);return changed;
  }
- snapshot(account,id) {
+ snapshot(account,id,afterTick=null) {
   const match=this.data().matches[id];if(!match||![match.from,match.to].includes(account.id))fail('友谊赛不存在或无权查看',404);
-  return match.battle?{completed:true,challenge:null,live:null,battle:restoreArchivedFields(match.battle)}:{completed:false,challenge:{id:match.id,phase:'first-leg',format:'friendly-single'},live:{key:match.id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(match.leg)},battle:null};
+  return match.battle?{competition:'friendly',completed:true,challenge:null,live:null,battle:restoreArchivedFields(match.battle)}:{competition:'friendly',completed:false,challenge:{id:match.id,phase:'first-leg',format:'friendly-single'},live:{key:match.id,legNumber:1,phase:'first-leg',broadcast:leagueBroadcastDelta(publicCampaignLiveLeg(match.leg),afterTick)},battle:null};
  }
 }

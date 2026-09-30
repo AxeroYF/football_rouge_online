@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>V2.2 · 动态比赛实验室</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/styles/v22-preview.css"></head>
+<body>
+<main>
+  <header class="masthead"><div class="brand"><span class="brand-mark">V<span>22</span></span><div><p>黄狗风云 / MATCH LAB</p><h1>动态比赛实验室</h1></div></div><span class="version"><i></i> V2.2 混合引擎 · DEMO</span></header>
+  <section class="scoreboard" aria-label="比赛比分">
+    <div class="club home"><span class="crest">DA</span><div><small>HOME · 主场</small><h2>曙光竞技</h2><p id="home-plan">控球推进 · 4-3-3</p></div></div>
+    <div class="score"><div><b id="home-score">0</b><span>:</span><b id="away-score">0</b></div><span id="clock">00:00</span><small id="phase-label">准备开球</small></div>
+    <div class="club away"><div><small>AWAY · 客场</small><h2>北境联队</h2><p id="away-plan">低位反击 · 4-3-3</p></div><span class="crest">NO</span></div>
+  </section>
+  <div class="workspace">
+    <section class="match-view">
+      <div class="view-head"><span><i class="live-dot"></i> LIVE VIEW <small>连续跑动 · 精简比赛回合</small></span><span id="possession-label">曙光竞技控球 →</span></div>
+      <div class="pitch-wrap"><canvas id="pitch" aria-label="动态比赛球场，可点击球员查看信息"></canvas><div id="loading">正在载入 V2.1 球员与战术…</div><div class="pitch-caption"><span>← 北境进攻</span><span>105 × 68 m</span><span>曙光进攻 →</span></div></div>
+      <div class="transport"><button id="play" class="primary" disabled>开始比赛</button><button id="restart" disabled>↻ 重开</button><button id="next-event" disabled>下一关键回合</button><div class="progress"><div><span id="elapsed">00:00 / 06:00</span><span>球员 1× · 时钟 15×</span></div><div class="track"><i id="progress"></i></div></div><label><input id="shape" type="checkbox" checked> 阵型连线</label><label><input id="targets" type="checkbox"> 跑位目标</label></div>
+      <div class="match-foot"><span id="event-line">点击开始，观察传接球、压迫与整体阵型移动。</span><span id="performance">20 Hz 模拟 · 本地计算</span></div>
+    </section>
+    <aside class="panel">
+      <div class="panel-heading"><span>01 / TACTICS</span><h3>战术观察台</h3><p>示例方案按战术板存档读取，包含站位、职责与战术参数。切换仅供演示对比。</p></div>
+      <div class="tactics"><label for="home-tactic"><i class="home-dot"></i> 曙光竞技</label><select id="home-tactic"><option value="opening">自动 · 比分触发预案</option><option value="control">控球推进</option><option value="press">高位压迫</option><option value="counter">低位反击</option><option value="wide">套边与内切</option><option value="inverted">内收组织</option></select><label for="away-tactic"><i class="away-dot"></i> 北境联队</label><select id="away-tactic"><option value="opening">自动 · 比分触发预案</option><option value="control">控球推进</option><option value="press">高位压迫</option><option value="counter">低位反击</option><option value="wide">套边与内切</option><option value="inverted">内收组织</option></select></div>
+      <div id="dimensions" class="dimensions"></div>
+      <div class="player-detail" id="player-detail"><span class="eyebrow">PLAYER INSPECTOR</span><h3>点击场上球员</h3><p>查看当前任务、移动速度与 V2.1 有效能力。</p></div>
+      <div class="rules-status"><span>IFAB 2026/27 · 核心规则子集</span><p id="var-status">越位监测已开启 · 进球自动 VAR 检查</p></div>
+    </aside>
+  </div>
+  <section class="bottom-grid"><div class="stat-panel"><div class="section-title"><span>02 / MATCH DATA</span><h3>场上数据</h3></div><div id="stats"></div></div><div class="event-panel"><div class="section-title"><span>03 / TIMELINE</span><h3>比赛动态</h3></div><ol id="events"></ol></div><div class="note-panel"><span>PROTOTYPE SCOPE</span><h3>常规 6 分钟，加时另加 2 分钟。</h3><p>复用 V2.1 球员能力、特性、羁绊、阵型与职责；传接球、抢断和射门按实际空间执行。</p><p>已支持触球越位、延迟举旗、进球 VAR、界外球、球门球与角球归属。尚未实现手球、完整犯规/红黄牌、点球及身体部位精度判罚。</p><p>淘汰赛演示：90 分钟战平进入加时；加时仍平局标记待点球，暂不模拟点球决胜。独立演示，不参与正式比赛结算。<a href="https://www.theifab.com/laws/latest/offside/" target="_blank" rel="noopener">越位规则</a> · <a href="https://www.theifab.com/laws/latest/video-assistant-referee-var-protocol/" target="_blank" rel="noopener">VAR 协议</a></p></div></section>
+</main><script type="module" src="/client/v22-preview/app.js"></script>
+</body></html>

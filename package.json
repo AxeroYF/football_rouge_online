@@ -46,7 +46,12 @@
     "test:v21": "node --test test/v21-integration.test.js test/campaign-match-engine.test.js test/campaign-broadcast.test.js",
     "test:coalition": "node --test test/coalition.test.js",
     "test:fitness": "node --test test/expedition-fitness.test.js",
-    "review:fitness": "node scripts/review-expedition-fitness.mjs"
+    "review:fitness": "node scripts/review-expedition-fitness.mjs",
+    "preview:v22": "node scripts/serve-v22-preview.mjs",
+    "review:v22": "node scripts/review-v22-preview.mjs",
+    "test:v22": "node --test test/v22-hybrid.test.js test/v22-football-rules.test.js test/v22-board-tactics.test.js",
+    "test:league-dynamic": "node --test test/league-dynamic.test.js test/daily-league.test.js test/daily-league-service.test.js test/league-registration.test.js",
+    "review:league-dynamic": "node scripts/review-league-dynamic.mjs"
   },
   "devDependencies": {
     "topojson-client": "^3.1.0",

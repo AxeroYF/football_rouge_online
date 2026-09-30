@@ -1290,7 +1290,7 @@ function resolveSetPiece(match, teamIndex, kind, setPieceDepth = 0, possessionTy
   return resolveShot(match, teamIndex, { possessionType, context:{ chainIndex:match.nextChainIndex }, endZone:deliveryZone, stages:[{ actor:{ id:target.id }, probability:xg }] }, { type:"setPiece", taker:target, creator:taker, xg, setPieceDepth, possessionType });
 }
 
-function processDiscipline(match, chain) {
+function processDiscipline(match, chain, { resolveRestarts = true } = {}) {
   for (const stage of chain.stages) {
     if (!stage.foul?.occurred) continue;
     const defending = match.teams[chain.defendingTeamIndex];
@@ -1343,13 +1343,13 @@ function processDiscipline(match, chain) {
       }
     }
     const foulBand = String(stage.zone ?? "").split(":")[0];
-    if (stage.foul.penalty || ["finalThird", "box"].includes(foulBand)) {
+    if (resolveRestarts && (stage.foul.penalty || ["finalThird", "box"].includes(foulBand))) {
       resolveSetPiece(match, attacking.index, stage.foul.penalty ? "penalty" : "freeKick", 0, chain.possessionType ?? "normal", stage.zone);
     } else attacking.stats.setPieces += 1;
   }
 }
 
-function processInjuries(match, chain) {
+function processInjuries(match, chain, { accidental = true } = {}) {
   const events = [...chain.independentEvents];
   const highPressInjuryConfig = match.parameters.events.highPressInjury ?? {};
   const highPressInjurySeverity = (team) => {
@@ -1366,7 +1366,7 @@ function processInjuries(match, chain) {
     ? Math.max(...highPressTeams.map(({ severity }) => Number(highPressInjuryConfig.minimumMultiplier ?? 1.08) + (Number(highPressInjuryConfig.maximumMultiplier ?? 1.65) - Number(highPressInjuryConfig.minimumMultiplier ?? 1.08)) * severity))
     : 1;
   const injuryProbability = clamp(Number(match.parameters.events.injuryPerChain ?? 0) * injuryMultiplier, 0, 1);
-  if (match.rng() < injuryProbability) events.push({ type:"matchInjury", probability:injuryProbability, highPressTeams });
+  if (accidental && match.rng() < injuryProbability) events.push({ type:"matchInjury", probability:injuryProbability, highPressTeams });
   for (const event of events) {
     if (event.type === "lightningInjury") {
       if (match.lightningResolved) continue;
@@ -2006,6 +2006,28 @@ export function advanceV2Match(match, targetChainCount = match.nextChainIndex + 
   if (match.nextChainIndex >= chainCount || match.abandoned) finishV2Match(match);
   if (typeof match.rng?.getState === "function") match.rngState=match.rng.getState();
   return match;
+}
+
+// Shared player-state rules for authoritative spatial engines. These do not
+// simulate possession, resolve shots or produce a second, competing score.
+export function advanceV2PlayerConditions(match, chainIndex) {
+  match.teams.forEach(team => applyTacticalPlan(match, team));
+  match.snapshotTeams = buildV2TeamSnapshots(match.teams, { parameters:match.parameters, state:{ minute:match.minute, score:match.score }, environment:match.environment });
+  applyFatigue(match);
+  processInjuries(match, { independentEvents:[], stages:[] });
+  maybeBlackWhistle(match, chainIndex, 180);
+  maybeBrawl(match, chainIndex, 180);
+  maybeWeatherImpact(match, chainIndex);
+  ensurePlayable(match);
+  delete match.snapshotTeams;
+  match.rngState = match.rng.getState();
+}
+
+export function applyV2SpatialFoul(match, chain) {
+  processDiscipline(match, chain, { resolveRestarts:false });
+  processInjuries(match, chain, { accidental:false });
+  ensurePlayable(match);
+  match.rngState = match.rng.getState();
 }
 
 export function publicV2Match(match, options = {}) {

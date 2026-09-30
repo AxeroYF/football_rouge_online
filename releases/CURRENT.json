@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20260928-r43",
-  "lastUserConfirmedDeployed": "20260928-r43",
-  "sourceState": "R43 deployment user-confirmed on 2026-09-29; Git synchronization and refactor assessment recorded in handoff/GITHUB_SYNC_20260929.md",
+  "latestPublished": "20260929-r44",
+  "lastUserConfirmedDeployed": "20260929-r44",
+  "sourceState": "R44 deployed, user-confirmed on 2026-09-30: modular refactor, V2.2 featured daily league and all new player friendlies.",
   "releases": [
     {
       "version": "20260918-r9",
@@ -285,6 +285,14 @@
       "bundleSha256": "201ff6ebc6a6c7c7a2eccd23058db09c619eabbb742efa8ba6d50f85782f8965",
       "baselineFiles": 1257,
       "changedFiles": 4,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260929-r44",
+      "parent": "20260928-r43",
+      "bundleSha256": "92bc711e9fdc1db17ca2cfea1599b3c2977459319178de078e12a4b749d73a56",
+      "baselineFiles": 1290,
+      "changedFiles": 54,
       "deployment": "user-confirmed"
     }
   ]

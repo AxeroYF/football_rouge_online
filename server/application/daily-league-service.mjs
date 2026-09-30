@@ -1,14 +1,16 @@
 import {normalizeLeagueRegistration,LEAGUE_ROSTER_LIMIT,leagueRoster,leaguePlayerView} from '../../shared/config/league-registration.mjs';
 import {enhancementFamily} from '../../shared/config/enhancement.mjs';
 import {archiveFields,restoreArchivedFields} from '../infrastructure/history-archive.mjs';
-import {DAILY_LEAGUE,LEAGUE_REWARDS,leagueDate,leagueDayStart,leagueSchedule,leagueStandings,leagueTicket} from '../../shared/config/daily-league.mjs';
+import {DAILY_LEAGUE,LEAGUE_REWARDS,leagueDate,leagueDayStart,leagueStandings,leagueTicket} from '../../shared/config/daily-league.mjs';
 import {ELITE_CLUB_BY_ID} from '../../shared/config/elite-clubs.mjs';
 import {PLAYER_PACK_TYPES} from '../../shared/config/player-packs.mjs';
 import {buildAccountMatchSeat} from '../../shared/football/account-match-seat.mjs';
 import {campaignBondCatalog} from '../../shared/football/campaign-bonds.mjs';
 import {setFitness,effectiveFitness} from '../../shared/football/fitness-lineup.mjs';
 import {applyLegConsequences} from './match-consequences.mjs';
-import {createCampaignLiveLeg,advanceCampaignLiveLeg,restoreCampaignLiveLeg,publicCampaignLiveLeg} from '../../engine/campaign-match-engine.mjs';
+import {createLeagueLiveLeg as createCampaignLiveLeg,advanceLeagueLiveLeg as advanceCampaignLiveLeg,restoreLeagueLiveLeg as restoreCampaignLiveLeg,publicLeagueLiveLeg as publicCampaignLiveLeg} from '../../engine/league-match-engine.mjs';
+import {leagueBroadcastDelta} from '../../engine/league-match-engine.mjs';
+import {featuredLeagueSchedule,LEAGUE_DYNAMIC_ENGINE} from '../../shared/config/league-featured.mjs';
 
 const LEAGUE_USERNAMES=Object.freeze(['皇马','小黄','AuI','ZH','Axero','罗哥']);
 const copy=value=>JSON.parse(JSON.stringify(value));
@@ -71,7 +73,7 @@ export class DailyLeagueService {
   if(this.day&&!this.day.rewarded)return false;
   const {teams,missing}=this.participants();if(missing.length)return false;
   // Replacing this one bounded object removes all prior schedules, statistics and full broadcasts.
-  return this.transaction(teams.filter(t=>t.kind==='player').map(t=>this.c.accounts.get(t.id)),()=>{for(const team of teams){const a=this.c.accounts.get(team.id);if(a?.wonderHomeEvents)a.wonderHomeEvents=Object.fromEntries(Object.entries(a.wonderHomeEvents).filter(([,v])=>v.day===id));}this.c.world.dailyLeague={id,teams,fixtures:leagueSchedule(teams.map(t=>t.id),id,this.rules),live:{},stats:{},rewarded:false,createdAt:now};return true;});
+  return this.transaction(teams.filter(t=>t.kind==='player').map(t=>this.c.accounts.get(t.id)),()=>{for(const team of teams){const a=this.c.accounts.get(team.id);if(a?.wonderHomeEvents)a.wonderHomeEvents=Object.fromEntries(Object.entries(a.wonderHomeEvents).filter(([,v])=>v.day===id));}this.c.world.dailyLeague={id,teams,fixtures:featuredLeagueSchedule(teams,id,this.rules),live:{},stats:{},rewarded:false,createdAt:now};return true;});
  }
  notify(account,notice){account.leagueNotices=[...(account.leagueNotices??[]).filter(n=>n.id!==notice.id),notice].slice(-24);}
  seat(team,now){
@@ -92,8 +94,9 @@ export class DailyLeagueService {
    const account=this.c.accounts.get(home.id),venue=account?this.c.sponsorMatchVenue?.(account,now):null;
    const tickets=account?leagueTicket(account.resources?.fans??0,venue?.seatingCapacity??0,this.rules):null;
    if(tickets)tickets.gold=this.c.wonders?.ticketIncome(account,{kind:'league',homeAccountId:account.id},tickets.gold)??tickets.gold;
-   const leg=createCampaignLiveLeg({home:seats[0],away:seats[1],seed:fixture.id,legNumber:1,startedAt:now,knockout:false,venue});
+   const leg=createCampaignLiveLeg({home:seats[0],away:seats[1],seed:fixture.id,legNumber:1,startedAt:now,knockout:false,venue},fixture);
    fixture.status='live';fixture.actualStartedAt=now;day.live[fixture.id]={leg,tickets};
+   if(fixture.engine===LEAGUE_DYNAMIC_ENGINE)for(const a of accounts)this.notify(a,{id:fixture.id+':live',day:day.id,kind:'live',dynamic:true,title:`动态直播 · 联赛第${fixture.round}轮`,text:`${home.name} vs ${away.name}，点击进入电视台。`,matchId:fixture.id,createdAt:now});
    for(const a of accounts)this.c.fitness?.refreshPlans(a,now);
    return true;
   });
@@ -101,7 +104,8 @@ export class DailyLeagueService {
  resultNotices(fixture,tickets){
   const day=this.day,home=day.teams.find(t=>t.id===fixture.homeId),away=day.teams.find(t=>t.id===fixture.awayId);
   for(const team of [home,away]){const account=this.c.accounts.get(team.id);if(!account)continue;
-   this.notify(account,{id:fixture.id,day:day.id,kind:'match',title:`联赛第${fixture.round}轮 · ${home.name} ${fixture.score.join(' : ')} ${away.name}`,text:fixture.forfeit?`未正常开赛：${fixture.reason}。无门票收入。`:team.id===home.id?`主场观众 ${tickets?.attendance??0} 人，门票收入 ${tickets?.gold??0} 金币。`:'客场比赛已结束。',createdAt:fixture.settledAt,matchId:fixture.id});
+   account.leagueNotices=(account.leagueNotices??[]).filter(n=>n.id!==fixture.id+':live');
+   this.notify(account,{id:fixture.id,day:day.id,kind:'match',dynamic:fixture.engine===LEAGUE_DYNAMIC_ENGINE,title:`联赛第${fixture.round}轮 · ${home.name} ${fixture.score.join(' : ')} ${away.name}`,text:fixture.forfeit?`未正常开赛：${fixture.reason}。无门票收入。`:team.id===home.id?`主场观众 ${tickets?.attendance??0} 人，门票收入 ${tickets?.gold??0} 金币。`:'客场比赛已结束。',createdAt:fixture.settledAt,matchId:fixture.forfeit?null:fixture.id});
   }
  }
  settle(fixture,now){
@@ -147,16 +151,17 @@ export class DailyLeagueService {
   if(this.reward(now)){this.lastCheckpoint=now;return false;}
   if(changed&&now-this.lastCheckpoint>=30000){this.lastCheckpoint=now;return true;}return false;
  }
- summary(account){return {liveCount:Object.keys(this.day?.live??{}).length,day:this.day?.id??null,unread:(account.leagueNotices??[]).filter(n=>!n.readAt)};}
+ summary(account){return {dynamicLiveCount:Object.values(this.day?.live??{}).filter(v=>v.leg.engine===LEAGUE_DYNAMIC_ENGINE).length,liveCount:Object.keys(this.day?.live??{}).length,day:this.day?.id??null,unread:(account.leagueNotices??[]).filter(n=>!n.readAt)};}
  read(account,id){const n=(account.leagueNotices??[]).find(n=>n.id===id);if(!n||n.readAt)return {ok:true};const previous=n.readAt;n.readAt=this.c.now();try{this.c.persist();}catch(error){if(previous===undefined)delete n.readAt;else n.readAt=previous;throw error;}return {ok:true};}
  audience(id){
   const now=this.c.now(),names=new Map();
   for(const [key,v] of this.viewers){if(now-v.lastSeenAt>=30000||!this.day?.live[v.matchId]){this.viewers.delete(key);continue;}if(v.matchId===id)names.set(v.accountId,{id:v.accountId,name:v.name});}
   return [...names.values()].sort((a,b)=>a.id.localeCompare(b.id));
  }
- watch(account,id,session){
+ watch(account,id,session,afterTick=null){
   if(typeof session!=='string'||!/^[a-zA-Z0-9-]{8,80}$/.test(session))fail('观赛会话无效',400);
   this.audience(id);const result=this.snapshot(id);
+  if(result.live?.broadcast.dynamic)result.live.broadcast=leagueBroadcastDelta(result.live.broadcast,afterTick);
   if(!result.completed){
    const key=account.id+'|'+session;
    const own=[...this.viewers.entries()].filter(([,v])=>v.accountId===account.id);

@@ -8,7 +8,7 @@ export function interactionRoutes({campaign, account, request, response, pathnam
     if(request.method==='GET'&&pathname==='/api/campaign/interactions/cards')return sendJson(response,200,campaign.diplomacy.cards(account,new URL(url,'http://localhost').searchParams.get('playerId')));
     if(request.method==='GET'&&pathname==='/api/campaign/interactions/joint-scout'){const other=campaign.diplomacy.other(account,new URL(url,'http://localhost').searchParams.get('playerId'));return sendJson(response,200,campaign.jointScouting.options(account,other));}
     if(request.method==='GET'&&pathname==='/api/campaign/interactions')return sendJson(response,200,{view:campaign.diplomacy.details(account,new URL(url,'http://localhost').searchParams.get('playerId'),{profile:new URL(url,'http://localhost').searchParams.get('view')==='profile'})});
-    if(request.method==='GET'&&pathname==='/api/campaign/interactions/match')return sendJson(response,200,campaign.diplomacy.snapshot(account,new URL(url,'http://localhost').searchParams.get('id')));
+    if(request.method==='GET'&&pathname==='/api/campaign/interactions/match'){const query=new URL(url,'http://localhost').searchParams;return sendJson(response,200,campaign.diplomacy.snapshot(account,query.get('id'),query.has('afterTick')?Number(query.get('afterTick')):null));}
     if(request.method==='POST'&&pathname==='/api/campaign/interactions') {
       if(['read-news','read'].includes(body.action))return sendJson(response,200,{...campaign.diplomacy.mutate(account,body),acknowledged:true});
       campaign.settleDueChallenges();
