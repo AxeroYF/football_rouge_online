@@ -244,27 +244,31 @@ test('external elite reward shares reveal/choice/acquired flow and never consume
  controller.open();assert.match(root.innerHTML,/背包球员/);controller.close();
 });
 
-test('consecutive packs stay on the acquired result during requests, reject duplicate clicks, retry and exit at zero stock',async()=>{
+test('consecutive packs confirm in place, reject duplicate clicks, retry and exit at zero stock',async()=>{
  const {createCampaignStore}=await import('../client/core/campaign-store.js');
  const documentRef={activeElement:null,addEventListener(){}},trigger=fixtureElement(documentRef,{textContent:''}),root=fixtureElement(documentRef),listeners={},requests=[];
  root.addEventListener=(type,fn)=>listeners[type]=fn;root.querySelectorAll=()=>[];
+ const actions={innerHTML:'',setAttribute(){}},query=root.querySelector.bind(root);
+ root.querySelector=selector=>selector==='[data-inventory-pack-actions]'?actions:
+  selector==='.inventory-choice-grid'&&root.innerHTML?.includes('inventory-choice-grid')?{}:query(selector);
  const type='exotic-player-pack',card={id:'first',name:'第一名',role:'ST',grade:'A'};
  const opening={id:'opening-first',packType:type,cards:[card]};
  const store=createCampaignStore({playerId:'p',inventory:{totalPacks:1,packs:[{type,count:1}],pendingOpening:opening}});
  const controller=createInventoryController({trigger,windowRoot:root,documentRef,getCampaignState:store.getState,campaignStore:store,getCampaignRequest:()=> (path,options)=>new Promise((resolve,reject)=>requests.push({path,options,resolve,reject}))});
  const click=(selector,dataset={})=>listeners.click({target:{closest:s=>s===selector?{dataset}:null}});
- controller.open();const choose=click('[data-player-card-action="pack-choice"]',{playerCardId:'first'});
+ controller.open();const initialMarkup=root.innerHTML;const choose=click('[data-player-card-action="pack-choice"]',{playerCardId:'first'});
  requests[0].resolve({player:card,state:{...store.getState(),inventory:{...store.getState().inventory,pendingOpening:null}}});await choose;
- assert.match(root.innerHTML,/开下一包/);assert.match(root.innerHTML,/剩余 1 包/);
- click('background');assert.match(root.innerHTML,/inventory-acquired-card/);
+ assert.equal(root.innerHTML,initialMarkup,'Claim keeps the original candidate nodes instead of rendering a second result');
+ assert.match(actions.innerHTML,/开下一包/);assert.match(actions.innerHTML,/剩余 1 包/);
+ click('background');assert.doesNotMatch(root.innerHTML,/inventory-acquired-card/);assert.match(root.innerHTML,/inventory-choice-grid/);
  const failed=click('[data-inventory-next-pack]');click('[data-inventory-next-pack]');click('[data-inventory-exit-opening]');
- assert.equal(requests.length,2);assert.match(root.innerHTML,/开启中/);assert.match(root.innerHTML,/inventory-acquired-card/);
- requests[1].reject(new Error('temporary'));await failed;assert.match(root.innerHTML,/开下一包/);
+ assert.equal(requests.length,2);assert.match(actions.innerHTML,/开启中/);assert.doesNotMatch(root.innerHTML,/inventory-acquired-card/);assert.match(root.innerHTML,/inventory-choice-grid/);
+ requests[1].reject(new Error('temporary'));await failed;assert.match(actions.innerHTML,/开下一包/);
  const retry=click('[data-inventory-next-pack]');assert.equal(requests[2].options.body.packType,type);
  const next={id:'second',name:'第二名',role:'GK',grade:'B'};
  requests[2].resolve({state:{...store.getState(),inventory:{totalPacks:0,packs:[{type,count:0}],pendingOpening:{id:'opening-second',packType:type,cards:[next]}}}});await retry;
  assert.doesNotMatch(root.innerHTML,/inventory-acquired-card/);
  const chosen=click('[data-player-card-action="pack-choice"]',{playerCardId:'second'});requests[3].resolve({player:next,state:{...store.getState(),inventory:{...store.getState().inventory,pendingOpening:null}}});await chosen;
- assert.match(root.innerHTML,/该卡包已开完/);click('[data-inventory-next-pack]');assert.equal(requests.length,4);
+ assert.match(actions.innerHTML,/该卡包已开完/);click('[data-inventory-next-pack]');assert.equal(requests.length,4);
  click('[data-inventory-exit-opening]');assert.doesNotMatch(root.innerHTML,/inventory-acquired-card/);assert.match(root.innerHTML,/inventory-pack-grid/);controller.close();
 });

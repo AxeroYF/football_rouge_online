@@ -116,6 +116,7 @@ export function createInventoryController({
   let activeTab = "all";
   let revealedOpeningId = null;
   let externalReward = null, choiceEpoch = 0;
+  let pendingChoiceId = null;
   let unbindSmallWindow = () => {};
 
   function inventory() {
@@ -162,10 +163,39 @@ export function createInventoryController({
   function renderOpening(opening, reveal) {
     const levels=ownedCardLevels(getCampaignState()?.draft?.roster);
     return `${meteorLayer()}
-      <main class="inventory-opening-stage">
+      <main class="inventory-opening-stage ${externalReward ? '' : 'inventory-pack-opening'}">
         <div class="inventory-choice-grid" data-choice-count="${opening.cards.length}">${opening.cards.map((card,index) => `
           <article class="inventory-choice-card ${reveal ? "is-revealing" : "is-revealed"}" style="--reveal-index:${index}" data-choice-player="${escapeHtml(card.playerId ?? card.id)}">${playerCardMarkup(card,{interactive:true,variant:"standard",action:"pack-choice",ariaPrefix:"选择",eager:true})}<p class="inventory-owned-status" data-owned-choice="${index}">${ownedCardText(card,levels)}</p></article>`).join("")}</div>
+        ${externalReward ? '' : '<div class="inventory-acquired-actions inventory-pack-actions" data-inventory-pack-actions aria-live="polite" aria-hidden="true"></div>'}
       </main>`;
+  }
+
+  // Keep the revealed cards and their artwork mounted through claim and next-pack requests.
+  function updatePackChoice() {
+    const claimed = Boolean(selectedPlayer);
+    const selectedId = pendingChoiceId;
+    const stage = windowRoot.querySelector('.inventory-pack-opening');
+    stage?.setAttribute('aria-busy',String(pending));
+    for (const card of windowRoot.querySelectorAll('.inventory-choice-card')) {
+      const selected = card.dataset.choicePlayer === selectedId;
+      card.classList.toggle('is-pack-selected',selected);
+      card.classList.toggle('is-pack-muted',Boolean(selectedId) && !selected);
+      const button = card.querySelector('[data-player-card-action="pack-choice"]');
+      if (button) {
+        button.disabled = pending || claimed;
+        button.setAttribute('aria-pressed',String(selected));
+      }
+      if (selected) {
+        const status = card.querySelector('.inventory-owned-status');
+        if (status) status.textContent = claimed ? '已获得' : '领取中…';
+      }
+    }
+    const actions = windowRoot.querySelector('[data-inventory-pack-actions]');
+    if (actions) {
+      actions.setAttribute('aria-hidden',String(!claimed));
+      const html = claimed ? acquiredActionsMarkup() : '';
+      if (actions.innerHTML !== html) actions.innerHTML = html;
+    }
   }
 
   function acquiredActionsMarkup() {
@@ -187,6 +217,11 @@ export function createInventoryController({
     if (!opened) return;
     const value = inventory();
     const opening = externalReward?.opening ?? value?.pendingOpening;
+    if (!externalReward && windowRoot.querySelector('.inventory-choice-grid') &&
+        (selectedPlayer || (opening && windowRoot.dataset.inventoryOpeningId === opening.id))) {
+      updatePackChoice();
+      return;
+    }
     if (selectedPlayer && windowRoot.querySelector(".inventory-acquired-card")) {
       const actions = windowRoot.querySelector('[data-inventory-acquired-actions]');
       if (actions) { const html=acquiredActionsMarkup(); if(actions.innerHTML!==html)actions.innerHTML=html; }
@@ -213,6 +248,7 @@ export function createInventoryController({
     if (smallShelf) unbindSmallWindow = bindSmallWindow(windowRoot,{onRequestClose:closeWindow});
     windowRoot.dataset.inventoryOpeningId = opening?.id ?? "";
     if (opening) revealedOpeningId = opening.id;
+    if (opening && !externalReward) updatePackChoice();
     const title = windowRoot.querySelector("h2");
     if (title) title.id = "inventory-window-title";
   }
@@ -222,7 +258,7 @@ export function createInventoryController({
     externalReward = null;
     choiceEpoch++;
     opened = true;
-    selectedPlayer = null;
+    selectedPlayer = null; pendingChoiceId = null;
     selectedPackType = null; continuationPackType = null;
     activateStageWindow(windowRoot);
     render();
@@ -230,7 +266,7 @@ export function createInventoryController({
 
   function openReward({id,cards,claim,onClose}={}) {
     if(pending||!id||!cards?.length||typeof claim!=='function')return false;
-    continuationPackType=null;
+    continuationPackType=null; pendingChoiceId=null;
     externalReward={opening:{id:'reward:'+id,cards},claim,onClose};
     choiceEpoch++;opened=true;selectedPlayer=null;
     activateStageWindow(windowRoot);render();return true;
@@ -241,7 +277,7 @@ export function createInventoryController({
     externalReward=null;choiceEpoch++;
     windowRoot.dataset.inventoryOpeningId="";
     opened = false;
-    selectedPlayer = null; continuationPackType = null;
+    selectedPlayer = null; continuationPackType = null; pendingChoiceId = null;
     windowRoot.hidden = true;
     deactivateStageWindow(windowRoot);
     if(back&&reason!=="superseded"&&reason!=="account")queueMicrotask(back);
@@ -259,7 +295,7 @@ export function createInventoryController({
       const value = await getCampaignRequest()("/api/campaign/inventory/packs/open", { method:"POST", body:{ packType } });
       if(account!==getCampaignState()?.playerId)return;
       pending = false;
-      if(epoch===choiceEpoch && opened)selectedPlayer=null;
+      if(epoch===choiceEpoch && opened){selectedPlayer=null;pendingChoiceId=null;}
       campaignStore.setState(value.state,{source:"pack-open"});
     } catch (error) {
       showToast(error.message || "卡包开启失败");
@@ -280,9 +316,10 @@ export function createInventoryController({
     if (!opening || !opening.cards.some(c => String(c.playerId ?? c.id) === String(playerId))) return;
     const epoch=choiceEpoch,account=getCampaignState()?.playerId;
     pending = true;
+    if (!reward) {pendingChoiceId=String(playerId);updatePackChoice();}
     try {
       const claim = reward ? reward.claim(playerId) : getCampaignRequest()("/api/campaign/inventory/packs/choose", { method:"POST", body:{ openingId:opening.id, playerId } });
-      const [value] = await Promise.all([claim, animateChoice(playerId)]);
+      const value = reward ? (await Promise.all([claim, animateChoice(playerId)]))[0] : await claim;
       if(account!==getCampaignState()?.playerId)return;
       if(epoch===choiceEpoch&&opened){selectedPlayer=value.player;if(!reward)continuationPackType=opening.packType ?? selectedPackType;}
       pending=false;
@@ -291,8 +328,16 @@ export function createInventoryController({
     } catch (error) {
       if(epoch===choiceEpoch){
         showToast(error.message || "球员选择失败");
-        // Restore all candidates after a failed request; retry the same reward.
-        windowRoot.dataset.inventoryOpeningId="";
+        // Restore candidates without replaying their reveal or losing the scroll position.
+        if(reward)windowRoot.dataset.inventoryOpeningId="";
+        else {
+          pendingChoiceId=null;
+          const levels=ownedCardLevels(getCampaignState()?.draft?.roster);
+          for(const node of windowRoot.querySelectorAll('[data-owned-choice]')) {
+            const card=opening.cards[Number(node.dataset.ownedChoice)];
+            if(card)node.textContent=ownedCardText(card,levels);
+          }
+        }
       }
     } finally {
       pending=false;
@@ -312,7 +357,7 @@ export function createInventoryController({
       if(pending)return;
       if(event.target.closest('[data-inventory-next-pack]'))return openPack(continuationPackType);
       if(event.target.closest('[data-inventory-exit-opening]')){
-        selectedPlayer = null; continuationPackType = null;
+        selectedPlayer = null; continuationPackType = null; pendingChoiceId = null;
         render();
       }
       return;

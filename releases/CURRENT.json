@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20260929-r44",
-  "lastUserConfirmedDeployed": "20260929-r44",
-  "sourceState": "R44 deployed, user-confirmed on 2026-09-30: modular refactor, V2.2 featured daily league and all new player friendlies.",
+  "latestPublished": "20260930-r45",
+  "lastUserConfirmedDeployed": "20260930-r45",
+  "sourceState": "R45 deployed, user-confirmed on 2026-09-30: shop and pack flow optimization, persistent multi-level research notices, league registration supplementation. Preparing the third game project.",
   "releases": [
     {
       "version": "20260918-r9",
@@ -293,6 +293,14 @@
       "bundleSha256": "92bc711e9fdc1db17ca2cfea1599b3c2977459319178de078e12a4b749d73a56",
       "baselineFiles": 1290,
       "changedFiles": 54,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260930-r45",
+      "parent": "20260929-r44",
+      "bundleSha256": "01cf8810761999631e8c10394316714901bf8adb46873d517cf4099374eb7629",
+      "baselineFiles": 1290,
+      "changedFiles": 11,
       "deployment": "user-confirmed"
     }
   ]

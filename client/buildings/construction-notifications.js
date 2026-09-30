@@ -1,3 +1,4 @@
+import {patchMarkup} from '../ui/patch-markup.js';
 import {advancedResearchTopic} from '../../shared/config/advanced-research.mjs';
 import { researchProgress, researchRemainingTime, FORMATION_RESEARCH_DIRECTIONS } from '../../shared/config/formation-research.mjs';
 import { productionConstructionProgress } from '../../shared/buildings/construction-production.mjs';
@@ -47,6 +48,17 @@ export function wonderCompetitionNoticesMarkup(notices=[]){
  return notices.map(n=>`<article class="construction-notice wonder-race-notice" role="status"><header><span>奇观建造已中止</span></header><div class="wonder-race-message"><strong>${esc(n.label)}</strong><p>${esc(n.winnerName)}已率先建成，该奇观全服唯一。</p><p>已返还 ${number(n.refundProduction)} 一次性生产力（已投入的 50%）。</p></div><footer>${n.rewardAvailable?`<button type="button" data-wonder-race-reward="${esc(n.rewardId)}">使用生产力</button>`:'<span></span>'}<button type="button" data-wonder-race-dismiss="${esc(n.id)}">已读</button></footer></article>`).join('');
 }
 
+export function completedResearchNoticesMarkup(research,pendingId=null){
+ return (research?.completionNotices??[]).map(notice=>{
+  const topic=advancedResearchTopic(notice.topicId),slot=research.slots?.find(s=>s.id===notice.slotId);
+  const direction=FORMATION_RESEARCH_DIRECTIONS.find(d=>d.id===notice.direction);
+  const label=topic?.label??`${slot?.name??'阵型'} · ${direction?.label??'研究'}`;
+  const branch=topic?(topic.branch==='biology'?'生物':'强化'):'阵型';
+  const level=(topic?research.topicLevels?.[topic.id]:slot?.levels?.[notice.direction])??notice.level,maxed=level>=(topic?.maxLevel??5);
+  return `<article class="construction-notice research-notice is-complete" data-ui-key="research:${esc(notice.id)}" data-research-complete="${esc(notice.id)}"><header><span>${branch}研究完成</span><b>Lv.${notice.level}</b></header><strong class="research-notice-title">${esc(label)}</strong><span class="construction-progress" role="progressbar" aria-label="研究进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i style="width:100%"></i></span><footer><span>${maxed?'已满级':'已完成'}</span><b>100%</b></footer><div class="research-notice-actions"><button type="button" data-continue-research="${esc(notice.id)}" ${pendingId||maxed||research.active?'disabled':''} title="${maxed?'该项目已达最高等级':research.active?'已有研究进行中':`研究 Lv.${level+1}`}">继续研究</button><button type="button" data-read-research="${esc(notice.id)}" ${pendingId?'disabled':''}>知道了</button></div></article>`;
+ }).join('');
+}
+
 export function researchNoticeMarkup(research){
  const job=research?.active;if(!job)return '';
  const topic=advancedResearchTopic(job.topicId);
@@ -56,13 +68,13 @@ export function researchNoticeMarkup(research){
 
 export function createConstructionNotifications({
   notifications, campaignStore, getCampaignState = campaignStore.getState,
-  getTerritoryLabel = id => id, onLocate = () => {}, onDismissWonder = () => {}, showToast = () => {}, onUseProduction = () => {}, onCancelResearch = () => {}, now = Date.now,
+  getTerritoryLabel = id => id, onLocate = () => {}, onDismissWonder = () => {}, showToast = () => {}, onUseProduction = () => {}, onCancelResearch = () => {}, onResearchNotice = () => {}, now = Date.now,
   setIntervalImpl = setInterval, clearIntervalImpl = clearInterval,
 } = {}) {
   let playerId = null, offset = 0, serverSample = null, timer = null, renderKey = null, destroyed = false;
   let items = [], previous = new Map();
   const completed = new Map(), dismissedWonders = new Map();
-  let accountEpoch=0;
+  let accountEpoch=0,pendingResearch=null;
   const clock = () => now() + offset;
   function paintProgress() {
     const job=getCampaignState()?.formationResearch?.active,researchValue=researchProgress(job,clock()),bar=job?notifications.querySelector('[data-research-notice-progress]'):null;
@@ -92,7 +104,7 @@ export function createConstructionNotifications({
     if (destroyed) return;
     const state = getCampaignState();
     if (playerId !== (state?.playerId ?? null)) {
-      playerId = state?.playerId ?? null; accountEpoch++; dismissedWonders.clear(); previous.clear(); completed.clear(); offset = 0; serverSample = null;
+      playerId = state?.playerId ?? null; accountEpoch++; pendingResearch=null; dismissedWonders.clear(); previous.clear(); completed.clear(); offset = 0; serverSample = null;
     }
     if (syncClock) {
       const serverNow = Number(state?.formationResearch?.serverNow ?? state?.scouting?.serverNow ?? state?.training?.serverNow);
@@ -110,14 +122,25 @@ export function createConstructionNotifications({
     const pending=new Set((state?.neutralRewards?.pending??[]).map(r=>r.id));
     const notices=(state?.wonders?.competitionNotices??[]).filter(n=>!dismissedWonders.has(n.id)).map(n=>({...n,rewardAvailable:pending.has(n.rewardId)}));
     const research=state?.formationResearch,job=research?.active;
-    const key = JSON.stringify({items,notices,job,slots:job?research.slots:undefined});
-    notifications.hidden = !items.length&&!notices.length&&!job;
-    if (key !== renderKey) { renderKey = key; notifications.innerHTML = researchNoticeMarkup(research)+wonderCompetitionNoticesMarkup(notices)+constructionNotificationsMarkup(items); }
+    const researchCompleted=completedResearchNoticesMarkup(research,pendingResearch);
+    const key = JSON.stringify({items,notices,job,researchCompleted,slots:job?research.slots:undefined});
+    notifications.hidden = !items.length&&!notices.length&&!job&&!researchCompleted;
+    if (key !== renderKey) { renderKey = key; patchMarkup(notifications,researchNoticeMarkup(research)+researchCompleted+wonderCompetitionNoticesMarkup(notices)+constructionNotificationsMarkup(items)); }
     paintProgress();
     if ((items.length||job) && timer === null) timer = setIntervalImpl(refresh, 1000);
     if (!items.length && !job && timer !== null) { clearIntervalImpl(timer); timer = null; }
   }
   function locate(event) {
+    const researchButton=event.target.closest('[data-continue-research], [data-read-research]');
+    if(researchButton&&(researchButton.dataset.continueResearch||researchButton.dataset.readResearch)){
+      if(researchButton.disabled||pendingResearch)return;
+      const id=researchButton.dataset.continueResearch??researchButton.dataset.readResearch;
+      const epoch=accountEpoch;pendingResearch=id;refresh();
+      Promise.resolve().then(()=>onResearchNotice(id,researchButton.dataset.continueResearch?'continue-notice':'read-notice'))
+        .catch(error=>{if(!destroyed&&epoch===accountEpoch)showToast(error.message||'研究操作失败，请重试');})
+        .finally(()=>{if(!destroyed&&epoch===accountEpoch){pendingResearch=null;refresh();}});
+      return;
+    }
     const researchId=event.target.closest("[data-cancel-research]")?.dataset.cancelResearch;if(researchId){onCancelResearch(researchId);return;}
     const dismiss=event.target.closest('[data-wonder-race-dismiss]')?.dataset.wonderRaceDismiss;
     if(dismiss){

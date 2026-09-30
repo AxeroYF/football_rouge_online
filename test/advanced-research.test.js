@@ -62,3 +62,50 @@ test('research rewards display the active topic and allocation, or keep the rewa
  f.command('start-topic',{topicId:BIOLOGY_TOPIC});const html=researchRewardMarkup({formationResearch:f.s.formationResearch.publicState(f.a)},reward);
  assert.match(html,/生物研究/);assert.match(html,/比赛耐力/);assert.match(html,/剩余 50 保留/);assert.match(html,/data-apply-research-reward/);assert.doesNotMatch(html,/研究系统开放后/);
 });
+
+
+test('enhancement completion notice persists, continues exactly one level and dismisses without losing research',()=>{
+ const f=fixture(),topicId='enhancement:2:1';f.command('start-topic',{topicId});const firstId=f.a.formationResearch.active.id;f.finish();
+ const notice=f.a.formationResearch.completionNotices[0];assert.equal(notice.id,firstId);assert.equal(notice.level,1);
+ assert.deepEqual(f.saved().accounts[f.a.id].formationResearch.completionNotices,[notice]);
+ const revision=f.a.formationResearch.revision;
+ f.command('continue-notice',{noticeId:firstId});assert.equal(f.a.formationResearch.active.level,2);assert.equal(f.a.formationResearch.active.topicId,topicId);assert.deepEqual(f.a.formationResearch.completionNotices,[]);
+ assert.throws(()=>f.command('continue-notice',{noticeId:firstId,revision}),/已更新/);
+ f.finish();const second=f.a.formationResearch.completionNotices[0];f.command('read-notice',{noticeId:second.id});
+ assert.equal(f.a.formationResearch.topicLevels[topicId],2);assert.equal(f.a.formationResearch.active,null);assert.deepEqual(f.a.formationResearch.completionNotices,[]);
+ f.command('read-notice',{noticeId:second.id,revision:-1});assert.deepEqual(f.a.formationResearch.completionNotices,[]);
+});
+
+test('completed notice survives a busy queue, max level and failed continue commit',()=>{
+ const f=fixture(),topicId='enhancement:2:1';f.command('start-topic',{topicId});f.finish();const id=f.a.formationResearch.completionNotices[0].id;
+ f.command('start-topic',{topicId:BIOLOGY_TOPIC});assert.throws(()=>f.command('continue-notice',{noticeId:id}),/同时只能/);assert.equal(f.a.formationResearch.completionNotices[0].id,id);
+ f.command('cancel',{jobId:f.a.formationResearch.active.id});
+ const before=structuredClone(f.a.formationResearch),save=f.s.repository.save.bind(f.s.repository);let writes=0;
+ f.s.repository.save=value=>{if(++writes===2)throw Error('disk failure');save(value);};
+ assert.throws(()=>f.command('continue-notice',{noticeId:id}),/disk failure/);assert.deepEqual(f.a.formationResearch,before);f.s.repository.save=save;
+ f.a.formationResearch.topicLevels[topicId]=10;assert.throws(()=>f.command('continue-notice',{noticeId:id}),/最高/);assert.equal(f.a.formationResearch.completionNotices.length,1);
+});
+
+test('research completion markup keeps full progress and both actions, disabling unavailable continuation',async()=>{
+ const {completedResearchNoticesMarkup}=await import('../client/buildings/construction-notifications.js');
+ const data={completionNotices:[{id:'notice',topicId:'enhancement:2:1',level:1}],topicLevels:{'enhancement:2:1':1},active:null};
+ let html=completedResearchNoticesMarkup(data);assert.match(html,/aria-valuenow="100"/);assert.match(html,/继续研究/);assert.match(html,/知道了/);assert.doesNotMatch(html,/data-continue-research="notice" disabled/);
+ for(const changed of [{active:{id:'other'}},{topicLevels:{'enhancement:2:1':10}}])assert.match(completedResearchNoticesMarkup({...data,...changed}),/data-continue-research="notice" disabled/);
+ assert.match(completedResearchNoticesMarkup(data,'notice'),/data-read-research="notice" disabled/);
+});
+
+
+test('formation directions and biology retain completion and continue their own next level',()=>{
+ for(const branch of ['formation','biology']){
+  const f=fixture();
+  if(branch==='formation'){f.command('confirm',{slotId:'custom-1',formation:createFormationResearchSlot(0)});f.command('start',{slotId:'custom-1',direction:'buildUp'});}
+  else f.command('start-topic',{topicId:BIOLOGY_TOPIC});
+  f.finish();const notice=f.a.formationResearch.completionNotices[0];assert.equal(notice.level,1);
+  f.command('continue-notice',{noticeId:notice.id,topicId:'enhancement:2:1',slotId:'custom-2',direction:'fake'});
+  const job=f.a.formationResearch.active;assert.equal(job.level,2);
+  if(branch==='formation'){assert.equal(job.slotId,'custom-1');assert.equal(job.direction,'buildUp');}else assert.equal(job.topicId,BIOLOGY_TOPIC);
+  assert.deepEqual(f.a.formationResearch.completionNotices,[]);
+  f.finish();f.command('read-notice',{noticeId:f.a.formationResearch.completionNotices[0].id});
+  assert.equal(branch==='formation'?f.a.formationResearch.slots[0].levels.buildUp:f.a.formationResearch.topicLevels[BIOLOGY_TOPIC],2);
+ }
+});

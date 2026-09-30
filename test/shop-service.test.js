@@ -53,3 +53,19 @@ test('legend controls allow oil when gold is insufficient and never offer oil fo
  const f=setup(),a=f.account('a');a.gold=0;a.oil={balance:150};const html=shopWindowMarkup(f.shop.publicState(a));
  assert.equal((html.match(/data-shop-currency="oil"/g)||[]).length,3);assert.match(html,/150 石油/);assert.doesNotMatch(html,/data-shop-currency="oil"[^>]+disabled/);assert.match(html,/共用限量库存/);
 });
+
+
+test('compact shop purchases avoid full world and roster projection and replay one card without duplicates',async()=>{
+ const {CampaignService}=await import('../campaign-service.mjs');const {mergeShopPurchase}=await import('../client/shop/shop-controller.js');
+ const f=setup(),a=f.account('a');a.playerId=a.id;
+ const service={save(){},shop:f.shop,playerPacks:f.playerPacks,actionState(account,options){assert.equal(options.includeRoster,false);return {playerId:account.id,wallet:{gold:account.gold}};},state(){throw Error('full state must not be built');}};
+ service.playerPacks=new PlayerPackService({playerDatabase:catalog});
+ const state={playerId:a.id,draft:{roster:[],teamName:'preserved'},world:{unchanged:true},tactics:{unchanged:true}};
+ const req={...request(f.shop.publicState(a)),compact:true};
+ const response=CampaignService.prototype.buyShop.call(service,a,req);assert.equal(response.state,undefined);assert.equal(response.statePatch.draft,undefined);assert.equal(response.rosterDelta.cards.length,1);
+ const merged=mergeShopPurchase(state,response);assert.equal(merged.world,state.world);assert.equal(merged.tactics,state.tactics);assert.equal(merged.draft.roster.length,1);assert.equal(merged.draft.teamName,'preserved');
+ const replay=CampaignService.prototype.buyShop.call(service,a,req);assert.equal(mergeShopPurchase(merged,replay).draft.roster.length,1);assert.equal(a.gold,900000);
+ const pack=CampaignService.prototype.buyShop.call(service,a,{requestId:crypto.randomUUID(),kind:'pack',itemId:SHOP_PACKS[0].type,compact:true});
+ assert.equal(pack.rosterDelta,undefined);assert.equal(pack.statePatch.inventory.totalPacks,1);assert.equal(mergeShopPurchase(merged,pack).draft,merged.draft);
+ assert.equal(mergeShopPurchase({...state,playerId:'other'},response).playerId,'other');
+});

@@ -150,9 +150,9 @@ export function createCampaignApiHandler({ campaign } = {}) {
     if (request.method === "POST" && pathname === "/api/campaign/expedition/cancel") {
       return sendJson(response, 200, campaign.cancelExpedition(account,{compact:body.compact===true,movementId:body.movementId}));
     }
-    if (request.method === "POST" && /^\/api\/campaign\/research\/(confirm|rename|start|start-topic|cancel)$/.test(pathname)) {
-      campaign.formationResearch.mutate(account,pathname.split('/').at(-1),body);
-      return sendJson(response,200,{state:campaign.state(account)});
+    if (request.method === "POST" && /^\/api\/campaign\/research\/(confirm|rename|start|start-topic|cancel|read-notice|continue-notice)$/.test(pathname)) {
+      const research=campaign.formationResearch.mutate(account,pathname.split('/').at(-1),body);
+      return sendJson(response,200,body.compact===true?{statePatch:{playerId:account.id,formationResearch:research}}:{state:campaign.state(account)});
     }
     if (request.method === "POST" && pathname === "/api/campaign/tactics/preview") return sendJson(response, 200, { tacticalShapePreview:campaignTacticalPreview(account, body) });
     if (request.method === "POST" && pathname === "/api/campaign/tactics") {

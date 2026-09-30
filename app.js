@@ -448,6 +448,11 @@ buildingPanelController = createBuildingPanelController({
 createConstructionNotifications({
   notifications: document.querySelector("#construction-notifications"),
   onUseProduction:rewardId=>neutralRewardController.open(rewardId),
+  onResearchNotice:async(noticeId,action)=>{
+    const account=campaignState.playerId;
+    const value=await campaignRequest('/api/campaign/research/'+action,{method:'POST',body:{noticeId,revision:campaignState.formationResearch.revision,compact:true}});
+    if(account===campaignState.playerId)campaignStore.setState({...campaignState,...value.statePatch},{source:'research-notice'});
+  },
   onCancelResearch:async jobId=>{if(!confirm('中止本级研究？本级进度将清零，已完成等级保留。'))return;try{const value=await campaignRequest('/api/campaign/research/cancel',{method:'POST',body:{jobId,revision:campaignState.formationResearch.revision}});campaignStore.setState(value.state,{source:'research-cancel'});}catch(error){showToast(error.message||'中止失败，请重试');}},
   showToast,
   onDismissWonder:noticeId=>campaignRequest('/api/campaign/wonders/notifications/read',{method:'POST',body:{noticeId,compact:true}}),
@@ -1010,7 +1015,7 @@ async function syncCampaignWorldState() {
 function startCampaignStatePolling() {
   if (campaignStatePollTimer) return;
   campaignStatePollTimer = createAdaptivePoller({run:syncCampaignWorldState,isBusy:()=>Boolean(campaignState?.activeChallengeId||campaignState?.expeditionPiece?.moving)});
-  campaignStore.subscribe(({source})=>{if(source!=="world-poll"&&source!=="subscribe")campaignStatePollTimer.refresh();});
+  campaignStore.subscribe(({source})=>{if(source!=="world-poll"&&source!=="subscribe"&&source!=="shop-buy-compact")campaignStatePollTimer.refresh();});
 }
 
 function finishMapLoading() {

@@ -281,7 +281,15 @@ export class CampaignService {
   }
 
   shopView(account){return {shop:this.shop.publicState(account)};}
-  buyShop(account,body){this.save();const purchase=this.shop.buy(account,body);return {purchase,shop:this.shop.publicState(account),state:this.state(account)};}
+  buyShop(account,body){
+    this.save();const purchase=this.shop.buy(account,body),shop=this.shop.publicState(account);
+    if(body?.compact!==true)return {purchase,shop,state:this.state(account)};
+    const statePatch={...this.actionState(account,{includeRoster:false}),inventory:this.playerPacks.publicInventory(account)};
+    if(purchase.kind!=='player')return {purchase,shop,statePatch};
+    const player=account.draft.roster.find(p=>p.id===purchase.playerId);
+    return {purchase,shop,statePatch:{...statePatch,playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))}},
+      rosterDelta:{cards:player?[{...player,card:createPlayerCardViewModel(player)}]:[],counts:rosterCounts(account.draft.roster),positionCounts:draftPositionCounts(account.draft.roster),pickNumber:account.draft.roster.length}};
+  }
 
   respondSponsorship(account, offerId, action) {
     this.buildings.settleConstructions(this.world);

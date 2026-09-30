@@ -14,7 +14,14 @@ export class FormationResearchService {
   if(!account.setupComplete)throw new Error('请先完成建队');
   this.campaign.save();
   const before=account.formationResearch,data=copy(this.data(account));
+  if(action==='read-notice'&&!(data.completionNotices??[]).some(n=>n.id===body.noticeId))return this.publicState(account);
   if(body.revision!==data.revision)throw conflict('研究状态已更新，请重试');
+  if(action==='continue-notice'){
+   const notice=(data.completionNotices??[]).find(n=>n.id===body.noticeId);
+   if(!notice)throw conflict('完成通知已处理，请刷新');
+   body={...body,topicId:notice.topicId,slotId:notice.slotId,direction:notice.direction};
+   action=notice.topicId?'start-topic':'start';
+  }
   const slot=data.slots.find(s=>s.id===body.slotId);
   const now=this.campaign.now();
   if(action==='confirm'){
@@ -32,17 +39,21 @@ export class FormationResearchService {
    const name=typeof body.name==='string'?body.name.trim():'';
    if(!name||name.length>24||/[\u0000-\u001f\u007f]/.test(name))throw new Error('阵型名称需为 1–24 个字符');
    slot.name=name;
+  }else if(action==='read-notice'){
+   data.completionNotices=(data.completionNotices??[]).filter(n=>n.id!==body.noticeId);
   }else if(action==='start-topic'){
    const topic=advancedResearchTopic(body.topicId);if(!topic)throw new Error('研究对象无效或尚未开放');
    if(data.active)throw conflict('俱乐部同时只能研究一项');
    const level=advancedResearchLevel(account,topic.id)+1;if(level>topic.maxLevel)throw new Error('该方向已达最高等级');
    data.active={id:crypto.randomUUID(),topicId:topic.id,branch:topic.branch,level,required:ADVANCED_RESEARCH_WORK[topic.branch][level-1],completed:0,workPeriodMs:period,startedAt:now,updatedAt:now};
+   data.completionNotices=(data.completionNotices??[]).filter(n=>n.topicId!==topic.id);
   }else if(action==='start'){
    if(!slot||slot.confirmedAt==null)throw new Error('请先确定阵型');
    if(data.active)throw conflict('俱乐部同时只能研究一项');
    if(!directions.some(d=>d.id===body.direction))throw new Error('研究方向无效');
    const level=(slot.levels[body.direction]??0)+1;if(level>5)throw new Error('该方向已达最高等级');
    data.active={id:crypto.randomUUID(),slotId:slot.id,direction:body.direction,level,required:this.campaign.wonders.researchRequirement(account,'formation',work[level-1]),completed:0,workPeriodMs:period,startedAt:now,updatedAt:now};
+   data.completionNotices=(data.completionNotices??[]).filter(n=>n.slotId!==slot.id||n.direction!==body.direction);
   }else if(action==='cancel'){
    if(data.active&&data.active.id!==body.jobId)throw conflict('研究项目已变化，请重试');
    data.active=null;
@@ -54,6 +65,8 @@ export class FormationResearchService {
  completeJob(data,job,at){
   if(job.topicId){data.topicLevels??={};data.topicLevels[job.topicId]=job.level;data.topicCompletedAt??={};data.topicCompletedAt[job.topicId]=at;}
   else {const slot=data.slots.find(s=>s.id===job.slotId);if(!slot)throw conflict('研究阵型不存在');slot.levels[job.direction]=job.level;slot.lastCompletedAt=at;}
+  data.completionNotices=[...(data.completionNotices??[]).filter(n=>n.topicId!==job.topicId||n.slotId!==job.slotId||n.direction!==job.direction),
+   {id:job.id,...(job.topicId?{topicId:job.topicId}:{slotId:job.slotId,direction:job.direction}),level:job.level,required:job.required,completedAt:at}];
   data.active=null;data.revision++;
  }
  assignReward(account,{rewardId,jobId}={}){

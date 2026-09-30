@@ -98,3 +98,8 @@
 .research-notice [data-cancel-research]{border-color:#517f91;color:#b2e3f1}
 .research-notice [data-cancel-research]:focus-visible{outline-color:var(--research-notice-accent)}
 @media(max-width:680px){#campaign-notifications{width:min(340px,calc(100vw - 20px))}.notification-center-header{min-height:36px}}
+
+.research-notice-actions{display:flex;gap:8px;grid-column:1/-1}
+.research-notice-actions button{flex:1;min-width:0;min-height:36px;padding:6px 8px;border:1px solid #517f91;border-radius:6px;background:#203a40;color:#d3f0f5;font:inherit;font-size:12px;cursor:pointer}
+.research-notice-actions button:disabled{opacity:.5;cursor:default}
+.research-notice-actions button:focus-visible{outline:2px solid #68cbe4;outline-offset:2px}

@@ -4,7 +4,7 @@ import {archiveFields,restoreArchivedFields} from '../infrastructure/history-arc
 import {DAILY_LEAGUE,LEAGUE_REWARDS,leagueDate,leagueDayStart,leagueStandings,leagueTicket} from '../../shared/config/daily-league.mjs';
 import {ELITE_CLUB_BY_ID} from '../../shared/config/elite-clubs.mjs';
 import {PLAYER_PACK_TYPES} from '../../shared/config/player-packs.mjs';
-import {buildAccountMatchSeat} from '../../shared/football/account-match-seat.mjs';
+import {buildAccountMatchSeat,defaultStartingEleven,defaultPositions} from '../../shared/football/account-match-seat.mjs';
 import {campaignBondCatalog} from '../../shared/football/campaign-bonds.mjs';
 import {setFitness,effectiveFitness} from '../../shared/football/fitness-lineup.mjs';
 import {applyLegConsequences} from './match-consequences.mjs';
@@ -18,6 +18,35 @@ const fail=(message,statusCode=409)=>{throw Object.assign(Error(message),{status
 const accountFields=['gold','goldLedger','inventory','resources','wonderHomeEvents','leagueNotices','leagueRewardDay','fitnessRecovery','leagueRegistration'];
 export function leagueLiveForAccount(world,id){return Object.values(world?.dailyLeague?.live??{}).find(f=>f.leg.home.id===id||f.leg.away.id===id)??null;}
 export function leaguePlayerLocked(world,id,playerId){const live=leagueLiveForAccount(world,id);return Boolean(live?.leg.match.teams.find(t=>t.id===id)?.players.some(p=>p.id===playerId));}
+
+// Supplement only short registrations; retain actual instances and independent league health.
+export function supplementLeagueRegistration(account,now){
+ const current=normalizeLeagueRegistration(account,now);
+ if(!current||current.playerIds.length>=15)return null;
+ const roster=account.draft?.roster??[],byId=new Map(roster.map(p=>[String(p.id),p]));
+ const ids=[...current.playerIds],families=new Set(ids.map(id=>enhancementFamily(byId.get(id))));
+ const ranked=[...roster].sort((a,b)=>Number(b.effectiveOverall??b.card?.overall??b.overall??0)-Number(a.effectiveOverall??a.card?.overall??a.overall??0)||String(a.id).localeCompare(String(b.id)));
+ const add=p=>{if(p&&ids.length<15&&!families.has(enhancementFamily(p))){ids.push(String(p.id));families.add(enhancementFamily(p));}};
+ // An automatic selection must be able to field a keeper when one is owned.
+ if(!ids.some(id=>byId.get(id)?.pool==='GK'))add(ranked.find(p=>p.pool==='GK'&&!families.has(enhancementFamily(p))));
+ for(const p of ranked)add(p);
+ if(ids.length===current.playerIds.length)return null;
+ const result=normalizeLeagueRegistration({...account,leagueRegistration:{...current,playerIds:ids}},now);
+ const players=leagueRoster(account,result).map(p=>leaguePlayerView(p,result.conditions[p.id],now));
+ const tactics=result.tactics,embedded=tactics.planSnapshots?.__s4V2;
+ const starters=embedded?.starters??tactics.starters??[];
+ if(starters.length!==11||starters.filter(id=>byId.get(id)?.pool==='GK').length!==1||tactics.vacantSlots?.length){
+  const eleven=defaultStartingEleven(players),selected=eleven.map(p=>String(p.id));
+  if(eleven.length===11&&eleven.filter(p=>p.pool==='GK').length===1){
+   const positions=defaultPositions(eleven),bench=ids.filter(id=>!selected.includes(id));
+   tactics.starters=selected;tactics.bench=bench;tactics.positions={...positions,...tactics.positions};delete tactics.vacantSlots;
+   if(embedded){embedded.starters=[...selected];embedded.bench=[...bench];delete embedded.vacantSlots;
+    if(embedded.positionPresets)for(const key of ['position1','position2','position3'])embedded.positionPresets[key]={...positions,...embedded.positionPresets[key]};
+   }
+  }
+ }
+ return result;
+}
 
 export class DailyLeagueService {
  constructor(campaign,{rules=DAILY_LEAGUE}={}){this.c=campaign;this.viewers=new Map();this.rules={...rules,usernames:rules.usernames??LEAGUE_USERNAMES};this.cursor=0;this.nextCheck=0;this.lastCheckpoint=this.c.now();this.restore();}
@@ -49,6 +78,18 @@ export class DailyLeagueService {
   return this.registrationView(account);
  }
 
+ // One bounded pass per competition, before kickoff; R45 has a dated in-progress exception.
+ prepareRegistrations(now=this.c.now()){
+  const day=this.day;
+  if(!day||day.rewarded||day.registrationMinimumCheckedAt!==undefined||!day.fixtures.some(f=>f.status!=='completed')||now<Math.min(...day.fixtures.map(f=>f.startsAt)))return false;
+  const started=day.fixtures.some(f=>f.status!=='scheduled');
+  if(started&&(day.id!=='2026-09-30'||leagueDate(now)!=='2026-09-30'))return false;
+  const accounts=day.teams.filter(t=>t.kind==='player').map(t=>this.c.accounts.get(t.id)).filter(a=>a?.setupComplete);
+  return this.transaction(accounts,()=>{
+   for(const a of accounts){const next=supplementLeagueRegistration(a,now);if(next)a.leagueRegistration=next;}
+   day.registrationMinimumCheckedAt=now;return true;
+  });
+ }
  restore(){for(const live of Object.values(this.day?.live??{}))restoreCampaignLiveLeg(live.leg);}
  participants(){
   const accounts=[...this.c.accounts.values()],teams=[],missing=[];
@@ -144,6 +185,7 @@ export class DailyLeagueService {
   let changed=false;
   if(now>=this.nextCheck){changed=this.ensureDay(now);this.nextCheck=now+10000;}
   if(!this.day||this.day.rewarded)return changed;
+  this.prepareRegistrations(now);
   const entries=Object.entries(this.day.live);
   if(entries.length){const [id,live]=entries[this.cursor++%entries.length],before=live.leg.match.nextChainIndex;advanceCampaignLiveLeg(live.leg,now,{maximumChains:maximumChainsPerMatch});changed=live.leg.match.nextChainIndex!==before||changed;if(live.leg.match.finished){this.settle(this.day.fixtures.find(f=>f.id===id),now);this.lastCheckpoint=now;return false;}}
   const pending=this.day.fixtures.find(f=>f.status==='scheduled');
