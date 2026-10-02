@@ -1,0 +1,14 @@
+import fs from 'node:fs';import {performance} from 'node:perf_hooks';
+import {presentPlayerTraits,playerTraitFitness} from '../shared/config/player-trait-presentation.mjs';
+import {FogSpatialIndex} from '../shared/map/fog-spatial.mjs';import {createFogAreaVisibility} from '../client/map/fog-area-visibility.js';
+const read=f=>JSON.parse(fs.readFileSync(f,'utf8'));
+const players=read('assets/data/s4-player-catalog.json').slice(0,200).map(p=>({...p,state:{fitness:73}}));
+const measure=fn=>{const start=performance.now();const value=fn();return {ms:performance.now()-start,value}};
+const loop=fn=>{let sum=0;for(let round=0;round<10;round++)for(const p of players)sum+=fn(p);return sum};loop(playerTraitFitness);loop(p=>presentPlayerTraits(p).effectiveFitness);
+const fitness={old:measure(()=>loop(p=>presentPlayerTraits(p).effectiveFitness)),optimized:measure(()=>loop(playerTraitFitness))};
+const geo=read('assets/data/campaign-territories.geojson'),index=new FogSpatialIndex(geo),ids=geo.features.slice(0,6).map(f=>f.properties.territoryId);
+const fog={enabled:true,sourceTerritoryIds:ids,exploredSourceTerritoryIds:ids,sharedVision:[{sourceTerritoryIds:ids.slice(0,3),exploredSourceTerritoryIds:ids}]},bounds={minX:10,maxX:20,minZ:10,maxZ:20};
+index.models(fog);const query=createFogAreaVisibility(index);query.update(fog);
+const areas=fn=>{let sum=0;for(let i=0;i<10000;i++)sum+=Number(fn());return sum};
+const visibility={old:measure(()=>areas(()=>{const m=index.models(fog);return index.touchesLand(m.current,bounds)||index.touchesLand(m.explored,bounds)})),optimized:measure(()=>areas(()=>query.isVisible(bounds)))};
+const report={scope:'Same-process comparisons, same inputs and output checksums; not production capacity',fitness,visibility};fs.writeFileSync('outputs/performance-20260919/microbench.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

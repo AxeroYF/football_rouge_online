@@ -1,0 +1,23 @@
+/* Map entry points share one row. Apply after feature styles so orientation rules
+   cannot put independent panels into the same fixed coordinates. */
+@media(max-width:1280px),(max-height:600px){
+ :root{--map-hud-edge:max(10px,env(safe-area-inset-left),env(safe-area-inset-right));--map-hud-gap:8px;--map-hud-column:calc((100vw - 2 * var(--map-hud-edge) - 2 * var(--map-hud-gap)) / 3);--map-hud-top:82px;--map-hud-header:44px}
+ #daily-league-sidebar,#daily-league-sidebar.is-expanded,#server-players,#server-players:has(.server-player-list[hidden]),#campaign-notifications,#campaign-notifications.is-collapsed{top:var(--map-hud-top);width:var(--map-hud-column);max-width:none;max-height:none;overflow:visible;border-radius:10px;box-sizing:border-box}
+ #daily-league-sidebar,#daily-league-sidebar.is-expanded{left:var(--map-hud-edge);right:auto}
+ #server-players{left:calc(var(--map-hud-edge) + var(--map-hud-column) + var(--map-hud-gap));right:auto}
+ #campaign-notifications,#campaign-notifications.is-collapsed{left:auto;right:var(--map-hud-edge)}
+ #daily-league-sidebar>header,#server-players>header,#campaign-notifications>.notification-center-header{height:var(--map-hud-header);min-height:var(--map-hud-header);padding:0 8px;gap:4px;flex-wrap:nowrap;border-radius:10px;box-sizing:border-box;font-size:13px;background:#192c21;line-height:1.25}
+ #daily-league-sidebar>header strong,#server-players>header strong,#campaign-notifications>.notification-center-header strong{min-width:0;white-space:nowrap}
+ #server-players>header span,#campaign-notifications>.notification-center-header span{font-size:12px;margin-left:3px}
+ #daily-league-sidebar>header button,#server-players>header button,#campaign-notifications>.notification-center-header button{flex:none;min-height:40px;padding:0 4px;font-size:12px;white-space:nowrap}
+ #server-players>.server-player-list{position:absolute;top:calc(var(--map-hud-header) + 8px);left:50%;transform:translateX(-50%);width:min(360px,calc(100vw - 2 * var(--map-hud-edge)));max-height:calc(var(--mobile-viewport-height,100dvh) - var(--map-hud-top) - var(--map-hud-header) - 22px);box-sizing:border-box;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;background:#15291bf5;border:1px solid #50634b;border-radius:10px;box-shadow:0 12px 28px #0005}
+ #campaign-notifications>.notification-center-list{position:absolute;top:calc(var(--map-hud-header) + 8px);right:0;width:min(360px,calc(100vw - 2 * var(--map-hud-edge)));max-height:calc(var(--notification-available-height,100dvh) - var(--map-hud-header) - 8px);box-sizing:border-box;padding:0 0 4px}
+ .map-stage.has-stage-window>#daily-league-sidebar,.map-stage.has-stage-window>#server-players,.map-stage.has-stage-window>#campaign-notifications{visibility:hidden;pointer-events:none}
+}
+@media(max-width:680px){:root{--map-hud-top:68px}}
+@media(max-width:540px){
+ :root{--map-hud-header:64px;--map-hud-gap:6px}
+ #daily-league-sidebar>header,#server-players>header,#campaign-notifications>.notification-center-header{flex-direction:column;justify-content:center;gap:0;padding:5px 3px 0;font-size:12px}
+ #daily-league-sidebar>header button,#server-players>header button,#campaign-notifications>.notification-center-header button{width:100%;min-height:36px;flex:1}
+}
+@media(max-width:1280px) and (max-height:600px) and (orientation:landscape){:root{--map-hud-top:52px}}

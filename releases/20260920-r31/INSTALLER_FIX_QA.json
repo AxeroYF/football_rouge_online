@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "tests": 9,
+  "preflight": {
+    "passed": true,
+    "version": "20260920-r31",
+    "checks": [
+      "Complete 20260920-r30 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260920-r31 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 16,
+    "newFiles": 4,
+    "requiredBaseFiles": 1225,
+    "imports": 164,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "changes": [
+    "256KiB reusable hash buffer",
+    "Online preflight checks save metadata only",
+    "Full JSON validation after stop in a separate process that exits before startup",
+    "Visible progress and bounded systemctl waits"
+  ]
+}

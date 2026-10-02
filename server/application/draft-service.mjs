@@ -22,8 +22,10 @@ export class DraftService {
   start(account, teamName) {
     if (account.setupComplete) return;
     this.transaction(account, () => {
+      const rebuilding=account.eliminatedAt!=null&&!account.draft;
       account.draft ??= { teamName, roster: [], offer: [] };
       const changed = this.prepare(account.draft);
+      if(rebuilding)account.draft.totalPicks=22;
       if (account.draft.roster.length >= draftTargetSize(account.draft) && !missingDraftGoalkeepers(account.draft.roster)) { account.setupComplete = true; return true; }
       return changed;
     });

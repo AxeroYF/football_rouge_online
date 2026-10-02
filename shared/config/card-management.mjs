@@ -2,7 +2,7 @@ import { S4_ENHANCEMENT, s4EnhancementAbilityBonus } from "./enhancement.mjs";
 
 export const CARD_MANAGEMENT_DEFAULTS = Object.freeze({
   recycleEnabled: true,
-  recycleRatioBps: 2000,
+  recycleRatioBps: 1000,
   upgradeBonusBps: 1000,
   valuations: Object.freeze({ C: 400, B: 2000, A: 10000, S: 50000 }),
 });

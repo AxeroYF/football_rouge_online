@@ -32,7 +32,8 @@ export function ownsScoutTerritory(account, world, id) {
 }
 
 export const canDiscoverScoutTerritory=(account,world,id)=>canUseTerritory(world,account?.id,id);
-export const canVisitScoutTerritory=(account,world,id)=>canDiscoverScoutTerritory(account,world,id)||world?.territories?.[id]?.ownerType==="neutral";
+export const isJointScoutSite=(world,id)=>Boolean(world?.jointScoutSites?.territories?.some(t=>t.id===id));
+export const canVisitScoutTerritory=(account,world,id)=>isJointScoutSite(world,id)||Object.values(account?.scouting?.tasks??{}).some(t=>t.joint&&t.claimedAt==null&&t.territoryId===id)||canDiscoverScoutTerritory(account,world,id)||world?.territories?.[id]?.ownerType==="neutral";
 export function scoutMoveTargets(account, world, sourceId) {
   if (!canVisitScoutTerritory(account, world, sourceId)) return [];
   return Object.keys(world?.territories ?? {}).filter(id => id !== sourceId && canVisitScoutTerritory(account, world, id));

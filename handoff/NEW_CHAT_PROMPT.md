@@ -1,15 +1,19 @@
-继续 Rougelite 项目。工作树 D:/Project/game_test/.worktrees/Rougelite，分支 codex/rougelite。先读 handoff/CURRENT_STATE.md、handoff/GITHUB_BASELINE_2026-09-19.md、releases/CURRENT.json 和 releases/README.md。
+# 新对话继续提示 · R49 已部署
 
-上一轮基线整理及 GitHub 合并已经完成：仓库 AxeroYF/football_rouge_online，main 代码基线提交 1511faddb61f39b7d5d62070c204dbfdedec62b7，整理提交 8cc795b。GitHub 连接器没有创建 PR 权限，因此未创建 PR，通过已有 Git 凭据直接推送 main 并 fetch 核实。不要重新做一遍项目合并；后续纯交接提交以 Git 日志为准。
+请先阅读 `handoff/README.md`、`handoff/CURRENT_STATE.md` 的最新节、`handoff/MANIFEST.md`、`handoff/GITHUB_SYNC_20261002.md` 和 `releases/CURRENT.json`。
 
-服务器用户最后确认部署 R10；R11 已交付但未确认部署。本轮仅更新 GitHub 和交接，没有部署服务器，也没有生成新热更新包。已发布的 R9/R10/R11 包及 SHA 不得覆盖重打。增量基线以用户实际安装版本为准，正式服上传目录 /home/admin。
+项目为黄狗风云，工作树 `D:\Project\game_test\.worktrees\Rougelite`，Git 分支 `codex/rougelite`，远端 `https://github.com/AxeroYF/football_rouge_online.git`。不要误改根目录另一个游戏或第三部作品。
 
-当前源码包含 R11 地图加载恢复、豪门仅选择近72小时活跃玩家并在出发和抵达时复查。另有仓库整理：真实停服收益扣除名单外置为 DATA_DIR/downtime-recovery-plan.json（本地 data/，被 Git 忽略）；缺省为空，旧 R10 回执继续防重；移除历史开发管理员密码提示，生产通过 ADMIN_BOOTSTRAP_PASSWORD 配置；补齐三个默认地图高度文件和18张豪门活动礼包封面。上述源码整理不是已发布 R11 包内容，未来打包会单独列为差异。
+用户于 2026-10-02 确认 R49（20261001-r49）部署。下次服务器热更新以 R49 为基线。R46–R49 已覆盖 HUD 遮挡修复、开包增量、启动资源合并、动画恢复、石油购买卡包。完整重构和 V2.2 动态比赛已随更早 R44 部署，不要按旧 R43 文档当作待实施。
 
-验证已完成：npm run check 前置81、主测试1040、地图/模型161项通过；发布专项56及战术/管理员专项13项通过。干净 Git 检出安装依赖成功；正常地图、WebGL失败后的兼容切换、主模块失败后的恢复入口三项浏览器验证通过。日志在 outputs/repository-sync/；不因接续对话而重复全量测试。
+重要要求：
+- 开包完整视觉效果要保留；优化重复重建、冗余请求/存档。R47 曾过度削减动画，已在 R49 修正。
+- 正式入口是生成的 game.html 和 game-startup.js/css；前端改动后先执行 build-browser-module-versions.py，再执行 build-browser-startup.mjs，校验生成物并与源码一起提交。
+- 商店石油卡包价为 2/6/16/40，金币价保留；支付验证、幂等、存档失败回滚由服务器负责。
+- 低配服务器优先复用节点、增量响应、有界缓存；不要缓存含私有状态的全量响应，不能跳过结算或写盘失败处理。
+- 发布前检查实际基线、运行依赖、生成资源、相关测试及升级回滚；原发布包和历史哈希不可改写。
+- 用户要求热更新命令一行式；不要上传存档、账号、私有卡画和 outputs 到 Git。
 
-用户地图问题：账号状态在独立浏览器正常渲染；原浏览器的具体故障尚未复现，不能声称用户已恢复。不要删除存档、重置账号或再次扣除收益。
+R49 发布时 1690 项测试、381 个语法模块、32 项浏览器检查以及真实隔离服务验证通过。具体证据记录在 releases/20261001-r49/QA.json；旧 QA 仅代表对应发布时的验证，不等于之后开发自动通过。
 
-发布基线已纳入 releases/<版本>/BASELINE.json；后续打包不依赖本机旧 outputs。保留 .gitattributes 的原始字节规则，避免换行破坏哈希。真实存档、账号种子、私有回收清单、审计报告和本机运维诊断不能上传公开仓库。
-
-当前没有新增功能待实现，按用户下一条请求继续。操作前检查 Git 状态并保护并行工作树。手机视觉及 Android 暂缓；卡包必须保留流星雨、翻牌和三选一展示。
+当前任务已完成 Git 归档与 handoff 更新。后续按用户新请求继续，不自行重复部署或制作新版本。

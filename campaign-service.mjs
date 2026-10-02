@@ -1,27 +1,40 @@
-import {prepareDowntimeRecovery} from './server/application/downtime-recovery-service.mjs';
-import {resumeServerEconomy,economicCheckpoint,SERVER_ECONOMY_HEARTBEAT_MS} from './server/infrastructure/server-economy-clock.mjs';
-import {AirportService} from './server/application/airport-service.mjs';
-import {EliteRaidService} from './server/application/elite-raid-service.mjs';
-import {suppressionBoundary,expireSuppressions} from './server/application/raid-suppression.mjs';
-import {raidMatchForAccount} from './shared/config/elite-raids.mjs';
-import {CoalitionService} from './server/application/coalition-service.mjs';
-import {repairHeadquartersWars} from './server/application/war-settlement.mjs';
-import {OilService} from './server/application/oil-service.mjs';
-import {OperatingCostService} from './server/application/operating-cost-service.mjs';
+import { persistCampaign } from './server/application/campaign-persistence.mjs';
+import { composeCampaignState } from './server/application/campaign-state-view.mjs';
+import { publicDraft, rosterCounts } from './server/application/draft-view.mjs';
+import { settleAndPersistCampaign } from './server/application/campaign-settlement.mjs';
+import { maintainCampaignState } from './server/application/campaign-state-maintenance.mjs';
+import { CardPurchaseService } from './server/application/card-purchase-service.mjs';
+import { JointScoutingService } from './server/application/joint-scouting-service.mjs';
+import { normalizeLeagueRegistration, leagueRoster, leaguePlayerView } from './shared/config/league-registration.mjs';
+import { squadBatchSnapshot, previewSquadBatch, saveSquadBatch } from './server/application/squad-batch-service.mjs';
+import { prepareHistoryCompaction } from './server/application/history-compaction.mjs';
+
+import { resumeServerEconomy, SERVER_ECONOMY_HEARTBEAT_MS } from './server/infrastructure/server-economy-clock.mjs';
+import { AirportService } from './server/application/airport-service.mjs';
+import { DailyLeagueService } from './server/application/daily-league-service.mjs';
+import { EliteRaidService } from './server/application/elite-raid-service.mjs';
+
+import { CoalitionService } from './server/application/coalition-service.mjs';
+import { unitTravelEstimate } from './server/application/unit-travel.mjs';
+import { createUnitMovement } from './server/domain/expedition-piece.mjs';
+import { resolveLiberation, migrateOriginalOwners } from './server/application/territory-liberation.mjs';
+import { repairHeadquartersWars } from './server/application/war-settlement.mjs';
+import { OilService } from './server/application/oil-service.mjs';
+import { OperatingCostService } from './server/application/operating-cost-service.mjs';
 import { visibleMapUnits } from './server/application/map-unit-visibility.mjs';
 import { buildingVisibility } from './shared/buildings/building-visibility.mjs';
-import { allianceMembers, playerRelationship } from './shared/config/diplomacy.mjs';
+import { allianceMembers } from './shared/config/diplomacy.mjs';
 import { initializePositionInheritance } from './shared/config/position-inheritance.mjs';
 import { DiplomacyService } from "./server/application/diplomacy-service.mjs";
-import {EliteChallengeService} from './server/application/elite-challenge-service.mjs';
-import {ShopService} from './server/application/shop-service.mjs';
-import { campaignBondCatalog } from './shared/football/campaign-bonds.mjs';
+import { EliteChallengeService } from './server/application/elite-challenge-service.mjs';
+import { ShopService } from './server/application/shop-service.mjs';
+
 import { MedicalService } from './server/application/medical-service.mjs';
-import { facilityEffects } from './shared/config/facility-levels.mjs';
+
 import { FormationResearchService } from './server/application/formation-research-service.mjs';
 import { confirmedResearchFormation, matchesResearchFormation } from './shared/config/formation-research.mjs';
 import { WonderService } from "./server/application/wonder-service.mjs";
-import { fanIncomeIntervals } from "./shared/config/fans.mjs";
+
 import { validFanPreference } from './shared/config/fans.mjs';
 import { SponsorshipService } from './server/application/sponsorship-service.mjs';
 import { sponsoredTeamName, sponsoredStadiumName, sponsorById, activeSponsorContracts } from './shared/config/sponsorship.mjs';
@@ -36,55 +49,25 @@ import { TrainingService } from "./server/application/training-service.mjs";
 import { ScoutingService } from "./server/application/scouting-service.mjs";
 import crypto from "node:crypto";
 import { accountPasswordMatches } from "./server/domain/account-password.mjs";
-import {
-  canChooseHome,
-  claimHome,
-  listAttackableTerritoriesFrom,
-  OWNER_TYPES,
-} from "./territory-model.js";
-import { CAMPAIGN_ENGINE } from "./engine/campaign-match-engine.mjs";
+import { canChooseHome, claimHome, OWNER_TYPES } from "./territory-model.js";
+
 import { campaignWeatherHour, createCampaignWeatherSnapshot } from "./engine/campaign-weather.mjs";
 import { createTerritoryAiGarrison, publicTerritoryAiIntel, TERRITORY_AI_SCHEMA_VERSION } from "./engine/territory-ai.mjs";
 import { analyzeElevenBoardFormation, sanitizeFormationLines } from "./formation-rules.js";
-import {
-  CAMPAIGN_EXTRA_TIME_LIVE_MS,
-  CAMPAIGN_REGULATION_LIVE_MS,
-  CHALLENGE_FIRST_LEG_MS,
-  CHALLENGE_SECOND_LEG_COOLDOWN_MS,
-  CHALLENGE_SECOND_LEG_MS,
-  CHALLENGE_TOTAL_DURATION_MS,
-} from "./shared/config/challenge.mjs";
-import { DRAFT_VERSION, DRAFT_SIZE, LINE_KEYS, draftPositionCounts, draftTargetSize, availableDraftPools, hasCurrentDraftOffer } from "./shared/config/draft.mjs";
+import { CHALLENGE_FIRST_LEG_MS, CHALLENGE_SECOND_LEG_COOLDOWN_MS, CHALLENGE_SECOND_LEG_MS, CHALLENGE_TOTAL_DURATION_MS } from "./shared/config/challenge.mjs";
+import { DRAFT_SIZE, LINE_KEYS, draftPositionCounts } from "./shared/config/draft.mjs";
 import { DraftService } from "./server/application/draft-service.mjs";
 import { STARTING_GOLD } from "./shared/config/economy.mjs";
-import {
-  PLAYER_PACK_DEFINITIONS,
-} from "./shared/config/player-packs.mjs";
+import { PLAYER_PACK_DEFINITIONS } from "./shared/config/player-packs.mjs";
 import { LINE_LABELS } from "./shared/football/labels.js";
-import {
-  assertExpeditionCapacity,
-  autoCompletePlayerSquads,
-  isPlayerSquadId,
-  normalizePlayerSquads,
-  PLAYER_SQUAD_DEFINITIONS,
-  PLAYER_SQUAD_IDS,
-} from "./shared/config/player-squads.mjs";
+import { assertExpeditionCapacity, autoCompletePlayerSquads, isPlayerSquadId, normalizePlayerSquads, PLAYER_SQUAD_DEFINITIONS, PLAYER_SQUAD_IDS } from "./shared/config/player-squads.mjs";
 import { createPlayerCardViewModel } from "./shared/player-card/player-card-contract.js";
 import { ChallengeService, publicChallengeView } from "./server/application/challenge-service.mjs";
 import { BuildingService } from "./server/application/building-service.mjs";
 import { EconomyService } from "./server/application/economy-service.mjs";
 import { PlayerPackService } from "./server/application/player-pack-service.mjs";
 import { nextAvailablePlayerMapColor } from "./server/domain/player-map-colors.mjs";
-import {
-  cancelExpeditionMovement,
-  estimateExpeditionMove,
-  expeditionAttackSource,
-  moveExpeditionPiece,
-  normalizeExpeditionPiece,
-  placeExpeditionPiece,
-  publicExpeditionPiece,
-  selectExpeditionStyle,
-} from "./server/domain/expedition-piece.mjs";
+import { cancelExpeditionMovement, estimateExpeditionMove, placeExpeditionPiece, publicExpeditionPiece, selectExpeditionStyle } from "./server/domain/expedition-piece.mjs";
 import { migrateCampaignSave } from "./server/infrastructure/campaign-save-migrations.mjs";
 import { JsonCampaignRepository } from "./server/infrastructure/json-campaign-repository.mjs";
 
@@ -144,29 +127,6 @@ function passwordDigest(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString("hex");
 }
 
-function rosterCounts(roster) {
-  return Object.fromEntries(LINE_KEYS.map((line) => [line, roster.filter((player) => player.pool === line).length]));
-}
-
-function publicDraft(account) {
-  const draft = account.draft;
-  if (!draft) return null;
-  const playerWithCard = (player) => ({ ...player, card:createPlayerCardViewModel(player) });
-  return {
-    teamName: draft.teamName,
-    roster: draft.roster.map(playerWithCard),
-    offer: (hasCurrentDraftOffer(draft) ? draft.offer : []).map(playerWithCard),
-    offerId: hasCurrentDraftOffer(draft) ? draft.offerId : null,
-    offerPool: hasCurrentDraftOffer(draft) ? draft.offerPool : null,
-    availablePools: account.setupComplete ? [] : availableDraftPools(draft),
-    positionCounts: draftPositionCounts(draft.roster),
-    pickNumber: draft.roster.length + (account.setupComplete ? 0 : 1),
-    totalPicks: account.setupComplete ? draft.totalPicks ?? 22 : draftTargetSize(draft),
-    counts: rosterCounts(draft.roster),
-    complete: account.setupComplete === true,
-  };
-}
-
 import { ConstructionProductionService } from './server/application/construction-production-service.mjs';
 import { TerritoryProductionService } from "./server/application/territory-production-service.mjs";
 
@@ -198,6 +158,7 @@ export class CampaignService {
     this.launchRewards = new LaunchRewardService({ economy: this.economy, playerPacks: this.playerPacks });
     this.drafting = new DraftService({ catalog: this.playerDatabase, random: this.random, save: () => this.save() });
     const saved = this.repository.load();
+    if(saved)prepareHistoryCompaction({accounts:new Map(Object.entries(saved.accounts??{})),world:saved.world},{maxRecords:Infinity});
     this.economyResume = this.pauseEconomyWhenStopped ? resumeServerEconomy(saved, this.now()) : null;
     const migration = migrateCampaignSave({
       saved,
@@ -240,10 +201,13 @@ export class CampaignService {
     this.enhancement = new EnhancementService({ economy: this.economy, now: this.now, random: this.random, save: () => this.save() });
     this.shop=new ShopService({world:this.world,oil:this.oil,playerDatabase:this.playerDatabase,economy:this.economy,playerPacks:this.playerPacks,enhancement:this.enhancement,now:this.now,random:this.random,save:()=>this.save()});
     this.cardManagement = new CardManagementService({ accounts: this.accounts, world: this.world, catalog: this.playerLibrary, economy: this.economy, now: this.now, random: this.random, save: () => this.save() });
+    this.cardPurchases = new CardPurchaseService(this);
     const cardHistoryChanged = this.cardManagement.migrateHistory();
     this.training = new TrainingService({ economy: this.economy, buildings: this.buildings, territoryIndex: this.territoryIndex, now: this.now, random: this.random, save: () => this.save() });
-    this.scouting = new ScoutingService({ playerDatabase: this.playerDatabase, buildings: this.buildings, economy: this.economy, territoryIndex: this.territoryIndex, now: this.now, random: this.random, save: () => this.save() });
+    this.scouting = new ScoutingService({ getProduction:(account,world)=>this.territoryProduction?.allocation(account,world).rates.production??0, playerDatabase: this.playerDatabase, buildings: this.buildings, economy: this.economy, territoryIndex: this.territoryIndex, now: this.now, random: this.random, save: () => this.save() });
     this.scouting.fog=this.fog;
+    this.jointScouting=new JointScoutingService(this);
+    this.scouting.siteProvider=()=>this.jointScouting.sites();
     const scoutingChanged = this.scouting.migrate(this.accounts, this.world);
     this.challenges = challenges ?? new ChallengeService({
       world: this.world,
@@ -267,6 +231,7 @@ export class CampaignService {
     this.fitness=new ExpeditionFitnessService({world:this.world,accounts:this.accounts,territoryIndex:this.territoryIndex,now:this.now});
     this.challenges.fitness=this.fitness;
     this.eliteRaids=new EliteRaidService(this);
+    this.dailyLeague=new DailyLeagueService(this);
     this.airports=new AirportService(this);
     this.scouting.oil=this.oil;
     this.buildings.getRuntimeEffect=(account,territoryId,building)=>{
@@ -284,12 +249,12 @@ export class CampaignService {
       return '';
     };
     this.enhancement.world=this.world;
+    migrateOriginalOwners({world:this.world,accounts:this.accounts});
     repairHeadquartersWars(this.world,this.accounts,this.now());
     this.challenges.restoreActiveChallenges();
     const fogChanged = this.fog.refreshAll(this.accounts, this.world);
     if (rewardsChanged || sponsorsChanged || migration.changed || inventoriesChanged || buildingsChanged || fogChanged || cardHistoryChanged || scoutingChanged || this.territoryProduction || this.fitness) this.save();
   }
-
 
   economyDue(now = this.now()) {
     return Boolean((this.pauseEconomyWhenStopped && now-(this.world?.serverEconomyClock?.lastPersistedAt??0)>=SERVER_ECONOMY_HEARTBEAT_MS) || this.airports?.due(now) || this.oil?.due(this.accounts,now) || this.operatingCosts?.due(this.accounts,now) || this.medical?.due(now) || this.fitness?.due(now) || this.territoryProduction?.due(this.world, now) || this.sponsorship.due(this.accounts, now));
@@ -316,7 +281,15 @@ export class CampaignService {
   }
 
   shopView(account){return {shop:this.shop.publicState(account)};}
-  buyShop(account,body){this.save();const purchase=this.shop.buy(account,body);return {purchase,shop:this.shop.publicState(account),state:this.state(account)};}
+  buyShop(account,body){
+    this.save();const purchase=this.shop.buy(account,body),shop=this.shop.publicState(account);
+    if(body?.compact!==true)return {purchase,shop,state:this.state(account)};
+    const statePatch={...this.actionState(account,{includeRoster:false}),inventory:this.playerPacks.publicInventory(account)};
+    if(purchase.kind!=='player')return {purchase,shop,statePatch};
+    const player=account.draft.roster.find(p=>p.id===purchase.playerId);
+    return {purchase,shop,statePatch:{...statePatch,playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))}},
+      rosterDelta:{cards:player?[{...player,card:createPlayerCardViewModel(player)}]:[],counts:rosterCounts(account.draft.roster),positionCounts:draftPositionCounts(account.draft.roster),pickNumber:account.draft.roster.length}};
+  }
 
   respondSponsorship(account, offerId, action) {
     this.buildings.settleConstructions(this.world);
@@ -338,80 +311,11 @@ export class CampaignService {
   }
 
   persist() {
-    const previous=this.world?.serverEconomyClock;
-    try{
-      if(this.pauseEconomyWhenStopped&&this.world)this.world.serverEconomyClock=economicCheckpoint(this.world,this.now());
-      this.repository.save({accounts:Object.fromEntries(this.accounts),world:this.world});
-    }catch(error){
-      if(this.world){if(previous===undefined)delete this.world.serverEconomyClock;else this.world.serverEconomyClock=previous;}
-      error.campaignPersistenceFailure=true;throw error;
-    }
+    return persistCampaign(this);
   }
 
   save() {
-    const rollbacks=[];
-    try {
-      const now=this.now();
-      if(this.airports)rollbacks.push(this.airports.prepare(now).rollback);
-      if(this.coalitions)rollbacks.push(this.coalitions.prepare(now).rollback);
-      if(this.territoryProduction){
-        let cursor=this.world?.resourceEconomy?.settledAt??now;
-        let first=true;
-        while(first||cursor<now){
-          first=false;
-          // Probe construction against the saved production plan, then rewind.
-          // Settle at each actual completion so new auras never affect earlier hours.
-          const candidates=Object.values(this.world?.territories??{}).flatMap(t=>(t.buildings??[]).filter(b=>(b.status==='constructing'||b.upgradeTo)&&!b.productionWork?.paused));
-          let boundary=suppressionBoundary(this.world,cursor,this.oil.nextSupplyBoundary(this.accounts,cursor,now));
-          if(candidates.length&&cursor<now){
-            const economy=this.world.resourceEconomy;
-            const intervals=Object.fromEntries(Object.entries(economy?.fanPlans??{}).map(([id,plan])=>[id,fanIncomeIntervals(plan,cursor,now)]));
-            const capacities=Object.fromEntries(Object.entries(economy?.rates??{}).map(([id,r])=>[id,r.production]));
-            const probe=this.constructionProduction.prepare(this.world,now,capacities,intervals);
-            try{for(const b of candidates)if(b.status==='active'){const completedAt=b.upgradeCompletedAt??b.builtAt;if(completedAt>cursor)boundary=Math.min(boundary,completedAt);};}finally{probe.rollback();}
-          }
-          rollbacks.push(this.oil.prepare(this.accounts,this.world,boundary).rollback);
-          if(this.fitness)rollbacks.push(this.fitness.prepare(boundary).rollback);
-          const production=this.territoryProduction.prepare(this.accounts,this.world,boundary);rollbacks.push(production.rollback);
-          const research=this.formationResearch.prepare(this.accounts,production.capacityIntervals,boundary);rollbacks.push(research.rollback);
-          const rates=this.world.resourceEconomy.rates;
-          const construction=this.constructionProduction.prepare(this.world,boundary,Object.fromEntries(Object.entries(rates).map(([id,r])=>[id,r.production])),production.capacityIntervals);rollbacks.push(construction.rollback);
-          const sponsorship=this.sponsorship.prepare(this.accounts,boundary);rollbacks.push(sponsorship.rollback);
-          rollbacks.push(this.operatingCosts.prepare(this.accounts,this.world,boundary).rollback);
-          const beforeAccounts=new Map([...this.accounts.values()].map(a=>[a,{gold:a.gold,goldLedger:structuredClone(a.goldLedger),wonderRewards:structuredClone(a.wonderRewards),pendingNeutralRewards:structuredClone(a.pendingNeutralRewards),wonderCompetitionNotices:structuredClone(a.wonderCompetitionNotices)}]));
-          const beforeBuildings=Object.values(this.world.territories??{}).flatMap(t=>(t.buildings??[]).filter(b=>b.wonderId).map(b=>[b,structuredClone(b)]));
-          const versions=Object.values(this.world.territories??{}).map(t=>[t,t.version,[...(t.buildings??[])]]);const revision=this.world.revision;
-          rollbacks.push(()=>{for(const [a,b] of beforeAccounts)for(const [k,v]of Object.entries(b)){if(v===undefined)delete a[k];else a[k]=v;}for(const [b,v]of beforeBuildings){for(const k of Object.keys(b))delete b[k];Object.assign(b,v);}for(const [t,v,buildings]of versions){t.version=v;t.buildings=buildings;}this.world.revision=revision;});
-          this.wonders.synchronize(boundary);
-          rollbacks.push(expireSuppressions(this,boundary).rollback);
-          // Refresh plans and forecasts after completion, without accruing time twice.
-          rollbacks.push(this.oil.prepare(this.accounts,this.world,boundary).rollback);
-          const refreshed=this.territoryProduction.prepare(this.accounts,this.world,boundary);rollbacks.push(refreshed.rollback);
-          const current=this.world.resourceEconomy.rates;
-          const forecast=this.constructionProduction.prepare(this.world,boundary,Object.fromEntries(Object.entries(current).map(([id,r])=>[id,r.production])));rollbacks.push(forecast.rollback);
-          rollbacks.push(this.oil.prepare(this.accounts,this.world,boundary).rollback);
-          if(this.fitness)rollbacks.push(this.fitness.prepare(boundary).rollback);
-          rollbacks.push(this.operatingCosts.prepare(this.accounts,this.world,boundary).rollback);
-          if(boundary<=cursor)break;cursor=boundary;
-        }
-      }else{const sponsorship=this.sponsorship.prepare(this.accounts,now);rollbacks.push(sponsorship.rollback);rollbacks.push(this.operatingCosts.prepare(this.accounts,this.world,now).rollback);}
-      rollbacks.push(expireSuppressions(this,now).rollback);
-      rollbacks.push(this.oil.prepare(this.accounts,this.world,now).rollback);
-      if(this.fitness)rollbacks.push(this.fitness.prepare(now).rollback);
-      if(this.medical)rollbacks.push(this.medical.prepare(now).rollback);
-      rollbacks.push(this.launchRewards.prepare(this.accounts,this.world,now).rollback);
-      const recovery=prepareDowntimeRecovery({accounts:this.accounts,world:this.world,economy:this.economy,now});rollbacks.push(recovery.rollback);
-      if(recovery.changed){
-        rollbacks.push(this.oil.prepare(this.accounts,this.world,now).rollback);
-        if(this.territoryProduction){
-          rollbacks.push(this.territoryProduction.prepare(this.accounts,this.world,now).rollback);
-          const rates=this.world.resourceEconomy.rates;
-          rollbacks.push(this.constructionProduction.prepare(this.world,now,Object.fromEntries(Object.entries(rates).map(([id,r])=>[id,r.production]))).rollback);
-        }
-      }
-      this.fog?.refreshAll(this.accounts,this.world);
-      this.persist();
-    }catch(error){for(const rollback of rollbacks.reverse())rollback();throw error;}
+    return settleAndPersistCampaign(this);
   }
 
   adjustGold(account, deltaValue, reasonValue = "system") {
@@ -469,6 +373,7 @@ export class CampaignService {
     const account = this.accountByNickname(nicknameValue) ?? this.accountByNickname(nicknameValue.trim());
     const password = String(account?.passwordHash).startsWith("scrypt$") ? passwordValue : passwordValue.trim();
     if (!account || !accountPasswordMatches(password, account)) throw new Error("昵称或密码错误");
+    if(account.eliminatedAt!=null){this.economy.migrateAccount(account);this.playerPacks.migrateAccount(account);}
     account.token = crypto.randomBytes(24).toString("base64url");
     account.lastSeenAt = Date.now();
     this.eliteRaids?.touch(account,{foreground:true});
@@ -505,7 +410,7 @@ export class CampaignService {
   challengeStatus(account, challengeIdValue) {
     const challenge = Object.values(this.world?.activeChallenges ?? {}).find((entry) => entry.id === challengeIdValue);
     let spectatorFog = null;
-    if (challenge && challenge.attackerId !== account.id && challenge.defenderId !== account.id && !challenge.coalitionContributors?.includes(account.id)) {
+    if (challenge && challenge.attackerId !== account.id && challenge.defenderId !== account.id && !challenge.coalitionContributors?.includes(account.id) && !challenge.defenderCoalitionContributors?.includes(account.id)) {
       this.assertTerritoryVisible(account, challenge.territoryId);
       spectatorFog = this.fogView(account);
       const playerDefender = challenge.previousOwner?.type === OWNER_TYPES.PLAYER || this.accounts.has(challenge.defenderId);
@@ -515,6 +420,8 @@ export class CampaignService {
       }
     }
     const result = this.challenges.status(account, challengeIdValue);
+    if(result.challenge&&!challenge?.coalitionContributors?.includes(account.id))delete result.challenge.coalitionContributors;
+    if(result.challenge&&!challenge?.defenderCoalitionContributors?.includes(account.id))delete result.challenge.defenderCoalitionContributors;
     if (result.challenge && spectatorFog?.enabled && !spectatorFog.visibleTerritoryIds.includes(result.challenge.sourceTerritoryId)) {
       result.challenge.sourceTerritoryId = null;
     }
@@ -522,11 +429,12 @@ export class CampaignService {
   }
 
   advanceActiveChallenges(now = this.now(), { maximumMatches = 1, maximumChainsPerMatch = 1 } = {}) {
+    const leagueChanged=this.dailyLeague?.advance(now,{maximumChainsPerMatch})??false;
     const raidChanged=this.eliteRaids?.advance(now,{maximumChainsPerMatch})??false;
     const coalitionChanged=this.coalitions?.advance()??false;
     const friendlyChanged=this.diplomacy?.advance(now,{maximumMatches,maximumChainsPerMatch})??false;
     const eliteChanged=this.eliteChallenges?.advance(now,{maximumMatches,maximumChainsPerMatch})??false;
-    return this.challenges.advance(now, { maximumMatches, maximumChainsPerMatch })||eliteChanged||friendlyChanged||coalitionChanged||raidChanged;
+    return this.challenges.advance(now, { maximumMatches, maximumChainsPerMatch })||eliteChanged||friendlyChanged||coalitionChanged||raidChanged||leagueChanged;
   }
 
   completeTerritoryChallenge(account, challengeIdValue) {
@@ -544,18 +452,30 @@ export class CampaignService {
     return reward;
   }
 
-  openPlayerPack(account, packTypeValue) {
+  openPlayerPack(account, packTypeValue, {compact=false}={}) {
     this.buildings.settleConstructions(this.world);
     const before=structuredClone(account);
-    try{const opening=this.playerPacks.open(account,packTypeValue);this.save();return {state:this.state(account),opening};}
-    catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
+    try{
+      const opening=this.playerPacks.open(account,packTypeValue);this.save();
+      return compact?{statePatch:{playerId:account.id,inventory:this.playerPacks.publicInventory(account)}}:{state:this.state(account),opening};
+    }catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
   }
 
-  choosePlayerPackCard(account, openingIdValue, playerIdValue) {
+  choosePlayerPackCard(account, openingIdValue, playerIdValue, {compact=false}={}) {
     this.buildings.settleConstructions(this.world);
     const before=structuredClone(account);
-    try{const player=this.playerPacks.choose(account,openingIdValue,playerIdValue);this.save();return {state:this.state(account),player};}
-    catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
+    try{
+      const player=this.playerPacks.choose(account,openingIdValue,playerIdValue);
+      // Finalize new-card assignments and bench once, before the durable commit.
+      account.playerSquads=normalizePlayerSquads(account.playerSquads,account.draft.roster);
+      account.tactics=repairTacticsLineups(account.tactics,account.draft.roster,account.playerSquads);
+      this.save();
+      if(!compact)return {state:this.state(account),player};
+      const received=account.draft.roster.find(p=>String(p.id)===String(player.playerId));
+      return {player,statePatch:{...this.actionState(account,{includeRoster:false}),inventory:this.playerPacks.publicInventory(account),
+        playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))},tactics:account.tactics},
+        rosterDelta:{cards:[{...received,card:createPlayerCardViewModel(received)}],counts:rosterCounts(account.draft.roster),positionCounts:draftPositionCounts(account.draft.roster),pickNumber:account.draft.roster.length}};
+    }catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
   }
 
   adminPlayerPackAccount(account) {
@@ -657,6 +577,25 @@ export class CampaignService {
     }
   }
 
+  dismissPvpNotice(account,noticeId) {
+    const notices=account.pvpNotices??[];
+    if(typeof noticeId!=='string'||!notices.some(n=>n.id===noticeId))throw Object.assign(new Error('保证金通知不存在或无权处理'),{statusCode:404});
+    const previous=account.pvpNoticeReadIds,valid=new Set(notices.map(n=>n.id));
+    account.pvpNoticeReadIds=[...new Set([...(previous??[]),noticeId])].filter(id=>valid.has(id));
+    try{this.persist();}catch(error){if(previous===undefined)delete account.pvpNoticeReadIds;else account.pvpNoticeReadIds=previous;throw error;}
+    return {pvpNoticeReadIds:account.pvpNoticeReadIds};
+  }
+
+  dismissBattleReport(account,challengeId) {
+    const history=account.battleHistory??[];
+    if(typeof challengeId!=='string'||!history.some(b=>(b.challengeId??b.id)===challengeId))throw Object.assign(new Error('战报不存在或无权处理'),{statusCode:404});
+    const previous=account.battleReportReadIds;
+    const valid=new Set(history.map(b=>b.challengeId??b.id));
+    account.battleReportReadIds=[...new Set([...(previous??[]),challengeId])].filter(id=>valid.has(id));
+    try{this.persist();}catch(error){if(previous===undefined)delete account.battleReportReadIds;else account.battleReportReadIds=previous;throw error;}
+    return {battleReportReadIds:account.battleReportReadIds};
+  }
+
   publicWorld(account = null, fog = account ? this.fogView(account) : null) {
     if (!this.world) return null;
     const now = this.now();
@@ -684,16 +623,20 @@ export class CampaignService {
       }];
     }));
     const activeChallenges = Object.fromEntries(Object.entries(this.world.activeChallenges ?? {})
-      .filter(([id, challenge]) => canSee(id) || challenge.attackerId === account?.id || challenge.defenderId === account?.id)
+      .filter(([id, challenge]) => canSee(id) || challenge.attackerId === account?.id || challenge.defenderId === account?.id || challenge.coalitionContributors?.includes(account?.id) || challenge.defenderCoalitionContributors?.includes(account?.id))
       .map(([id, challenge]) => {
         const view = publicChallengeView(challenge, now);
+        if(!challenge.coalitionContributors?.includes(account?.id))delete view.coalitionContributors;
+        if(!challenge.defenderCoalitionContributors?.includes(account?.id))delete view.defenderCoalitionContributors;
         if (!canSee(view.sourceTerritoryId)) view.sourceTerritoryId = null;
-        if (!knows(challenge.attackerId)) { view.attackerId = null; view.attackerTeamName = "未相遇球队"; view.id = null; }
-        if ((challenge.previousOwner?.type === OWNER_TYPES.PLAYER || this.accounts.has(challenge.defenderId)) && !knows(challenge.defenderId)) { view.defenderId = null; view.defenderName = "未相遇球队"; view.id = null; }
+        const participant=challenge.attackerId===account?.id||challenge.defenderId===account?.id||challenge.coalitionContributors?.includes(account?.id)||challenge.defenderCoalitionContributors?.includes(account?.id);
+        if(view.firstLeg&&!participant)view.firstLeg.teams=view.firstLeg.teams.map(team=>knows(team.id)?team:{id:null,name:"未相遇球队"});
+        if (!participant && !knows(challenge.attackerId)) { view.attackerId = null; view.attackerTeamName = "未相遇球队"; view.id = null; }
+        if (!participant && (challenge.previousOwner?.type === OWNER_TYPES.PLAYER || this.accounts.has(challenge.defenderId)) && !knows(challenge.defenderId)) { view.defenderId = null; view.defenderName = "未相遇球队"; view.id = null; }
         return [id, view];
       }));
     const weather = this.campaignWeather(now);
-    return { units:visibleMapUnits({account,world:this.world,accounts:this.accounts,territoryIndex:this.territoryIndex,fog,spatial:this.fog.spatial,now}), revision: this.world.revision, territories, players, activeChallenges, viewerId:account?.id,conquestHostIds:allianceMembers(this.world,account?.id).filter(id=>this.diplomacy.relationship(account?.id,id).conquestPermissions?.[id]),alliedPlayerIds:allianceMembers(this.world,account?.id).filter(id=>id!==account?.id),
+    return { jointScoutSites:this.jointScouting?.sites(), units:visibleMapUnits({account,world:this.world,accounts:this.accounts,territoryIndex:this.territoryIndex,fog,spatial:this.fog.spatial,now}), revision: this.world.revision, territories, players, activeChallenges, viewerId:account?.id,conquestHostIds:allianceMembers(this.world,account?.id).filter(id=>this.diplomacy.relationship(account?.id,id).conquestPermissions?.[id]),alliedPlayerIds:allianceMembers(this.world,account?.id).filter(id=>id!==account?.id),
       weather: { ...weather, territories: Object.fromEntries(Object.entries(weather.territories).filter(([id]) => canSee(id))) } };
   }
 
@@ -756,7 +699,11 @@ export class CampaignService {
     return { catalogVersion: PLAYER_CATALOG_VERSION, total: players.length, players };
   }
 
-  assignPlayerSquad(account, playerIdValue, squadIdValue) {
+  squadBatchDetails(account) { return squadBatchSnapshot(account,this.world); }
+  previewSquadBatch(account,body) { return previewSquadBatch(account,this.world,body); }
+  saveSquadBatch(account,body) { return saveSquadBatch(this,account,body); }
+
+  assignPlayerSquad(account, playerIdValue, squadIdValue, options = {}) {
     if(account.draft?.roster?.find(p=>p.id===playerIdValue)?.coalitionLoan)throw new Error("球员已借调联军，归队后才能调动");
     this.training.settle(account);
     if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
@@ -782,7 +729,7 @@ export class CampaignService {
       account.tactics = previousTactics;
       throw error;
     }
-    return this.state(account);
+    return options.compact === true ? this.actionState(account) : this.state(account);
   }
 
   cardManagementDetails(account) {
@@ -801,7 +748,13 @@ export class CampaignService {
       : action === "cancel" ? this.cardManagement.cancel(account, options)
       : this.cardManagement.consume(account, options, action);
     // The committed reveal does not wait for the full map and warehouse snapshots.
-    if (action === "trade-up" && options.resultOnly === true) return { result };
+    if (action === "trade-up" && options.resultOnly === true) {
+      if (options.warehouseDelta !== true) return { result };
+      const card=account.draft.roster.find(p=>p.id===result.card.id),added=card?[card]:[];
+      return {result,cardDelta:{removedIds:result.cards.map(p=>p.id),cards:added.map(p=>this.cardManagement.managedCard(account,p))},
+        rosterDelta:{removedIds:result.cards.map(p=>p.id),cards:added.map(p=>({...p,card:createPlayerCardViewModel(p)})),counts:rosterCounts(account.draft.roster),positionCounts:draftPositionCounts(account.draft.roster),pickNumber:account.draft.roster.length},
+        statePatch:{...this.actionState(account,{includeRoster:false}),playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))},tactics:account.tactics,leagueRegistration:this.dailyLeague.registrationView(account),training:this.training.publicState(account),expeditionFitness:this.fitness.publicState(account)}};
+    }
     return { result, state: this.state(account), view: this.cardManagement.details(account) };
   }
 
@@ -817,7 +770,7 @@ export class CampaignService {
     const result = action === "trait" ? this.enhancement.chooseTrait(account, options)
       : action === "batch" ? this.enhancement.batch(account, this.world, options)
       : this.enhancement.enhance(account, this.world, options);
-    return { result, state: this.state(account), view: this.enhancementDetails(account) };
+    return { result, ...(options.compact === true ? {statePatch:this.actionState(account)} : {state:this.state(account)}), view: this.enhancementDetails(account) };
   }
 
   trainingDetails(account, territoryId, buildingId) {
@@ -860,9 +813,10 @@ export class CampaignService {
     const scout = this.scouting.move(account, this.world, options);
     return { scout, state: this.state(account) };
   }
-  cancelScoutMove(account, scoutId, movementId) {
-    const scout = this.scouting.cancelMove(account, this.world, scoutId, movementId);
-    return { scout, state: this.state(account) };
+  cancelScoutMove(account, scoutId, movementId, {compact=false}={}) {
+    if(this.economyDue(this.now()))this.save();
+    const scout = this.scouting.cancelMove(account, this.world, scoutId, movementId, {save:()=>this.persist()});
+    return compact?{scout,statePatch:{scouting:this.scouting.publicState(account,this.world)}}:{ scout, state: this.state(account) };
   }
 
   startScouting(account, options) {
@@ -871,11 +825,11 @@ export class CampaignService {
     return { task, state: this.state(account) };
   }
 
-  claimScoutingQueue(account,taskId,cardIds){const players=this.scouting.claimQueue(account,taskId,cardIds);return {players,state:this.state(account)};}
+  claimScoutingQueue(account,taskId,cardIds,options={}){const players=this.scouting.claimQueue(account,taskId,cardIds);return {players,...(options.compact?{statePatch:{...this.actionState(account),scouting:this.scouting.publicState(account,this.world)}}:{state:this.state(account)})};}
 
-  chooseScoutingPlayer(account, taskId, cardId) {
+  chooseScoutingPlayer(account, taskId, cardId, options = {}) {
     const player = this.scouting.choose(account, taskId, cardId);
-    return { player, state: this.state(account) };
+    return { player, ...(options.compact?{statePatch:{...this.actionState(account),scouting:this.scouting.publicState(account,this.world)}}:{state:this.state(account)}) };
   }
 
   startMedical(account,options){this.save();const task=this.medical.start(account,options);return {task,state:this.state(account),territory:this.buildings.territoryView(account,this.world,options.territoryId)};}
@@ -892,8 +846,8 @@ export class CampaignService {
     return { state: this.state(account), ...result };
   }
 
-  acknowledgeWonderCompetition(account,id) {
-    this.wonders.acknowledgeCompetition(account,String(id??''));return {state:this.state(account)};
+  acknowledgeWonderCompetition(account,id,{compact=false}={}) {
+    this.wonders.acknowledgeCompetition(account,String(id??''));return compact?{ok:true}:{state:this.state(account)};
   }
 
   cancelWonderConstruction(account, territoryId, buildingId) {
@@ -929,104 +883,35 @@ export class CampaignService {
   }
 
   state(account) {
-    if (account.draft && !account.setupComplete && account.draft.version !== DRAFT_VERSION) {
-      this.drafting.start(account, account.draft.teamName);
-    }
-    this.settleDueChallenges();
-    this.buildings.settleConstructions(this.world);
-    const now = this.now();
-    if (this.economyDue(now)) this.save();
-    this.scouting.settle(account, this.world);
-    const expeditionNormalization = normalizeExpeditionPiece(account, this.world, now);
-    if (expeditionNormalization.changed) this.save();
-    const setupComplete = account.setupComplete === true;
-    const normalizedPlayerSquads = normalizePlayerSquads(account.playerSquads, account.draft?.roster ?? []);
-    if (JSON.stringify(account.playerSquads ?? null) !== JSON.stringify(normalizedPlayerSquads)) {
-      account.playerSquads = normalizedPlayerSquads;
-      this.save();
-    }
-    const repairedTactics = repairTacticsLineups(account.tactics, account.draft?.roster ?? [], account.playerSquads);
-    if (JSON.stringify(repairedTactics) !== JSON.stringify(account.tactics)) {
-      account.tactics = repairedTactics;
-      this.save();
-    }
-    const activeChallenge=Object.values(this.world?.activeChallenges ?? {}).find((challenge)=>challenge.attackerId===account.id&&!challenge.coalitionId) ?? null;
-    const expeditionPiece = setupComplete ? publicExpeditionPiece(account, this.world, now) : null;
-    const fog = this.fogView(account);
-    const visible = new Set(fog.visibleTerritoryIds);
-    const canSee = (id) => !fog.enabled || visible.has(id);
-    const resources = this.resourceState(account, now);
-    const canExpand = Boolean(this.world && setupComplete && account.homeTerritoryId && this.world.players[account.id] && !activeChallenge && !expeditionPiece?.moving);
-    const expeditionTerritoryId = canExpand ? expeditionAttackSource(account, this.world, now) : null;
-    return {
-      modeName: "黄狗风云",
-      bondCatalog:campaignBondCatalog(this.playerDatabase),
-      interactions:this.diplomacy.summary(account),
-      eliteRaids:setupComplete?this.eliteRaids?.view(account):null,
-      coalition:this.coalitions?.view(account,{detail:false}),
-      playerId: account.id,
-      nickname: account.nickname,
-      playerColor: account.mapColor,
-      wallet:{ gold:Number(account.gold ?? 0) },
-      ...(resources ? { resources } : {}),
-      sponsorship:this.sponsorship.publicState(account, now),
-      eliteChallenge:{activeId:this.eliteChallenges?.active(account)?.id??null,pendingReward:Boolean(account.elite?.reward&&!account.elite.reward.claimedId)},
-      neutralRewards:this.neutralRewards.publicState(account),
-      conquest:this.challenges.conquestState(account, now),
-      development:{enabled:this.developmentTools,fogEnabled:!this.developmentTools || !account.developmentFogDisabled},
-      inventory: this.playerPacks.publicInventory(account),
-      scouting: this.scouting.publicState(account, this.world),
-      training: this.training.publicState(account),
-      enhancement: this.enhancement.publicState(account),
-      wonders: this.wonders.publicState(account),
-      formationResearch:this.formationResearch.publicState(account),
-      expeditionFitness:this.fitness.publicState(account),
-      buildings: setupComplete && this.world
-        ? this.buildings.accountView(account, this.world)
-        : { rules:null, catalog:this.buildings.catalog(), territories:{} },
-      setupComplete,
-      homeSelectionRequired: Boolean(this.world && setupComplete && !account.homeTerritoryId),
-      homeTerritoryId: account.homeTerritoryId ?? null,
-      expeditionPiece,
-      draft: account.draft ? { ...this.fitness.draftView(account,publicDraft(account)), baseTeamName:account.draft.teamName, teamName:sponsoredTeamName(account, now) } : null,
-      playerSquads: {
-        ...normalizedPlayerSquads,
-        squads:PLAYER_SQUAD_DEFINITIONS.map((squad) => ({ ...squad })),
-      },
-      tactics: account.tactics ?? null,
-      fog,
-      world: setupComplete ? this.publicWorld(account, fog) : null,
-      activeChallengeId:activeChallenge?.id ?? null,
-      attackableTerritoryIds: canExpand ? listAttackableTerritoriesFrom(this.territoryIndex, this.world, account.id, expeditionTerritoryId, now).filter((territoryId) => canSee(territoryId) && !this.world.activeChallenges?.[territoryId]) : [],
-      coastalTerritoryIds: (this.maritimePlanner?.coastalTerritoryIds ?? []).filter(canSee),
-      battleHistory: (account.battleHistory ?? []).slice(-20).reverse().map(({broadcasts,...battle})=>({...battle,hasDetailedReport:Boolean(broadcasts?.length)})),
-      primaryMatchEngine: CAMPAIGN_ENGINE,
-    };
+    const {now, setupComplete, normalizedPlayerSquads} = maintainCampaignState(this, account);
+    return composeCampaignState(this, account, {now, setupComplete, normalizedPlayerSquads});
   }
 
-  saveTactics(account, value = {}) {
+  saveTactics(account, value = {}, { compact=false } = {}) {
     this.training.settle(account);
     if (!account.setupComplete || !account.draft?.roster?.length) throw new Error("请先完成初始建队");
-    const submittedPlayerSquads = value.playerSquads && typeof value.playerSquads === "object" ? value.playerSquads : account.playerSquads;
+    const leagueOnly=value.leagueOnly===true;
+    if(leagueOnly&&this.dailyLeague?.liveFor(account))throw Object.assign(Error('本场联赛进行中，结束后可调整战术'),{statusCode:409});
+    const submittedPlayerSquads = !leagueOnly&&value.playerSquads && typeof value.playerSquads === "object" ? value.playerSquads : account.playerSquads;
     for (const player of account.draft.roster.filter((entry) => entry.training || entry.medical || entry.coalitionLoan)) {
       if ((submittedPlayerSquads?.assignments?.[player.id] ?? "garrison") !== (account.playerSquads?.assignments?.[player.id] ?? "garrison")) throw new Error("训练、治疗或联军借调结束后才能变更该球员的编队");
     }
     for(const id of activeExpeditionPlayerIds(this.world,account.id))if(submittedPlayerSquads?.assignments?.[id]!==account.playerSquads?.assignments?.[id])throw Object.assign(new Error("远征比赛进行中，参赛球员暂时不能变更编队"),{statusCode:409});
-    const completed = autoCompletePlayerSquads(submittedPlayerSquads,account.draft.roster,{allowTransfers:!account.tactics?.squads});
-    assertExpeditionCapacity(completed.playerSquads, account.draft.roster);
-    if (!completed.ready) throw new Error("远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋");
+    const completed = autoCompletePlayerSquads(submittedPlayerSquads,account.draft.roster,{allowTransfers:!leagueOnly&&!account.tactics?.squads});
+    if(!leagueOnly)assertExpeditionCapacity(completed.playerSquads, account.draft.roster);
+    if (!leagueOnly&&!completed.ready) throw new Error("远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋");
     const nextPlayerSquads = completed.playerSquads;
     for(const id of activeExpeditionPlayerIds(this.world,account.id))if(nextPlayerSquads.assignments[id]!==account.playerSquads?.assignments?.[id])throw Object.assign(new Error("远征比赛进行中，参赛球员暂时不能变更编队"),{statusCode:409});
-    value = representativeTactics(value,account.draft.roster);
+    if(!leagueOnly)value = representativeTactics(value,account.draft.roster);
     const providedSquads = value.squads && typeof value.squads === "object" ? value.squads : null;
     const existingSquads = repairTacticsLineups(account.tactics,account.draft.roster,nextPlayerSquads)?.squads ?? {};
     const sanitizeSquad = (squadId,sourceValue = {}) => {
-      const eligible = representativePlayers(account.draft.roster).filter((player) => nextPlayerSquads.assignments[player.id] === squadId);
+      const eligible = leagueOnly?leagueRoster(account,normalizeLeagueRegistration(account,this.now())).map(p=>leaguePlayerView(p,account.leagueRegistration?.conditions?.[p.id],this.now())):representativePlayers(account.draft.roster).filter((player) => nextPlayerSquads.assignments[player.id] === squadId);
       sourceValue = repairSquadTactics(sourceValue, eligible, { previousRoster:account.draft.roster });
       const eligibleIds = new Set(eligible.map((player) => player.id));
       const requested = [...new Set((Array.isArray(sourceValue.starters) ? sourceValue.starters : []).map(String).filter((id) => eligibleIds.has(id)))];
       const starters = requested.length ? requested : defaultTacticsStarters(eligible);
-      if (starters.length !== 11) throw new Error(`${squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : "留守"}编队必须选择恰好11名首发球员`);
+      if (starters.length !== 11) throw new Error(`${squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : squadId === "league" ? "联赛" : "留守"}编队必须选择恰好11名首发球员`);
       const players = starters.map((id) => eligible.find((player) => player.id === id));
       const planSnapshots = sourceValue.planSnapshots && typeof sourceValue.planSnapshots === "object" ? structuredClone(sourceValue.planSnapshots) : {};
       const embedded = planSnapshots.__s4V2 && typeof planSnapshots.__s4V2 === "object" ? planSnapshots.__s4V2 : {};
@@ -1049,7 +934,7 @@ export class CampaignService {
         const validOutfieldLines = [formation.counts.DEF,formation.counts.MID,formation.counts.ATT].every((count) => count >= 1);
         if (formation.counts.GK !== 1 || (key === "position1" && !validOutfieldLines)) {
           const planLabel = key === "position1" ? "默认站位" : key === "position2" ? "领先站位" : "落后站位";
-          const squadLabel = squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : "留守";
+          const squadLabel = squadId === PLAYER_SQUAD_IDS.EXPEDITION ? "远征" : squadId === "league" ? "联赛" : "留守";
           throw new Error(`${squadLabel}${planLabel}：门将必须且只能有一人${key === "position1" ? "，并保留前场、中场、后场三条外场线" : ""}`);
         }
         return [key,sanitized];
@@ -1066,6 +951,12 @@ export class CampaignService {
       const openingFormation = analyzeElevenBoardFormation(players,positionPresets.position1,formationLinePresets.position1);
       return { formation:openingFormation.name,attackStyle:String(sourceValue.attackStyle || "balanced"),defenseStyle:String(sourceValue.defenseStyle || "possession"),starters,bench,positions:positionPresets.position1,formationLines:formationLinePresets.position1,tacticalBars:sourceValue.tacticalBars && typeof sourceValue.tacticalBars === "object" ? sourceValue.tacticalBars : {},planSnapshots,activePlan:String(sourceValue.activePlan || "opening"),updatedAt:Date.now() };
     };
+    if(leagueOnly){
+      const previous=account.leagueRegistration;
+      account.leagueRegistration={...normalizeLeagueRegistration(account,this.now()),tactics:sanitizeSquad('league',value.squads?.league??{})};
+      try{this.save();}catch(error){account.leagueRegistration=previous;throw error;}
+      return compact?{leagueRegistration:this.dailyLeague.registrationView(account)}:this.state(account);
+    }
     const squads = Object.fromEntries(PLAYER_SQUAD_DEFINITIONS.map((squad) => {
       const fallback = squad.id === PLAYER_SQUAD_IDS.EXPEDITION ? value : {};
       return [squad.id,sanitizeSquad(squad.id,providedSquads?.[squad.id] ?? existingSquads[squad.id] ?? fallback)];
@@ -1075,7 +966,7 @@ export class CampaignService {
     account.playerSquads = nextPlayerSquads;
     account.tactics = { schemaVersion:2,activeSquadId,squads,...squads[PLAYER_SQUAD_IDS.EXPEDITION],updatedAt:Date.now() };
     try{this.save();}catch(error){account.playerSquads=previousPlayerSquads;account.tactics=previousTactics;throw error;}
-    return this.state(account);
+    return compact ? {tactics:account.tactics,playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))}} : this.state(account);
   }
 
   beginDraft(account, teamNameValue) {
@@ -1136,6 +1027,20 @@ export class CampaignService {
     return { ...result, state: this.state(account) };
   }
 
+  // Mutations return affected account fields; regular polling owns world refreshes.
+  actionState(account,{includeRoster=true}={}) {
+    const now=this.now();
+    const base={playerId:account.id,wallet:{gold:Number(account.gold??0)},resources:this.resourceState(account,now),expeditionPiece:publicExpeditionPiece(account,this.world,now)};
+    if(!includeRoster)return base;
+    return {
+      ...base,
+      draft:account.draft?{...this.fitness.draftView(account,publicDraft(account)),baseTeamName:account.draft.teamName,teamName:sponsoredTeamName(account,now)}:null,
+      playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))},
+      tactics:account.tactics??null, enhancement:this.enhancement.publicState(account),
+      training:this.training.publicState(account), expeditionFitness:this.fitness.publicState(account),
+    };
+  }
+
   ensureExpeditionCanMove(account) {
     if (!this.world || !this.territoryIndex) throw new Error("共享世界尚未初始化");
     if (!account.setupComplete || !account.homeTerritoryId) throw new Error("请先完成建队并选择总部所在地");
@@ -1158,11 +1063,7 @@ export class CampaignService {
   estimateExpedition(account, territoryIdValue, options = {}) {
     this.ensureExpeditionCanMove(account);
     const base=estimateExpeditionMove({account,world:this.world,territoryIndex:this.territoryIndex,targetTerritoryId:territoryIdValue,now:this.now()});
-    if(!this.wonders.isSeaJourney(base.fromTerritoryId,base.toTerritoryId))return {estimate:this.oil.estimate(account,{...base,mode:'land'},'expedition',options)};
-    const territory=this.world.territories[base.fromTerritoryId];
-    const port=territory.ownerId===account.id?territory.buildings?.find(b=>b.type==='port'&&b.status==='active'):null;
-    const sea=this.wonders.seaTravel(account,base);
-    return {estimate:this.oil.estimate(account,{...sea,durationMs:Math.max(60000,Math.ceil(sea.durationMs*(port?facilityEffects('port',port.level).timeMultiplier:1))),mode:'sea'},'expedition',options)};
+    return {estimate:this.oil.estimate(account,unitTravelEstimate(this,account,base),'expedition',options)};
   }
 
   moveExpedition(account, territoryIdValue, options = {}) {
@@ -1171,26 +1072,30 @@ export class CampaignService {
     const before=structuredClone(account);
     try {
     const estimate=this.estimateExpedition(account,territoryIdValue,options).estimate;
-    moveExpeditionPiece({
-      account,
-      world: this.world,
-      territoryIndex: this.territoryIndex,
-      targetTerritoryId: territoryIdValue,
-      now: this.now(),
-    });
+    // The estimate just validated ownership and current position.
+    account.expeditionPiece.movement=createUnitMovement(estimate,this.now());
     this.oil.spend(account,estimate);
-    account.expeditionPiece.movement={...account.expeditionPiece.movement,...estimate,arrivesAt:this.now()+estimate.durationMs};
     const expeditionPiece=publicExpeditionPiece(account,this.world,this.now());
     this.save();
-    return { state: this.state(account), expeditionPiece };
+    return { ...(options.compact === true ? {statePatch:{...this.actionState(account,{includeRoster:false}),attackableTerritoryIds:[]}} : {state:this.state(account)}), expeditionPiece };
     }catch(e){for(const key of Object.keys(account))delete account[key];Object.assign(account,before);throw e;}
   }
 
-  cancelExpedition(account) {
+  cancelExpedition(account,{compact=false,movementId}={}) {
     if (!this.world) throw new Error("共享世界尚未初始化");
-    const result=cancelExpeditionMovement(account,this.world,this.now());
-    this.save();
-    return {state:this.state(account),expeditionPiece:result.piece,canceledMovement:result.canceledMovement};
+    if(movementId&&account.expeditionPiece?.movement?.id!==movementId)throw Object.assign(Error('远征行程已变化，请刷新后重试'),{statusCode:409});
+    if(this.economyDue(this.now()))this.save();
+    const before=structuredClone(account.expeditionPiece);
+    try{const result=cancelExpeditionMovement(account,this.world,this.now());this.persist();
+      return {...(compact?{statePatch:{expeditionPiece:result.piece}}:{state:this.state(account)}),expeditionPiece:result.piece,canceledMovement:result.canceledMovement};
+    }catch(error){account.expeditionPiece=before;throw error;}
+  }
+
+  resolveTerritoryLiberation(account, body = {}) {
+    const result=resolveLiberation({world:this.world,accounts:this.accounts,account,
+      territoryId:String(body.territoryId??''),challengeId:String(body.challengeId??''),action:body.action,
+      save:()=>this.save(),now:this.now()});
+    return {result,state:this.state(account)};
   }
 
   challengeTerritory(account, territoryIdValue, options = {}) {

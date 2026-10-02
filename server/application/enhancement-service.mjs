@@ -1,10 +1,11 @@
+import {restoreArchivedFields} from '../infrastructure/history-archive.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import {researchedEnhancementChance} from '../../shared/config/advanced-research.mjs';
 import { refreshTrainingGrowth } from "../../shared/football/training-growth.mjs";
 import { activeExpeditionPlayerIds } from './expedition-fitness-service.mjs';
 import { repairTacticsLineups } from "../../shared/config/tactics-repair.mjs";
 import crypto from "node:crypto";
-import { S4_ENHANCEMENT, s4EnhancementAbilityBonus, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, enhancementFamily } from "../../shared/config/enhancement.mjs";
+import { S4_ENHANCEMENT, enhancementTraitEligible, s4EnhancementAbilityBonus, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, enhancementFamily } from "../../shared/config/enhancement.mjs";
 import { YDL_TRAIT_BY_ID } from "../../engine/s4-v2.1/versus/trait-pool.js";
 import { createPlayerCardViewModel } from "../../shared/player-card/player-card-contract.js";
 
@@ -21,9 +22,21 @@ export class EnhancementService {
     catch (error) { for (const key of Object.keys(account)) delete account[key]; Object.assign(account, before); throw error; }
   }
   pending(account, cardId) { return Object.values(this.data(account).offers).find((offer) => offer.cardId === cardId && offer.status === "pending"); }
+  normalizedOffer(offer,player) {
+    if(!player)return {...offer,traits:[]};
+    const available=Object.values(YDL_TRAIT_BY_ID).filter(t=>enhancementTraitEligible(t,player)&&!traitIds(player).includes(t.id));
+    const valid=new Map(available.map(t=>[t.id,t])),chosen=[];
+    for(const old of offer.traits??[]){const t=valid.get(old.id);if(t&&!chosen.some(v=>v.id===t.id))chosen.push(t);}
+    // Stable replacements: opening the panel again cannot reroll the choices.
+    const rank=t=>crypto.createHash('sha256').update(offer.id+':'+t.id).digest('hex');
+    for(const t of available.filter(t=>!chosen.some(v=>v.id===t.id)).sort((a,b)=>rank(a).localeCompare(rank(b)))){
+      if(chosen.length>=3)break;chosen.push(t);
+    }
+    return {...offer,traits:chosen.slice(0,3).map(t=>({id:t.id,name:t.name,summary:t.summary,eligibleRoleGroups:t.eligibleRoleGroups}))};
+  }
   publicState(account) {
     return { ...S4_ENHANCEMENT, researchLevels:{...account.formationResearch?.topicLevels}, protectionCostMultiplier:this.wonders?.modifiers(account).protectionCostMultiplier??1, history: this.data(account).history.slice(-50).reverse(),
-      traitOffers: Object.values(this.data(account).offers).filter((offer) => offer.status === "pending") };
+      traitOffers: Object.values(this.data(account).offers).filter((offer) => offer.status === "pending").map(offer=>this.normalizedOffer(offer,account.draft?.roster?.find(p=>id(p)===offer.cardId))) };
   }
   isStarter(value, playerId) {
     return Boolean(value && typeof value === "object" && Object.entries(value).some(([key, item]) =>
@@ -56,7 +69,7 @@ export class EnhancementService {
     if (!/^[A-Za-z0-9._:-]{8,128}$/.test(String(options.requestId ?? ""))) fail("强化请求标识无效");
     const signature = JSON.stringify([kind, options.mainCardId, options.materialCardId, options.useProtection === true, options.playerId, options.mainLevel, options.materialLevel, options.quantity]);
     const prior = this.data(account).requests[options.requestId];
-    if (prior) { if (prior.signature !== signature) fail("强化请求标识与原请求不一致", 409); return structuredClone(prior.result); }
+    if (prior) { if (prior.signature !== signature) fail("强化请求标识与原请求不一致", 409); return structuredClone(restoreArchivedFields(prior).result); }
     return this.transaction(account, () => {
       const result = action();
       account.enhancement.requests[options.requestId] = { signature, result: structuredClone(result) };
@@ -67,12 +80,12 @@ export class EnhancementService {
     refreshTrainingGrowth(player);
     const oldBonus = s4EnhancementAbilityBonus(level(player));
     const bases = (values) => Object.fromEntries(Object.entries(values ?? {}).map(([key, value]) => [key,
-      Number(value) >= 99 && Number.isFinite(player.referenceAttributes?.[key])
+      Number(value) === 99 && Number.isFinite(player.referenceAttributes?.[key])
         ? Number(player.referenceAttributes[key]) : Number(value) - oldBonus - Number(player.trainingBonuses?.[key] ?? 0)]));
     player.enhancementBaseAttributes ??= bases(player.attributes);
     player.enhancementBaseEffectiveAttributes ??= bases(player.effectiveAttributes ?? player.attributes);
     const bonus = s4EnhancementAbilityBonus(nextLevel);
-    const enhance = (base) => Object.fromEntries(Object.entries(base).map(([key, value]) => [key, Math.max(1, Math.min(99, value + Number(player.trainingBonuses?.[key] ?? 0) + bonus))]));
+    const enhance = (base) => Object.fromEntries(Object.entries(base).map(([key, value]) => [key, Math.max(1, value + Number(player.trainingBonuses?.[key] ?? 0) + bonus)]));
     player.baseOverall ??= Number(player.overall) - oldBonus;
     player.overall = player.baseOverall + bonus; player.effectiveOverall = player.overall;
     player.attributes = enhance(player.enhancementBaseAttributes); player.effectiveAttributes = enhance(player.enhancementBaseEffectiveAttributes);
@@ -84,7 +97,7 @@ export class EnhancementService {
     const chosen = player.enhancementTraitIds ?? [];
     const unlockLevel = S4_ENHANCEMENT.traitUnlockLevels[chosen.length];
     if (unlockLevel == null || level(player) < unlockLevel) return null;
-    const available = Object.values(YDL_TRAIT_BY_ID).filter((trait) => !traitIds(player).includes(trait.id) && (trait.eligibleRoleGroups.includes("ANY") || trait.eligibleRoleGroups.includes(player.pool)));
+    const available = Object.values(YDL_TRAIT_BY_ID).filter((trait) => !traitIds(player).includes(trait.id) && enhancementTraitEligible(trait,player));
     const traits = [];
     while (available.length && traits.length < 3) {
       const trait = available.splice(Math.min(available.length - 1, Math.floor(Math.max(0, this.random()) * available.length)), 1)[0];
@@ -158,9 +171,12 @@ export class EnhancementService {
     if (!offer || !player || offer.status === "cancelled") fail("强化特性候选不存在", 404);
     if (offer.status === "chosen") { if (offer.chosenTraitId !== traitId) fail("该特性已经选择", 409); return createPlayerCardViewModel(player); }
     if(activeExpeditionPlayerIds(this.world,account.id).has(id(player)))fail("远征比赛进行中，结束后才能绑定强化特性",409);
-    if (!offer.traits.some((trait) => trait.id === traitId) || !YDL_TRAIT_BY_ID[traitId]) fail("请选择候选中的强化特性");
+    const normalized=this.normalizedOffer(offer,player);
+    if (!normalized.traits.some((trait) => trait.id === traitId) || !YDL_TRAIT_BY_ID[traitId]) fail("请选择当前候选中的强化特性，旧候选请刷新后重试");
+    if(!enhancementTraitEligible(YDL_TRAIT_BY_ID[traitId],player))fail("该强化特性不适用于球员位置",409);
     return this.transaction(account, () => {
       const trait = YDL_TRAIT_BY_ID[traitId];
+      offer.traits=normalized.traits;
       if (!traitIds(player).includes(traitId)) player.traits = [...(player.traits ?? []), { id: trait.id, name: trait.name, summary: trait.summary }];
       player.enhancementTraitIds = [...new Set([...(player.enhancementTraitIds ?? []), traitId])];
       player.cardInstanceId ??= id(player); delete player.card;

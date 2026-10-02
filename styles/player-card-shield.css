@@ -39,3 +39,10 @@
 
 /* Static consumers (the tactics board) allocate no particle canvas or foil animation. */
 .s4-player-card.ydl-player-card.player-card-static,.s4-player-card.ydl-player-card.player-card-static:hover{transform:none!important;transition:none!important;animation:none!important}
+
+/* Trait labels share the upgrade column; no hit targets or animated layers. */
+.player-card-shield .shield-card-traits{position:absolute;z-index:10;right:12.1%;top:21%;max-width:44%;display:flex;flex-direction:column;align-items:flex-end;gap:1cqw;font:600 4.2cqw/1.3 "Microsoft YaHei",sans-serif;color:var(--shield-bright);text-align:right;pointer-events:none}
+.player-card-shield .shield-card-trait-row{display:flex;max-width:100%;gap:1cqw;min-width:0}
+.player-card-shield .shield-card-trait,.player-card-shield .shield-card-trait-more{display:block;padding:.8cqw 1.5cqw;border:1px solid var(--shield-metal);border-radius:1cqw;background:color-mix(in srgb,var(--shield-ink) 94%,transparent);box-sizing:border-box;white-space:nowrap}
+.player-card-shield .shield-card-trait{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.player-card-shield .shield-card-trait-more{flex:none}

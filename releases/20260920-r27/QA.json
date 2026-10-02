@@ -1,0 +1,121 @@
+{
+  "passed": true,
+  "version": "20260920-r27",
+  "checks": [
+    "Complete 20260920-r26 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r27 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 5,
+  "newFiles": 1,
+  "requiredBaseFiles": 1216,
+  "imports": 8,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "unitTests": {
+    "passed": 26,
+    "report": "outputs/r27-regression.log"
+  },
+  "browser": {
+    "checks": [
+      {
+        "name": "1024 navigation has usable width",
+        "pass": true
+      },
+      {
+        "name": "1024 navigation overflow enabled",
+        "pass": true
+      },
+      {
+        "name": "1024 mouse drag scrolls",
+        "pass": true
+      },
+      {
+        "name": "1024 drag does not activate button",
+        "pass": true
+      },
+      {
+        "name": "1024 wheel reaches final action",
+        "pass": true
+      },
+      {
+        "name": "1280 navigation has usable width",
+        "pass": true
+      },
+      {
+        "name": "1280 navigation overflow enabled",
+        "pass": true
+      },
+      {
+        "name": "1280 mouse drag scrolls",
+        "pass": true
+      },
+      {
+        "name": "1280 drag does not activate button",
+        "pass": true
+      },
+      {
+        "name": "1280 wheel reaches final action",
+        "pass": true
+      },
+      {
+        "name": "1366 navigation has usable width",
+        "pass": true
+      },
+      {
+        "name": "1366 navigation overflow enabled",
+        "pass": true
+      },
+      {
+        "name": "1366 mouse drag scrolls",
+        "pass": true
+      },
+      {
+        "name": "1366 drag does not activate button",
+        "pass": true
+      },
+      {
+        "name": "1366 wheel reaches final action",
+        "pass": true
+      },
+      {
+        "name": "ordinary navigation click still opens enhancement",
+        "pass": true
+      },
+      {
+        "name": "completed result shown",
+        "pass": true
+      },
+      {
+        "name": "selecting next card clears result",
+        "pass": true
+      },
+      {
+        "name": "previous result returned to warehouse",
+        "pass": true
+      },
+      {
+        "name": "new card occupies main slot",
+        "pass": true
+      },
+      {
+        "name": "consumed material not restored",
+        "pass": true
+      },
+      {
+        "name": "mobile menu keeps grid layout",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  }
+}

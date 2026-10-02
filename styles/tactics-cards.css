@@ -80,6 +80,14 @@
 /* The shared board accepts the optional coalition tab without adding another row. */
 #campaign-tactics .league-lineup-squad-tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(58px,1fr)}
 #campaign-tactics .league-next-match [data-stage-window-close]{padding:8px 16px;border:1px solid #65745b;border-radius:6px;color:#efe7cd;background:#233c30;font:inherit;cursor:pointer}
+@media(max-width:1050px){
+ #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ #campaign-tactics .league-tactics-detail-title>span{grid-column:1/-1}
+ #campaign-tactics .league-tactics-detail-title>.league-captain-controls,#campaign-tactics .league-tactics-detail-title>.league-tactical-node-controls{display:grid;width:100%;grid-column:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;transform:none}
+}
+@media(max-width:600px){
+ #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{grid-template-columns:minmax(0,1fr)}
+}
 /* Size the three columns together; keep controls in explicit rows inside each column. */
 @media(min-width:1051px){
  #campaign-tactics .league-lineup-workspace{grid-template-columns:minmax(0,1.05fr) 320px minmax(0,1fr);justify-content:stretch}
@@ -95,12 +103,10 @@
  #campaign-tactics .league-tactical-shape-preview-menu>summary{grid-template-columns:minmax(0,1fr)}
  #campaign-tactics .league-tactical-shape-preview-menu>summary>span{width:auto;height:auto;border-radius:0;color:inherit;background:none;box-shadow:none}
  #campaign-tactics .league-tactics-detail>header{display:block;min-height:0;padding:14px}
- #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"title share" "captain nodes" "ai ai";align-items:end;gap:12px 16px}
+ #campaign-tactics .league-tactics-detail>header .league-tactics-detail-title{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"title title" "captain nodes";align-items:end;gap:12px 16px}
  #campaign-tactics .league-tactics-detail-title>span{grid-area:title}
- #campaign-tactics .league-tactics-detail-title>.league-lineup-share-actions{grid-area:share;justify-self:end}
  #campaign-tactics .league-tactics-detail-title>.league-captain-controls{grid-area:captain;display:grid;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  #campaign-tactics .league-tactics-detail-title>.league-tactical-node-controls{grid-area:nodes;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));transform:none;justify-self:stretch}
- #campaign-tactics .league-tactics-detail-title>.league-ai-training-actions{grid-area:ai;justify-self:start}
  #campaign-tactics .league-tactics-detail :is(select,input){max-width:100%;min-width:0}
  #campaign-tactics .league-tactics-detail .league-match-plan-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
 }

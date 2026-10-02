@@ -88,3 +88,14 @@ test('a target that becomes inactive while the raid travels is skipped without a
  assert.equal(raid.results[0].outcome,'skipped');assert.equal(Object.keys(r.data.matches).length,0);
  assert.equal(f.s.world.territories[stop.territoryId].raidSuppression,undefined);
 });
+
+
+test('activity commander may kick loans, members cannot; live match roster remains intact until settlement',()=>{
+ const f=fixture(),leader=assemble(f),r=f.s.eliteRaids,army=r.day().army,loan=army.loans.find(l=>l.ownerId!==leader.id),owner=f.s.accounts.get(loan.ownerId);
+ assert.throws(()=>action(f,owner,'kick',{ownerId:leader.id,playerId:army.loans.find(l=>l.ownerId===leader.id).playerId}),/指挥官/);
+ const {challengeId}=action(f,leader,'challenge',{clubId:r.day().raids[0].clubId});
+ action(f,leader,'kick',{ownerId:loan.ownerId,playerId:loan.playerId});
+ assert.equal(r.day().army.loans.find(l=>l.ownerId===loan.ownerId&&l.playerId===loan.playerId).withdrawRequested,true);assert.equal(r.day().army.loans.length,11);
+ finish(f,r.data.matches[challengeId]);f.tick(1000);r.advance(f.now);
+ assert.ok(!r.day().army.loans.some(l=>l.ownerId===loan.ownerId&&l.playerId===loan.playerId));assert.ok(!owner.draft.roster.find(p=>p.id===loan.playerId).coalitionLoan);
+});

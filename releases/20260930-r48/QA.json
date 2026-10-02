@@ -1,0 +1,124 @@
+{
+  "passed": true,
+  "version": "20260930-r48",
+  "baseline": "20260930-r47",
+  "fullTests": {
+    "passed": 1688,
+    "failed": 0,
+    "runtimeSyntaxModules": 381,
+    "log": "outputs/r47-startup-audit/full-tests.log"
+  },
+  "browser": {
+    "passed": true,
+    "latencyPerRequestMs": 120,
+    "report": [
+      {
+        "name": "source",
+        "firstMs": 5624,
+        "repeatMs": 321,
+        "codeRequests": 250,
+        "repeatCodeRequests": 1,
+        "errors": []
+      },
+      {
+        "name": "bundle",
+        "firstMs": 383,
+        "repeatMs": 323,
+        "codeRequests": 4,
+        "repeatCodeRequests": 1,
+        "errors": []
+      },
+      {
+        "name": "phone",
+        "firstMs": 368,
+        "repeatMs": 325,
+        "codeRequests": 4,
+        "repeatCodeRequests": 1,
+        "errors": []
+      }
+    ]
+  },
+  "electron": {
+    "passed": true,
+    "ms": 867,
+    "errors": [],
+    "hits": 1,
+    "downloads": 2,
+    "codeRequests": [
+      "/versus/assets/vendor/leaflet.js",
+      "/game-startup.js?v=sha256-0550f9b86d749ffb2ed0",
+      "/game-startup.css?v=sha256-dae1ca783e2aa30e27e1"
+    ]
+  },
+  "fullGame": {
+    "passed": true,
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      }
+    ],
+    "checks": [
+      "Real game page opens compact pack and preserves world and roster",
+      "Real game claim merges one card with world retained",
+      "Consecutive next pack works",
+      "No extra state GET after pack actions",
+      "No page exceptions"
+    ]
+  },
+  "installation": {
+    "passed": true,
+    "version": "20260930-r48",
+    "checks": [
+      "Complete 20260930-r47 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260930-r48 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 5,
+    "newFiles": 3,
+    "requiredBaseFiles": 1292,
+    "imports": 3,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R47 account, wallet, roster, packs and active research survive installed server boot",
+      "Real compact pack purchase is idempotent and omits full map and roster",
+      "Existing oil legend purchase returns exactly one enhanced player delta",
+      "Proposed pack oil pricing remains disabled",
+      "Compact open and choose return one card delta, retain remaining packs and avoid full-state responses",
+      "Real research completion and continue APIs retain notices and start the same next level",
+      "Actual process restart preserves purchases and unread completed research",
+      "Acknowledgement keeps research levels, retries safely and requires authentication",
+      "Installed public entry serves the generated startup bundle",
+      "Updated assets load and private uploads remain intact",
+      "Matched R47 code and save rollback restores a healthy server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "remoteDeployed": false,
+  "limitations": [
+    "Live CDN trace confirmed slow pending module loads; server-provided logs were healthy. Recovery still needs deployment and real-user verification.",
+    "Local fixed latency and Electron timing do not guarantee production network speed.",
+    "Windows service hooks mocked; actual isolated Node service startup/restart/rollback exercised."
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "passed": true,
+  "version": "20260920-r20",
+  "checks": [
+    "Complete 20260920-r16 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r20 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 13,
+  "newFiles": 0,
+  "requiredBaseFiles": 1216,
+  "imports": 57,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "regressionTests": 78,
+  "browserChecks": [
+    {
+      "name": "696 coalition fits viewport",
+      "pass": true
+    },
+    {
+      "name": "696 command transfer reachable",
+      "pass": true
+    },
+    {
+      "name": "800 coalition fits viewport",
+      "pass": true
+    },
+    {
+      "name": "800 command transfer reachable",
+      "pass": true
+    },
+    {
+      "name": "1236 coalition fits viewport",
+      "pass": true
+    },
+    {
+      "name": "1236 command transfer reachable",
+      "pass": true
+    },
+    {
+      "name": "advanced filters collapsed on phones",
+      "pass": true
+    },
+    {
+      "name": "advanced filters can expand",
+      "pass": true
+    },
+    {
+      "name": "ally pane available",
+      "pass": true
+    },
+    {
+      "name": "lineup pane available",
+      "pass": true
+    },
+    {
+      "name": "touch loan reaches real latest coalition API",
+      "pass": true
+    },
+    {
+      "name": "long guarantee footer stays in viewport",
+      "pass": true
+    },
+    {
+      "name": "guarantee footer is above coalition and touch reachable",
+      "pass": true
+    },
+    {
+      "name": "native back consumes top confirmation",
+      "pass": true
+    },
+    {
+      "name": "native back cancels guarantee",
+      "pass": true
+    },
+    {
+      "name": "parent coalition stays open",
+      "pass": true
+    },
+    {
+      "name": "next native back closes coalition",
+      "pass": true
+    },
+    {
+      "name": "coalition closed",
+      "pass": true
+    },
+    {
+      "name": "native back closes navigation",
+      "pass": true
+    },
+    {
+      "name": "navigation is closed",
+      "pass": true
+    },
+    {
+      "name": "native back closes map tools",
+      "pass": true
+    },
+    {
+      "name": "keyboard-sized login button reachable",
+      "pass": true
+    },
+    {
+      "name": "keyboard-sized shell stays pinned",
+      "pass": true
+    },
+    {
+      "name": "1440 dialog is browser top layer",
+      "pass": true
+    },
+    {
+      "name": "1440 button is unobstructed false",
+      "pass": true
+    },
+    {
+      "name": "1440 wonder-aware confirmation",
+      "pass": true
+    },
+    {
+      "name": "1440 real tap resolves false",
+      "pass": true
+    },
+    {
+      "name": "1440 modal removed",
+      "pass": true
+    },
+    {
+      "name": "1440 dialog is browser top layer",
+      "pass": true
+    },
+    {
+      "name": "1440 button is unobstructed true",
+      "pass": true
+    },
+    {
+      "name": "1440 wonder-aware confirmation",
+      "pass": true
+    },
+    {
+      "name": "1440 real tap resolves true",
+      "pass": true
+    },
+    {
+      "name": "1440 modal removed",
+      "pass": true
+    },
+    {
+      "name": "696 dialog is browser top layer",
+      "pass": true
+    },
+    {
+      "name": "696 button is unobstructed false",
+      "pass": true
+    },
+    {
+      "name": "696 wonder-aware confirmation",
+      "pass": true
+    },
+    {
+      "name": "696 real tap resolves false",
+      "pass": true
+    },
+    {
+      "name": "696 modal removed",
+      "pass": true
+    },
+    {
+      "name": "696 dialog is browser top layer",
+      "pass": true
+    },
+    {
+      "name": "696 button is unobstructed true",
+      "pass": true
+    },
+    {
+      "name": "696 wonder-aware confirmation",
+      "pass": true
+    },
+    {
+      "name": "696 real tap resolves true",
+      "pass": true
+    },
+    {
+      "name": "696 modal removed",
+      "pass": true
+    },
+    {
+      "name": "no browser exceptions",
+      "pass": true
+    }
+  ],
+  "browserErrors": [],
+  "priorCumulativeQA": "releases/20260920-r19/QA.json",
+  "physicalAndroidDeviceVerified": false
+}

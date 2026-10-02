@@ -1,0 +1,10 @@
+import fs from 'node:fs';import http from 'node:http';import {createRequire} from 'node:module';
+import {createStaticHandler} from '../server/http/static-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const serve=createStaticHandler(process.cwd()),server=http.createServer((req,res)=>serve(req,res));await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const browser=await chromium.launch({channel:'chrome',headless:true}),page=await browser.newPage({viewport:{width:1000,height:700}});
+try{await page.goto('http://127.0.0.1:'+server.address().port+'/versus/');
+await page.evaluate(async()=>{const {playerCardMarkup}=await import('/client/player-card/player-card.js');document.body.innerHTML='<main style="display:flex;gap:24px;align-items:start;padding:30px;background:#14251f;min-height:600px"></main>';const catalog=await fetch('/assets/data/s4-player-catalog.json').then(r=>r.json());const players=Array.isArray(catalog)?catalog:catalog.players;const player=players?.find(p=>p.portrait)||{id:'sample',name:'球员示例',overall:92,role:'ST',grade:'S'};for(const width of [280,180,110])document.querySelector('main').insertAdjacentHTML('beforeend',`<section style="width:${width}px">${playerCardMarkup({...player,upgradeLevel:5,traits:['进攻核心','禁区终结者','快速回防']},{animated:false})}</section>`);});
+await page.waitForTimeout(1000);fs.mkdirSync('outputs/card-traits-review',{recursive:true});await page.screenshot({path:'outputs/card-traits-review/cards.png'});
+const checks=await page.locator('.shield-card-traits').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect(),b=e.closest('.shield-card-surface').querySelector('.s4-player-card-upgrade').getBoundingClientRect();return {belowUpgrade:r.top>=b.bottom,rows:e.children.length,z:getComputedStyle(e).zIndex};}));if(checks.some(c=>!c.belowUpgrade||c.rows!==2))throw Error(JSON.stringify(checks));fs.writeFileSync('outputs/card-traits-review/checks.json',JSON.stringify(checks));console.log(checks);
+}finally{await browser.close();server.close();}

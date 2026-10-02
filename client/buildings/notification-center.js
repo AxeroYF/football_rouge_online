@@ -18,7 +18,7 @@ export function createNotificationCenter(root){
  };
  // Only an explicit expand restores a saved offset; live updates never fight scrolling.
  const onToggle=()=>{if(!root.classList.contains('is-collapsed'))collapsedScrollTop=list.scrollTop;const collapsed=root.classList.toggle('is-collapsed');restoreScrollTop=collapsed?null:collapsedScrollTop;toggle.textContent=collapsed?'展开':'收起';toggle.setAttribute('aria-expanded',String(!collapsed));list.inert=collapsed;update();};toggle.addEventListener('click',onToggle);
- const observer=new MutationObserver(update);observer.observe(list,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+ const observer=new MutationObserver(records=>{if(records.some(r=>r.type==='attributes'||r.target===list||r.target.parentElement===list))update();});observer.observe(list,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
  const resize=new ResizeObserver(update);resize.observe(list);if(mapControls)resize.observe(mapControls);if(stage)resize.observe(stage);window.addEventListener('resize',update);window.visualViewport?.addEventListener('resize',update);update();
  return {destroy(){observer.disconnect();resize.disconnect();window.removeEventListener('resize',update);window.visualViewport?.removeEventListener('resize',update);if(frame!==null)cancelAnimationFrame(frame);toggle.removeEventListener('click',onToggle);}};
 }

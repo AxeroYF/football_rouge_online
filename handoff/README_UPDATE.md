@@ -1,7 +1,5 @@
-本轮对话交接已更新（2026-09-19）。
+# 交接更新 · 2026-10-02
 
-GitHub 项目整理合并已经完成，代码基线为 1511fad，详情见 GITHUB_BASELINE_2026-09-19.md。当前状态以 CURRENT_STATE.md 为准，下一轮可以直接使用 NEW_CHAT_PROMPT.md。
+用户已确认 R49 部署。本轮归档 R46–R49 源码、测试、构建工具及发布清单，刷新交接入口和项目结构。历史入口复制到 archive/before-r49-handoff-20261002/，原发布包及 MANIFEST/QA/BASELINE 不变。
 
-服务器最后确认部署 R10，R11 已交付但未确认部署。本轮没有打包新版本或部署服务器。不要将 GitHub main 等同于正式服已安装版本。
-
-旧的累计更新记录保存在 archive/pre-github-r11-20260918/；历史记录只反映当时状态。
+当前状态见 [README](README.md)、[CURRENT_STATE](CURRENT_STATE.md)，Git 结果见 [同步记录](GITHUB_SYNC_20261002.md)。后续增量以 releases/20261001-r49 为基线。交接包仅含文档与发布记录，不是运行安装包。

@@ -1,0 +1,180 @@
+{
+  "passed": true,
+  "version": "20260930-r45",
+  "baseline": "20260929-r44",
+  "fullTests": {
+    "passed": 1682,
+    "failed": 0,
+    "runtimeSyntaxModules": 379,
+    "testFiles": 167,
+    "log": "outputs/r45-full-tests.log"
+  },
+  "browser": {
+    "passed": true,
+    "checks": [
+      "shop uses static player cards",
+      "purchase preserves all shop image nodes and scroll container",
+      "pack purchase preserves roster and world objects",
+      "success does not immediately refetch shop",
+      "rapid player purchase submits once",
+      "sold card keeps original artwork nodes",
+      "mobile shop stays within viewport",
+      "pack claim is single request",
+      "claim keeps original cards and images with no acquired screen",
+      "selected card stops entry animation",
+      "failed next pack preserves original selected card",
+      "next-pack action fits 390x844",
+      "next-pack action fits 844x390",
+      "next-pack action fits 1024x768",
+      "four choices fit 390x844",
+      "four choices fit 844x390",
+      "four-choice landscape result actions fit",
+      "completed biology notice remains at 100 percent",
+      "notification continues same topic at level two",
+      "acknowledgement clears only notice and retains level",
+      "no browser exceptions"
+    ],
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/shop",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/research/continue-notice",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/research/read-notice",
+        "method": "POST"
+      }
+    ]
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260930-r45",
+    "checks": [
+      "Complete 20260929-r44 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260930-r45 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 11,
+    "newFiles": 0,
+    "requiredBaseFiles": 1290,
+    "imports": 177,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R44 account, wallet, roster, packs and active research survive installed server boot",
+      "Real compact pack purchase is idempotent and omits full map and roster",
+      "Existing oil legend purchase returns exactly one enhanced player delta",
+      "Proposed pack oil pricing remains disabled",
+      "Open and choose deliver one card while keeping the next unopened packs",
+      "Real research completion and continue APIs retain notices and start the same next level",
+      "Actual process restart preserves purchases and unread completed research",
+      "Acknowledgement keeps research levels, retries safely and requires authentication",
+      "Updated assets load and private uploads remain intact",
+      "Matched R44 code and save rollback restores a healthy server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "leagueRegistration": {
+    "tests": 8,
+    "includedInFullSuite": true,
+    "minimumPlayerCards": 15,
+    "registrationLimit": 23,
+    "ongoingExceptionDate": "2026-09-30",
+    "checks": [
+      "Strongest effective overall, deduplicated families; existing cards retained",
+      "Independent league health preserved; no reset from re-registration",
+      "Insufficient owned cards stop naturally; no generated or borrowed cards",
+      "Playable lineup and keeper repair while retaining tactical settings",
+      "One persisted preparation per day, no polling writes",
+      "September 30 live leg and completed fixtures unchanged",
+      "No in-progress intervention on other days",
+      "Save failure rolls back both cards and once-only marker"
+    ]
+  },
+  "notes": [
+    "Browser checks precede the server-only league supplement; tested frontend payload is unchanged.",
+    "Actual isolated Windows Node and HTTP; systemd hooks mocked; no production data or remote services modified.",
+    "Oil pack prices remain an evaluation only.",
+    "Regular supplement runs once immediately before the first scheduled match; September 30 permits an existing ongoing competition once. Current match player snapshots and previous results are unchanged."
+  ],
+  "remoteDeployed": false
+}

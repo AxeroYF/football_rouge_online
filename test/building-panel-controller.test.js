@@ -214,3 +214,10 @@ test('demolition is available on owned ordinary facility cards and opens the exa
  assert.deepEqual(f.demolitions,[{target:{territoryId:'A',buildingId:'facility-a'},button}]);
  const html=buildingPanelMarkup({catalog,view:{...viewFor('other'),canManage:false}});assert.doesNotMatch(html,/data-demolish-building/);
 });
+
+test('versioned building polls only refetch detail when construction dependencies change',async()=>{
+ const f=inlineFixture();f.state.buildings.detailVersion='one';f.controller.open('A');f.requests[0].resolve(wonderView());await settle();
+ for(let i=0;i<5;i++)f.controller.refreshFromState();assert.equal(f.requests.length,1);
+ f.state.buildings.detailVersion='two';f.controller.refreshFromState();assert.equal(f.requests.length,2);
+ f.requests[1].resolve(wonderView('new requirements'));await settle();f.controller.refreshFromState();assert.equal(f.requests.length,2);f.controller.close();
+});

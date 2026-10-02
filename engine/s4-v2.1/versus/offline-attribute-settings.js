@@ -1,9 +1,11 @@
-﻿const ALLOWED_OVERFLOW_RATES = new Set([1, 0.5, 0.3]);
+﻿const ALLOWED_OVERFLOW_RATES = new Set([1, 0.5, 0.3, 0.2]);
 
 export function resolveOfflineAttributeSettings(environment = typeof process !== "undefined" ? process.env : {}) {
-  const unlocked = environment.YDL_OFFLINE_MODE === "1" && environment.YDL_OFFLINE_ATTRIBUTE_UNCAP === "1";
+  const offline = environment.YDL_OFFLINE_MODE === "1";
+  const unlocked = !offline || environment.YDL_OFFLINE_ATTRIBUTE_UNCAP === "1";
   const requestedRate = Number(environment.YDL_OFFLINE_OVERCAP_RATE ?? 1);
-  const overflowRate = unlocked && ALLOWED_OVERFLOW_RATES.has(requestedRate) ? requestedRate : 0;
+  // Online cards keep full attributes; only the excess above 99 is discounted in matches.
+  const overflowRate = !unlocked ? 0 : offline && ALLOWED_OVERFLOW_RATES.has(requestedRate) ? requestedRate : 0.2;
   return Object.freeze({
     unlocked,
     overflowRate,

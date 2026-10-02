@@ -62,7 +62,7 @@ test('failed map downloads can retry and explicit content versions never reuse a
 test('all three elevation binaries start before any metadata finishes', async () => {
   const gate = deferred(), urls = [], controller = new AbortController();
   const pending = loadReliefFields({ signal: controller.signal, fetchImpl: async (url, options) => {
-    urls.push(url); assert.equal(options.signal, controller.signal); assert.equal(options.cache, 'default');
+    urls.push(url); assert.equal(options.signal.aborted, false); assert.equal(options.cache, 'default');
     if (url.includes('.json?')) await gate.promise;
     return { ok: true,
       json: async () => ({ schemaVersion: 1, width: 2, height: 2, step: 1, origin: [0, 0], file: 'https://invalid.test/redirect.bin' }),
@@ -112,6 +112,31 @@ function request(port, url, headers = {}, method = 'GET') {
     req.on('error', reject); req.end();
   });
 }
+
+test('versioned startup code is compressed and immutable only when its hash matches; HTML stays revalidated', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ydl-code-http-'));
+  const source = Buffer.from('/* compressible startup fixture */\n'.repeat(300));
+  await writeFile(path.join(root,'startup.js'),source);
+  await writeFile(path.join(root,'game.html'),source);
+  const server=http.createServer(createStaticHandler(root));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const port=server.address().port,url='/versus/startup.js?v=sha256-'+sha(source).slice(0,20);
+  try {
+    const first=await request(port,url,{'Accept-Encoding':'gzip'});
+    assert.match(first.headers['cache-control'],/immutable/);
+    assert.deepEqual(gunzipSync(first.body),source);
+    assert.ok(first.body.length<source.length/10);
+    const raw=await request(port,url,{'Accept-Encoding':'identity'});
+    assert.deepEqual(raw.body,source);
+    assert.equal((await request(port,url,{'If-None-Match':raw.headers.etag})).status,304);
+    for(const p of ['/startup.js','/startup.js?v=sha256-aaaaaaaaaaaaaaaaaaaa','/game.html?v=sha256-'+sha(source)])
+      assert.equal((await request(port,p)).headers['cache-control'],'no-cache');
+    await writeFile(path.join(root,'startup.js'),Buffer.from('/* updated version */'));
+    const stale=await request(port,url,{'If-None-Match':raw.headers.etag});
+    assert.equal(stale.status,200);assert.equal(stale.headers['cache-control'],'no-cache');
+    assert.notEqual(stale.headers.etag,raw.headers.etag);
+  }finally{await new Promise(resolve=>server.close(resolve));await rm(root,{recursive:true,force:true});}
+});
 
 test('HTTP map serving compresses losslessly, caches content versions, and preserves validation/HEAD/encoding semantics', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ydl-map-http-'));

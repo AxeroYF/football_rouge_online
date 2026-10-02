@@ -1,3 +1,7 @@
+import {openRosterPoster} from '../share/roster-poster.js';
+import {createLeagueRegistrationController} from './league-registration-controller.js';
+import {createTeamBatchController} from "./team-batch-controller.js";
+import {patchMarkup} from "../ui/patch-markup.js";
 import { presentPlayerTraits } from "../../shared/config/player-trait-presentation.mjs";
 import { representativePlayers } from "../../shared/config/representative-players.mjs";
 import { isPlayerTraining } from "../../shared/config/training.mjs";
@@ -58,10 +62,16 @@ function attributeValue(player, key) {
   const value = player?.effectiveAttributes?.[key] ?? player?.displayAttributes?.[key] ?? player?.attributes?.[key];
   return Number.isFinite(Number(value)) ? Math.round(Number(value)) : "—";
 }
+const attributeCache=new Map();
 function listAttributes(player) {
+  const key=String(player.playerId??player.id),signature=JSON.stringify(player),cached=attributeCache.get(key);
+  if(cached?.signature===signature)return cached.markup;
   player = presentPlayerTraits(player);
   const keys = LIST_KEY_ATTRIBUTES[primaryPosition(player)] ?? ["pace", "passing", "dribbling", "decisions"];
-  return keys.map((key) => `<span><i>${esc(PLAYER_ATTRIBUTE_LABELS[key] ?? key)}</i><b>${attributeValue(player,key)}</b></span>`).join("");
+  const markup=keys.map((key) => `<span><i>${esc(PLAYER_ATTRIBUTE_LABELS[key] ?? key)}</i><b>${attributeValue(player,key)}</b></span>`).join("");
+  attributeCache.set(key,{signature,markup});
+  if(attributeCache.size>512)attributeCache.delete(attributeCache.keys().next().value);
+  return markup;
 }
 function squadSelectMarkup(player, assignments, expeditionCount) {
   const playerId = String(player.playerId ?? player.id);
@@ -88,7 +98,7 @@ export function teamPlayerListMarkup(players, assignments = {}, expeditionCount 
         ? PLAYER_SQUAD_IDS.EXPEDITION
         : PLAYER_SQUAD_IDS.GARRISON;
       const squadClass = assignedSquad === PLAYER_SQUAD_IDS.EXPEDITION ? " is-squad-expedition" : "";
-      return `<div class="team-player-list-row${squadClass}"><button type="button" class="team-list-name" data-player-card-action="team-detail" data-player-card-id="${esc(playerId)}" aria-label="查看${esc(player.name)}"><strong>${esc(player.name)}</strong>${english ? `<em>${esc(english)}</em>` : ""}</button>${squadSelectMarkup(player,assignments,expeditionCount)}<span class="team-list-rating"><b>${esc(player.grade ?? "—")}</b><strong>${overallValue(player)}</strong></span><span class="team-list-positions"><b>${esc(primaryPosition(player))}</b><i>/</i><span>${esc(secondary || "—")}</span></span><span>${esc(player.club || "—")}</span><span>${esc(player.nationality || "—")}</span><span class="team-list-attributes">${listAttributes(player)}</span></div>`;
+      return `<div data-ui-key="team-player-${esc(playerId)}" class="team-player-list-row${squadClass}"><button type="button" class="team-list-name" data-player-card-action="team-detail" data-player-card-id="${esc(playerId)}" aria-label="查看${esc(player.name)}"><strong>${esc(player.name)}</strong>${english ? `<em>${esc(english)}</em>` : ""}</button>${squadSelectMarkup(player,assignments,expeditionCount)}<span class="team-list-rating"><b>${esc(player.grade ?? "—")}</b><strong>${overallValue(player)}</strong></span><span class="team-list-positions"><b>${esc(primaryPosition(player))}</b><i>/</i><span>${esc(secondary || "—")}</span></span><span>${esc(player.club || "—")}</span><span>${esc(player.nationality || "—")}</span><span class="team-list-attributes">${listAttributes(player)}</span></div>`;
     }).join("");
     return `<div class="team-position-row" role="heading" aria-level="3"><h3>${esc(role)}</h3></div>${playerRows || '<div class="team-position-empty">暂无球员</div>'}`;
   }).join("");
@@ -101,9 +111,26 @@ export function teamPlayerDetailMarkup(player) {
 export { PLAYER_ATTRIBUTE_LABELS };
 
 export function createTeamController({ panel, getCampaignState, mapElement, getCampaignRequest, campaignStore, showToast = () => {} } = {}) {
-  let openState = false;
-  let selectedPlayerId = null;
-  let filters = { squad:"all", position:"all", nationality:"all", minOverall:"", maxOverall:"", upgradeLevel:"all", search:"" };
+  let openState = false, assignmentPending=false, unbindDetail=()=>{};
+  let selectedPlayerId = null, mode = 'menu';
+  const batch=createTeamBatchController({panel,getCampaignState,getCampaignRequest,campaignStore,showToast,renderHost:()=>render(),onDetail:id=>{selectedPlayerId=id;render();}});
+  const league=createLeagueRegistrationController({panel,getCampaignState,getCampaignRequest,campaignStore,showToast,renderHost:()=>render(),onDetail:id=>{selectedPlayerId=id;render();}});
+  let leagueRenderKey='';
+  const registrationRenderKey=()=>{const value=getCampaignState(),r=value?.leagueRegistration;return JSON.stringify([value?.playerId,r?.playerIds,r?.locked,(value?.draft?.roster??[]).map(p=>[p.id,p.upgradeLevel])]);};
+  campaignStore?.subscribe?.(()=>{if(!openState||mode!=='league')return;const key=registrationRenderKey();if(key!==leagueRenderKey){leagueRenderKey=key;render();}});
+  function enterMode(next){
+    if(assignmentPending||batch.pending||league.pending)return showToast('正在保存，请稍候');
+    const apply=()=>{mode=next;selectedPlayerId=null;render();if(next==='batch'&&!batch.dirty)batch.load();};
+    if(mode==='batch')batch.requestLeave(apply);else if(mode==='league')league.requestLeave(apply);else apply();
+  }
+  function headerMarkup(){return `<header class="team-management-header"><div class="team-management-title"><h2>${mode==='menu'?'编队':mode==='list'?'编队 · 列表':mode==='league'?'编队 · 联赛注册':'编队 · 批量操作'}</h2></div><button type="button" class="club-share-button" data-team-poster>▧ 分享阵容</button>${mode!=='menu'?'<button class="team-mode-back" type="button" data-team-back>返回</button>':''}<button type="button" data-team-close aria-label="关闭编队">×</button></header>`;}
+  function bindCommon(){
+    const share=panel.querySelector('[data-team-poster]');if(share)share.onclick=()=>openRosterPoster(getCampaignState());
+    const back=panel.querySelector('[data-team-back]');if(back)back.onclick=()=>enterMode('menu');
+    const closeButton=panel.querySelector('[data-team-close]');if(closeButton)closeButton.onclick=()=>close();
+    panel.querySelectorAll('[data-team-mode]').forEach(b=>b.onclick=()=>enterMode(b.dataset.teamMode));
+  }
+  let filters = { squad:"all", position:"all", nationality:"all", club:"all", minOverall:"", maxOverall:"", upgradeLevel:"all", search:"" };
   const roster = () => representativePlayers(getCampaignState()?.draft?.roster ?? []);
   const filtered = () => sortTeamPlayers(roster().filter((player) => {
     const text = filters.search.trim().toLowerCase();
@@ -114,6 +141,7 @@ export function createTeamController({ panel, getCampaignState, mapElement, getC
     if (filters.squad !== "all" && assignedSquad !== filters.squad) return false;
     if (filters.position !== "all" && player.pool !== filters.position && player.role !== filters.position) return false;
     if (filters.nationality !== "all" && player.nationality !== filters.nationality) return false;
+    if (filters.club !== "all" && player.club !== filters.club) return false;
     if (filters.minOverall !== "" && Number(player.effectiveOverall ?? player.overall) < Number(filters.minOverall)) return false;
     if (filters.maxOverall !== "" && Number(player.effectiveOverall ?? player.overall) > Number(filters.maxOverall)) return false;
     if (filters.upgradeLevel !== "all" && Number(player.upgradeLevel ?? 0) !== Number(filters.upgradeLevel)) return false;
@@ -121,6 +149,26 @@ export function createTeamController({ panel, getCampaignState, mapElement, getC
   }));
   function closeDetail() { selectedPlayerId = null; render(); }
   function render({ scrollTop = null, scrollLeft = null } = {}) {
+    unbindDetail();
+    batch.ensureOwner();
+    if(mode==='menu'){
+      const icon=content=>`<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${content}</svg>`;
+      const listIcon=icon('<rect x="4" y="5" width="24" height="22" rx="4"/><path d="M10 11h1m5 0h6M10 16h1m5 0h6M10 21h1m5 0h6"/>');
+      const batchIcon=icon('<rect x="4" y="5" width="10" height="14" rx="2"/><rect x="18" y="5" width="10" height="14" rx="2"/><path d="M7 25h18m-4-4 4 4-4 4M8 10h2m12 0h2"/>');
+      patchMarkup(panel,`<div class="team-management-shell team-mode-shell">${headerMarkup()}<div class="team-mode-home"><button type="button" data-team-mode="list"><span class="team-mode-icon">${listIcon}</span><strong>列表</strong><span class="team-mode-description">逐人调整，即时生效</span><span class="team-mode-enter" aria-hidden="true">进入 <b>→</b></span></button><button type="button" data-team-mode="batch"><span class="team-mode-icon">${batchIcon}</span><strong>批量操作</strong><span class="team-mode-description">卡片多选，统一保存</span>${batch.dirty?'<small class="team-mode-draft">有未保存草稿</small>':''}<span class="team-mode-enter" aria-hidden="true">${batch.dirty?'继续编辑':'进入'} <b>→</b></span></button><button type="button" data-team-mode="league"><span class="team-mode-icon">${icon('<path d="M9 4h14v8a7 7 0 0 1-14 0V4ZM9 7H4v3a6 6 0 0 0 6 6m13-9h5v3a6 6 0 0 1-6 6M16 19v7m-6 2h12"/>')}</span><strong>联赛注册</strong><span class="team-mode-description">23 人名单，独立出战</span><span class="team-mode-enter" aria-hidden="true">进入 <b>→</b></span></button></div></div>`);bindCommon();return;
+    }
+    if(mode==='league'){
+      leagueRenderKey=registrationRenderKey();
+      const source=getCampaignState()?.draft?.roster?.find(p=>String(p.id)===String(selectedPlayerId));
+      const player=source?{...source,state:getCampaignState()?.leagueRegistration?.conditions?.[source.id]?.state??{fitness:100},status:{},medical:null,training:null,coalitionLoan:null,injury:null}:null;
+      patchMarkup(panel,`<div class="team-management-shell league-registration-shell">${headerMarkup()}${league.markup()}${teamPlayerDetailMarkup(player)}</div>`);league.bind();bindCommon();
+      unbindDetail=bindSmallWindow(panel.querySelector('.team-player-detail-overlay'),{onRequestClose:closeDetail});return;
+    }
+    if(mode==='batch'){
+      const player=getCampaignState()?.draft?.roster?.find(p=>String(p.id)===String(selectedPlayerId));
+      patchMarkup(panel,`<div class="team-management-shell team-batch-shell">${headerMarkup()}${batch.markup()}${teamPlayerDetailMarkup(player)}</div>`);batch.bind();bindCommon();
+      unbindDetail=bindSmallWindow(panel.querySelector('.team-player-detail-overlay'),{onRequestClose:closeDetail});return;
+    }
     const players = filtered();
     const currentRoster = roster();
     const assignments = getCampaignState()?.playerSquads?.assignments ?? {};
@@ -133,29 +181,36 @@ export function createTeamController({ panel, getCampaignState, mapElement, getC
     });
     const selected = currentRoster.find((player) => String(player.id) === String(selectedPlayerId));
     const nationalities = [...new Set(currentRoster.map((player) => player.nationality).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-CN"));
+    const clubs = [...new Set(currentRoster.map(player=>player.club).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"zh-CN"));
     const expeditionCount = squadCounts[PLAYER_SQUAD_IDS.EXPEDITION];
     const content = teamPlayerListMarkup(players,assignments,expeditionCount);
     const limitNotice = `远征队最多 ${EXPEDITION_MAX_PLAYERS} 人（含首发与替补）${expeditionCount > EXPEDITION_MAX_PLAYERS ? `，当前超出 ${expeditionCount - EXPEDITION_MAX_PLAYERS} 人，请调至留守队后再出征` : expeditionCount === EXPEDITION_MAX_PLAYERS ? "，已满员，调入前请先调出球员" : ""}`;
     const squadSummary = PLAYER_SQUAD_DEFINITIONS.map((squad) => `<span class="is-${esc(squad.id)}"><b>${esc(squad.name)}</b><strong>${squadCounts[squad.id]}${squad.id === PLAYER_SQUAD_IDS.EXPEDITION ? ` / ${EXPEDITION_MAX_PLAYERS}` : ""}</strong></span>`).join("");
-    panel.innerHTML = `<div class="team-management-shell"><header class="team-management-header"><div class="team-management-title"><h2>编队</h2></div><button type="button" data-team-close aria-label="关闭编队">×</button></header><div class="team-management-toolbar"><label class="team-search"><span>搜索球员</span><input data-team-filter="search" value="${esc(filters.search)}" placeholder="中文名、英文名、俱乐部或国籍"></label><label class="team-squad-filter"><span>编队</span><select data-team-filter="squad"><option value="all">全部编队</option>${PLAYER_SQUAD_DEFINITIONS.map((squad) => `<option value="${esc(squad.id)}" ${filters.squad === squad.id ? "selected" : ""}>${esc(squad.name)}</option>`).join("")}</select></label><label><span>位置</span><select data-team-filter="position"><option value="all">全部位置</option>${FILTER_POSITION_ORDER.map((key) => `<option value="${key}" ${filters.position === key ? "selected" : ""}>${FILTER_POSITION_LABELS[key]}</option>`).join("")}</select></label><label><span>国家</span><select data-team-filter="nationality"><option value="all">全部国家</option>${nationalities.map((name) => `<option value="${esc(name)}" ${filters.nationality === name ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label><label><span>能力值</span><span class="team-range"><input data-team-filter="minOverall" type="number" min="0" max="99" value="${esc(filters.minOverall)}" placeholder="最低"><i>—</i><input data-team-filter="maxOverall" type="number" min="0" max="99" value="${esc(filters.maxOverall)}" placeholder="最高"></span></label><label><span>强化等级</span><select data-team-filter="upgradeLevel"><option value="all">全部等级</option>${[0,1,2,3,4,5,6,7,8].map((level) => `<option value="${level}" ${String(filters.upgradeLevel) === String(level) ? "selected" : ""}>${level === 0 ? "未强化" : `+${level}`}</option>`).join("")}</select></label><div class="team-squad-summary" aria-label="编队人数">${squadSummary}</div></div><p class="team-squad-limit${expeditionCount > EXPEDITION_MAX_PLAYERS ? " is-over-limit" : ""}">${limitNotice}</p>${content}${teamPlayerDetailMarkup(selected)}</div>`;
-    panel.querySelectorAll("[data-team-filter]").forEach((input) => { input.addEventListener(input.tagName === "SELECT" ? "change" : "input", () => { filters[input.dataset.teamFilter] = input.value; render(); }); });
-    panel.querySelectorAll("[data-team-squad-player]").forEach((select) => select.addEventListener("change", async () => {
+    patchMarkup(panel, `<div class="team-management-shell">${headerMarkup()}<div class="team-management-toolbar"><label class="team-search"><span>搜索球员</span><input data-team-filter="search" value="${esc(filters.search)}" placeholder="中文名、英文名、俱乐部或国籍"></label><label class="team-squad-filter"><span>编队</span><select data-team-filter="squad"><option value="all">全部编队</option>${PLAYER_SQUAD_DEFINITIONS.map((squad) => `<option value="${esc(squad.id)}" ${filters.squad === squad.id ? "selected" : ""}>${esc(squad.name)}</option>`).join("")}</select></label><label><span>位置</span><select data-team-filter="position"><option value="all">全部位置</option>${FILTER_POSITION_ORDER.map((key) => `<option value="${key}" ${filters.position === key ? "selected" : ""}>${FILTER_POSITION_LABELS[key]}</option>`).join("")}</select></label><label><span>国家</span><select data-team-filter="nationality"><option value="all">全部国家</option>${nationalities.map((name) => `<option value="${esc(name)}" ${filters.nationality === name ? "selected" : ""}>${esc(name)}</option>`).join("")}</select></label><label><span>俱乐部</span><select data-team-filter="club"><option value="all">全部俱乐部</option>${clubs.map(name=>`<option value="${esc(name)}" ${filters.club===name?"selected":""}>${esc(name)}</option>`).join("")}</select></label><label><span>能力值</span><span class="team-range"><input data-team-filter="minOverall" type="number" min="0" max="99" value="${esc(filters.minOverall)}" placeholder="最低"><i>—</i><input data-team-filter="maxOverall" type="number" min="0" max="99" value="${esc(filters.maxOverall)}" placeholder="最高"></span></label><label><span>强化等级</span><select data-team-filter="upgradeLevel"><option value="all">全部等级</option>${[0,1,2,3,4,5,6,7,8].map((level) => `<option value="${level}" ${String(filters.upgradeLevel) === String(level) ? "selected" : ""}>${level === 0 ? "未强化" : `+${level}`}</option>`).join("")}</select></label><div class="team-squad-summary" aria-label="编队人数">${squadSummary}</div></div><p class="team-squad-limit${expeditionCount > EXPEDITION_MAX_PLAYERS ? " is-over-limit" : ""}">${limitNotice}</p>${content}${teamPlayerDetailMarkup(selected)}</div>`);
+    panel.querySelectorAll("[data-team-filter]").forEach((input) => { input[input.tagName === "SELECT" ? "onchange" : "oninput"] = () => { filters[input.dataset.teamFilter] = input.value; render(); }; });
+    panel.querySelectorAll("[data-team-squad-player]").forEach((select) => select.onchange = async () => {
+      if(assignmentPending){select.value=getCampaignState()?.playerSquads?.assignments?.[select.dataset.teamSquadPlayer]??PLAYER_SQUAD_IDS.GARRISON;return;}
       const request = getCampaignRequest?.();
       if (typeof request !== "function") return showToast("登录会话尚未准备完成");
       const scrollContainer = panel.querySelector(".team-player-list");
       const preservedScroll = { scrollTop:scrollContainer?.scrollTop ?? 0, scrollLeft:scrollContainer?.scrollLeft ?? 0 };
-      select.disabled = true;
+      const accountId=getCampaignState()?.playerId;
+      assignmentPending=true;select.disabled = true;
       try {
-        const value = await request("/api/campaign/squads/assign", { method:"POST", body:{ playerId:select.dataset.teamSquadPlayer, squadId:select.value } });
-        campaignStore?.setState(value.state,{source:"player-squad-assignment"});
+        const value = await request("/api/campaign/squads/assign", { method:"POST", body:{ compact:true, playerId:select.dataset.teamSquadPlayer, squadId:select.value } });
+        if(accountId!==getCampaignState()?.playerId)return;
+        campaignStore?.setState(value.state??{...getCampaignState(),...value.statePatch},{source:"player-squad-assignment"});
       } catch (error) {
         showToast(error?.message || "编队设置失败");
       }
+      finally {assignmentPending=false;}
+      if(accountId!==getCampaignState()?.playerId)return;
+      select.blur?.();
       render(preservedScroll);
-    }));
-    panel.querySelectorAll('[data-player-card-action="team-detail"]').forEach((button) => button.addEventListener("click", () => { selectedPlayerId = button.dataset.playerCardId; render(); }));
-    panel.querySelector("[data-team-close]")?.addEventListener("click", close);
-    bindSmallWindow(panel.querySelector(".team-player-detail-overlay"), { onRequestClose:closeDetail });
+    });
+    panel.querySelectorAll('[data-player-card-action="team-detail"]').forEach((button) => button.onclick = () => { selectedPlayerId = button.dataset.playerCardId; render(); });
+    bindCommon();
+    unbindDetail=bindSmallWindow(panel.querySelector(".team-player-detail-overlay"), { onRequestClose:closeDetail });
     if (scrollTop !== null || scrollLeft !== null) {
       const scrollContainer = panel.querySelector(".team-player-list");
       if (scrollContainer) {
@@ -164,8 +219,15 @@ export function createTeamController({ panel, getCampaignState, mapElement, getC
       }
     }
   }
-  function open() { openState = true; selectedPlayerId = null; activateStandardWindow(panel); mapElement.classList.add("is-team-open"); render(); }
-  function close() { openState = false; selectedPlayerId = null; panel.hidden = true; deactivateStandardWindow(panel); mapElement.classList.remove("is-team-open"); }
+  function open() { openState = true; mode='menu'; selectedPlayerId = null; activateStandardWindow(panel); mapElement.classList.add("is-team-open"); render(); }
+  function close(reason) {
+    const finish=()=>{unbindDetail();openState=false;selectedPlayerId=null;panel.hidden=true;deactivateStandardWindow(panel);mapElement.classList.remove("is-team-open");};
+    if(reason==='superseded'){finish();return;}
+    if(mode==='batch')return batch.requestLeave(finish);
+    if(mode==='league')return league.requestLeave(finish);
+    if(assignmentPending)return false;
+    finish();return true;
+  }
   function toggle() { openState ? close() : open(); }
   function isOpen() { return openState; }
   registerStandardWindow(panel, { onRequestClose:close });

@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "version": "20260921-r38",
+  "checks": [
+    "Complete 20260921-r37 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260921-r38 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 4,
+  "newFiles": 0,
+  "requiredBaseFiles": 1233,
+  "imports": 10,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "testsPassed": 22,
+  "browserReview": {
+    "passed": true,
+    "errors": [],
+    "closedPollingStopped": true,
+    "standings": 10,
+    "preSchedule": true,
+    "spectators": true,
+    "liveBadge": true,
+    "portraitScroll": true,
+    "fixtures": 90,
+    "live": 5
+  }
+}

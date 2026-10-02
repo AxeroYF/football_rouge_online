@@ -192,7 +192,7 @@ test('actual two-leg challenge broadcasts the current home clubs normal sponsors
  Object.assign(s.world.territories.target,{ownerType:'player',ownerId:'two'});setTestWar(s.world,a.id,b.id);
  for(const brand of ['microsoft','bmw','mcdonalds'])grant(s,a,'normal',brand);
  grant(s,a,'stadium','audi');grant(s,a,'team','ferrari');grant(s,b,'normal','honda');
- const {challenge}=s.challenges.begin(a,'target');
+ a.gold+=30000; const {challenge}=s.challenges.begin(a,'target');
  const first=publicCampaignLiveLeg(challenge.live.firstLeg,{now:origin});
  assert.equal(first.venue.name,'客队主场');assert.equal(first.venue.ownerId,'two');assert.deepEqual(first.venue.sponsors.map(b=>b.id),['honda']);assert.equal(first.teams[0].name,'客队');assert.equal(first.teams[1].name,'主队-法拉利');
  f.setNow(challenge.firstLegEndsAt);

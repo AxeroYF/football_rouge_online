@@ -1,0 +1,198 @@
+{
+  "passed": true,
+  "version": "20261001-r49",
+  "baseline": "20260930-r48",
+  "fullTests": {
+    "passed": 1690,
+    "failed": 0,
+    "runtimeSyntaxModules": 381,
+    "log": "outputs/r49-full-tests.log"
+  },
+  "browser": {
+    "passed": true,
+    "checks": [
+      "shop uses static player cards",
+      "purchase preserves all shop image nodes and scroll container",
+      "pack purchase preserves roster and world objects",
+      "success does not immediately refetch shop",
+      "rapid player purchase submits once",
+      "sold card keeps original artwork nodes",
+      "oil pack buy spends 2 oil, preserves gold and adds one unopened pack",
+      "oil pack purchase keeps shop artwork mounted",
+      "mobile shop stays within viewport",
+      "pending opening keeps shelf art mounted and disables repeated open",
+      "opening uses inventory-only response and preserves roster and world",
+      "opening keeps meteor background and animated card sheen",
+      "original staggered 3D reveal restored",
+      "failed claim keeps cards and effects, restores choices without replaying reveal",
+      "claim returns one card and keeps the existing world",
+      "pack claim is single request",
+      "claim keeps original cards and images with no acquired screen",
+      "unchosen cards stay dim after selection feedback",
+      "selected card animates in place without replaying entry",
+      "claim keeps canvas and meteor nodes",
+      "failed next pack preserves original selected card",
+      "next pack reuses stage and meteors and replaces only candidate cards",
+      "next-pack action fits 390x844",
+      "next-pack action fits 844x390",
+      "next-pack action fits 1024x768",
+      "four choices fit 390x844",
+      "four choices fit 844x390",
+      "four-choice landscape result actions fit",
+      "completed biology notice remains at 100 percent",
+      "notification continues same topic at level two",
+      "acknowledgement clears only notice and retains level",
+      "no browser exceptions"
+    ],
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/shop",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/research/continue-notice",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/research/read-notice",
+        "method": "POST"
+      }
+    ]
+  },
+  "fullGame": {
+    "passed": true,
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      }
+    ],
+    "checks": [
+      "Real game page opens compact pack and preserves world and roster",
+      "Real game claim merges one card with world retained",
+      "Consecutive next pack works",
+      "No extra state GET after pack actions",
+      "No page exceptions"
+    ]
+  },
+  "installation": {
+    "passed": true,
+    "version": "20261001-r49",
+    "checks": [
+      "Complete 20260930-r48 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20261001-r49 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 10,
+    "newFiles": 0,
+    "requiredBaseFiles": 1295,
+    "imports": 17,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R48 account, wallet, roster, packs and active research survive installed server boot",
+      "Real compact pack purchase is idempotent and omits full map and roster",
+      "Existing oil legend purchase returns exactly one enhanced player delta",
+      "Oil pack pricing, compact delivery, replay, currency mismatch and insufficient oil pass actual HTTP",
+      "Compact open and choose return one card delta, retain remaining packs and avoid full-state responses",
+      "Real research completion and continue APIs retain notices and start the same next level",
+      "Actual process restart preserves oil pack receipts, balances, inventory and unread research",
+      "Acknowledgement keeps research levels, retries safely and requires authentication",
+      "Installed public entry serves the generated startup bundle",
+      "Updated assets load and private uploads remain intact",
+      "Matched R48 code and save rollback restores a healthy server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "remoteDeployed": false,
+  "scope": "Restore pack visual effects without redundant stage/card rebuilds; enable server-priced oil packs with transactional receipts. Isolated browser and real Node service tests; no remote deployment."
+}

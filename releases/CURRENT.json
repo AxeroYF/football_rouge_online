@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20260918-r11",
-  "lastUserConfirmedDeployed": "20260918-r10",
-  "sourceState": "R11 plus repository baseline cleanup, private migration configuration extraction and removal of legacy development password hints; not a newly deployed server release",
+  "latestPublished": "20261001-r49",
+  "lastUserConfirmedDeployed": "20261001-r49",
+  "sourceState": "R49 deployment confirmed by user on 2026-10-02. R46-R49 source, tests, build tools and release records committed and pushed as bc399a6178a9d1c43999e3645cce723174a29a47. Runtime files and generated browser startup assets exactly match published R49; handoff refreshed.",
   "releases": [
     {
       "version": "20260918-r9",
@@ -26,7 +26,316 @@
       "bundleSha256": "e4ea118b2f1051332445b6d4fb372dbfd446df63c5c8573ceecc68c790ca6d56",
       "baselineFiles": 1202,
       "changedFiles": 7,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260919-r12",
+      "parent": "20260918-r11",
+      "bundleSha256": "2cf5b1972e1ce92df07a30c4e3b8bc6ac2674c7bbeee2a88b52b64e944edfbf4",
+      "baselineFiles": 1203,
+      "changedFiles": 12,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260919-r13",
+      "parent": "20260919-r12",
+      "bundleSha256": "aacdc5490b690209708d8d5010c82838e26e86dfcaa2abef2d40c7bcdb293caa",
+      "baselineFiles": 1212,
+      "changedFiles": 62,
+      "deployment": "user-confirmed",
+      "recoveryInstallerSha256": "c190d401b8a99949b61e592f0d46fea1abc6802fc41f95c265429bca4e214920",
+      "deploymentBackup": "/var/backups/yellowdogs-rougelite/hot-updates/20260919-r13-1789824343071"
+    },
+    {
+      "version": "20260920-r14",
+      "parent": "20260919-r13",
+      "bundleSha256": "22d75b789f9d5f392f0670ee71ee7df47e173e5077250affbf50164b0ef2865e",
+      "baselineFiles": 1213,
+      "changedFiles": 6,
+      "deployment": "user-confirmed-not-deployed"
+    },
+    {
+      "version": "20260920-r15",
+      "parent": "20260919-r13",
+      "bundleSha256": "97e9647c9ee52363f019f526290878681e7b9dca3bcc99293d32252bce3b2de9",
+      "baselineFiles": 1216,
+      "changedFiles": 25,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r16",
+      "parent": "20260920-r15",
+      "bundleSha256": "191422957ac17b211a605e06b561faea757fa2d810ee110b52f64016094e9a51",
+      "baselineFiles": 1216,
+      "changedFiles": 2,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r17",
+      "parent": "20260920-r16",
+      "bundleSha256": "bf72388645663e81e4f8a5753c55e1bbd30400247516bbe7a1de993a10a12d39",
+      "baselineFiles": 1216,
+      "changedFiles": 2,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r18",
+      "parent": "20260920-r16",
+      "bundleSha256": "806481b24fcbf2f9a89b8b10958e88cf3513f63ab560f782493b77e013fad226",
+      "baselineFiles": 1216,
+      "changedFiles": 7,
       "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260920-r19",
+      "parent": "20260920-r16",
+      "bundleSha256": "5cb7455dc8f2d07c5705c11cb19d327d543d535779118a08af569fc2f301853b",
+      "baselineFiles": 1216,
+      "changedFiles": 8,
+      "deployment": "user-confirmed-not-deployed"
+    },
+    {
+      "version": "20260920-r20",
+      "parent": "20260920-r16",
+      "bundleSha256": "8098a461f64f635b9b12e7e58bd15b15702f1adf6d09a81bc24ac8157ceeceaf",
+      "baselineFiles": 1216,
+      "changedFiles": 13,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260920-r21",
+      "parent": "20260920-r16",
+      "bundleSha256": "d84a7fee715d02df87034f0ff79c8f5b67f7ced250184c7154c147017d1b648a",
+      "baselineFiles": 1216,
+      "changedFiles": 16,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260920-r22",
+      "parent": "20260920-r16",
+      "bundleSha256": "b70b8d0c93bd4b3a8f3f2875470c72aeb1149dc841bc6a612248f43065f92339",
+      "baselineFiles": 1216,
+      "changedFiles": 23,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260920-r23",
+      "parent": "20260920-r16",
+      "bundleSha256": "5c91e759ec6543cd775ea3a3c451c5ba882acf2026eff6ce32d6527e34cdf86f",
+      "baselineFiles": 1216,
+      "changedFiles": 27,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260920-r24",
+      "parent": "20260920-r17",
+      "bundleSha256": "f322972e86380cd5e40574dc7bc6a7893c9b412c95f479cb8ac407b8675c3eb8",
+      "baselineFiles": 1216,
+      "changedFiles": 26,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r25",
+      "parent": "20260920-r24",
+      "bundleSha256": "fccac8eb4dc3b7ee895ee8ad3b46d4cc06c885da4870119d12eaa7fd56007041",
+      "baselineFiles": 1216,
+      "changedFiles": 5,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r26",
+      "parent": "20260920-r25",
+      "bundleSha256": "369bb1a5c8cd091d43e9c1b366450916529922996dad0202ea41334cec4bf2f4",
+      "baselineFiles": 1216,
+      "changedFiles": 5,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r27",
+      "parent": "20260920-r26",
+      "bundleSha256": "d2d4071bc1626e0ab57160dbb4b5f2af67af2108394708f9a4d8bedf27e952f2",
+      "baselineFiles": 1217,
+      "changedFiles": 5,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r28",
+      "parent": "20260920-r27",
+      "bundleSha256": "8984ccbc18eb9b5dfd363e6ca06838473565ae183971ee832144edde3c31305a",
+      "baselineFiles": 1217,
+      "changedFiles": 8,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r29",
+      "parent": "20260920-r28",
+      "bundleSha256": "bcca6f75a6c32fa42ebd6373c554c896541bcb3eeff5fb87a9d0f7d9ae036778",
+      "baselineFiles": 1219,
+      "changedFiles": 15,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r30",
+      "parent": "20260920-r29",
+      "bundleSha256": "1f6f2c0dfe50b266d133e30e533b7d4797e2ee04ecebb3ba3b6171baa63372dd",
+      "baselineFiles": 1225,
+      "changedFiles": 26,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260920-r31",
+      "parent": "20260920-r30",
+      "bundleSha256": "515f35827c018f9023d0f50f96e07acaa20b1f9bf8d1078ff0ea63665bae3716",
+      "baselineFiles": 1229,
+      "changedFiles": 16,
+      "deployment": "user-confirmed",
+      "recoveryInstallerSha256": "8bde6e1ed645e51400280ad4bbae7ce35a57d4bd881588b17a9830898c9a6cf6"
+    },
+    {
+      "version": "20260920-r32",
+      "parent": "20260920-r31",
+      "bundleSha256": "da6b0e9e33a384e00ab1ceb3ad0a3ea0431b5b914ce9aa4a399c43aa0aadcfd6",
+      "baselineFiles": 1229,
+      "changedFiles": 5,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260920-r33",
+      "parent": "20260920-r31",
+      "bundleSha256": "cd8df5792a465f01aab9b9e18665ea0b37522728f56ddb2c9f71f0af45f6828e",
+      "baselineFiles": 1229,
+      "changedFiles": 10,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260921-r34",
+      "parent": "20260920-r31",
+      "bundleSha256": "52bd4d561100630ba7868ae47d01095b674ba4fea7ba961049372f448c2d5b84",
+      "baselineFiles": 1229,
+      "changedFiles": 13,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260921-r35",
+      "parent": "20260920-r31",
+      "bundleSha256": "9d21f7946371ecd0b4b83fd39efd1ad573fd5e9dadf6f1d9893aad2b9551f75b",
+      "baselineFiles": 1233,
+      "changedFiles": 22,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260921-r36",
+      "parent": "20260921-r35",
+      "bundleSha256": "26df8cfcdc05d54be15a15374e85756ba711bdb9a3a1689c4a58fe7958de9ab0",
+      "baselineFiles": 1233,
+      "changedFiles": 6,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260921-r37",
+      "parent": "20260921-r35",
+      "bundleSha256": "bfc41b356012150ee4a2d5b8006183d80a05edf311a2373e37a8892720d3c01d",
+      "baselineFiles": 1233,
+      "changedFiles": 6,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260921-r38",
+      "parent": "20260921-r37",
+      "bundleSha256": "0826e1756985fd0655421fd3a32815e8c2e762c47ab1b488801bb431635d0930",
+      "baselineFiles": 1233,
+      "changedFiles": 4,
+      "deployment": "not-confirmed"
+    },
+    {
+      "version": "20260921-r39",
+      "parent": "20260921-r37",
+      "bundleSha256": "067ab9142026aa62279c6373b4dd93a551209bc2339065247cdf0329aa19fc69",
+      "baselineFiles": 1233,
+      "changedFiles": 5,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260927-r40",
+      "parent": "20260921-r39",
+      "bundleSha256": "32ee636334fa7de1cc6c7581fa054141a3fbc0e3397a97aa23e59570995c3c6c",
+      "baselineFiles": 1249,
+      "changedFiles": 49,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260928-r41",
+      "parent": "20260927-r40",
+      "bundleSha256": "4ea16b049290c3de75784a72d977d6b4ea5540e6666a8b9a8777d4c17458d962",
+      "baselineFiles": 1249,
+      "changedFiles": 6,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260928-r42",
+      "parent": "20260928-r41",
+      "bundleSha256": "2039d6ed97f7ff0616f5ffbf3fa428c594513c796e2f678a1d53a7f531bafb6e",
+      "baselineFiles": 1257,
+      "changedFiles": 15,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260928-r43",
+      "parent": "20260928-r42",
+      "bundleSha256": "201ff6ebc6a6c7c7a2eccd23058db09c619eabbb742efa8ba6d50f85782f8965",
+      "baselineFiles": 1257,
+      "changedFiles": 4,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260929-r44",
+      "parent": "20260928-r43",
+      "bundleSha256": "92bc711e9fdc1db17ca2cfea1599b3c2977459319178de078e12a4b749d73a56",
+      "baselineFiles": 1290,
+      "changedFiles": 54,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260930-r45",
+      "parent": "20260929-r44",
+      "bundleSha256": "01cf8810761999631e8c10394316714901bf8adb46873d517cf4099374eb7629",
+      "baselineFiles": 1290,
+      "changedFiles": 11,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260930-r46",
+      "parent": "20260930-r45",
+      "bundleSha256": "73ac8d33d1969eb9d67f786b86a1692538144df0997b1c2f2420ae78a132e995",
+      "baselineFiles": 1291,
+      "changedFiles": 4,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260930-r47",
+      "parent": "20260930-r46",
+      "bundleSha256": "2db850ba4db5d6489196042a1c66ec7d9bd6d40f2db71cdbb857618ec5c7f8a7",
+      "baselineFiles": 1292,
+      "changedFiles": 8,
+      "deployment": "user-confirmed",
+      "incident": "Windows online mode and browser startup failed; service healthy in user-provided logs. R48 reduces startup requests and adds versioned code caching.",
+      "incidentResolvedBy": "20260930-r48 (user confirmed successful game entry)"
+    },
+    {
+      "version": "20260930-r48",
+      "parent": "20260930-r47",
+      "bundleSha256": "54db77e9495833f77da60061bd5ecf0f45ed767a01082d62868c2fb745b40c59",
+      "baselineFiles": 1295,
+      "changedFiles": 5,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20261001-r49",
+      "parent": "20260930-r48",
+      "bundleSha256": "0f2c220e39077e579438e8c33a0e65f899ef5c87d4150871cc1878a5bf90271a",
+      "baselineFiles": 1295,
+      "changedFiles": 10,
+      "deployment": "user-confirmed"
     }
   ]
 }

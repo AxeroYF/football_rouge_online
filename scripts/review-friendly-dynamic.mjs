@@ -1,0 +1,40 @@
+import fs from 'node:fs';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {coalitionFixture} from '../test/coalition-fixture.mjs';
+import {createStaticHandler} from '../server/http/static-handler.mjs';
+import {createCampaignApiHandler} from '../server/http/campaign-api-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const f=coalitionFixture(),id=f.s.diplomacy.beginFriendly(f.a,f.b);
+const serve=createStaticHandler(process.cwd()),api=createCampaignApiHandler({campaign:f.s});
+const links=fs.readFileSync('index.html','utf8').match(/<link[^>]+rel="stylesheet"[^>]*>/g).join('');
+const html=`<!doctype html><html><head><meta charset="utf-8">${links}</head><body><div id="campaign-live-widget"></div><section id="campaign-broadcast" class="broadcast-overlay standard-window" hidden></section></body></html>`;
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname==='/review-friendly.html'){res.writeHead(200,{'content-type':'text/html'});res.end(html);}else if(u.pathname.startsWith('/api/'))await api(req,res,u.pathname,u.href);else await serve(req,res);}catch(e){res.writeHead(e.statusCode||500,{'content-type':'application/json'});res.end(JSON.stringify({error:e.message}));}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({channel:'chrome',headless:true}),out='outputs/friendly-dynamic-review';fs.mkdirSync(out,{recursive:true});
+const tick=setInterval(()=>{f.tick(200);f.s.diplomacy.advance(f.now);},200);
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(`http://127.0.0.1:${server.address().port}/review-friendly.html`);
+ await page.evaluate(async id=>{
+  const {showCampaignBroadcast,startCampaignBroadcastBackground}=await import('/campaign-broadcast.js');window.calls=[];
+  const fetchSnapshot=async previous=>{const tick=previous?.live?.broadcast?.dynamic?.frames.at(-1)?.tick;const response=await fetch('/api/campaign/interactions/match?id='+encodeURIComponent(id)+(Number.isSafeInteger(tick)?'&afterTick='+tick:''),{headers:{authorization:'Bearer a'}});const value=await response.json();window.calls.push({delta:Boolean(value.live?.broadcast.playerPatch),bytes:JSON.stringify(value).length});if(!response.ok)throw Error(value.error);return value;};
+  const snapshot=await fetchSnapshot();window.viewer=startCampaignBroadcastBackground(snapshot,{fetchSnapshot,onOpen:state=>showCampaignBroadcast(state)});showCampaignBroadcast(viewer);
+ },id);
+ await page.waitForSelector('.dynamic-pitch-wrap canvas');await page.waitForTimeout(900);
+ assert.match(await page.locator('.broadcast-toolbar').innerText(),/友谊赛.*动态直播/);
+ assert.doesNotMatch(await page.locator('.broadcast-toolbar').innerText(),/地块争夺/);
+ await page.screenshot({path:out+'/desktop.png'});
+ await page.evaluate(()=>window.canvas=document.querySelector('.dynamic-pitch-wrap canvas'));
+ await page.waitForTimeout(2400);
+ assert.ok(await page.evaluate(()=>window.canvas===document.querySelector('.dynamic-pitch-wrap canvas')));
+ assert.ok(await page.evaluate(()=>calls.some(c=>c.delta)));
+ assert.ok(await page.locator('.dynamic-selected-card .broadcast-card-face').count());
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:out+'/phone.png'});
+ await page.click('[data-leave-broadcast]');assert.ok(await page.evaluate(()=>!viewer.dynamicRenderer));
+ await page.click('#campaign-live-widget button');await page.waitForSelector('.dynamic-pitch-wrap canvas');
+ await page.evaluate(()=>viewer.stop());const count=await page.evaluate(()=>calls.length);await page.waitForTimeout(2200);assert.equal(await page.evaluate(()=>calls.length),count);
+ assert.deepEqual(errors,[]);
+ fs.writeFileSync(out+'/report.json',JSON.stringify({passed:true,errors,dynamicFriendly:true,correctCompetitionLabel:true,incrementalSnapshots:true,canvasRetained:true,closeDestroysRenderer:true,reopen:true,stopCancelsPolling:true},null,2));
+ console.log('Friendly dynamic browser review passed');
+}finally{clearInterval(tick);await browser.close();server.close();}

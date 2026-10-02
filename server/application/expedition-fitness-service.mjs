@@ -5,6 +5,16 @@ import { FITNESS_RULES } from '../../shared/config/fitness.mjs';
 import { effectiveFitness, setFitness } from '../../shared/football/fitness-lineup.mjs';
 
 const MINUTE=60_000;
+export const FITNESS_CHECKPOINT_MS=30_000;
+// Project from the last committed anchor. Reads never advance the cursor or write.
+export function recoveredFitness(account,player,at){
+ const value=effectiveFitness(player),previous=account.fitnessRecovery,plan=previous?.plans?.[player.id];
+ if(value>=100||!plan)return value;
+ const from=Number(previous.at),end=Math.min(Math.max(from,at),plan.stopAt??Math.max(from,at));
+ const elapsed=Math.max(0,end-from),boosted=plan.boostFrom==null?0:Math.max(0,end-Math.max(from,plan.boostFrom));
+ const fitness=Math.min(100,value+elapsed/MINUTE*FITNESS_RULES.recoveryPerMinute+boosted/MINUTE*((plan.boostRate??FITNESS_RULES.centerPerMinute)-FITNESS_RULES.recoveryPerMinute));
+ return effectiveFitness({...player,fitness,state:{...player.state,fitness}});
+}
 export function activeExpeditionPlayerIds(world,accountId) {
   return new Set([...Object.values(world?.activeChallenges ?? {}).filter(c=>c.attackerId===accountId&&!c.coalitionId)
     .flatMap(c=>c.live?.attacker?.players?.map(p=>p.id) ?? []),...(world?.eliteChallenges?.[accountId]?.leg?.away?.players??[]).map(p=>p.id)]);
@@ -19,13 +29,15 @@ export class ExpeditionFitnessService {
     const territoryId=movement?.toTerritoryId ?? piece?.territoryId;
     const center=strongestRecoveryCenter(this.world,account.id,territoryId,this.metadata);
     const boostFrom=center ? Math.max(at,Number(movement?.arrivesAt ?? at),Number(center.builtAt ?? at)) : null;
+    const raid=Boolean(raidMatchForAccount(this.world,account.id)),armyPlans=new Map();
     return Object.fromEntries((account.draft?.roster ?? []).map(p=>{
       const army=p.coalitionLoan?this.world.coalitions?.[p.coalitionLoan.armyId]:null;
-      const coalitionChallenge=army?Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===army.id):null;
-      const inMatch=locked.has(p.id)||Boolean(coalitionChallenge)||Boolean(raidMatchForAccount(this.world,account.id));
+      if(army&&!armyPlans.has(army.id))armyPlans.set(army.id,{challenge:Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===army.id),center:strongestRecoveryCenter(this.world,account.id,army.movement?.toTerritoryId??army.territoryId,this.metadata)});
+      const coalitionChallenge=army?armyPlans.get(army.id).challenge:null;
+      const inMatch=locked.has(p.id)||Boolean(coalitionChallenge)||raid;
       const match=coalitionChallenge??challenge;
       const loanMovement=army?.movement;
-      const loanCenter=army?strongestRecoveryCenter(this.world,account.id,loanMovement?.toTerritoryId??army.territoryId,this.metadata):null;
+      const loanCenter=army?armyPlans.get(army.id).center:null;
       // Intermission ends at its saved deadline even if the server resumes later.
       const stopAt=inMatch ? (match?.phase==='intermission' ? match.secondLegStartsAt : at) : null;
       const boosted=!inMatch && !army && account.playerSquads?.assignments?.[p.id]==='expedition';
@@ -39,29 +51,23 @@ export class ExpeditionFitnessService {
       if(!account.draft?.roster?.length) continue;
       snapshots.push([account,structuredClone(account.fitnessRecovery),account.draft.roster.map(p=>[p,structuredClone(p.state),p.fitness,Object.hasOwn(p,'fitness')])]);
       const previous=account.fitnessRecovery;
-      const from=Number(previous?.at ?? at), until=Math.max(from,at);
+      const until=Math.max(Number(previous?.at??at),at);
       for(const p of account.draft.roster) {
-        const plan=previous?.plans?.[p.id];
-        let value=effectiveFitness(p);
-        if(plan) {
-          const end=Math.min(until,plan.stopAt ?? until);
-          const elapsed=Math.max(0,end-from);
-          const boosted=plan.boostFrom==null?0:Math.max(0,end-Math.max(from,plan.boostFrom));
-          value+=elapsed/MINUTE*FITNESS_RULES.recoveryPerMinute+boosted/MINUTE*((plan.boostRate??FITNESS_RULES.centerPerMinute)-FITNESS_RULES.recoveryPerMinute);
-        }
-        value=Math.min(100,value);
-        if(p.state?.fitness!=null||p.fitness!=null||value!==100){
-          setFitness(p,value);
-          // Fixed-fitness traits always win over ordinary recovery.
-          setFitness(p,effectiveFitness(p));
-        }
+        const value=recoveredFitness(account,p,until);
+        if(p.state?.fitness!=null||p.fitness!=null||value!==100)setFitness(p,value);
       }
       account.fitnessRecovery={version:1,at:until,plans:this.plans(account,until)};
     }
     return {rollback:()=>{for(const [a,b,players] of snapshots){if(b===undefined)delete a.fitnessRecovery;else a.fitnessRecovery=b;for(const [p,state,value,has]of players){if(state===undefined)delete p.state;else p.state=state;if(has)p.fitness=value;else delete p.fitness;}}}};
   }
   due(at=this.now()) {
-    return [...this.accounts.values()].some(a=>a.draft?.roster?.length && (!a.fitnessRecovery || at-a.fitnessRecovery.at>=5000));
+    for(const account of this.accounts.values()){
+      const roster=account.draft?.roster;if(!roster?.length)continue;
+      if(!account.fitnessRecovery)return true;
+      if(at-account.fitnessRecovery.at<FITNESS_CHECKPOINT_MS)continue;
+      if(roster.some(player=>!account.fitnessRecovery.plans?.[player.id]||recoveredFitness(account,player,at)!==effectiveFitness(player)))return true;
+    }
+    return false;
   }
   applyLeg(account,challenge,leg,at=this.now()) {
     if(!account||!leg||leg.fitnessApplied) return;
@@ -77,13 +83,13 @@ export class ExpeditionFitnessService {
   refreshPlans(account,at=this.now()) {
     if(account.fitnessRecovery) account.fitnessRecovery.plans=this.plans(account,at);
   }
-  currentFitness(account,player) {
+  currentFitness(account,player,at=this.now()) {
     const raid=raidMatchForAccount(this.world,account.id);if(raid){const team=raid.leg.match.teams.find(t=>t.id===(raid.armyId??account.id)),id=raid.armyId?coalitionPlayerId(account.id,player.id):player.id,current=team?.players?.find(p=>p.id===id);if(current)return effectiveFitness(current);}
-    if(player.coalitionLoan){const ch=Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===player.coalitionLoan.armyId),leg=ch?.phase==='first-leg'?ch.live.firstLeg:ch?.phase==='second-leg'?ch.live.secondLeg:null;const current=leg?.match?.teams?.find(t=>t.id===ch.coalitionId)?.players?.find(p=>p.id===coalitionPlayerId(account.id,player.id));return effectiveFitness(current??player);}
+    if(player.coalitionLoan){const ch=Object.values(this.world.activeChallenges??{}).find(c=>c.coalitionId===player.coalitionLoan.armyId),leg=ch?.phase==='first-leg'?ch.live.firstLeg:ch?.phase==='second-leg'?ch.live.secondLeg:null;const current=leg?.match?.teams?.find(t=>t.id===player.coalitionLoan.armyId)?.players?.find(p=>p.id===coalitionPlayerId(account.id,player.id));return current?effectiveFitness(current):recoveredFitness(account,player,at);}
     const challenge=Object.values(this.world?.activeChallenges ?? {}).find(c=>c.attackerId===account.id&&!c.coalitionId);
     const leg=this.world?.eliteChallenges?.[account.id]?.leg ?? (challenge?.phase==='first-leg'?challenge.live?.firstLeg:challenge?.phase==='second-leg'?challenge.live?.secondLeg:null);
     const current=leg?.match?.teams?.find(t=>t.id===account.id)?.players?.find(p=>p.id===player.id);
-    return effectiveFitness(current ?? player);
+    return current?effectiveFitness(current):recoveredFitness(account,player,at);
   }
   draftView(account,draft) {
     for(const player of draft.roster ?? [])setFitness(player,this.currentFitness(account,player));
@@ -95,7 +101,7 @@ export class ExpeditionFitnessService {
       const plan=plans[p.id],paused=plan?.stopAt!=null&&plan.stopAt<=at;
       const fixed=effectiveFitness({...p,state:{...p.state,fitness:0}})===effectiveFitness({...p,state:{...p.state,fitness:100}});
       const rate=paused||fixed?0:plan?.boostFrom!=null&&plan.boostFrom<=at?(plan.boostRate??1):0.5;
-      const fitness=this.currentFitness(account,p);
+      const fitness=this.currentFitness(account,p,at);
       return [p.id,{fitness,fixed,recoveryPerMinute:rate,fullInMinutes:rate?(100-fitness)/rate:null}];
     }))};
   }

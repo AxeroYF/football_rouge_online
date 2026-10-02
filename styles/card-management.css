@@ -347,3 +347,5 @@
   .cmu-history-list { flex:none; height:190px; }
   .cmu-history-detail-heading { flex-direction:column; align-items:flex-start; }
 }
+
+.cmm-upgrade-filter{display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap}

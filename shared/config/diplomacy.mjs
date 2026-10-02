@@ -1,5 +1,5 @@
 export const INTERACTION_RULES = Object.freeze({ requestLifetimeMs: 24 * 60 * 60 * 1000, maxTradeCards: 10, maxTradeGold: 1000000000, maxTradeOil: 1000000 });
-export const INTERACTION_LABELS = Object.freeze({ "conquest-access":"申请借地征服", "revoke-conquest-access":"撤销借地授权", location: "开放俱乐部位置", friendship: "宣布友谊", condemn: "谴责", trade: "交易", friendly: "友谊赛", war: "宣战", peace: "求和", alliance: "建立同盟", "leave-alliance": "退出同盟" });
+export const INTERACTION_LABELS = Object.freeze({ "joint-scout":"联合球探考察", "conquest-access":"申请借地征服", "revoke-conquest-access":"撤销借地授权", location: "开放俱乐部位置", friendship: "宣布友谊", condemn: "谴责", trade: "交易", friendly: "友谊赛", war: "宣战", peace: "求和", alliance: "建立同盟", "leave-alliance": "退出同盟" });
 export const relationKey = (a, b) => JSON.stringify([String(a), String(b)].sort());
 export const playerRelationship = (world, a, b) => world?.diplomacy?.relationships?.[relationKey(a,b)] ?? null;
 export const playersAtWar = (world, a, b) => Boolean(a && b && a !== b && playerRelationship(world,a,b)?.state === "war");

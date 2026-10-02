@@ -1,10 +1,11 @@
 {
   "applicationId": "online.yellowdogsleague.client",
-  "versionCode": 2,
-  "versionName": "0.1.1",
+  "versionCode": 4,
+  "versionName": "0.3.0",
   "gameUrl": "https://yellowdogsleague.online/versus/",
   "updateUrl": "https://yellowdogsleague.online/android/releases/latest.json",
   "orientation": "sensorLandscape",
   "minSdk": 26,
-  "targetSdk": 36
+  "targetSdk": 36,
+  "releaseNotes": "预装球员卡画、卡框与常用美术资源，按服务器哈希优先读取本地资源，减少重复下载。"
 }

@@ -1,3 +1,5 @@
+import {createCampaignLiveLeg} from '../engine/campaign-match-engine.mjs';
+import {mergeDynamicSnapshot} from '../client/league/dynamic-broadcast.js';
 import {OilService} from '../server/application/oil-service.mjs';
 import {repairHeadquartersWars} from '../server/application/war-settlement.mjs';
 import {withoutNavalPreview} from '../shared/config/fog.mjs';
@@ -140,7 +142,8 @@ test('friendlies use full fitness snapshots and leave official fatigue, absences
  const invite=f.action('a','b','friendly');assert.equal(Object.keys(f.d.data().matches).length,0);const result=accept(f,invite);
  const match=f.d.data().matches[result.matchId];assert.ok(match.leg.home.players.every(p=>p.state.fitness===100));assert.ok(match.leg.away.players.every(p=>p.state.fitness===100));
  assert.throws(()=>f.d.snapshot(f.other,match.id),/无权/);assert.throws(()=>f.d.beginFriendly(f.a,f.other),/进行中/);
- f.reload();assert.equal(typeof f.d.active(f.a).leg.match.rng,'function');f.tick(300000);f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000});
+ f.reload();assert.equal(typeof f.d.active(f.a).leg.match.rng,'function');f.tick(120000);f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000});assert.equal(f.d.snapshot(f.a,match.id).completed,false);
+ f.tick(240000);for(let i=0;i<100&&f.d.active(f.a);i++)f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000});
  const end=f.d.snapshot(f.a,match.id);assert.ok(end.completed);assert.equal(end.battle.captured,false);assert.equal(end.battle.broadcasts.length,1);
  assert.deepEqual([f.a.draft,f.b.draft,f.a.gold,f.b.gold,f.a.resources,f.b.resources],before);assert.equal(absenceMatches(f.a.draft.roster[1],'injury'),2);
  f.d.advance();assert.deepEqual([f.a.draft,f.b.draft,f.a.gold,f.b.gold,f.a.resources,f.b.resources],before);
@@ -291,6 +294,7 @@ test('alliance accepted after a new external war joins that war; enemy members c
 });
 test('headquarters capture ends both alliance blocs, retains other wars and blocks already running captures',()=>{
  const f=fixture();extraPlayer(f,'d');extraPlayer(f,'e');ally(f,'a','c');ally(f,'b','d');f.action('a','b','war');f.action('a','e','war');
+ f.c.world.territories.reserve={...structuredClone(f.c.world.territories.b),territoryId:'reserve',capitalOf:null};f.c.world.players.b.territoryIds.push('reserve');
  const peace=f.action('a','b','peace'),main=winningChallenge(f),other=winningChallenge(f,{attackerId:'d',defenderId:'a',territoryId:'a',id:'other-live'}),service=challengeService(f);
  const before=JSON.stringify({world:f.c.world,accounts:[...f.c.accounts]});f.broken(true);assert.throws(()=>service.settleChallenge(main),/disk failure/);assert.equal(JSON.stringify({world:f.c.world,accounts:[...f.c.accounts]}),before);f.broken(false);
  const battle=service.settleChallenge(main);assert.equal(battle.captured,true);assert.equal(battle.warEnded.loserId,'b');
@@ -300,7 +304,7 @@ test('headquarters capture ends both alliance blocs, retains other wars and bloc
  f.action('a','b','war');const second=service.settleChallenge(other);assert.equal(second.captured,false);assert.match(second.captureBlockedReason,/战争已结束/);assert.equal(f.c.world.territories.a.ownerId,'a');
 });
 test('ordinary land capture does not end war and a lost headquarters match transfers no land',()=>{
- const f=fixture();f.action('a','b','war');f.c.world.players.b.capitalTerritoryId='remote';f.b.homeTerritoryId='remote';f.c.world.territories.b.capitalOf=null;
+ const f=fixture();f.action('a','b','war');f.c.world.players.b.capitalTerritoryId='remote';f.b.homeTerritoryId='remote';f.c.world.territories.b.capitalOf=null;f.c.world.territories.remote={...structuredClone(f.c.world.territories.b),territoryId:'remote',capitalOf:'b'};f.c.world.players.b.territoryIds.push('remote');
  assert.equal(challengeService(f).settleChallenge(winningChallenge(f)).captured,true);assert.ok(playersAtWar(f.c.world,'a','b'));
  const g=fixture();g.action('a','b','war');const c=winningChallenge(g);c.battle.outcome='loss';assert.equal(challengeService(g).settleChallenge(c).captured,false);assert.ok(playersAtWar(g.c.world,'a','b'));
 });
@@ -375,4 +379,46 @@ test('resource forms and both quote views show oil, gifting and the correct tran
  assert.match(form,/data-trade-oil="give" value="7"/);assert.match(form,/data-trade-oil="take"/);assert.match(form,/30 石油/);assert.match(form,/金币、石油、球员/);
  const gift=interactionWindowMarkup(f.d.details(f.a,'b'),{tradeOpen:true,trade:{mode:'gift',giveOil:5}});assert.match(gift,/无需付出/);assert.doesNotMatch(gift,/data-trade-oil="take"/);assert.match(gift,/发送赠送申请/);
  f.action('a','b','trade',{trade:{giveOil:7,takeGold:800}});const html=interactionNoticesMarkup({playerId:'b',interactions:f.d.summary(f.b)});assert.match(html,/你获得：0 金币 · 7 石油/);assert.match(html,/你付出：800 金币/);assert.match(interactionWindowMarkup(f.d.details(f.b,'a')),/7 石油/);
+});
+
+test('finished friendly runtime is discarded only after a successful durable settlement',()=>{
+ const f=fixture(),result=accept(f,f.action('a','b','friendly'));
+ f.tick(360000);f.broken(true);assert.throws(()=>{for(let i=0;i<100;i++)f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000});},/disk failure/);
+ const restored=f.d.data().matches[result.matchId];assert.ok(restored.leg);assert.equal(restored.battle,undefined);
+ f.broken(false);f.d.advance(f.c.now(),{maximumMatches:10,maximumChainsPerMatch:1000});
+ assert.equal(f.d.data().matches[result.matchId].leg,undefined);assert.ok(f.d.snapshot(f.a,result.matchId).battle.broadcasts.length);
+ f.reload();assert.ok(f.d.snapshot(f.a,result.matchId).completed);
+});
+
+
+test('new friendlies use dynamic broadcasts, read-only delta views and private participant access',()=>{
+ const f=fixture(),result=accept(f,f.action('a','b','friendly')),id=result.matchId;
+ const first=f.d.snapshot(f.a,id);assert.equal(first.competition,'friendly');assert.equal(first.live.broadcast.engine,'v2.2');
+ assert.equal(f.d.details(f.a,'b').matches[0].engine,'v2.2');
+ const match=f.d.data().matches[id],before=JSON.stringify(match);
+ for(let i=0;i<10;i++)f.d.snapshot(f.b,id,0);assert.equal(JSON.stringify(match),before);
+ assert.throws(()=>f.d.snapshot(f.other,id,0),/无权/);
+ f.tick(1000);f.d.advance(f.c.now());const delta=f.d.snapshot(f.b,id,0);assert.ok(delta.live.broadcast.playerPatch);
+ const merged=mergeDynamicSnapshot(first,delta);assert.ok(merged.live.broadcast.teams[0].players[0].card);
+ assert.equal(merged.live.broadcast.dynamic.frames.at(-1).tick,20);
+ assert.ok(!JSON.stringify(merged).includes('rngState'));
+ f.reload();assert.equal(f.d.snapshot(f.a,id).live.broadcast.engine,'v2.2');
+});
+
+test('legacy in-flight friendlies finish with their original engine while subsequent matches use V2.2',()=>{
+ const f=fixture(),id=f.d.beginFriendly(f.a,f.b),m=f.d.data().matches[id],old=m.leg;
+ m.leg=createCampaignLiveLeg({home:old.home,away:old.away,seed:id,legNumber:1,startedAt:old.startedAt,knockout:false});
+ f.reload();assert.equal(f.d.snapshot(f.a,id).live.broadcast.dynamic,undefined);
+ f.tick(120000);f.d.advance(f.c.now(),{maximumMatches:1,maximumChainsPerMatch:1000});assert.equal(f.d.snapshot(f.a,id).completed,true);
+ assert.equal(f.d.data().matches[id].battle.engine,'v2.1');
+ assert.equal(f.d.data().matches[f.d.beginFriendly(f.a,f.b)].leg.engine,'v2.2');
+});
+
+test('concurrent friendly advancement remains round-robin and bounded independently of spectator count',()=>{
+ const f=fixture(),d={...structuredClone(f.other),id:'d',nickname:'d'};f.c.accounts.set('d',d);
+ const first=f.d.beginFriendly(f.a,f.b),second=f.d.beginFriendly(f.other,d);
+ f.tick(60000);f.d.advance(f.c.now(),{maximumMatches:1});
+ const a=f.d.data().matches[first].leg,b=f.d.data().matches[second].leg;
+ assert.ok(a.match.nextChainIndex>0&&a.match.nextChainIndex<=40);assert.equal(b.match.nextChainIndex,0);
+ f.d.advance(f.c.now(),{maximumMatches:1});assert.ok(b.match.nextChainIndex>0&&b.match.nextChainIndex<=40);
 });

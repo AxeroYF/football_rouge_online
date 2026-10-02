@@ -4,7 +4,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 ROOT=Path(__file__).resolve().parent.parent
 parser=argparse.ArgumentParser();parser.add_argument('--check',action='store_true');args=parser.parse_args()
-paths=[p for p in ROOT.iterdir() if p.is_file() and p.suffix in ('.js','.mjs')]
+# Generated bundle is an output, never an input to the editable module graph.
+paths=[p for p in ROOT.iterdir() if p.is_file() and p.suffix in ('.js','.mjs') and p.name!='game-startup.js']
 for folder in ('client','shared','engine'):
  paths.extend(p for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in ('.js','.mjs'))
 hashes={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()[:20] for p in paths}

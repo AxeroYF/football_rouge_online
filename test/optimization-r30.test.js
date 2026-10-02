@@ -1,0 +1,50 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {createRequestId} from '../client/core/request-id.js';
+import {receipt,pruneReceipts,requestTime,RECEIPT_TTL} from '../server/application/receipt-retention.mjs';
+import {maintainCampaignHistory} from '../server/application/history-maintenance.mjs';
+const now=1800000000000;
+test('retained retry survives JSON reload; retired request cannot execute twice',()=>{
+ const ids=[0,1,2,3].map(n=>createRequestId(webcrypto,now+n));
+ const a={requests:Object.fromEntries(ids.map((id,n)=>[id,{result:n,recordedAt:now+n}]))};
+ assert.equal(requestTime(ids[0]),now);
+ assert.equal(pruneReceipts(a,'requests',now+10,{limit:2}),true);
+ const restored=JSON.parse(JSON.stringify(a));
+ assert.equal(Object.keys(restored.requests).length,2);
+ assert.equal(receipt(restored,'requests',ids[3],now+10).result,3);
+ assert.throws(()=>receipt(restored,'requests',ids[0],now+10),/过期/);
+ assert.throws(()=>receipt(restored,'requests',createRequestId(webcrypto,now-RECEIPT_TTL-1),now),/过期/);
+ assert.throws(()=>receipt(restored,'requests',createRequestId(webcrypto,now+600000),now),/过期/);
+});
+test('legacy migration retains recent retries and blocks missing legacy IDs after retirement',()=>{
+ const a={requests:{'old-request-a':{result:1},'old-request-b':{result:2},'old-request-c':{result:3}}};
+ pruneReceipts(a,'requests',now,{limit:2});
+ const b=JSON.parse(JSON.stringify(a));
+ assert.equal(Object.keys(b.requests).length,2);
+ for(const id of Object.keys(b.requests))assert.ok(receipt(b,'requests',id,now));
+ assert.throws(()=>receipt(b,'requests','missing-request',now),/过期/);
+ pruneReceipts(b,'requests',now+RECEIPT_TTL+1);
+ assert.equal(Object.keys(b.requests).length,0);
+});
+test('equal timestamp retirement rejects every missing ID at the watermark',()=>{
+ const ids=Array.from({length:4},()=>createRequestId(webcrypto,now));
+ const a={requests:Object.fromEntries(ids.map(id=>[id,{result:1}]))};
+ pruneReceipts(a,'requests',now,{limit:2});
+ for(const id of ids)assert.throws(()=>receipt(a,'requests',id,now),/过期/);
+});
+test('maintenance failure restores receipts and finished match runtime; active work is retained',()=>{
+ const owner={id:'a',airportRequests:Object.fromEntries(Array.from({length:300},(_,i)=>['legacy-'+i,{result:i}]))};
+ const active={id:'live',from:'a',to:'b',leg:{running:true}};
+ const done={id:'done',from:'a',to:'b',leg:{large:true},battle:{settledAt:now,broadcasts:[{text:'report'}]}};
+ const c={accounts:new Map([['a',owner]]),world:{diplomacy:{receipts:{},requests:{pending:{status:'pending',expiresAt:now+999999}},matches:{live:active,done}}},now:()=>now,persist(){throw Error('disk failure');}};
+ const before=JSON.stringify({owner,world:c.world});
+ assert.throws(()=>maintainCampaignHistory(c),/disk failure/);
+ assert.equal(JSON.stringify({owner,world:c.world}),before);
+ c.persist=()=>{};maintainCampaignHistory(c);
+ assert.ok(c.world.diplomacy.matches.live.leg);
+ assert.equal(c.world.diplomacy.matches.done.leg,undefined);
+ assert.ok(c.world.diplomacy.matches.done.battle.broadcasts);
+ assert.ok(c.world.diplomacy.requests.pending);
+ assert.ok(Object.keys(owner.airportRequests).length<=256);
+});

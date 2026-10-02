@@ -1,0 +1,75 @@
+{
+  "passed": true,
+  "version": "20260920-r23",
+  "checks": [
+    "Complete 20260920-r16 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r23 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 27,
+  "newFiles": 0,
+  "requiredBaseFiles": 1216,
+  "imports": 207,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "regressionTests": 169,
+  "browser": {
+    "checks": [
+      {
+        "name": "beneficiary confirms directly in notification",
+        "pass": true
+      },
+      {
+        "name": "confirmation does not open coalition panel",
+        "pass": true
+      },
+      {
+        "name": "defence option saved by real API",
+        "pass": true
+      },
+      {
+        "name": "defence option survives reload",
+        "pass": true
+      },
+      {
+        "name": "commander has no beneficiary confirmation",
+        "pass": true
+      },
+      {
+        "name": "neutral preview explains no oil",
+        "pass": true
+      },
+      {
+        "name": "neutral preview has no slow oil selector",
+        "pass": true
+      },
+      {
+        "name": "phone landscape quote padded without horizontal clipping",
+        "pass": true
+      },
+      {
+        "name": "neutral order actually started without oil",
+        "pass": true
+      },
+      {
+        "name": "nonbeneficiary contributor phone opens live coalition match from notification",
+        "pass": true
+      },
+      {
+        "name": "beneficiary desktop opens live coalition match from notification",
+        "pass": true
+      },
+      {
+        "name": "no browser runtime errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "androidDeviceVerified": false
+}

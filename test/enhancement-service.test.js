@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {enhancementTraitEligible} from '../shared/config/enhancement.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TrainingService } from "../server/application/training-service.mjs";
@@ -144,4 +146,36 @@ test('completed enhancement research changes actual rolls and protection cost fo
  const f=fixture(2,1);f.account.formationResearch={topicLevels:{'enhancement:2:1':1}};f.setRoll(.572);const result=f.run({useProtection:true});assert.equal(result.chance,57.5);assert.equal(result.success,true);assert.equal(result.protectionCost,s4EnhancementProtectionCost(57.5));assert.equal(f.service.publicState(f.account).researchLevels['enhancement:2:1'],1);
  const base=fixture(2,1);base.setRoll(.572);assert.equal(base.run().success,false);
  const capped=fixture(2,2);capped.account.formationResearch={topicLevels:{'enhancement:2:2':10}};capped.setRoll(.999);const guaranteed=capped.run({useProtection:true});assert.equal(guaranteed.chance,100);assert.equal(guaranteed.protectionCost,0);assert.equal(guaranteed.protectionUsed,false);
+});
+
+
+test('all production trait role restrictions match the S4 production overrides',()=>{
+ const overrides=JSON.parse(readFileSync(new URL('../assets/data/s4-production-content-overrides.json',import.meta.url))).traits;
+ for(const trait of Object.values(YDL_TRAIT_BY_ID))if(overrides[trait.id]?.eligibleRoleGroups)
+   assert.deepEqual(trait.eligibleRoleGroups,overrides[trait.id].eligibleRoleGroups,trait.name);
+ assert.deepEqual(YDL_TRAIT_BY_ID['muddy-knees'].eligibleRoleGroups,['GK']);
+ for(const id of ['sweeper-keeper','lone-finisher','stoppage-time-expert'])assert.deepEqual(YDL_TRAIT_BY_ID[id].eligibleRoleGroups,['ANY']);
+});
+test('trait eligibility follows actual positions even when the imported pool disagrees',()=>{
+ const keeper=YDL_TRAIT_BY_ID['muddy-knees'],outfield=YDL_TRAIT_BY_ID['utility-player'];
+ assert.equal(enhancementTraitEligible(keeper,{role:'GK',pool:'DEF'}),true);
+ for(const role of ['CB','LB','RB','LWB','RWB','DM','CM','AM','LM','RM','LW','RW','ST']){
+  assert.equal(enhancementTraitEligible(keeper,{role,pool:'GK'}),false,role);
+  assert.equal(enhancementTraitEligible(outfield,{role,pool:'GK'}),true,role);
+ }
+ assert.equal(enhancementTraitEligible(outfield,{role:'GK',pool:'ATT'}),false);
+ assert.equal(enhancementTraitEligible(keeper,{role:'unknown',pool:'GK'}),false);
+});
+test('old wrong pending choices are replaced stably without changing existing traits or charging again',()=>{
+ const f=fixture(4),main=f.account.draft.roster[0];main.traits=[{id:'existing',name:'原有特性'}];
+ f.account.enhancement={requests:{},history:[],offers:{old:{id:'old',cardId:'main',status:'pending',unlockLevel:4,traits:[{id:'muddy-knees',name:'一夫当关',eligibleRoleGroups:['DEF']},{id:'sweeper-keeper',eligibleRoleGroups:['GK']}]}}};
+ const before=structuredClone(f.account),first=f.service.publicState(f.account).traitOffers[0];
+ assert.equal(first.traits.length,3);assert.ok(first.traits.every(t=>enhancementTraitEligible(t,main)));
+ assert.deepEqual(first,f.service.publicState(f.account).traitOffers[0]);assert.deepEqual(f.account,before);
+ assert.throws(()=>f.service.chooseTrait(f.account,{offerId:'old',traitId:'muddy-knees'}),/当前候选/);
+ assert.deepEqual(f.account,before);
+ f.fail(true);assert.throws(()=>f.service.chooseTrait(f.account,{offerId:'old',traitId:first.traits[0].id}),/disk failure/);assert.deepEqual(f.account,before);f.fail(false);
+ f.service.chooseTrait(f.account,{offerId:'old',traitId:first.traits[0].id});
+ assert.equal(f.account.gold,before.gold);assert.equal(f.account.draft.roster[0].traits[0].id,'existing');
+ assert.equal(f.account.enhancement.offers.old.status,'chosen');
 });

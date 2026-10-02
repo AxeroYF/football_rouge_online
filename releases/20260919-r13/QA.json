@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "version": "20260919-r13",
+  "baseline": "20260919-r12",
+  "preflight": {
+    "passed": true,
+    "version": "20260919-r13",
+    "checks": [
+      "Complete 20260919-r12 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260919-r13 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 62,
+    "newFiles": 9,
+    "requiredBaseFiles": 1203,
+    "imports": 365,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "regression": {
+    "passed": 1319,
+    "phases": [
+      81,
+      1077,
+      161
+    ],
+    "failed": 0,
+    "logSha256": "6c4ee581c7b984892c551a572ced7562ba216e1ae6d355a51680ceddd03c4cef"
+  },
+  "browser": {
+    "liberation": true,
+    "loanApproval": true,
+    "airportEntry": true,
+    "airportSplit": true,
+    "passed": true,
+    "errors": []
+  },
+  "remoteDeployed": false,
+  "limitations": "Local PowerShell 7 / Windows verification with mocked service hooks; Linux systemd upgrade not executed here."
+}

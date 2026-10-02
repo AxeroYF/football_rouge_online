@@ -119,6 +119,7 @@ export function claimHome(index, world, playerId, territoryId) {
   const player = addTerritoryToPlayer(world, playerId, territoryId);
   player.capitalTerritoryId = territoryId;
   const state = world.territories[territoryId];
+  state.originalOwnerId ??= playerId;
   state.ownerType = OWNER_TYPES.PLAYER;
   state.ownerId = playerId;
   state.capitalOf = playerId;
@@ -195,6 +196,15 @@ export function captureTerritory(index, world, playerId, targetTerritoryId, { pr
   permission ??= canAttack(index, world, playerId, targetTerritoryId);
   if (!permission.allowed) throw new Error(permission.reason);
   const state = world.territories[targetTerritoryId];
+  if (state.ownerType === OWNER_TYPES.NEUTRAL) state.originalOwnerId ??= playerId;
+  return transferCapturedTerritory(world, playerId, targetTerritoryId, {protectedUntil, permission});
+}
+
+// Internal ownership primitive: callers must authorize capture or liberation first.
+export function transferCapturedTerritory(world, playerId, targetTerritoryId, {protectedUntil = null, permission = {fromTerritoryIds:[]}} = {}) {
+  const state = world.territories[targetTerritoryId];
+  delete state.pendingLiberation;
+  delete state.liberationDecision;
   if (state.ownerType === OWNER_TYPES.PLAYER && state.ownerId) {
     removeTerritoryFromPlayer(world, state.ownerId, targetTerritoryId);
   }

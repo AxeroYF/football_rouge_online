@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "version": "20260920-r15",
+  "checks": [
+    "Complete 20260919-r13 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r15 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 25,
+  "newFiles": 4,
+  "requiredBaseFiles": 1212,
+  "imports": 248,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "fullGameTests": 1348,
+  "healthCheckTests": 6,
+  "browserReviews": [
+    "PvP confirmation and notices",
+    "Coalition management and incomplete tactics reopen"
+  ]
+}

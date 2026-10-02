@@ -1,3 +1,5 @@
+import { patchMarkup } from "../ui/patch-markup.js";
+import { ownedCardLevels, ownedCardText } from "../inventory/owned-card-summary.js";
 import {oilMovementText,oilMovementChoiceMarkup,applyMovementOilChoice} from '../resources/oil-movement.js';
 import {canUseTerritory} from '../../shared/config/diplomacy.mjs';
 import { unitTravelProgress } from '../../shared/map/unit-travel.mjs';
@@ -96,19 +98,21 @@ function scoutNameMarkup(scout,task,pending,renameDraft){
  return `<div class="scout-name-row"><h3>${esc(name)}</h3>${scout&&!editing?`<button type="button" data-scout-rename ${pending?"disabled":""}>改名</button>`:""}</div>${editing?`<form class="scout-rename-form" data-scout-rename-form><label for="scout-name-input">球探名字</label><input id="scout-name-input" data-scout-name-input value="${esc(renameDraft.value)}" maxlength="${SCOUT_NAME_MAX_LENGTH*2}" autocomplete="off" ${pending?"disabled":""} aria-describedby="scout-name-error"><p id="scout-name-error" class="scout-error" role="status" ${renameDraft.error?"":"hidden"}>${esc(renameDraft.error??"")}</p><div><button type="submit" ${pending?"disabled":""}>${pending?"保存中…":"保存"}</button><button type="button" data-scout-rename-cancel ${pending?"disabled":""}>取消</button></div></form>`:""}`;
 }
 
-export function scoutingDetailMarkup(view, { selectedCardId = null, pending = false, gold = 0, showSelection = false, reveal = false, movementPlan = null, renameDraft = null, queueRounds = 1, roundIndex = 0, roundChoices = {} } = {}) {
+export function scoutingDetailMarkup(view, { selectedCardId = null, pending = false, gold = 0, showSelection = false, reveal = false, movementPlan = null, renameDraft = null, queueRounds = 1, roundIndex = 0, roundChoices = {}, roster = [] } = {}) {
   if (!view) return '<p class="scout-empty">加载中…</p>';
   if (view.kind === "center") return centerMarkup(view, pending, gold);
   const task = view.task, scout = view.scout;
   if (view.error && !task && !scout) return `<p class="scout-empty">${esc(view.error)}</p>`;
-  const level = scout?.level ?? task?.level ?? 1;
+  const level = task?.joint ? task.level : scout?.level ?? task?.level ?? 1;
   const working = task?.status === "working", ready = task?.status === "ready";
   let action;
+  if (ready && showSelection && task.candidatesDeferred) return `<p class="scout-empty">${esc(view.error||"正在读取联合考察结果…")}</p><button type="button" data-scout-results>重新读取结果</button>`;
   if (ready && showSelection) {
     const cards=task.roundCount>1?task.rounds[roundIndex].cards:task.cards;
+    const levels = ownedCardLevels(roster);
     if(task.roundCount>1)selectedCardId=roundChoices[roundIndex];
     const queue=task.roundCount>1?`<div class="scout-queue-navigation"><strong>第 ${roundIndex+1} / ${task.roundCount} 轮 · 已选 ${Object.keys(roundChoices).length} 名</strong><span>每轮选一，最后统一领取</span><div>${Array.from({length:task.roundCount},(_,i)=>`<button type="button" data-scout-round="${i}" class="${i===roundIndex?'is-current':''}" ${pending?'disabled':''}>${i+1}${roundChoices[i]?' ✓':''}</button>`).join('')}</div><button type="button" class="scout-primary" data-scout-claim-queue ${pending||Object.keys(roundChoices).length!==task.roundCount?'disabled':''}>统一领取 ${task.roundCount} 名球员</button></div>`:'';
-    return `${queue}<div class="inventory-choice-grid" data-choice-count="${cards.length}" aria-busy="${pending}">${cards.map((card,index) => `<article class="inventory-choice-card ${reveal ? "is-revealing" : "is-revealed"}" style="--reveal-index:${index}"><button type="button" class="scout-candidate ${card.playerId === selectedCardId ? "is-selected" : ""}" data-scout-select="${esc(card.playerId)}" ${pending ? "disabled" : ""} aria-label="领取${esc(card.name)}${card.upgradeLevel ? `，强化加${card.upgradeLevel}` : ""}">${playerCardMarkup(card,{eager:true,animated:false})}</button></article>`).join("")}</div>`;
+    return `${queue}<div class="inventory-choice-grid" data-ui-key="${esc(task.id)}:${roundIndex}" data-choice-count="${cards.length}" aria-busy="${pending}">${cards.map((card,index) => `<article class="inventory-choice-card ${reveal ? "is-revealing" : "is-revealed"}" data-ui-key="${esc(card.playerId)}" style="--reveal-index:${index}"><button type="button" class="scout-candidate ${card.playerId === selectedCardId ? "is-selected" : ""}" data-scout-select="${esc(card.playerId)}" ${pending ? "disabled" : ""} aria-label="领取${esc(card.name)}${card.upgradeLevel ? `，强化加${card.upgradeLevel}` : ""}">${playerCardMarkup(card,{eager:true,animated:false})}</button><p class="inventory-owned-status">${ownedCardText(card,levels)}</p></article>`).join("")}</div>`;
   }
   if (ready) {
     action = `<div class="scout-ready"><h3>发掘完成${task.roundCount>1?` · ${task.roundCount} 轮`:""}</h3><button type="button" class="scout-primary" data-scout-results>查看结果 · ${task.cards?.length??view.rules.choiceCount??3} 选 1</button></div>`;
@@ -122,10 +126,10 @@ export function scoutingDetailMarkup(view, { selectedCardId = null, pending = fa
     action = '<div class="scout-ready"><h3>球员已加入球队</h3></div>';
   } else {
     const unavailable = pending || !scout || !view.canDiscover || Boolean(view.error);
-    action = `<div class="scout-start"><div class="scout-cost"><span>发掘费用<strong>${goldAmountMarkup(view.rules.costGold*queueRounds)}</strong></span><span>时间<strong>${view.rules.durationMs*queueRounds / 60_000} 分钟</strong></span></div><label class="scout-queue-input">连续发掘轮数<select data-scout-rounds ${pending?"disabled":""}>${Array.from({length:20},(_,i)=>`<option value="${i+1}" ${queueRounds===i+1?"selected":""}>${i+1} 轮</option>`).join("")}</select></label><div class="scout-unit-actions"><button type="button" class="scout-primary" data-scout-start ${unavailable || gold < view.rules.costGold*queueRounds ? "disabled" : ""}>${view.neutralTerritory ? "中立地块不可发掘" : gold < view.rules.costGold*queueRounds ? "金币不足" : "开始发掘"}</button><button type="button" data-scout-move ${pending || !scout?.movableTerritoryIds?.length ? "disabled" : ""}>移动</button></div></div>`;
+    action = `<div class="scout-start"><div class="scout-cost"><span>发掘费用<strong>${goldAmountMarkup(view.rules.costGold*queueRounds)}</strong></span><span>时间<strong>${view.rules.durationMs*queueRounds % 60_000 === 0 ? `${view.rules.durationMs*queueRounds / 60_000} 分钟` : `${Math.floor(Math.ceil(view.rules.durationMs*queueRounds/1000)/60)}分${Math.ceil(view.rules.durationMs*queueRounds/1000)%60}秒`}</strong></span></div>${view.rules.speedMultiplier ? `<p class="scout-production-note">生产力 ${Number(view.rules.production).toFixed(1)} · 发掘用时减少 ${Number(view.rules.reductionPercent).toFixed(1)}%<br><small>开工锁定，递减提速，不占用建设产能。</small></p>` : ""}<label class="scout-queue-input">连续发掘轮数<select data-scout-rounds ${pending?"disabled":""}>${Array.from({length:20},(_,i)=>`<option value="${i+1}" ${queueRounds===i+1?"selected":""}>${i+1} 轮</option>`).join("")}</select></label><div class="scout-unit-actions"><button type="button" class="scout-primary" data-scout-start ${unavailable || gold < view.rules.costGold*queueRounds ? "disabled" : ""}>${view.neutralTerritory ? "中立地块不可发掘" : gold < view.rules.costGold*queueRounds ? "金币不足" : "开始发掘"}</button><button type="button" data-scout-move ${pending || !scout?.movableTerritoryIds?.length ? "disabled" : ""}>移动</button></div></div>`;
   }
   const countryContext = working || ready || view.kind === "legacy" ? { ...task, rules: view.rules } : view;
-  const pools = scout?.movement || movementPlan ? "" : `<div class="scout-pools">${scoutingPoolMarkup(level, view.levelRules ?? scoutingLevel(level))}${scoutingCountryPoolMarkup(countryContext)}</div>`;
+  const pools = scout?.movement || movementPlan ? "" : `<div class="scout-pools">${scoutingPoolMarkup(level, task?.joint?{...scoutingLevel(level),legendaryChance:task.joint.legendaryChance}:view.levelRules ?? scoutingLevel(level))}${scoutingCountryPoolMarkup(countryContext)}</div>`;
   return `<div class="scout-overview scout-unit-overview"><div class="scout-building-art"><img src="${SCOUT_TOKEN_URL}" alt=""></div><div class="scout-unit-identity">${scoutNameMarkup(scout,task,pending||Boolean(view.error),renameDraft)}<span>${esc(view.territoryLabel ?? task?.territoryLabel)}</span>${view.error ? `<p class="scout-error">${esc(view.error)}</p>` : ""}</div></div>${pools}<div class="scout-work-area">${action}</div>`;
 }
 
@@ -170,7 +174,7 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
       if (facilityActions.innerHTML !== actions) facilityActions.innerHTML = actions;
     }
     const content = showSelection ? selectionContent : panelContent;
-    const options = { selectedCardId, pending, gold: getCampaignState()?.wallet?.gold ?? 0, showSelection, movementPlan, renameDraft,queueRounds,roundIndex,roundChoices:queueChoices.get(view?.task?.id)??{} };
+    const options = { selectedCardId, pending, roster: getCampaignState()?.draft?.roster ?? [], gold: getCampaignState()?.wallet?.gold ?? 0, showSelection, movementPlan, renameDraft,queueRounds,roundIndex,roundChoices:queueChoices.get(view?.task?.id)??{} };
     const html = scoutingDetailMarkup(view, options);
     const background = selectionRoot.querySelector("[data-scout-meteors]");
     if (showSelection && background && !background.firstElementChild) background.innerHTML = meteorLayer();
@@ -182,8 +186,19 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
       const scroll=content.scrollTop??0;
       const offerKey=showSelection?`${view.task.id}:${roundIndex}`:null;
       const reveal = showSelection && !pending && offerKey !== revealedTaskId;
-      content.innerHTML = reveal ? scoutingDetailMarkup(view, { ...options, reveal: true }) : html;
-      renderKey = html;content.scrollTop=scroll;
+      if (showSelection) {
+        const currentGrid = content.querySelector?.('.inventory-choice-grid');
+        const sameOffer = currentGrid?.getAttribute('data-ui-key') === offerKey;
+        // Keep the scrolling grid and card faces mounted during selection, polling and retry.
+        // Retain an in-flight reveal rather than cancelling/restarting its compositor layer.
+        const keepReveal = sameOffer && Boolean(currentGrid.querySelector('.is-revealing'));
+        patchMarkup(content, reveal || keepReveal ? scoutingDetailMarkup(view, { ...options, reveal: true }) : html);
+        content.scrollTop = sameOffer ? scroll : 0;
+      } else {
+        content.innerHTML = html;
+        content.scrollTop = scroll;
+      }
+      renderKey = html;
       if(editing){const next=content.querySelector?.('[data-scout-name-input]');next?.focus({preventScroll:true});if(next&&selection)next.setSelectionRange(...selection);}
       if (showSelection && !pending) revealedTaskId = offerKey;
     }
@@ -229,7 +244,7 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
     if (key !== noticeKey) {
       noticeKey = key;
       const movementNotices = moving.map(unit => `<article class="campaign-expedition-card scout-movement-notice"><button type="button" class="campaign-expedition-kicker scout-movement-heading" data-scout-open-moving="${esc(unit.id)}" title="查看 ${esc(unit.name)} 的行程">球探移动中 · ${esc(unit.name)}</button>${scoutMovementMarkup(unit, { fromLabel:getTerritoryLabel(unit.movement.fromTerritoryId), toLabel:getTerritoryLabel(unit.movement.toTerritoryId), pending })}</article>`).join("");
-      const taskNotices = active.map(task => `<article class="scout-notice"><span class="scout-eyebrow">${task.status === "ready" ? "球探发掘完成" : "球探发掘中"}</span><strong>${esc(task.scoutName ? task.scoutName + " · " + task.territoryLabel : task.territoryLabel)}</strong>${task.roundCount>1?`<span>队列 ${task.completedRounds} / ${task.roundCount} 轮</span>`:""}${progressMarkup(task)}${task.status === "ready" ? `<button type="button" data-scout-open-task="${esc(task.id)}">打开 · 选择球员</button>` : ""}</article>`).join("");
+      const taskNotices = active.map(task => `<article class="scout-notice"><span class="scout-eyebrow">${task.joint?"联合考察 · ":""}${task.status === "ready" ? "球探发掘完成" : "球探发掘中"}</span><strong>${esc(task.scoutName ? task.scoutName + " · " + task.territoryLabel : task.territoryLabel)}</strong>${task.joint?`<span>合作：${esc(task.joint.partnerName)} · 独立结果</span>`:""}${task.roundCount>1?`<span>队列 ${task.completedRounds} / ${task.roundCount} 轮</span>`:""}${progressMarkup(task)}${task.status === "ready" ? `<button type="button" data-scout-open-task="${esc(task.id)}">打开 · 选择球员</button>` : ""}</article>`).join("");
       notifications.innerHTML = movementNotices + taskNotices;
     }
     tick();
@@ -313,15 +328,17 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
       body = kind === "recruit" ? { ...current, count, requestId }
         : { ...(kind==="start"?{rounds:queueRounds}:kind==="move"?{useOil:movementPlan.useOil!==false}:{}),scoutId: current.scoutId, territoryId: kind === "move" ? movementPlan.toTerritoryId : view.territoryId, requestId };
     }
+    if(['claim-queue','choose'].includes(kind))body.view='compact';
     pending = true; render();
     try {
       const result = await getCampaignRequest()(`/api/campaign/scouting/${kind}`, { method: "POST", body });
       if (getCampaignState()?.playerId !== accountId) return;
       requestIds.delete(operationKey);
-      campaignStore.setState(result.state, { source: `scouting-${kind}` }); onState(result.state);
+      const next=result.statePatch?{...getCampaignState(),...result.statePatch}:result.state;
+      campaignStore.setState(next, { source: `scouting-${kind}` }); onState(next, { compact: Boolean(result.statePatch) });
       showToast(kind === "claim-queue" ? `${result.players.length} 名球员已加入球队` : kind === "choose" ? `${result.player.name} 已加入球队`
         : ({ start: "已开始发掘", recruit: "球探已招募", move: "球探开始移动", "cancel-move": "球探已停止移动" })[kind]);
-      if (keyFor(target) === currentKey) { selectedCardId = null; movementPlan = null; await load(); }
+      if (keyFor(target) === currentKey) { selectedCardId = null; movementPlan = null; if(!result.statePatch)await load(); }
     } catch (error) {
       if (getCampaignState()?.playerId === accountId) { showToast(error.message || "操作失败，请重试"); if (keyFor(target) === currentKey) await load(); }
     } finally { pending = false; render(); }
@@ -354,9 +371,10 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
     const accountId = getCampaignState()?.playerId;
     pending = true; render();
     try {
-      const result = await getCampaignRequest()("/api/campaign/scouting/cancel-move", { method:"POST", body:{scoutId, movementId} });
+      const result = await getCampaignRequest()("/api/campaign/scouting/cancel-move", { method:"POST", body:{scoutId, movementId,compact:true} });
       if (getCampaignState()?.playerId !== accountId) return;
-      campaignStore.setState(result.state, {source:"scouting-cancel-move"}); onState(result.state);
+      const state=result.statePatch?{...getCampaignState(),...result.statePatch}:result.state;
+      campaignStore.setState(state, {source:"scouting-cancel-move"}); if(result.state)onState(state);
       showToast("球探已停止移动");
       if (target?.scoutId === scoutId) await load();
     } catch (error) {
@@ -374,7 +392,7 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
     if(upgrade&&!upgrade.disabled&&!pending&&target)return onUpgrade({territoryId:target.territoryId,buildingId:target.buildingId});
     const demolish = event.target.closest?.("[data-facility-demolish]");
     if (demolish && !demolish.disabled && !pending && view?.kind === "center" && !view.error) return onDemolish({ territoryId: target.territoryId, buildingId: target.buildingId }, demolish);
-    if (event.target.closest?.("[data-scout-results]")) { selectionRequested = true; render(); return; }
+    if (event.target.closest?.("[data-scout-results]")) { selectionRequested = true; if(view?.task?.candidatesDeferred)void load();render(); return; }
     const select = event.target.closest?.("[data-scout-select]");
     const round=event.target.closest?.('[data-scout-round]');if(round&&!pending){roundIndex=Number(round.dataset.scoutRound);render();return;}
     if(event.target.closest?.('[data-scout-claim-queue]')){perform('claim-queue');return;}
@@ -426,13 +444,13 @@ export function createScoutingController({ windowRoot, selectionRoot, notificati
           view.sourceLabel = getTerritoryLabel(scout.movement?.fromTerritoryId);
           view.destinationLabel = getTerritoryLabel(scout.movement?.toTerritoryId);
           const task = tasks().find(entry => entry.scoutId === target.scoutId);
-          if (task) view.task = task;
+          if (task) view.task = task.candidatesDeferred&&view.task?.id===task.id&&!view.task.candidatesDeferred?{...task,candidatesDeferred:false,cards:view.task.cards,rounds:view.task.rounds}:task;
           else if (view.task) view.task = { ...view.task, status: "claimed", cards: [] };
           if (scout.status !== "idle") movementPlan = null;
         } else { view.error = "球探已不可用"; view.canDiscover = false; renameDraft=null; }
       } else if (target.taskId) {
         const task = tasks().find(entry => entry.id === target.taskId);
-        if (task) view.task = task;
+        if (task) view.task = task.candidatesDeferred&&view.task?.id===task.id&&!view.task.candidatesDeferred?{...task,candidatesDeferred:false,cards:view.task.cards,rounds:view.task.rounds}:task;
         else if (view.task) view.task = { ...view.task, status: "claimed", cards: [] };
       } else if (view.kind === "center") {
         const building = state.buildings?.territories?.[target.territoryId]?.buildings?.find(entry => entry.id === target.buildingId);

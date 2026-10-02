@@ -1,0 +1,161 @@
+{
+  "passed": true,
+  "version": "20260920-r17",
+  "checks": [
+    "Complete 20260920-r16 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r17 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks",
+    "24 same-frame pans without delayed terrain frames",
+    "Real pointer dragging and inertial wheel zoom have zero delayed terrain updates",
+    "Resize and suspend/resume verified"
+  ],
+  "changedFiles": 2,
+  "newFiles": 0,
+  "requiredBaseFiles": 1216,
+  "imports": 11,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "mapRegressionTests": 36,
+  "browserDrag": {
+    "observations": [
+      {
+        "renderedInMove": true,
+        "frames": 9
+      },
+      {
+        "renderedInMove": true,
+        "frames": 10
+      },
+      {
+        "renderedInMove": true,
+        "frames": 11
+      },
+      {
+        "renderedInMove": true,
+        "frames": 12
+      },
+      {
+        "renderedInMove": true,
+        "frames": 13
+      },
+      {
+        "renderedInMove": true,
+        "frames": 14
+      },
+      {
+        "renderedInMove": true,
+        "frames": 15
+      },
+      {
+        "renderedInMove": true,
+        "frames": 16
+      },
+      {
+        "renderedInMove": true,
+        "frames": 17
+      },
+      {
+        "renderedInMove": true,
+        "frames": 18
+      },
+      {
+        "renderedInMove": true,
+        "frames": 19
+      },
+      {
+        "renderedInMove": true,
+        "frames": 20
+      },
+      {
+        "renderedInMove": true,
+        "frames": 21
+      },
+      {
+        "renderedInMove": true,
+        "frames": 22
+      },
+      {
+        "renderedInMove": true,
+        "frames": 23
+      },
+      {
+        "renderedInMove": true,
+        "frames": 24
+      },
+      {
+        "renderedInMove": true,
+        "frames": 25
+      },
+      {
+        "renderedInMove": true,
+        "frames": 26
+      },
+      {
+        "renderedInMove": true,
+        "frames": 27
+      },
+      {
+        "renderedInMove": true,
+        "frames": 28
+      },
+      {
+        "renderedInMove": true,
+        "frames": 29
+      },
+      {
+        "renderedInMove": true,
+        "frames": 30
+      },
+      {
+        "renderedInMove": true,
+        "frames": 31
+      },
+      {
+        "renderedInMove": true,
+        "frames": 32
+      }
+    ],
+    "moves": 24,
+    "lateFrames": 0,
+    "idleFrames": 1,
+    "stats": {
+      "loaded": 444,
+      "total": 444,
+      "cached": 620,
+      "active": 0,
+      "failed": 0,
+      "zoom": "风格化",
+      "triangles": 56390,
+      "deferred": 0,
+      "nature": {
+        "deferred": 0,
+        "trees": 18870,
+        "shrubs": 2535,
+        "lakes": 212,
+        "mouths": 18,
+        "visibleBatches": 0
+      },
+      "mountainSites": 0,
+      "mountainTriangles": 0,
+      "stride": 4,
+      "visibleTriangles": 40274,
+      "renderedFrames": 33,
+      "suspended": false
+    },
+    "pointer": {
+      "moves": 225,
+      "lateFrames": 0
+    },
+    "suspension": {
+      "paused": true,
+      "resumed": true
+    },
+    "errors": []
+  },
+  "fullStartupRegression": "Chrome anonymous entry and authenticated Leaflet entry passed"
+}

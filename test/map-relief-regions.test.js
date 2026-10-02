@@ -46,11 +46,9 @@ test("Svalbard relief plan targets the existing territory and expands the future
 });
 
 test("campaign bounds include the completed Svalbard relief range", async () => {
-  const geometrySource = await readFile(
-    new URL("../client/map/campaign-map-geometry.js", import.meta.url),
-    "utf8",
-  );
-  assert.match(geometrySource, /Object\.freeze\(\[82, 100\]\)/);
+  const {CAMPAIGN_BOUNDS} = await import("../client/map/campaign-map-geometry.js");
+  assert.deepEqual(CAMPAIGN_BOUNDS[1], [82, 100]);
+  assert.ok(Object.isFrozen(CAMPAIGN_BOUNDS[1]));
   assert.equal(config.futureCampaignBounds.north, 82);
 });
 

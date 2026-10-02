@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';import http from 'node:http';import {createRequire} from 'node:module';
+import {coalitionFixture} from '../test/coalition-fixture.mjs';import {createCampaignApiHandler} from '../server/http/campaign-api-handler.mjs';import {createStaticHandler} from '../server/http/static-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const out='outputs/trade-movement-r29-review';fs.mkdirSync(out,{recursive:true});
+const f=coalitionFixture(),api=createCampaignApiHandler({campaign:f.s}),serve=createStaticHandler(process.cwd());
+for(const [id,owner]of [['land-a','a'],['land-b','b']]){f.s.world.territories[id]={...structuredClone(f.s.world.territories[owner]),ownerId:owner,capitalOf:null,version:1,buildings:id==='land-a'?[{id:'port1',type:'port',status:'active',level:2}]:[]};f.s.world.players[owner].territoryIds.push(id);f.s.territoryIndex.territories.push({...f.s.territoryIndex.territories[0],territoryId:id,name:id});}f.s.save();
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname.startsWith('/api/'))await api(req,res,u.pathname,u.href);else await serve(req,res);}catch(e){res.writeHead(e.statusCode||500,{'content-type':'application/json'});res.end(JSON.stringify({error:e.message}));}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;
+const browser=await chromium.launch({channel:'chrome',headless:true});const checks=[],errors=[];let page;
+const check=(name,pass)=>{checks.push({name,pass:!!pass});assert.ok(pass,name);};
+const inView=async selector=>page.locator(selector).evaluate(e=>{const r=e.getBoundingClientRect();return r.x>=0&&r.y>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;});
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:900}});await context.addInitScript(()=>localStorage.setItem('yellowdogs-chronicles-token','a'));
+ page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url+'/versus/?renderer=leaflet');await page.waitForFunction(()=>document.querySelector('#map-loader')?.classList.contains('is-ready'));
+ let landRequests=0,quoteReply=null;page.on('response',async r=>{if(r.url().endsWith('/api/campaign/interactions')&&r.request().postDataJSON()?.action==='trade')quoteReply=await r.json();});page.on('request',r=>{if(r.url().includes('/interactions/territories'))landRequests++;});
+ await page.locator('[data-interaction-player="b"]').click();await page.locator('[data-interaction-action="trade-form"]').click();
+ check('land list not fetched on ordinary profile or trade open',landRequests===0);
+ await page.locator('.trade-land-picker summary').first().click();await page.locator('[data-interaction-action="trade-land-load"]').first().click();
+ await page.locator('[data-trade-land="give"]').first().waitFor();check('one lazy land request',landRequests===1);
+ check('ordinary building shown',await page.locator('.trade-land-picker').first().innerText().then(t=>t.includes('港口 Lv.2')));
+ await page.locator('[data-trade-land="give"][value="land-a"]').check();await page.locator('[data-trade-gold="take"]').fill('500');
+ await page.locator('[data-interaction-trade] button[type="submit"]').click();await page.locator('[data-interaction-response="cancel"]').first().waitFor({state:'attached'});
+ const request=Object.values(f.s.world.diplomacy.requests).find(r=>r.type==='trade');check('quote skips full world and player detail response',!!quoteReply?.statePatch&&!quoteReply.state&&!quoteReply.view);check('land included in submitted offer',request?.payload?.giveTerritoryIds?.includes('land-a'));
+ const second=await browser.newContext({viewport:{width:1440,height:900}});await second.addInitScript(()=>localStorage.setItem('yellowdogs-chronicles-token','b'));const receiver=await second.newPage();await receiver.goto(url+'/versus/?renderer=leaflet');await receiver.waitForFunction(()=>document.querySelector('#map-loader')?.classList.contains('is-ready'));
+ check('recipient notification names land and building',await receiver.locator('[data-notice-proposal]').innerText().then(t=>t.includes('land-a')&&t.includes('港口')));
+ await receiver.locator('[data-notice-action="accept"]').click();await receiver.waitForFunction(()=>!document.querySelector('[data-notice-proposal]'));
+ check('accept transfers ownership',f.s.world.territories['land-a'].ownerId==='b');check('accept preserves building',f.s.world.territories['land-a'].buildings[0]?.level===2);
+ await receiver.screenshot({path:out+'/accepted.png'});await second.close();
+ const ownership=await page.evaluate(async cards=>{
+  const {createInventoryController}=await import('/client/inventory/inventory-controller.js');const {createCampaignStore}=await import('/client/core/campaign-store.js');
+  const root=document.createElement('section');root.className='inventory-window';root.hidden=true;document.querySelector('.map-stage').append(root);const trigger=document.createElement('button');
+  const store=createCampaignStore({playerId:'ownership-test',setupComplete:true,draft:{roster:[{...cards[0],upgradeLevel:0},{...cards[0],id:'copy-high',upgradeLevel:7},{...cards[1],upgradeLevel:0}]}});let requests=0;
+  const ctl=createInventoryController({trigger,windowRoot:root,getCampaignState:store.getState,campaignStore:store,getCampaignRequest:()=>()=>{requests++;throw Error('unexpected network');}});ctl.openReward({id:'qa',cards,claim:async()=>({})});
+  const before=[...root.querySelectorAll('[data-owned-choice]')].map(n=>n.textContent),card=root.querySelector('.inventory-choice-card');store.setState({...store.getState(),draft:{roster:[{...cards[0],upgradeLevel:2}]}});
+  const after=[...root.querySelectorAll('[data-owned-choice]')].map(n=>n.textContent),stable=card===root.querySelector('.inventory-choice-card');window.ownershipFixture={root,ctl};return {before,after,stable,requests};
+ },f.a.draft.roster.slice(0,3));
+ check('pack ownership distinguishes max level, base level and missing',JSON.stringify(ownership.before)===JSON.stringify(['已拥有 · 最高 +7','已拥有 · 最高 +0','未拥有']));
+ check('ownership updates without replacing card or replaying animation',ownership.stable&&ownership.after[0]==='已拥有 · 最高 +2');check('ownership sends zero extra requests',ownership.requests===0);
+ await page.screenshot({path:out+'/owned-desktop.png'});await page.setViewportSize({width:960,height:540});await page.waitForTimeout(150);
+ check('ownership labels stay inside mobile viewport',await page.locator('[data-owned-choice]').evaluateAll(nodes=>nodes.every(n=>{const b=n.getBoundingClientRect();return b.bottom<=innerHeight&&b.left>=0&&b.right<=innerWidth;})));
+ await page.screenshot({path:out+'/owned-mobile.png'});
+ await page.evaluate(()=>{window.ownershipFixture.ctl.close();window.ownershipFixture.root.remove();});
+ await page.screenshot({path:out+'/warehouse.png'});check('no browser errors',!errors.length);
+}finally{fs.writeFileSync(out+'/report.json',JSON.stringify({checks,errors},null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+console.log(JSON.stringify({checks,errors}));

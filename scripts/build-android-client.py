@@ -62,15 +62,34 @@ manifest.write(work / 'AndroidManifest.xml', encoding='utf-8', xml_declaration=T
 fields = {'GAME_URL':config['gameUrl'],'UPDATE_URL':config['updateUrl'],'VERSION_NAME':config['versionName'],'LANDSCAPE_CSS':(SOURCE/'landscape.css').read_text(encoding='utf-8')}
 generated = 'package online.yellowdogsleague.client;\npublic final class BuildConfig {\n' + ''.join('public static final String '+key+'='+json.dumps(value,ensure_ascii=True)+';\n' for key,value in fields.items()) + 'public static final int VERSION_CODE='+str(config['versionCode'])+';\n}\n'
 (work / 'generated/BuildConfig.java').write_text(generated, encoding='utf-8')
-run(java_tool('javac'),'--release','8','-encoding','UTF-8','-d',work / 'tests',SOURCE / 'src/online/yellowdogsleague/client/UpdatePolicy.java',SOURCE / 'test/UpdatePolicyTest.java')
+run(java_tool('javac'),'--release','8','-encoding','UTF-8','-d',work / 'tests',SOURCE / 'src/online/yellowdogsleague/client/UpdatePolicy.java',SOURCE / 'src/online/yellowdogsleague/client/LocalArtPolicy.java',SOURCE / 'test/UpdatePolicyTest.java')
 policy_output=run(java_tool('java'),'-cp',work / 'tests','online.yellowdogsleague.client.UpdatePolicyTest')
 run(sdk_tool('aapt2'),'compile','--dir',work / 'res','-o',work / 'resources.zip')
 run(sdk_tool('aapt2'),'link','-o',work / 'unsigned.apk','--manifest',work / 'AndroidManifest.xml','-I',android,'--min-sdk-version',config['minSdk'],'--target-sdk-version',config['targetSdk'],'--version-code',config['versionCode'],'--version-name',config['versionName'],work / 'resources.zip')
 run(java_tool('javac'),'--release','8','-encoding','UTF-8','-cp',android,'-d',work / 'classes',*sorted((SOURCE / 'src').rglob('*.java')),work / 'generated/BuildConfig.java')
 run(java_tool('jar'),'cf',work / 'classes.jar','-C',work / 'classes','.')
 run(sdk_tool('d8'),'--lib',android,'--min-api',config['minSdk'],'--output',work / 'dex',work / 'classes.jar')
+# Embed common art under a strict budget so v3's 64 MiB updater can install v4.
+entries=[];used=0
+manifest=json.loads((ROOT/'assets/data/desktop-resources.json').read_text(encoding='utf-8'))
+priority=['assets/player-profiles/','assets/card-frames/','assets/club-badges/','assets/flags/','assets/ui/','assets/sponsors/','assets/scout-tokens/']
+candidates=[e for e in manifest['entries'] if any(e['path'].startswith(p) for p in priority) or e['path'] in ['assets/yellowdog-logo-transparent.png','assets/screen-r2.jpg','assets/screen-r3.png']]
+candidates+= [e for e in manifest['entries'] if e not in candidates and e['path'].startswith(('assets/facilities/','assets/wonders/','assets/expedition-units/')) and e['path'].endswith('.webp')]
+objects={}
+for entry in candidates:
+    rel=entry['path'];source=ROOT/rel
+    if source.is_symlink() or not source.resolve().is_relative_to((ROOT/'assets').resolve()):raise SystemExit('Unsafe art path')
+    content=source.read_bytes();digest=hashlib.sha256(content).hexdigest()
+    if digest!=entry['sha256'] or len(content)!=entry['bytes']:raise SystemExit('Refresh desktop resource manifest: '+rel)
+    cost=0 if digest in objects else len(content)
+    if used+cost>61*1024*1024:continue
+    objects[digest]=content;used+=cost;entries.append(entry)
+asset_manifest={'schemaVersion':1,'entries':entries}
 with zipfile.ZipFile(work / 'unsigned.apk','a',compression=zipfile.ZIP_DEFLATED) as archive:
     for file in sorted((work / 'dex').glob('*.dex')): archive.write(file,file.name)
+    archive.writestr('assets/local-art/manifest.json',json.dumps(asset_manifest,separators=(',',':')))
+    for digest,content in objects.items():archive.writestr('assets/local-art/'+digest,content)
+(release/'LOCAL_ART.json').write_text(json.dumps({'files':len(entries),'bytes':used,'profiles':sum(e['path'].startswith('assets/player-profiles/') for e in entries),'entries':entries},ensure_ascii=False,indent=2),encoding='utf-8')
 run(sdk_tool('zipalign'),'-p','4',work / 'unsigned.apk',work / 'aligned.apk')
 
 private = ROOT / 'outputs/android-private'
@@ -89,8 +108,12 @@ apk = release / ('yellowdogs-android-v'+str(config['versionCode'])+'.apk')
 run(sdk_tool('apksigner'),'sign','--ks',key,'--ks-key-alias','yellowdogs','--ks-pass','env:YDL_ANDROID_SIGNING_PASSWORD','--v4-signing-enabled','false','--out',apk,work / 'aligned.apk')
 signature_output=run(sdk_tool('apksigner'),'verify','--verbose','--print-certs',apk)
 (release / 'SIGNATURE.txt').write_text(signature_output,encoding='utf-8')
+if apk.stat().st_size>64*1024*1024:raise SystemExit('APK exceeds v3 updater compatibility limit')
+with zipfile.ZipFile(apk) as archive:
+    for entry in entries:
+        data=archive.read('assets/local-art/'+entry['sha256']);assert len(data)==entry['bytes'] and hashlib.sha256(data).hexdigest()==entry['sha256']
 digest=hashlib.sha256(apk.read_bytes()).hexdigest()
-update={'versionCode':config['versionCode'],'versionName':config['versionName'],'apkUrl':urllib.parse.urljoin(config['updateUrl'],apk.name),'sha256':digest,'sizeBytes':apk.stat().st_size,'notes':'安卓朋友测试版：横屏游戏、自动检查更新、下载校验及系统安装。'}
+update={'versionCode':config['versionCode'],'versionName':config['versionName'],'apkUrl':urllib.parse.urljoin(config['updateUrl'],apk.name),'sha256':digest,'sizeBytes':apk.stat().st_size,'notes':config.get('releaseNotes','横屏游戏、自动检查更新、下载校验及系统安装。')}
 (release / 'latest.json').write_text(json.dumps(update,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 (release / 'SHA256SUMS').write_text(digest+'  '+apk.name+'\n',encoding='utf-8',newline='\n')
 report={'builtAt':stamp,'config':config,'apk':str(apk),'bytes':apk.stat().st_size,'sha256':digest,'signed':True,'policyTests':policy_output.strip(),'deviceTest':'pending; see DEVICE_QA.json when present','websiteProbe':'not performed by build script','signingBackup':'outputs/android-private (private; never upload with APK)'}

@@ -1,3 +1,8 @@
+import {restoreArchivedFields} from '../infrastructure/history-archive.mjs';
+import {bondQuote,holdBond,resolveBond,assertBondFunds} from './pvp-attack-bond.mjs';
+import {settlePlayerDefeat} from './player-defeat.mjs';
+import {coalitionContributors} from '../../shared/config/coalition.mjs';
+import {liberationBeneficiary} from './territory-liberation.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import {endHeadquartersWar} from './war-settlement.mjs';
 import {publishWorldNews} from './world-news.mjs';
@@ -39,6 +44,9 @@ export function publicChallengeView(challenge, now) {
     id: challenge.id,
     territoryId: challenge.territoryId,
     coalitionId:challenge.coalitionId,
+    coalitionContributors:challenge.coalitionContributors,
+    defenderCoalitionId:challenge.defenderCoalitionId,
+    defenderCoalitionContributors:challenge.defenderCoalitionContributors,
     attackerId: challenge.attackerId,
     attackerTeamName: challenge.attackerTeamName,
     defenderId: challenge.defenderId,
@@ -48,6 +56,7 @@ export function publicChallengeView(challenge, now) {
     secondLegStartsAt: challenge.secondLegStartsAt,
     settleAt: challenge.settleAt,
     phase,
+    firstLeg: challenge.live?.firstLeg?.match?.finished ? {score:[...challenge.live.firstLeg.match.score],teams:challenge.live.firstLeg.match.teams.map(team=>({id:team.id,name:team.name}))} : null,
     maritime: Boolean(challenge.maritimeRoute),
     sourceTerritoryId: challenge.fromTerritoryIds?.[0] ?? null,
   };
@@ -140,7 +149,7 @@ export class ChallengeService {
 
   attackingAccount(challenge) {return challenge.coalitionId?this.coalitions.matchAccount(challenge):this.accounts.get(challenge.attackerId);}
   applyAttackingLeg(challenge,leg,at=this.now()) {
-    if(challenge.coalitionId)return this.coalitions.applyLeg(challenge,leg,at);
+    if(challenge.coalitionId||challenge.defenderCoalitionId)return this.coalitions.applyLeg(challenge,leg,at);
     this.fitness?.applyLeg(this.accounts.get(challenge.attackerId),challenge,leg,at);
     applyLegConsequences(this.accounts,challenge,leg);
   }
@@ -148,62 +157,69 @@ export class ChallengeService {
   settleChallenge(challenge) {
     const current = this.world?.activeChallenges?.[challenge.territoryId];
     if (!current || current.id !== challenge.id) return null;
+    challenge=current;
     const computed = this.battleForChallenge(challenge);
     if (!computed) return null;
     const targetState = this.world.territories[challenge.territoryId];
     const ownerUnchanged = targetState.ownerType === challenge.previousOwner.type
       && (targetState.ownerId ?? null) === (challenge.previousOwner.id ?? null);
-    const battle = { coalitionId:challenge.coalitionId,coalitionContributors:challenge.coalitionContributors, ...computed, defender: computed.defender ?? challenge.previousOwner, captured: false, settledAt: this.now() };
+    const battle = { coalitionId:challenge.coalitionId,coalitionContributors:challenge.coalitionContributors,defenderCoalitionId:challenge.defenderCoalitionId,defenderCoalitionContributors:challenge.defenderCoalitionContributors, ...computed, attackerId:challenge.attackerId, defenderId:challenge.defenderId, attackerTeamName:challenge.attackerTeamName, defenderName:challenge.defenderName, defender: computed.defender ?? challenge.previousOwner, captured: false, settledAt: this.now() };
     const attacker = this.accounts.get(challenge.attackerId);
     const territoryBefore=structuredClone(targetState), playersBefore=structuredClone(this.world.players);
     const newsBefore=structuredClone(this.world.news),diplomacyBefore=this.world.diplomacy?JSON.parse(JSON.stringify(this.world.diplomacy)):undefined;
     const warEndMarkers=Object.values(this.world.activeChallenges??{}).map(c=>[c,c.warEndedAt]);
+    const bondsBefore=structuredClone(this.world.pvpBonds);
     const revisionBefore=this.world.revision, activeBefore={...this.world.activeChallenges}, rewardsBefore=structuredClone(this.world.neutralRewards);
     const fitnessAppliedBefore=challenge.live?.secondLeg?.fitnessApplied;
     const consequenceMarkers=[challenge.live?.firstLeg,challenge.live?.secondLeg].filter(Boolean).map(leg=>[leg,leg.consequencesApplied]);
     const defenderBefore=structuredClone(challenge.live?.defender);
     const coalitionBefore=structuredClone(this.world.coalitions);
-    const accountSnapshots=[...new Set([attacker,this.accounts.get(challenge.defenderId),...(challenge.coalitionContributors??[]).map(id=>this.accounts.get(id))])].filter(Boolean).map(a=>[a,structuredClone(a)]);
+    const defeatTransaction=battle.outcome==='win'&&challenge.previousOwner.type===OWNER_TYPES.PLAYER&&((this.world.players[challenge.previousOwner.id]?.territoryIds?.length??0)<=1||territoryBefore.capitalOf===challenge.previousOwner.id||this.accounts.get(challenge.previousOwner.id)?.homeTerritoryId===challenge.territoryId);
+    const defeatWorldBefore=defeatTransaction?JSON.parse(JSON.stringify(this.world)):null;
+    const accountSnapshots=[...new Set([...(defeatTransaction?this.accounts.values():[]),...(this.world.pvpBonds?.[challenge.attackBondId]?.shares??[]).map(s=>this.accounts.get(s.ownerId)),attacker,this.accounts.get(challenge.defenderId??challenge.previousOwner?.id),...[...(challenge.coalitionContributors??[]),...(challenge.defenderCoalitionContributors??[])].map(id=>this.accounts.get(id))])].filter(Boolean).map(a=>[a,structuredClone(a)]);
     try {
       for(const leg of [challenge.live?.firstLeg,challenge.live?.secondLeg])this.applyAttackingLeg(challenge,leg,battle.settledAt);
       this.wonders?.challengeCompleted(attacker,challenge);
       if (attacker && !attacker.conquest) {
         const quota = this.conquestState(attacker, battle.settledAt);
-        attacker.conquest = { day: quota.day, resetHour: quota.resetHour, used: quota.used, cooldownUntil: quota.cooldownUntil };
+        attacker.conquest = {...quota};
       }
-      const quotaAvailable = challenge.previousOwner.type !== OWNER_TYPES.NEUTRAL
-        || (attacker && this.conquestState(attacker, battle.settledAt).remaining > 0);
+      const captureQuota=attacker?this.conquestState(attacker,battle.settledAt):null;
+      const quotaAvailable=Boolean(captureQuota?.remaining>0&&(challenge.previousOwner.type!=='player'||captureQuota.playerRemaining>0));
       if (battle.outcome === "win" && ownerUnchanged && !quotaAvailable)
-        battle.captureBlockedReason = '今日中立地块征服次数已用完';
+        battle.captureBlockedReason = '今日地块征服总次数或玩家地块征服次数已用完';
       const eliteProtected=isEliteTerritory(this.territoryIndex?.territories.find(t=>t.territoryId===challenge.territoryId));
       if(eliteProtected)battle.captureBlockedReason="豪门地块不可占领";
       const warAllowed=challenge.warEndedAt==null&&(targetState.ownerType!==OWNER_TYPES.PLAYER || playersAtWar(this.world,challenge.attackerId,targetState.ownerId));
       if(!warAllowed)battle.captureBlockedReason=challenge.warEndedAt!=null?"总部失守，战争已结束":"双方未处于战争状态";
       if (battle.outcome === "win" && ownerUnchanged && quotaAvailable && !eliteProtected && warAllowed) {
+        const beneficiary=liberationBeneficiary(this.world,this.accounts,challenge.attackerId,challenge.territoryId);
         captureTerritory(this.territoryIndex, this.world, challenge.attackerId, challenge.territoryId, {
           permission: { allowed: true, reason: null, fromTerritoryIds: challenge.fromTerritoryIds ?? [] },
         });
         if(challenge.coalitionId)this.world.coalitions[challenge.coalitionId].territoryId=challenge.territoryId;
         else placeExpeditionPiece(attacker, challenge.territoryId);
         battle.captured = true;
+        if(beneficiary)targetState.pendingLiberation={challengeId:challenge.id,captorId:challenge.attackerId,originalOwnerId:beneficiary};
         const territory=this.territoryIndex?.territories?.find(t=>t.territoryId===challenge.territoryId);
         publishWorldNews(this.world,{key:challenge.id,type:'capture',text:(challenge.coalitionId?challenge.attackerTeamName+'（归属 '+(attacker?.draft?.teamName??attacker?.nickname??challenge.attackerId)+'）':(attacker?.draft?.teamName??attacker?.nickname??challenge.attackerTeamName??challenge.attackerId))+' 攻下了 '+(territory?[territory.country,territory.name].filter(Boolean).join(' · '):challenge.territoryId),createdAt:battle.settledAt});
         const defenderId=challenge.previousOwner.id;
         if(challenge.previousOwner.type===OWNER_TYPES.PLAYER&&(territoryBefore.capitalOf===defenderId||playersBefore[defenderId]?.capitalTerritoryId===challenge.territoryId||this.accounts.get(defenderId)?.homeTerritoryId===challenge.territoryId))
           battle.warEnded=endHeadquartersWar({world:this.world,accounts:this.accounts,winnerId:challenge.attackerId,loserId:defenderId,territoryId:challenge.territoryId,at:battle.settledAt,key:challenge.id});
-        if (attacker && challenge.previousOwner.type === OWNER_TYPES.NEUTRAL) {
+        if (attacker) {
           const quota = this.conquestState(attacker, battle.settledAt);
-          attacker.conquest = { day: quota.day, resetHour: quota.resetHour, used: quota.used + 1, cooldownUntil: quota.cooldownUntil };
-          const rewards = this.awardNeutralCapture({ account:attacker, challenge, battle });
+          attacker.conquest = {...quota,used:quota.used+1,playerUsed:quota.playerUsed+(challenge.previousOwner.type==='player'?1:0)};
+          const rewards = challenge.previousOwner.type===OWNER_TYPES.NEUTRAL?this.awardNeutralCapture({ account:attacker, challenge, battle }):null;
           if (rewards) battle.rewards = rewards;
         }
       } else {
         this.world.revision += 1;
       }
+      battle.attackBond=resolveBond(this.world,this.accounts,challenge.attackBondId,battle.outcome==='win'||!warAllowed||!ownerUnchanged?'refund':'loss',battle.settledAt,battle.outcome==='win'?'进攻获胜':!warAllowed||!ownerUnchanged?'目标状态变化，进攻取消':'');
       if (attacker) {
         if (battle.outcome !== "win" && !challenge.coalitionId) {
           const quota = this.conquestState(attacker, battle.settledAt);
-          attacker.conquest = { day: quota.day, resetHour: quota.resetHour, used: quota.used,
+          attacker.conquest = { ...quota,
             cooldownUntil: battle.settledAt + EXPEDITION_DEFEAT_COOLDOWN_MS };
           battle.attackCooldownUntil = attacker.conquest.cooldownUntil;
         }
@@ -214,14 +230,19 @@ export class ChallengeService {
       if(challenge.coalitionId){
         const army=this.world.coalitions[challenge.coalitionId];army.lastChallengeId=challenge.id;army.revision++;
         if(battle.outcome!=='win')army.cooldownUntil=battle.settledAt+EXPEDITION_DEFEAT_COOLDOWN_MS;
-        for(const id of new Set([...(challenge.coalitionContributors??[]),challenge.defenderId])){
-          const a=this.accounts.get(id);if(!a||a===attacker)continue;a.battleHistory??=[];a.battleHistory.push(compactBattleRecord(battle));a.battleHistory=a.battleHistory.slice(-50);
-        }
       }
+      if(challenge.defenderCoalitionId){const army=this.world.coalitions[challenge.defenderCoalitionId];army.lastChallengeId=challenge.id;army.revision++;if(battle.outcome==='win')army.cooldownUntil=battle.settledAt+EXPEDITION_DEFEAT_COOLDOWN_MS;}
+      // Ordinary PvP defenders need the same durable report as coalition defenders.
+      for(const id of new Set([...(challenge.coalitionContributors??[]),...(challenge.defenderCoalitionContributors??[]),challenge.defenderId??challenge.previousOwner?.id])){
+        const a=this.accounts.get(id);if(!a||a===attacker)continue;
+        a.battleHistory??=[];a.battleHistory.push(compactBattleRecord(battle));a.battleHistory=a.battleHistory.slice(-50);
+      }
+      if(battle.captured&&challenge.previousOwner.type===OWNER_TYPES.PLAYER)battle.playerDefeat=settlePlayerDefeat({world:this.world,accounts:this.accounts,loserId:challenge.previousOwner.id,territoryId:challenge.territoryId,territoryBefore,at:battle.settledAt});
       delete this.world.activeChallenges[challenge.territoryId];
       this.save();
       return battle;
     } catch (error) {
+      if(bondsBefore===undefined)delete this.world.pvpBonds;else this.world.pvpBonds=bondsBefore;
       if(coalitionBefore===undefined)delete this.world.coalitions;else this.world.coalitions=coalitionBefore;
       if(challenge.live?.secondLeg){if(fitnessAppliedBefore===undefined)delete challenge.live.secondLeg.fitnessApplied;else challenge.live.secondLeg.fitnessApplied=fitnessAppliedBefore;}
       for(const [leg,marker] of consequenceMarkers){if(marker===undefined)delete leg.consequencesApplied;else leg.consequencesApplied=marker;}
@@ -232,6 +253,12 @@ export class ChallengeService {
       if(diplomacyBefore===undefined)delete this.world.diplomacy;else {this.world.diplomacy=diplomacyBefore;for(const m of Object.values(diplomacyBefore.matches??{}))if(!m.battle)restoreCampaignLiveLeg(m.leg);}
       for(const [c,at]of warEndMarkers){if(at===undefined)delete c.warEndedAt;else c.warEndedAt=at;}
       this.world.players=playersBefore;this.world.revision=revisionBefore;this.world.activeChallenges=activeBefore;this.world.neutralRewards=rewardsBefore;
+      if(defeatWorldBefore){
+        for(const key of Object.keys(this.world))delete this.world[key];Object.assign(this.world,defeatWorldBefore);this.restoreActiveChallenges();
+        for(const m of Object.values(this.world.diplomacy?.matches??{}))if(!m.battle)restoreCampaignLiveLeg(m.leg);
+        for(const m of Object.values(this.world.eliteRaids?.matches??{}))restoreCampaignLiveLeg(m.leg);
+        for(const m of Object.values(this.world.eliteChallenges??{}))restoreCampaignLiveLeg(m.leg);
+      }
       throw error;
     }
   }
@@ -256,7 +283,7 @@ export class ChallengeService {
       const completed = (account.battleHistory ?? [])
         .find((battle) => battle.challengeId === challengeId || battle.id === challengeId);
       if (!completed) throw Object.assign(new Error("进行中的挑战不存在或已经结束"), { statusCode: 404 });
-      return { completed: true, challenge: null, live: null, battle: completed };
+      return { completed: true, challenge: null, live: null, battle: restoreArchivedFields(completed) };
     }
     const live = challenge.live;
     const currentLeg = challenge.phase === "second-leg" ? live?.secondLeg : live?.firstLeg;
@@ -306,11 +333,12 @@ export class ChallengeService {
         const current=this.attackingAccount(challenge);
         this.applyAttackingLeg(challenge,live.firstLeg);
         const secondAttacker=nextLegSeat(live.attacker,current);
-        const secondDefender=nextLegSeat(live.defender,this.accounts.get(challenge.defenderId),{full:true});
+        const secondDefender=nextLegSeat(live.defender,challenge.defenderCoalitionId?this.coalitions.projection(this.world.coalitions[challenge.defenderCoalitionId]):this.accounts.get(challenge.defenderId),{full:true});
         live.secondLeg = createCampaignLiveLeg({
           home: secondDefender,
           venue: this.getMatchVenue(this.accounts.get(challenge.defenderId), Number(challenge.secondLegStartsAt)),
           away: secondAttacker,
+          internalAbilityMultipliers: challenge.internalAbilityMultipliers,
           seed: String(challenge.seed) + ":leg-2",
           legNumber: 2,
           startedAt: challenge.secondLegStartsAt,
@@ -342,7 +370,7 @@ export class ChallengeService {
 
   fitnessTransition(challenge,action) {
     const before=JSON.parse(JSON.stringify(challenge));
-    const accounts=[...new Set([challenge.attackerId,challenge.defenderId,...(challenge.coalitionContributors??[])])].map(id=>this.accounts.get(id)).filter(Boolean).map(account=>[account,structuredClone(account)]);
+    const accounts=[...new Set([challenge.attackerId,challenge.defenderId,...(challenge.coalitionContributors??[]),...(challenge.defenderCoalitionContributors??[])])].map(id=>this.accounts.get(id)).filter(Boolean).map(account=>[account,structuredClone(account)]);
     try{action();this.save();}catch(error){
       for(const key of Object.keys(challenge))delete challenge[key];Object.assign(challenge,before);
       for(const leg of [challenge.live?.firstLeg,challenge.live?.secondLeg])if(leg)restoreCampaignLiveLeg(leg);
@@ -357,7 +385,7 @@ export class ChallengeService {
     if (!challenge) {
       const completed = (account.battleHistory ?? [])
         .find((battle) => battle.challengeId === challengeId || battle.id === challengeId);
-      if (completed) return { battle: completed, alreadyCompleted: true };
+      if (completed) return { battle: restoreArchivedFields(completed), alreadyCompleted: true };
       throw Object.assign(new Error("进行中的挑战不存在或已经结束"), { statusCode: 404 });
     }
     if (challenge.attackerId !== account.id) {
@@ -447,7 +475,12 @@ export class ChallengeService {
     }
 
     const targetState = this.world.territories[territoryId];
+    if(targetState.ownerType==='player'&&options.requirePvpConfirmation&&(!options.pvpConfirmed||options.expectedOwnerId!==targetState.ownerId))throw Object.assign(Error('请确认30000金币进攻保证金；目标归属变化后需重新确认'),{statusCode:409});
+    if(options.coalition&&targetState.ownerType==='player'&&!options.attackBondId)throw Error('联军进攻需先确认并缴纳保证金');
+    if(options.attackBondId){const bond=this.world.pvpBonds?.[options.attackBondId];if(bond?.status!=='held'||bond.territoryId!==territoryId||bond.defenderId!==targetState.ownerId)throw Error('进攻目标归属或保证金状态已变化');}
     this.save();
+    const personalBondQuote=targetState.ownerType==='player'&&!options.attackBondId?bondQuote(this.accounts,[account.id],territoryId,targetState.ownerId):null;
+    if(personalBondQuote)assertBondFunds(this.accounts,personalBondQuote);
     const attacker = options.coalition?.seat ?? buildAccountMatchSeat(account,"expedition",this.now(),{fitness:true,allowShortHanded:true,bondCatalog:campaignBondCatalog(this.playerDatabase)});
     const defendingAccount = targetState.ownerType === OWNER_TYPES.PLAYER
       ? this.accounts.get(targetState.ownerId)
@@ -455,7 +488,8 @@ export class ChallengeService {
     const now = this.now();
     const seed = `${this.world.seasonId}:${this.world.revision + 1}:${account.id}:${territoryId}:${now}`;
     const garrison = defendingAccount ? null : this.ensureAiGarrison(territoryId);
-    const defender = defendingAccount?.draft?.roster?.length >= 11
+    const coalitionDefence=this.coalitions?.defenderFor(defendingAccount),defendingArmy=coalitionDefence?.army;
+    const defender = coalitionDefence ? coalitionDefence.seat : defendingAccount?.draft?.roster?.length >= 11
       ? buildAccountMatchSeat(defendingAccount,"garrison",this.now(),{fitness:true,allowShortHanded:true,bondCatalog:campaignBondCatalog(this.playerDatabase)})
       : buildTerritoryDefenderSeat({
         catalog: this.playerDatabase,
@@ -466,10 +500,13 @@ export class ChallengeService {
       });
     const previousOwner = { type: targetState.ownerType, id: targetState.ownerId };
     const challengeId = this.createChallengeId(account.id);
+    const liberatingIds=options.coalition?.contributors??[account.id];
+    const internalAbilityMultipliers=liberatingIds.some(id=>liberationBeneficiary(this.world,this.accounts,id,territoryId))?[1,1.2]:null;
     const firstLeg = createCampaignLiveLeg({
       home: defender,
       venue: this.getMatchVenue(defendingAccount, now),
       away: attacker,
+      internalAbilityMultipliers,
       seed: `${seed}:leg-1`,
       legNumber: 1,
       startedAt: now,
@@ -477,8 +514,10 @@ export class ChallengeService {
     });
     const challenge = {
       id: challengeId,
+      internalAbilityMultipliers,
       territoryId,
       coalitionId:options.coalition?.id,coalitionContributors:options.coalition?.contributors,
+      defenderCoalitionId:defendingArmy?.id,defenderCoalitionContributors:defendingArmy?coalitionContributors(defendingArmy):undefined,
       attackerId: account.id,
       attackerTeamName: attacker.name,
       defenderId: previousOwner.id ?? null,
@@ -498,10 +537,11 @@ export class ChallengeService {
       live: { attacker, defender, firstLeg, secondLeg: null },
     };
     this.world.activeChallenges ??= {};
-    const revision=this.world.revision;
+    const revision=this.world.revision,bondsBefore=structuredClone(this.world.pvpBonds),accountBefore=structuredClone(account);
+    if(targetState.ownerType==='player')challenge.attackBondId=options.attackBondId??holdBond(this.world,this.accounts,personalBondQuote,now);
     this.world.activeChallenges[territoryId] = challenge;
     this.world.revision += 1;
-    try{this.save();}catch(error){delete this.world.activeChallenges[territoryId];this.world.revision=revision;throw error;}
+    try{this.save();}catch(error){delete this.world.activeChallenges[territoryId];this.world.revision=revision;if(bondsBefore===undefined)delete this.world.pvpBonds;else this.world.pvpBonds=bondsBefore;for(const k of Object.keys(account))delete account[k];Object.assign(account,accountBefore);throw error;}
     return { challengeId, challenge };
   }
 }

@@ -1,3 +1,5 @@
+import {restoreArchivedFields,battleSummary} from '../infrastructure/history-archive.mjs';
+import {receipt} from './receipt-retention.mjs';
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import {applyLegConsequences} from './match-consequences.mjs';
 import crypto from 'node:crypto';
@@ -26,10 +28,10 @@ export class EliteChallengeService{
   const result={key,club,sources,seat,territories,average:Number((players.reduce((sum,p)=>sum+p.overall,0)/11).toFixed(1)),preview:lineup.map((slot,i)=>({role:slot.role,position:positions[players[i].id],player:createPlayerCardViewModel(players[i])}))};this.cache.set(clubId,result);return result;
  }
  block(account){if(raidMatchForAccount(this.c.world,account.id))return '豪门远征比赛进行中';if(!account.setupComplete||!account.draft) return '请先完成初始建队';if(this.active(account))return '已有豪门挑战进行中';if(Object.values(this.c.world?.activeChallenges??{}).some(ch=>ch.attackerId===account.id&&!ch.coalitionId))return '远征队正在进行地块比赛';if(account.elite?.reward&&!account.elite.reward.claimedId)return '请先领取上一场豪门挑战的球员奖励';return conquestAttackBlock(conquestState(account,this.c.now()),'club')?.message??null;}
- transaction(account,action){const before=structuredClone(account),active=copy(this.c.world.eliteChallenges??{});try{const result=action();this.c.save();return result;}catch(error){for(const key of Object.keys(account))delete account[key];Object.assign(account,before);this.c.world.eliteChallenges=active;for(const ch of Object.values(active))restoreCampaignLiveLeg(ch.leg);throw error;}}
+ transaction(account,action){const before=structuredClone(account),active=this.c.world.eliteChallenges?.[account.id]?copy(this.c.world.eliteChallenges[account.id]):null;try{const result=action();this.c.save();return result;}catch(error){for(const key of Object.keys(account))delete account[key];Object.assign(account,before);if(active){this.c.world.eliteChallenges[account.id]=active;restoreCampaignLiveLeg(active.leg);}else delete this.c.world.eliteChallenges[account.id];throw error;}}
  begin(account,{clubId,requestId}={}){
   if(!/^[a-f0-9-]{36}$/i.test(String(requestId??'')))fail('请求标识无效',400);
-  const previous=account.elite?.requests?.[requestId];if(previous){if(previous.clubId!==clubId)fail('请求标识与原挑战不一致');return {challengeId:previous.id};}
+  const previous=receipt(account.elite,'requests',requestId,this.c.now());if(previous){if(previous.clubId!==clubId)fail('请求标识与原挑战不一致');return {challengeId:previous.id};}
   const blocked=this.block(account);if(blocked)fail(blocked);
   const team=this.team(clubId),squad=structuredClone(account);
   for(const p of squad.draft.roster){p.state={...p.state,fitness:100};if(Object.hasOwn(p,'fitness'))p.fitness=100;}
@@ -37,7 +39,7 @@ export class EliteChallengeService{
   if(attacker.players.filter(p=>p.active!==false).length<7)fail('可用远征球员不足 7 人');
   const now=this.c.now(),id='elite-challenge:'+crypto.randomUUID(),territory=team.territories[0];
   const leg=createCampaignLiveLeg({home:team.seat,away:attacker,seed:id,legNumber:1,startedAt:now,knockout:true,weather:this.c.campaignWeather(now)?.territories?.[territory.territoryId]??null});
-  return this.transaction(account,()=>{this.c.economy.spend(account,RULES.fee,'elite-challenge');account.elite??={requests:{}};account.elite.requests??={};account.elite.requests[requestId]={id,clubId};this.c.world.eliteChallenges[account.id]={id,clubId,territoryId:territory.territoryId,attackerId:account.id,startedAt:now,fanReward:eliteFanReward(team.average),leg};return {challengeId:id};});
+  return this.transaction(account,()=>{this.c.economy.spend(account,RULES.fee,'elite-challenge');account.elite??={requests:{}};account.elite.requests??={};account.elite.requests[requestId]={id,clubId,recordedAt:this.c.now()};this.c.world.eliteChallenges[account.id]={id,clubId,territoryId:territory.territoryId,attackerId:account.id,startedAt:now,fanReward:eliteFanReward(team.average),leg};return {challengeId:id};});
  }
  settle(account){const ch=this.active(account);if(!ch?.leg.match.finished)return false;
   advanceCampaignLiveLeg(ch.leg,this.c.now(),{maximumChains:0});
@@ -51,7 +53,7 @@ export class EliteChallengeService{
     if(cards.length!==RULES.rewardChoices)fail('豪门奖励球员库不足');
     // Existing matches retain their previously advertised 1,000-fan reward.
     const fans=ch.fanReward??1000;account.resources??={};account.resources.fans=Number(account.resources.fans??0)+fans;result.rewards={fans};account.elite.reward={id:ch.id,clubId:ch.clubId,cards,claimedId:null};
-   }else{const quota=conquestState(account,at);account.conquest={day:quota.day,resetHour:quota.resetHour,used:quota.used,cooldownUntil:Math.max(quota.cooldownUntil,at+EXPEDITION_DEFEAT_COOLDOWN_MS)};result.attackCooldownUntil=account.conquest.cooldownUntil;}
+   }else{const quota=conquestState(account,at);account.conquest={schemaVersion:quota.schemaVersion,day:quota.day,resetHour:quota.resetHour,used:quota.used,playerUsed:quota.playerUsed,cooldownUntil:Math.max(quota.cooldownUntil,at+EXPEDITION_DEFEAT_COOLDOWN_MS)};result.attackCooldownUntil=account.conquest.cooldownUntil;}
    account.elite.lastBattle=result;account.elite.history=[...(account.elite.history??[]),{...result,broadcasts:undefined}].slice(-30);delete this.c.world.eliteChallenges[account.id];return true;
   });
  }
@@ -59,8 +61,8 @@ export class EliteChallengeService{
  claim(account,{rewardId,playerId}={}){const reward=account.elite?.reward;if(!reward||reward.id!==rewardId)fail('待领取奖励不存在',404);if(reward.claimedId){if(reward.selectedId!==playerId)fail('该奖励已领取');return {playerId:reward.claimedId};}const source=reward.cards.find(p=>p.id===playerId);if(!source)fail('请选择本次三选一中的球员',400);
   return this.transaction(account,()=>{const p=structuredClone(source);p.cardDefinitionId=source.cardDefinitionId??source.id;p.id='elite-reward:'+crypto.randomUUID();p.cardInstanceId=p.id;p.upgradeLevel=0;delete p.card;account.draft.roster.push(p);account.playerSquads??={schemaVersion:2,assignments:{}};account.playerSquads.assignments??={};account.playerSquads.assignments[p.id]='garrison';reward.claimedId=p.id;reward.selectedId=playerId;return {playerId:p.id};});
  }
- snapshot(account,id){const ch=this.active(account);if(!ch||ch.id!==id){const battle=account.elite?.lastBattle;if(battle?.id!==id)fail('比赛不存在或不属于你',404);return {completed:true,challenge:null,live:null,battle};}return {completed:false,challenge:{id:ch.id,phase:'first-leg',format:'elite-single',territoryId:ch.territoryId},live:{key:ch.id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(ch.leg)},battle:null};}
+ snapshot(account,id){const ch=this.active(account);if(!ch||ch.id!==id){const battle=account.elite?.lastBattle;if(battle?.id!==id)fail('比赛不存在或不属于你',404);return {completed:true,challenge:null,live:null,battle:restoreArchivedFields(battle)};}return {completed:false,challenge:{id:ch.id,phase:'first-leg',format:'elite-single',territoryId:ch.territoryId},live:{key:ch.id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(ch.leg)},battle:null};}
  view(account,selectedId){if(!account.setupComplete)fail('请先完成初始建队');const clubs=this.availableClubs().map(c=>{try{const t=this.team(c.id);return {...c,average:t.average,fans:eliteFanReward(t.average),territoryNames:t.territories.map(t=>t.name),available:true};}catch(error){return {...c,available:false,reason:error.message};}}),selected=clubs.find(c=>c.id===selectedId)??clubs[0],team=selected?.available?this.team(selected.id):null,active=this.active(account),reward=account.elite?.reward;
-  return {serverNow:this.c.now(),rules:{...RULES,fans:selected?.fans??0},gold:account.gold,clubs,selected:selected?{...selected,players:team?.preview??[]}:null,blocked:this.block(account),cooldownUntil:conquestState(account,this.c.now()).cooldownUntil,active:active?{id:active.id,clubId:active.clubId,fanReward:active.fanReward??1000,minute:active.leg.match.minute,score:[...active.leg.match.score].reverse(),startedAt:active.startedAt}:null,lastBattle:account.elite?.lastBattle?{...account.elite.lastBattle,broadcasts:undefined}:null,reward:reward&&!reward.claimedId?{id:reward.id,clubId:reward.clubId,cards:reward.cards.map(createPlayerCardViewModel)}:null};
+  return {serverNow:this.c.now(),rules:{...RULES,fans:selected?.fans??0},gold:account.gold,clubs,selected:selected?{...selected,players:team?.preview??[]}:null,blocked:this.block(account),cooldownUntil:conquestState(account,this.c.now()).cooldownUntil,active:active?{id:active.id,clubId:active.clubId,fanReward:active.fanReward??1000,minute:active.leg.match.minute,score:[...active.leg.match.score].reverse(),startedAt:active.startedAt}:null,lastBattle:account.elite?.lastBattle?battleSummary(account.elite.lastBattle):null,reward:reward&&!reward.claimedId?{id:reward.id,clubId:reward.clubId,cards:reward.cards.map(createPlayerCardViewModel)}:null};
  }
 }

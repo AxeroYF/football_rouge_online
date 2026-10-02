@@ -39,3 +39,10 @@ export function presentPlayerTraits(player, {
     traitDefinitions:playerTraitDefinitions(player),
   };
 }
+
+// Fitness callers do not need the 26-attribute display model or position fit.
+export function playerTraitFitness(player) {
+  const sourceAttributes=player?.effectiveAttributes??player?.displayAttributes??player?.attributes??{};
+  const hydrated=hydratePlayerTraits({...player,attributes:{...sourceAttributes},assignedRole:player?.role},TRAIT_CATALOG,`frontend:${player?.id??player?.playerId??'player'}`);
+  return clamp(Number(hydrated.state?.fitness??player?.effectiveFitness??player?.state?.fitness??100),0,100);
+}

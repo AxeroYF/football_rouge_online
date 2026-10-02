@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "version": "20260929-r44",
+  "baseline": "20260928-r43",
+  "fullTests": {
+    "passed": 1669,
+    "failed": 0,
+    "runtimeSyntaxModules": 379,
+    "log": "full-tests.log"
+  },
+  "focusedDiplomacyTests": 47,
+  "browser": {
+    "passed": true,
+    "errors": [],
+    "dynamicFriendly": true,
+    "correctCompetitionLabel": true,
+    "incrementalSnapshots": true,
+    "canvasRetained": true,
+    "closeDestroysRenderer": true,
+    "reopen": true,
+    "stopCancelsPolling": true
+  },
+  "leagueBrowser": {
+    "passed": true,
+    "errors": [],
+    "closedPollingStopped": true,
+    "canvasRetained": true,
+    "inlineTimeBadge": true,
+    "featuredFixtures": 18,
+    "ownFeaturedFixtures": 6,
+    "viewports": [
+      "1440x1000",
+      "390x844",
+      "844x390",
+      "1024x768"
+    ],
+    "standings": 10,
+    "fixtures": 90,
+    "live": 5
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260929-r44",
+    "checks": [
+      "Complete 20260928-r43 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260929-r44 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 54,
+    "newFiles": 33,
+    "requiredBaseFiles": 1257,
+    "imports": 325,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R43 account, wallet and roster survive actual installed server boot",
+      "In-flight R43 friendly settles using original V2.1 engine",
+      "Real invite/accept HTTP flow creates a private V2.2 friendly",
+      "Scheduler persists live progress; authenticated delta endpoint works",
+      "Actual process restart restores dynamic match checkpoint",
+      "New modules accessible; private uploads preserved",
+      "Matched R43 code/save rollback boots and preserves account"
+    ],
+    "remoteDeployed": false,
+    "scope": "Real isolated Windows Node servers and HTTP; systemd service hooks mocked, no remote deployment"
+  },
+  "notes": [
+    "Focused test counts overlap with the full suite.",
+    "All HTTP and install tests used isolated local fixtures; no production data or remote services were modified.",
+    "Windows service hooks are mocked; Linux/systemd deployment is performed by the operator."
+  ],
+  "remoteDeployed": false
+}

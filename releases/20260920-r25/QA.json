@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "version": "20260920-r25",
+  "checks": [
+    "Complete 20260920-r24 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r25 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 5,
+  "newFiles": 0,
+  "requiredBaseFiles": 1216,
+  "imports": 69,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "regressionTests": 29,
+  "browser": {
+    "checks": [
+      {
+        "name": "phone dismiss button visible",
+        "pass": true
+      },
+      {
+        "name": "acknowledgement persisted",
+        "pass": true
+      },
+      {
+        "name": "report kept",
+        "pass": true
+      },
+      {
+        "name": "dismissed report stays hidden after reload",
+        "pass": true
+      },
+      {
+        "name": "other reports remain",
+        "pass": true
+      },
+      {
+        "name": "defence report also dismissible",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "androidDevelopment": "stopped at user request; no APK changes"
+}

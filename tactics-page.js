@@ -1,4 +1,8 @@
-import { initializePositionInheritance, syncInheritedPositions, markPositionCustomized } from './shared/config/position-inheritance.mjs';
+import { defaultDimensions, defaultPositions, defaultStarterIds, normalizeSquadState, normalizeTacticsSquads, DIMENSIONS } from "./client/tactics/tactics-state.js";
+export {normalizeTacticsSquads} from "./client/tactics/tactics-state.js";
+import { absenceMatches } from './shared/football/match-availability.mjs';
+import { benchFilterOptions, filterBenchPlayers, benchFiltersMarkup } from "./client/tactics/bench-filters.js";
+import { syncInheritedPositions, markPositionCustomized } from './shared/config/position-inheritance.mjs';
 import { buildV2TeamPlayerEffects } from './engine/s4-v2.1/versus/v2/team-player-effects.js?v=20260909-notifications-bonds-v1';
 import { tacticsBondDisplay } from './client/tactics/bond-display.js?v=20260910-s4-bonds-v1';
 import { fitnessRedline, fitnessBand } from './shared/config/fitness.mjs';
@@ -6,28 +10,17 @@ import { positionFamiliarity, positionFamilyRoles } from './engine/s4-v2.1/game/
 import { rememberFormationBeforeResearch, releaseResearchFormation } from './client/research/formation-import-state.js';
 import { formationImportMarkup } from './client/research/formation-import-markup.js';
 import { FORMATION_RESEARCH_POINTS, analyzeResearchFormation } from './shared/config/formation-research.mjs';
-import { presentPlayerTraits, playerTraitDefinitions } from "./shared/config/player-trait-presentation.mjs";
-import { representativePlayers, representativeTactics } from "./shared/config/representative-players.mjs";
+import { presentPlayerTraits, playerTraitDefinitions, playerTraitFitness } from "./shared/config/player-trait-presentation.mjs";
+import { representativePlayers } from "./shared/config/representative-players.mjs";
 import { createTacticsCardDisplay } from "./client/tactics/card-display-controller.js?v=20260909-settings-v1";
 import { createShapePreviewController } from "./client/tactics/shape-preview-controller.js";
-import { repairSquadTactics } from "./shared/config/tactics-repair.mjs";
+
 import { isPlayerTraining } from "./shared/config/training.mjs";
-import {
-  DEFAULT_FORMATION_LINES,
-  FORMATION_LINE_KEYS,
-  analyzeElevenBoardFormation,
-  formationRoleZones,
-  moveFormationLine,
-  sanitizeFormationLines,
-} from "./formation-rules.js";
+import { FORMATION_LINE_KEYS, analyzeElevenBoardFormation, formationRoleZones, moveFormationLine, sanitizeFormationLines } from "./formation-rules.js";
 import { optimalLineupAssignment, remapLineupPresetSlots } from "./tactics-lineup-rules.js";
 import { PLAY_STYLE_LABELS as STYLES, ROLE_LABELS, TACTIC_LABELS as TACTICS } from "./shared/football/labels.js";
-import { autoCompletePlayerSquads, PLAYER_SQUAD_DEFINITIONS, PLAYER_SQUAD_IDS } from "./shared/config/player-squads.mjs";
-import {
-  activateWideWindow,
-  deactivateWideWindow,
-  registerWideWindow,
-} from "./client/ui/wide-window.js";
+import { PLAYER_SQUAD_DEFINITIONS, PLAYER_SQUAD_IDS } from "./shared/config/player-squads.mjs";
+import { activateWideWindow, deactivateWideWindow, registerWideWindow } from "./client/ui/wide-window.js";
 
 const BENCH_ROLE_ORDER = Object.freeze(["GK","CB","LB","RB","LWB","RWB","DM","AM","LM","RM","ST","LW","RW"]);
 const BENCH_ROLE_RANK = new Map(BENCH_ROLE_ORDER.map((role,index)=>[role,index]));
@@ -40,21 +33,6 @@ const ROLE_CORE_ATTRIBUTES = {
   ATT:["finishing","offBall","pace","dribbling","composure"],
 };
 const ATTRIBUTE_LABELS = { passing:"传球",firstTouch:"停球",dribbling:"盘带",crossing:"传中",finishing:"射门",longShots:"远射",heading:"头球",setPieces:"定位球",tackling:"抢断",marking:"盯人",positioning:"站位",vision:"视野",decisions:"决策",composure:"冷静",offBall:"无球",discipline:"纪律",pace:"速度",acceleration:"加速",strength:"力量",stamina:"耐力",agility:"灵活",jumping:"弹跳",workRate:"投入",aggression:"侵略性",goalkeeping:"守门",reflexes:"反应" };
-const DIMENSIONS = { tempo:"比赛节奏", directness:"传球纵深", attackingWidth:"进攻宽度", defensiveLine:"防线高度", pressing:"压迫强度", compactness:"阵型紧凑", counterAttack:"反击倾向", timeWasting:"比赛控制" };
-const DIMENSION_PRESETS = {
-  allOutAttack:{ tempo:72,directness:58,attackingWidth:60,defensiveLine:76,pressing:72,compactness:42,counterAttack:36,timeWasting:0 },
-  positive:{ tempo:60,directness:53,attackingWidth:55,defensiveLine:58,pressing:58,compactness:54,counterAttack:44,timeWasting:5 },
-  balanced:{ tempo:50,directness:50,attackingWidth:50,defensiveLine:50,pressing:50,compactness:55,counterAttack:50,timeWasting:15 },
-  defensive:{ tempo:44,directness:56,attackingWidth:46,defensiveLine:42,pressing:42,compactness:64,counterAttack:62,timeWasting:32 },
-  parkBus:{ tempo:36,directness:60,attackingWidth:42,defensiveLine:28,pressing:30,compactness:72,counterAttack:64,timeWasting:55 },
-};
-const STYLE_ADJUSTMENTS = {
-  possession:{ tempo:-8,directness:-22,attackingWidth:-4,compactness:8,counterAttack:-18 },
-  longBall:{ tempo:7,directness:30,attackingWidth:6,counterAttack:8 }, wingPlay:{ tempo:5,directness:5,attackingWidth:30,compactness:-8 },
-  counterAttack:{ tempo:8,directness:14,defensiveLine:-10,pressing:-6,compactness:8,counterAttack:20 },
-  highPress:{ tempo:10,directness:-4,defensiveLine:22,pressing:32,compactness:12 }, lowBlock:{ tempo:-10,directness:8,defensiveLine:-20,pressing:-16,compactness:18,counterAttack:8 },
-  roughPlay:{ tempo:4,directness:8,pressing:16,compactness:6 },
-};
 const IN_DETAILS = {
   attackDirection:["进攻方向",{ left:"左路",leftHalf:"左肋",center:"中路",rightHalf:"右肋",right:"右路",balanced:"均衡" }],
   chanceCreation:["机会创造",{ patient:"耐心寻找",balanced:"均衡",shootOnSight:"尽快起脚" }],
@@ -78,8 +56,6 @@ const DUTIES = {
   RWB:[["","默认职责"],["holdingFullback","留守边卫"],["overlappingFullback","套边边卫"],["invertedFullback","内收边卫"]],
   CB:[["","默认职责"],["ballPlayingDefender","出球中卫"],["stopper","上抢中卫"],["coverDefender","拖后中卫"]], GK:[["","门线门将"]],
 };
-const DEFAULT_IN = { attackDirection:"balanced",chanceCreation:"balanced",longShots:"balanced",crossing:"balanced" };
-const DEFAULT_OUT = { defensiveWidth:"balanced",defenseDirection:"balanced",marking:"mixed",lineStrategy:"hold" };
 const clone = (value) => structuredClone(value);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[char]);
@@ -92,93 +68,22 @@ function compareBenchPlayers(left,right) {
   return overallDifference||String(left.name??left.id).localeCompare(String(right.name??right.id),"zh-CN");
 }
 
-function frameThrottlePointerMove(handler) {
+function frameThrottlePointerMove(handler, pointerId) {
   let animationFrame=null,pendingPoint=null;
   const applyPending=()=>{animationFrame=null;const point=pendingPoint;pendingPoint=null;if(point)handler(point);};
-  const listener=(event)=>{pendingPoint={clientX:event.clientX,clientY:event.clientY};if(animationFrame===null)animationFrame=requestAnimationFrame(applyPending);};
-  listener.flush=(event)=>{pendingPoint={clientX:event.clientX,clientY:event.clientY};if(animationFrame!==null)cancelAnimationFrame(animationFrame);applyPending();};
+  const listener=(event)=>{if(event.pointerId!==pointerId)return;pendingPoint={clientX:event.clientX,clientY:event.clientY};if(animationFrame===null)animationFrame=requestAnimationFrame(applyPending);};
+  listener.flush=(event)=>{if(event.pointerId!==pointerId)return;pendingPoint={clientX:event.clientX,clientY:event.clientY};if(animationFrame!==null)cancelAnimationFrame(animationFrame);applyPending();};
   listener.cancel=()=>{if(animationFrame!==null)cancelAnimationFrame(animationFrame);animationFrame=null;pendingPoint=null;};
   return listener;
 }
 
-function defaultDimensions(tactic="balanced", style="possession") {
-  const base = DIMENSION_PRESETS[tactic] ?? DIMENSION_PRESETS.balanced;
-  const adjustment = STYLE_ADJUSTMENTS[style] ?? {};
-  return Object.fromEntries(Object.keys(DIMENSIONS).map((key) => [key,clamp(Math.round(base[key] + Number(adjustment[key] ?? 0)),0,100)]));
-}
-function defaultPositions(roster) {
-  const groups = { GK:[],DEF:[],MID:[],ATT:[] };
-  roster.forEach((player) => (groups[player.pool] ?? groups.MID).push(player));
-  const result = {};
-  [["GK",90],["DEF",68],["MID",44],["ATT",20]].forEach(([key,y]) => groups[key].forEach((player,index) => { result[player.id] = { x:Math.round(12 + (index + 1) * 76 / (groups[key].length + 1)),y }; }));
-  return result;
-}
-function defaultPlan(tactic, style, positionPreset, triggerGoalDifference) {
-  return { tactic,style,positionPreset,...(triggerGoalDifference ? { triggerGoalDifference } : {}),inPossessionDetails:{...DEFAULT_IN},outOfPossessionDetails:{...DEFAULT_OUT},tacticalDimensions:defaultDimensions(tactic,style),playerDuties:{} };
-}
-function normalizePlan(value, fallback) {
-  const tactic = TACTICS[value?.tactic] ? value.tactic : fallback.tactic;
-  const style = STYLES[value?.style] ? value.style : fallback.style;
-  return { ...fallback,...value,tactic,style,inPossessionDetails:{...DEFAULT_IN,...value?.inPossessionDetails},outOfPossessionDetails:{...DEFAULT_OUT,...value?.outOfPossessionDetails},tacticalDimensions:{...defaultDimensions(tactic,style),...value?.tacticalDimensions},playerDuties:{...value?.playerDuties} };
-}
-function defaultStarterIds(roster) {
-  const available=[...roster].sort((left,right)=>Number(right.effectiveOverall??right.overall??0)-Number(left.effectiveOverall??left.overall??0));
-  const selected=[];
-  const take=(pool,count)=>available.filter((player)=>player.pool===pool&&!selected.includes(player)).slice(0,count).forEach((player)=>selected.push(player));
-  take("GK",1); take("DEF",4); take("MID",3); take("ATT",3);
-  available.filter((player)=>player.pool!=="GK"&&!selected.includes(player)).forEach((player)=>{if(selected.length<11)selected.push(player);});
-  return selected.slice(0,11).map((player)=>player.id);
-}
-function normalizeSquadState(saved, roster) {
-  saved = repairSquadTactics(saved, roster);
-  const embedded = saved?.planSnapshots?.__s4V2 ?? {};
-  const ids = new Set(roster.map((player) => player.id));
-  const savedStarters = [...new Set((embedded.starters ?? saved?.starters ?? []).filter((id) => ids.has(id)))].slice(0,11);
-  const hasSavedLineup = Array.isArray(embedded.starters ?? saved?.starters);
-  const starters = hasSavedLineup ? savedStarters : defaultStarterIds(roster);
-  const basePositions = { ...defaultPositions(roster),...(saved?.positions ?? {}),...(embedded.positionPresets?.position1 ?? {}) };
-  const state = {
-    starters, vacantSlots:clone(saved?.vacantSlots ?? []), activePositionPreset:embedded.activePositionPreset ?? "position1", activePlan:embedded.activePlan ?? saved?.activePlan ?? "opening",
-    researchFormationIds:clone(embedded.researchFormationIds??{}),
-    researchFormationBackups:clone(embedded.researchFormationBackups??{}),
-    customPositionPresets:clone(embedded.customPositionPresets??{}),
-    positionPresets:{ position1:clone(basePositions),position2:clone(embedded.positionPresets?.position2 ?? basePositions),position3:clone(embedded.positionPresets?.position3 ?? basePositions) },
-    formationLinePresets:{ position1:sanitizeFormationLines(embedded.formationLinePresets?.position1 ?? saved?.formationLines),position2:sanitizeFormationLines(embedded.formationLinePresets?.position2 ?? saved?.formationLines),position3:sanitizeFormationLines(embedded.formationLinePresets?.position3 ?? saved?.formationLines) },
-    tacticalPlans:{
-      opening:normalizePlan(embedded.tacticalPlans?.opening ?? saved?.planSnapshots?.opening,defaultPlan(saved?.attackStyle ?? "balanced",saved?.defenseStyle ?? "possession","position1")),
-      leading:normalizePlan(embedded.tacticalPlans?.leading ?? saved?.planSnapshots?.leading,defaultPlan("defensive","counterAttack","position2",1)),
-      trailing:normalizePlan(embedded.tacticalPlans?.trailing ?? saved?.planSnapshots?.trailing,defaultPlan("positive","possession","position3",1)),
-    },
-    captainId:starters.includes(embedded.captainId) ? embedded.captainId : starters[0] ?? null, fitnessThreshold:fitnessRedline(embedded.fitnessThreshold), showRoleZones:Boolean(embedded.showRoleZones), showReferenceLines:embedded.showReferenceLines !== false,
-  };
-  return initializePositionInheritance(state,{generatedPositions:defaultPositions(roster),defaultLines:sanitizeFormationLines()});
-}
-export function normalizeTacticsSquads(saved, roster, playerSquads) {
-  saved=representativeTactics(saved,roster);
-  const completed=autoCompletePlayerSquads(playerSquads,roster,{allowTransfers:!saved?.squads});
-  roster=representativePlayers(roster);
-  const assignments=completed.playerSquads.assignments;
-  const squadRoster=(squadId)=>roster.filter((player)=>assignments[String(player.id)]===squadId);
-  const activeSquadId=PLAYER_SQUAD_DEFINITIONS.some((squad)=>squad.id===saved?.activeSquadId)?saved.activeSquadId:PLAYER_SQUAD_IDS.EXPEDITION;
-  const hasFixedSquads=Boolean(saved?.squads&&typeof saved.squads==="object");
-  return {
-    activeSquadId,
-    assignments,
-    ready:completed.ready,
-    autoAssignedPlayerIds:completed.autoAssignedPlayerIds,
-    hasFixedSquads,
-    squads:{
-      [PLAYER_SQUAD_IDS.EXPEDITION]:normalizeSquadState(hasFixedSquads?saved.squads?.[PLAYER_SQUAD_IDS.EXPEDITION]:saved,squadRoster(PLAYER_SQUAD_IDS.EXPEDITION)),
-      [PLAYER_SQUAD_IDS.GARRISON]:normalizeSquadState(saved?.squads?.[PLAYER_SQUAD_IDS.GARRISON],squadRoster(PLAYER_SQUAD_IDS.GARRISON)),
-    },
-  };
-}
 function roleFit(player, role) {
   return positionFamiliarity(player, role);
 }
 export function playerTooltip(player, assignedRole=player.role, context={}) {
   const presented=presentPlayerTraits(player,{assignedRole,...context});
-  const status=player.coalitionLoan?"联军借调":player.state?.injuryRounds?"伤停 "+player.state.injuryRounds+" 轮":player.state?.suspension?"停赛":"可出场";
+  const injury=absenceMatches(player,"injury"),suspension=absenceMatches(player,"suspension");
+  const status=player.coalitionLoan?"联军借调":injury?"伤停 "+injury+" 轮":suspension?"停赛 "+suspension+" 轮":"可出场";
   const group=assignedRole==="GK"?"GK":["CB","LB","RB","LWB","RWB"].includes(assignedRole)?"DEF":["ST","LW","RW"].includes(assignedRole)?"ATT":"MID";
   const attributes=ROLE_CORE_ATTRIBUTES[group].map((key)=>ATTRIBUTE_LABELS[key]+" "+Math.round(context.displayAttributes?.[key]??presented.effectiveAttributes?.[key]??player.attributes?.[key]??0)).join(" · ");
   const traitLines=playerTraitDefinitions(player).map((trait)=>`${trait.name}${trait.summary?`：${trait.summary}`:""}`);
@@ -195,11 +100,11 @@ export function playerTooltip(player, assignedRole=player.role, context={}) {
 
 export function createTacticsController({ panel, mapElement, getCampaignState, setCampaignState, request, showToast }) {
   let editVersion=0, coalitionView=null, dirty=false, switching=false, refreshingCoalition=false, openEpoch=0;
-  const squadDefinitions=()=>[...PLAYER_SQUAD_DEFINITIONS,...(getCampaignState()?.coalition?.army?[{id:'coalition',name:'同盟联军'}]:[]),...(getCampaignState()?.eliteRaids?.army&&!getCampaignState()?.eliteRaids?.army.closed?[{id:'raid',name:'活动联军'}]:[])];
+  const squadDefinitions=()=>[...PLAYER_SQUAD_DEFINITIONS,{id:'league',name:'联赛'},...(getCampaignState()?.coalition?.army?[{id:'coalition',name:'同盟联军'}]:[]),...(getCampaignState()?.eliteRaids?.army&&!getCampaignState()?.eliteRaids?.army.closed?[{id:'raid',name:'活动联军'}]:[])];
   const isCoalition=()=>['coalition','raid'].includes(activeSquadId);
   const coalitionPath=()=>activeSquadId==='raid'?'/api/campaign/raids':'/api/campaign/coalition';
   const contextState=()=>isCoalition()?coalitionView?.tacticsState:getCampaignState();
-  const readOnly=()=>isCoalition()&&(!coalitionView?.army?.canCommand||coalitionView?.army?.busy);
+  const readOnly=()=>activeSquadId==='league'?Boolean(getCampaignState()?.leagueRegistration?.inMatch):isCoalition()&&(!coalitionView?.army?.canCommand||coalitionView?.army?.busy);
   async function loadCoalition(id=activeSquadId==='raid'?'raid':'coalition'){
     if(!(id==='raid'?getCampaignState()?.eliteRaids?.army:getCampaignState()?.coalition?.army)){coalitionView=null;return;}
     const accountId=getCampaignState()?.playerId;
@@ -220,40 +125,72 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
   const displayPlayer=id=>bondDisplay.players.find(player=>player.id===id)??roster().find(player=>player.id===id);
   const shapePreview = createShapePreviewController({panel,request:previewRequest,showToast,getPayload:()=>({starterIds:[...state.starters],positions:clone(positions()),formationLines:clone(formationLines()),plan:clone(state.tacticalPlans[planState()]),planState:planState()})});
   let mobileDutyPlayerId = null, researchImportOpen=false;
+  let benchFilters={position:"",club:"",nationality:""}, benchFiltersOpen=false;
   const roster = () => contextState()?.draft?.roster ?? [];
-  const boardPlayer=player=>activeSquadId===PLAYER_SQUAD_IDS.GARRISON?{...player,state:{...player.state,fitness:100}}:player;
+  // The board shows real fatigue. Full-fitness defence is a match-seat rule, not roster state.
+  const boardPlayer=player=>{
+    const latest=roster().find(p=>p.id===player.id)??player;
+    if(activeSquadId==='league'){const condition=getCampaignState()?.leagueRegistration?.conditions?.[player.id];return {...player,state:condition?.state??{fitness:100},status:{},medical:null,training:null,coalitionLoan:null,injury:null};}
+    const live=isCoalition()?undefined:getCampaignState()?.expeditionFitness?.players?.[player.id]?.fitness;
+    return {...player,state:{...player.state,...latest.state,...(Number.isFinite(live)?{fitness:live}:{})}};
+  };
   function refreshFitness() {
     if(!state||panel.hidden)return;
+    if(activeSquadId==='league'){
+      const registration=getCampaignState()?.leagueRegistration,key=JSON.stringify([registration?.playerIds,registration?.inMatch,registration?.locked]);
+      if(key!==leagueViewKey){clearTimeout(saveTimer);dirty=false;state=squadStates.league=normalizeSquadState(registration?.tactics,squadRoster('league'));render();return;}
+    }
     const currentArmy=activeSquadId==='raid'?getCampaignState()?.eliteRaids?.army:getCampaignState()?.coalition?.army;
     if(isCoalition()&&!currentArmy){clearTimeout(saveTimer);dirty=false;coalitionView=null;activeSquadId='expedition';state=squadStates.expedition;render();return;}
     if(isCoalition()&&!saving&&!dirty&&!switching&&!refreshingCoalition&&currentArmy?.revision!==coalitionView?.army?.revision){
       refreshingCoalition=true;loadCoalition().then(()=>{if(isCoalition()&&coalitionView?.army){state=squadStates[activeSquadId];render();}}).catch(e=>showToast(e.message)).finally(()=>{refreshingCoalition=false;});
     }
+    const playersById=new Map(roster().map(p=>[p.id,p]));
     for(const magnet of panel.querySelectorAll('[data-league-magnet],[data-league-bench-magnet]')){
       const id=magnet.dataset.leagueMagnet??magnet.dataset.leagueBenchMagnet;
-      const player=roster().find(p=>p.id===id),bar=magnet.querySelector('[data-magnet-fitness]');
+      const player=playersById.get(id),bar=magnet.querySelector('[data-magnet-fitness]');
       if(!player||!bar)continue;
-      const fitness=presentPlayerTraits(boardPlayer(player)).effectiveFitness,low=fitness<=state.fitnessThreshold;
+      const fitness=playerTraitFitness(boardPlayer(player)),low=fitness<=state.fitnessThreshold;
       bar.dataset.magnetFitness=String(fitness);bar.classList.toggle('is-below-threshold',low);bar.classList.toggle('is-above-threshold',!low);
       if(bar.firstElementChild)bar.firstElementChild.style.width=fitness+'%';
       bar.title=fitnessLabel(player,fitness);bar.setAttribute('aria-label',bar.title);
     }
+    const tooltip=document.querySelector('.league-magnet-tooltip[data-fitness-player]');
+    const tooltipPlayer=tooltip&&displayPlayer(tooltip.dataset.fitnessPlayer);
+    if(tooltipPlayer)tooltip.textContent=playerTooltip(boardPlayer(tooltipPlayer),tooltip.dataset.assignedRole,{...traitContext(),displayAttributes:tooltipPlayer.effectiveAttributes??tooltipPlayer.attributes});
   }
   function fitnessLabel(player,fitness){
-    const info=getCampaignState()?.expeditionFitness?.players?.[player.id],rate=info?.recoveryPerMinute;
+    const info=activeSquadId==='league'?getCampaignState()?.leagueRegistration?.conditions?.[player.id]:getCampaignState()?.expeditionFitness?.players?.[player.id],rate=info?.recoveryPerMinute;
     if(info?.fixed)return `固定体力 ${fitness.toFixed(0)} · 红线 ${state.fitnessThreshold}`;
-    return activeSquadId===PLAYER_SQUAD_IDS.GARRISON?'防守满体力开局（固定体力特性除外）':`体力 ${fitness.toFixed(1)} · ${fitnessBand(fitness)} · 红线 ${state.fitnessThreshold}${rate>0?' · 每分钟恢复 '+rate:rate===0?' · 比赛中暂停自然恢复':''}`;
+    return `体力 ${fitness.toFixed(1)} · ${fitnessBand(fitness)} · 红线 ${state.fitnessThreshold}${rate>0?' · 每分钟恢复 '+rate:rate===0?' · 比赛中暂停自然恢复':''}${activeSquadId===PLAYER_SQUAD_IDS.GARRISON?' · 被入侵防守满体力开局（固定体力特性除外）':''}`;
   }
   const cardDisplay = createTacticsCardDisplay({panel,settingsRoot:document.querySelector("#account-tactics-display"),getPlayer:displayPlayer});
-  const squadRoster = (squadId=activeSquadId) => ['coalition','raid'].includes(squadId)?representativePlayers(coalitionView?.tacticsState?.draft?.roster??[]):representativePlayers(getCampaignState()?.draft?.roster??[]).filter((player) => squadAssignments[String(player.id)] === squadId);
+  let leagueViewKey=null;
+  let renderCache=null;
+  const computeSquadRoster = (squadId=activeSquadId) => squadId==='league'?(getCampaignState()?.draft?.roster??[]).filter(p=>(getCampaignState()?.leagueRegistration?.playerIds??[]).includes(p.id)):['coalition','raid'].includes(squadId)?representativePlayers(coalitionView?.tacticsState?.draft?.roster??[]):representativePlayers(getCampaignState()?.draft?.roster??[]).filter((player) => squadAssignments[String(player.id)] === squadId);
+  const squadRoster=(id=activeSquadId)=>{
+    if(!renderCache)return computeSquadRoster(id);
+    if(!renderCache.rosters.has(id))renderCache.rosters.set(id,computeSquadRoster(id));
+    return renderCache.rosters.get(id);
+  };
   const researchLocked=()=>Boolean(state?.researchFormationIds?.[state.activePositionPreset]);
   const positions = () => state.positionPresets[state.activePositionPreset];
   const formationLines = () => state.formationLinePresets[state.activePositionPreset];
   const planState = () => ({ position1:"opening",position2:"leading",position3:"trailing" })[state.activePositionPreset];
   const activePlan = () => state.tacticalPlans[state.activePlan];
-  const starters = () => state.starters.map((id) => squadRoster().find((player) => player.id === id)).filter(Boolean);
-  const analysis = () => analyzeElevenBoardFormation(starters(),positions(),formationLines());
-  const presetAnalysis = (key) => analyzeElevenBoardFormation(starters(),state.positionPresets[key],state.formationLinePresets[key]);
+  const starters = () => {
+    if(renderCache?.starters)return renderCache.starters;
+    const eligible=new Map(squadRoster().map(p=>[p.id,p]));
+    const players=state.starters.map(id=>eligible.get(id)).filter(Boolean);
+    if(renderCache)renderCache.starters=players;
+    return players;
+  };
+  const presetAnalysis = key => {
+    if(renderCache?.shapes.has(key))return renderCache.shapes.get(key);
+    const shape=analyzeElevenBoardFormation(starters(),state.positionPresets[key],state.formationLinePresets[key]);
+    renderCache?.shapes.set(key,shape);return shape;
+  };
+  const analysis = () => presetAnalysis(state.activePositionPreset);
   function formationValidity(key=state.activePositionPreset) {
     const shape=presetAnalysis(key); const requireOutfieldLines=key === "position1";
     const validOutfieldLines=[shape.counts.DEF,shape.counts.MID,shape.counts.ATT].every((count)=>count>=1);
@@ -272,6 +209,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     return { formation:analyzeElevenBoardFormation(starterPlayers,currentPositions,squadState.formationLinePresets.position1).name,attackStyle:current.tactic,defenseStyle:current.style,starters:[...squadState.starters],bench:eligible.map((player)=>player.id).filter((id)=>!squadState.starters.includes(id)),positions:clone(currentPositions),formationLines:clone(squadState.formationLinePresets.position1),tacticalBars:clone(current.tacticalDimensions),activePlan:squadState.activePlan,planSnapshots:{ opening:clone(squadState.tacticalPlans.opening),leading:clone(squadState.tacticalPlans.leading),trailing:clone(squadState.tacticalPlans.trailing),__s4V2:clone(squadState) } };
   }
   function serialize() {
+    if(activeSquadId==='league')return {leagueOnly:true,squads:{league:serializeSquad('league',state)}};
     return {
       schemaVersion:2,
       activeSquadId:isCoalition()?PLAYER_SQUAD_IDS.EXPEDITION:activeSquadId,
@@ -288,15 +226,16 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     saving=true;setSaveStatus('saving','正在自动保存…');
     const loanArmy=isCoalition(),version=editVersion,accountId=getCampaignState()?.playerId;
     try {
-      const value=loanArmy?await request(coalitionPath(),{method:'POST',body:{action:'tactics',requestId:crypto.randomUUID(),armyId:coalitionView.army.id,revision:coalitionView.army.revision,tactics:{squads:{expedition:serializeSquad(activeSquadId,state)}}}}):await request('/api/campaign/tactics',{method:'POST',body:serialize()});
+      const value=loanArmy?await request(coalitionPath(),{method:'POST',body:{action:'tactics',responseMode:'tactics',requestId:crypto.randomUUID(),armyId:coalitionView.army.id,revision:coalitionView.army.revision,tactics:{squads:{expedition:serializeSquad(activeSquadId,state)}}}}):await request('/api/campaign/tactics',{method:'POST',body:{...serialize(),responseMode:'tactics'}});
       if(accountId!==getCampaignState()?.playerId)return false;
       if(loanArmy)coalitionView=value.view;
-      setCampaignState(value.state);
-      squadAssignments={...(value.state?.playerSquads?.assignments??squadAssignments)};
+      const nextState=value.tacticsUpdate?{...getCampaignState(),...value.tacticsUpdate}:value.state;
+      setCampaignState(nextState);
+      squadAssignments={...(nextState?.playerSquads?.assignments??squadAssignments)};
       dirty=editVersion!==version;setSaveStatus(dirty?'dirty':'saved',dirty?'有未保存修改':'已自动保存');
       if(!silent)showToast('战术方案已保存');return !dirty;
     }catch(error){setSaveStatus('error',error.message||'战术保存失败');showToast(error.message||'战术保存失败');return false;}
-    finally{saving=false;if(dirty&&editVersion!==version)markDirty();}
+    finally{saving=false;if(dirty&&editVersion!==version&&saveTimer===null)saveTimer=setTimeout(()=>persist(true),0);}
   }
   async function switchSquad(id){
     if(id===activeSquadId||switching)return;
@@ -306,6 +245,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
       if(dirty&&!await persist(false))return;
       if(['coalition','raid'].includes(id)){await loadCoalition(id);if(!coalitionView?.army)return showToast('当前没有可用联军');}
       clearTimeout(saveTimer);stopPreview();researchImportOpen=false;
+      if(id==='league')squadStates.league=normalizeSquadState(getCampaignState()?.leagueRegistration?.tactics,squadRoster('league'));
       activeSquadId=id;state=squadStates[id];mobileDutyPlayerId=null;dirty=false;render();saveInitialCoalition();
     }catch(error){showToast(error.message);}finally{switching=false;}
   }
@@ -370,7 +310,13 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     return `<div class="league-mobile-duty-backdrop"><section class="league-mobile-duty-sheet"><header><div><small>${ROLE_LABELS[role]??role} · ${esc(player.name)}</small><b>选择球员职责</b></div><button type="button" data-mobile-duty-close>×</button></header><div class="league-mobile-duty-selector"><button type="button" data-mobile-duty-step="-1">‹</button><div><small>当前职责</small><b>${esc(label)}</b><p>左右切换当前比赛阶段的球员职责。</p></div><button type="button" data-mobile-duty-step="1">›</button></div><footer>职责按默认、领先、落后三个战术阶段独立保存</footer></section></div>`;
   }
   function render() {
+    if(activeSquadId==='league'){const r=getCampaignState()?.leagueRegistration;leagueViewKey=JSON.stringify([r?.playerIds,r?.inMatch,r?.locked]);}
+    renderCache={rosters:new Map(),starters:null,shapes:new Map()};
+    try {
     syncInheritedPositions(state); stopPreview(); refreshRelationships(); const rosterValue=squadRoster(); const starterPlayers=starters(); const shape=analysis(); const bench=rosterValue.filter((player)=>!state.starters.includes(player.id)).sort(compareBenchPlayers);
+    const benchOptions=benchFilterOptions(rosterValue);
+    for(const key of Object.keys(benchFilters))if(!benchOptions[key].includes(benchFilters[key]))benchFilters[key]='';
+    const visibleBench=filterBenchPlayers(bench,benchFilters);
     const fitCounts={primary:0,secondary:0,unfamiliar:0}; starterPlayers.forEach((player)=>{fitCounts[roleFit(player,shape.roles[player.id])]++}); const fitScore=Math.round((fitCounts.primary*100+fitCounts.secondary*90+fitCounts.unfamiliar*66)/Math.max(1,starterPlayers.length)); const activeFit=tacticalFit(planState()); const validity=formationValidity(); const allPresetsValid=Object.keys(POSITION_META).every((key)=>formationValidity(key).valid);
     const positionTabs=`<nav class="league-position-tabs" aria-label="保存站位">${Object.entries(POSITION_META).map(([key,[,label]])=>`<button type="button" data-league-position-preset="${key}" class="${state.activePositionPreset===key?"active":""} ${formationValidity(key).valid?"valid":"invalid"}" aria-pressed="${state.activePositionPreset===key}">${label}站位</button>`).join("")}<button type="button" data-import-research>导入阵容研究</button>${researchLocked()?'<button type="button" data-release-research>解除使用</button>':''}</nav>`;
     const relationshipControls=`<label class="league-board-chemistry"><input type="checkbox" data-league-chemistry-toggle ${showChemistry?"checked":""}><span>默契连线</span></label><label class="league-board-chemistry"><input type="checkbox" data-league-bond-bonus-toggle ${showBonds?"checked":""}><span>羁绊增益</span></label><label class="league-board-chemistry league-board-role-zones-toggle"><input type="checkbox" data-league-role-zones-toggle ${state.showRoleZones?"checked":""}><span>位置阴影</span></label><label class="league-board-fitness" title="赛前体力低于或等于红线时，优先使用高于红线的同位置替补；无合适替补且体力至少30时继续出场"><span>体力红线</span><input type="number" inputmode="numeric" min="45" max="100" step="1" value="${state.fitnessThreshold}" data-fitness-threshold><em>%</em></label>`;
@@ -383,10 +329,19 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     const captainControls=`<div class="league-captain-controls"><label><span>场上队长</span><select data-captain><option value="">未设置队长</option>${starterPlayers.map((p)=>`<option value="${esc(p.id)}" ${p.id===state.captainId?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label><label><span>队长风格</span><select><option>以身作则</option><option>鼓舞型</option><option>战术型</option></select></label></div>`;
     const nodeControls=`<div class="league-tactical-node-controls"><label><span>领先战术节点</span><select data-plan-trigger="leading">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${n===state.tacticalPlans.leading.triggerGoalDifference?"selected":""}>${n===5?"5+":n} 球</option>`).join("")}</select></label><label><span>落后战术节点</span><select data-plan-trigger="trailing">${[1,2,3,4,5].map((n)=>`<option value="${n}" ${n===state.tacticalPlans.trailing.triggerGoalDifference?"selected":""}>${n===5?"5+":n} 球</option>`).join("")}</select></label></div>`;
     const mobileTabs=`<nav class="league-mobile-plan-tabs">${Object.entries(PLAN_META).map(([key,[title]])=>`<button type="button" data-select-plan="${key}" class="${state.activePlan===key?"active":""}">${title.replace("方案","战术")}</button>`).join("")}</nav>`;
-    const aiTrainingActions=`<div class="league-ai-training-actions"><label class="league-mirror-upload"><input type="checkbox" disabled><span>上传完整战术镜像</span></label><button type="button" class="button secondary league-ai-training-open" disabled><span>▶</span> AI 对战</button></div>`;
-    const nextMatch=isCoalition()?`<section class="league-next-match"><div><small>联军</small><b>${esc(coalitionView?.army?.name??'联军战术')}</b></div><div><small>阵容规则</small><strong>${readOnly()?'只读 · 指挥官管理':'11 首发 · 自由安排'}</strong></div><div><small>比赛体能</small><strong>保留实际体能与伤停</strong></div><div><button type="button" data-stage-window-close>返回地图</button></div></section>`:`<section class="league-next-match"><div><small>NEXT MATCH</small><b>征程赛程待接入</b></div><div><small>比赛阶段</small><strong>阵容准备</strong></div><div><small>天气与裁判</small><strong>等待赛程生成</strong></div><div><small>战术提示</small><span>完整 S4 阵容战术面板已启用</span></div></section>`;
-    panel.innerHTML=`<section class="league-squad-page"><form class="league-tactics-layout" id="league-squad-form" data-tactics-mode="club" data-active-mobile-plan="${state.activePlan}">${nextMatch}<section class="league-lineup-workspace"><section class="board-panel league-board-panel"><header class="league-board-heading">${boardToolbar}</header>${pitchMarkup(`${roleZonesMarkup()}${referenceLinesMarkup()}${chemistryMarkup()}${starterPlayers.map((player)=>magnet(player,true)).join("")}`)}</section><aside class="tournament-bench league-bench"><header><div><small>FULL SQUAD</small><b>替补席 · ${bench.length}人</b></div><span>主力与替补磁贴可双向拖动交换</span>${guidanceButtons}</header><div class="bench-magnet-list">${bench.map((player)=>magnet(player,false)).join("")}</div>${autosaveFooter}</aside><aside class="league-tactics-detail"><header><div class="league-tactics-detail-title"><span><small>V2 TACTICAL CONTROL</small><b>细节战术</b></span>${captainControls}<div class="league-lineup-share-actions"><button type="button" class="button secondary">导出</button><button type="button" class="button secondary">导入</button></div>${nodeControls}${aiTrainingActions}</div></header>${mobileTabs}<div class="league-tactics-detail-scroll">${benchSummary}<section class="league-match-plans league-bench-match-plans"><header><b>赛中战术</b></header><div class="league-match-plan-grid">${Object.keys(PLAN_META).map(planMarkup).join("")}</div></section></div></aside></section>${allPresetsValid?"":`<p class="league-position-save-warning">默认站位需要保持完整阵型；领先与落后站位只要求场上保留一名门将。</p>`}</form>${mobileDutySheetMarkup()}${researchImportMarkup()}</section>`;
+    const nextMatch=activeSquadId==='league'?`<section class="league-next-match"><div><small>每日联赛</small><b>注册 ${squadRoster().length} / 23 人</b></div><div><small>名单</small><strong>${getCampaignState()?.leagueRegistration?.locked?'联赛期间锁定':'编队 → 联赛注册'}</strong></div><div><small>战术</small><strong>${readOnly()?'本场比赛中 · 只读':'体力与伤病独立计算'}</strong></div></section>`:isCoalition()?`<section class="league-next-match"><div><small>联军</small><b>${esc(coalitionView?.army?.name??'联军战术')}</b></div><div><small>阵容规则</small><strong>${readOnly()?'只读 · 指挥官管理':'11 首发 · 自由安排'}</strong></div><div><small>比赛体能</small><strong>保留实际体能与伤停</strong></div><div><button type="button" data-stage-window-close>返回地图</button></div></section>`:`<section class="league-next-match"><div><small>NEXT MATCH</small><b>征程赛程待接入</b></div><div><small>比赛阶段</small><strong>阵容准备</strong></div><div><small>天气与裁判</small><strong>等待赛程生成</strong></div><div><small>战术提示</small><span>完整 S4 阵容战术面板已启用</span></div></section>`;
+    // Rendering replaces scroll containers; retain local navigation and both scroll axes.
+    const scrollSelectors=['.bench-magnet-list','.league-bench','.league-board-panel','.league-tactics-detail','.league-tactics-detail-scroll'];
+    const scrolls=scrollSelectors.map(selector=>{const el=panel.querySelector(selector);return {selector,top:el?.scrollTop??0,left:el?.scrollLeft??0};});
+    const oldPage=panel.querySelector('.league-squad-page');
+    const mobileView=oldPage?.dataset.mobileView,expanded=oldPage?.classList.contains('mobile-pitch-expanded');
+    panel.innerHTML=`<section class="league-squad-page"><form class="league-tactics-layout" id="league-squad-form" data-tactics-mode="club" data-active-mobile-plan="${state.activePlan}">${nextMatch}<section class="league-lineup-workspace"><section class="board-panel league-board-panel"><header class="league-board-heading">${boardToolbar}</header>${pitchMarkup(`${roleZonesMarkup()}${referenceLinesMarkup()}${chemistryMarkup()}${starterPlayers.map((player)=>magnet(player,true)).join("")}`)}</section><aside class="tournament-bench league-bench"><header><div><small>FULL SQUAD</small><b>替补席 · ${bench.length}人</b></div><span>主力与替补磁贴可双向拖动交换</span>${guidanceButtons}</header>${benchFiltersMarkup(benchOptions,benchFilters,{open:benchFiltersOpen,shown:visibleBench.length,total:bench.length})}<div class="bench-magnet-list">${visibleBench.map((player)=>magnet(player,false)).join("") || '<p class="league-bench-filter-empty">没有符合筛选条件的替补球员</p>'}</div>${autosaveFooter}</aside><aside class="league-tactics-detail"><header><div class="league-tactics-detail-title"><span><small>V2 TACTICAL CONTROL</small><b>细节战术</b></span>${captainControls}${nodeControls}</div></header>${mobileTabs}<div class="league-tactics-detail-scroll">${benchSummary}<section class="league-match-plans league-bench-match-plans"><header><b>赛中战术</b></header><div class="league-match-plan-grid">${Object.keys(PLAN_META).map(planMarkup).join("")}</div></section></div></aside></section>${allPresetsValid?"":`<p class="league-position-save-warning">默认站位需要保持完整阵型；领先与落后站位只要求场上保留一名门将。</p>`}</form>${mobileDutySheetMarkup()}${researchImportMarkup()}</section>`;
+    const nextPage=panel.querySelector('.league-squad-page');
+    if(nextPage&&mobileView){nextPage.dataset.mobileView=mobileView;nextPage.classList.toggle('mobile-pitch-expanded',!!expanded);}
     bind();
+    for(const {selector,top,left} of scrolls){const el=panel.querySelector(selector);if(el){el.scrollTop=top;el.scrollLeft=left;}}
+    if(saving)setSaveStatus('saving','正在自动保存…');else if(dirty)setSaveStatus('dirty','有未保存修改');
+    } finally {renderCache=null;}
   }
   function setPreset(key) { state.activePositionPreset=key; state.activePlan=planState(); mobileDutyPlayerId=null; render(); }
   function swapStarter(benchId,starterId) {
@@ -397,6 +352,16 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
   }
   function recommendLineup() {
     const rosterValue=squadRoster();
+    if(state.activePositionPreset==='position1'&&state.starters.length<11){
+      const ids=defaultStarterIds(rosterValue);
+      if(ids.length<11){showToast('当前名单不足11人，请先补充球员');return;}
+      state.starters=ids;state.vacantSlots=[];
+      const layout=defaultPositions(ids.map(id=>rosterValue.find(player=>player.id===id)));
+      for(const key of Object.keys(POSITION_META)){state.positionPresets[key]=clone(layout);state.formationLinePresets[key]=sanitizeFormationLines();}
+      state.researchFormationIds={};state.researchFormationBackups={};
+      if(!ids.includes(state.captainId))state.captainId=ids[0];
+      markPositionCustomized(state);render();markDirty(180);showToast('已补齐11人首发并生成基础站位');return;
+    }
     const sourceStarterIds=[...state.starters];
     const canUseBench=state.activePositionPreset==="position1";
     const activePositions=state.positionPresets[state.activePositionPreset];
@@ -451,6 +416,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
       const assignedRole=magnet.dataset.leagueMagnet?(analysis().roles[id]??player.role):player.role;
       tooltip=document.createElement("div");
       tooltip.className="league-magnet-tooltip";
+      tooltip.dataset.fitnessPlayer=id;tooltip.dataset.assignedRole=assignedRole;
       tooltip.textContent=playerTooltip(boardPlayer(player),assignedRole,{...traitContext(),displayAttributes:player.effectiveAttributes??player.attributes});
       document.body.appendChild(tooltip);
       const place=(x,y)=>{
@@ -507,14 +473,14 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
       },null)?.element??null;
     };
     panel.querySelectorAll("[data-league-magnet]").forEach((magnet)=>magnet.addEventListener("pointerdown",(event)=>{
-      if(event.button!==0||event.target.closest("[data-duty-step]")||researchLocked())return;
+      if(event.button!==0||event.isPrimary===false||event.target.closest("[data-duty-step]")||researchLocked())return;
       event.preventDefault();
       try{magnet.setPointerCapture(event.pointerId);}catch{}
       const playerId=magnet.dataset.leagueMagnet;
       const startPosition={...positions()[playerId]};
       const pointerStart={x:event.clientX,y:event.clientY};
-      const pitchRect=pitch.getBoundingClientRect();
-      const benchTargets=benchSnapshot();
+      const magnetRect=magnet.getBoundingClientRect();
+      const grabOffset={x:event.clientX-magnetRect.left-magnetRect.width/2,y:event.clientY-magnetRect.top-magnetRect.height/2};
       let moved=false,benchTarget=null,ghost=null;
       highlight(magnet);
       magnet.classList.add("dragging");
@@ -536,24 +502,28 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
           document.body.appendChild(ghost);
         }
         magnet.classList.add("league-drag-source-hidden");
-        ghost.style.left=pointerEvent.clientX+"px";
-        ghost.style.top=pointerEvent.clientY+"px";
+        ghost.style.left=(pointerEvent.clientX-grabOffset.x)+"px";
+        ghost.style.top=(pointerEvent.clientY-grabOffset.y)+"px";
       };
       const applyMove=(pointerEvent)=>{
         moved ||= Math.hypot(pointerEvent.clientX-pointerStart.x,pointerEvent.clientY-pointerStart.y)>=3;
         if(!moved)return;
-        const nextTarget=benchTargetAt(pointerEvent.clientX,pointerEvent.clientY,benchTargets);
+        const nextTarget=benchTargetAt(pointerEvent.clientX,pointerEvent.clientY,benchSnapshot());
+        const pitchRect=pitch.getBoundingClientRect();
         if(nextTarget!==benchTarget){benchTarget?.classList.remove("swap-target");benchTarget=nextTarget;benchTarget?.classList.add("swap-target");}
         const insidePitch=pointerEvent.clientX>=pitchRect.left&&pointerEvent.clientX<=pitchRect.right&&pointerEvent.clientY>=pitchRect.top&&pointerEvent.clientY<=pitchRect.bottom;
         if(benchTarget||!insidePitch){moveGhost(pointerEvent);return;}
         removeGhost();
-        const x=clamp((pointerEvent.clientX-pitchRect.left)/pitchRect.width*100,8,92);
-        const y=clamp((pointerEvent.clientY-pitchRect.top)/pitchRect.height*100,6,94);
-        positions()[playerId]={x:Math.round(x),y:Math.round(y)};
-        magnet.style.left=x+"%";
-        magnet.style.top=y+"%";
+        // Absolute percentages use the padding box; client coordinates include the zoomed border.
+        const scaleX=pitchRect.width/pitch.offsetWidth,scaleY=pitchRect.height/pitch.offsetHeight;
+        const x=clamp((pointerEvent.clientX-grabOffset.x-pitchRect.left-pitch.clientLeft*scaleX)/(pitch.clientWidth*scaleX)*100,8,92);
+        const y=clamp((pointerEvent.clientY-grabOffset.y-pitchRect.top-pitch.clientTop*scaleY)/(pitch.clientHeight*scaleY)*100,6,94);
+        const next={x:Math.round(x),y:Math.round(y)};
+        positions()[playerId]=next;
+        magnet.style.left=next.x+"%";
+        magnet.style.top=next.y+"%";
       };
-      const move=frameThrottlePointerMove(applyMove);
+      const move=frameThrottlePointerMove(applyMove,event.pointerId);
       const cleanup=()=>{
         clearHighlights();
         magnet.classList.remove("dragging");
@@ -564,6 +534,7 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
         window.removeEventListener("pointercancel",cancel);
       };
       const finish=(pointerEvent)=>{
+        if(pointerEvent.pointerId!==event.pointerId)return;
         move.flush(pointerEvent);
         cleanup();
         if(!moved&&window.matchMedia("(max-width:1050px), (pointer:coarse)").matches){mobileDutyPlayerId=playerId;render();return;}
@@ -575,18 +546,19 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
         render();
         if(!rejected)markDirty(180);
       };
-      const cancel=()=>{
+      const cancel=(pointerEvent)=>{
+        if(pointerEvent.pointerId!==event.pointerId)return;
         move.cancel();
         positions()[playerId]=startPosition;
         cleanup();
         render();
       };
       window.addEventListener("pointermove",move,{passive:false});
-      window.addEventListener("pointerup",finish,{once:true});
-      window.addEventListener("pointercancel",cancel,{once:true});
+      window.addEventListener("pointerup",finish);
+      window.addEventListener("pointercancel",cancel);
     }));
     panel.querySelectorAll("[data-league-bench-magnet]").forEach((magnet)=>magnet.addEventListener("pointerdown",(event)=>{
-      if(event.button!==0)return;
+      if(event.button!==0||event.isPrimary===false)return;
       event.preventDefault();
       try{magnet.setPointerCapture(event.pointerId);}catch{}
       const benchId=magnet.dataset.leagueBenchMagnet;
@@ -600,14 +572,14 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
       magnet.classList.add("league-bench-source-removed");
       highlight(magnet);
       let target=null;
-      const fieldTargets=[...panel.querySelectorAll("[data-league-magnet]")].map((element)=>({element,rect:element.getBoundingClientRect()}));
+      const fieldTargets=()=>[...panel.querySelectorAll("[data-league-magnet]")].map((element)=>({element,rect:element.getBoundingClientRect()}));
       const applyMove=(pointerEvent)=>{
         ghost.style.left=pointerEvent.clientX+"px";
         ghost.style.top=pointerEvent.clientY+"px";
-        const next=fieldTargets.find(({rect})=>pointerEvent.clientX>=rect.left&&pointerEvent.clientX<=rect.right&&pointerEvent.clientY>=rect.top&&pointerEvent.clientY<=rect.bottom)?.element??null;
+        const next=fieldTargets().find(({rect})=>pointerEvent.clientX>=rect.left&&pointerEvent.clientX<=rect.right&&pointerEvent.clientY>=rect.top&&pointerEvent.clientY<=rect.bottom)?.element??null;
         if(next!==target){target?.classList.remove("swap-target");target=next;target?.classList.add("swap-target");}
       };
-      const move=frameThrottlePointerMove(applyMove);
+      const move=frameThrottlePointerMove(applyMove,event.pointerId);
       const cleanup=()=>{
         clearHighlights();
         target?.classList.remove("swap-target");
@@ -618,99 +590,41 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
         window.removeEventListener("pointercancel",cancel);
       };
       const finish=(pointerEvent)=>{
+        if(pointerEvent.pointerId!==event.pointerId)return;
         move.flush(pointerEvent);
         const starterId=target?.dataset.leagueMagnet;
         cleanup();
         if(starterId)swapStarter(benchId,starterId);
       };
-      const cancel=()=>{move.cancel();cleanup();};
+      const cancel=(pointerEvent)=>{if(pointerEvent.pointerId!==event.pointerId)return;move.cancel();cleanup();};
       applyMove(event);
       window.addEventListener("pointermove",move,{passive:false});
-      window.addEventListener("pointerup",finish,{once:true});
-      window.addEventListener("pointercancel",cancel,{once:true});
+      window.addEventListener("pointerup",finish);
+      window.addEventListener("pointercancel",cancel);
     }));
   }
-  function bindDrag() {
+  function bindFormationLineDrag() {
     const pitch=panel.querySelector("#league-tactics-pitch");
     if(!pitch)return;
-    panel.querySelectorAll("[data-formation-line]").forEach((handle)=>handle.addEventListener("pointerdown",(event)=>{
-      if(event.button!==0||researchLocked())return;
+    panel.querySelectorAll("[data-formation-line]").forEach(handle=>handle.addEventListener("pointerdown",event=>{
+      if(event.button!==0||researchLocked()||readOnly())return;
       event.preventDefault();
-      const key=handle.dataset.formationLine,rect=pitch.getBoundingClientRect();
-      const move=(e)=>{
+      const key=handle.dataset.formationLine,id=event.pointerId,rect=pitch.getBoundingClientRect();
+      const original={...formationLines()};
+      try{handle.setPointerCapture(id);}catch{}
+      handle.classList.add('dragging');
+      const move=e=>{
+        if(e.pointerId!==id)return;
         state.formationLinePresets[state.activePositionPreset]=moveFormationLine(formationLines(),key,(e.clientY-rect.top)/rect.height*100);
-        handle.style.top=`${formationLines()[key]}%`;
+        for(const line of panel.querySelectorAll('[data-formation-line]'))line.style.top=formationLines()[line.dataset.formationLine]+'%';
       };
-      const up=()=>{window.removeEventListener("pointermove",move);markPositionCustomized(state);render();markDirty(180);};
-      window.addEventListener("pointermove",move);
-      window.addEventListener("pointerup",up,{once:true});
-    }));
-    const highlight=(source,on)=>panel.querySelectorAll("[data-league-magnet],[data-league-bench-magnet]").forEach((node)=>{
-      if(node===source)return;
-      const primary=source.dataset.primaryRole;
-      const fit=positionFamiliarity({role:primary,secondaryRole:source.dataset.secondaryRole},node.dataset.primaryRole);
-      node.classList.toggle("role-swap-primary",on&&fit==="primary");
-      node.classList.toggle("role-swap-secondary",on&&fit==="secondary");
-    });
-    panel.querySelectorAll("[data-league-magnet]").forEach((node)=>node.addEventListener("pointerdown",(event)=>{
-      if(event.button!==0||event.target.closest("[data-duty-step]")||researchLocked())return;
-      event.preventDefault();
-      const id=node.dataset.leagueMagnet,start={...positions()[id]},rect=pitch.getBoundingClientRect(),targets=[...panel.querySelectorAll("[data-league-bench-magnet]")];
-      let target=null,moved=false;
-      node.classList.add("dragging");
-      highlight(node,true);
-      const move=(e)=>{
-        moved=true;
-        const next=targets.find((item)=>{const r=item.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;})??null;
-        if(next!==target){target?.classList.remove("swap-target");target=next;target?.classList.add("swap-target");}
-        if(!target&&e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom){
-          const x=clamp((e.clientX-rect.left)/rect.width*100,8,92),y=clamp((e.clientY-rect.top)/rect.height*100,6,94);
-          positions()[id]={x:Math.round(x),y:Math.round(y)};
-          node.style.left=`${x}%`;
-          node.style.top=`${y}%`;
-        }
+      const cleanup=()=>{
+        window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancel);
+        handle.classList.remove('dragging');try{handle.releasePointerCapture(id);}catch{}
       };
-      const up=()=>{
-        window.removeEventListener("pointermove",move);
-        node.classList.remove("dragging");
-        target?.classList.remove("swap-target");
-        highlight(node,false);
-        if(target)return swapStarter(target.dataset.leagueBenchMagnet,id);
-        if(!moved&&window.matchMedia("(max-width:1050px), (pointer:coarse)").matches){mobileDutyPlayerId=id;return render();}
-        if(!moved)positions()[id]=start;
-        const rejected=moved&&analysis().counts.GK>1;
-        if(rejected){positions()[id]=start;showToast("门将位置最多只能安排一名球员");}
-        render();
-        if(moved&&!rejected)markDirty(180);
-      };
-      window.addEventListener("pointermove",move);
-      window.addEventListener("pointerup",up,{once:true});
-    }));
-    panel.querySelectorAll("[data-league-bench-magnet]").forEach((node)=>node.addEventListener("pointerdown",(event)=>{
-      if(event.button!==0)return;
-      event.preventDefault();
-      const ghost=node.cloneNode(true);
-      ghost.classList.add("bench-drag-ghost");
-      document.body.appendChild(ghost);
-      const targets=[...panel.querySelectorAll("[data-league-magnet]")];
-      let target=null;
-      highlight(node,true);
-      const move=(e)=>{
-        ghost.style.left=`${e.clientX}px`;
-        ghost.style.top=`${e.clientY}px`;
-        const next=targets.find((item)=>{const r=item.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;})??null;
-        if(next!==target){target?.classList.remove("swap-target");target=next;target?.classList.add("swap-target");}
-      };
-      const up=()=>{
-        window.removeEventListener("pointermove",move);
-        ghost.remove();
-        target?.classList.remove("swap-target");
-        highlight(node,false);
-        if(target)swapStarter(node.dataset.leagueBenchMagnet,target.dataset.leagueMagnet);
-      };
-      move(event);
-      window.addEventListener("pointermove",move);
-      window.addEventListener("pointerup",up,{once:true});
+      const up=e=>{if(e.pointerId!==id)return;move(e);cleanup();if(JSON.stringify(original)===JSON.stringify(formationLines()))return;markPositionCustomized(state);render();markDirty(180);};
+      const cancel=e=>{if(e.pointerId!==id)return;cleanup();state.formationLinePresets[state.activePositionPreset]=original;render();};
+      window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancel);
     }));
   }
   function researchImportMarkup(){
@@ -751,12 +665,20 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     closeResearchImport();render();panel.querySelector('[data-import-research]')?.focus({preventScroll:true});markDirty(0);
   }
   function bind() {
+    const filterPanel=panel.querySelector('[data-bench-filters]');
+    filterPanel?.addEventListener('toggle',()=>{if(filterPanel.isConnected)benchFiltersOpen=filterPanel.open;});
+    panel.querySelectorAll('[data-bench-filter]').forEach(select=>select.addEventListener('change',()=>{
+      benchFilters[select.dataset.benchFilter]=select.value;benchFiltersOpen=true;render();
+      panel.querySelector('.bench-magnet-list').scrollTop=0;
+      panel.querySelector(`[data-bench-filter="${select.dataset.benchFilter}"]`)?.focus({preventScroll:true});
+    }));
+    panel.querySelector('[data-bench-filter-reset]')?.addEventListener('click',()=>{benchFilters={position:'',club:'',nationality:''};render();panel.querySelector('.bench-magnet-list').scrollTop=0;});
     cardDisplay.bind();
     panel.querySelectorAll('[data-lineup-squad]').forEach(button=>button.addEventListener('click',()=>switchSquad(button.dataset.lineupSquad)));
     if(readOnly()){
-      panel.querySelectorAll('button,input,select').forEach(el=>{if(!el.matches('[data-lineup-squad],[data-league-position-preset],[data-stage-window-close]'))el.disabled=true;});
+      panel.querySelectorAll('button,input,select').forEach(el=>{if(!el.matches('[data-lineup-squad],[data-league-position-preset],[data-stage-window-close],[data-bench-filter],[data-bench-filter-reset]'))el.disabled=true;});
       panel.querySelectorAll('[data-league-position-preset]').forEach(button=>button.addEventListener('click',()=>setPreset(button.dataset.leaguePositionPreset)));
-      setSaveStatus('saved',coalitionView?.army?.busy?'行动期间只读':'由指挥官管理战术');bindTooltips();return;
+      setSaveStatus('saved',activeSquadId==='league'?'本场联赛进行中':coalitionView?.army?.busy?'行动期间只读':'由指挥官管理战术');bindTooltips();return;
     }
     panel.querySelector('[data-import-research]')?.addEventListener('click',openResearchImport);
     bindResearchImport();
@@ -778,22 +700,38 @@ export function createTacticsController({ panel, mapElement, getCampaignState, s
     panel.querySelectorAll("[data-duty-step]").forEach((button)=>button.addEventListener("click",(event)=>{event.stopPropagation();const id=button.dataset.player,role=analysis().roles[id],list=DUTIES[role]??DUTIES.DM,plan=state.tacticalPlans[planState()],current=plan.playerDuties[id]??"",index=list.findIndex(([key])=>key===current);plan.playerDuties[id]=list[(index+Number(button.dataset.dutyStep)+list.length)%list.length][0];render();markDirty();}));
     panel.querySelector("[data-mobile-duty-close]")?.addEventListener("click",()=>{mobileDutyPlayerId=null;render();});
     panel.querySelectorAll("[data-mobile-duty-step]").forEach((button)=>button.addEventListener("click",()=>{const id=mobileDutyPlayerId,role=analysis().roles[id],list=DUTIES[role]??DUTIES.DM,plan=state.tacticalPlans[planState()],current=plan.playerDuties[id]??"",index=list.findIndex(([key])=>key===current);plan.playerDuties[id]=list[(index+Number(button.dataset.mobileDutyStep)+list.length)%list.length][0];render();markDirty();}));
+    bindFormationLineDrag();
     bindReliableDrag();
     bindTooltips();
   }
   async function open({squadId}={}) {
     if(!getCampaignState()?.setupComplete)return showToast('完成 22 名球员选择后才能设置战术');
     if(saving)return showToast('正在保存战术，请稍后打开');
+    // Reopening is navigation, not a save: unfinished lineups must remain editable.
+    if(dirty&&panel.hidden){
+      clearTimeout(saveTimer);saveTimer=null;
+      const epoch=++openEpoch,accountId=getCampaignState()?.playerId;
+      if(isCoalition()){
+        const id=activeSquadId,draft=serializeSquad(id,state);
+        try{
+          await loadCoalition(id);
+          if(epoch!==openEpoch||accountId!==getCampaignState()?.playerId)return;
+          if(coalitionView?.army){state=normalizeSquadState(draft,coalitionView.tacticsState.draft.roster);squadStates[id]=state;}
+          else dirty=false;
+        }catch(error){if(epoch!==openEpoch||accountId!==getCampaignState()?.playerId)return;showToast(error.message);}
+      }
+      if(dirty){activateWideWindow(panel);mapElement.classList.add('is-tactics-open');render();setSaveStatus('dirty','有未保存修改');return;}
+    }
     if(dirty&&!await persist(false))return;
     const epoch=++openEpoch;
     const normalized=normalizeTacticsSquads(getCampaignState().tactics,getCampaignState().draft.roster,getCampaignState().playerSquads);
-    squadAssignments=normalized.assignments;squadStates=normalized.squads;activeSquadId=normalized.activeSquadId;coalitionView=null;
-    try{await loadCoalition(squadId==='raid'?'raid':'coalition');}catch(error){showToast(error.message);}
+    squadAssignments=normalized.assignments;squadStates=normalized.squads;squadStates.league=normalizeSquadState(getCampaignState()?.leagueRegistration?.tactics,squadRoster('league'));activeSquadId=normalized.activeSquadId;coalitionView=null;
+    if(['coalition','raid'].includes(squadId))try{await loadCoalition(squadId);}catch(error){showToast(error.message);}
     if(epoch!==openEpoch)return;
-    if(['coalition','raid'].includes(squadId)&&coalitionView?.army)activeSquadId=squadId;
+    if(squadId==='league'||PLAYER_SQUAD_DEFINITIONS.some(s=>s.id===squadId)||(['coalition','raid'].includes(squadId)&&coalitionView?.army))activeSquadId=squadId;
     state=squadStates[activeSquadId];dirty=false;activateWideWindow(panel);mapElement.classList.add('is-tactics-open');render();
-    if(!isCoalition()&&!normalized.ready)showToast('远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋');
-    else if(!isCoalition()&&(!normalized.hasFixedSquads||normalized.autoAssignedPlayerIds.length))markDirty(120);
+    if(activeSquadId!=='league'&&!isCoalition()&&!normalized.ready)showToast('远征与留守编队都需要至少11人，并各自包含门将、后卫、中场和前锋');
+    else if(activeSquadId!=='league'&&!isCoalition()&&(!normalized.hasFixedSquads||normalized.autoAssignedPlayerIds.length))markDirty(120);
     saveInitialCoalition();
   }
   function close() { openEpoch++;if(researchImportOpen)closeResearchImport();researchImportOpen=false;stopPreview();document.querySelector('.league-magnet-tooltip')?.remove();panel.hidden=true;deactivateWideWindow(panel);mapElement.classList.remove('is-tactics-open'); }

@@ -31,7 +31,7 @@ function account(id='a') {
       formationLinePresets:{position1:lines,position2:lines,position3:lines},
       tacticalPlans:{opening:{tactic:'balanced',style:'possession',positionPreset:'position1',playerDuties:{[starters[1]]:'support'}},leading:{tactic:'defensive',style:'counterAttack',positionPreset:'position2',playerDuties:{}},trailing:{tactic:'positive',style:'possession',positionPreset:'position3',playerDuties:{}}}}}};
   }
-  return {id,nickname:id,token:id,setupComplete:true,homeTerritoryId:id,gold:10000,draft:{version:DRAFT_VERSION,teamName:id,roster},playerSquads:{schemaVersion:2,assignments},tactics:{schemaVersion:2,activeSquadId:'expedition',squads},expeditionPiece:{schemaVersion:1,territoryId:id,tokenId:'default',movement:null}};
+  return {id,nickname:id,token:id,setupComplete:true,homeTerritoryId:id,gold:100000,draft:{version:DRAFT_VERSION,teamName:id,roster},playerSquads:{schemaVersion:2,assignments},tactics:{schemaVersion:2,activeSquadId:'expedition',squads},expeditionPiece:{schemaVersion:1,territoryId:id,tokenId:'default',movement:null}};
 }
 function reserve(a,role='LB',fitness=90,overall=90,suffix=role+'-bench') {
   const p={...structuredClone(catalog.find(p=>p.role===role)||catalog.find(p=>p.role===(role==='LWB'?'LB':'RB'))),role,id:a.id+'-'+suffix,name:suffix,overall,effectiveOverall:overall};

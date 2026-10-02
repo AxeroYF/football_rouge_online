@@ -31,7 +31,6 @@ export class ShopService{
   if(!account.setupComplete||!account.draft)fail('请先完成初始建队',409);
   if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(String(requestId??'')))fail('购买请求标识无效');
   if(!['gold','oil'].includes(currency))fail('支付资源无效');
-  if(currency==='oil'&&kind!=='player')fail('只有限量传奇支持石油购买');
   const signature=JSON.stringify(currency==='gold'?[kind,itemId,rotationId??null]:[kind,itemId,rotationId??null,currency]);
   const prior=account.shopReceipts?.[requestId];
   if(prior){if(prior.signature!==signature)fail('请求标识与原购买不一致',409);return structuredClone(prior.result);}
@@ -45,11 +44,11 @@ export class ShopService{
   }else fail('未知商品类型');
   const before=structuredClone(account),beforeShop=structuredClone(shop);
   try{
-   const price=currency==='oil'?(offer.oilPrice??SHOP_LEGEND_OIL_PRICE):(pack?.price??offer.price);
+   const price=currency==='oil'?(pack?.oilPrice??offer.oilPrice??SHOP_LEGEND_OIL_PRICE):(pack?.price??offer.price);
    if(currency==='oil'){if(!account.oil||account.oil.balance<price)fail('石油不足');account.oil.balance-=price;}
    else this.economy.spend(account,price,'global-shop-'+kind);
    let result;
-   if(pack){this.playerPacks.addPacks(account,pack.type,1);result={kind,name:pack.name,price:pack.price};}
+   if(pack){this.playerPacks.addPacks(account,pack.type,1);result={kind,name:pack.name,price,currency};}
    else{
     const player=structuredClone(offer.player);player.state={...player.state,fitness:100};
     account.draft.roster.push(player);account.playerSquads??={schemaVersion:2,assignments:{}};account.playerSquads.assignments??={};account.playerSquads.assignments[player.id]='garrison';
