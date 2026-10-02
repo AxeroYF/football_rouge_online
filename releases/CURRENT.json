@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "latestPublished": "20261001-r49",
   "lastUserConfirmedDeployed": "20261001-r49",
-  "sourceState": "R49 deployment confirmed by user on 2026-10-02. Source and generated browser startup assets match the published R49 baseline; R46-R49 changes are being archived in Git with refreshed handoff documentation.",
+  "sourceState": "R49 deployment confirmed by user on 2026-10-02. R46-R49 source, tests, build tools and release records committed and pushed as bc399a6178a9d1c43999e3645cce723174a29a47. Runtime files and generated browser startup assets exactly match published R49; handoff refreshed.",
   "releases": [
     {
       "version": "20260918-r9",

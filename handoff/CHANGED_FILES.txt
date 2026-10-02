@@ -1,5 +1,6 @@
 R46-R49 归档文件（相对 R45 提交 c9daf07e836054ae7fb05d8c1305440664bb1ebd）
-生成时间：2026-10-02。随后 Git 同步记录与交接 ZIP 校验文件另见同步记录。
+源码提交：bc399a6178a9d1c43999e3645cce723174a29a47
+包含后续交接文档与 ZIP 校验记录。ZIP 本身被 Git 忽略。
 
 .gitignore
 app.js
@@ -11,7 +12,9 @@ client/ui/mobile-landscape.js
 game-startup.css
 game-startup.js
 game.html
+handoff/CHANGED_FILES.txt
 handoff/CURRENT_STATE.md
+handoff/GITHUB_SYNC_20261002.md
 handoff/MANIFEST.md
 handoff/MAP_HUD_LAYOUT_20260930.md
 handoff/NEW_CHAT_PROMPT.md
@@ -26,6 +29,7 @@ handoff/archive/before-r49-handoff-20261002/MANIFEST.md
 handoff/archive/before-r49-handoff-20261002/NEW_CHAT_PROMPT.md
 handoff/archive/before-r49-handoff-20261002/README.md
 handoff/archive/before-r49-handoff-20261002/README_UPDATE.md
+handoff/yellowdogs-rougelite-handoff-20261002-r49.zip.sha256
 index.html
 releases/20260930-r46/ARCHIVE.sha256
 releases/20260930-r46/BASELINE.json
