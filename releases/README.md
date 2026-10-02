@@ -4,7 +4,7 @@
 
 `CURRENT.json` 是发布入口，区分已发布版本、用户确认部署版本和源码整理状态。
 
-最新交付 R45（20260930-r45），用户于 2026-09-30 确认已部署；后续增量更新以 R45 为基线。R45 包内 11 个变更文件，有效基线 1290 个文件，无新增依赖。包含商店、连续开包、多等级科技通知和联赛注册自动补足 15 人；9 月 30 日允许在进行中的联赛补员一次。更新说明见 handoff/R45_UPDATE_20260930.md。
+最新交付及用户确认部署版本均为 R49（20261001-r49），用户于 2026-10-02 确认部署；后续增量以 R49 为基线。R48 已恢复游戏进入。R49 恢复开包动画，选卡保留原卡和画布、下一包复用舞台及流星背景，并启用卡包金币／石油支付（2／6／16／40 石油）。10 个运行文件变更，有效基线仍为 1295 个文件，无运行依赖更新。说明见 handoff/R49_UPDATE_20261001.md。
 
 Windows 0.1.5 是独立客户端发布，安装器保留在本机 outputs/windows-client-0.1.5/，不代表服务器更新。
 
@@ -20,7 +20,7 @@ Windows 0.1.5 是独立客户端发布，安装器保留在本机 outputs/window
 
 1. 确认服务器已安装版本，不根据 Git 分支或包名猜测。
 2. 执行 `node scripts/check-release-baseline.mjs` 核验归档链。
-3. 修改完成后运行 `python scripts/build-browser-module-versions.py`，更新资源内容版本。
+3. 修改完成后运行 `python scripts/build-browser-module-versions.py`，更新资源内容版本，然后执行 `node scripts/build-browser-startup.mjs` 生成正式入口。首次安装构建器执行 `npm ci --prefix tools/browser-build`（仅开发机器）。
 4. 使用 `scripts/build-incremental-hot-update.py --baseline releases/<已安装版本> --output outputs/<新的输出目录> --version <YYYYMMDD-rN> --scope "更新内容"`。
 5. 审核新增/变更清单，完成对应测试，写入 QA.json 与部署说明后再执行 `scripts/build-hot-update.py --output ... --version ... --finalize`。
 6. 上传包和 sha256 文件至 `/home/admin`，先执行包内 `update.sh --check`，通过后执行 `apply`。

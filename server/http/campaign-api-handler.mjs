@@ -124,10 +124,10 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, { state: campaign.choose(account, body.playerId, body.offerId) });
     }
     if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/open") {
-      return sendJson(response, 200, campaign.openPlayerPack(account, body.packType));
+      return sendJson(response, 200, campaign.openPlayerPack(account, body.packType, {compact:body.compact===true}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/choose") {
-      return sendJson(response, 200, campaign.choosePlayerPackCard(account, body.openingId, body.playerId));
+      return sendJson(response, 200, campaign.choosePlayerPackCard(account, body.openingId, body.playerId, {compact:body.compact===true}));
     }
     if (request.method === "GET" && pathname === "/api/campaign/squads/batch") return sendJson(response,200,{snapshot:campaign.squadBatchDetails(account)});
     if (request.method === "POST" && pathname === "/api/campaign/squads/batch-preview") return sendJson(response,200,campaign.previewSquadBatch(account,body));

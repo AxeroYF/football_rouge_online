@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20260930-r45",
-  "lastUserConfirmedDeployed": "20260930-r45",
-  "sourceState": "R45 deployed, user-confirmed on 2026-09-30: shop and pack flow optimization, persistent multi-level research notices, league registration supplementation. Preparing the third game project.",
+  "latestPublished": "20261001-r49",
+  "lastUserConfirmedDeployed": "20261001-r49",
+  "sourceState": "R49 deployment confirmed by user on 2026-10-02. Source and generated browser startup assets match the published R49 baseline; R46-R49 changes are being archived in Git with refreshed handoff documentation.",
   "releases": [
     {
       "version": "20260918-r9",
@@ -301,6 +301,40 @@
       "bundleSha256": "01cf8810761999631e8c10394316714901bf8adb46873d517cf4099374eb7629",
       "baselineFiles": 1290,
       "changedFiles": 11,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260930-r46",
+      "parent": "20260930-r45",
+      "bundleSha256": "73ac8d33d1969eb9d67f786b86a1692538144df0997b1c2f2420ae78a132e995",
+      "baselineFiles": 1291,
+      "changedFiles": 4,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20260930-r47",
+      "parent": "20260930-r46",
+      "bundleSha256": "2db850ba4db5d6489196042a1c66ec7d9bd6d40f2db71cdbb857618ec5c7f8a7",
+      "baselineFiles": 1292,
+      "changedFiles": 8,
+      "deployment": "user-confirmed",
+      "incident": "Windows online mode and browser startup failed; service healthy in user-provided logs. R48 reduces startup requests and adds versioned code caching.",
+      "incidentResolvedBy": "20260930-r48 (user confirmed successful game entry)"
+    },
+    {
+      "version": "20260930-r48",
+      "parent": "20260930-r47",
+      "bundleSha256": "54db77e9495833f77da60061bd5ecf0f45ed767a01082d62868c2fb745b40c59",
+      "baselineFiles": 1295,
+      "changedFiles": 5,
+      "deployment": "user-confirmed"
+    },
+    {
+      "version": "20261001-r49",
+      "parent": "20260930-r48",
+      "bundleSha256": "0f2c220e39077e579438e8c33a0e65f899ef5c87d4150871cc1878a5bf90271a",
+      "baselineFiles": 1295,
+      "changedFiles": 10,
       "deployment": "user-confirmed"
     }
   ]

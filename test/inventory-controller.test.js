@@ -169,7 +169,7 @@ test("single clicks preserve shelf nodes; double click opens selected pack once 
   const pending=fixture.event("dblclick");
   await fixture.event("dblclick");
   assert.equal(fixture.requests.length,1);
-  assert.deepEqual(fixture.requests[0],{path:"/api/campaign/inventory/packs/open",options:{method:"POST",body:{packType:"exotic-player-pack"}}});
+  assert.deepEqual(fixture.requests[0],{path:"/api/campaign/inventory/packs/open",options:{method:"POST",body:{packType:"exotic-player-pack",compact:true}}});
   fixture.finish();await pending;
   await fixture.event("dblclick");
   assert.equal(fixture.requests.length,1,"An existing opening cannot consume another pack");

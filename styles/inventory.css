@@ -135,8 +135,9 @@
 #inventory-window .inventory-pack-opening .inventory-choice-grid{flex:0 1 auto;min-height:0;max-height:calc(100% - 100px);overflow:auto;overscroll-behavior:contain;align-content:start;padding-top:12px;padding-bottom:12px}
 #inventory-window .inventory-pack-actions{min-height:82px;max-width:calc(100% - 24px)}
 #inventory-window .inventory-pack-actions[aria-hidden="true"]{visibility:hidden;pointer-events:none}
-#inventory-window .inventory-pack-opening .is-pack-selected{animation:none!important;opacity:1;transform:none;filter:drop-shadow(0 0 16px #d8bc6a66)}
-#inventory-window .inventory-pack-opening .is-pack-muted{animation:none!important;opacity:.28;transform:none;filter:saturate(.35);pointer-events:none}
+#inventory-window .inventory-pack-opening .is-pack-selected{animation:inventory-choice-selected .52s cubic-bezier(.16,.84,.28,1) both!important;opacity:1;filter:drop-shadow(0 0 16px #d8bc6a66)}
+#inventory-window .inventory-pack-opening .is-pack-muted{animation:inventory-pack-muted .42s ease both!important;opacity:.28;filter:saturate(.35);pointer-events:none}
+@keyframes inventory-pack-muted{from{opacity:1;transform:scale(1)}to{opacity:.28;transform:scale(.94) translateY(12px)}}
 #inventory-window .inventory-pack-opening .inventory-choice-card button:disabled{opacity:1;cursor:default}
 #inventory-window .inventory-pack-opening .is-pack-selected .inventory-owned-status{color:#f4d778;font-weight:700}
 @media(max-height:500px){#inventory-window .inventory-pack-opening{gap:4px;padding:6px 0}#inventory-window .inventory-pack-actions{min-height:76px}}

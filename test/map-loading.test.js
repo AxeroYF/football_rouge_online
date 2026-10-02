@@ -113,6 +113,31 @@ function request(port, url, headers = {}, method = 'GET') {
   });
 }
 
+test('versioned startup code is compressed and immutable only when its hash matches; HTML stays revalidated', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ydl-code-http-'));
+  const source = Buffer.from('/* compressible startup fixture */\n'.repeat(300));
+  await writeFile(path.join(root,'startup.js'),source);
+  await writeFile(path.join(root,'game.html'),source);
+  const server=http.createServer(createStaticHandler(root));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const port=server.address().port,url='/versus/startup.js?v=sha256-'+sha(source).slice(0,20);
+  try {
+    const first=await request(port,url,{'Accept-Encoding':'gzip'});
+    assert.match(first.headers['cache-control'],/immutable/);
+    assert.deepEqual(gunzipSync(first.body),source);
+    assert.ok(first.body.length<source.length/10);
+    const raw=await request(port,url,{'Accept-Encoding':'identity'});
+    assert.deepEqual(raw.body,source);
+    assert.equal((await request(port,url,{'If-None-Match':raw.headers.etag})).status,304);
+    for(const p of ['/startup.js','/startup.js?v=sha256-aaaaaaaaaaaaaaaaaaaa','/game.html?v=sha256-'+sha(source)])
+      assert.equal((await request(port,p)).headers['cache-control'],'no-cache');
+    await writeFile(path.join(root,'startup.js'),Buffer.from('/* updated version */'));
+    const stale=await request(port,url,{'If-None-Match':raw.headers.etag});
+    assert.equal(stale.status,200);assert.equal(stale.headers['cache-control'],'no-cache');
+    assert.notEqual(stale.headers.etag,raw.headers.etag);
+  }finally{await new Promise(resolve=>server.close(resolve));await rm(root,{recursive:true,force:true});}
+});
+
 test('HTTP map serving compresses losslessly, caches content versions, and preserves validation/HEAD/encoding semantics', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ydl-map-http-'));
   const file = 'assets/map-relief/relief-mesh/europe.bin', source = Buffer.alloc(10000, 3);

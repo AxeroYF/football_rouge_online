@@ -84,3 +84,6 @@ Desktop.ini
 /windows-client/audit-loading.cjs
 /windows-client/audit-loading-fixed.cjs
 /windows-client/test-navigation.cjs
+
+# One-off production browser startup diagnosis (local output only)
+/scripts/audit-live-startup.mjs

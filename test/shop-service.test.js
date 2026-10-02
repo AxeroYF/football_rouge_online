@@ -17,11 +17,32 @@ test('first buyer owns the real enhanced card; the second cannot buy it',()=>{co
 test('duplicate requests are idempotent, mismatched request reuse is rejected',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a),r=request(v),first=f.shop.buy(a,r);assert.deepEqual(f.shop.buy(a,r),first);assert.equal(a.draft.roster.length,1);assert.equal(a.gold,900000);assert.throws(()=>f.shop.buy(a,{...r,itemId:'other'}),/不一致/);f.setTime(v.refreshAt);assert.deepEqual(f.shop.buy(a,r),first);});
 test('all sold cards remain until the shared three-hour boundary, stale purchases fail',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a);for(let i=0;i<3;i++)f.shop.buy(a,request(v,i));assert.equal(f.shop.publicState(a).offers.filter(o=>o.sold).length,3);f.setTime(v.refreshAt-1);assert.equal(f.shop.publicState(a).rotationId,v.rotationId);f.setTime(v.refreshAt);const next=f.shop.publicState(a);assert.notEqual(next.rotationId,v.rotationId);assert.equal(next.offers.filter(o=>o.sold).length,0);assert.throws(()=>f.shop.buy(a,request(v)),/已刷新/);});
 test('each existing pack is delivered unopened once with its configured price',()=>{const f=setup(),a=f.account('a');for(const p of SHOP_PACKS){const r={kind:'pack',itemId:p.type,requestId:crypto.randomUUID()};f.shop.buy(a,r);f.shop.buy(a,r);assert.equal(a.inventory.packs[p.type],1);}assert.equal(a.inventory.pendingOpening,null);assert.equal(a.gold,968000);});
+
+test('oil packs use authoritative 2/6/16/40 prices, replay after restart and reject currency switching',()=>{
+ const f=setup();let a=f.account('a');a.oil={balance:64};
+ assert.deepEqual(f.shop.publicState(a).packs.map(p=>p.oilPrice),[2,6,16,40]);
+ for(const p of SHOP_PACKS){
+  const req={kind:'pack',itemId:p.type,currency:'oil',requestId:crypto.randomUUID(),price:0,oilPrice:0};
+  const before=a.oil.balance,result=f.shop.buy(a,req);
+  assert.equal(result.price,p.oilPrice);assert.equal(result.currency,'oil');assert.equal(a.oil.balance,before-p.oilPrice);
+  a=JSON.parse(JSON.stringify(a));assert.deepEqual(f.shop.buy(a,req),result);assert.equal(a.inventory.packs[p.type],1);
+  assert.throws(()=>f.shop.buy(a,{...req,currency:'gold'}),/不一致/);
+ }
+ assert.equal(a.oil.balance,0);assert.equal(a.gold,1000000);assert.equal(a.inventory.pendingOpening,null);assert.equal(a.draft.roster.length,0);
+ const before=structuredClone(a);assert.throws(()=>f.shop.buy(a,{kind:'pack',itemId:SHOP_PACKS[0].type,currency:'oil',requestId:crypto.randomUUID()}),/石油不足/);assert.deepEqual(a,before);
+});
+
+test('failed oil pack save rolls back fuel, pack and receipt, then the same request succeeds once',()=>{
+ const f=setup(),a=f.account('a');a.oil={balance:40};f.shop.publicState(a);
+ const before=structuredClone(a),req={kind:'pack',itemId:SHOP_PACKS[3].type,currency:'oil',requestId:crypto.randomUUID()};
+ f.setBroken(true);assert.throws(()=>f.shop.buy(a,req),/disk/);assert.deepEqual(a,before);
+ f.setBroken(false);f.shop.buy(a,req);f.shop.buy(a,req);assert.equal(a.oil.balance,0);assert.equal(a.inventory.packs[req.itemId],1);
+});
 test('insufficient funds and invalid requests do not consume shared inventory',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a);a.gold=99;const before=structuredClone(a);assert.throws(()=>f.shop.buy(a,request(v)),/金币不足/);assert.deepEqual(a,before);assert.equal(f.shop.publicState(a).offers[0].sold,false);assert.throws(()=>f.shop.buy(a,{kind:'pack',itemId:SHOP_PACKS[0].type,requestId:'bad'}),/请求标识/);assert.throws(()=>f.shop.publicState({...a,setupComplete:false}),/建队/);});
 test('save failures roll back debit, card delivery, stock and receipts',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a),before=structuredClone(a),stock=structuredClone(f.world.shop);f.setBroken(true);assert.throws(()=>f.shop.buy(a,request(v)),/disk/);assert.deepEqual(a,before);assert.deepEqual(f.world.shop,stock);});
 test('rotation save failure restores previous shared offers',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a),before=structuredClone(f.world.shop);f.setTime(v.refreshAt);f.setBroken(true);assert.throws(()=>f.shop.publicState(a),/disk/);assert.deepEqual(f.world.shop,before);});
 test('server restart hydrates sold inventory and keeps purchased +3 card instances',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a);f.shop.buy(a,request(v));const index=JSON.parse(readFileSync(new URL('../assets/data/territory-index.json',import.meta.url)));const saved=JSON.parse(JSON.stringify({accounts:{a},world:f.world}));const migrated=migrateCampaignSave({saved,territoryIndex:index,playerDatabase:catalog,playerCatalogVersion:'shop-test',economy:f.economy});assert.deepEqual(migrated.world.shop,f.world.shop);assert.equal(migrated.accounts.get('a').draft.roster[0].attributes.passing,97);assert.equal(migrated.accounts.get('a').draft.roster[0].upgradeLevel,3);assert.deepEqual(hydrateCampaignWorld(index,saved.world).shop,f.world.shop);});
-test('sold cards keep their card art, turn gray and cannot be purchased in markup',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a);f.shop.buy(a,request(v));const html=shopWindowMarkup(f.shop.publicState(a));assert.equal((html.match(/data-shop-offer=/g)||[]).length,3);assert.equal((html.match(/data-shop-buy="pack"/g)||[]).length,4);assert.match(html,/shop-legend is-sold/);assert.match(html,/已售出 · 等待刷新/);assert.match(html,/强化加3/);});
+test('sold cards keep their card art, turn gray and cannot be purchased in markup',()=>{const f=setup(),a=f.account('a'),v=f.shop.publicState(a);f.shop.buy(a,request(v));const html=shopWindowMarkup(f.shop.publicState(a));assert.equal((html.match(/data-shop-offer=/g)||[]).length,3);assert.equal((html.match(/data-shop-buy="pack"/g)||[]).length,8);assert.match(html,/shop-legend is-sold/);assert.match(html,/已售出 · 等待刷新/);assert.match(html,/强化加3/);});
 
 test('LAN HTTP clients without randomUUID can create a valid purchase request',()=>{const f=setup(),a=f.account('a');const requestId=shopRequestId({getRandomValues:values=>values.fill(1)});assert.match(requestId,/^[a-f0-9-]{36}$/);f.shop.buy(a,{requestId,kind:'pack',itemId:SHOP_PACKS[0].type});assert.equal(a.inventory.packs[SHOP_PACKS[0].type],1);});
 
@@ -39,7 +60,7 @@ test('oil payment validates funds and eligible items and rolls back fuel, card, 
  const f=setup(),a=f.account('a');a.oil={balance:149};const v=f.shop.publicState(a),req={...request(v),currency:'oil'};
  assert.throws(()=>f.shop.buy(a,req),/石油不足/);assert.equal(a.oil.balance,149);assert.equal(f.shop.publicState(a).offers[0].sold,false);
  assert.throws(()=>f.shop.buy(a,{...req,currency:'science'}),/支付资源/);
- assert.throws(()=>f.shop.buy(a,{...req,kind:'pack',itemId:SHOP_PACKS[0].type}),/只有限量传奇/);
+ assert.throws(()=>f.shop.buy(a,{...req,kind:'pack',itemId:'unknown-pack'}),/未知卡包/);
  a.oil.balance=150;const before=structuredClone(a),stock=structuredClone(f.world.shop);f.setBroken(true);assert.throws(()=>f.shop.buy(a,req),/disk/);assert.deepEqual(a,before);assert.deepEqual(f.world.shop,stock);f.setBroken(false);f.shop.buy(a,req);assert.equal(a.oil.balance,0);
 });
 test('existing rotations expose oil pricing and legacy gold receipts still replay after update',()=>{
@@ -49,9 +70,9 @@ test('existing rotations expose oil pricing and legacy gold receipts still repla
  assert.deepEqual(f.shop.buy(a,{...req,currency:'gold'}),legacy);
  const saved=JSON.parse(JSON.stringify(a)),balance=a.oil.balance;const oilRequestId=Object.keys(a.shopReceipts).find(id=>id!==req.requestId);assert.equal(f.shop.buy(saved,{...request(view),currency:'oil',requestId:oilRequestId}).currency,'oil');assert.equal(saved.oil.balance,balance);
 });
-test('legend controls allow oil when gold is insufficient and never offer oil for packs',()=>{
+test('both product types allow oil when gold is insufficient',()=>{
  const f=setup(),a=f.account('a');a.gold=0;a.oil={balance:150};const html=shopWindowMarkup(f.shop.publicState(a));
- assert.equal((html.match(/data-shop-currency="oil"/g)||[]).length,3);assert.match(html,/150 石油/);assert.doesNotMatch(html,/data-shop-currency="oil"[^>]+disabled/);assert.match(html,/共用限量库存/);
+ assert.equal((html.match(/data-shop-currency="oil"/g)||[]).length,7);assert.match(html,/150 石油/);assert.doesNotMatch(html,/data-shop-currency="oil"[^>]+disabled/);assert.match(html,/共用限量库存/);
 });
 
 

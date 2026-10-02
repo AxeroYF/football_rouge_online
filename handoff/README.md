@@ -1,44 +1,60 @@
-# R43 已部署与重构评估 · 2026-09-29
+# 黄狗风云 Rougelite 交接 · 2026-10-02
 
-用户已确认 R43 部署，后续发布以 R43 为基线。本轮整理并推送 R42–R43 及 Windows 0.1.7 相关源码，重构暂不实施。详见 [完整重构评估](REFACTOR_ASSESSMENT_20260929.md) 与 [Git 同步记录](GITHUB_SYNC_20260929.md)。默认遗漏测试补跑 145 通过、2 项旧接线断言失败，未掩盖失败。
+**R49 已部署，用户已确认。** 最新发布/部署版本：`20261001-r49`。工作树：`D:\Project\game_test\.worktrees\Rougelite`；分支：`codex/rougelite`；远端：`https://github.com/AxeroYF/football_rouge_online.git`。
 
-# R43 已交付，待部署 · 2026-09-28
+## 阅读入口
 
-用户已确认 R42 部署。R43 包含训练中心扩容与操作卡顿优化，正式包位于 outputs/hot-update-20260928-r43-final/，详见 [R43 更新说明](R43_UPDATE_20260928.md)。1481 项全量、45 项专项、真实浏览器与隔离安装/服务/回滚通过，尚未远端部署。此前同版本的无 final 目录仅为未交付临时载荷。
+1. [当前状态](CURRENT_STATE.md)：以开头的最新结论为准，后续段落为历史。
+2. [新对话提示](NEW_CHAT_PROMPT.md)：可直接用于继续开发。
+3. [交接索引](MANIFEST.md)：项目结构与近期功能文档。
+4. [R49 更新](R49_UPDATE_20261001.md)、[Git 同步](GITHUB_SYNC_20261002.md)、[发布基线](../releases/CURRENT.json)。
 
-# R42 已交付，待部署 · 2026-09-28
+## 最近累计更新
 
-R42 以用户已部署的 R41 为基线，包含银白俱乐部主页与分享海报、全服球员天梯、状态同步减负及编队分批展示。更新包、校验文件和一行部署指令见 [R42 更新说明](R42_UPDATE_20260928.md)。已完成全量回归、真实服务及升级回滚验证；尚未远端部署。Windows 安装器独立发布，新增 PNG 保存支持不在现有 0.1.7 中。
+- 界面：R46 统一每日联赛、服务器玩家、通知栏入口，修复手机/电脑网页模式遮挡。
+- 加载与开包：R47 增量响应、归队一次存档、去除成功后的冗余全量读取；R48 将冷启动代码请求从 250 个降到 4 个，使用有界压缩缓存。用户确认 R48 恢复进入游戏。
+- 开包体验：R49 恢复流星、扫光、对应传奇 Canvas、原有逐张翻转；选卡保留原节点，下一包复用舞台，不再重复展示获得卡。**不能通过取消动画来做性能优化。**
+- 商店：金币与石油均可购买相同卡包；普通/稀有/珍奇/传奇为 2/6/16/40 石油，服务端定价、幂等和失败回滚。
 
-# 俱乐部分享与球员天梯已实现，待发布 · 2026-09-28
+## 项目结构
 
-俱乐部主页重做、两种立体分享海报及全服球员天梯已落地，真实导出与多尺寸浏览器检查通过。详见 [实现、刷新规则与审阅文件](CLUB_STUDIO_AND_PLAYER_LADDER_20260928.md)。尚未打包或部署；现有 Windows 0.1.7 安装包不含新增 PNG 下载支持。服务器基线仍为 R41。
+```text
+app.js / index.html       前端编排与可编辑入口
+client/                  领域 UI、地图、球员卡、背包、商店、战术、回放
+styles/                  页面与领域样式
+game.html                正式游戏入口（生成）
+game-startup.js / .css    正式启动资源（生成，与源码一起提交）
+server.mjs               Node HTTP 启动
+campaign-service.mjs     游戏业务协调入口
+server/application/      领域应用服务、状态与提交协调
+server/http/             分域路由、静态资源与协议处理
+shared/                  共享规则、配置、视图与几何计算
+engine/                  比赛引擎与动态模拟
+assets/                  公共资源；私有卡画不入 Git
+test/ / scripts/         自动测试、验证、构建与热更新工具
+tools/browser-build/     固定版本的开发用启动构建器
+windows-client/          Windows 客户端
+android-client/          Android 客户端
+deploy/ / releases/      部署工具、不可变发布清单及有效基线
+handoff/                 当前入口、专题说明与历史交接
+```
 
-# Windows 0.1.7 已交付 · 2026-09-28
+## 构建与发布
 
-新安装包已生成，24 项客户端测试及六组打包测试通过，尚未确认安装。详见 [0.1.7 安装与验证](WINDOWS_CLIENT_017_20260928.md)。服务器仍为 R41；网页同步和卡片优化待服务器热更新。以下保留历史记录。
+首次准备开发依赖：`npm ci`；启动构建器：`npm ci --prefix tools/browser-build`。开发入口 `npm run dev`，测试 `npm test`。构建器仅用于开发机器，无需生产服务器安装。
 
-# Windows 0.1.6 已交付 · 2026-09-28
+前端改动后依次执行：
 
-用户已授权优化 Windows 启动/加载，0.1.6 安装包已生成并验证，尚未确认安装。详见 [启动优化与安装说明](WINDOWS_CLIENT_016_STARTUP_20260928.md)。服务器最新确认部署仍为 R41，不需要服务器热更新。
+```powershell
+python scripts/build-browser-module-versions.py
+node scripts/build-browser-startup.mjs
+python scripts/build-browser-module-versions.py --check
+node scripts/build-browser-startup.mjs --check
+node scripts/check-release-baseline.mjs --workspace
+```
 
-# R41 当前交付 · 2026-09-28
+最后一项列出源码相对发布基线的差异；未修改运行文件时应为空，有开发变更时应与预期一致。正式 `/versus/` 与 `/game` 路由加载 `game.html`，只修改 index.html 或模块而不重建会让正式页停留旧代码。增量打包器已拒绝陈旧生成物。详细步骤见 [发布说明](../releases/README.md)。
 
-GitHub 整理见 [2026-09-28 同步记录](GITHUB_SYNC_20260928.md)，沿用 PR #2。
+R49 原包在 `outputs/hot-update-20261001-r49/`；午夜前 `outputs/hot-update-20260930-r49/` 是未交付暂存目录。不要修改原包或历史清单，不要把 outputs、存档、账号、私有卡画、node_modules 放入 Git。后续热更新以已部署 R49 为基线；提供一行式部署命令。
 
-最新交付 R41（20260928-r41），用户已明确确认部署；最新部署基线为 R41。
-
-[R41 更新、验证与部署指令](R41_UPDATE_20260928.md)。修复历史活动与球探回执误锁交易地块；联赛注册筛选只作用左侧可选球员，两栏互斥；汰换正常成功后使用增量卡片与编队状态更新，保留筛选、滚动位置和已加载卡片，零追加全量读取。1478 项全量测试、专项测试、真实浏览器与隔离升级回滚通过。
-
-以下保留历史记录，各段部署状态以成文时为准。
-
-# Rougelite 对话交接 · 2026-09-27
-
-先读 [当前状态](CURRENT_STATE.md)、[GitHub 整理](GITHUB_SYNC_20260927.md)。
-
-- [R40 更新、验证与部署指令](R40_UPDATE_20260927.md)
-- [R39 票房修复与一行部署](DAILY_LEAGUE_R39_20260921.md)
-- [Windows 0.1.5 启动修复](WINDOWS_CLIENT_015_STARTUP_FIX_20260921.md)
-- [发布记录](../releases/CURRENT.json)
-
-最新交付 R39，最后明确确认服务器 R37；Windows 0.1.5 安装未确认。旧入口已归档于 archive/before-github-r39-20260927/。
+本 handoff 包是交接文档与发布记录，不含游戏运行载荷或生产存档，不能作为热更新包执行。早期入口已归档到 `archive/before-r49-handoff-20261002/`。

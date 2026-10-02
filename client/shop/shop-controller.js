@@ -1,3 +1,4 @@
+import {mergeRosterDelta as mergeShopPurchase} from '../core/merge-roster-delta.js';
 import {patchMarkup} from '../ui/patch-markup.js';
 import {registerStandardWindow,activateStandardWindow,deactivateStandardWindow} from '../ui/standard-window.js';
 import {playerCardMarkup,escapePlayerCardHtml as esc} from '../player-card/player-card.js?v=20260905-shield-v1';
@@ -15,20 +16,9 @@ export function shopWindowMarkup(view,{pending=false,error=''}={}){
  <p class="shop-error" role="alert" ${error?'':'hidden'}>${esc(error)}</p>
  <div class="shop-legend-grid">${offers.map(o=>`<article class="shop-legend ${o.sold?'is-sold':''}" data-ui-key="${esc(o.id)}" data-shop-offer="${esc(o.id)}"><div class="shop-card-art">${playerCardMarkup(o.player,{variant:'standard',animated:false,eager:true})}<span class="shop-sold-stamp" ${o.sold?'':'hidden'}>已售出</span></div><div class="shop-legend-caption"><strong>${esc(o.player.name)}</strong></div><button class="ui-button ui-button--primary" data-shop-buy="player" data-shop-item="${esc(o.id)}" ${pending||o.sold||gold<o.price?'disabled':''}>${o.sold?'已售出 · 等待刷新':gold<o.price?'金币不足 · ':''}${o.sold?'':goldAmountMarkup(o.price)}</button>${!o.sold&&o.oilPrice!=null?`<button class="ui-button shop-oil-buy" data-shop-buy="player" data-shop-currency="oil" data-shop-item="${esc(o.id)}" ${pending||oil<o.oilPrice?'disabled':''}>${oil<o.oilPrice?'石油不足 · ':''}${Number(o.oilPrice).toLocaleString('zh-CN')} 石油</button>`:''}</article>`).join('')}</div>
  ${offers.length&&offers.every(o=>o.sold)?'<p class="shop-empty">本轮传奇球员已售罄，等待下一轮刷新。</p>':!view?'<p class="shop-empty">正在加载商店…</p>':!offers.length?'<p class="shop-empty">暂无传奇球员可供出售</p>':''}</section>
- <section class="shop-pack-section"><div class="shop-section-heading"><div><h3>球员卡包</h3></div></div><div class="shop-pack-grid">${(view?.packs??[]).map(p=>`<article class="shop-pack" data-ui-key="${esc(p.type)}"><img decoding="async" loading="lazy" src="${SHOP_PACK_ART[p.type]}" alt="${esc(p.name)}" draggable="false"><h4>${esc(p.name)}</h4><button class="ui-button" data-shop-buy="pack" data-shop-item="${esc(p.type)}" ${pending||gold<p.price?'disabled':''}>${gold<p.price?'金币不足 · ':''}${goldAmountMarkup(p.price)}</button></article>`).join('')}</div></section></div></div>`;
+ <section class="shop-pack-section"><div class="shop-section-heading"><div><h3>球员卡包</h3><p>金币或石油支付</p></div></div><div class="shop-pack-grid">${(view?.packs??[]).map(p=>`<article class="shop-pack" data-ui-key="${esc(p.type)}"><img decoding="async" loading="lazy" src="${SHOP_PACK_ART[p.type]}" alt="${esc(p.name)}" draggable="false"><h4>${esc(p.name)}</h4><button class="ui-button" data-shop-buy="pack" data-shop-item="${esc(p.type)}" ${pending||gold<p.price?'disabled':''}>${gold<p.price?'金币不足 · ':''}${goldAmountMarkup(p.price)}</button>${p.oilPrice!=null?`<button class="ui-button shop-oil-buy" data-shop-buy="pack" data-shop-currency="oil" data-shop-item="${esc(p.type)}" ${pending||oil<p.oilPrice?'disabled':''}>${oil<p.oilPrice?'石油不足 · ':''}${Number(p.oilPrice).toLocaleString('zh-CN')} 石油</button>`:''}</article>`).join('')}</div></section></div></div>`;
 }
-export function mergeShopPurchase(state,response) {
- if(response.state)return response.state;
- const patch=response.statePatch;
- if(!patch || patch.playerId!==state?.playerId)return state;
- const next={...state,...patch},delta=response.rosterDelta;
- if(delta&&state.draft){
-  const cards=new Map(delta.cards.map(card=>[String(card.id),card]));
-  const roster=state.draft.roster.map(card=>{const value=cards.get(String(card.id));cards.delete(String(card.id));return value??card;});
-  next.draft={...state.draft,roster:[...roster,...cards.values()],counts:delta.counts,positionCounts:delta.positionCounts,pickNumber:delta.pickNumber};
- }
- return next;
-}
+export {mergeRosterDelta as mergeShopPurchase} from '../core/merge-roster-delta.js';
 export function createShopController({root,trigger,getState,getRequest,campaignStore,onOpen=()=>{},onClose=()=>{},showToast=()=>{}}){
  let view=null,pending=false,error='',timer=null,offset=0,fetching=false,generation=0,retry=null;
  let accountId=getState()?.playerId;

@@ -14,6 +14,7 @@ def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def read(p): return json.loads(p.read_text(encoding='utf-8'))
 subprocess.run(['node',str(ROOT/'windows-client/build-resources.mjs'),'--manifest-only'],check=True)
 subprocess.run([sys.executable,str(ROOT/'scripts/build-browser-module-versions.py'),'--check'],check=True)
+subprocess.run(['node',str(ROOT/'scripts/build-browser-startup.mjs'),'--check'],check=True)
 previous=read(baseline/'MANIFEST.json')
 assert read(baseline/'QA.json')['passed'] is True
 assert not bundle.exists(),'Refusing to overwrite an existing bundle'

@@ -66,7 +66,7 @@ test('static routes expose game assets but reject data, backend, archives, encod
     '/seed/campaign-accounts.json','/node_modules/three/package.json','/deploy/install.sh','/YDL_backup/file.tar.gz','/.git/config',
     '/assets/../data/campaign-accounts.json','/assets/%2e%2e/data/campaign-accounts.json','/assets/%5c..%5cdata/campaign-accounts.json',
     '/assets/.secret.json','/assets/../../../etc/passwd','/%00','/%invalid','/shared/account-import/s4-accounts.mjs']) assert.equal(publicRequestPath(request), null, request);
-  assert.equal(publicRequestPath('/game'), 'index.html'); assert.equal(publicRequestPath('/admin/'), 'admin-v2.html');
+  assert.equal(publicRequestPath('/game'), 'game.html'); assert.equal(publicRequestPath('/admin/'), 'admin-v2.html');
   for (const request of ['/assets/data/territory-index.json','/assets/map-relief/relief-mesh/europe.bin','/client/core/request-id.js?v=1','/shared/config/draft.mjs','/styles/draft.css','/engine/s4-v2.1/game/public/schema.js','/app.js']) assert.ok(publicRequestPath(request), request);
 });
 
@@ -105,7 +105,7 @@ test('a broken existing save cannot silently become an empty world and overwrite
 
 
 test('versus entry serves relative assets and keeps API paths and private files isolated',()=>{
- for(const p of ['/versus','/versus/'])assert.equal(publicRequestPath(p),'index.html');
+ for(const p of ['/versus','/versus/'])assert.equal(publicRequestPath(p),'game.html');
  for(const p of ['app.js','styles/login.css','client/core/request-id.js','assets/data/territory-index.json','engine/s4-v2.1/game/public/schema.js'])assert.equal(publicRequestPath('/versus/'+p+'?v=1'),p);
  for(const p of ['data/campaign-accounts.json','server.mjs','campaign-service.mjs','shared/account-import/s4-accounts.mjs','../data/campaign-accounts.json','assets/%5c..%5cdata/campaign-accounts.json','.env'])assert.equal(publicRequestPath('/versus/'+p),null);
  assert.equal(campaignRequestPath('/versus/api/campaign/state'),'/api/campaign/state');assert.equal(campaignRequestPath('/api/campaign/state'),'/api/campaign/state');

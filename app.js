@@ -1015,7 +1015,7 @@ async function syncCampaignWorldState() {
 function startCampaignStatePolling() {
   if (campaignStatePollTimer) return;
   campaignStatePollTimer = createAdaptivePoller({run:syncCampaignWorldState,isBusy:()=>Boolean(campaignState?.activeChallengeId||campaignState?.expeditionPiece?.moving)});
-  campaignStore.subscribe(({source})=>{if(source!=="world-poll"&&source!=="subscribe"&&source!=="shop-buy-compact")campaignStatePollTimer.refresh();});
+  campaignStore.subscribe(({source})=>{if(source!=="world-poll"&&source!=="subscribe"&&source!=="shop-buy-compact"&&source!=="pack-open-compact"&&source!=="pack-choose-compact")campaignStatePollTimer.refresh();});
 }
 
 function finishMapLoading() {

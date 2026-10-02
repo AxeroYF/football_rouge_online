@@ -14,7 +14,7 @@
 @media(max-width:760px){#daily-league-sidebar{top:118px;left:10px;right:auto;width:240px}.league-heading{padding:15px}.league-heading h2{font-size:22px}.league-content{padding:6px 10px 15px}.league-tabs{padding:9px}.league-table td{font-size:12px;padding:10px 4px}.league-fixture{flex-wrap:wrap;gap:5px}.league-fixture>div{min-width:220px;font-size:12px}.league-fixture aside{margin-left:auto}}
 @media(max-height:600px) and (orientation:landscape){#daily-league-sidebar{top:52px;left:auto;right:220px;width:200px}#daily-league-sidebar>header{padding:3px 8px;min-height:40px;box-sizing:border-box}.league-heading{padding:10px 16px}.league-heading h2{font-size:20px;margin:3px 0}.league-tabs{padding:7px 12px}.map-stage.has-stage-window>#daily-league-sidebar{visibility:hidden}}
 
-@media(min-width:1280px) and (min-height:601px){
+@media(min-width:1281px) and (min-height:601px){
  #daily-league-sidebar.is-expanded{width:min(660px,calc(100vw - 750px));border-radius:12px 12px 0 0}
  #daily-league-window.is-league-drawer{position:fixed!important;inset:auto!important;top:125px!important;right:734px!important;width:min(660px,calc(100vw - 750px))!important;height:auto!important;max-height:calc(100dvh - 155px)!important;padding:0!important;background:none!important;backdrop-filter:none!important;display:block!important}
  #daily-league-window.is-league-drawer[hidden]{display:none!important}

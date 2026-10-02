@@ -1,0 +1,293 @@
+{
+  "passed": true,
+  "version": "20260930-r46",
+  "baseline": "20260930-r45",
+  "runtimeSyntaxModules": 379,
+  "browser": {
+    "passed": true,
+    "checks": [
+      "phone collapsed entries reachable",
+      "phone expanded players keeps all entries reachable",
+      "phone expanded notifications keeps all entries reachable",
+      "phone entries restored after league closes",
+      "small-phone collapsed entries reachable",
+      "small-phone expanded players keeps all entries reachable",
+      "small-phone expanded notifications keeps all entries reachable",
+      "small-phone entries restored after league closes",
+      "phone-landscape collapsed entries reachable",
+      "phone-landscape expanded players keeps all entries reachable",
+      "phone-landscape expanded notifications keeps all entries reachable",
+      "phone-landscape entries restored after league closes",
+      "desktop-mode collapsed entries reachable",
+      "desktop-mode expanded players keeps all entries reachable",
+      "desktop-mode expanded notifications keeps all entries reachable",
+      "desktop-mode entries restored after league closes",
+      "desktop-mode-portrait collapsed entries reachable",
+      "desktop-mode-portrait expanded players keeps all entries reachable",
+      "desktop-mode-portrait expanded notifications keeps all entries reachable",
+      "desktop-mode-portrait entries restored after league closes",
+      "tablet collapsed entries reachable",
+      "tablet expanded players keeps all entries reachable",
+      "tablet expanded notifications keeps all entries reachable",
+      "tablet entries restored after league closes",
+      "boundary collapsed entries reachable",
+      "boundary expanded players keeps all entries reachable",
+      "boundary expanded notifications keeps all entries reachable",
+      "boundary entries restored after league closes",
+      "short-desktop collapsed entries reachable",
+      "short-desktop expanded players keeps all entries reachable",
+      "short-desktop expanded notifications keeps all entries reachable",
+      "short-desktop entries restored after league closes",
+      "desktop collapsed entries reachable",
+      "desktop expanded players keeps all entries reachable",
+      "desktop expanded notifications keeps all entries reachable",
+      "desktop entries restored after league closes"
+    ],
+    "legacy": [
+      {
+        "size": [
+          390,
+          844
+        ],
+        "buttons": [
+          {
+            "selector": "#daily-league-toggle",
+            "hit": false,
+            "inside": true
+          },
+          {
+            "selector": "[data-players-toggle]",
+            "hit": true,
+            "inside": true
+          },
+          {
+            "selector": "[data-notification-toggle]",
+            "hit": false,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "size": [
+          844,
+          390
+        ],
+        "buttons": [
+          {
+            "selector": "#daily-league-toggle",
+            "hit": false,
+            "inside": true
+          },
+          {
+            "selector": "[data-players-toggle]",
+            "hit": true,
+            "inside": true
+          },
+          {
+            "selector": "[data-notification-toggle]",
+            "hit": true,
+            "inside": true
+          }
+        ]
+      },
+      {
+        "size": [
+          980,
+          460
+        ],
+        "buttons": [
+          {
+            "selector": "#daily-league-toggle",
+            "hit": false,
+            "inside": true
+          },
+          {
+            "selector": "[data-players-toggle]",
+            "hit": true,
+            "inside": true
+          },
+          {
+            "selector": "[data-notification-toggle]",
+            "hit": true,
+            "inside": true
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/league",
+        "method": "GET"
+      }
+    ],
+    "scope": "Real Chrome, game CSS and three real controllers against an isolated campaign; touch and desktop viewport emulation, no physical mobile browser"
+  },
+  "fullGameBrowser": {
+    "passed": true,
+    "report": [
+      {
+        "size": {
+          "width": 320,
+          "height": 740
+        },
+        "entryClickable": true
+      },
+      {
+        "size": {
+          "width": 390,
+          "height": 844
+        },
+        "entryClickable": true
+      },
+      {
+        "size": {
+          "width": 768,
+          "height": 1024
+        },
+        "entryClickable": true
+      },
+      {
+        "size": {
+          "width": 780,
+          "height": 360
+        },
+        "entryClickable": true
+      },
+      {
+        "size": {
+          "width": 1024,
+          "height": 600
+        },
+        "entryClickable": true
+      }
+    ],
+    "production": {
+      "capacity": 26,
+      "durationMs": 592891
+    },
+    "errors": []
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260930-r46",
+    "checks": [
+      "Complete 20260930-r45 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260930-r46 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 4,
+    "newFiles": 1,
+    "requiredBaseFiles": 1290,
+    "imports": 1,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R45 save unchanged during apply",
+      "Installed R46 server health and authenticated account endpoint",
+      "Installed HTML references content-versioned map HUD CSS",
+      "All changed JS and CSS served with exact payload bytes; CSS MIME correct",
+      "Actual restart preserves account and private assets",
+      "Rollback restores R45 code and matching save, removes added CSS, and server boots"
+    ],
+    "scope": "Actual isolated Windows Node servers and HTTP, mocked systemd hooks, no remote deployment",
+    "remoteDeployed": false
+  },
+  "notes": [
+    "Nine viewport configurations and 36 entry-point assertions plus panel bounds and scrolling checks.",
+    "Five complete game page viewport checks; no physical mobile device test.",
+    "Frontend payload only; no backend changes or new polling. Full unit suite was not rerun for this CSS and presentation-only change.",
+    "All service and installation tests use isolated local data; systemd hooks mocked."
+  ],
+  "remoteDeployed": false
+}

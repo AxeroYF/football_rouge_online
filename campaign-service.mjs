@@ -452,18 +452,30 @@ export class CampaignService {
     return reward;
   }
 
-  openPlayerPack(account, packTypeValue) {
+  openPlayerPack(account, packTypeValue, {compact=false}={}) {
     this.buildings.settleConstructions(this.world);
     const before=structuredClone(account);
-    try{const opening=this.playerPacks.open(account,packTypeValue);this.save();return {state:this.state(account),opening};}
-    catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
+    try{
+      const opening=this.playerPacks.open(account,packTypeValue);this.save();
+      return compact?{statePatch:{playerId:account.id,inventory:this.playerPacks.publicInventory(account)}}:{state:this.state(account),opening};
+    }catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
   }
 
-  choosePlayerPackCard(account, openingIdValue, playerIdValue) {
+  choosePlayerPackCard(account, openingIdValue, playerIdValue, {compact=false}={}) {
     this.buildings.settleConstructions(this.world);
     const before=structuredClone(account);
-    try{const player=this.playerPacks.choose(account,openingIdValue,playerIdValue);this.save();return {state:this.state(account),player};}
-    catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
+    try{
+      const player=this.playerPacks.choose(account,openingIdValue,playerIdValue);
+      // Finalize new-card assignments and bench once, before the durable commit.
+      account.playerSquads=normalizePlayerSquads(account.playerSquads,account.draft.roster);
+      account.tactics=repairTacticsLineups(account.tactics,account.draft.roster,account.playerSquads);
+      this.save();
+      if(!compact)return {state:this.state(account),player};
+      const received=account.draft.roster.find(p=>String(p.id)===String(player.playerId));
+      return {player,statePatch:{...this.actionState(account,{includeRoster:false}),inventory:this.playerPacks.publicInventory(account),
+        playerSquads:{...account.playerSquads,squads:PLAYER_SQUAD_DEFINITIONS.map(s=>({...s}))},tactics:account.tactics},
+        rosterDelta:{cards:[{...received,card:createPlayerCardViewModel(received)}],counts:rosterCounts(account.draft.roster),positionCounts:draftPositionCounts(account.draft.roster),pickNumber:account.draft.roster.length}};
+    }catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,before);throw error;}
   }
 
   adminPlayerPackAccount(account) {

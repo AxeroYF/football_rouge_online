@@ -30,7 +30,8 @@ document.addEventListener('click',e=>{
  if(toggle){const shell=toggle.closest('.team-management-shell');const open=shell.classList.toggle('mobile-filters-open');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'收起筛选':'筛选';}
  if(!media.matches)return;
  if(e.isTrusted&&!e.target.closest('.primary-nav,#mobile-menu-toggle'))closeMenu();
- if(e.target.closest('[data-players-toggle]')?.getAttribute('aria-expanded')==='true'){collapseNotices();closeTools();}
+ // Player rendering replaces the clicked button; read the current header state.
+ if(e.target.closest('[data-players-toggle]')&&players?.querySelector('[data-players-toggle]')?.getAttribute('aria-expanded')==='true'){collapseNotices();closeTools();}
  if(e.target.closest('[data-notification-toggle]')?.getAttribute('aria-expanded')==='true'){collapsePlayers();closeTools();}
  const tab=e.target.closest('[data-mobile-tactics-tab]');
  if(tab){tacticsTab=tab.dataset.mobileTacticsTab;decorate();}
