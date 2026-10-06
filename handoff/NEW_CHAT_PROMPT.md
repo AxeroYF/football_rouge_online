@@ -1,19 +1,22 @@
-# 新对话继续提示 · R49 已部署
+# 新对话继续提示 · 原版 R51 已部署
 
-请先阅读 `handoff/README.md`、`handoff/CURRENT_STATE.md` 的最新节、`handoff/MANIFEST.md`、`handoff/GITHUB_SYNC_20261002.md` 和 `releases/CURRENT.json`。
+请先阅读 handoff/README.md、CURRENT_STATE.md、MANIFEST.md、GITHUB_SYNC_20261006.md 和 releases/CURRENT.json。
 
-项目为黄狗风云，工作树 `D:\Project\game_test\.worktrees\Rougelite`，Git 分支 `codex/rougelite`，远端 `https://github.com/AxeroYF/football_rouge_online.git`。不要误改根目录另一个游戏或第三部作品。
+项目为黄狗风云，工作树 `D:/Project/game_test/.worktrees/Rougelite`，分支 `codex/rougelite`，远端 `https://github.com/AxeroYF/football_rouge_online.git`。不要误改根目录游戏、S4 或 YFFM3 工作树。
 
-用户于 2026-10-02 确认 R49（20261001-r49）部署。下次服务器热更新以 R49 为基线。R46–R49 已覆盖 HUD 遮挡修复、开包增量、启动资源合并、动画恢复、石油购买卡包。完整重构和 V2.2 动态比赛已随更早 R44 部署，不要按旧 R43 文档当作待实施。
+用户已确认原版 R51 部署，最新发布和部署基线均为 20261004-r51（1299 文件）。R50 开放 +10 强化、+4/+7/+9/+10 四特性及审阅后的边框；R51 将商店球员卡改为两小时轮换，首次访问立即切换到当前周期。R51 原包哈希以 releases/20261004-r51/ARCHIVE.sha256 为准。
 
-重要要求：
-- 开包完整视觉效果要保留；优化重复重建、冗余请求/存档。R47 曾过度削减动画，已在 R49 修正。
-- 正式入口是生成的 game.html 和 game-startup.js/css；前端改动后先执行 build-browser-module-versions.py，再执行 build-browser-startup.mjs，校验生成物并与源码一起提交。
-- 商店石油卡包价为 2/6/16/40，金币价保留；支付验证、幂等、存档失败回滚由服务器负责。
-- 低配服务器优先复用节点、增量响应、有界缓存；不要缓存含私有状态的全量响应，不能跳过结算或写盘失败处理。
-- 发布前检查实际基线、运行依赖、生成资源、相关测试及升级回滚；原发布包和历史哈希不可改写。
-- 用户要求热更新命令一行式；不要上传存档、账号、私有卡画和 outputs 到 Git。
+用户自行测试 +8 卡可拖入后，明确暂停修复并选择原版 R51。fix1 已撤回并保留记录，不在正式源码中；不要继续推进或重新打包，除非用户重新要求。
 
-R49 发布时 1690 项测试、381 个语法模块、32 项浏览器检查以及真实隔离服务验证通过。具体证据记录在 releases/20261001-r49/QA.json；旧 QA 仅代表对应发布时的验证，不等于之后开发自动通过。
+维护约束：
+- 保留完整开包动画和传奇流星雨／星际穿越；优化重复重建、请求与存档，不能删效果替代优化。
+- +9 紫银、+10 炽金，传奇红金底图；保持原画框厚度、卡画在边框上方、原角标尺寸，四特性不折叠、不编号。
+- 正式入口是生成的 game.html 和 game-startup.js/css。前端修改后先 build-browser-module-versions.py，再 build-browser-startup.mjs，检查后与源码一起提交。
+- 交易、概率、幂等、资产校验和存档失败回滚由服务端负责。卡包石油价格 2/6/16/40，金币支付保留。
+- 低配服务器优先节点复用、增量响应及有界缓存，不跳过结算或写盘错误。
+- 下次热更新以原版 R51 为基线，核对依赖、生成物、测试与回滚；提供一行式命令。
+- 不上传账号、存档、私有卡画、outputs、node_modules。发布包和冻结哈希不可改写。
 
-当前任务已完成 Git 归档与 handoff 更新。后续按用户新请求继续，不自行重复部署或制作新版本。
+2026-10-06：156 项相关测试、381 个模块语法检查通过；1299 个运行文件与原版 R51 无差异。R50 发布时完整测试为 1695 项，历史 QA 不代表后续修改自动通过。
+
+本轮 Git 推送与 handoff 已完成。按用户新任务继续，不自行部署新版本。YFFM3 仓库已按用户要求公开，这不授权修改其源码。

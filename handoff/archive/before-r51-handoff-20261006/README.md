@@ -1,13 +1,13 @@
-# 黄狗风云 Rougelite 交接 · 2026-10-06
+# 黄狗风云 Rougelite 交接 · 2026-10-02
 
-**原版 R51 已部署，用户已确认；fix1 已暂停并撤回。** 最新发布/部署版本：`20261004-r51`。工作树：`D:\Project\game_test\.worktrees\Rougelite`；分支：`codex/rougelite`；远端：`https://github.com/AxeroYF/football_rouge_online.git`。
+**R49 已部署，用户已确认。** 最新发布/部署版本：`20261001-r49`。工作树：`D:\Project\game_test\.worktrees\Rougelite`；分支：`codex/rougelite`；远端：`https://github.com/AxeroYF/football_rouge_online.git`。
 
 ## 阅读入口
 
 1. [当前状态](CURRENT_STATE.md)：以开头的最新结论为准，后续段落为历史。
 2. [新对话提示](NEW_CHAT_PROMPT.md)：可直接用于继续开发。
 3. [交接索引](MANIFEST.md)：项目结构与近期功能文档。
-4. [R50 强化](R50_UPDATE_20261004.md)、[R51 商店](R51_UPDATE_20261004.md)、[Git 同步](GITHUB_SYNC_20261006.md)、[发布基线](../releases/CURRENT.json)。
+4. [R49 更新](R49_UPDATE_20261001.md)、[Git 同步](GITHUB_SYNC_20261002.md)、[发布基线](../releases/CURRENT.json)。
 
 ## 最近累计更新
 
@@ -15,9 +15,6 @@
 - 加载与开包：R47 增量响应、归队一次存档、去除成功后的冗余全量读取；R48 将冷启动代码请求从 250 个降到 4 个，使用有界压缩缓存。用户确认 R48 恢复进入游戏。
 - 开包体验：R49 恢复流星、扫光、对应传奇 Canvas、原有逐张翻转；选卡保留原节点，下一包复用舞台，不再重复展示获得卡。**不能通过取消动画来做性能优化。**
 - 商店：金币与石油均可购买相同卡包；普通/稀有/珍奇/传奇为 2/6/16/40 石油，服务端定价、幂等和失败回滚。
-
-- 强化：R50 开放 +10、四特性与审阅后的高阶卡框，保持传奇动效。
-- 商店轮换：R51 改为每两小时全服刷新；用户接受更新后首次访问换轮。
 
 ## 项目结构
 
@@ -58,6 +55,6 @@ node scripts/check-release-baseline.mjs --workspace
 
 最后一项列出源码相对发布基线的差异；未修改运行文件时应为空，有开发变更时应与预期一致。正式 `/versus/` 与 `/game` 路由加载 `game.html`，只修改 index.html 或模块而不重建会让正式页停留旧代码。增量打包器已拒绝陈旧生成物。详细步骤见 [发布说明](../releases/README.md)。
 
-原版 R51 包在 `outputs/hot-update-20261004-r51/`，SHA256 为 `1609ae9c3bd642968f53a47a775898053f230808bcfb4ea09ef858e4bfe60cdd`。后续以已部署的原版 R51 为基线；不要使用 `fix1`。不要修改原包或历史清单，不把 outputs、存档、账号、私有卡画和 node_modules 放入 Git。部署指令保持一行式。
+R49 原包在 `outputs/hot-update-20261001-r49/`；午夜前 `outputs/hot-update-20260930-r49/` 是未交付暂存目录。不要修改原包或历史清单，不要把 outputs、存档、账号、私有卡画、node_modules 放入 Git。后续热更新以已部署 R49 为基线；提供一行式部署命令。
 
-本 handoff 包是交接文档与发布记录，不含游戏运行载荷或生产存档，不能作为热更新包执行。早期入口已归档到 `archive/before-r51-handoff-20261006/`。
+本 handoff 包是交接文档与发布记录，不含游戏运行载荷或生产存档，不能作为热更新包执行。早期入口已归档到 `archive/before-r49-handoff-20261002/`。
