@@ -1,3 +1,4 @@
+import {S4_ENHANCEMENT} from '../../shared/config/enhancement.mjs';
 import { playerCardMarkup, escapePlayerCardHtml as esc } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
 import { TRADE_UP_GRADES, TRADE_UP_HISTORY_LIMIT } from "../../shared/config/card-management.mjs";
 import { warehouseCards } from "./card-market-view.js?v=20260906-card-scroll-v1";
@@ -42,7 +43,7 @@ function filtersMarkup(view, state) {
     select("position", "位置", [["all", "位置"], ["GK", "门将"], ["DEF", "后卫"], ["MID", "中场"], ["ATT", "前锋"]]) +
     select("squad", "编队", [["all", "编队"], ["expedition", "远征"], ["garrison", "留守"]]) +
     select("nationality", "国家", [["all", "国家"], ...countries.map(value => [value, value])]) +
-    select("upgradeLevel", "强化", [["all", "强化"], ...Array.from({ length: 9 }, (_, i) => [i, "+" + i])]) +
+    select("upgradeLevel", "强化", [["all", "强化"], ...Array.from({ length: S4_ENHANCEMENT.maxLevel+1 }, (_, i) => [i, "+" + i])]) +
     '<label class="cmm-usable"><input type="checkbox" data-cmu-filter="usable"' + (f.usable ? ' checked' : '') + '>仅可汰换</label><button type="button" data-cmu-action="reset">重置</button></div>';
 }
 export function tradeUpCardMarkup(card, view, state) {

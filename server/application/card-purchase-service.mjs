@@ -1,3 +1,4 @@
+import {S4_ENHANCEMENT} from '../../shared/config/enhancement.mjs';
 import crypto from 'node:crypto';
 import {createPlayerCardViewModel} from '../../shared/player-card/player-card-contract.js';
 import {INTERACTION_RULES} from '../../shared/config/diplomacy.mjs';
@@ -22,7 +23,7 @@ export class CardPurchaseService {
     if(!Array.isArray(input)||!input.length||input.length>PURCHASE_RULES.maxPlayers)fail('每条求购请选择 1～10 名球员',400);
     return input.map(item=>{const id=item?.definitionId,p=this.catalog.get(id),upgradeLevel=item?.upgradeLevel;
       if(!p)fail('球员不在已发布的 YOOGLE 球员库中',400);
-      if(!Number.isInteger(upgradeLevel)||upgradeLevel<0||upgradeLevel>8)fail('强化等级须为 0～8',400);
+      if(!Number.isInteger(upgradeLevel)||upgradeLevel<0||upgradeLevel>S4_ENHANCEMENT.maxLevel)fail(`强化等级须为 0～${S4_ENHANCEMENT.maxLevel}`,400);
       return {definitionId:id,upgradeLevel,name:p.name,club:p.club,nationality:p.nationality,grade:p.grade,role:p.role};
     });
   }

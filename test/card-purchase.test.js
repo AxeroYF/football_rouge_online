@@ -48,7 +48,7 @@ test('cancel ownership, publish idempotency and competing accept cannot duplicat
   const second=f.publish({payment:{gold:10}});f.accept(second.orderId);assert.throws(()=>f.accept(second.orderId),/成交/);
 });
 test('bad definitions, prices, levels, empty orders and protected territories are rejected',()=>{
-  const f=purchaseFixture();for(const patch of [{requirements:[]},{requirements:[{definitionId:'invented',upgradeLevel:2}]},{requirements:[{definitionId:f.definition.id,upgradeLevel:9}]},{payment:{gold:-1}},{payment:{gold:1.2}},{payment:{oil:1000001}},{payment:{}},{payment:{territoryIds:['a']}}])assert.throws(()=>f.publish(patch));
+  const f=purchaseFixture();for(const patch of [{requirements:[]},{requirements:[{definitionId:'invented',upgradeLevel:2}]},{requirements:[{definitionId:f.definition.id,upgradeLevel:11}]},{payment:{gold:-1}},{payment:{gold:1.2}},{payment:{oil:1000001}},{payment:{}},{payment:{territoryIds:['a']}}])assert.throws(()=>f.publish(patch));
   assert.equal(f.s.cardPurchases.list(f.a,{mine:true}).total,0);
 });
 test('paged reads do not save or send another players warehouse; only detail sends own matches',()=>{
@@ -66,4 +66,14 @@ test('API authenticates and exposes paged purchase routes with compact mutation 
   await handler({method:'GET',headers:{authorization:'Bearer a'}},res,'/api/campaign/card-purchases/options','/api/campaign/card-purchases/options');assert.ok(response.territories.some(t=>t.id===f.land));
   const body={action:'publish',requestId:'http-publish-request',requirements:[{definitionId:f.definition.id,upgradeLevel:2}],payment:{gold:1}},req=Readable.from([Buffer.from(JSON.stringify(body))]);req.method='POST';req.headers={authorization:'Bearer a'};
   await handler(req,res,'/api/campaign/card-purchases','/api/campaign/card-purchases');assert.equal(response.result.status,'active');assert.deepEqual(Object.keys(response),['result']);
+});
+
+
+test('purchase orders deliver +9/+10 cards with traits intact and reject +11',()=>{
+ for(const level of [9,10]){
+  const f=purchaseFixture();f.card.upgradeLevel=level;f.card.enhancementTraitIds=['one','two','three','four'].slice(0,level===9?3:4);f.card.traits=f.card.enhancementTraitIds.map(id=>({id,name:id}));
+  const {orderId}=f.publish({requirements:[{definitionId:f.definition.id,upgradeLevel:level}],payment:{gold:10}});f.accept(orderId);
+  const received=f.a.draft.roster.find(p=>p.id===f.card.id);assert.equal(received.upgradeLevel,level);assert.equal(received.enhancementTraitIds.length,level===9?3:4);
+ }
+ const f=purchaseFixture();assert.throws(()=>f.publish({requirements:[{definitionId:f.definition.id,upgradeLevel:11}],payment:{gold:10}}),/强化等级/);
 });

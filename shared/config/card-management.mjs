@@ -25,7 +25,7 @@ export function minimumListingPrice(card, config = CARD_MANAGEMENT_DEFAULTS) {
   const valuation = config.valuations?.[grade], level = Number(card.upgradeLevel ?? 0);
   const floor = LISTING_PRICE_RULES.overallFloors[grade];
   const baseOverall = Number(card.baseOverall ?? (Number(card.effectiveOverall ?? card.overall) - s4EnhancementAbilityBonus(level)));
-  if (!Number.isSafeInteger(valuation) || valuation <= 0 || floor == null || !Number.isInteger(level) || level < 0 || level > 8 ||
+  if (!Number.isSafeInteger(valuation) || valuation <= 0 || floor == null || !Number.isInteger(level) || level < 0 || level > S4_ENHANCEMENT.maxLevel ||
       !Number.isFinite(baseOverall) || baseOverall < 1 || baseOverall > 999) return null;
   const abilityBps = 10000 + Math.max(0, Math.round(baseOverall) - floor) * LISTING_PRICE_RULES.overallStepBps;
   const multiplierTenths = Math.round(S4_ENHANCEMENT.cardValueMultipliers[level] * 10);
@@ -38,6 +38,6 @@ export function recycleValue(card, config = CARD_MANAGEMENT_DEFAULTS) {
   const grade = card.grade === "X" ? "S" : card.grade;
   const valuation = config.valuations[grade];
   const level = Number(card.upgradeLevel ?? 0);
-  if (!Number.isSafeInteger(valuation) || !Number.isInteger(level) || level < 0 || level > 8) return 0;
+  if (!Number.isSafeInteger(valuation) || !Number.isInteger(level) || level < 0 || level > S4_ENHANCEMENT.maxLevel) return 0;
   return Number(BigInt(valuation) * BigInt(config.recycleRatioBps) * BigInt(10000 + level * config.upgradeBonusBps) / 100000000n);
 }

@@ -109,3 +109,14 @@ test('formation directions and biology retain completion and continue their own 
   assert.equal(branch==='formation'?f.a.formationResearch.slots[0].levels.buildUp:f.a.formationResearch.topicLevels[BIOLOGY_TOPIC],2);
  }
 });
+
+
+test('+9 and +10 research topics complete and affect only their exact material pairing',()=>{
+ for(const [main,base] of [[8,18],[9,12]]){
+  const f=fixture(),topicId=`enhancement:${main}:${main}`;f.command('start-topic',{topicId});f.finish();
+  assert.equal(f.a.formationResearch.topicLevels[topicId],1);assert.equal(researchedEnhancementChance(f.a,main,main),base+.5);
+  assert.equal(researchedEnhancementChance(f.a,main,main-1),Math.round(base*.6));
+  assert.equal(f.a.formationResearch.completionNotices[0].topicId,topicId);
+ }
+ const f=fixture();for(const topicId of ['enhancement:10:10','enhancement:9:10'])assert.throws(()=>f.command('start-topic',{topicId}),/无效|未开放/);
+});

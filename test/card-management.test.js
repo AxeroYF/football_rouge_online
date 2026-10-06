@@ -38,7 +38,9 @@ test("confirmed recycling prices and enhancement multipliers use integer arithme
     assert.equal(recycleValue(card("x", grade, { upgradeLevel: 8, trainingBonuses: { passing: 500 } })), base * 1.8);
   }
   assert.equal(recycleValue(card("x", "C", { upgradeLevel: 4 })), 56);
-  assert.equal(recycleValue(card("x", "C", { upgradeLevel: 9 })), 0);
+  assert.equal(recycleValue(card("x", "C", { upgradeLevel: 9 })), 76);
+  assert.equal(recycleValue(card("x", "C", { upgradeLevel: 10 })), 80);
+  assert.equal(recycleValue(card("x", "C", { upgradeLevel: 11 })), 0);
 });
 
 test("recycling quotes contain each independent card's exact price under the quoted configuration", () => {
@@ -343,14 +345,14 @@ test("listing floors separate base overall from enhancement and round upward to 
     assert.equal(minimumListingPrice(card("floor", grade, { overall })), expected);
     assert.ok(minimumListingPrice(card("floor", grade, { overall: overall + 1 })) > expected);
   }
-  for (const [upgradeLevel, expected] of [[0, 5500], [4, 33000], [8, 154000]]) {
+  for (const [upgradeLevel, expected] of [[0, 5500], [4, 33000], [8, 154000], [9, 225500], [10, 330000]]) {
     assert.equal(minimumListingPrice(card("floor", "A", { baseOverall: 88, overall: 88, upgradeLevel })), expected);
   }
   assert.equal(minimumListingPrice(card("inferred-base", "A", { overall: 93, upgradeLevel: 4 })), 33000);
   assert.equal(minimumListingPrice(card("trained", "A", { baseOverall: 88, overall: 93, upgradeLevel: 4, trainingBonuses: { passing: 50 }, state: { fitness: 10 } })), 33000);
   const config = { ...CARD_MANAGEMENT_DEFAULTS, valuations: { ...CARD_MANAGEMENT_DEFAULTS.valuations, C: 401 } };
   assert.equal(minimumListingPrice(card("round", "C", { overall: 76 }), config), 220);
-  for (const more of [{ grade: "Z" }, { overall: NaN }, { overall: 0 }, { upgradeLevel: -1 }, { upgradeLevel: 9 }]) assert.equal(minimumListingPrice(card("invalid", "C", more)), null);
+  for (const more of [{ grade: "Z" }, { overall: NaN }, { overall: 0 }, { upgradeLevel: -1 }, { upgradeLevel: 11 }]) assert.equal(minimumListingPrice(card("invalid", "C", more)), null);
 });
 
 test("the price editor gets an authoritative floor without choosing a price, while listing requires an explicit legal price", () => {

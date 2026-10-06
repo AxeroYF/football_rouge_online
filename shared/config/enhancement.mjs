@@ -1,16 +1,16 @@
 import {POSITION_GROUPS,roleGroup} from '../../engine/s4-v2.1/game/public/schema.js';
 // Enhancement rules ported from S4 versus/s4-balance.js.
 export const S4_ENHANCEMENT = Object.freeze({
-  maxLevel:8,
-  abilityBonuses:Object.freeze([0, 1, 2, 3, 5, 7, 9, 11, 13]),
-  traitUnlockLevels:Object.freeze([4, 7]),
-  equalLevelChances:Object.freeze([100, 100, 95, 85, 70, 55, 40, 25]),
+  maxLevel:10,
+  abilityBonuses:Object.freeze([0, 1, 2, 3, 5, 7, 9, 11, 13, 15, 17]),
+  traitUnlockLevels:Object.freeze([4, 7, 9, 10]),
+  equalLevelChances:Object.freeze([100, 100, 95, 85, 70, 55, 40, 25, 18, 12]),
   protectionCostFactor:.7,
   protectionCostDiscount:.75,
   protectionCostUnit:100,
   lowerMaterialMultiplier:.6,
   higherMaterialMultiplier:1.2,
-  cardValueMultipliers:Object.freeze([1, 1.7, 2.7, 4, 6, 9, 13, 19, 28]),
+  cardValueMultipliers:Object.freeze([1, 1.7, 2.7, 4, 6, 9, 13, 19, 28, 41, 60]),
 });
 
 export function s4EnhancementAbilityBonus(levelValue) {

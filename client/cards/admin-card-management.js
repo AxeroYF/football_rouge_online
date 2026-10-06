@@ -47,7 +47,7 @@ export function createAdminCardManagement({ root, api, getProfile, isActive, toa
     const updatePrices = () => {
       const value = configInput();
       if (![value.recycleRatioBps, value.upgradeBonusBps].every(Number.isSafeInteger)) return;
-      $("[data-admin-price-preview]").innerHTML = `<table><thead><tr><th>评级</th><th>+0 回收</th><th>+4 回收</th><th>+8 回收</th></tr></thead><tbody>${["C", "B", "A", "S"].map(grade => `<tr><th>${grade}</th>${[0, 4, 8].map(upgradeLevel => `<td>${gold(recycleValue({ grade, upgradeLevel }, value))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+      $("[data-admin-price-preview]").innerHTML = `<table><thead><tr><th>评级</th><th>+0 回收</th><th>+4 回收</th><th>+8 回收</th><th>+9 回收</th><th>+10 回收</th></tr></thead><tbody>${["C", "B", "A", "S"].map(grade => `<tr><th>${grade}</th>${[0, 4, 8, 9, 10].map(upgradeLevel => `<td>${gold(recycleValue({ grade, upgradeLevel }, value))}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
     };
     form.addEventListener("input", updatePrices); updatePrices();
     form.onsubmit = async event => {

@@ -1,3 +1,4 @@
+import {S4_ENHANCEMENT} from '../../shared/config/enhancement.mjs';
 import { playerCardMarkup, escapePlayerCardHtml as esc } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
 import { goldAmountMarkup as gold } from "../ui/currency.js";
 import { MAX_CARD_PRICE } from "../../shared/config/card-management.mjs";
@@ -58,7 +59,7 @@ function filterMarkup(view, state, pane) {
     select("grade", "评级", [["all", "评级"], ...["S", "A", "B", "C", "X"].map(value => [value, value])]) +
     select("position", "位置", [["all", "位置"], ["GK", "门将"], ["DEF", "后卫"], ["MID", "中场"], ["ATT", "前锋"]]) +
     (warehouse ? select("squad", "编队", [["all", "编队"], ["expedition", "远征"], ["garrison", "留守"]]) : select("nationality", "国家", [["all", "国家"], ...countries.map(value => [value, value])])) +
-    '<label class="cmm-upgrade-filter"><span>强化等级</span>' + select("upgradeLevel", "强化等级", [["all", "全部等级"], ...Array.from({ length: 9 }, (_, i) => [i, i === 0 ? "未强化" : "+" + i])]) + '</label>' +
+    '<label class="cmm-upgrade-filter"><span>强化等级</span>' + select("upgradeLevel", "强化等级", [["all", "全部等级"], ...Array.from({ length: S4_ENHANCEMENT.maxLevel+1 }, (_, i) => [i, i === 0 ? "未强化" : "+" + i])]) + '</label>' +
     (warehouse ? '<label class="cmm-usable"><input type="checkbox" data-cmm-pane="warehouse" data-cmm-filter="usable"' + (f.usable ? " checked" : "") + '>仅可挂牌</label>' :
       select("sort", "排序", [["newest", "最新挂牌"], ["price-asc", "价格从低到高"], ["price-desc", "价格从高到低"]])) +
     '<button type="button" class="cmm-reset" data-cmm-reset="' + pane + '">重置</button></div>';

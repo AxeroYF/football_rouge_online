@@ -1,0 +1,144 @@
+{
+  "passed": true,
+  "version": "20261004-r50",
+  "baseline": "20261001-r49",
+  "fullTests": {
+    "passed": 1695,
+    "failed": 0,
+    "runtimeSyntaxModules": 381,
+    "log": "outputs/enhancement-high-full-tests-final.log"
+  },
+  "browser": {
+    "passed": true,
+    "checks": [
+      "both levels retain real meteor and warp canvases",
+      "3/4 traits fully visible without folding",
+      "background < particles < frame and gloss < legendary portrait",
+      "badge keeps original dimensions and centered digits",
+      "new redgold backgrounds and running shared-visibility highlights",
+      "static card creates no background canvas or gloss",
+      "all four existing particle animations continue drawing",
+      "offscreen backgrounds stop the single animation loop",
+      "offscreen border highlights pause too",
+      "reduced motion stops particles and high-grade gloss",
+      "390x844 page fits",
+      "390x844 all trait labels remain untruncated",
+      "844x390 page fits",
+      "844x390 all trait labels remain untruncated",
+      "1024x768 page fits",
+      "1024x768 all trait labels remain untruncated",
+      "removing cards releases all particles and stops RAF",
+      "no broken images",
+      "no browser errors"
+    ],
+    "metrics": [
+      {
+        "mode": "meteor",
+        "traits": 3,
+        "folds": 0,
+        "canvas": 1,
+        "background": 0,
+        "rim": 7,
+        "portrait": 8,
+        "gloss": 7,
+        "width": 0.1399981426448737,
+        "height": 0.0759917212832011,
+        "offset": 0.8984375,
+        "backgroundUrl": "/assets/card-frames/shield-v1/s-redgold-background.svg",
+        "animation": "running"
+      },
+      {
+        "mode": "warp",
+        "traits": 3,
+        "folds": 0,
+        "canvas": 1,
+        "background": 0,
+        "rim": 7,
+        "portrait": 8,
+        "gloss": 7,
+        "width": 0.1399981426448737,
+        "height": 0.0759917212832011,
+        "offset": 0.8984375,
+        "backgroundUrl": "/assets/card-frames/shield-v1/s-redgold-background.svg",
+        "animation": "running"
+      },
+      {
+        "mode": "meteor",
+        "traits": 4,
+        "folds": 0,
+        "canvas": 1,
+        "background": 0,
+        "rim": 7,
+        "portrait": 8,
+        "gloss": 7,
+        "width": 0.1399981426448737,
+        "height": 0.0759917212832011,
+        "offset": 0.8984375,
+        "backgroundUrl": "/assets/card-frames/shield-v1/s-redgold-background.svg",
+        "animation": "running"
+      },
+      {
+        "mode": "warp",
+        "traits": 4,
+        "folds": 0,
+        "canvas": 1,
+        "background": 0,
+        "rim": 7,
+        "portrait": 8,
+        "gloss": 7,
+        "width": 0.1399981426448737,
+        "height": 0.0759917212832011,
+        "offset": 0.8984375,
+        "backgroundUrl": "/assets/card-frames/shield-v1/s-redgold-background.svg",
+        "animation": "running"
+      }
+    ],
+    "errors": []
+  },
+  "incremental": {
+    "passed": true,
+    "version": "20261004-r50",
+    "checks": [
+      "Complete 20261001-r49 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20261004-r50 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 28,
+    "newFiles": 4,
+    "requiredBaseFiles": 1295,
+    "imports": 82,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R49 account, wallet, +8 card with two traits and inventory survive installed R50 boot",
+      "Actual enhancement HTTP reaches +9 and +10 with third/fourth traits, correct rates and bonuses; retries never consume twice",
+      "Cap rejects further enhancement without consuming spare material; APIs require authentication",
+      "Real process restart preserves +10, all four trait IDs and retry receipts without extra rewards",
+      "Public entry, startup bundle and all new effect assets load exact bytes; private uploads preserved",
+      "Matched R49 code and save rollback restores a healthy +8 server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "runtimeTestMethod": "Only the isolated verification child overrides EnhancementService.perform random to zero through an external test preload; this preload is excluded from the release. Equal/lower rates, random failures and protection are also covered by unit tests.",
+  "remoteDeployed": false,
+  "limitations": [
+    "Windows isolated validation; systemd hooks mocked, no Linux host deployment performed."
+  ],
+  "changes": {
+    "files": 28,
+    "newFiles": 4,
+    "dependencyChanges": false,
+    "saveMigration": false
+  }
+}

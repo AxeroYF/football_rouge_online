@@ -1,3 +1,4 @@
+import {S4_ENHANCEMENT} from '../../shared/config/enhancement.mjs';
 import {createCardPurchaseController} from './card-purchase-controller.js';
 import {patchMarkup} from '../ui/patch-markup.js';
 import { createRequestId } from "../core/request-id.js?v=20260906-release-v01";
@@ -97,7 +98,7 @@ export function createCardManagementController({ root, getCampaignState, getCamp
       selectFilter("position", "位置", [["all", "位置"], ["GK", "门将"], ["DEF", "后卫"], ["MID", "中场"], ["ATT", "前锋"]]) +
       selectFilter("nationality", "国家", [["all", "国家"], ...countries.map(value => [value, value])]) +
       selectFilter("squad", "编队", [["all", "编队"], ["expedition", "远征"], ["garrison", "留守"]]) +
-      selectFilter("upgradeLevel", "强化等级", [["all", "强化"], ...Array.from({ length: 9 }, (_, level) => [level, "+" + level])]) +
+      selectFilter("upgradeLevel", "强化等级", [["all", "强化"], ...Array.from({ length: S4_ENHANCEMENT.maxLevel+1 }, (_, level) => [level, "+" + level])]) +
       '<label class="cm-usable"><input type="checkbox" data-cm-filter="usable"' + (filters.usable ? " checked" : "") + '>仅可回收</label><button type="button" data-cm-action="reset-filters">重置</button><button type="button" class="cm-refresh" data-cm-action="refresh" aria-label="刷新" title="刷新"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5.4 7a8 8 0 0 1 13.2-1L20 8M4 16l1.4 2A8 8 0 0 0 18.6 17"/></svg></button></div>';
   }
   function homeMarkup() {

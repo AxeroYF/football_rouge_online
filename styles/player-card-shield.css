@@ -46,3 +46,17 @@
 .player-card-shield .shield-card-trait,.player-card-shield .shield-card-trait-more{display:block;padding:.8cqw 1.5cqw;border:1px solid var(--shield-metal);border-radius:1cqw;background:color-mix(in srgb,var(--shield-ink) 94%,transparent);box-sizing:border-box;white-space:nowrap}
 .player-card-shield .shield-card-trait{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .player-card-shield .shield-card-trait-more{flex:none}
+
+/* +9/+10 keep the approved shield geometry and original badge dimensions.
+   Legend portraits remain z=8, above both the rim and its masked highlight (z=7). */
+.s4-player-card.player-card-shield.enhancement-9{--enhancement-glow:#a576d94d;filter:drop-shadow(0 0 3px #9f69d970) drop-shadow(0 0 9px var(--enhancement-glow)) drop-shadow(0 9px 9px #0006)}
+.s4-player-card.player-card-shield.enhancement-10{--enhancement-glow:#e5983140;filter:drop-shadow(0 0 3px #e9a92970) drop-shadow(0 0 10px var(--enhancement-glow)) drop-shadow(0 9px 9px #0006)}
+.s4-player-card.player-card-shield.enhancement-9 .shield-card-surface>.s4-player-card-upgrade{color:#fff1ff;border-color:#dbc5ff;background:linear-gradient(135deg,#f7ecff,#9b72c7 16%,#372046 21%,#200d31 70%,#ceb2ed 90%,#fff)}
+.s4-player-card.player-card-shield.enhancement-10 .shield-card-surface>.s4-player-card-upgrade{color:#ffe59a;border-color:#ffdc7a;background:linear-gradient(135deg,#fff7c0,#e9a826 16%,#3a1e09 21%,#1d1308 70%,#e9a826 90%,#fff3b1)}
+.player-card-shield .shield-card-enhancement-gloss{position:absolute;inset:0;z-index:7;pointer-events:none;mask:url('../assets/card-frames/shield-v1/enhancement-mask.svg') center/100% 100% no-repeat;-webkit-mask:url('../assets/card-frames/shield-v1/enhancement-mask.svg') center/100% 100% no-repeat;background:linear-gradient(115deg,transparent 43%,#fff4 47%,#fff 50%,#fff4 53%,transparent 57%);background-size:350% 100%;background-position:100% 0;opacity:.7;animation:enhancement-border-sweep 7s ease-in-out infinite;animation-play-state:paused}
+.player-card-shield.enhancement-10 .shield-card-enhancement-gloss{background-image:linear-gradient(65deg,transparent 43%,#ffe6a366 47%,#fff3c9 50%,#ffe6a366 53%,transparent 57%);animation-duration:5s;animation-direction:reverse}
+.player-card-shield.card-motion-active .shield-card-enhancement-gloss,.player-card-shield:hover .shield-card-enhancement-gloss,.player-card-shield:focus-visible .shield-card-enhancement-gloss{animation-play-state:running}
+.player-card-shield.enhancement-9 .shield-card-trait{background:#251322ee;border-color:#b2acd2}
+.player-card-shield.enhancement-10 .shield-card-trait{background:#341017ee;border-color:#edcf90}
+@keyframes enhancement-border-sweep{0%,10%{background-position:100% 0}70%,100%{background-position:0 0}}
+@media(prefers-reduced-motion:reduce){.player-card-shield .shield-card-enhancement-gloss{animation:none;opacity:.3}}

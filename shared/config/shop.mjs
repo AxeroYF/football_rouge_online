@@ -1,5 +1,5 @@
 import {PLAYER_PACK_DEFINITIONS,PLAYER_PACK_TYPES} from './player-packs.mjs';
-export const SHOP_ROTATION_MS=3*60*60*1000;
+export const SHOP_ROTATION_MS=2*60*60*1000;
 export const SHOP_LEGEND_PRICE=100_000;
 export const SHOP_LEGEND_OIL_PRICE=150;
 export const SHOP_LEGEND_LEVEL=3;

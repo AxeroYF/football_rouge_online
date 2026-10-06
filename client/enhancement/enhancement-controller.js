@@ -2,7 +2,7 @@ import {patchMarkup} from '../ui/patch-markup.js';
 import {researchedEnhancementChance} from '../../shared/config/advanced-research.mjs';
 import { createRequestId } from "../core/request-id.js?v=20260906-release-v01";
 import { playerCardMarkup, escapePlayerCardHtml as escapeHtml } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
-import { duplicateEnhancementCards, enhancementFamily, s4EnhancementChanceForLevels } from "../../shared/config/enhancement.mjs";
+import { S4_ENHANCEMENT, duplicateEnhancementCards, enhancementFamily, s4EnhancementChanceForLevels } from "../../shared/config/enhancement.mjs";
 import { goldAmountMarkup } from "../ui/currency.js";
 import { registerWideWindow, activateWideWindow, deactivateWideWindow } from "../ui/wide-window.js";
 
@@ -107,7 +107,7 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
       if (main && main.player.id !== entry.player.id) return showToast('副卡必须是同名球员卡');
       leagueEnhancementMaterialCardId = cardId;
     } else {
-      if (entry.card.upgradeLevel >= 8) return showToast('主卡已经达到最高强化等级');
+      if (entry.card.upgradeLevel >= Number(league.enhancement?.maxLevel ?? S4_ENHANCEMENT.maxLevel)) return showToast('主卡已经达到最高强化等级');
       leagueEnhancementMainCardId = cardId;
       const material = leagueEnhancementCardEntry(leagueEnhancementMaterialCardId);
       if (material?.card.id === cardId || material?.player.id !== entry.player.id) leagueEnhancementMaterialCardId = null;
@@ -232,17 +232,17 @@ function leagueEnhancementMarkup() {
   const compatibleCards = Boolean(main && material && main.card.id !== material.card.id && main.player.id === material.player.id);
   const materialLevelTooHigh = compatibleCards && materialLevel > mainLevel;
   const chance = compatibleCards ? leagueEnhancementChance(mainLevel, materialLevel) : 0;
-  const protectionAvailable = Boolean(main && compatibleCards && !materialLevelTooHigh && chance < 100 && mainLevel < Number(league.enhancement?.maxLevel ?? 8));
+  const protectionAvailable = Boolean(main && compatibleCards && !materialLevelTooHigh && chance < 100 && mainLevel < Number(league.enhancement?.maxLevel ?? S4_ENHANCEMENT.maxLevel));
   if (!protectionAvailable) leagueEnhancementUseProtection = false;
   const failureChance = Math.max(0, 100 - chance);
   const protectionUnit = Number(league.enhancement?.protectionCostUnit ?? 100);
   const protectionBaseCost = protectionAvailable ? Math.ceil((failureChance * failureChance * Number(league.enhancement?.protectionCostFactor ?? .7)) / protectionUnit) * protectionUnit : 0;
   const protectionCost = Math.ceil(Math.ceil(protectionBaseCost * Number(league.enhancement?.protectionCostDiscount ?? .75)) * Number(league.enhancement?.protectionCostMultiplier ?? 1));
-  const abilityBonuses = league.enhancement?.abilityBonuses ?? [0, 1, 2, 3, 5, 7, 9, 11, 13];
+  const abilityBonuses = league.enhancement?.abilityBonuses ?? S4_ENHANCEMENT.abilityBonuses;
   const currentOverall = main ? Number(main.player.baseOverall ?? main.player.overall) + Number(abilityBonuses[mainLevel] ?? mainLevel) : null;
   const targetOverall = main ? Number(main.player.baseOverall ?? main.player.overall) + Number(abilityBonuses[mainLevel + 1] ?? mainLevel + 1) : null;
   const insufficientCoins = leagueEnhancementUseProtection && protectionAvailable && league.wallet.balance < protectionCost;
-  const canEnhance = !leagueEnhancementResult && !main?.card.mainBlocked && !material?.card.materialBlocked && compatibleCards && !materialLevelTooHigh && mainLevel < Number(league.enhancement?.maxLevel ?? 8) && !insufficientCoins && leagueEnhancementPhase !== "scanning";
+  const canEnhance = !leagueEnhancementResult && !main?.card.mainBlocked && !material?.card.materialBlocked && compatibleCards && !materialLevelTooHigh && mainLevel < Number(league.enhancement?.maxLevel ?? S4_ENHANCEMENT.maxLevel) && !insufficientCoins && leagueEnhancementPhase !== "scanning";
   const enhancementHint = materialLevelTooHigh ? "" : main ? `能力 ${currentOverall} → ${targetOverall}` : "选择主卡后显示能力成长";
   const result = leagueEnhancementResult;
   const traitOffer = result ? result.traitOffer ?? null : league.enhancement?.traitOffer ?? null;
@@ -290,7 +290,7 @@ function leagueEnhancementMarkup() {
     </section>${leagueEnhancementHistoryMarkup()}</div>
     <section class="enhancement-warehouse" data-enhancement-warehouse>
       <header><h2>同名球员卡仓库</h2><div class="enhancement-warehouse-header-actions"><button type="button" class="button secondary" data-enhancement-batch-open>批量合卡</button><b>${warehouseCards.length}/${allCards.length}</b></div></header>
-      <div class="backpack-card-tools enhancement-tools"><input type="search" value="${escapeHtml(leagueBackpackSearch)}" placeholder="输入后按回车搜索球员、俱乐部或国家队" data-backpack-search><select data-backpack-position><option value="ALL" ${leagueBackpackPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueBackpackPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPosition === "GK" ? "selected" : ""}>门将</option></select><select data-backpack-upgrade><option value="ALL" ${leagueBackpackUpgrade === "ALL" ? "selected" : ""}>全部强化</option><option value="BASE" ${leagueBackpackUpgrade === "BASE" ? "selected" : ""}>未强化</option><option value="MID" ${leagueBackpackUpgrade === "MID" ? "selected" : ""}>+1 ～ +4</option><option value="HIGH" ${leagueBackpackUpgrade === "HIGH" ? "selected" : ""}>+5 ～ +7</option><option value="MAX" ${leagueBackpackUpgrade === "MAX" ? "selected" : ""}>+8</option></select><select data-backpack-sort><option value="upgrade" ${leagueBackpackSort === "upgrade" ? "selected" : ""}>同名分组 · 强化</option><option value="overall" ${leagueBackpackSort === "overall" ? "selected" : ""}>能力值</option><option value="name" ${leagueBackpackSort === "name" ? "selected" : ""}>姓名</option></select></div>
+      <div class="backpack-card-tools enhancement-tools"><input type="search" value="${escapeHtml(leagueBackpackSearch)}" placeholder="输入后按回车搜索球员、俱乐部或国家队" data-backpack-search><select data-backpack-position><option value="ALL" ${leagueBackpackPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueBackpackPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueBackpackPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueBackpackPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueBackpackPosition === "GK" ? "selected" : ""}>门将</option></select><select data-backpack-upgrade><option value="ALL" ${leagueBackpackUpgrade === "ALL" ? "selected" : ""}>全部强化</option><option value="BASE" ${leagueBackpackUpgrade === "BASE" ? "selected" : ""}>未强化</option><option value="MID" ${leagueBackpackUpgrade === "MID" ? "selected" : ""}>+1 ～ +4</option><option value="HIGH" ${leagueBackpackUpgrade === "HIGH" ? "selected" : ""}>+5 ～ +7</option><option value="MAX" ${leagueBackpackUpgrade === "MAX" ? "selected" : ""}>+8 ～ +10</option></select><select data-backpack-sort><option value="upgrade" ${leagueBackpackSort === "upgrade" ? "selected" : ""}>同名分组 · 强化</option><option value="overall" ${leagueBackpackSort === "overall" ? "selected" : ""}>能力值</option><option value="name" ${leagueBackpackSort === "name" ? "selected" : ""}>姓名</option></select></div>
       <div class="backpack-card-grid compact enhancement-card-grid">${warehouseMarkup}</div>
     </section>
   </section>`;
@@ -378,7 +378,7 @@ function showLeagueEnhancementCelebration(result) {
     const preview = () => {
       const v = values(), counts = {};
       (view.cards ?? []).filter((p) => enhancementFamily(p) === v.playerId).forEach((p) => { counts[p.upgradeLevel] = (counts[p.upgradeLevel] ?? 0) + 1; });
-      overlay.querySelector('[data-batch-distribution]').innerHTML = `<header>强化等级分布</header><div class="batch-result-levels">${Array.from({ length: 9 }, (_, n) => `<span>+${n}<b>${counts[n] ?? 0}</b></span>`).join('')}</div>`;
+      overlay.querySelector('[data-batch-distribution]').innerHTML = `<header>强化等级分布</header><div class="batch-result-levels">${Array.from({ length: S4_ENHANCEMENT.maxLevel+1 }, (_, n) => `<span>+${n}<b>${counts[n] ?? 0}</b></span>`).join('')}</div>`;
       overlay.querySelector('[data-batch-preview]').textContent = v.materialLevel > v.mainLevel ? '副卡等级不能高于主卡' : `每次成功率 ${leagueEnhancementChance(v.mainLevel, v.materialLevel)}%；自动跳过锁定卡；作为副卡消耗的球员会结束训练，并处理其首发位置。`;
     };
     overlay.addEventListener('change', preview); preview();
@@ -449,7 +449,7 @@ function showLeagueEnhancementCelebration(result) {
       const entry=leagueEnhancementCardEntry(cardId);if(!entry)return;
       const reason=role==='main'?entry.card.mainBlocked:entry.card.materialBlocked;
       if(reason)return showToast(reason);
-      if(role==='main'&&entry.card.upgradeLevel>=8)return showToast('主卡已经达到最高强化等级');
+      if(role==='main'&&entry.card.upgradeLevel>=Number(league.enhancement?.maxLevel ?? S4_ENHANCEMENT.maxLevel))return showToast('主卡已经达到最高强化等级');
     }
     leagueEnhancementMainCardId=nextMain;leagueEnhancementMaterialCardId=nextMaterial;
     if(!leagueEnhancementResult)leagueEnhancementPhase='idle';

@@ -1,0 +1,113 @@
+{
+  "passed": true,
+  "version": "20261004-r51",
+  "revision": 2,
+  "baseline": "20261004-r50",
+  "tests": {
+    "targetedPassed": 69,
+    "failed": 0,
+    "runtimeSyntaxModules": 381,
+    "log": "outputs/r51-drag-targeted-tests.log"
+  },
+  "browserDrag": {
+    "before": false,
+    "checks": [
+      "native warehouse -> main",
+      "native main -> material",
+      "poll during native drag preserves source and drop",
+      "scrolled warehouse keeps identity and scroll after drop",
+      "occupied slots swap without duplicate cards",
+      "cancel drag clears state and retains card",
+      "+8 drop with empty native text keeps recorded card identity"
+    ],
+    "errors": [],
+    "mainToMaterial": true,
+    "toasts": [],
+    "sourceSurvivesPoll": true,
+    "pollDragLanded": true,
+    "passed": true
+  },
+  "browserFullGame": {
+    "checks": [
+      {
+        "name": "full game +8 native main drag",
+        "pass": true
+      },
+      {
+        "name": "full game +8 material click",
+        "pass": true
+      },
+      {
+        "name": "full game +8 submit enabled",
+        "pass": true
+      },
+      {
+        "name": "full game +9 native main drag",
+        "pass": true
+      },
+      {
+        "name": "full game +9 material click",
+        "pass": true
+      },
+      {
+        "name": "full game +9 submit enabled",
+        "pass": true
+      },
+      {
+        "name": "+10 stays capped",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "incremental": {
+    "passed": true,
+    "version": "20261004-r51",
+    "checks": [
+      "Complete 20261004-r50 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20261004-r51 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 5,
+    "newFiles": 0,
+    "requiredBaseFiles": 1299,
+    "imports": 8,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R50 save, purchased player, wallet and +10 rules survive R51 boot",
+      "First shop access at 18:30 switches old three-hour stock once, deadline is 20:00, old receipt still replays",
+      "19:59:59 retains stock; 20:00 rotates to a 22:00 deadline and rejects old-offer purchases",
+      "Real restart retains two-hour rotation, sold inventory, card ownership and oil receipt idempotency",
+      "Changed public resources match payload hashes; private uploads preserved",
+      "Matched R50 code/save rollback restores original three-hour stock and healthy server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "limitations": [
+    "User-specific failure not reproduced; fixed and regression-tested the empty native drag payload branch.",
+    "Windows runtime; systemd hooks mocked."
+  ],
+  "remoteDeployed": false,
+  "changes": {
+    "files": 5,
+    "newFiles": 0,
+    "dependencyChanges": false,
+    "saveMigration": false
+  }
+}

@@ -1,0 +1,1 @@
+Withdrawn at user request on 2026-10-04 after local +8 drag succeeded. User selected and later confirmed deployment of original R51. Do not use fix1 as an incremental baseline. Original artifact retained locally.

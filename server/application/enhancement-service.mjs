@@ -94,6 +94,8 @@ export class EnhancementService {
     player.cardDefinitionId ??= id(player); player.cardInstanceId ??= id(player); delete player.card;
   }
   offer(account, player, result) {
+    const pending = this.pending(account, id(player));
+    if (pending) return structuredClone(pending);
     const chosen = player.enhancementTraitIds ?? [];
     const unlockLevel = S4_ENHANCEMENT.traitUnlockLevels[chosen.length];
     if (unlockLevel == null || level(player) < unlockLevel) return null;
@@ -114,7 +116,7 @@ export class EnhancementService {
     if (enhancementFamily(main) !== enhancementFamily(material)) fail("强化只允许使用同名球员卡");
     for (const [player, isMaterial] of [[main, false], [material, true]]) { const reason = this.blocked(account, world, player, isMaterial); if (reason) fail(reason, 409); }
     const beforeLevel = level(main), materialLevel = level(material);
-    if (!Number.isInteger(beforeLevel) || beforeLevel < 0 || beforeLevel >= 8) fail("主卡已经达到最高强化等级");
+    if (!Number.isInteger(beforeLevel) || beforeLevel < 0 || beforeLevel >= S4_ENHANCEMENT.maxLevel) fail("主卡已经达到最高强化等级");
     if (!Number.isInteger(materialLevel) || materialLevel < 0 || materialLevel > beforeLevel) fail("主卡等级不能低于副卡等级，请交换主副卡");
     const chance = researchedEnhancementChance(account,beforeLevel, materialLevel), protectionUsed = useProtection === true && chance < 100;
     const protectionCost = protectionUsed ? Math.ceil(s4EnhancementProtectionCost(chance)*(this.wonders?.modifiers(account).protectionCostMultiplier??1)) : 0;
@@ -171,6 +173,7 @@ export class EnhancementService {
     if (!offer || !player || offer.status === "cancelled") fail("强化特性候选不存在", 404);
     if (offer.status === "chosen") { if (offer.chosenTraitId !== traitId) fail("该特性已经选择", 409); return createPlayerCardViewModel(player); }
     if(activeExpeditionPlayerIds(this.world,account.id).has(id(player)))fail("远征比赛进行中，结束后才能绑定强化特性",409);
+    if ((player.enhancementTraitIds ?? []).length >= S4_ENHANCEMENT.traitUnlockLevels.length) fail("强化特性已达到数量上限",409);
     const normalized=this.normalizedOffer(offer,player);
     if (!normalized.traits.some((trait) => trait.id === traitId) || !YDL_TRAIT_BY_ID[traitId]) fail("请选择当前候选中的强化特性，旧候选请刷新后重试");
     if(!enhancementTraitEligible(YDL_TRAIT_BY_ID[traitId],player))fail("该强化特性不适用于球员位置",409);

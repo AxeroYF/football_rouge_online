@@ -143,7 +143,8 @@ test("trait labels survive nested card data and deferred rendering", async () =>
   assert.deepEqual(card.traits,[trait.name,trait.name,"<长特性>"]);
   const markup=renderDeferredCardContent({card,options:{animated:false}});
   assert.match(markup,/shield-card-traits/);
-  assert.match(markup,/shield-card-trait-more">\+1/);
+  assert.doesNotMatch(markup,/shield-card-trait-more/);
+  assert.equal((markup.match(/class="shield-card-trait"/g)||[]).length,3);
   assert.match(markup,/&lt;长特性&gt;/);
   assert.doesNotMatch(markup,/<长特性>/);
   assert.doesNotMatch(playerCardMarkup({id:"empty",traits:[]}),/class="shield-card-traits"/);

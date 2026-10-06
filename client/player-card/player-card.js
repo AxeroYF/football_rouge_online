@@ -45,6 +45,7 @@ export function playerCardMarkup(player, options = {}) {
     `player-card-variant-${variant}`,
     `grade-${safeToken(card.grade.toLowerCase())}`,
     `band-${upgradeBand(card.upgradeLevel)}`,
+    card.upgradeLevel >= 10 ? "enhancement-10" : card.upgradeLevel >= 9 ? "enhancement-9" : "",
     art ? "has-player-profile" : "",
     "player-card-shield",
     options.animated === false || deferred ? "player-card-static" : "",
