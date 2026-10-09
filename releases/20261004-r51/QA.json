@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "version": "20261004-r51",
+  "baseline": "20261004-r50",
+  "tests": {
+    "shopPassed": 18,
+    "failed": 0,
+    "runtimeSyntaxModules": 381,
+    "log": "outputs/r51-shop-tests.log",
+    "scope": "Targeted shop regression; full suite was last run on R50 (1695 passed), not rerun for this one-line rule change."
+  },
+  "incremental": {
+    "passed": true,
+    "version": "20261004-r51",
+    "checks": [
+      "Complete 20261004-r50 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20261004-r51 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 4,
+    "newFiles": 0,
+    "requiredBaseFiles": 1299,
+    "imports": 1,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R50 save, purchased player, wallet and +10 rules survive R51 boot",
+      "First shop access at 18:30 switches old three-hour stock once, deadline is 20:00, old receipt still replays",
+      "19:59:59 retains stock; 20:00 rotates to a 22:00 deadline and rejects old-offer purchases",
+      "Real restart retains two-hour rotation, sold inventory, card ownership and oil receipt idempotency",
+      "Changed public resources match payload hashes; private uploads preserved",
+      "Matched R50 code/save rollback restores original three-hour stock and healthy server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "testClock": "Shop clock overridden only by external preload in isolated child; no test settings in production payload.",
+  "remoteDeployed": false,
+  "changes": {
+    "files": 4,
+    "newFiles": 0,
+    "dependencyChanges": false,
+    "saveMigration": false
+  }
+}

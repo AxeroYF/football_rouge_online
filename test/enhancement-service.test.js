@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {enhancementTraitEligible} from '../shared/config/enhancement.mjs';
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TrainingService } from "../server/application/training-service.mjs";
@@ -16,11 +18,11 @@ function fixture(mainLevel = 0, materialLevel = mainLevel) {
   const run = (options={}) => service.enhance(account,world,{mainCardId:"main",materialCardId:"material",useProtection:false,requestId:"once-1234",...options});
   return {account,world,service,run,setRoll:v=>{random=v;},fail:v=>{failure=v;},saved:()=>saved};
 }
-test("S4 probabilities, protection prices, maximum and bonus thresholds are unchanged",()=>{
-  assert.deepEqual(S4_ENHANCEMENT.equalLevelChances,[100,100,95,85,70,55,40,25]);
+test("legacy S4 rates are preserved and +9/+10 extend the rules",()=>{
+  assert.deepEqual(S4_ENHANCEMENT.equalLevelChances,[100,100,95,85,70,55,40,25,18,12]);
   for(let i=0;i<8;i++)assert.equal(s4EnhancementChanceForLevels(i,i),S4_ENHANCEMENT.equalLevelChances[i]);
   assert.equal(s4EnhancementChanceForLevels(3,2),51);assert.equal(s4EnhancementProtectionCost(85),150);
-  assert.deepEqual(S4_ENHANCEMENT.abilityBonuses,[0,1,2,3,5,7,9,11,13]);
+  assert.deepEqual(S4_ENHANCEMENT.abilityBonuses,[0,1,2,3,5,7,9,11,13,15,17]);
 });
 test("same-name enhancement consumes only material, preserves training and lineup, and retries once",()=>{
   const f=fixture(3),main=f.account.draft.roster[0];
@@ -45,7 +47,7 @@ test("invalid ownership, identity, locked cards and insufficient gold cause no a
     const f=fixture(4);change(f);const before=structuredClone(f.account);assert.throws(()=>f.run({useProtection:true}));assert.deepEqual(f.account,before);
   }
   const f=fixture();assert.throws(()=>f.run({materialCardId:"main"}),/同一张/);assert.throws(()=>f.run({mainCardId:"foreign"}),/本队/);
-  assert.throws(()=>fixture(8).run(),/最高/);assert.throws(()=>fixture(1,2).run(),/不能低于/);
+  assert.throws(()=>fixture(10).run(),/最高/);assert.throws(()=>fixture(1,2).run(),/不能低于/);
 });
 test("failed persistence rolls back consumed card, rewards, trait offers and gold",()=>{
   const f=fixture(3),before=structuredClone(f.account);f.fail(true);assert.throws(()=>f.run({useProtection:true}),/disk failure/);assert.deepEqual(f.account,before);
@@ -144,4 +146,79 @@ test('completed enhancement research changes actual rolls and protection cost fo
  const f=fixture(2,1);f.account.formationResearch={topicLevels:{'enhancement:2:1':1}};f.setRoll(.572);const result=f.run({useProtection:true});assert.equal(result.chance,57.5);assert.equal(result.success,true);assert.equal(result.protectionCost,s4EnhancementProtectionCost(57.5));assert.equal(f.service.publicState(f.account).researchLevels['enhancement:2:1'],1);
  const base=fixture(2,1);base.setRoll(.572);assert.equal(base.run().success,false);
  const capped=fixture(2,2);capped.account.formationResearch={topicLevels:{'enhancement:2:2':10}};capped.setRoll(.999);const guaranteed=capped.run({useProtection:true});assert.equal(guaranteed.chance,100);assert.equal(guaranteed.protectionCost,0);assert.equal(guaranteed.protectionUsed,false);
+});
+
+
+test('all production trait role restrictions match the S4 production overrides',()=>{
+ const overrides=JSON.parse(readFileSync(new URL('../assets/data/s4-production-content-overrides.json',import.meta.url))).traits;
+ for(const trait of Object.values(YDL_TRAIT_BY_ID))if(overrides[trait.id]?.eligibleRoleGroups)
+   assert.deepEqual(trait.eligibleRoleGroups,overrides[trait.id].eligibleRoleGroups,trait.name);
+ assert.deepEqual(YDL_TRAIT_BY_ID['muddy-knees'].eligibleRoleGroups,['GK']);
+ for(const id of ['sweeper-keeper','lone-finisher','stoppage-time-expert'])assert.deepEqual(YDL_TRAIT_BY_ID[id].eligibleRoleGroups,['ANY']);
+});
+test('trait eligibility follows actual positions even when the imported pool disagrees',()=>{
+ const keeper=YDL_TRAIT_BY_ID['muddy-knees'],outfield=YDL_TRAIT_BY_ID['utility-player'];
+ assert.equal(enhancementTraitEligible(keeper,{role:'GK',pool:'DEF'}),true);
+ for(const role of ['CB','LB','RB','LWB','RWB','DM','CM','AM','LM','RM','LW','RW','ST']){
+  assert.equal(enhancementTraitEligible(keeper,{role,pool:'GK'}),false,role);
+  assert.equal(enhancementTraitEligible(outfield,{role,pool:'GK'}),true,role);
+ }
+ assert.equal(enhancementTraitEligible(outfield,{role:'GK',pool:'ATT'}),false);
+ assert.equal(enhancementTraitEligible(keeper,{role:'unknown',pool:'GK'}),false);
+});
+test('old wrong pending choices are replaced stably without changing existing traits or charging again',()=>{
+ const f=fixture(4),main=f.account.draft.roster[0];main.traits=[{id:'existing',name:'原有特性'}];
+ f.account.enhancement={requests:{},history:[],offers:{old:{id:'old',cardId:'main',status:'pending',unlockLevel:4,traits:[{id:'muddy-knees',name:'一夫当关',eligibleRoleGroups:['DEF']},{id:'sweeper-keeper',eligibleRoleGroups:['GK']}]}}};
+ const before=structuredClone(f.account),first=f.service.publicState(f.account).traitOffers[0];
+ assert.equal(first.traits.length,3);assert.ok(first.traits.every(t=>enhancementTraitEligible(t,main)));
+ assert.deepEqual(first,f.service.publicState(f.account).traitOffers[0]);assert.deepEqual(f.account,before);
+ assert.throws(()=>f.service.chooseTrait(f.account,{offerId:'old',traitId:'muddy-knees'}),/当前候选/);
+ assert.deepEqual(f.account,before);
+ f.fail(true);assert.throws(()=>f.service.chooseTrait(f.account,{offerId:'old',traitId:first.traits[0].id}),/disk failure/);assert.deepEqual(f.account,before);f.fail(false);
+ f.service.chooseTrait(f.account,{offerId:'old',traitId:first.traits[0].id});
+ assert.equal(f.account.gold,before.gold);assert.equal(f.account.draft.roster[0].traits[0].id,'existing');
+ assert.equal(f.account.enhancement.offers.old.status,'chosen');
+});
+
+
+test('a card reaches +10 with exactly four durable, distinct trait choices and unchanged identity',()=>{
+ const f=fixture(),main=f.account.draft.roster[0],unlocks=[];
+ f.account.draft.roster=[main];
+ for(let before=0;before<10;before++){
+  const material=card('mat-'+before,before);f.account.draft.roster.push(material);
+  const options={materialCardId:material.id,requestId:'upgrade-step-'+before};
+  const result=f.run(options);assert.equal(result.afterLevel,before+1);assert.equal(f.run(options).id,result.id);
+  if(result.traitOffer){
+   const offer=result.traitOffer;unlocks.push(offer.unlockLevel);
+   assert.deepEqual(f.service.publicState(f.account).traitOffers[0],f.service.publicState(f.account).traitOffers[0]);
+   assert.ok(offer.traits.every(t=>!main.enhancementTraitIds?.includes(t.id)));
+   const choice={offerId:offer.id,traitId:offer.traits[0].id};
+   if(before===9){const previous=structuredClone(f.account);f.fail(true);assert.throws(()=>f.service.chooseTrait(f.account,choice),/disk failure/);assert.deepEqual(f.account,previous);f.fail(false);}
+   f.service.chooseTrait(f.account,choice);f.service.chooseTrait(f.account,choice);
+  }
+ }
+ const saved=f.account.draft.roster[0];assert.deepEqual(unlocks,[4,7,9,10]);
+ assert.equal(saved.id,'main');assert.equal(saved.upgradeLevel,10);assert.equal(saved.overall,107);assert.equal(saved.attributes.passing,87);
+ assert.equal(new Set(saved.enhancementTraitIds).size,4);assert.equal(saved.traits.length,4);
+ assert.equal(f.service.offer(f.account,saved),null);
+ const snap=buildV2TeamSnapshots([{id:'team',players:[saved]}])[0].players[0];
+ for(const id of saved.enhancementTraitIds)assert.ok(snap.traitDefinitions.some(t=>t.id===id),id);
+ let storage={accounts:{p:structuredClone(f.account)},world:null};
+ const restored=new CampaignService({catalog:[card('main',0)],repository:{load:()=>structuredClone(storage),save:v=>{storage=structuredClone(v);}},now:()=>1234});
+ const reloaded=restored.accounts.get('p').draft.roster[0];assert.equal(reloaded.upgradeLevel,10);assert.deepEqual(reloaded.enhancementTraitIds,saved.enhancementTraitIds);assert.equal(reloaded.attributes.passing,87);
+});
+
+test('+9 downgrade and re-upgrade cannot grant another third trait; +10 protection and rollback work',()=>{
+ const f=fixture(8);let offer=f.run().traitOffer;
+ while(offer){f.service.chooseTrait(f.account,{offerId:offer.id,traitId:offer.traits[0].id});offer=f.service.publicState(f.account).traitOffers[0];}
+ let main=f.account.draft.roster[0];assert.equal(main.enhancementTraitIds.length,3);
+ f.account.draft.roster.push(card('fail-material',9));f.setRoll(.99);
+ assert.equal(f.run({materialCardId:'fail-material',requestId:'failure-step'}).afterLevel,8);assert.equal(main.enhancementTraitIds.length,3);
+ f.account.draft.roster.push(card('return-material',8));f.setRoll(0);
+ assert.equal(f.run({materialCardId:'return-material',requestId:'return-step'}).traitOffer,null);
+ f.account.draft.roster.push(card('protected-material',9));f.setRoll(.99);
+ const before=structuredClone(f.account);f.fail(true);
+ assert.throws(()=>f.run({materialCardId:'protected-material',requestId:'protect-step',useProtection:true}),/disk failure/);assert.deepEqual(f.account,before);f.fail(false);
+ const result=f.run({materialCardId:'protected-material',requestId:'protect-step',useProtection:true});
+ assert.equal(result.chance,12);assert.equal(result.afterLevel,9);assert.equal(result.traitOffer,null);assert.equal(result.protectionCost,s4EnhancementProtectionCost(12));
 });

@@ -63,7 +63,7 @@ test('admin grants independent enhanced cards only to the specified team and pre
  const result=f.service.grantPlayers(f.actor,f.body),newCards=f.account.draft.roster.slice(1);
  assert.equal(result.count,2);assert.equal(new Set(result.cardIds).size,2);assert.equal(f.other.draft.roster.length,0);
  assert.deepEqual(f.source,source);assert.deepEqual(f.account.draft.roster[0],original);assert.deepEqual(f.account.tactics,{starters:['existing']});assert.equal(f.account.gold,100);
- for(const card of newCards){assert.equal(card.cardDefinitionId,f.source.id);assert.equal(card.upgradeLevel,8);assert.equal(card.overall,103);assert.equal(card.attributes.passing,83);assert.equal(card.attributes.finishing,99);assert.equal(card.acquisitionSource,'admin');assert.equal(f.account.playerSquads.assignments[card.id],'garrison');}
+ for(const card of newCards){assert.equal(card.cardDefinitionId,f.source.id);assert.equal(card.upgradeLevel,8);assert.equal(card.overall,103);assert.equal(card.attributes.passing,83);assert.equal(card.attributes.finishing,108);assert.equal(card.acquisitionSource,'admin');assert.equal(f.account.playerSquads.assignments[card.id],'garrison');}
  assert.equal(f.account.playerSquads.assignments.existing,'expedition');assert.equal(f.saved().draft.roster.length,3);
  const offers=Object.values(f.account.enhancement.offers);assert.equal(offers.length,2);
  const offer=offers[0];f.campaign.enhancement.chooseTrait(f.account,{offerId:offer.id,traitId:offer.traits[0].id});
@@ -83,13 +83,13 @@ test('admin grants validate permission, team, active player, numeric bounds befo
  const f=grantFixture(),before=structuredClone(f.account);
  for(const role of ['readonly','content'])assert.throws(()=>f.service.grantPlayers({...f.actor,role},f.body),error=>error.statusCode===403);
  for(const count of [0,-1,1.2,1000,true])assert.throws(()=>f.service.grantPlayers(f.actor,{...f.body,count}),/数量/);
- for(const upgradeLevel of [-1,9,1.2,null,false])assert.throws(()=>f.service.grantPlayers(f.actor,{...f.body,upgradeLevel}),/等级/);
+ for(const upgradeLevel of [-1,11,1.2,null,false])assert.throws(()=>f.service.grantPlayers(f.actor,{...f.body,upgradeLevel}),/等级/);
  assert.throws(()=>f.service.grantPlayers(f.actor,{...f.body,accountId:'missing'}),/球队不存在/);
  assert.throws(()=>f.service.grantPlayers(f.actor,{...f.body,playerId:'draft-player'}),/已上线/);
  assert.throws(()=>f.service.grantPlayers(f.actor,{...f.body,requestId:'x'}),/标识/);
  assert.deepEqual(f.account,before);assert.equal(f.service.listAudit().length,0);
  f.account.setupComplete=false;assert.throws(()=>f.service.grantPlayers(f.actor,f.body),/尚未完成建队/);
- const management=f.service.playerGrantManagement({...f.actor,role:'readonly'});assert.equal(management.maxUpgradeLevel,8);assert.doesNotMatch(JSON.stringify(management),/private-token/);
+ const management=f.service.playerGrantManagement({...f.actor,role:'readonly'});assert.equal(management.maxUpgradeLevel,10);assert.doesNotMatch(JSON.stringify(management),/private-token/);
 });
 
 test('admin grant restores the entire account when saving fails',()=>{
@@ -98,8 +98,8 @@ test('admin grant restores the entire account when saving fails',()=>{
 });
 
 test('admin grant levels use the complete S4 ability curve, including level zero',()=>{
- const f=grantFixture(),bonuses=[0,1,2,3,5,7,9,11,13];
- for(let level=0;level<=8;level++){
+ const f=grantFixture(),bonuses=[0,1,2,3,5,7,9,11,13,15,17];
+ for(let level=0;level<=10;level++){
   f.service.grantPlayers(f.actor,{...f.body,count:1,upgradeLevel:level,requestId:`grant-level-${level}`});
   const card=f.account.draft.roster.at(-1);assert.equal(card.upgradeLevel,level);assert.equal(card.overall,90+bonuses[level]);assert.equal(card.attributes.passing,70+bonuses[level]);
  }

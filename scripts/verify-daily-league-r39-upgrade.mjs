@@ -1,0 +1,10 @@
+import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {preflight,applyUpdate,rollbackUpdate} from '../outputs/hot-update-20260921-r39/yellowdogs-hot-update-20260921-r39/updater.mjs';
+const root=process.cwd(),bundle=path.join(root,'outputs/hot-update-20260921-r39/yellowdogs-hot-update-20260921-r39'),base=path.join(root,'outputs/hot-update-20260921-r39/verified-preflight-fixture/app'),results=[];
+for(const version of ['20260921-r38']){
+ const dir=path.join(root,'outputs/hot-update-20260921-r39','upgrade-final-from-'+version);assert.ok(!fs.existsSync(dir));const app=path.join(dir,'app'),data=path.join(dir,'data');fs.cpSync(base,app,{recursive:true});fs.mkdirSync(data,{recursive:true});
+ const previous=path.join(root,'outputs/hot-update-'+version,'yellowdogs-hot-update-'+version),manifest=JSON.parse(fs.readFileSync(path.join(previous,'MANIFEST.json'),'utf8'));
+ for(const item of manifest.files){const dest=path.join(app,item.path);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(path.join(previous,'payload',item.path),dest);}
+ const sentinel=JSON.stringify({accounts:{fixture:{gold:123}},world:{revision:1}});fs.writeFileSync(path.join(data,'campaign-accounts.json'),sentinel);
+ const options={bundle,app,data,backupRoot:path.join(dir,'backups'),stop(){},start(){},health:async()=>true,log(){}};preflight(options);const result=await applyUpdate(options);assert.equal(fs.readFileSync(path.join(data,'campaign-accounts.json'),'utf8'),sentinel);await rollbackUpdate({...options,backup:result.backup});preflight(options);results.push({version,applyAndRollback:true});
+}
+fs.writeFileSync(path.join(root,'outputs/hot-update-20260921-r39/intermediate-upgrades.json'),JSON.stringify({passed:true,results},null,2));console.log(JSON.stringify(results));

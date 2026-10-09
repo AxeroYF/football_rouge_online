@@ -128,7 +128,7 @@ body:has(#league-squad-form) #app{width:min(1720px,calc(100% - 32px))}
   .league-plan-grid{grid-template-columns:1fr}.league-match-plans{grid-column:auto}.league-match-plan-grid{grid-template-columns:1fr}
 }
 @media(max-width:900px){
-  .league-tactics-detail>header .league-tactics-detail-title{grid-template-columns:minmax(130px,1fr) auto auto;gap:9px}
+  .league-tactics-detail>header .league-tactics-detail-title{grid-template-columns:minmax(130px,1fr) auto;gap:9px}
   .league-tactics-detail-title>.league-tactical-node-controls{grid-column:1/-1;width:100%;transform:none}
 }
 @media(min-width:621px){
@@ -177,11 +177,11 @@ body:has(#league-squad-form) #app{width:min(1720px,calc(100% - 32px))}
 .league-tactics-detail .league-match-plan{display:block;padding:10px}.league-tactics-detail .league-match-plan>header b{font-size:14px}.league-tactics-detail .league-match-plan-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .league-tactics-detail .field{min-width:0}.league-tactics-detail .field span{font-size:11px}.league-tactics-detail .field select{box-sizing:border-box;width:100%;min-width:0;padding-left:8px;padding-right:18px;font-size:12px;text-overflow:ellipsis}
 .league-tactics-detail-title>span{min-width:0;display:grid;gap:4px}
-.league-tactics-detail>header .league-tactics-detail-title{width:100%;display:grid;grid-template-columns:minmax(145px,1fr) 174px auto auto auto;align-items:center;justify-content:stretch;gap:12px}
+.league-tactics-detail>header .league-tactics-detail-title{width:100%;display:grid;grid-template-columns:minmax(145px,1fr) 174px auto;align-items:center;justify-content:stretch;gap:12px}
 .league-lineup-share-actions{display:flex!important;align-items:center;justify-content:flex-start!important;gap:7px!important}.league-lineup-share-actions .button{min-width:58px;min-height:34px;padding:5px 11px;font-size:11px}
 .league-captain-controls{width:174px;min-width:0;display:grid;grid-template-columns:72px 95px;gap:7px}.league-captain-controls label{min-width:0;display:grid;gap:4px}.league-captain-controls label>span{color:var(--muted);font-size:9px;font-weight:900;white-space:nowrap}.league-captain-controls select{box-sizing:border-box;width:100%;min-width:0;min-height:34px;padding:0 18px 0 7px;border:1px solid rgba(245,211,74,.38);border-radius:7px;color:var(--ink);background:#10271f;font:inherit;font-size:9px;font-weight:900;text-overflow:ellipsis}
 .captain-c-badge{position:absolute;left:-9px;top:-9px;z-index:28;width:22px;height:22px;display:grid;place-items:center;border:2px solid #fff1a8;border-radius:50%;color:#201800;background:linear-gradient(145deg,#fff27b,#e8b914);box-shadow:0 2px 0 #7d5a00,0 4px 10px rgba(0,0,0,.46),0 0 10px rgba(245,211,74,.48);font-size:12px;font-style:normal;font-weight:1000;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.45);pointer-events:none}
-@media(max-width:900px){.league-captain-controls{grid-column:1/-1;width:100%;min-width:0;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}.league-tactics-detail>header .league-tactics-detail-title{grid-template-columns:minmax(130px,1fr) auto auto}}
+@media(max-width:900px){.league-captain-controls{grid-column:1/-1;width:100%;min-width:0;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}.league-tactics-detail>header .league-tactics-detail-title{grid-template-columns:minmax(130px,1fr) auto}}
 #league-tactics-pitch.is-tactical-shape-previewing .captain-c-badge{display:none}
 .league-tactics-detail-title>.league-tactical-node-controls{justify-self:end;transform:translateX(8px)}
 .league-tactics-detail-title>.league-ai-training-actions{justify-self:end}
@@ -259,7 +259,7 @@ body:has(#league-squad-form) #app{width:min(1720px,calc(100% - 32px))}
   #league-squad-form .league-bench-magnet{filter:none;box-shadow:0 3px 0 rgba(3,12,9,.72),0 5px 10px rgba(0,0,0,.22)}
   #league-squad-form .league-squad-magnet::before,
   #league-squad-form .league-bench-magnet::before{display:none}
-  #league-squad-form .league-squad-magnet:hover,
+  #league-squad-form .league-squad-magnet:hover{filter:none;transform:translate(-50%,-50%)}
   #league-squad-form .league-bench-magnet:hover{filter:none;transform:none;box-shadow:0 3px 0 rgba(3,12,9,.72),0 5px 10px rgba(0,0,0,.22)}
   #league-squad-form .league-squad-magnet.dragging,
   #league-squad-form .league-bench-magnet.dragging,

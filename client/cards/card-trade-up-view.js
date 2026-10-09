@@ -1,3 +1,4 @@
+import {S4_ENHANCEMENT} from '../../shared/config/enhancement.mjs';
 import { playerCardMarkup, escapePlayerCardHtml as esc } from "../player-card/player-card.js?v=20260906-card-scroll-v1";
 import { TRADE_UP_GRADES, TRADE_UP_HISTORY_LIMIT } from "../../shared/config/card-management.mjs";
 import { warehouseCards } from "./card-market-view.js?v=20260906-card-scroll-v1";
@@ -42,12 +43,12 @@ function filtersMarkup(view, state) {
     select("position", "位置", [["all", "位置"], ["GK", "门将"], ["DEF", "后卫"], ["MID", "中场"], ["ATT", "前锋"]]) +
     select("squad", "编队", [["all", "编队"], ["expedition", "远征"], ["garrison", "留守"]]) +
     select("nationality", "国家", [["all", "国家"], ...countries.map(value => [value, value])]) +
-    select("upgradeLevel", "强化", [["all", "强化"], ...Array.from({ length: 9 }, (_, i) => [i, "+" + i])]) +
+    select("upgradeLevel", "强化", [["all", "强化"], ...Array.from({ length: S4_ENHANCEMENT.maxLevel+1 }, (_, i) => [i, "+" + i])]) +
     '<label class="cmm-usable"><input type="checkbox" data-cmu-filter="usable"' + (f.usable ? ' checked' : '') + '>仅可汰换</label><button type="button" data-cmu-action="reset">重置</button></div>';
 }
 export function tradeUpCardMarkup(card, view, state) {
   const chosen = state.selected.includes(card.id), reason = tradeUpBlocked(card, tradeUpCards(view, state));
-  return '<article class="cm-card cmm-card' + (chosen ? ' is-selected' : '') + '"><button type="button" class="cm-card-art" data-cmu-select="' + esc(card.id) + '" aria-pressed="' + chosen + '" aria-label="' +
+  return '<article data-ui-key="' + esc(card.id) + '" class="cm-card cmm-card' + (chosen ? ' is-selected' : '') + '"><button type="button" class="cm-card-art" data-cmu-select="' + esc(card.id) + '" aria-pressed="' + chosen + '" aria-label="' +
     esc((chosen ? "移除素材 " : "加入素材 ") + card.name + " +" + card.upgradeLevel + (reason ? "，" + reason : "")) + '"' + (reason ? ' disabled' : '') + '>' + shield(card, true) +
     '<span class="cm-selection-mark" aria-hidden="true"' + (chosen ? '' : ' hidden') + '>✓</span>' + (card.listingId ? '<span class="cmm-listed-badge">已挂牌</span>' : '') + '</button>' +
     '<button type="button" class="cmm-card-name" data-cmu-detail="' + esc(card.id) + '" title="查看详情">' + name(card) + '</button>' +

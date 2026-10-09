@@ -45,6 +45,7 @@ export function playerCardMarkup(player, options = {}) {
     `player-card-variant-${variant}`,
     `grade-${safeToken(card.grade.toLowerCase())}`,
     `band-${upgradeBand(card.upgradeLevel)}`,
+    card.upgradeLevel >= 10 ? "enhancement-10" : card.upgradeLevel >= 9 ? "enhancement-9" : "",
     art ? "has-player-profile" : "",
     "player-card-shield",
     options.animated === false || deferred ? "player-card-static" : "",
@@ -53,12 +54,13 @@ export function playerCardMarkup(player, options = {}) {
   ].filter(Boolean).join(" ");
   const style = art ? ` style="--profile-x:${art.x}%;--profile-y:${art.y}%;--profile-width:${art.width}%"` : "";
   const label = `${card.name}，能力${card.overall ?? "未知"}，${card.role}，${card.grade}级${card.upgradeLevel ? `，强化加${card.upgradeLevel}` : ""}`;
+  const accessibleLabel = label + (card.traits.length ? `，特性：${card.traits.join("、")}` : "");
   const attributes = `${id ? ` id="${id}"` : ""} class="${classes}" data-player-card-skin="shield-v1" data-player-card-id="${escapePlayerCardHtml(card.playerId)}"${action ? ` data-player-card-action="${action}"` : ""}${style}`;
   const payload = deferred ? { card: { playerId:card.playerId,cardInstanceId:card.cardInstanceId,name:card.name,sourceName:card.sourceName,overall:card.overall,role:card.role,grade:card.grade,upgradeLevel:card.upgradeLevel,art:card.art,nationality:card.nationality,club:card.club,traits:card.traits }, options:{animated:false} } : null;
   const lazyAttribute = payload ? ` data-card-render="${escapePlayerCardHtml(JSON.stringify(payload))}"` : "";
   const content = deferred ? '<span class="shield-card-surface"></span>' : shieldCardContent(card, options, escapePlayerCardHtml, safeToken);
-  if (interactive) return `<button type="button"${attributes}${lazyAttribute} aria-label="${escapePlayerCardHtml(options.ariaPrefix ?? "查看")}${escapePlayerCardHtml(label)}"${action ? ' aria-haspopup="dialog"' : ""}>${content}</button>`;
-  return `<div${attributes}${lazyAttribute} role="img" aria-label="${escapePlayerCardHtml(label)}">${content}</div>`;
+  if (interactive) return `<button type="button"${attributes}${lazyAttribute} aria-label="${escapePlayerCardHtml(options.ariaPrefix ?? "查看")}${escapePlayerCardHtml(accessibleLabel)}"${action ? ' aria-haspopup="dialog"' : ""}>${content}</button>`;
+  return `<div${attributes}${lazyAttribute} role="img" aria-label="${escapePlayerCardHtml(accessibleLabel)}">${content}</div>`;
 }
 
 installCardMotionController();

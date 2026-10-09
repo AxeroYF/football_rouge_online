@@ -96,7 +96,7 @@ test('S4 bond display keeps all eligible labels and toggles attributes, ratings 
  assert.deepEqual(t,original);
 });
 
-test('S4 bond display uses assigned role for structure recipients and caps only the preview', async()=>{
+test('S4 bond display uses assigned role for structure recipients and preserves uncapped preview values', async()=>{
  const {tacticsBondDisplay}=await import('../client/tactics/bond-display.js');
  const {PLAYER_OVERALL_ATTRIBUTE_KEYS}=await import('../engine/s4-v2.1/game/public/schema.js');
  const keys=[...new Set(Object.values(PLAYER_OVERALL_ATTRIBUTE_KEYS).flat())];
@@ -104,7 +104,7 @@ test('S4 bond display uses assigned role for structure recipients and caps only 
  const assigned=Object.fromEntries(t.players.map((p,i)=>[p.id,i<6?'CB':i===6?'GK':'ST']));
  const display=tacticsBondDisplay(t.players,[],{roles:assigned,showBonuses:true});
  assert.deepEqual(display.bonds.map(b=>b.id),['structure:steel-defense']);
- assert.equal(display.players[0].effectiveOverall,99);assert.equal(display.players[0].attributes.passing,99);
+ assert.equal(display.players[0].effectiveOverall,101);assert.equal(display.players[0].attributes.passing,100.94);
  assert.equal(display.players[7].effectiveOverall,98);assert.equal(display.players[7].ydlBondBonus,undefined);
  assert.equal(t.players[0].attributes.passing,98);
  const noBonds=tacticsBondDisplay(t.players,[],{roles:roles(t),showBonuses:true});

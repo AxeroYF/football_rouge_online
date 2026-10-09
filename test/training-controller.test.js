@@ -24,6 +24,38 @@ function fixture() {
   return { controller, facilityActions, demolitions, windowRoot, pickerRoot, notifications, panelContent, pickerContent, title, requests, store, toasts, click, tick: () => timer(), setTime: (time) => { clock = time; } };
 }
 
+test("top navigation opens an owned training center and reports when none is built", async () => {
+  const f=fixture();f.controller.open();assert.equal(f.requests.length,0);assert.match(f.toasts.at(-1),/尚未建设/);
+  const state=f.store.getState();
+  f.store.setState({...state,buildings:{territories:{t:{buildings:[{...baseView.building,type:'training-center'}]}}}});
+  f.controller.open();assert.equal(f.windowRoot.hidden,false);assert.match(f.requests[0].url,/territoryId=t&buildingId=b/);
+  f.requests[0].resolve(structuredClone(baseView));await flush();
+});
+
+test("one-click finish uses one request across pools, locks duplicates and keeps working seats", async () => {
+  const f=fixture(), tasks=['ATT','MID','DEF'].map((pool,i)=>({id:pool,buildingId:'b',territoryId:'t',playerId:pool,pool,slot:0,status:i===2?'working':'completed',gains:{passing:5},startedAt:1000,completesAt:601000}));
+  f.store.setState({...f.store.getState(),training:{tasks,serverNow:1000}});
+  f.controller.open({territoryId:'t',buildingId:'b'});f.requests[0].resolve({...structuredClone(baseView),tasks});await flush();
+  assert.match(f.panelContent.innerHTML,/一键完成训练（2）/);
+  f.click(f.windowRoot,'[data-training-finish-completed]');f.click(f.windowRoot,'[data-training-finish-completed]');
+  assert.equal(f.requests.length,2);assert.equal(f.requests[1].url,'/api/campaign/training/finish-completed');
+  assert.deepEqual(f.requests[1].options.body.taskIds,['ATT','MID']);
+  f.requests[1].resolve({finishedCount:2,statePatch:{training:{tasks:[tasks[2]],serverNow:1000}}});await flush();
+  assert.equal(f.requests.length,2);assert.deepEqual(f.store.getState().training.tasks,[tasks[2]]);
+  assert.match(f.panelContent.innerHTML,/data-training-finish-completed disabled/);
+  assert.match(f.toasts.at(-1),/已完成 2 名/);
+});
+
+test("failed batch completion preserves completed seats and permits retry", async () => {
+  const f=fixture(), task={id:'done',buildingId:'b',territoryId:'t',playerId:'ATT',pool:'ATT',slot:0,status:'completed',gains:{passing:5}};
+  f.controller.open({territoryId:'t',buildingId:'b'});f.requests[0].resolve({...structuredClone(baseView),tasks:[task]});await flush();
+  f.click(f.windowRoot,'[data-training-finish-completed]');f.requests[1].reject(Error('连接中断'));await flush();
+  assert.match(f.panelContent.innerHTML,/一键完成训练（1）/);assert.match(f.toasts.at(-1),/连接中断/);
+  f.click(f.windowRoot,'[data-training-finish-completed]');assert.equal(f.requests.length,3);
+  assert.deepEqual(f.requests[2].options.body,f.requests[1].options.body);
+  f.requests[2].resolve({finishedCount:1,statePatch:{training:{tasks:[],serverNow:1000}}});await flush();
+});
+
 test("four position frames contain level-based seats and picker shows only matching players", () => {
   const html = trainingPanelMarkup(baseView);
   assert.equal((html.match(/class="training-group"/g) ?? []).length, 4);
@@ -55,7 +87,7 @@ test("empty seat opens player cards; direct start locks double clicks and comple
   assert.equal(f.requests[1].options.body.pool, "ATT"); assert.equal(f.requests[1].options.body.slot, 0);
   const task = { id: "train", buildingId: "b", territoryId: "t", playerId: "ATT", playerName: "ATT球员", pool: "ATT", slot: 0, status: "working", startedAt: 1000, completesAt: 601000 };
   f.requests[1].resolve({ task, state: { ...f.store.getState(), training: { tasks: [task], serverNow: 1000 } } }); await flush();
-  f.requests[2].resolve({ ...baseView, tasks: [task] }); await flush();
+  assert.equal(f.requests.length,2,"successful start must not refetch center");
   assert.equal(f.pickerRoot.hidden, true); assert.match(f.panelContent.innerHTML, /data-training-progress="train"/);
   f.store.setState({ ...f.store.getState(), training: { tasks: [{ ...task, status: "completed", gains: { passing: 5 } }], serverNow: 601000 } });
   assert.match(f.panelContent.innerHTML, /训练完成/);
@@ -195,8 +227,8 @@ test("finish result locks repeat actions, persists clearing and closes only the 
   assert.deepEqual(f.requests[1].options.body, { taskId: "done" });
   assert.match(f.pickerContent.innerHTML, /26 项能力/);
   assert.match(f.pickerContent.innerHTML, /data-training-finish type="button" disabled/);
-  f.requests[1].resolve({ task: { ...task, status: "finished" }, state: f.store.getState() }); await flush();
-  f.requests[2].resolve(structuredClone(baseView)); await flush();
+  f.requests[1].resolve({ task: { ...task, status: "finished" }, state: {...f.store.getState(),training:{tasks:[],serverNow:1000}} }); await flush();
+  assert.equal(f.requests.length,2,"successful finish must not refetch center");
   assert.equal(f.pickerRoot.hidden, true);
   assert.equal(f.windowRoot.hidden, false);
   assert.doesNotMatch(f.panelContent.innerHTML, /is-occupied|查看能力提升/);
@@ -263,12 +295,12 @@ test("completed training result scroll survives live player updates",async()=>{
  f.store.setState({...structuredClone(f.store.getState()),training:{tasks:[task],serverNow:2000}});
  assert.match(f.pickerContent.innerHTML,/26 项能力/);assert.equal(dom.scroller.scrollTop,160);f.controller.close();
 });
-test("live training eligibility uses the current wonder-adjusted points requirement",async()=>{
+test("live training allows wonder-adjusted growth even when most attributes are 99",async()=>{
  const f=fixture(),player={...players[0],attributes:Object.fromEntries(Object.keys(PLAYER_ATTRIBUTE_LABELS).map(key=>[key,99]))};player.attributes.passing=94;
  f.controller.open({territoryId:"t",buildingId:"b"});f.requests[0].resolve({...structuredClone(baseView),players:[player]});await flush();
  f.click(f.windowRoot,"[data-training-pool]",{trainingPool:"ATT",trainingSlot:"0"});
  f.store.setState({...f.store.getState(),draft:{roster:[player]},training:{tasks:[],rules:{attributePoints:6}}});
- assert.match(f.pickerContent.innerHTML,/data-training-player="ATT" disabled/);f.controller.close();
+ assert.doesNotMatch(f.pickerContent.innerHTML,/data-training-player="ATT" disabled/);f.controller.close();
 });
 
 
@@ -287,4 +319,33 @@ test("world polls refresh training affordability and preserve medical restrictio
   f.store.setState({...f.store.getState(),wallet:{gold:1000},draft:{roster:[{...players[0],medical:{taskId:'treatment'}}]}});
   assert.match(f.pickerContent.innerHTML,/data-training-player="ATT" disabled/);assert.match(f.pickerContent.innerHTML,/暂不可训练/);
   f.controller.close();
+});
+
+
+test("high capacity center counts occupied and completed seats and filters positions locally", async () => {
+  const view={...baseView,capacity:5,building:{...baseView.building,level:5},tasks:[
+    {id:'working',buildingId:'b',pool:'ATT',slot:0,playerId:'ATT',playerName:'ATT球员',status:'working'},
+    {id:'done',buildingId:'b',pool:'MID',slot:0,playerId:'MID',playerName:'MID球员',status:'completed'},
+    {id:'elsewhere',buildingId:'other',pool:'GK',slot:0,status:'working'}
+  ]};
+  const html=trainingPanelMarkup(view);
+  assert.equal((html.match(/data-training-slot=/g)??[]).length,20);
+  assert.match(html,/<b>1<\/b> 训练中/);assert.match(html,/<b>1<\/b> 待查看/);assert.match(html,/<b>18<\/b> 空闲名额/);
+  const f=fixture();f.controller.open({territoryId:'t',buildingId:'b'});f.requests[0].resolve(view);await flush();
+  const reads=f.requests.length;
+  f.click(f.windowRoot,'[data-training-filter]',{trainingFilter:'MID'});
+  assert.equal((f.panelContent.innerHTML.match(/data-training-slot=/g)??[]).length,5);
+  assert.match(f.panelContent.innerHTML,/训练完成/);assert.doesNotMatch(f.panelContent.innerHTML,/data-training-pool="ATT"/);
+  f.click(f.windowRoot,'[data-training-filter]',{trainingFilter:'all'});
+  assert.equal((f.panelContent.innerHTML.match(/data-training-slot=/g)??[]).length,20);
+  assert.equal(f.requests.length,reads);f.controller.close();
+});
+
+test("training selection bounds initial cards and expands locally",async()=>{
+ const roster=Array.from({length:80},(_,i)=>({...players[0],id:'p'+i,playerId:'p'+i,overall:70+i/100}));
+ const f=fixture();f.controller.open({territoryId:'t',buildingId:'b'});f.requests[0].resolve({...baseView,players:roster});await flush();
+ f.click(f.windowRoot,'[data-training-pool]',{trainingPool:'ATT',trainingSlot:'0'});
+ assert.equal((f.pickerContent.innerHTML.match(/data-training-player=/g)??[]).length,24);
+ f.click(f.pickerRoot,'[data-training-more]');assert.equal((f.pickerContent.innerHTML.match(/data-training-player=/g)??[]).length,48);
+ assert.equal(f.requests.length,1);f.controller.close();
 });

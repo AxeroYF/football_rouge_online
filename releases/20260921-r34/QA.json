@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "version": "20260921-r34",
+  "checks": [
+    "Complete 20260920-r31 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260921-r34 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks",
+    "R32 and R33 known hashes accepted, unknown changes rejected, R33 apply/rollback restores exact prior files"
+  ],
+  "changedFiles": 13,
+  "newFiles": 0,
+  "requiredBaseFiles": 1229,
+  "imports": 128,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "tacticsReview": {
+    "before": {
+      "openMs": 1338.4000000059605,
+      "coalitionFetches": 1
+    },
+    "after": {
+      "openMs": 86.80000001192093,
+      "coalitionFetches": 0
+    },
+    "saves": {
+      "maxActiveSaves": 1,
+      "updates": [
+        {
+          "sameWorld": true
+        },
+        {
+          "sameWorld": true
+        }
+      ],
+      "modes": [
+        "tactics",
+        "tactics"
+      ]
+    },
+    "coalition": {
+      "saved": true,
+      "preservedWorld": true
+    }
+  },
+  "tacticsTests": 41,
+  "testsPassed": 1401,
+  "cardTests": 11,
+  "visualSizes": [
+    280,
+    180,
+    110
+  ],
+  "includesR32": true,
+  "installerTests": 9
+}

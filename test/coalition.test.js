@@ -10,7 +10,7 @@ import {buildAccountMatchSeat} from '../shared/football/account-match-seat.mjs';
 import {setTestWar} from './diplomacy-fixture.mjs';
 import {setAbsence,absenceMatches} from '../shared/football/match-availability.mjs';
 const M=60000;
-function action(f,a,action,extra={}){const army=f.s.coalitions.find(a);return f.s.coalitions.mutate(a,{action,requestId:crypto.randomUUID(),armyId:army?.id,revision:army?.revision,...extra});}
+function action(f,a,action,extra={}){const army=f.s.coalitions.find(a);return f.s.coalitions.mutate(a,{action,pvpConfirmed:action==='attack',requestId:crypto.randomUUID(),armyId:army?.id,revision:army?.revision,...extra});}
 function assembled(){const f=coalitionFixture();action(f,f.a,'create',{name:'测试联军'});for(const p of f.a.draft.roster.slice(0,6))action(f,f.a,'lend',{playerId:p.id});for(const p of f.b.draft.roster.slice(6,11))action(f,f.b,'lend',{playerId:p.id});action(f,f.a,'auto-lineup');f.s.save();return f;}
 const army=f=>f.s.coalitions.find(f.a);
 function move(f,id){const a=army(f),quote=f.s.coalitions.estimate(a,{territoryId:id});return action(f,f.a,'move',{territoryId:id,quoteId:quote.quoteId});}
@@ -86,4 +86,44 @@ test('curfew blocks new coalition attacks but permits moves; overnight deploymen
  assert.throws(()=>action(g,g.a,'propose-target',{territoryId:'c',beneficiaryId:'b'}),/宵禁/);
  assert.throws(()=>g.s.coalitions.estimate(army(g),{territoryId:'c',beneficiaryId:'b',kind:'attack'}),/宵禁/);
  move(g,'b');assert.ok(army(g).movement);
+});
+
+
+test('management detail omits tactical payload but preserves loan permissions and army revision',()=>{
+ const f=assembled(),full=f.s.coalitions.view(f.a),light=f.s.coalitions.view(f.a,{includeTactics:false});
+ assert.ok(full.tacticsState);assert.equal(Object.hasOwn(light,'tacticsState'),false);
+ const {tacticsState,...expected}=full;assert.deepEqual(light,expected);
+ assert.ok(JSON.stringify(light).length<JSON.stringify(full).length);
+});
+
+
+test('commander can return another owner card; other members cannot; busy armies defer release',()=>{
+ const f=assembled(),loan=army(f).loans.find(l=>l.ownerId==='b'),card=f.b.draft.roster.find(p=>p.id===loan.playerId),before=structuredClone(f.b.playerSquads);
+ assert.throws(()=>action(f,f.b,'kick',{ownerId:'a',playerId:army(f).loans[0].playerId}),/指挥官/);
+ army(f).movement={fromTerritoryId:'a',toTerritoryId:'b',startedAt:f.now,arrivesAt:f.now+60000};
+ action(f,f.a,'kick',{ownerId:'b',playerId:loan.playerId});
+ assert.equal(army(f).loans.find(l=>l.playerId===loan.playerId).withdrawRequested,true);assert.ok(card.coalitionLoan);
+ army(f).movement=null;f.s.save();assert.ok(!f.b.draft.roster.find(p=>p.id===loan.playerId).coalitionLoan);assert.ok(!army(f).loans.some(l=>l.ownerId==='b'&&l.playerId===loan.playerId));assert.deepEqual(f.b.playerSquads,before);
+});
+test('commander kick persistence failure restores owner card and army roster',()=>{
+ const f=assembled(),loan=army(f).loans.find(l=>l.ownerId==='b'),oldSave=f.s.repository.save.bind(f.s.repository);let calls=0;
+ f.s.repository.save=value=>{if(++calls===1)throw Error('kick commit failed');return oldSave(value);};
+ assert.throws(()=>action(f,f.a,'kick',{ownerId:'b',playerId:loan.playerId}),/kick commit failed/);
+ assert.ok(army(f).loans.some(l=>l.ownerId==='b'&&l.playerId===loan.playerId));assert.ok(f.b.draft.roster.find(p=>p.id===loan.playerId).coalitionLoan);
+ f.s.repository.save=oldSave;action(f,f.a,'kick',{ownerId:'b',playerId:loan.playerId});assert.ok(!f.b.draft.roster.find(p=>p.id===loan.playerId).coalitionLoan);
+});
+
+test('allied coalition shares travel geometry and times but enemies never receive routes',()=>{const f=assembled();move(f,'b');const args={world:f.s.world,accounts:f.s.accounts,territoryIndex:f.s.territoryIndex,now:f.now,fog:{enabled:false}};const own=visibleMapUnits({...args,account:f.b}).find(u=>u.kind==='coalition');assert.equal(own.movement.toTerritoryId,'b');assert.ok(own.movement.fromPosition);assert.equal(own.movement.arrivesAt,army(f).movement.arrivesAt);const enemy=visibleMapUnits({...args,account:f.s.accounts.get('c')}).find(u=>u.kind==='coalition');assert.equal(enemy.movement,undefined);assert.ok(!JSON.stringify(enemy).includes('toTerritoryId'));});
+
+test('loan recovery follows coalition location, shares allied center boost and pauses only when attacking',()=>{
+ const f=assembled(),a=army(f),loan=a.loans.find(l=>l.ownerId==='a'),p=f.s.coalitions.card(loan);
+ f.a.expeditionPiece.territoryId='c';a.territoryId='b';p.state.fitness=40;
+ f.s.world.territories.b.buildings.push({id:'allied-recovery',type:'recovery-center',level:1,status:'active',builtAt:f.now});
+ f.s.fitness.prepare(f.now);assert.equal(f.a.fitnessRecovery.plans[p.id].centerId,'allied-recovery');
+ f.tick(4*M);f.s.fitness.prepare(f.now);assert.equal(p.state.fitness,44);
+ f.s.world.activeChallenges.test={id:'defending',defenderCoalitionId:a.id,phase:'first-leg',live:{firstLeg:{match:{teams:[{id:a.id,players:[{id:coalitionPlayerId(loan.ownerId,p.id),state:{fitness:100}}]}]}}}};
+ f.s.fitness.prepare(f.now);assert.equal(f.s.fitness.currentFitness(f.a,p),44);f.tick(4*M);f.s.fitness.prepare(f.now);assert.equal(p.state.fitness,48,'defending does not stop stored recovery');
+ f.s.world.activeChallenges.test={id:'attacking',coalitionId:a.id,phase:'first-leg',live:{firstLeg:{match:{teams:[]}}}};
+ f.s.fitness.prepare(f.now);f.tick(4*M);f.s.fitness.prepare(f.now);assert.equal(p.state.fitness,48,'no outside recovery during attack');
+ delete f.s.world.activeChallenges.test;f.s.world.territories.b.buildings=[];f.s.fitness.prepare(f.now);f.tick(4*M);f.s.fitness.prepare(f.now);assert.equal(p.state.fitness,50,'natural recovery without center');
 });

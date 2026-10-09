@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "version": "20260920-r14",
+  "checks": [
+    "Complete 20260919-r13 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r14 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 6,
+  "newFiles": 1,
+  "requiredBaseFiles": 1212,
+  "imports": 73,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "fullGameTests": 1320,
+  "coalitionFocusedTests": 48,
+  "desktopTests": 9,
+  "browserMovementReview": {
+    "stable": true,
+    "halfway": "50",
+    "position": [
+      5,
+      10
+    ],
+    "air": true,
+    "routeCount": 3,
+    "arrived": true,
+    "cleanup": true
+  }
+}

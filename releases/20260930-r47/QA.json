@@ -1,0 +1,496 @@
+{
+  "passed": true,
+  "version": "20260930-r47",
+  "baseline": "20260930-r46",
+  "fullTests": {
+    "passed": 1687,
+    "failed": 0,
+    "runtimeSyntaxModules": 380,
+    "testFiles": 168,
+    "log": "outputs/r47-full-tests.log"
+  },
+  "browser": {
+    "passed": true,
+    "checks": [
+      "shop uses static player cards",
+      "purchase preserves all shop image nodes and scroll container",
+      "pack purchase preserves roster and world objects",
+      "success does not immediately refetch shop",
+      "rapid player purchase submits once",
+      "sold card keeps original artwork nodes",
+      "mobile shop stays within viewport",
+      "pending opening keeps shelf art mounted and disables repeated open",
+      "opening uses inventory-only response and preserves roster and world",
+      "normal packs have no persistent canvas or meteor animation",
+      "normal candidates appear immediately with brief entry motion",
+      "claim returns one card and keeps the existing world",
+      "pack claim is single request",
+      "claim keeps original cards and images with no acquired screen",
+      "unchosen cards stay dim after the fast reveal",
+      "selected card stops entry animation",
+      "failed next pack preserves original selected card",
+      "next-pack action fits 390x844",
+      "next-pack action fits 844x390",
+      "next-pack action fits 1024x768",
+      "four choices fit 390x844",
+      "four choices fit 844x390",
+      "four-choice landscape result actions fit",
+      "completed biology notice remains at 100 percent",
+      "notification continues same topic at level two",
+      "acknowledgement clears only notice and retains level",
+      "no browser exceptions"
+    ],
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/shop",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/shop/buy",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/research/continue-notice",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/state",
+        "method": "GET"
+      },
+      {
+        "path": "/api/campaign/research/read-notice",
+        "method": "POST"
+      }
+    ]
+  },
+  "fullGameBrowser": {
+    "passed": true,
+    "errors": [],
+    "calls": [
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/choose",
+        "method": "POST"
+      },
+      {
+        "path": "/api/campaign/inventory/packs/open",
+        "method": "POST"
+      }
+    ],
+    "checks": [
+      "Real game page opens compact pack and preserves world and roster",
+      "Real game claim merges one card with world retained",
+      "Consecutive next pack works",
+      "No extra state GET after pack actions",
+      "No page exceptions"
+    ]
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260930-r47",
+    "checks": [
+      "Complete 20260930-r46 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260930-r47 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 8,
+    "newFiles": 1,
+    "requiredBaseFiles": 1291,
+    "imports": 159,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R46 account, wallet, roster, packs and active research survive installed server boot",
+      "Real compact pack purchase is idempotent and omits full map and roster",
+      "Existing oil legend purchase returns exactly one enhanced player delta",
+      "Proposed pack oil pricing remains disabled",
+      "Compact open and choose return one card delta, retain remaining packs and avoid full-state responses",
+      "Real research completion and continue APIs retain notices and start the same next level",
+      "Actual process restart preserves purchases and unread completed research",
+      "Acknowledgement keeps research levels, retries safely and requires authentication",
+      "Updated assets load and private uploads remain intact",
+      "Matched R46 code and save rollback restores a healthy server"
+    ],
+    "remoteDeployed": false,
+    "scope": "Actual isolated Windows Node servers and HTTP; systemd service hooks mocked; no remote deployment"
+  },
+  "performance": {
+    "before": {
+      "compact": false,
+      "scope": "Local in-memory repository serializes saves; three accounts, test world; not production latency",
+      "summary": [
+        {
+          "size": 22,
+          "openMs": 4.66,
+          "chooseMs": 9.22,
+          "openBytes": 110521.6,
+          "chooseBytes": 108373.6,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 522,
+          "openMs": 26.81,
+          "chooseMs": 50.44,
+          "openBytes": 1338027.4,
+          "chooseBytes": 1335869.4,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        }
+      ],
+      "samples": [
+        {
+          "size": 22,
+          "run": 0,
+          "openMs": 5.724599999999981,
+          "chooseMs": 10.45580000000001,
+          "openBytes": 110522,
+          "chooseBytes": 108374,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 22,
+          "run": 1,
+          "openMs": 4.814400000000006,
+          "chooseMs": 9.249600000000015,
+          "openBytes": 110521,
+          "chooseBytes": 108373,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 22,
+          "run": 2,
+          "openMs": 4.405399999999986,
+          "chooseMs": 8.673699999999997,
+          "openBytes": 110521,
+          "chooseBytes": 108373,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 22,
+          "run": 3,
+          "openMs": 4.0575999999999794,
+          "chooseMs": 8.951000000000022,
+          "openBytes": 110521,
+          "chooseBytes": 108373,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 22,
+          "run": 4,
+          "openMs": 4.307999999999993,
+          "chooseMs": 8.74739999999997,
+          "openBytes": 110523,
+          "chooseBytes": 108375,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 522,
+          "run": 0,
+          "openMs": 27.67360000000002,
+          "chooseMs": 52.90350000000001,
+          "openBytes": 1338027,
+          "chooseBytes": 1335869,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 522,
+          "run": 1,
+          "openMs": 26.730299999999943,
+          "chooseMs": 50.66250000000002,
+          "openBytes": 1338028,
+          "chooseBytes": 1335870,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 522,
+          "run": 2,
+          "openMs": 26.62119999999993,
+          "chooseMs": 49.91500000000008,
+          "openBytes": 1338028,
+          "chooseBytes": 1335870,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 522,
+          "run": 3,
+          "openMs": 27.301699999999983,
+          "chooseMs": 48.996099999999956,
+          "openBytes": 1338027,
+          "chooseBytes": 1335869,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        },
+        {
+          "size": 522,
+          "run": 4,
+          "openMs": 25.73300000000006,
+          "chooseMs": 49.71620000000007,
+          "openBytes": 1338027,
+          "chooseBytes": 1335869,
+          "openWrites": 1,
+          "chooseWrites": 3,
+          "openViews": 1,
+          "chooseViews": 1
+        }
+      ]
+    },
+    "after": {
+      "compact": true,
+      "scope": "Local in-memory repository serializes saves; three accounts, test world; not production latency",
+      "summary": [
+        {
+          "size": 22,
+          "openMs": 3.16,
+          "chooseMs": 3.38,
+          "openBytes": 8105,
+          "chooseBytes": 16075,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 522,
+          "openMs": 18.28,
+          "chooseMs": 19.03,
+          "openBytes": 8105,
+          "chooseBytes": 33681,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        }
+      ],
+      "samples": [
+        {
+          "size": 22,
+          "run": 0,
+          "openMs": 3.6004999999999825,
+          "chooseMs": 3.861799999999988,
+          "openBytes": 8105,
+          "chooseBytes": 16075,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 22,
+          "run": 1,
+          "openMs": 3.4215999999999838,
+          "chooseMs": 3.1317999999999984,
+          "openBytes": 8105,
+          "chooseBytes": 16075,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 22,
+          "run": 2,
+          "openMs": 2.8255000000000052,
+          "chooseMs": 3.4070999999999856,
+          "openBytes": 8105,
+          "chooseBytes": 16075,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 22,
+          "run": 3,
+          "openMs": 2.767400000000009,
+          "chooseMs": 3.556999999999988,
+          "openBytes": 8105,
+          "chooseBytes": 16075,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 22,
+          "run": 4,
+          "openMs": 3.165600000000012,
+          "chooseMs": 2.9610000000000127,
+          "openBytes": 8105,
+          "chooseBytes": 16075,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 522,
+          "run": 0,
+          "openMs": 19.11189999999999,
+          "chooseMs": 19.942199999999957,
+          "openBytes": 8105,
+          "chooseBytes": 33681,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 522,
+          "run": 1,
+          "openMs": 18.269399999999962,
+          "chooseMs": 17.954800000000034,
+          "openBytes": 8105,
+          "chooseBytes": 33681,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 522,
+          "run": 2,
+          "openMs": 18.566399999999987,
+          "chooseMs": 18.989599999999996,
+          "openBytes": 8105,
+          "chooseBytes": 33681,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 522,
+          "run": 3,
+          "openMs": 18.30110000000002,
+          "chooseMs": 18.894600000000082,
+          "openBytes": 8105,
+          "chooseBytes": 33681,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        },
+        {
+          "size": 522,
+          "run": 4,
+          "openMs": 17.163299999999936,
+          "chooseMs": 19.36239999999998,
+          "openBytes": 8105,
+          "chooseBytes": 33681,
+          "openWrites": 1,
+          "chooseWrites": 1,
+          "openViews": 0,
+          "chooseViews": 0
+        }
+      ]
+    }
+  },
+  "notes": [
+    "Local benchmark: five samples per warehouse size, three accounts and test world, in-memory repository serializing saves; not production end-to-end latency.",
+    "Single claim commit still settles economy and synchronously commits; no deferred or skipped save.",
+    "Legacy clients retain full-state responses; pack odds, ownership exclusion and choices are unchanged.",
+    "Actual isolated Windows Node servers and browser; systemd hooks mocked, no remote deployment."
+  ],
+  "remoteDeployed": false
+}

@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';import http from 'node:http';import {createRequire} from 'node:module';
+import {coalitionFixture} from '../test/coalition-fixture.mjs';import {createCampaignApiHandler} from '../server/http/campaign-api-handler.mjs';import {createStaticHandler} from '../server/http/static-handler.mjs';
+const {chromium}=createRequire('C:/Users/11846/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/review.cjs')('playwright');
+const out='outputs/optimization-r30/browser';fs.mkdirSync(out,{recursive:true});
+const f=coalitionFixture(),api=createCampaignApiHandler({campaign:f.s}),serve=createStaticHandler(process.cwd());
+for(const [id,owner]of [['land-a','a'],['land-b','b']]){f.s.world.territories[id]={...structuredClone(f.s.world.territories[owner]),ownerId:owner,capitalOf:null,version:1,buildings:id==='land-a'?[{id:'port1',type:'port',status:'active',level:2}]:[]};f.s.world.players[owner].territoryIds.push(id);f.s.territoryIndex.territories.push({...f.s.territoryIndex.territories[0],territoryId:id,name:id});}f.s.save();
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname.startsWith('/api/'))await api(req,res,u.pathname,u.href);else await serve(req,res);}catch(e){res.writeHead(e.statusCode||500,{'content-type':'application/json'});res.end(JSON.stringify({error:e.message}));}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;
+const browser=await chromium.launch({channel:'chrome',headless:true});const checks=[],errors=[];let page;
+const check=(name,pass)=>{checks.push({name,pass:!!pass});assert.ok(pass,name);};
+const inView=async selector=>page.locator(selector).evaluate(e=>{const r=e.getBoundingClientRect();return r.x>=0&&r.y>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1;});
+try{
+ const context=await browser.newContext({viewport:{width:1280,height:720}});await context.addInitScript(()=>localStorage.setItem('yellowdogs-chronicles-token','a'));
+ page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+ const states=[];page.on('response',async r=>{if(new URL(r.url()).pathname==='/api/campaign/state'&&r.ok())states.push(await r.json());});
+ await page.goto(url+'/versus/?renderer=leaflet');await page.waitForFunction(()=>document.querySelector('#map-loader')?.classList.contains('is-ready'));
+ await page.waitForFunction(()=>document.querySelector('[data-interaction-player="b"]'));
+ await page.waitForTimeout(10800);
+ check('real browser receives versioned delta state',states.some(s=>s.stateVersions&&s.statePatch));
+ check('unchanged roster omitted in later polling',states.slice(1).some(s=>!Object.hasOwn(s.statePatch??{},'draft')));
+ let requests=0;await page.route('**/api/campaign/interactions?*',async route=>{requests++;await new Promise(r=>setTimeout(r,7000));await route.continue();});
+ await page.locator('[data-interaction-player="b"]').click();await page.waitForTimeout(3400);check('slow interaction request stays single-flight',requests===1);
+ await page.locator('#interaction-window [data-stage-window-close]').click();await page.waitForTimeout(4200);
+ check('closed interaction remains closed after late response',await page.locator('#interaction-window').evaluate(e=>e.hidden));
+ await page.waitForTimeout(3200);check('closed interaction does not restart polling',requests===1);
+ await page.unroute('**/api/campaign/interactions?*');await page.locator('[data-interaction-player="b"]').click();await page.locator('[data-interaction-action="trade-form"]').waitFor();
+ check('interaction reopens and loads normally',true);await page.locator('#interaction-window [data-stage-window-close]').click();
+ await page.screenshot({path:out+'/map-desktop.png'});await page.setViewportSize({width:960,height:540});await page.waitForTimeout(200);await page.screenshot({path:out+'/map-low-resolution.png'});
+ check('no browser runtime errors',errors.length===0);
+}finally{fs.writeFileSync(out+'/report.json',JSON.stringify({checks,errors},null,2));await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+console.log(JSON.stringify({checks,errors}));

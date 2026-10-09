@@ -1,3 +1,6 @@
+import {restoreArchivedFields,battleSummary} from '../infrastructure/history-archive.mjs';
+import {receipt} from './receipt-retention.mjs';
+import {createPlayerCardViewModel} from '../../shared/player-card/player-card-contract.js';
 import crypto from 'node:crypto';
 import {RAID_RULES as RULES,raidDay,raidWindow,raidPackType,raidActiveAccount,raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import {ELITE_CLUB_BY_ID} from '../../shared/config/elite-clubs.mjs';
@@ -126,7 +129,15 @@ export class EliteRaidService{
    if(at>=d.endsAt){for(const r of d.raids)if(r.status!=='battle'){r.status='withdrawn';r.movement=null;}if(!this.armyMatch(d.army)&&!d.army.closed)this.releaseArmy(d);continue;}
    if(at<d.startsAt)continue;
    for(const r of d.raids){if(r.status==='scheduled'){r.route=this.targets(r,d);r.index=0;this.depart(r,at);changed=true;}
-    if((r.status==='moving'&&r.movement.arrivesAt<=at)||r.status==='waiting'){this.c.save();this.transaction(()=>this.startDefence(d,r,at));changed=true;}}
+    if((r.status==='moving'&&r.movement.arrivesAt<=at)||r.status==='waiting'){
+     const stop=r.route?.[r.index],target=this.c.world.territories[stop?.territoryId],defender=this.c.accounts.get(stop?.ownerId);
+     // Match locks are released by settlement. A waiting tick has no economic
+     // mutation: do not snapshot the world or write the save again each second.
+     if(raidActiveAccount(defender,at)&&target?.ownerType==='player'&&target.ownerId===defender.id&&!(target.protectedUntil>at)&&this.accountBusy(defender.id)){
+      if(r.status!=='waiting'){r.status='waiting';changed=true;}continue;
+     }
+     this.c.save();this.transaction(()=>this.startDefence(d,r,at));changed=true;
+    }}
    if(!this.armyMatch(d.army))for(const l of [...d.army.loans])if(l.withdrawRequested)this.helper.release(d.army,l);
   }
   const after=JSON.stringify([this.data.queue,this.data.activeIds,Object.values(this.data.days).map(d=>[d.candidateId,d.offerUntil,d.army.commanderId,d.army.closed,d.raids.map(r=>[r.status,r.index])])]);
@@ -134,11 +145,11 @@ export class EliteRaidService{
  }
  armyView(a,day=this.day()){
   if(!day)return {army:null,members:[]};const army=day.army,projection=this.projection(army),live=this.armyMatch(army),open=raidWindow(this.c.now()).open;
-  return {army:{...structuredClone(army),roster:projection.draft.roster.map(p=>({...p,ownerName:name(this.c.accounts.get(p.coalitionOwnerId))})),canCommand:open&&army.commanderId===a.id,busy:Boolean(live)||!open,contributors:coalitionContributors(army),activeChallengeId:live?.id??null},tacticsState:{...projection,bondCatalog:campaignBondCatalog(this.c.playerDatabase),formationResearch:army.commanderId?this.c.formationResearch?.publicState(this.c.accounts.get(army.commanderId)):null},myCards:(a.draft?.roster??[]).map(p=>({id:p.id,name:p.name,role:p.role,overall:p.overall,blocked:this.c.cardManagement.blocked(a,p),loan:p.coalitionLoan??null})),members:[...this.c.accounts.values()].filter(a=>a.setupComplete).map(a=>({id:a.id,name:name(a)}))};
+  return {army:{...structuredClone(army),roster:projection.draft.roster.map(p=>({...p,ownerName:name(this.c.accounts.get(p.coalitionOwnerId))})),canCommand:open&&army.commanderId===a.id,busy:Boolean(live)||!open,contributors:coalitionContributors(army),activeChallengeId:live?.id??null},tacticsState:{...projection,bondCatalog:campaignBondCatalog(this.c.playerDatabase),formationResearch:army.commanderId?this.c.formationResearch?.publicState(this.c.accounts.get(army.commanderId)):null},myCards:(a.draft?.roster??[]).map(p=>({...createPlayerCardViewModel(p),id:p.id,blocked:this.c.cardManagement.blocked(a,p),loan:p.coalitionLoan??null})),members:[...this.c.accounts.values()].filter(a=>a.setupComplete).map(a=>({id:a.id,name:name(a)}))};
  }
  mutate(a,body){
   if(!a.setupComplete)fail('请先完成建队',403);if(!/^[\w:.-]{8,128}$/.test(String(body.requestId??'')))fail('请求编号无效',400);
-  const prior=a.raidRequests?.[body.requestId],signature=JSON.stringify(body);if(prior){if(prior.signature!==signature)fail('请求编号已使用');return prior.result;}
+  const prior=receipt(a,'raidRequests',body.requestId,this.c.now()),signature=JSON.stringify(body);if(prior){if(prior.signature!==signature)fail('请求编号已使用');return prior.result;}
   this.c.save();return this.transaction(()=>{
    const day=this.ensureDay();if(!day)fail("当前地图没有足够的出征豪门");const army=day.army,at=this.c.now();if(!raidWindow(at).open)fail('活动联军仅在每天 20:00—24:00 开放');
    if(body.armyId&&army.id!==body.armyId)fail('活动日期已变化，请刷新');
@@ -146,7 +157,7 @@ export class EliteRaidService{
    let result={};const live=this.armyMatch(army),action=body.action;
    if(action==='accept-command'){this.rotation(day,at);if(day.candidateId!==a.id||army.commanderId)fail('尚未轮到你接任',403);army.commanderId=a.id;day.candidateId=null;this.data.queue=this.data.queue.filter(id=>id!==a.id);this.data.queue.push(a.id);this.touch(a,{foreground:true});}
    else if(action==='decline-command'){if(day.candidateId!==a.id&&army.commanderId!==a.id)fail('不是当前候选或指挥官',403);if(live)fail('比赛结束后才能移交');day.attempted.push(a.id);day.candidateId=null;army.commanderId=null;this.rotation(day,at);}
-   else if(action==='withdraw'){const loan=army.loans.find(l=>l.ownerId===a.id&&l.playerId===body.playerId);if(!loan)fail('只能撤回自己的球员');if(live)loan.withdrawRequested=true;else this.helper.release(army,loan);}
+   else if(action==='withdraw'||action==='kick'){if(action==='kick'&&army.commanderId!==a.id)fail('只有当日指挥官可操作',403);const ownerId=action==='kick'?body.ownerId:a.id;const loan=army.loans.find(l=>l.ownerId===ownerId&&l.playerId===body.playerId);if(!loan)fail(action==='kick'?'借调球员不存在':'只能撤回自己的球员');if(live)loan.withdrawRequested=true;else this.helper.release(army,loan);}
    else if(action==='lend'){
     if(live)fail('比赛结束后才能借调');const p=a.draft.roster.find(p=>p.id===body.playerId);if(!p)fail('球员不存在');const reason=this.c.cardManagement.blocked(a,p);if(reason)fail(reason);if(this.accountBusy(a.id))fail('球队正在比赛');if(army.loans.length>=18)fail('活动联军最多 18 人');
     if(this.helper.roster(army).some(x=>enhancementFamily(x)===enhancementFamily(p)))fail('不能重复借调同一球员');
@@ -163,14 +174,14 @@ export class EliteRaidService{
      this.data.matches[id]={id,day:day.id,clubId:raid.clubId,kind:'interception',armyId:army.id,contributors:coalitionContributors(army),loans:structuredClone(army.loans),startedAt:at,leg};result={challengeId:id};
     }else fail('未知活动操作',400);
    }
-   army.revision++;a.raidRequests??={};a.raidRequests[body.requestId]={signature,result};return result;
+   army.revision++;a.raidRequests??={};a.raidRequests[body.requestId]={signature,result,recordedAt:this.c.now()};return result;
   });
  }
  preview(a,body){const army=this.day()?.army;if(!army||army.id!==body.armyId||army.commanderId!==a.id||!raidWindow(this.c.now()).open)fail('无权调整活动联军',403);return campaignTacticalPreview(this.projection(army),body);}
- snapshot(a,id){const m=this.data.matches[id];if(m)return {completed:false,challenge:{id,format:'raid',phase:'first-leg'},live:{key:id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(m.leg)},battle:null};const b=this.data.history.find(b=>b.id===id);if(!b)fail('战报不存在',404);return {completed:true,challenge:null,live:null,battle:{...b,broadcasts:[b.broadcast]}};}
+ snapshot(a,id){const m=this.data.matches[id];if(m)return {completed:false,challenge:{id,format:'raid',phase:'first-leg'},live:{key:id,legNumber:1,phase:'first-leg',broadcast:publicCampaignLiveLeg(m.leg)},battle:null};const b=restoreArchivedFields(this.data.history.find(b=>b.id===id));if(!b)fail('战报不存在',404);return {completed:true,challenge:null,live:null,battle:{...b,broadcasts:[b.broadcast]}};}
  view(a,{detail=false}={}){
   const day=this.day();if(!day)return null;const at=this.c.now(),open=at>=day.startsAt&&at<day.endsAt;
   const raids=day.raids.map(r=>({...r,name:ELITE_CLUB_BY_ID[r.clubId].name,badge:'./assets/club-badges/'+r.clubId+'.webp',route:r.route?.map(s=>({...s,ownerName:name(this.c.accounts.get(s.ownerId)),territoryName:this.metadata.get(s.territoryId)?.name??s.territoryId})),myTarget:r.route?.find(s=>s.ownerId===a.id)??null,rewards:{defence:Boolean(a.raidRewards?.[[day.id,r.clubId,'defence'].join(':')]),interception:Boolean(a.raidRewards?.[[day.id,r.clubId,'interception'].join(':')])}}));
-  return {day:day.id,startsAt:day.startsAt,endsAt:day.endsAt,open,serverNow:at,raids,candidateId:day.candidateId,candidateName:day.candidateId?name(this.c.accounts.get(day.candidateId)):'暂无候选',offerUntil:day.offerUntil,queue:this.data.queue.map(id=>({id,name:name(this.c.accounts.get(id))})),army:detail?this.armyView(a,day).army:{id:day.army.id,commanderId:day.army.commanderId,revision:day.army.revision,closed:day.army.closed},commanderName:day.army.commanderId?name(this.c.accounts.get(day.army.commanderId)):null,noticeDismissed:a.raidNoticeDay===day.id,matches:Object.values(this.data.matches).map(m=>({id:m.id,day:m.day,clubId:m.clubId,kind:m.kind,defenderId:m.defenderId,minute:m.leg.match.minute,score:m.leg.match.score})),history:this.data.history.filter(b=>b.day===day.id&&(b.kind==='interception'||b.defenderId===a.id)).map(({broadcast,...b})=>b),...(detail?{coalition:this.armyView(a,day)}:{})};
+  return {day:day.id,startsAt:day.startsAt,endsAt:day.endsAt,open,serverNow:at,raids,candidateId:day.candidateId,candidateName:day.candidateId?name(this.c.accounts.get(day.candidateId)):'暂无候选',offerUntil:day.offerUntil,queue:this.data.queue.map(id=>({id,name:name(this.c.accounts.get(id))})),army:detail?this.armyView(a,day).army:{id:day.army.id,commanderId:day.army.commanderId,revision:day.army.revision,closed:day.army.closed},commanderName:day.army.commanderId?name(this.c.accounts.get(day.army.commanderId)):null,noticeDismissed:a.raidNoticeDay===day.id,matches:Object.values(this.data.matches).map(m=>({id:m.id,day:m.day,clubId:m.clubId,kind:m.kind,defenderId:m.defenderId,minute:m.leg.match.minute,score:m.leg.match.score})),history:this.data.history.filter(b=>b.day===day.id&&(b.kind==='interception'||b.defenderId===a.id)).map(battleSummary),...(detail?{coalition:this.armyView(a,day)}:{})};
  }
 }

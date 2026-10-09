@@ -3,7 +3,7 @@ export const SCOUTING_RULES = Object.freeze({
   scoutCapacity: 2,
   recruitBatchLimit: 2,
   recruitCostGold: 0,
-  costGold: 700,
+  costGold: 1200,
   maxQueueRounds: 20,
   durationMs: 10 * 60_000,
   choiceCount: 3,
@@ -31,3 +31,16 @@ export function scoutingGradeProbabilities(levelRules) {
   const legendary = levelRules.legendaryChance;
   return [...Object.entries(weights).filter(([, weight]) => weight > 0).map(([grade, weight]) => ({ grade, percent: (1 - legendary) * weight / total * 100 })), { grade: "S", percent: legendary * 100 }].filter((entry) => entry.percent > 0);
 }
+
+// Diminishing production efficiency; no hard cap or production stockpile spending.
+export function scoutingProductionTiming(production = 0, baseDurationMs = SCOUTING_RULES.durationMs) {
+  const capacity = Number.isFinite(production) ? Math.max(0, production) : 0;
+  const speedMultiplier = 1 + 0.1 * Math.log2(1 + capacity / 300);
+  const durationMs = Math.ceil(baseDurationMs / speedMultiplier);
+  return { production: capacity, speedMultiplier, baseDurationMs, durationMs, reductionPercent: (1 - 1 / speedMultiplier) * 100 };
+}
+
+export const JOINT_SCOUTING_RULES = Object.freeze({
+ siteCount:3, rotationMs:6*60*60_000, maxQueueRounds:30, costMultiplier:1.2, legendaryMultiplier:1.5,
+ enhancementWeights:Object.freeze({0:88,1:8,2:3,3:1}),
+});

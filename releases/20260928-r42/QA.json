@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "version": "20260928-r42",
+  "baseline": "20260928-r41",
+  "fullTests": {
+    "passed": 1478,
+    "failed": 0,
+    "groups": [
+      85,
+      1232,
+      161
+    ]
+  },
+  "focusedTests": {
+    "newFeatureTests": 10,
+    "clubAndDiplomacy": 47,
+    "overlapWithFullSuite": true
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260928-r42",
+    "checks": [
+      "Complete 20260928-r41 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260928-r42 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 15,
+    "newFiles": 8,
+    "requiredBaseFiles": 1249,
+    "imports": 109,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "runtime": {
+    "passed": true,
+    "platform": "win32",
+    "node": "v22.17.1",
+    "checks": [
+      "R41 account login, wallet and roster preserved after upgrade",
+      "Leaderboard requires authenticated access",
+      "Installed ladder endpoint returns owned cards in descending order and reuses cache",
+      "New browser modules and styles served from installed payload",
+      "Server restarts successfully and reconstructs leaderboard",
+      "Protected uploaded content preserved",
+      "Matched R41 code/save restored and old server starts successfully"
+    ],
+    "remoteDeployed": false,
+    "scope": "Real Windows Node server starts and HTTP requests; updater service hooks mocked; no Linux systemd deployment"
+  },
+  "clubBrowser": {
+    "report": [
+      {
+        "name": "lineup-export",
+        "bytes": 1922011,
+        "width": 960,
+        "height": 1572,
+        "cards": 11
+      },
+      {
+        "name": "roster-export",
+        "bytes": 2345298,
+        "width": 960,
+        "height": 1559,
+        "cards": 20
+      },
+      {
+        "name": "silver-roster-export",
+        "bytes": 2384242,
+        "width": 960,
+        "height": 1559,
+        "cards": 20
+      },
+      {
+        "name": "league-mobile-export",
+        "bytes": 1921879,
+        "width": 960,
+        "height": 1572,
+        "cards": 11
+      }
+    ],
+    "posts": 0,
+    "backgroundPresence": 1,
+    "posted": [],
+    "errors": []
+  },
+  "ladderBrowser": {
+    "reads": 1,
+    "entries": 100,
+    "errors": []
+  },
+  "remoteDeployed": false,
+  "scope": "Windows isolated file upgrade and rollback; real Node HTTP and Chrome tests; system service hooks mocked; no remote Linux deployment"
+}

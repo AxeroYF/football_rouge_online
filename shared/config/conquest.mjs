@@ -1,4 +1,6 @@
 export const DAILY_NEUTRAL_CONQUEST_LIMIT = 8;
+export const DAILY_PLAYER_CONQUEST_LIMIT = 4;
+export const PVP_ATTACK_BOND_GOLD = 30000;
 export const EXPEDITION_DEFEAT_COOLDOWN_MS = 20 * 60 * 1000;
 export const CONQUEST_RESET_HOUR = 8;
 const HOUR_MS = 3600000, DAY_MS = 86400000;
@@ -27,8 +29,12 @@ export function conquestState(account, now, bonus = 0) {
   }
   const latestDefeat = saved ? 0 : Math.max(0, ...(account.battleHistory ?? [])
     .filter(b => b.outcome && b.outcome !== 'win').map(captureTime));
-  const limit = DAILY_NEUTRAL_CONQUEST_LIMIT + Math.max(0, Math.floor(Number(bonus) || 0));
-  return { day, resetHour:CONQUEST_RESET_HOUR, limit, used, remaining:Math.max(0,limit-used),
+  const playerHistory=(account.battleHistory??[]).filter(b=>b.captured&&b.attackerId===account.id&&b.defender?.type==='player'&&conquestDay(captureTime(b))===day).length;
+  const playerUsed=saved?.schemaVersion===2?(saved.day===day?Math.max(0,Number(saved.playerUsed)||0):0):playerHistory;
+  if(saved?.schemaVersion!==2)used+=playerUsed;
+  const extra = Number(bonus);
+  const limit = DAILY_NEUTRAL_CONQUEST_LIMIT + (Number.isFinite(extra) ? Math.max(0, Math.floor(extra)) : 0);
+  return { schemaVersion:2,day, resetHour:CONQUEST_RESET_HOUR, limit, used, playerLimit:DAILY_PLAYER_CONQUEST_LIMIT,playerUsed,playerRemaining:Math.max(0,DAILY_PLAYER_CONQUEST_LIMIT-playerUsed),remaining:Math.max(0,limit-used),
     resetsAt:(Math.floor((now+RESET_OFFSET_MS)/DAY_MS)+1)*DAY_MS-RESET_OFFSET_MS,
     cooldownUntil:Math.max(Number(saved?.cooldownUntil)||0,latestDefeat?latestDefeat+EXPEDITION_DEFEAT_COOLDOWN_MS:0),
     curfew:attackCurfewState(now), serverNow:now };
@@ -41,7 +47,8 @@ export function conquestAttackBlock(state, ownerType, now = state?.serverNow ?? 
     const seconds = Math.ceil((state.cooldownUntil - now) / 1000);
     return { code: 'expedition-cooldown', message: `远征队休整中，${Math.floor(seconds / 60)}分${String(seconds % 60).padStart(2, '0')}秒后可再次攻击` };
   }
-  if (ownerType === 'neutral' && now < state.resetsAt && state.remaining <= 0)
-    return { code:'neutral-conquest-limit', message:'今日中立地块征服次数已用完，北京时间 08:00 恢复' };
+  if (['neutral','player'].includes(ownerType) && now < state.resetsAt && state.remaining <= 0)
+    return { code:'neutral-conquest-limit', message:'今日地块征服总次数已用完，北京时间 08:00 恢复' };
+  if(ownerType==='player'&&now<state.resetsAt&&state.playerRemaining<=0)return {code:'player-conquest-limit',message:'今日玩家地块成功攻占已达4块，北京时间08:00恢复'};
   return null;
 }

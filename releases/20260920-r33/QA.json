@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "version": "20260920-r33",
+  "checks": [
+    "Complete 20260920-r31 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r33 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks",
+    "Already applied R32 accepted by cumulative R33"
+  ],
+  "changedFiles": 10,
+  "newFiles": 0,
+  "requiredBaseFiles": 1229,
+  "imports": 38,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "testsPassed": 1398,
+  "cardTests": 11,
+  "visualSizes": [
+    280,
+    180,
+    110
+  ],
+  "includesR32": true
+}

@@ -23,10 +23,13 @@ export function createMaritimeController({
   let maritimeRouteLayer = null;
   let maritimeSnapMarker = null;
   const maritimeTargetIds = new Set();
+  let coastProjection = null;
+  map.on?.('zoomend viewreset moveend resize', () => { coastProjection = null; });
 
-  function clearMaritimeMode({ keepSelection = false } = {}) {
+  function clearMaritimeMode({ keepSelection = false, previewAlreadyClosed = false } = {}) {
     const previous = maritimeMode;
     maritimeMode = null;
+    coastProjection = null;
     if (heartbeat !== null) timer.clearInterval(heartbeat);
     heartbeat = null;
     maritimeTargetIds.clear();
@@ -35,12 +38,11 @@ export function createMaritimeController({
     maritimeSnapMarker?.remove();
     maritimeSnapMarker = null;
     mapElement.classList.remove("is-selecting-coast");
-    if (!keepSelection) refreshTerritoryDisplay();
-    if (previous?.previewId) {
+    if (!keepSelection && !previous?.previewId) refreshTerritoryDisplay();
+    if (previous?.previewId && !previewAlreadyClosed) {
       onSurveyClose(previous.previewId);
       const request = getCampaignRequest();
-      if (request) Promise.resolve(request("/api/campaign/maritime/preview", { method:"POST", body:{action:"close",previewId:previous.previewId} }))
-        .then(result => { if (!maritimeMode && result.state) onSurveyState(result.state, {fit:false}); }).catch(() => {});
+      if (request) Promise.resolve(request("/api/campaign/maritime/preview", { method:"POST", body:{action:"close",previewId:previous.previewId,compact:true} })).catch(() => {});
     }
   }
 
@@ -54,37 +56,28 @@ export function createMaritimeController({
 
   function nearestCoastPoint(territoryId, latlng) {
     const coastlines = getCoastlineData()?.territories?.[territoryId]?.coastlines ?? [];
+    if (!coastProjection || coastProjection.territoryId !== territoryId || coastProjection.lines !== coastlines) {
+      coastProjection = {territoryId, lines:coastlines, points:coastlines.map(line => line.map(point =>
+        map.latLngToLayerPoint(Leaflet.latLng(...sourcePointToDisplay(territoryId, point)))))};
+    }
     const cursor = map.latLngToLayerPoint(latlng);
-    let nearest = null;
-    coastlines.forEach((line) => {
-      for (let index = 1; index < line.length; index += 1) {
-        const startLatLng = Leaflet.latLng(...sourcePointToDisplay(territoryId, line[index - 1]));
-        const endLatLng = Leaflet.latLng(...sourcePointToDisplay(territoryId, line[index]));
-        const start = map.latLngToLayerPoint(startLatLng);
-        const end = map.latLngToLayerPoint(endLatLng);
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
+    let best = null, bestDistance = Infinity;
+    for (const line of coastProjection.points) {
+      for (let index = 1; index < line.length; index++) {
+        const start = line[index - 1], end = line[index], dx = end.x - start.x, dy = end.y - start.y;
         const lengthSquared = dx * dx + dy * dy;
-        const ratio = lengthSquared
-          ? Math.max(0, Math.min(1, ((cursor.x - start.x) * dx + (cursor.y - start.y) * dy) / lengthSquared))
-          : 0;
-        const snappedLayerPoint = Leaflet.point(start.x + dx * ratio, start.y + dy * ratio);
-        const distance = cursor.distanceTo(snappedLayerPoint);
-        if (!nearest || distance < nearest.distance) {
-          const displayLatLng = map.layerPointToLatLng(snappedLayerPoint);
-          nearest = {
-            sourcePoint: displayPointToSource(territoryId, displayLatLng),
-            displayLatLng,
-            distance,
-          };
-        }
+        const ratio = lengthSquared ? Math.max(0, Math.min(1, ((cursor.x-start.x)*dx+(cursor.y-start.y)*dy)/lengthSquared)) : 0;
+        const x = start.x+dx*ratio, y = start.y+dy*ratio, distance = (cursor.x-x)**2+(cursor.y-y)**2;
+        if (distance < bestDistance) { bestDistance = distance; best = {x,y}; }
       }
-    });
-    return nearest;
+    }
+    if (!best) return null;
+    const displayLatLng = map.layerPointToLatLng(Leaflet.point(best.x,best.y));
+    return {sourcePoint:displayPointToSource(territoryId,displayLatLng), displayLatLng, distance:Math.sqrt(bestDistance)};
   }
 
   function updateMaritimeSnap(latlng) {
-    if (!maritimeMode || maritimeMode.routes) return;
+    if (!maritimeMode || maritimeMode.routes || maritimeMode.pending) return;
     const nearest = nearestCoastPoint(maritimeMode.sourceTerritoryId, latlng);
     maritimeMode.pendingPoint = nearest?.distance <= 34 ? nearest : null;
     if (!maritimeMode.pendingPoint) {
@@ -149,11 +142,10 @@ export function createMaritimeController({
         .on("click", chooseTarget)
         .addTo(maritimeRouteLayer);
     });
-    refreshTerritoryDisplay();
   }
 
   async function confirmMaritimePoint(latlng) {
-    if (!maritimeMode || maritimeMode.routes) return;
+    if (!maritimeMode || maritimeMode.routes || maritimeMode.pending) return;
     updateMaritimeSnap(latlng);
     const selected = maritimeMode.pendingPoint;
     if (!selected) {
@@ -161,6 +153,8 @@ export function createMaritimeController({
       return;
     }
     const activeMode = maritimeMode;
+    activeMode.pending = true;
+    const accountId = getCampaignState()?.playerId;
     const request = getCampaignRequest();
     try {
       const result = await request("/api/campaign/maritime/routes", {
@@ -168,15 +162,18 @@ export function createMaritimeController({
         body: {
           sourceTerritoryId: activeMode.sourceTerritoryId,
           sourcePoint: selected.sourcePoint,
+          compact: true,
         },
       });
-      if (maritimeMode !== activeMode) {
-        if(result.previewId)void request("/api/campaign/maritime/preview",{method:"POST",body:{action:"close",previewId:result.previewId}}).catch(()=>{});
+      if (maritimeMode !== activeMode || getCampaignState()?.playerId !== accountId) {
+        if(result.previewId)void request("/api/campaign/maritime/preview",{method:"POST",body:{action:"close",previewId:result.previewId,compact:true}}).catch(()=>{});
         return;
       }
-      maritimeMode = { ...maritimeMode, sourcePoint: result.sourcePoint, routes: result.routes, maxRangeKm: result.maxRangeKm, previewId:result.previewId };
-      if (result.state) onSurveyState(result.state, {fit:true});
+      maritimeMode = { ...maritimeMode, pending:false, sourcePoint: result.sourcePoint, routes: result.routes, maxRangeKm: result.maxRangeKm, previewId:result.previewId };
+      if (result.statePatch || result.state) onSurveyState(result.statePatch ?? result.state, {fit:false,compact:Boolean(result.statePatch)});
+      else refreshTerritoryDisplay();
       if (!maritimeMode || maritimeMode.sourceTerritoryId !== activeMode.sourceTerritoryId) return;
+      drawMaritimeRoutes(result);
       if (result.previewId) {
         if (heartbeat !== null) timer.clearInterval(heartbeat);
         heartbeat = timer.setInterval(() => {
@@ -187,7 +184,6 @@ export function createMaritimeController({
         heartbeat?.unref?.();
       }
       maritimeSnapMarker?.setStyle({ color: "#c9f05c", fillColor: "#c9f05c" });
-      drawMaritimeRoutes(result);
       renderTerritoryInspector(maritimeMode.sourceTerritoryId);
       showToast(
         result.routes.length
@@ -195,7 +191,9 @@ export function createMaritimeController({
           : `航程 ${result.maxRangeKm} 公里内无可达目标，可更换出发点或建设、升级港口`,
       );
     } catch (error) {
-      showToast(error.message || "航线计算失败");
+      if (maritimeMode === activeMode && getCampaignState()?.playerId === accountId) showToast(error.message || "航线计算失败");
+    } finally {
+      if (maritimeMode === activeMode) activeMode.pending = false;
     }
   }
 

@@ -233,7 +233,7 @@ for(const useCoalition of [false,true])test(`${useCoalition?'coalition':'persona
     const result=f.s.challenges.begin(f.a,'c',{maritimeRoute:route});
     assert.equal(result.challenge.maritimeRoute.distanceKm,778);
   }else{
-    const action=(account,action,extra={})=>{const army=f.s.coalitions.find(account);return f.s.coalitions.mutate(account,{action,requestId:crypto.randomUUID(),armyId:army?.id,revision:army?.revision,...extra});};
+    const action=(account,action,extra={})=>{const army=f.s.coalitions.find(account);return f.s.coalitions.mutate(account,{action,pvpConfirmed:action==='attack',requestId:crypto.randomUUID(),armyId:army?.id,revision:army?.revision,...extra});};
     action(f.a,'create');
     for(const player of f.a.draft.roster.slice(0,6))action(f.a,'lend',{playerId:player.id});
     for(const player of f.b.draft.roster.slice(6,11))action(f.b,'lend',{playerId:player.id});

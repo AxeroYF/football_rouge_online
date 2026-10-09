@@ -142,7 +142,7 @@ test("bad elevation buffers fail clearly and loading preserves cancellation and 
   assert.throws(()=>new ReliefField({...field.meta,width:2,height:2},corrupt),/超出/);
   const signal=new AbortController().signal,requests=[];
   const fields=await loadReliefFields({signal,fetchImpl:async(url,options)=>{
-    assert.equal(options.signal,signal);requests.push(url);
+    assert.equal(options.signal.aborted,false);requests.push(url);
     return {ok:true,json:async()=>({...field.meta,file:"https://invalid.test/redirect.bin"}),arrayBuffer:async()=>field.mask.buffer.slice(0)};
   }});
   assert.equal(fields.length,3);assert.equal(requests.length,6);

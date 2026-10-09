@@ -1,7 +1,9 @@
+import {enableNavigationScroll} from './navigation-scroll.js';
 // Shared browser/WebView presentation. No game state or server mutations.
-const media=matchMedia('(max-width:1100px) and (max-height:600px) and (orientation:landscape)');
+const media=matchMedia('(max-width:1280px) and (max-height:600px) and (orientation:landscape)');
 const root=document.documentElement,nav=document.querySelector('.primary-nav'),menu=document.querySelector('#mobile-menu-toggle'),tools=document.querySelector('.campaign-minimap-panel'),toolsButton=tools?.querySelector('.mobile-map-tools');
 const players=document.querySelector('#server-players'),notices=document.querySelector('#campaign-notifications');
+enableNavigationScroll(nav);
 let entered=false,scheduled=false,tacticsTab="lineup",pitchExpanded=false,observedBoard=null;
 function fitPitch(){if(!media.matches||!observedBoard?.isConnected||!observedBoard.clientHeight)return;const scale=Math.min(.8,(observedBoard.clientHeight-14)/600,(observedBoard.clientWidth-14)/480);root.style.setProperty('--mobile-pitch-zoom',String(Math.max(.15,scale)));}
 const pitchResize=new ResizeObserver(fitPitch);
@@ -16,7 +18,7 @@ function fit(){
   const viewport=window.visualViewport;
   const height=viewport&&Math.abs(viewport.scale-1)<.05?viewport.height:innerHeight;
   root.style.setProperty('--mobile-viewport-height',Math.round(height)+'px');
-  root.style.setProperty('--mobile-pitch-zoom',String(Math.max(.22,Math.min(.8,(height-98)/600))));
+  fitPitch();
   if(!entered){collapsePlayers();collapseNotices();closeTools();window.scrollTo(0,0);entered=true;}
  }else{root.style.removeProperty('--mobile-viewport-height');closeMenu();closeTools();entered=false;}
 }
@@ -24,21 +26,22 @@ menu?.addEventListener('click',()=>{const open=!root.classList.contains('mobile-
 nav?.addEventListener('click',e=>{if(e.target.closest('.nav-item'))closeMenu();});
 toolsButton?.addEventListener('click',()=>{const open=!tools.classList.contains('mobile-tools-open');closeTools();if(open){tools.classList.add('mobile-tools-open');toolsButton.setAttribute('aria-expanded','true');collapsePlayers();collapseNotices();closeMenu();}});
 document.addEventListener('click',e=>{
+ const toggle=e.target.closest('[data-mobile-filter-toggle]');
+ if(toggle){const shell=toggle.closest('.team-management-shell');const open=shell.classList.toggle('mobile-filters-open');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'收起筛选':'筛选';}
  if(!media.matches)return;
  if(e.isTrusted&&!e.target.closest('.primary-nav,#mobile-menu-toggle'))closeMenu();
- if(e.target.closest('[data-players-toggle]')?.getAttribute('aria-expanded')==='true'){collapseNotices();closeTools();}
+ // Player rendering replaces the clicked button; read the current header state.
+ if(e.target.closest('[data-players-toggle]')&&players?.querySelector('[data-players-toggle]')?.getAttribute('aria-expanded')==='true'){collapseNotices();closeTools();}
  if(e.target.closest('[data-notification-toggle]')?.getAttribute('aria-expanded')==='true'){collapsePlayers();closeTools();}
  const tab=e.target.closest('[data-mobile-tactics-tab]');
  if(tab){tacticsTab=tab.dataset.mobileTacticsTab;decorate();}
  if(e.target.closest('[data-mobile-pitch-zoom]')){pitchExpanded=!pitchExpanded;decorate();}
  if(e.target.closest('[data-mobile-tactics-close]'))document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
- const toggle=e.target.closest('[data-mobile-filter-toggle]');
- if(toggle){const shell=toggle.closest('.team-management-shell');const open=shell.classList.toggle('mobile-filters-open');toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'收起筛选':'筛选';}
 },false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(media.matches&&(root.classList.contains('mobile-menu-open')||tools?.classList.contains('mobile-tools-open')))e.preventDefault();closeMenu();closeTools();}});
 function decorate(){
  scheduled=false;
- const shell=document.querySelector('.team-management-shell'),heading=shell?.querySelector('header');
+ const shell=document.querySelector('.team-management-shell:not(.team-mode-shell):not(.team-batch-shell):not(.league-registration-shell)'),heading=shell?.querySelector('header');
  if(heading&&!heading.querySelector('[data-mobile-filter-toggle]')){const b=document.createElement('button');b.type='button';b.className='mobile-only mobile-filter-toggle';b.dataset.mobileFilterToggle='';b.setAttribute('aria-expanded','false');b.textContent='筛选';heading.insertBefore(b,heading.lastElementChild);}
  const tactics=document.querySelector('#campaign-tactics .league-squad-page');
  if(tactics){
@@ -57,4 +60,21 @@ function decorate(){
 }
 const observer=new MutationObserver(()=>{if(!scheduled){scheduled=true;requestAnimationFrame(decorate);}});
 observer.observe(document.querySelector('.map-stage'),{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+// Native Android invokes this narrow presentation-only hook, with no JS/native bridge.
+window.yellowdogsMobileBack=()=>{
+ const visible=e=>e&&!e.hidden&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden';
+ const modal=[...document.querySelectorAll('[data-small-window]')].filter(visible).at(-1);
+ if(modal){
+  const target=modal.querySelector('[data-small-window-dialog]')??modal;
+  const event=new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true});target.dispatchEvent(event);
+  return event.defaultPrevented;
+ }
+ if(root.classList.contains('mobile-menu-open')){closeMenu();return true;}
+ if(tools?.classList.contains('mobile-tools-open')){closeTools();return true;}
+ const event=new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true});
+ document.dispatchEvent(event);if(event.defaultPrevented)return true;
+ if(players?.querySelector('[data-players-toggle][aria-expanded="true"]')){collapsePlayers();return true;}
+ if(notices?.querySelector('[data-notification-toggle][aria-expanded="true"]')){collapseNotices();return true;}
+ return false;
+};
 media.addEventListener('change',fit);window.addEventListener('resize',fit);window.visualViewport?.addEventListener('resize',fit);fit();decorate();

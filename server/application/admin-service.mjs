@@ -234,7 +234,7 @@ export class AdminService {
     const requestId = clean(input.requestId), reason = clean(input.reason, "后台球员发放").slice(0,120);
     const fail = (message, statusCode=400) => { throw Object.assign(new Error(message), {statusCode}); };
     if (typeof input.count !== "number" || !Number.isSafeInteger(count) || count < 1 || count > 999) fail("发放数量必须是 1 至 999 的整数");
-    if (typeof input.upgradeLevel !== "number" || !Number.isInteger(upgradeLevel) || upgradeLevel < 0 || upgradeLevel > S4_ENHANCEMENT.maxLevel) fail("强化等级必须是 0 至 8 的整数");
+    if (typeof input.upgradeLevel !== "number" || !Number.isInteger(upgradeLevel) || upgradeLevel < 0 || upgradeLevel > S4_ENHANCEMENT.maxLevel) fail(`强化等级必须是 0 至 ${S4_ENHANCEMENT.maxLevel} 的整数`);
     if (!/^[A-Za-z0-9._:-]{8,128}$/.test(requestId)) fail("发放请求标识无效");
     const account = this.campaign.accounts.get(accountId);
     if (!account) fail("目标球队不存在",404);

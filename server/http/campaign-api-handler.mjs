@@ -1,35 +1,18 @@
+import {scoutingRoutes} from "./scouting-routes.mjs";
+import {cardRoutes} from "./card-routes.mjs";
+import {interactionRoutes} from './interaction-routes.mjs';
+import {leagueRoutes} from "./league-routes.mjs";
+import {UNHANDLED} from "./route-result.mjs";
+import {trainingRoute} from './training-routes.mjs';
+import {PlayerLadderService} from '../application/player-ladder-service.mjs';
+import {stateDelta} from './state-delta.mjs';
 import { campaignTacticalPreview } from "../application/tactical-preview.mjs";
-export function sendJson(response, statusCode, value) {
-  response.writeHead(statusCode, {
-    "content-type": "application/json; charset=utf-8",
-    "cache-control": "no-store",
-  });
-  response.end(JSON.stringify(value));
-}
-
-export async function readJsonBody(request, { maximumBytes = 1_000_000 } = {}) {
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of request) {
-    size += chunk.length;
-    if (size > maximumBytes) throw Object.assign(new Error("请求内容过大"), { statusCode: 413 });
-    chunks.push(chunk);
-  }
-  if (!chunks.length) return {};
-  try {
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
-  } catch {
-    throw Object.assign(new Error("请求格式无效"), { statusCode: 400 });
-  }
-}
-
-export function bearerToken(request) {
-  const header = String(request.headers.authorization ?? "");
-  return header.startsWith("Bearer ") ? header.slice(7) : "";
-}
+import {sendJson, readJsonBody, bearerToken} from "./json.mjs";
+export {sendJson, readJsonBody, bearerToken} from "./json.mjs";
 
 export function createCampaignApiHandler({ campaign } = {}) {
   if (!campaign) throw new Error("Campaign API handler requires a campaign service");
+  const ladder=new PlayerLadderService({accounts:campaign.accounts,now:()=>campaign.now?.()??Date.now()});
   return async function handleCampaignApi(request, response, pathname, url) {
     const body = request.method === "POST" ? await readJsonBody(request) : {};
     if (request.method === "POST" && pathname === "/api/campaign/register") {
@@ -39,6 +22,14 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, campaign.login(body.nickname, body.password));
     }
     const account = campaign.authenticate(bearerToken(request));
+    if(request.method==='GET'&&pathname==='/api/campaign/player-ladder'){
+      if(!account.setupComplete)throw Object.assign(Error('请先完成建队'),{statusCode:403});
+      return sendJson(response,200,{ladder:ladder.get(),serverNow:campaign.now?.()??Date.now()});
+    }
+    const league = leagueRoutes({campaign, account, request, response, pathname, url, body});
+    if (league !== UNHANDLED) return league;
+    if(request.method==='POST'&&pathname==='/api/campaign/pvp-notice/read')return sendJson(response,200,campaign.dismissPvpNotice(account,body.noticeId));
+    if(request.method==='POST'&&pathname==='/api/campaign/battle-report/read')return sendJson(response,200,campaign.dismissBattleReport(account,body.challengeId));
     if(pathname==='/api/campaign/airport'&&request.method==='POST'){
       if(!account.setupComplete)throw Object.assign(Error('请先建队'),{statusCode:403});campaign.save();
       if(body.action==='view')return sendJson(response,200,{view:campaign.airports.view(account,body.territoryId)});
@@ -50,34 +41,32 @@ export function createCampaignApiHandler({ campaign } = {}) {
       if(!account.setupComplete)throw Object.assign(Error('请先完成建队'),{statusCode:403});
       if(request.method==='GET'){campaign.eliteRaids.ensureDay();return sendJson(response,200,{activity:campaign.eliteRaids.view(account,{detail:true}),view:campaign.eliteRaids.armyView(account)});}
       if(body.action==='presence'){campaign.eliteRaids.touch(account,{foreground:true});return sendJson(response,200,{ok:true});}
-      if(body.action==='dismiss'){account.raidNoticeDay=campaign.eliteRaids.day()?.id;campaign.save();return sendJson(response,200,{ok:true});}
+      if(body.action==='dismiss'){const day=campaign.eliteRaids.day()?.id;if(body.day!==undefined&&body.day!==day)throw Object.assign(Error('活动日期已变化，请刷新'),{statusCode:409});const previous=account.raidNoticeDay;account.raidNoticeDay=day;try{campaign.persist();}catch(error){if(previous===undefined)delete account.raidNoticeDay;else account.raidNoticeDay=previous;throw error;}return sendJson(response,200,{ok:true});}
       if(body.action==='preview')return sendJson(response,200,{tacticalShapePreview:campaign.eliteRaids.preview(account,body)});
-      const result=campaign.eliteRaids.mutate(account,body);campaign.eliteRaids.touch(account,{foreground:true});return sendJson(response,200,{result,activity:campaign.eliteRaids.view(account,{detail:true}),view:campaign.eliteRaids.armyView(account),state:campaign.state(account)});
+      const result=campaign.eliteRaids.mutate(account,body);campaign.eliteRaids.touch(account,{foreground:true});
+      if(body.action==='tactics'&&body.responseMode==='tactics')return sendJson(response,200,{result,view:campaign.eliteRaids.armyView(account),tacticsUpdate:{eliteRaids:campaign.eliteRaids.view(account)}});
+      return sendJson(response,200,{result,activity:campaign.eliteRaids.view(account,{detail:true}),view:campaign.eliteRaids.armyView(account),state:campaign.state(account)});
     }
     if(request.method==='GET'&&pathname==='/api/campaign/raids/match'){if(!account.setupComplete)throw Object.assign(Error('请先完成建队'),{statusCode:403});return sendJson(response,200,campaign.eliteRaids.snapshot(account,new URL(url,'http://localhost').searchParams.get('id')));}
     if(request.method==='POST'&&!['estimate','preview','routes','read','read-news'].includes(body.action))response.once?.('finish',()=>{if(response.statusCode>=200&&response.statusCode<300)campaign.eliteRaids?.touch(account,{foreground:true});});
     if(pathname==='/api/campaign/coalition'&&['GET','POST'].includes(request.method)) {
-      if(request.method==='GET')return sendJson(response,200,{view:campaign.coalitions.view(account)});
+      if(request.method==='GET')return sendJson(response,200,{view:campaign.coalitions.view(account,{includeTactics:new URL(request.url,'http://localhost').searchParams.get('view')!=='management'})});
       if(body.action==='estimate'){campaign.save();const army=campaign.coalitions.require(account,body.armyId);campaign.coalitions.command(account,army);return sendJson(response,200,{estimate:campaign.coalitions.estimate(army,body)});}
+      if(body.action==='loan-cards')return sendJson(response,200,{view:campaign.coalitions.loanCards(account,String(body.ownerId??''))});
       if(body.action==='preview')return sendJson(response,200,{tacticalShapePreview:campaign.coalitions.preview(account,body)});
       if(body.action==='routes'){const army=campaign.coalitions.require(account,body.armyId);campaign.coalitions.command(account,army);const routes=campaign.coalitions.routes(army,body.beneficiaryId,body.sourcePoint);campaign.fog.survey(account,campaign.world,routes,{coalitionId:army.id});return sendJson(response,200,{...routes,state:campaign.state(account)});}
-      const result=campaign.coalitions.mutate(account,body);return sendJson(response,200,{result,view:campaign.coalitions.view(account),state:campaign.state(account)});
+      const result=campaign.coalitions.mutate(account,body),view=campaign.coalitions.view(account,{includeTactics:body.view!=='management'});
+      if(body.action==='tactics'&&body.responseMode==='tactics')return sendJson(response,200,{result,view,tacticsUpdate:{coalition:campaign.coalitions.view(account,{detail:false})}});
+      if(body.view==='management'&&campaign.coalitions.isManagementAction(body.action))return sendJson(response,200,{result,view,statePatch:{...campaign.actionState(account,{includeRoster:['lend','withdraw','accept-loan'].includes(body.action)}),coalition:campaign.coalitions.view(account,{detail:false}),coalitionLoanRequests:campaign.coalitions.loanNotices(account),coalitionCommandRequests:campaign.coalitions.commandNotices(account),coalitionTargetRequests:campaign.coalitions.targetNotices(account)}});
+      return sendJson(response,200,{result,view,state:campaign.state(account)});
     }
     if(pathname==='/api/campaign/oil'&&['GET','POST'].includes(request.method)){
       campaign.save();
       const result=request.method==='POST'?campaign.oil.mutate(account,body):null;
       return sendJson(response,200,{result,oil:campaign.oil.market(account),state:campaign.state(account)});
     }
-    if(request.method==='GET'&&pathname==='/api/campaign/players')return sendJson(response,200,{interactions:campaign.diplomacy.summary(account)});
-    if(request.method==='GET'&&pathname==='/api/campaign/interactions')return sendJson(response,200,{view:campaign.diplomacy.details(account,new URL(url,'http://localhost').searchParams.get('playerId'))});
-    if(request.method==='GET'&&pathname==='/api/campaign/interactions/match')return sendJson(response,200,campaign.diplomacy.snapshot(account,new URL(url,'http://localhost').searchParams.get('id')));
-    if(request.method==='POST'&&pathname==='/api/campaign/interactions') {
-      if(['read-news','read'].includes(body.action))return sendJson(response,200,{...campaign.diplomacy.mutate(account,body),acknowledged:true});
-      campaign.settleDueChallenges();
-      const result=campaign.diplomacy.mutate(account,body);
-      return sendJson(response,200,{...result,view:campaign.diplomacy.details(account,body.targetId),state:campaign.state(account)});
-    }
-
+    const interaction = interactionRoutes({campaign, account, request, response, pathname, url, body});
+    if (interaction !== UNHANDLED) return interaction;
     if(request.method==='GET'&&pathname==='/api/campaign/elite')return sendJson(response,200,{elite:campaign.eliteChallenges.view(account,new URL(url,'http://localhost').searchParams.get('clubId'))});
     if(request.method==='GET'&&pathname==='/api/campaign/elite/match')return sendJson(response,200,campaign.eliteChallenges.snapshot(account,new URL(url,'http://localhost').searchParams.get('id')));
     if(request.method==='POST'&&pathname==='/api/campaign/elite/begin'){const result=campaign.eliteChallenges.begin(account,body);return sendJson(response,200,{...result,state:campaign.state(account),elite:campaign.eliteChallenges.view(account,body.clubId)});}
@@ -90,14 +79,13 @@ export function createCampaignApiHandler({ campaign } = {}) {
     if (request.method === 'POST' && pathname === '/api/campaign/development/fog') return sendJson(response,200,campaign.setDevelopmentFog(account,body.enabled));
     if (request.method === 'POST' && pathname === '/api/campaign/rewards/research') return sendJson(response,200,campaign.assignNeutralResearch(account,body));
     if (request.method === 'POST' && pathname === '/api/campaign/rewards/production') return sendJson(response,200,campaign.assignNeutralProduction(account,body));
-    if (request.method === "GET" && pathname === "/api/campaign/cards") return sendJson(response, 200, campaign.cardManagementDetails(account));
-    if (request.method === "POST" && pathname === "/api/campaign/cards/preview") return sendJson(response, 200, campaign.previewCardManagement(account, body));
-    const cardAction = { "/api/campaign/cards/recycle": "recycle", "/api/campaign/cards/trade-up": "trade-up", "/api/campaign/cards/list": "list", "/api/campaign/cards/buy": "buy", "/api/campaign/cards/cancel": "cancel" }[pathname];
-    if (request.method === "POST" && cardAction) return sendJson(response, 200, campaign.mutateCardManagement(account, cardAction, body));
+    const cards = cardRoutes({campaign, account, request, response, pathname, url, body});
+    if (cards !== UNHANDLED) return cards;
     if (request.method === "GET" && pathname === "/api/campaign/state") {
       return sendJson(response, 200, {
         profile: { id: account.id, nickname: account.nickname },
-        state: campaign.state(account),
+        ...(request.headers['x-campaign-delta']==='1'?stateDelta(campaign.state(account),request.headers['x-campaign-versions']):{state:campaign.state(account)}),
+        ...(request.headers['x-campaign-delta']==='1'?{serverNow:campaign.now?.()??Date.now()}:{}),
       });
     }
     if (request.method === "GET" && pathname === "/api/campaign/player-directory") {
@@ -116,41 +104,10 @@ export function createCampaignApiHandler({ campaign } = {}) {
     if (request.method === "POST" && enhancementAction) {
       return sendJson(response, 200, campaign.mutateEnhancement(account, enhancementAction, body));
     }
-    if (request.method === "GET" && pathname === "/api/campaign/training/center") {
-      const params = new URL(url, "http://localhost").searchParams;
-      return sendJson(response, 200, campaign.trainingDetails(account, params.get("territoryId"), params.get("buildingId")));
-    }
-    if (request.method === "POST" && pathname === "/api/campaign/training/finish") {
-      return sendJson(response, 200, campaign.finishTraining(account, body.taskId));
-    }
-    if (request.method === "POST" && pathname === "/api/campaign/training/cancel") {
-      return sendJson(response, 200, campaign.cancelTraining(account, body.taskId));
-    }
-    if (request.method === "POST" && pathname === "/api/campaign/training/start") {
-      return sendJson(response, 200, campaign.startTraining(account, body));
-    }
-    if (request.method === "GET" && pathname === "/api/campaign/scouting/unit") {
-      return sendJson(response, 200, campaign.scoutUnitDetails(account, new URL(url, "http://localhost").searchParams.get("scoutId")));
-    }
-    if (request.method === "GET" && pathname === "/api/campaign/scouting/task") {
-      return sendJson(response, 200, campaign.scoutingTaskDetails(account, new URL(url, "http://localhost").searchParams.get("taskId")));
-    }
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/rename") return sendJson(response, 200, campaign.renameScout(account, body));
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/recruit") return sendJson(response, 200, campaign.recruitScouts(account, body));
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/estimate") return sendJson(response, 200, campaign.estimateScoutMove(account, body));
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/move") return sendJson(response, 200, campaign.moveScout(account, body));
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/cancel-move") return sendJson(response, 200, campaign.cancelScoutMove(account, body.scoutId, body.movementId));
-    if (request.method === "GET" && pathname === "/api/campaign/scouting/center") {
-      const params = new URL(url, "http://localhost").searchParams;
-      return sendJson(response, 200, campaign.scoutingDetails(account, params.get("territoryId"), params.get("buildingId")));
-    }
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/start") {
-      return sendJson(response, 200, campaign.startScouting(account, body));
-    }
-    if(request.method==="POST"&&pathname==="/api/campaign/scouting/claim-queue")return sendJson(response,200,campaign.claimScoutingQueue(account,body.taskId,body.cardIds));
-    if (request.method === "POST" && pathname === "/api/campaign/scouting/choose") {
-      return sendJson(response, 200, campaign.chooseScoutingPlayer(account, body.taskId, body.cardId));
-    }
+    const training = trainingRoute({campaign, account, method:request.method, pathname, url, body});
+    if (training) return sendJson(response, 200, training.value);
+    const scouting = scoutingRoutes({campaign, account, request, response, pathname, url, body});
+    if (scouting !== UNHANDLED) return scouting;
     if (request.method === "GET" && pathname === "/api/campaign/buildings/catalog") {
       return sendJson(response, 200, { catalog: campaign.buildingCatalog() });
     }
@@ -167,13 +124,16 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, { state: campaign.choose(account, body.playerId, body.offerId) });
     }
     if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/open") {
-      return sendJson(response, 200, campaign.openPlayerPack(account, body.packType));
+      return sendJson(response, 200, campaign.openPlayerPack(account, body.packType, {compact:body.compact===true}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/inventory/packs/choose") {
-      return sendJson(response, 200, campaign.choosePlayerPackCard(account, body.openingId, body.playerId));
+      return sendJson(response, 200, campaign.choosePlayerPackCard(account, body.openingId, body.playerId, {compact:body.compact===true}));
     }
+    if (request.method === "GET" && pathname === "/api/campaign/squads/batch") return sendJson(response,200,{snapshot:campaign.squadBatchDetails(account)});
+    if (request.method === "POST" && pathname === "/api/campaign/squads/batch-preview") return sendJson(response,200,campaign.previewSquadBatch(account,body));
+    if (request.method === "POST" && pathname === "/api/campaign/squads/batch") return sendJson(response,200,campaign.saveSquadBatch(account,body));
     if (request.method === "POST" && pathname === "/api/campaign/squads/assign") {
-      return sendJson(response, 200, { state:campaign.assignPlayerSquad(account, body.playerId, body.squadId) });
+      return sendJson(response, 200, { [body.compact === true ? "statePatch" : "state"]:campaign.assignPlayerSquad(account, body.playerId, body.squadId, {compact:body.compact}) });
     }
     if (request.method === "POST" && pathname === "/api/campaign/home/claim") {
       return sendJson(response, 200, { state: campaign.chooseHome(account, body.territoryId) });
@@ -182,30 +142,35 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, campaign.selectExpeditionAppearance(account, body.tokenId));
     }
     if (request.method === "POST" && pathname === "/api/campaign/expedition/move") {
-      return sendJson(response, 200, campaign.moveExpedition(account, body.territoryId, {useOil:body.useOil}));
+      return sendJson(response, 200, campaign.moveExpedition(account, body.territoryId, {useOil:body.useOil,compact:body.compact}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/expedition/estimate") {
       return sendJson(response, 200, campaign.estimateExpedition(account, body.territoryId, {useOil:body.useOil}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/expedition/cancel") {
-      return sendJson(response, 200, campaign.cancelExpedition(account));
+      return sendJson(response, 200, campaign.cancelExpedition(account,{compact:body.compact===true,movementId:body.movementId}));
     }
-    if (request.method === "POST" && /^\/api\/campaign\/research\/(confirm|rename|start|start-topic|cancel)$/.test(pathname)) {
-      campaign.formationResearch.mutate(account,pathname.split('/').at(-1),body);
-      return sendJson(response,200,{state:campaign.state(account)});
+    if (request.method === "POST" && /^\/api\/campaign\/research\/(confirm|rename|start|start-topic|cancel|read-notice|continue-notice)$/.test(pathname)) {
+      const research=campaign.formationResearch.mutate(account,pathname.split('/').at(-1),body);
+      return sendJson(response,200,body.compact===true?{statePatch:{playerId:account.id,formationResearch:research}}:{state:campaign.state(account)});
     }
     if (request.method === "POST" && pathname === "/api/campaign/tactics/preview") return sendJson(response, 200, { tacticalShapePreview:campaignTacticalPreview(account, body) });
     if (request.method === "POST" && pathname === "/api/campaign/tactics") {
-      return sendJson(response, 200, { state: campaign.saveTactics(account, body) });
+      const compact=body.responseMode==='tactics';
+      const result=campaign.saveTactics(account,body,{compact});
+      return sendJson(response,200,compact?{tacticsUpdate:result}:{state:result});
     }
     if (request.method === "POST" && pathname === "/api/campaign/maritime/preview") {
-      return sendJson(response, 200, campaign.maritimePreview(account, body.previewId, body.action));
+      return sendJson(response, 200, campaign.maritimePreview(account, body.previewId, body.action, {compact:body.compact===true}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/maritime/routes") {
-      return sendJson(response, 200, campaign.maritimeRoutes(account, body.sourceTerritoryId, body.sourcePoint));
+      return sendJson(response, 200, campaign.maritimeRoutes(account, body.sourceTerritoryId, body.sourcePoint, {compact:body.compact===true}));
+    }
+    if (request.method === "POST" && pathname === "/api/campaign/territory/liberation") {
+      return sendJson(response, 200, campaign.resolveTerritoryLiberation(account, body));
     }
     if (request.method === "POST" && pathname === "/api/campaign/territory/challenge") {
-      return sendJson(response, 200, campaign.challengeTerritory(account, body.territoryId, { maritimeRoute: body.maritimeRoute }));
+      return sendJson(response, 200, campaign.challengeTerritory(account, body.territoryId, { maritimeRoute: body.maritimeRoute, requirePvpConfirmation:true,pvpConfirmed:body.pvpConfirmed===true,expectedOwnerId:body.expectedOwnerId }));
     }
     if (request.method === "POST" && pathname === "/api/campaign/territory/challenge/complete") {
       return sendJson(response, 200, campaign.completeTerritoryChallenge(account, body.challengeId));
@@ -217,7 +182,7 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response, 200, campaign.buildTerritoryBuilding(account, body.territoryId, body.type, body.buildMethod));
     }
     if (request.method === "POST" && pathname === "/api/campaign/wonders/notifications/read") {
-      return sendJson(response,200,campaign.acknowledgeWonderCompetition(account,body.noticeId));
+      return sendJson(response,200,campaign.acknowledgeWonderCompetition(account,body.noticeId,{compact:body.compact===true}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/wonders/cancel") {
       return sendJson(response,200,campaign.cancelWonderConstruction(account,body.territoryId,body.buildingId));

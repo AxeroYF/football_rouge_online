@@ -1,5 +1,11 @@
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';
-const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+const hashBuffer=Buffer.allocUnsafe(256*1024);
+const hash=p=>{const h=crypto.createHash('sha256'),fd=fs.openSync(p,'r');try{let n;while((n=fs.readSync(fd,hashBuffer,0,hashBuffer.length,null))>0)h.update(hashBuffer.subarray(0,n));return h.digest('hex');}finally{fs.closeSync(fd);}};
+export function validateStoppedSave(file){
+ try{execFileSync(process.execPath,['--max-old-space-size=512','--input-type=module','-e',"import fs from 'node:fs';JSON.parse(fs.readFileSync(process.argv[1],'utf8'));",file],{timeout:60000,stdio:['ignore','pipe','pipe'],maxBuffer:16384});}
+ catch(error){throw Error(error.code==='ETIMEDOUT'?'存档校验超过 60 秒；未替换游戏文件':'存档 JSON 校验失败；未替换游戏文件，请检查存档或内存');}
+}
 const read=p=>JSON.parse(fs.readFileSync(p,'utf8'));
 const write=(p,v)=>fs.writeFileSync(p,JSON.stringify(v,null,2)+'\n',{mode:0o600});
 export function safeFile(root,relative){
@@ -14,21 +20,25 @@ export function verifyBundle(bundle){const m=read(path.join(bundle,'MANIFEST.jso
  if(hash(safeFile(path.join(bundle,'payload'),f.path))!==f.sha256)throw Error('Payload checksum mismatch: '+f.path);
  }return m;
 }
-export function preflight({bundle,app,data}){const manifest=verifyBundle(bundle);
+export function preflight({bundle,app,data,log=()=>{}}){log('检查更新包文件…');const manifest=verifyBundle(bundle);
  for(const root of [app,data])if(!fs.statSync(root).isDirectory()||fs.realpathSync(root)!==path.resolve(root))throw Error('Invalid or linked target directory: '+root);
  if(path.resolve(app)===path.parse(path.resolve(app)).root||path.resolve(data)===path.parse(path.resolve(data)).root)throw Error('Root directory is forbidden');
  if(!fs.existsSync(path.join(app,'server.mjs'))||!fs.existsSync(path.join(data,'campaign-accounts.json')))throw Error('Existing game installation/save is required');
  for(const item of manifest.files)safeFile(app,item.path);
  // Incremental bundles require their exact base, while permitting an idempotent reapply.
  const replacements=new Map(manifest.files.map(f=>[f.path,f.sha256]));
+ let checked=0;const total=manifest.requiredBaseFiles?.length??0;log('校验已安装版本，共 '+total+' 个文件…');
  for(const item of manifest.requiredBaseFiles??[]){
   const target=safeFile(app,item.path);
   if(!fs.existsSync(target)||!fs.statSync(target).isFile())throw Error('Incremental baseline missing: '+item.path+'; install '+manifest.baseline+' first');
-  const installed=hash(target);
-  if(installed!==item.sha256&&installed!==replacements.get(item.path))throw Error('Incremental baseline mismatch: '+item.path+'; install '+manifest.baseline+' first');
+  const installed=hash(target);if(++checked%100===0||checked===total)log('文件校验 '+checked+'/'+total);
+  const compatible=manifest.acceptedBaselineHashes?.[item.path];
+ const knownIntermediate=replacements.has(item.path)&&Array.isArray(compatible)&&compatible.some(value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value)&&value===installed);
+ if(installed!==item.sha256&&installed!==replacements.get(item.path)&&!knownIntermediate)throw Error('Incremental baseline mismatch: '+item.path+'; install '+manifest.baseline+' first');
  }
  const lock=read(path.join(app,'package-lock.json'));for(const d of manifest.dependencies){if(lock.packages[d.path]?.version!==d.version||read(safeFile(app,d.path+'/package.json')).version!==d.version)throw Error('Runtime dependency mismatch: '+d.path);}
- read(path.join(data,'campaign-accounts.json'));return manifest;
+ const save=safeFile(data,'campaign-accounts.json');if(!fs.statSync(save).isFile()||fs.statSync(save).size===0)throw Error('Existing save is empty or not a file');
+ log('静态检查通过；完整存档 JSON 校验将在 apply 停止旧服务后执行。');return manifest;
 }
 function loadBackup(backup,app,data){const m=read(path.join(backup,'BACKUP.json'));if(m.app!==path.resolve(app)||m.data!==path.resolve(data)||m.ready!==true)throw Error('Backup belongs to a different installation or is incomplete');
  for(const f of m.files.filter(x=>x.existed))if(hash(safeFile(path.join(backup,'app'),f.path))!==f.sha256)throw Error('Backup code checksum mismatch: '+f.path);
@@ -41,11 +51,11 @@ function restore(backup,app,data){const m=loadBackup(backup,app,data);
  try{for(const f of m.dataFiles)copy(safeFile(path.join(backup,'data'),f.path),safeFile(data,f.path),f);if(process.platform!=='win32')fs.chownSync(data,m.dataUid,m.dataGid);}catch(e){e.message+='; current data preserved at '+preserved;throw e;}
  return preserved;
 }
-export async function applyUpdate(options){const {bundle,app,data,backupRoot,stop,start,health,log=console.log}=options,manifest=preflight(options);
+export async function applyUpdate(options){const {bundle,app,data,backupRoot,stop,start,health,log=console.log}=options,manifest=preflight({...options,log});
  fs.mkdirSync(backupRoot,{recursive:true,mode:0o700});const lock=path.join(backupRoot,'.hot-update-lock');fs.mkdirSync(lock,{mode:0o700});
  const backup=path.join(backupRoot,manifest.version+'-'+Date.now()),record={version:manifest.version,app:path.resolve(app),data:path.resolve(data),files:[],dataFiles:[],ready:false};let stopped=false,changed=false;
  try{
-  stopped=true;await stop();fs.mkdirSync(backup,{mode:0o700});const ds=fs.statSync(data);Object.assign(record,{dataMode:ds.mode&0o777,dataUid:ds.uid,dataGid:ds.gid,dataFiles:files(data)});
+  log('停止旧服务后校验存档…');stopped=true;await stop();validateStoppedSave(path.join(data,'campaign-accounts.json'));log('存档校验通过，开始备份…');fs.mkdirSync(backup,{mode:0o700});const ds=fs.statSync(data);Object.assign(record,{dataMode:ds.mode&0o777,dataUid:ds.uid,dataGid:ds.gid,dataFiles:files(data)});
   for(const f of record.dataFiles)copy(safeFile(data,f.path),safeFile(path.join(backup,'data'),f.path),{...f,mode:0o600});
   for(const f of manifest.files){const target=safeFile(app,f.path),existed=fs.existsSync(target);if(existed&&!fs.statSync(target).isFile())throw Error('File target is not a file: '+target);const stat=fs.statSync(existed?target:f.path.startsWith('assets/')?path.join(app,'assets'):app),entry={path:f.path,existed,mode:existed?stat.mode&0o777:0o644,uid:stat.uid,gid:stat.gid};if(existed){entry.sha256=hash(target);copy(target,safeFile(path.join(backup,'app'),f.path),entry);}record.files.push(entry);}
   record.ready=true;write(path.join(backup,'BACKUP.json'),record);log('Backup: '+backup);changed=true;

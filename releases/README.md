@@ -4,11 +4,9 @@
 
 `CURRENT.json` 是发布入口，区分已发布版本、用户确认部署版本和源码整理状态。
 
-| 版本 | 必须安装的前置版本 | 状态 |
-| --- | --- | --- |
-| 20260918-r9 | 20260914-r8 | 用户确认已部署 |
-| 20260918-r10 | 20260918-r9 | 用户确认已部署 |
-| 20260918-r11 | 20260918-r10 | 已交付，部署尚未确认 |
+最新发布为 R52（20261006-r52），20 个运行文件更新，有效基线 1300 个文件，部署未确认。最近用户确认部署版本为原版 R51（20261004-r51），用户于 2026-10-06 确认推送服务器。2026-10-09 用户准备停服封存，见 handoff/SERVER_ARCHIVE_20261009.md；不需要先部署 R52。以下为 R51 历史记录：以 R50 为前置，4 个运行文件变更，有效基线 1299 个文件。用户实测 +8 卡可拖入后要求暂停 fix1，并选择原版 R51；fix1 已撤回，记录留在 releases/withdrawn/20261004-r51-fix1，不能作为后续增量基线。后续使用当前 releases/20261004-r51/BASELINE.json，详见 handoff/R51_UPDATE_20261004.md。
+
+Windows 0.1.5 是独立客户端发布，安装器保留在本机 outputs/windows-client-0.1.5/，不代表服务器更新。
 
 每个版本包含：
 - `MANIFEST.json`：原始热更新包清单，保持原字节和文件哈希。
@@ -22,7 +20,7 @@
 
 1. 确认服务器已安装版本，不根据 Git 分支或包名猜测。
 2. 执行 `node scripts/check-release-baseline.mjs` 核验归档链。
-3. 修改完成后运行 `python scripts/build-browser-module-versions.py`，更新资源内容版本。
+3. 修改完成后运行 `python scripts/build-browser-module-versions.py`，更新资源内容版本，然后执行 `node scripts/build-browser-startup.mjs` 生成正式入口。首次安装构建器执行 `npm ci --prefix tools/browser-build`（仅开发机器）。
 4. 使用 `scripts/build-incremental-hot-update.py --baseline releases/<已安装版本> --output outputs/<新的输出目录> --version <YYYYMMDD-rN> --scope "更新内容"`。
 5. 审核新增/变更清单，完成对应测试，写入 QA.json 与部署说明后再执行 `scripts/build-hot-update.py --output ... --version ... --finalize`。
 6. 上传包和 sha256 文件至 `/home/admin`，先执行包内 `update.sh --check`，通过后执行 `apply`。
@@ -37,3 +35,15 @@ R11 后的源码整理将 R10 中硬编码的真实玩家扣除清单改为私�
 原始包和运行诊断报告保留在开发机器 `outputs/`，不上传公开仓库。需要核对正式服时，安装器检查全部必需代码文件；浏览器只能读取公开资源，不能代替服务器端私有文件校验。
 
 公开源码已移除历史开发管理员密码及页面密码提示。本地开发默认值为 `local-dev-admin`，生产环境仍必须通过 `ADMIN_BOOTSTRAP_PASSWORD` 配置；这属于 R11 之后的源码整理，不改变已发布热更新包。
+
+## 2026-09-20 R15
+
+用户确认 R13 已部署、R14 未部署。R15 直接以 R13 为前置版本，合并 R14 及之后修改，共 25 个文件；不需要先部署 R14。归档核验按 parent 查找基线，支持该累计发布分支。R14 原包保持不变。R15 尚未确认部署。
+
+## 当前部署确认：R16
+
+用户于本轮handoff更新时确认20260920-r16已部署。下一次增量应以releases/20260920-r16为基线；原包保持不变。当前入口见handoff/CURRENT_STATE.md，早期段落的部署状态属于历史。
+
+## 2026-09-20 R17交付待部署
+
+R17基于R16，仅地图同帧渲染与页面资源版本两文件；Windows0.1.4同步交付。R17部署未获用户确认，lastUserConfirmedDeployed保持R16。

@@ -1,6 +1,6 @@
 import { FOG_RULES } from "../config/fog.mjs";
-import { territoryPointToDisplay } from "../../client/map/campaign-map-geometry.js";
-import { project, unproject } from "../../client/map-three/projection.js";
+import { territoryPointToDisplay } from "../geo/campaign-map-geometry.js";
+import { project, unproject } from "../geo/projection.js";
 
 export const intersects = (a,b) => !!a && !!b && a.minX<=b.maxX && a.maxX>=b.minX && a.minZ<=b.maxZ && a.maxZ>=b.minZ;
 export const expand = (b,r) => ({minX:b.minX-r,maxX:b.maxX+r,minZ:b.minZ-r,maxZ:b.maxZ+r});

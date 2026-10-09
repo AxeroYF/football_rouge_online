@@ -1,3 +1,5 @@
+import {createReadGate} from '../core/read-gate.js';
+import {createRequestId} from '../core/request-id.js';
 import {ELITE_FAN_TIERS} from '../../shared/config/elite-clubs.mjs';
 import {registerStandardWindow,activateStandardWindow,deactivateStandardWindow} from '../ui/standard-window.js';
 import {playerCardMarkup,escapePlayerCardHtml as esc} from '../player-card/player-card.js?v=20260905-shield-v1';
@@ -50,10 +52,11 @@ export function createEliteController({root,trigger,getState,getRequest,campaign
   const focus=next==='detail'?root.querySelector('[data-elite-back]'):[...root.querySelectorAll('[data-elite-club]')].find(b=>b.dataset.eliteClub===selectedId);
   focus?.focus({preventScroll:true});
  }
- async function refresh(){if(pending)return;const seq=++sequence;try{const value=await getRequest()('/api/campaign/elite'+(selectedId?'?clubId='+encodeURIComponent(selectedId):''));if(seq!==sequence)return;view=value.elite;selectedId=view.selected?.id;error='';render();if(autoReward&&!root.hidden&&view.reward){autoReward=false;showReward();}}catch(e){if(seq===sequence){error=e.message;render();}}}
+ const refreshGate=createReadGate();
+ async function refresh(){if(root.hidden)return;return refreshGate.run(async current=>{if(root.ownerDocument?.hidden||pending)return;const seq=++sequence;try{const value=await getRequest()('/api/campaign/elite'+(selectedId?'?clubId='+encodeURIComponent(selectedId):''));if(!current()||root.hidden||seq!==sequence)return;view=value.elite;selectedId=view.selected?.id;error='';render();if(autoReward&&!root.hidden&&view.reward){autoReward=false;showReward();}}catch(e){if(current()&&seq===sequence){error=e.message;render();}throw e;}}).catch(()=>{});}
  async function syncState(){const value=await getRequest()('/api/campaign/state');campaignStore.setState(value.state,{source:'elite'});}
- function close(){if(root.hidden)return;clearInterval(timer);timer=null;root.hidden=true;deactivateStandardWindow(root);onClose();}
- function open(clubId,{skipReward=false}={}){autoReward=!skipReward;if(!getState()?.setupComplete)return;page=typeof clubId==='string'?'detail':'catalog';if(typeof clubId==='string'&&selectedId!==clubId){selectedId=clubId;scrolls.detail=0;if(view)view={...view,selected:null};}activateStandardWindow(root);onOpen();render();refresh();clearInterval(timer);timer=setInterval(refresh,3000);}
+ function close(){refreshGate.reset();if(root.hidden)return;clearInterval(timer);timer=null;root.hidden=true;deactivateStandardWindow(root);onClose();}
+ function open(clubId,{skipReward=false}={}){refreshGate.reset();autoReward=!skipReward;if(!getState()?.setupComplete)return;page=typeof clubId==='string'?'detail':'catalog';if(typeof clubId==='string'&&selectedId!==clubId){selectedId=clubId;scrolls.detail=0;if(view)view={...view,selected:null};}activateStandardWindow(root);onOpen();render();refresh();clearInterval(timer);timer=setInterval(refresh,3000);}
  async function ensureLive(id){
   if(live?.snapshot?.challenge?.id===id||live?.snapshot?.battle?.id===id)return live;
   if(livePromise)return livePromise;
@@ -62,7 +65,7 @@ export function createEliteController({root,trigger,getState,getRequest,campaign
   })();try{return await livePromise;}finally{livePromise=null;}
  }
  async function watch(id){try{const state=await ensureLive(id);if(state)showCampaignBroadcast(state,{onClose:()=>open(page==='detail'?selectedId:undefined)});}catch(e){showToast(e.message);}}
- async function begin(clubId){if(pending)return;pending=true;++sequence;error='';if(retry?.clubId!==clubId)retry={clubId,requestId:shopRequestId()};render();try{const value=await getRequest()('/api/campaign/elite/begin',{method:'POST',body:retry});retry=null;view=value.elite;campaignStore.setState(value.state,{source:'elite-begin'});await watch(value.challengeId);}catch(e){error=e.message;showToast(error);}finally{pending=false;render();}}
+ async function begin(clubId){if(pending)return;pending=true;++sequence;error='';if(retry?.clubId!==clubId)retry={clubId,requestId:createRequestId()};render();try{const value=await getRequest()('/api/campaign/elite/begin',{method:'POST',body:retry});retry=null;view=value.elite;campaignStore.setState(value.state,{source:'elite-begin'});await watch(value.challengeId);}catch(e){error=e.message;showToast(error);}finally{pending=false;render();}}
  function showReward(){
   if(pending||!view?.reward)return;
   const reward=view.reward,account=getState()?.playerId,clubId=selectedId,backPage=page;

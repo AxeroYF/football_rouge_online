@@ -7,7 +7,7 @@ const restore=(target,value)=>{for(const k of Object.keys(target))delete target[
 export class MedicalService{
  constructor({world,accounts,buildings,economy,now=Date.now,save=()=>{},wonders}){Object.assign(this,{world,accounts,buildings,economy,now,save,wonders});}
  tasks(a){return Object.values(a.medicalTasks??{});}
- due(at=this.now()){return [...this.accounts.values()].some(a=>this.tasks(a).some(t=>!t.closedAt&&t.completesAt<=at));}
+ due(at=this.now()){return [...this.accounts.values()].some(a=>this.tasks(a).some(t=>!t.closedAt&&t.completesAt<=at&&!(t.raidPause&&this.world.territories[t.territoryId]?.buildings?.some(b=>b.id===t.buildingId&&b.raidSuppressed))));}
  locked(a){return Boolean(raidMatchForAccount(this.world,a.id))||Boolean(this.world.eliteChallenges?.[a.id])||Object.values(this.world.activeChallenges??{}).some(c=>c.attackerId===a.id||c.defenderId===a.id);}
  prepare(at=this.now()){
   const snapshots=[];

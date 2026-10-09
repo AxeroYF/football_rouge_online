@@ -1,3 +1,4 @@
+import {trainingAttributeHeadroom} from "../../shared/config/training.mjs";
 import {raidMatchForAccount} from '../../shared/config/elite-raids.mjs';
 import { ensureTrainingBases, refreshTrainingGrowth } from "../../shared/football/training-growth.mjs";
 import { facilityEffects } from '../../shared/config/facility-levels.mjs';
@@ -40,7 +41,7 @@ export class TrainingService {
         task.gains = {};
         for (const [key, gain] of Object.entries(task.plannedGains)) {
           const current = Math.max(Number(player.attributes[key]), Number(player.effectiveAttributes[key]));
-          const applied = Number.isFinite(current) ? Math.max(0, Math.min(gain, Math.floor(TRAINING_RULES.attributeMaximum - current))) : 0;
+          const applied = Number.isFinite(current) ? Math.max(0, Math.min(gain, Math.floor(trainingAttributeHeadroom(current)))) : 0;
           if (applied > 0) {
             task.gains[key] = applied;
             player.trainingBonuses[key] = Number(player.trainingBonuses[key] ?? 0) + applied;
@@ -65,7 +66,8 @@ export class TrainingService {
     // Select latest first so dismissed results never reveal an older session.
     const latest = new Map();
     for (const task of this.tasks(account)) latest.set(`${task.buildingId}:${task.pool}:${task.slot}`, task);
-    return { rules: {...TRAINING_RULES,attributePoints:this.wonders?.modifiers(account).trainingPoints??TRAINING_RULES.attributePoints,canSelectAttribute:this.wonders?.modifiers(account).trainingSelection??false}, tasks: [...latest.values()].filter((task) => task.cancelledAt == null && task.finishedAt == null).map((task) => this.publicTask(task)), serverNow: this.now() };
+    const modifiers=this.wonders?.modifiers(account);
+    return { rules: {...TRAINING_RULES,attributePoints:modifiers?.trainingPoints??TRAINING_RULES.attributePoints,canSelectAttribute:modifiers?.trainingSelection??false}, tasks: [...latest.values()].filter((task) => task.cancelledAt == null && task.finishedAt == null).map((task) => this.publicTask(task)), serverNow: this.now() };
   }
   details(account, world, territoryId, buildingId) {
     this.settle(account);
@@ -74,21 +76,22 @@ export class TrainingService {
     const building = territory.buildings.find((entry) => entry.id === buildingId && entry.type === "training-center");
     if (!building) fail("训练中心不存在", 404);
     const metadata = this.territoryIndex?.territories.find((entry) => entry.territoryId === territoryId);
+    const trainingState=this.publicState(account);
     return { building: this.buildings.publicBuilding(building), territoryId, gold: account.gold ?? 0,
       territoryLabel: metadata ? `${metadata.country} · ${metadata.name}` : territoryId,
-      capacity: trainingCapacity(building.level), ...this.publicState(account),
+      capacity: trainingCapacity(building.level), ...trainingState,
       players: (account.draft?.roster ?? []).map((player) => ({ ...createPlayerCardViewModel(player),
         training: player.training ?? null,
         costGold: trainingCostGold(player), canAfford: (account.gold ?? 0) >= trainingCostGold(player),
         expedition: account.playerSquads?.assignments?.[playerId(player)] === "expedition",
-        canTrain: !player.medical && this.headroom(player) >= (this.wonders?.modifiers(account).trainingPoints??TRAINING_RULES.attributePoints),
+        canTrain: !player.medical && this.headroom(player) >= trainingState.rules.attributePoints,
       })),
     };
   }
   headroom(player) {
     return Object.keys(PLAYER_ATTRIBUTE_LABELS).reduce((sum, key) => {
       const value = Math.max(Number(player.attributes?.[key]), Number(player.effectiveAttributes?.[key] ?? player.attributes?.[key]));
-      return sum + (Number.isFinite(value) ? Math.max(0, Math.floor(TRAINING_RULES.attributeMaximum - value)) : 0);
+      return sum + (Number.isFinite(value) ? Math.max(0, Math.floor(trainingAttributeHeadroom(value))) : 0);
     }, 0);
   }
   gains(player, points = TRAINING_RULES.attributePoints, attribute = null, coreBias = 0) {
@@ -96,13 +99,13 @@ export class TrainingService {
     if(attribute){
       if(!Object.hasOwn(PLAYER_ATTRIBUTE_LABELS,attribute))fail("请选择有效训练属性");
       const value=Math.max(Number(player.attributes?.[attribute]),Number(player.effectiveAttributes?.[attribute]??player.attributes?.[attribute]));
-      if(!Number.isFinite(value)||value>=TRAINING_RULES.attributeMaximum)fail("指定属性已达到上限");
+      if(!Number.isFinite(value)||trainingAttributeHeadroom(value)<1)fail("指定属性已达到上限");
       gains[attribute]=1;
     }
     for (let i = attribute?1:0; i < points; i += 1) {
       const keys = Object.keys(PLAYER_ATTRIBUTE_LABELS).filter((key) => {
         const value = Math.max(Number(player.attributes?.[key]), Number(player.effectiveAttributes?.[key] ?? player.attributes?.[key]));
-        return Number.isFinite(value) && value + (gains[key] ?? 0) + 1 <= TRAINING_RULES.attributeMaximum;
+        return Number.isFinite(value) && trainingAttributeHeadroom(value) >= (gains[key] ?? 0) + 1;
       });
       if (!keys.length) fail(`该球员可提升的能力不足 ${points} 点`);
       const roll = Math.max(0, Math.min(.999999999, Number(this.random()) || 0));
@@ -129,6 +132,24 @@ export class TrainingService {
     return this.transaction(account, () => {
       task.finishedAt = this.now();
       return this.publicTask(task);
+    });
+  }
+  finishCompleted(account, world, {territoryId, buildingId, taskIds} = {}) {
+    const territory = this.buildings.ownedTerritory(account, world, territoryId);
+    if (!territory.buildings.some(building => building.id === buildingId && building.type === 'training-center')) fail('训练中心不存在', 404);
+    if (!Array.isArray(taskIds) || !taskIds.length || taskIds.length > 100 || taskIds.some(id => typeof id !== 'string')) fail('请选择已完成的训练');
+    const tasks = [...new Set(taskIds)].map(id => {
+      const task = account.training?.tasks?.[id];
+      if (!task || task.territoryId !== territoryId || task.buildingId !== buildingId) fail('训练任务不存在', 404);
+      if (task.completedAt == null || task.cancelledAt != null) fail('只能完成已经结算的训练', 409);
+      return task;
+    }).filter(task => task.finishedAt == null);
+    if (!tasks.length) return {finishedCount: 0};
+    // Growth was settled already. Dismiss the selected results in one durable write.
+    return this.transaction(account, () => {
+      const now = this.now();
+      for (const task of tasks) task.finishedAt = now;
+      return {finishedCount: tasks.length};
     });
   }
   cancel(account, taskId) {

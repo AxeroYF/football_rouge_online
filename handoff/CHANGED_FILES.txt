@@ -1,15 +1,59 @@
-代码基线：1511fad（GitHub main 已合并），整理提交：8cc795b。
-截至 R11 的 client、server、shared、engine、styles、assets、test、scripts 及部署文档已纳入主线。
-releases/ 保存原始发布记录与有效基线；真实存档、账号种子、审计原件和扣除名单不入 Git。
-
-本轮交接追加文件：
-handoff/README.md
-handoff/CURRENT_STATE.md
-handoff/NEW_CHAT_PROMPT.md
-handoff/README_UPDATE.md
-handoff/CHANGED_FILES.txt
-handoff/GITHUB_BASELINE_2026-09-19.md
-handoff/MANIFEST.md
-
-本轮只更新文档，不修改玩法、不生成热更新包、不部署服务器。
-精确文件清单使用 git show --stat 和 git diff；历史未提交列表保存在 archive/pre-github-r11-20260918/CHANGED_FILES.txt。
+# R50–R51 source changes
+# Base: 194e835
+# Source: 37591c4304cca35159b24ab2fe595b5b9b4ec83c
+assets/card-frames/shield-v1/enhancement-10-frame.svg
+assets/card-frames/shield-v1/enhancement-9-frame.svg
+assets/card-frames/shield-v1/enhancement-mask.svg
+assets/card-frames/shield-v1/s-redgold-background.svg
+assets/data/desktop-resources.json
+client/cards/admin-card-management.js
+client/cards/card-management-controller.js
+client/cards/card-market-view.js
+client/cards/card-purchase-controller.js
+client/cards/card-trade-up-view.js
+client/cards/social-card-warehouse.js
+client/enhancement/enhancement-controller.js
+client/player-card/card-motion-controller.js
+client/player-card/card-shield-markup.js
+client/player-card/player-card.js
+client/team/team-controller-ydl.js
+client/team/team-controller.js
+game-startup.css
+game-startup.js
+game.html
+index.html
+releases/20261004-r50/ARCHIVE.sha256
+releases/20261004-r50/BASELINE.json
+releases/20261004-r50/MANIFEST.json
+releases/20261004-r50/QA.json
+releases/20261004-r51/ARCHIVE.sha256
+releases/20261004-r51/BASELINE.json
+releases/20261004-r51/MANIFEST.json
+releases/20261004-r51/QA.json
+releases/CURRENT.json
+releases/README.md
+releases/withdrawn/20261004-r51-fix1/ARCHIVE.sha256
+releases/withdrawn/20261004-r51-fix1/BASELINE.json
+releases/withdrawn/20261004-r51-fix1/MANIFEST.json
+releases/withdrawn/20261004-r51-fix1/QA.json
+releases/withdrawn/20261004-r51-fix1/WITHDRAWN.md
+scripts/review-enhancement-full-r51.mjs
+scripts/review-enhancement-high.mjs
+scripts/verify-r50-runtime.mjs
+scripts/verify-r51-runtime.mjs
+server/application/admin-service.mjs
+server/application/card-purchase-service.mjs
+server/application/enhancement-service.mjs
+shared/config/advanced-research.mjs
+shared/config/card-management.mjs
+shared/config/enhancement.mjs
+shared/config/shop.mjs
+styles/player-card-shield.css
+test/admin-service.test.js
+test/advanced-research.test.js
+test/card-management.test.js
+test/card-purchase.test.js
+test/card-shield.test.js
+test/enhancement-service.test.js
+test/player-card.test.js
+test/shop-service.test.js

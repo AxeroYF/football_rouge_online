@@ -68,3 +68,12 @@ test("电视台标准窗口内容层占满可用宽度后再由1600px画面居�
   assert.match(css,/\.standard-window>\.broadcast-v2-content\{width:100%!important;max-width:none!important\}/);
   assert.match(css,/\.standard-window \.broadcast-screen[\s\S]*width:min\(var\(--standard-window-max-width\),100%\)!important/);
 });
+
+test("a window can veto Escape while handling an unsaved draft",async()=>{
+ const {registerStageWindow,activateStageWindow,deactivateStageWindow}=await import('../client/ui/stage-window-manager.js');
+ const handlers={};const doc={addEventListener:(type,fn)=>handlers[type]=fn};let allow=false;
+ const element={ownerDocument:doc,dataset:{},hidden:true,classList:{add(){},remove(){}},setAttribute(){},closest:()=>null,querySelector:()=>null};
+ registerStageWindow(element,{kind:'standard',documentRef:doc,onRequestClose:()=>allow});activateStageWindow(element);
+ handlers.keydown({key:'Escape',preventDefault(){}});assert.equal(element.hidden,false);
+ allow=true;handlers.keydown({key:'Escape',preventDefault(){}});assert.equal(element.hidden,true);deactivateStageWindow(element);
+});

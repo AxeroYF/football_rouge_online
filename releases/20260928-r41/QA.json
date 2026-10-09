@@ -1,0 +1,207 @@
+{
+  "passed": true,
+  "version": "20260928-r41",
+  "baseline": "20260927-r40",
+  "fullTests": {
+    "passed": 1478,
+    "failed": 0,
+    "groups": [
+      85,
+      1232,
+      161
+    ]
+  },
+  "focusedTests": {
+    "tradePurchaseRegistration": 32,
+    "cardManagementServiceAndUI": 93,
+    "overlapWithFullSuite": true
+  },
+  "preflight": {
+    "passed": true,
+    "version": "20260928-r41",
+    "checks": [
+      "Complete 20260927-r40 base accepted",
+      "Modified base rejected",
+      "Missing base rejected",
+      "Applied 20260928-r41 supports safe reapply",
+      "Corrupt payload rejected",
+      "Changed-module imports resolve against base plus payload",
+      "Apply and explicit rollback preserve matched save with mocked service hooks",
+      "Health failure automatically rolls back with mocked service hooks"
+    ],
+    "changedFiles": 6,
+    "newFiles": 0,
+    "requiredBaseFiles": 1249,
+    "imports": 95,
+    "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+    "remoteDeployed": false
+  },
+  "registrationBrowser": {
+    "report": [
+      {
+        "size": {
+          "width": 1440,
+          "height": 900
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      },
+      {
+        "size": {
+          "width": 390,
+          "height": 844
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      },
+      {
+        "size": {
+          "width": 780,
+          "height": 360
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      },
+      {
+        "size": {
+          "width": 768,
+          "height": 1024
+        },
+        "registrationWrites": 2,
+        "uniqueCards": 101
+      }
+    ],
+    "dragChecks": [
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 3.051757815342171e-06
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 6.103515625e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031204525265e-05
+      },
+      {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "maxError": 1.2207031204525265e-05
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "maxError": 1.52587890625e-05
+      },
+      {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 780,
+          "height": 360
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 780,
+          "height": 360
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 780,
+          "height": 360
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        },
+        "maxError": 1.2207031261368684e-05
+      },
+      {
+        "viewport": {
+          "width": 768,
+          "height": 1024
+        },
+        "maxError": 1.2207031261368684e-05
+      }
+    ],
+    "errors": []
+  },
+  "tradeUpBrowser": {
+    "passed": true,
+    "report": [
+      {
+        "run": 1,
+        "responseBytes": 50222,
+        "visibleBefore": 48,
+        "scrollTop": 350,
+        "followupReads": 0,
+        "unchangedCardReused": true
+      },
+      {
+        "run": 2,
+        "responseBytes": 49538,
+        "visibleBefore": 72,
+        "scrollTop": 350,
+        "followupReads": 0,
+        "unchangedCardReused": true
+      }
+    ],
+    "errors": []
+  },
+  "remoteDeployed": false,
+  "scope": "Windows isolated tests and real Chrome/HTTP verification; updater service hooks mocked; no remote Linux/systemd deployment"
+}

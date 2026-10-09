@@ -1,0 +1,555 @@
+{
+  "passed": true,
+  "version": "20260920-r30",
+  "checks": [
+    "Complete 20260920-r29 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r30 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 26,
+  "newFiles": 6,
+  "requiredBaseFiles": 1219,
+  "imports": 201,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "tests": {
+    "fullRegression": {
+      "pretest": 82,
+      "main": 1132,
+      "posttest": 161,
+      "log": "outputs/r30-full-tests-final.log",
+      "note": "Full run preceded final enhancement sorting and state overlap changes; targeted suites below cover final changes."
+    },
+    "finalTargeted": {
+      "enhancement": 46,
+      "stateSync": 16,
+      "map": 30
+    },
+    "runtimeObserver": 2
+  },
+  "browser": {
+    "optimization": {
+      "checks": [
+        {
+          "name": "real browser receives versioned delta state",
+          "pass": true
+        },
+        {
+          "name": "unchanged roster omitted in later polling",
+          "pass": true
+        },
+        {
+          "name": "slow interaction request stays single-flight",
+          "pass": true
+        },
+        {
+          "name": "closed interaction remains closed after late response",
+          "pass": true
+        },
+        {
+          "name": "closed interaction does not restart polling",
+          "pass": true
+        },
+        {
+          "name": "interaction reopens and loads normally",
+          "pass": true
+        },
+        {
+          "name": "no browser runtime errors",
+          "pass": true
+        }
+      ],
+      "errors": []
+    },
+    "trade": {
+      "checks": [
+        {
+          "name": "land list not fetched on ordinary profile or trade open",
+          "pass": true
+        },
+        {
+          "name": "one lazy land request",
+          "pass": true
+        },
+        {
+          "name": "ordinary building shown",
+          "pass": true
+        },
+        {
+          "name": "quote skips full world and player detail response",
+          "pass": true
+        },
+        {
+          "name": "land included in submitted offer",
+          "pass": true
+        },
+        {
+          "name": "recipient notification names land and building",
+          "pass": true
+        },
+        {
+          "name": "accept transfers ownership",
+          "pass": true
+        },
+        {
+          "name": "accept preserves building",
+          "pass": true
+        },
+        {
+          "name": "pack ownership distinguishes max level, base level and missing",
+          "pass": true
+        },
+        {
+          "name": "ownership updates without replacing card or replaying animation",
+          "pass": true
+        },
+        {
+          "name": "ownership sends zero extra requests",
+          "pass": true
+        },
+        {
+          "name": "ownership labels stay inside mobile viewport",
+          "pass": true
+        },
+        {
+          "name": "no browser errors",
+          "pass": true
+        }
+      ],
+      "errors": []
+    },
+    "mapDrag": {
+      "observations": [
+        {
+          "renderedInMove": true,
+          "frames": 9
+        },
+        {
+          "renderedInMove": true,
+          "frames": 10
+        },
+        {
+          "renderedInMove": true,
+          "frames": 11
+        },
+        {
+          "renderedInMove": true,
+          "frames": 12
+        },
+        {
+          "renderedInMove": true,
+          "frames": 13
+        },
+        {
+          "renderedInMove": true,
+          "frames": 14
+        },
+        {
+          "renderedInMove": true,
+          "frames": 15
+        },
+        {
+          "renderedInMove": true,
+          "frames": 16
+        },
+        {
+          "renderedInMove": true,
+          "frames": 17
+        },
+        {
+          "renderedInMove": true,
+          "frames": 18
+        },
+        {
+          "renderedInMove": true,
+          "frames": 19
+        },
+        {
+          "renderedInMove": true,
+          "frames": 20
+        },
+        {
+          "renderedInMove": true,
+          "frames": 21
+        },
+        {
+          "renderedInMove": true,
+          "frames": 22
+        },
+        {
+          "renderedInMove": true,
+          "frames": 23
+        },
+        {
+          "renderedInMove": true,
+          "frames": 24
+        },
+        {
+          "renderedInMove": true,
+          "frames": 25
+        },
+        {
+          "renderedInMove": true,
+          "frames": 26
+        },
+        {
+          "renderedInMove": true,
+          "frames": 27
+        },
+        {
+          "renderedInMove": true,
+          "frames": 28
+        },
+        {
+          "renderedInMove": true,
+          "frames": 29
+        },
+        {
+          "renderedInMove": true,
+          "frames": 30
+        },
+        {
+          "renderedInMove": true,
+          "frames": 31
+        },
+        {
+          "renderedInMove": true,
+          "frames": 32
+        }
+      ],
+      "moves": 24,
+      "lateFrames": 0,
+      "idleFrames": 1,
+      "stats": {
+        "loaded": 444,
+        "total": 444,
+        "cached": 620,
+        "active": 0,
+        "failed": 0,
+        "zoom": "风格化",
+        "triangles": 56390,
+        "deferred": 0,
+        "nature": {
+          "deferred": 0,
+          "trees": 18870,
+          "shrubs": 2535,
+          "lakes": 212,
+          "mouths": 18,
+          "visibleBatches": 0
+        },
+        "mountainSites": 0,
+        "mountainTriangles": 0,
+        "stride": 4,
+        "visibleTriangles": 40274,
+        "renderedFrames": 33,
+        "suspended": false
+      },
+      "pointer": {
+        "moves": 219,
+        "lateFrames": 0
+      },
+      "suspension": {
+        "paused": true,
+        "resumed": true
+      },
+      "errors": []
+    },
+    "enhancementSort": {
+      "checks": [
+        {
+          "name": "upgrade selection preserves all remaining positions",
+          "pass": true
+        },
+        {
+          "name": "upgrade returning main restores the original order",
+          "pass": true
+        },
+        {
+          "name": "overall selection preserves all remaining positions",
+          "pass": true
+        },
+        {
+          "name": "overall returning main restores the original order",
+          "pass": true
+        },
+        {
+          "name": "name selection preserves all remaining positions",
+          "pass": true
+        },
+        {
+          "name": "name returning main restores the original order",
+          "pass": true
+        },
+        {
+          "name": "no browser errors",
+          "pass": true
+        }
+      ],
+      "errors": []
+    }
+  },
+  "capacity": {
+    "at": "2026-09-20T10:12:00.859Z",
+    "node": "v22.17.1",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-12700K",
+    "logicalCpus": 20,
+    "hostMemoryGB": 31.747314453125,
+    "note": "Local synthetic benchmark; 33 cards/account, one territory, no history. Not target-server capacity. No production saves read or modified.",
+    "rows": [
+      {
+        "accounts": 10,
+        "stateJsonMs": {
+          "mean": 2.3690999999999915,
+          "p95": 3.104000000000042,
+          "max": 3.104000000000042
+        },
+        "responseBytes": {
+          "mean": 135363.2,
+          "p95": 141810,
+          "max": 141810
+        },
+        "gzipBytes": {
+          "mean": 22778.9,
+          "p95": 23566,
+          "max": 23566
+        },
+        "fullSaveMs": {
+          "mean": 16.62765999999997,
+          "p95": 19.419799999999896,
+          "max": 19.419799999999896
+        },
+        "saveBytes": 774934,
+        "memoryMB": 150.5546875,
+        "postGcMemoryMB": {
+          "rss": 149.28,
+          "heapTotal": 107,
+          "heapUsed": 59.58,
+          "external": 3.4,
+          "arrayBuffers": 0.06
+        }
+      },
+      {
+        "accounts": 30,
+        "stateJsonMs": {
+          "mean": 4.604514999999992,
+          "p95": 7.034200000000055,
+          "max": 16.986800000000585
+        },
+        "responseBytes": {
+          "mean": 144453.5,
+          "p95": 154702,
+          "max": 155173
+        },
+        "gzipBytes": {
+          "mean": 23654.2,
+          "p95": 25060,
+          "max": 25083
+        },
+        "fullSaveMs": {
+          "mean": 59.90041999999994,
+          "p95": 76.52019999999993,
+          "max": 76.52019999999993
+        },
+        "saveBytes": 1934150,
+        "memoryMB": 185.1328125,
+        "postGcMemoryMB": {
+          "rss": 181.59,
+          "heapTotal": 109.28,
+          "heapUsed": 61.24,
+          "external": 3.4,
+          "arrayBuffers": 0.06
+        }
+      },
+      {
+        "accounts": 60,
+        "stateJsonMs": {
+          "mean": 3.7192924999996344,
+          "p95": 5.388100000000122,
+          "max": 14.841199999998935
+        },
+        "responseBytes": {
+          "mean": 148778.2,
+          "p95": 160943,
+          "max": 163008
+        },
+        "gzipBytes": {
+          "mean": 23992.866666666665,
+          "p95": 25538,
+          "max": 25769
+        },
+        "fullSaveMs": {
+          "mean": 107.54966000000059,
+          "p95": 119.64150000000154,
+          "max": 119.64150000000154
+        },
+        "saveBytes": 3675762,
+        "memoryMB": 207.41796875,
+        "postGcMemoryMB": {
+          "rss": 197.47,
+          "heapTotal": 123.01,
+          "heapUsed": 61.77,
+          "external": 3.79,
+          "arrayBuffers": 0.06
+        }
+      }
+    ],
+    "memoryBaselineMB": {
+      "rss": 129.65,
+      "heapTotal": 91.5,
+      "heapUsed": 57.07,
+      "external": 3.42,
+      "arrayBuffers": 0.06
+    },
+    "delta": {
+      "fullBytes": 149160,
+      "deltaBytes": 10244,
+      "changed": [
+        "wallet",
+        "resources",
+        "conquest",
+        "scouting",
+        "training",
+        "formationResearch",
+        "expeditionFitness"
+      ],
+      "sections": {
+        "modeName": 14,
+        "bondCatalog": 7938,
+        "interactions": 8874,
+        "eliteRaids": 4,
+        "coalition": 125,
+        "playerId": 9,
+        "nickname": 9,
+        "playerColor": 9,
+        "wallet": 14,
+        "resources": 1676,
+        "sponsorship": 2428,
+        "eliteChallenge": 39,
+        "neutralRewards": 14,
+        "conquest": 335,
+        "development": 35,
+        "inventory": 5227,
+        "scouting": 330,
+        "training": 247,
+        "enhancement": 399,
+        "wonders": 479,
+        "formationResearch": 2901,
+        "expeditionFitness": 3086,
+        "buildings": 14898,
+        "setupComplete": 4,
+        "pvpNotices": 2,
+        "pvpNoticeReadIds": 2,
+        "homeSelectionRequired": 5,
+        "homeTerritoryId": 15,
+        "expeditionPiece": 234,
+        "draft": 79477,
+        "playerSquads": 1117,
+        "tactics": 464,
+        "fog": 2801,
+        "world": 14998,
+        "activeChallengeId": 4,
+        "attackableTerritoryIds": 107,
+        "coastalTerritoryIds": 2,
+        "coalitionLoanRequests": 2,
+        "coalitionTargetRequests": 2,
+        "coalitionCommandRequests": 2,
+        "pendingLiberations": 2,
+        "battleReportReadIds": 2,
+        "battleHistory": 2,
+        "primaryMatchEngine": 87
+      }
+    },
+    "matches": {
+      "concurrent": 5,
+      "beginMs": {
+        "mean": 134.90763999999908,
+        "p95": 148.5521000000008,
+        "max": 148.5521000000008
+      },
+      "schedulerSliceMs": {
+        "mean": 29.92487866666641,
+        "p95": 57.04939999999624,
+        "max": 131.6395999999986
+      },
+      "saveMs": 185.4227000000028,
+      "saveBytes": 7011641,
+      "memoryMB": 214.01171875,
+      "minutes": [
+        10.25,
+        10.75,
+        10.75,
+        10.75,
+        10.75
+      ]
+    },
+    "http": [
+      {
+        "concurrency": 10,
+        "requests": 30,
+        "responseMs": {
+          "mean": 77.43090666666734,
+          "p95": 114.48189999999886,
+          "max": 114.97119999999995
+        },
+        "errors": []
+      },
+      {
+        "concurrency": 30,
+        "requests": 90,
+        "responseMs": {
+          "mean": 147.47732111111077,
+          "p95": 191.78659999999945,
+          "max": 192.40739999999641
+        },
+        "errors": []
+      },
+      {
+        "concurrency": 60,
+        "requests": 180,
+        "responseMs": {
+          "mean": 279.95675055555563,
+          "p95": 343.4087999999974,
+          "max": 349.3338999999978
+        },
+        "errors": []
+      }
+    ],
+    "economy": {
+      "playableTerritories": 598,
+      "ordinaryTerritories": 585,
+      "rates": {
+        "gold": {
+          "mean": 39.65217391304348,
+          "p95": 132,
+          "max": 144,
+          "zero": 255,
+          "min": 0
+        },
+        "production": {
+          "mean": 4.8996655518394645,
+          "p95": 11,
+          "max": 12,
+          "zero": 175,
+          "min": 0
+        },
+        "science": {
+          "mean": 1.8010033444816054,
+          "p95": 9,
+          "max": 12,
+          "zero": 377,
+          "min": 0
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Local synthetic capacity sample, not production soak or a guarantee against OOM.",
+    "Synchronous full saves and complex coalition world snapshots remain.",
+    "Service hooks mocked during upgrade rehearsal."
+  ]
+}

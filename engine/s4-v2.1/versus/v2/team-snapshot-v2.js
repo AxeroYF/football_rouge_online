@@ -22,7 +22,7 @@ export function buildV2TeamSnapshots(teams, options = {}) {
         ...player,
         displayAttributes,
         captain:player.id === team.captainId,
-        attributes:Object.fromEntries(Object.entries(displayAttributes).map(([key, value]) => [key, Number(v2EngineAttributeValue(value, parameters).toFixed(2))])),
+        attributes:Object.fromEntries(Object.entries(displayAttributes).map(([key, value]) => [key, Number((v2EngineAttributeValue(value, parameters) * (options.internalAbilityMultipliers?.[teamIndex] ?? 1)).toFixed(2))])),
       };
     });
     const captaincy = captainStyleModifiers({ ...team, players }, scoreState);

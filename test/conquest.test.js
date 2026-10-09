@@ -54,16 +54,16 @@ test('failure cooldown survives the 08:00 reset, JSON save and service reconstru
 test('cross-08:00 win is counted on the new conquest day',()=>{
  const f=fixture({now:Date.parse('2026-09-08T23:59:00Z'),used:4});f.time(Date.parse('2026-09-09T00:01:00Z'));f.service.settleChallenge(f.challenge);assert.equal(f.account.conquest.day,'2026-09-09');assert.equal(f.account.conquest.used,1);
 });
-test('player and club capture leave neutral quota unchanged',()=>{
- for(const type of ['player','club']){const f=fixture({used:5,type});assert.equal(f.service.settleChallenge(f.challenge).captured,true);assert.equal(f.account.conquest.used,5);}
+test('all successful captures count toward the total quota',()=>{
+ for(const type of ['player','club']){const f=fixture({used:5,type});assert.equal(f.service.settleChallenge(f.challenge).captured,true);assert.equal(f.account.conquest.used,6);}
 });
 test('save failure rolls back capture, quota and cooldown; retry applies once',()=>{
  for(const outcome of ['win','loss']){let fail=true;const f=fixture({used:3,outcome,save:()=>{if(fail)throw Error('disk failure');}});
  assert.throws(()=>f.service.settleChallenge(f.challenge),/disk failure/);assert.equal(f.account.conquest.used,3);assert.equal(f.account.conquest.cooldownUntil,0);assert.equal(f.world.territories.target.ownerType,'neutral');assert.ok(f.world.activeChallenges.target);
  fail=false;f.service.settleChallenge(f.challenge);assert.equal(f.account.conquest.used,outcome==='win'?4:3);}
 });
-test('wonder bonus adds one daily conquest and is visible in limit',()=>{
- const f=fixture({used:8});f.service.wonders={modifiers:()=>({neutralAttacksBonus:1})};assert.equal(f.service.conquestState(f.account).limit,9);assert.equal(f.service.conquestState(f.account).remaining,1);assert.doesNotThrow(()=>f.service.assertAttackAvailable(f.account,'target'));
+test('wonder bonus permits the ninth capture and then exhausts the quota',()=>{
+ const f=fixture({used:8});f.service.wonders={modifiers:()=>({neutralAttacksBonus:1}),challengeCompleted(){}};assert.equal(f.service.conquestState(f.account).limit,9);assert.equal(f.service.conquestState(f.account).remaining,1);assert.doesNotThrow(()=>f.service.assertAttackAvailable(f.account,'target'));assert.equal(f.service.settleChallenge(f.challenge).captured,true);assert.equal(f.service.conquestState(f.account).remaining,0);assert.throws(()=>f.service.assertAttackAvailable(f.account,'target'),/次数已用完/);
 });
 
 test('raising the base limit preserves the five captures already used in an existing save',()=>{const a=JSON.parse(JSON.stringify({conquest:{day:conquestDay(noon),used:5,cooldownUntil:0}}));assert.equal(conquestState(a,noon).limit,8);assert.equal(conquestState(a,noon).remaining,3);});
@@ -88,4 +88,31 @@ test('midnight does not replenish quotas and migration separates old early-morni
  const legacy={conquest:{day:'2026-09-09',used:3},battleHistory:[capture('2026-09-08T17:00:00Z'),capture('2026-09-08T19:00:00Z'),capture('2026-09-09T01:00:00Z')]};
  assert.equal(conquestState(legacy,Date.parse('2026-09-09T02:00:00Z')).used,1);
  assert.equal(conquestState(legacy,Date.parse('2026-09-08T23:00:00Z')).used,2);
+});
+
+
+test('ordinary PvP saves the same detailed report for defender, survives reload, and rolls back failed persistence',()=>{
+ let fail=true,saved;
+ const f=fixture({type:'player',outcome:'loss',save:()=>{if(fail)throw Error('disk failure');saved=structuredClone([...f.service.accounts]);}});
+ const defender={id:'b',battleHistory:[]};f.service.accounts.set('b',defender);
+ f.challenge.defenderId='b';f.challenge.battle.challengeId=f.challenge.id;
+ f.challenge.battle.broadcasts=[{legNumber:1,score:[1,2],events:[{type:'goal',minute:20}]},{legNumber:2,score:[0,1],events:[{type:'goal',minute:70}]}];
+ assert.throws(()=>f.service.settleChallenge(f.challenge),/disk failure/);
+ assert.deepEqual(defender.battleHistory,[]);assert.ok(f.world.activeChallenges.target);
+ fail=false;f.service.settleChallenge(f.challenge);
+ assert.equal(defender.battleHistory.length,1);assert.equal(defender.battleHistory[0].defenderId,'b');
+ assert.deepEqual(defender.battleHistory[0].broadcasts,f.account.battleHistory[0].broadcasts);
+ const restored=new Map(saved);const service=new ChallengeService({world:f.world,accounts:restored});
+ const report=service.status(restored.get('b'),'test');assert.equal(report.completed,true);assert.equal(report.battle.broadcasts[1].events[0].minute,70);
+ assert.equal(f.service.settleChallenge(f.challenge),null);assert.equal(defender.battleHistory.length,1);
+});
+
+test('wonder ownership changes retain used captures, reset at 08:00 and keep PvP cap four',()=>{
+ const a={conquest:{schemaVersion:2,resetHour:8,day:conquestDay(noon),used:8,playerUsed:4}};
+ assert.equal(conquestState(a,noon,1).remaining,1);assert.equal(conquestState(a,noon,0).remaining,0);
+ assert.equal(conquestState(a,noon,1).used,8);assert.equal(conquestState(a,noon,1).playerRemaining,0);
+ const reset=conquestState(a,noon,1).resetsAt;
+ assert.equal(conquestState(a,reset-1,1).remaining,1);assert.equal(conquestState(a,reset,1).remaining,9);
+ assert.equal(conquestAttackBlock(conquestState(a,noon,1),'player',reset),null);
+ for(const bonus of [NaN,Infinity,-1])assert.equal(conquestState(a,noon,bonus).limit,8);
 });

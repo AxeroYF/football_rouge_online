@@ -1,3 +1,5 @@
+import {patchMarkup} from "../ui/patch-markup.js";
+import {trainingAttributeHeadroom} from "../../shared/config/training.mjs";
 import { goldAmountMarkup } from "../ui/currency.js";
 import { facilityArtIcon } from '../../shared/config/facility-art.mjs';
 import { facilityActionsMarkup } from "./facility-actions-controller.js?v=20260909-infrastructure-v1";
@@ -26,28 +28,40 @@ export function trainingResultMarkup(player, gains = {}, task = {}) {
     return `<div class="${gain ? "is-improved" : ""}"><dt>${label}</dt><dd>${value == null ? "—" : esc(value)}${gain ? `<em>+${gain}</em>` : ""}</dd></div>`;
   }).join("")}</dl></section>`;
 }
-export function trainingPanelMarkup(view, { pending = false } = {}) {
+export function trainingCenters(state) {
+  return Object.entries(state?.buildings?.territories ?? {}).flatMap(([territoryId, territory]) =>
+    (territory.buildings ?? []).filter(building => building.type === 'training-center').map(building => ({territoryId, buildingId: building.id, building})));
+}
+export function trainingPanelMarkup(view, { pending = false, poolFilter = "all", centers = [] } = {}) {
   if (!view) return '<p class="training-empty">正在读取训练中心…</p>';
   if (view.error) return `<p class="training-empty">${esc(view.error)}</p>`;
-  return `<div class="training-overview"><img src="${facilityArtIcon("training-center", view.building.level)}" alt=""><div><small>LV.${view.building.level}</small><strong>${esc(view.territoryLabel)}</strong></div></div><p class="training-rule">每次 10 分钟 · 能力总计 +${Number(view.rules?.attributePoints??5)}${view.rules?.canSelectAttribute?" · 可指定 1 点属性":" · 随机分配"}</p><div class="training-groups">${Object.entries(TRAINING_POOLS).map(([pool, label]) => `<section class="training-group"><header><h3>${label}</h3><small>${view.tasks.filter((task) => task.buildingId === view.building.id && task.pool === pool && task.status === "working").length} / ${view.capacity}</small></header><div class="training-seats">${Array.from({ length: view.capacity }, (_, slot) => {
+  const tasks = view.tasks.filter(task => task.buildingId === view.building.id);
+  const workingCount = tasks.filter(task => task.status === "working").length;
+  const completedCount = tasks.filter(task => task.status === "completed").length;
+  const freeCount = Math.max(0, view.capacity * 4 - tasks.length);
+  const controls = `<div class="training-manage-actions">${centers.length > 1 ? `<label>训练场 <select data-training-center ${pending ? 'disabled' : ''}>${centers.map(center => `<option value="${esc(center.buildingId)}" ${center.buildingId === view.building.id ? 'selected' : ''}>${esc(center.label ?? center.building.name ?? center.territoryId)} · LV.${center.building.level}</option>`).join('')}</select></label>` : ''}<button type="button" class="ui-button" data-training-finish-completed ${pending || !completedCount ? 'disabled' : ''}>一键完成训练${completedCount ? `（${completedCount}）` : ''}</button></div>`;
+  const filters = `<nav class="training-pool-tabs" aria-label="训练位置筛选">${Object.entries({all:"全部",...TRAINING_POOLS}).map(([id,label])=>`<button type="button" data-training-filter="${id}" aria-pressed="${poolFilter===id}" ${pending?'disabled':''}>${label}<small>${id==='all'?workingCount:tasks.filter(t=>t.pool===id&&t.status==='working').length}/${view.capacity*(id==='all'?4:1)}</small></button>`).join('')}</nav>`;
+  return `<div class="training-overview"><img src="${facilityArtIcon("training-center", view.building.level)}" alt=""><div><small>LV.${view.building.level}</small><strong>${esc(view.territoryLabel)}</strong></div></div><p class="training-rule">每次 10 分钟 · 能力总计 +${Number(view.rules?.attributePoints??5)}${view.rules?.canSelectAttribute?" · 可指定 1 点属性":" · 随机分配"}</p><div class="training-summary"><span><b>${workingCount}</b> 训练中</span><span><b>${completedCount}</b> 待查看</span><span><b>${freeCount}</b> 空闲名额</span></div>${controls}${filters}<div class="training-groups">${Object.entries(TRAINING_POOLS).filter(([pool])=>poolFilter==="all"||pool===poolFilter).map(([pool, label]) => `<section class="training-group"><header><h3>${label}</h3><small>${view.tasks.filter((task) => task.buildingId === view.building.id && task.pool === pool && task.status === "working").length} / ${view.capacity}</small></header><div class="training-seats">${Array.from({ length: view.capacity }, (_, slot) => {
     const task = view.tasks.find((entry) => entry.buildingId === view.building.id && entry.pool === pool && entry.slot === slot);
     const working = task?.status === "working";
     const player = task && view.players?.find((entry) => entry.playerId === task.playerId);
-    return `<button type="button" class="training-seat ${task ? "is-occupied" : "is-empty"} ${task?.status === "completed" ? "is-completed" : ""}" data-training-pool="${pool}" data-training-slot="${slot}" ${pending || view.building.status !== "active" || working ? "disabled" : ""}>${task ? `${player ? playerCardMarkup(player, { variant: "mini", className: "training-seat-card" }) : `<strong>${esc(task.playerName)}</strong>`}${working ? trainingProgressMarkup(task) : '<span class="training-completed">✓ 训练完成</span><small>查看能力提升</small>'}` : '<b class="training-plus">＋</b><span>选择球员</span>'}</button>`;
+    return `<button type="button" class="training-seat ${task ? "is-occupied" : "is-empty"} ${task?.status === "completed" ? "is-completed" : ""}" data-training-pool="${pool}" data-training-slot="${slot}" ${pending || view.building.status !== "active" || working ? "disabled" : ""}>${task ? `${player ? playerCardMarkup(player, { variant: "mini", className: "training-seat-card", animated: false }) : `<strong>${esc(task.playerName)}</strong>`}<span class="training-seat-name">${esc(player?.name??task.playerName)}</span>${working ? trainingProgressMarkup(task) : '<span class="training-completed">✓ 训练完成</span><small>查看能力提升</small>'}` : `<b class="training-plus">＋</b><span>选择球员</span><small>名额 ${slot+1}</small>`}</button>`;
   }).join("")}</div></section>`).join("")}</div>`;
 }
 const TRAINING_SQUAD_FILTERS = { all: "全部", expedition: "远征", garrison: "留守" };
-export function trainingPickerMarkup(players, pool, { pending = false, squadFilter = "all" } = {}) {
+export function trainingPickerMarkup(players, pool, { pending = false, squadFilter = "all", limit = 24 } = {}) {
   const ability = (player) => Number(player.effectiveOverall ?? player.overall) || 0;
   const eligible = players.filter((player) => player.pool === pool && (squadFilter === "all" || (squadFilter === "expedition" ? player.expedition === true : player.expedition !== true)))
     .sort((left, right) => ability(right) - ability(left) || String(left.playerId).localeCompare(String(right.playerId)));
   const filters = `<div class="training-squad-filters" role="group" aria-label="按编队筛选训练球员">${Object.entries(TRAINING_SQUAD_FILTERS).map(([id, label]) => `<button type="button" data-training-squad="${id}" class="${id === squadFilter ? "is-active" : ""}" aria-pressed="${id === squadFilter}" ${pending ? "disabled" : ""}>${label}</button>`).join("")}</div>`;
-  return `${filters}<p class="training-picker-hint">点击球员支付下方费用开训，总评越高费用越高。未完成取消全额退款；远征球员训练期间比赛自动替补。</p><div class="training-card-list"><div class="training-player-grid">${eligible.map((player) => `<button type="button" class="training-player" data-training-player="${esc(player.playerId)}" ${pending || player.training || !player.canTrain || player.canAfford === false ? "disabled" : ""}>${playerCardMarkup(player, { deferred: true })}<span class="training-price">${goldAmountMarkup(player.costGold ?? trainingCostGold(player))}</span><span>${player.training ? "训练中" : !player.canTrain ? "暂不可训练" : player.canAfford === false ? "金币不足" : player.expedition ? "远征 · 比赛时自动替补" : "留守"}</span></button>`).join("") || '<p class="training-empty">当前筛选下暂无该位置球员</p>'}</div></div>`;
+  return `${filters}<p class="training-picker-hint">点击球员支付下方费用开训，总评越高费用越高。未完成取消全额退款；远征球员训练期间比赛自动替补。</p><div class="training-card-list"><div class="training-player-grid">${eligible.slice(0,limit).map((player) => `<button type="button" class="training-player" data-ui-key="${esc(player.playerId)}" data-training-player="${esc(player.playerId)}" ${pending || player.training || !player.canTrain || player.canAfford === false ? "disabled" : ""}>${playerCardMarkup(player, { deferred: true, animated: false })}<span class="training-price">${goldAmountMarkup(player.costGold ?? trainingCostGold(player))}</span><span>${player.training ? "训练中" : !player.canTrain ? "暂不可训练" : player.canAfford === false ? "金币不足" : player.expedition ? "远征 · 比赛时自动替补" : "留守"}</span></button>`).join("") || '<p class="training-empty">当前筛选下暂无该位置球员</p>'}</div>${eligible.length>limit?`<button type="button" class="training-load-more" data-training-more ${pending?'disabled':''}>继续显示 · ${Math.min(limit,eligible.length)} / ${eligible.length}</button>`:''}</div>`;
 }
 
-export function createTrainingController({ windowRoot, pickerRoot, notifications = null, getCampaignState, getCampaignRequest, campaignStore, onOpen = () => {}, onState = () => {}, onDemolish = () => {}, onUpgrade = () => {}, showToast = () => {}, now = Date.now, setIntervalImpl = setInterval }) {
+export function createTrainingController({ windowRoot, pickerRoot, notifications = null, getCampaignState, getCampaignRequest, campaignStore, getTerritoryLabel = id => id, onOpen = () => {}, onClose = () => {}, onState = () => {}, onDemolish = () => {}, onUpgrade = () => {}, showToast = () => {}, now = Date.now, setIntervalImpl = setInterval }) {
   let target = null, view = null, selection = null, pending = false, version = 0, offset = 0;
-  let squadFilter = "all";
+  let squadFilter = "all", poolFilter = "all", panelHtml = null;
+  let pickerLimit = 24, panelKey = null, pickerDataKey = null, noticeHtml = null;
+  const playerCache = new WeakMap();
   let pickerRenderKey = null, pickerHtml = null;
   const requestIds = new Map();
   const content = windowRoot.querySelector("[data-training-content]");
@@ -55,6 +69,7 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
   const pickerContent = pickerRoot.querySelector("[data-training-picker-content]");
   const pickerTitle = pickerRoot.querySelector("[data-training-picker-title]");
   const clock = () => now() + offset;
+  const getCenters = () => trainingCenters(getCampaignState()).map(center => ({...center, label: getTerritoryLabel(center.territoryId)}));
   function tick() {
     const tasks = new Map([...(getCampaignState()?.training?.tasks ?? []), ...(view?.tasks ?? [])].map((task) => [task.id, task]));
     for (const root of [windowRoot, notifications].filter(Boolean)) {
@@ -75,7 +90,7 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     if (!notifications) return;
     const html = trainingNotificationsMarkup(getCampaignState()?.training?.tasks, { pending });
     notifications.hidden = !html;
-    if (notifications.innerHTML !== html) notifications.innerHTML = html;
+    if (noticeHtml !== html) { patchMarkup(notifications,html); noticeHtml=html; }
     tick();
   }
   function render() {
@@ -83,7 +98,14 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     if (!target) return;
     windowRoot.hidden = false;
     const panelScroll = content.scrollTop;
-    content.innerHTML = trainingPanelMarkup(view, { pending });
+    const relevantTasks = view?.tasks?.filter(t=>t.buildingId===view.building?.id)??[];
+    const ids = new Set(relevantTasks.map(t=>t.playerId));
+    const nextPanelKey = JSON.stringify([pending,poolFilter,view?.error,view?.building,view?.capacity,view?.rules,view?.territoryLabel,relevantTasks,view?.players?.filter(p=>ids.has(p.playerId)),getCenters()]);
+    if (nextPanelKey !== panelKey) {
+      const nextPanel = trainingPanelMarkup(view, { pending, poolFilter, centers: getCenters() });
+      if(nextPanel !== panelHtml){patchMarkup(content,nextPanel);panelHtml=nextPanel;}
+      panelKey=nextPanelKey;
+    }
     content.scrollTop = panelScroll;
     if (facilityActions) {
       facilityActions.hidden = !view || Boolean(view.error);
@@ -97,7 +119,9 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
       const result = task?.status === "completed" && player;
       pickerTitle.textContent = result ? `${player.name} · 训练提升` : `${TRAINING_POOLS[selection.pool]} · 选择训练球员`;
       const renderKey = JSON.stringify([target.territoryId, target.buildingId, selection.pool, selection.slot, result ? task.id : "pick", squadFilter]);
-      const html = result ? `<div class="training-result-body">${trainingResultMarkup(player, task.gains, task)}</div><footer class="training-result-actions"><button class="training-again" data-training-again type="button" ${pending ? "disabled" : ""}>安排下一次训练</button><button class="training-finish" data-training-finish type="button" ${pending ? "disabled" : ""}>训练完成</button></footer>` : `${view.rules?.canSelectAttribute?`<label class="wonder-training-attribute">阿尔罕布拉宫 · 指定 1 点属性<select data-training-attribute ${pending?"disabled":""}><option value="">随机分配</option>${Object.entries(PLAYER_ATTRIBUTE_LABELS).map(([key,label])=>`<option value="${key}" ${selection.attribute===key?"selected":""}>${esc(label)}</option>`).join("")}</select></label>`:""}${trainingPickerMarkup(view.players, selection.pool, { pending, squadFilter })}`;
+      const nextPickerDataKey=JSON.stringify([renderKey,pending,pickerLimit,selection.attribute,view.rules,result?player:view.players.filter(p=>p.pool===selection.pool),result?task:null]);
+      if(nextPickerDataKey !== pickerDataKey){
+      const html = result ? `<div class="training-result-body">${trainingResultMarkup(player, task.gains, task)}</div><footer class="training-result-actions"><button class="training-again" data-training-again type="button" ${pending ? "disabled" : ""}>安排下一次训练</button><button class="training-finish" data-training-finish type="button" ${pending ? "disabled" : ""}>训练完成</button></footer>` : `${view.rules?.canSelectAttribute?`<label class="wonder-training-attribute">阿尔罕布拉宫 · 指定 1 点属性<select data-training-attribute ${pending?"disabled":""}><option value="">随机分配</option>${Object.entries(PLAYER_ATTRIBUTE_LABELS).map(([key,label])=>`<option value="${key}" ${selection.attribute===key?"selected":""}>${esc(label)}</option>`).join("")}</select></label>`:""}${trainingPickerMarkup(view.players, selection.pool, { pending, squadFilter, limit: pickerLimit })}`;
       // Deferred card rendering mutates the DOM, so compare generated markup
       // against the last render, not against the hydrated element.innerHTML.
       if (html !== pickerHtml || renderKey !== pickerRenderKey) {
@@ -106,20 +130,22 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
         const scrollTop = sameSelection ? pickerContent.querySelector?.(scrollerSelector)?.scrollTop ?? 0 : 0;
         const outerScroll = sameSelection ? pickerContent.scrollTop : 0;
         const focusedPlayer = sameSelection && pickerRoot.ownerDocument?.activeElement?.closest?.("[data-training-player]")?.dataset.trainingPlayer;
-        pickerContent.innerHTML = html;
+        patchMarkup(pickerContent, html);
         pickerHtml = html; pickerRenderKey = renderKey;
         const scroller = pickerContent.querySelector?.(scrollerSelector);
         if (scroller) scroller.scrollTop = scrollTop;
         pickerContent.scrollTop = outerScroll;
         if (focusedPlayer) [...(pickerContent.querySelectorAll?.("[data-training-player]") ?? [])].find(node => node.dataset.trainingPlayer === focusedPlayer)?.focus({preventScroll:true});
       }
+      pickerDataKey=nextPickerDataKey;
+      }
       if(view.rules?.canSelectAttribute){const attribute=pickerContent.querySelector("[data-training-attribute]");if(attribute)attribute.onchange=()=>{selection.attribute=attribute.value||null;};}
     } else {
-      pickerRenderKey = null; pickerHtml = null;
+      pickerRenderKey = null; pickerHtml = null; pickerDataKey = null;
     }
     tick();
   }
-  function close() { pickerRenderKey = null; pickerHtml = null; version += 1; target = null; view = null; selection = null; windowRoot.hidden = true; pickerRoot.hidden = true; }
+  function close() { const wasOpen = !windowRoot.hidden; pickerRenderKey = null; pickerHtml = null; pickerDataKey = null; version += 1; target = null; view = null; selection = null; windowRoot.hidden = true; pickerRoot.hidden = true; if (wasOpen) onClose(); }
   async function load() {
     if (!target) return;
     const requestVersion = ++version, current = { ...target };
@@ -135,7 +161,30 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
   }
   function open(value) {
     if (!getCampaignState()?.setupComplete) return;
-    onOpen(); squadFilter = "all"; target = { ...value }; view = null; selection = null; render(); load();
+    if (!value) {
+      const centers = getCenters();
+      value = centers.find(center => center.building.status === 'active') ?? centers[0];
+      if (!value) return showToast('尚未建设训练场，请先在领地建设训练中心');
+    }
+    onOpen(); squadFilter = "all"; poolFilter = "all"; panelHtml = null; panelKey = null; pickerLimit = 24; target = { ...value }; view = null; selection = null; render(); load();
+  }
+  async function finishCompleted() {
+    if (pending || !target || !view || view.error) return;
+    const taskIds = view.tasks.filter(task => task.buildingId === target.buildingId && task.status === 'completed').map(task => task.id);
+    if (!taskIds.length) return;
+    const accountId = getCampaignState()?.playerId, requestVersion = ++version;
+    const body = {territoryId: target.territoryId, buildingId: target.buildingId, taskIds};
+    pending = true; render();
+    try {
+      const result = await getCampaignRequest()('/api/campaign/training/finish-completed', {method: 'POST', body});
+      if (getCampaignState()?.playerId !== accountId) return;
+      if (version === requestVersion) selection = null;
+      const state = {...getCampaignState(), ...result.statePatch};
+      campaignStore.setState(state, {source: 'training-finish-completed'}); onState(state, {compact: true});
+      showToast(`已完成 ${result.finishedCount} 名球员的训练，席位已腾空`);
+    } catch (error) {
+      if (getCampaignState()?.playerId === accountId) showToast(error.message || '完成训练失败，请重试');
+    } finally { pending = false; render(); }
   }
   async function start(playerId) {
     if (pending || !target || !selection || !view || view.error) return;
@@ -153,7 +202,6 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
       if (version === requestVersion) selection = null;
       campaignStore.setState(result.state, { source: "training-start" }); onState(result.state);
       showToast(`${player.name} 已开始训练`);
-      if (version === requestVersion) await load();
     } catch (error) {
       if (getCampaignState()?.playerId === accountId) { showToast(error.message || "训练开始失败，请重试"); if (version === requestVersion) await load(); }
     } finally { pending = false; render(); }
@@ -170,7 +218,6 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
       if (version === requestVersion && selection?.taskId === task.id) selection = null;
       campaignStore.setState(result.state, { source: "training-finish" }); onState(result.state);
       showToast(`${task.playerName} 的训练已完成，席位已腾空`);
-      if (target && version === requestVersion) await load();
     } catch (error) {
       if (getCampaignState()?.playerId === accountId) {
         showToast(error.message || "收起训练结果失败，请重试");
@@ -189,7 +236,6 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
       if (getCampaignState()?.playerId !== accountId) return;
       campaignStore.setState(result.state, { source: "training-cancel" }); onState(result.state);
       showToast(result.task.status === "completed" ? `${task.playerName} 的训练已完成` : `${task.playerName} 的训练已取消${result.task.refundedGold > 0 ? `，退还 ${result.task.refundedGold.toLocaleString("zh-CN")} 金币` : ""}`);
-      if (target && version === requestVersion) await load();
     } catch (error) {
       if (getCampaignState()?.playerId === accountId) {
         showToast(error.message || "取消训练失败，请重试");
@@ -203,6 +249,9 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
   });
   windowRoot.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-training-close]")) return close();
+    if (event.target.closest?.('[data-training-finish-completed]')) return finishCompleted();
+    const filter = event.target.closest?.("[data-training-filter]");
+    if (filter && !pending && (filter.dataset.trainingFilter === "all" || Object.hasOwn(TRAINING_POOLS, filter.dataset.trainingFilter))) { poolFilter = filter.dataset.trainingFilter; render(); content.scrollTop = 0; return; }
     const upgrade=event.target.closest?.('[data-facility-upgrade]');
     if(upgrade&&!upgrade.disabled&&!pending&&target)return onUpgrade({territoryId:target.territoryId,buildingId:target.buildingId});
     const demolish = event.target.closest?.("[data-facility-demolish]");
@@ -212,15 +261,21 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     const pool = button.dataset.trainingPool, slot = Number(button.dataset.trainingSlot);
     const task = view.tasks.find((entry) => entry.buildingId === target.buildingId && entry.pool === pool && entry.slot === slot);
     if (task?.status === "working") return;
-    selection = { pool, slot, taskId: task?.id }; render();
+    pickerLimit = 24; selection = { pool, slot, taskId: task?.id }; render();
+  });
+  windowRoot.addEventListener('change', event => {
+    if (pending || !event.target.matches?.('[data-training-center]')) return;
+    const next = getCenters().find(center => center.buildingId === event.target.value);
+    if (next) open({territoryId: next.territoryId, buildingId: next.buildingId});
   });
   pickerRoot.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-training-picker-close]")) { selection = null; render(); return; }
     if (event.target.closest?.("[data-training-finish]")) { finish(); return; }
     if (event.target.closest?.("[data-training-again]")) { if (!pending && selection) { selection.taskId = null; render(); } return; }
+    if(event.target.closest?.("[data-training-more]")){if(!pending){pickerLimit+=24;render();}return;}
     const filter = event.target.closest?.("[data-training-squad]");
     if (filter && !pending && Object.hasOwn(TRAINING_SQUAD_FILTERS, filter.dataset.trainingSquad)) {
-      squadFilter = filter.dataset.trainingSquad; render(); return;
+      squadFilter = filter.dataset.trainingSquad; pickerLimit=24; render(); return;
     }
     const button = event.target.closest?.("[data-training-player]");
     if (button && !button.disabled) start(button.dataset.trainingPlayer);
@@ -243,9 +298,14 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     view.gold = state.wallet?.gold ?? view.gold;
     if (selection?.taskId && !view.tasks.some((task) => task.id === selection.taskId)) selection = null;
     view.players = (state.draft?.roster ?? []).map((player) => {
+      let cached=playerCache.get(player);
+      if(!cached){
       const card = createPlayerCardViewModel(player);
-      const headroom = Object.keys(PLAYER_ATTRIBUTE_LABELS).reduce((sum, key) => sum + (Number.isFinite(card.attributes[key]) ? Math.max(0, Math.floor(TRAINING_RULES.attributeMaximum - card.attributes[key])) : 0), 0);
-      return { ...card, costGold: trainingCostGold(card), canAfford: view.gold == null || view.gold >= trainingCostGold(card), training: player.training, expedition: state.playerSquads?.assignments?.[card.playerId] === "expedition", canTrain: !player.medical && headroom >= (view.rules?.attributePoints ?? TRAINING_RULES.attributePoints) };
+      const headroom = Object.keys(PLAYER_ATTRIBUTE_LABELS).reduce((sum, key) => sum + (Number.isFinite(card.attributes[key]) ? Math.max(0, Math.floor(trainingAttributeHeadroom(card.attributes[key]))) : 0), 0);
+      cached={card,headroom,costGold:trainingCostGold(card)};playerCache.set(player,cached);
+      }
+      const {card,headroom,costGold}=cached;
+      return { ...card, costGold, canAfford: view.gold == null || view.gold >= costGold, training: player.training, expedition: state.playerSquads?.assignments?.[card.playerId] === "expedition", canTrain: !player.medical && headroom >= (view.rules?.attributePoints ?? TRAINING_RULES.attributePoints) };
     });
     render();
   });

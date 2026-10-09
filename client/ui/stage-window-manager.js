@@ -18,7 +18,7 @@ function syncMapStage(element) {
 function requestClose(element, reason = "request") {
   const registration = registrations.get(element);
   if (!registration || element.hidden) return false;
-  registration.onRequestClose?.(reason);
+  if (registration.onRequestClose?.(reason) === false) return false;
   if (!element.hidden) element.hidden = true;
   deactivateStageWindow(element, { restoreFocus:reason !== "superseded" });
   return true;

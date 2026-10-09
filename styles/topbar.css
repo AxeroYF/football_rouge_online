@@ -29,3 +29,7 @@ html .topbar .yoogle-input-shell:focus-within{border-bottom-color:#d6ba6e;box-sh
 
 /* Settings must remain clickable while a map-stage window is open. */
 html .topbar:has(#account-menu-popover:not([hidden])){z-index:1600}
+
+/* Keep overflowing desktop actions reachable without squeezing the buttons. */
+html .topbar .primary-nav{overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:auto;user-select:none}
+html .topbar .primary-nav.is-nav-dragging,html .topbar .primary-nav.is-nav-dragging *{cursor:grabbing}

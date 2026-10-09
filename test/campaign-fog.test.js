@@ -74,7 +74,7 @@ for (const invalidate of [false, true]) test(
     const layer=()=>({addTo(){return this;},remove(){},on(){events.push("target");return this;},bindTooltip(){return this;},setStyle(){},setLatLng(){}});
     const point=(x,y)=>({x,y,distanceTo(p){return Math.hypot(x-p.x,y-p.y);}});
     const state={playerId:"p",coastalTerritoryIds:["a"],expeditionPiece:{territoryId:"a",moving:false}};
-    const surveyed={...state,fog:{enabled:true,visibleTerritoryIds:["a","overseas"],exploredTerritoryIds:["a","overseas"],metPlayerIds:[]}};
+    const surveyed={playerId:"p",fog:{enabled:true,visibleTerritoryIds:["a","overseas"],exploredTerritoryIds:["a","overseas"],metPlayerIds:[]},world:{territories:{a:{},overseas:{}}}};
     const route={sourcePoint:[.5,0],targetPoint:[4,0],targetTerritoryId:"overseas",distanceKm:389};
     let selected=null,controller;
     controller=createMaritimeController({
@@ -84,11 +84,11 @@ for (const invalidate of [false, true]) test(
       getCoastlineData:()=>({territories:{a:{coastlines:[[[0,0],[1,0]]]}}}),
       getTerritoryWorld:()=>({territories:{a:{ownerType:"player",ownerId:"p"}}}),
       getCampaignState:()=>state,getSelectedTerritoryId:()=>"a",ownActiveChallenge:()=>null,
-      getCampaignRequest:()=>async()=>({sourceTerritoryId:"a",sourcePoint:[.5,0],routes:[route],state:surveyed}),
+      getCampaignRequest:()=>async(_url,options)=>{assert.equal(options.body.compact,true);return {sourceTerritoryId:"a",sourcePoint:[.5,0],routes:[route],statePatch:surveyed};},
       sourcePointToDisplay:(_id,[lng,lat])=>[lat,lng],displayPointToSource:(_id,{lat,lng})=>[lng,lat],
       selectTerritory:id=>{selected=id;},refreshTerritoryDisplay(){},renderTerritoryInspector(){},showToast(){},
-      onSurveyState(next){
-        assert.equal(next,surveyed);assert.equal(controller.getTargetIds().size,0);
+      onSurveyState(next,options){
+        assert.equal(next,surveyed);assert.deepEqual(options,{fit:false,compact:true});assert.equal(controller.getTargetIds().size,0);
         events.push("state");if(invalidate)controller.clearMaritimeMode();
       },
     });

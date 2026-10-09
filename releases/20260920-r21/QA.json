@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "version": "20260920-r21",
+  "checks": [
+    "Complete 20260920-r16 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r21 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 16,
+  "newFiles": 0,
+  "requiredBaseFiles": 1216,
+  "imports": 67,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "airportRegressionTests": 18,
+  "browser": {
+    "checks": [
+      {
+        "name": "coalition preselected",
+        "pass": true
+      },
+      {
+        "name": "correct game-map distance displayed",
+        "pass": true
+      },
+      {
+        "name": "correct ticket price displayed",
+        "pass": true
+      },
+      {
+        "name": "flight stores corrected distance",
+        "pass": true
+      },
+      {
+        "name": "both allies pay 400",
+        "pass": true
+      },
+      {
+        "name": "arrives in one minute",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "priorCumulativeQA": "releases/20260920-r20/QA.json"
+}

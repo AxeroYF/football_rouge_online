@@ -31,7 +31,7 @@ function account(id='a') {
       formationLinePresets:{position1:lines,position2:lines,position3:lines},
       tacticalPlans:{opening:{tactic:'balanced',style:'possession',positionPreset:'position1',playerDuties:{[starters[1]]:'support'}},leading:{tactic:'defensive',style:'counterAttack',positionPreset:'position2',playerDuties:{}},trailing:{tactic:'positive',style:'possession',positionPreset:'position3',playerDuties:{}}}}}};
   }
-  return {id,nickname:id,token:id,setupComplete:true,homeTerritoryId:id,gold:10000,draft:{version:DRAFT_VERSION,teamName:id,roster},playerSquads:{schemaVersion:2,assignments},tactics:{schemaVersion:2,activeSquadId:'expedition',squads},expeditionPiece:{schemaVersion:1,territoryId:id,tokenId:'default',movement:null}};
+  return {id,nickname:id,token:id,setupComplete:true,homeTerritoryId:id,gold:100000,draft:{version:DRAFT_VERSION,teamName:id,roster},playerSquads:{schemaVersion:2,assignments},tactics:{schemaVersion:2,activeSquadId:'expedition',squads},expeditionPiece:{schemaVersion:1,territoryId:id,tokenId:'default',movement:null}};
 }
 function reserve(a,role='LB',fitness=90,overall=90,suffix=role+'-bench') {
   const p={...structuredClone(catalog.find(p=>p.role===role)||catalog.find(p=>p.role===(role==='LWB'?'LB':'RB'))),role,id:a.id+'-'+suffix,name:suffix,overall,effectiveOverall:overall};
@@ -139,7 +139,7 @@ test('second-leg write failure remains retryable, with no extra fatigue or dupli
   assert.equal(f.a.draft.roster.find(p=>p.id===id).state.fitness,after);
 });
 test('sanctuary restores attacker participants once after both legs, never a bench-only player or defender',()=>{
-  const f=fixture();const bench=reserve(f.a,'LB',70);const c=f.begin();
+  const f=fixture();Object.assign(f.s.world.territories.c,{ownerType:'player',ownerId:'b',capitalOf:null});f.s.world.players.b.territoryIds.push('c');const bench=reserve(f.a,'LB',70);const c=f.begin();
   f.tick(2*M);f.advance();f.tick(3*M);f.advance();
   // Finish the second game, then enable the existing effect for settlement.
   const leg=c.live.secondLeg;advanceCampaignLiveLeg(leg,f.now+3*M,{maximumChains:1000});
@@ -180,4 +180,30 @@ test('biology is snapshotted for expeditions, excludes garrison and lowers live 
  const sum=l=>l.match.teams[1].players.reduce((n,p)=>n+Number(p.state.fitness),0);assert.ok(sum(research)>sum(normal));
  a.formationResearch.topicLevels['biology:match-endurance']=0;assert.equal(research.match.teams[1].biologyFatigueReduction,15);
  const service=new ExpeditionFitnessService({world:{},accounts:new Map([[a.id,a]])});service.applyLeg(a,{},research);for(const p of research.match.teams[1].players)assert.equal(a.draft.roster.find(x=>x.id===p.id).state.fitness,p.state.fitness);
+});
+
+
+test('fitness checkpoint skips full, fixed and stopped recovery, and batches actual recovery at 30 seconds',()=>{
+ const f=fixture(),p=f.a.draft.roster[1];f.tick(30000);assert.equal(f.s.fitness.due(),false);
+ const trait=YDL_TRAIT_CARDS.find(t=>t.rules.some(r=>r.hook==='fixedFitness'&&r.value===94));p.traits=[trait.id];setFitness(p,10);f.s.save();f.tick(30000);assert.equal(f.s.fitness.due(),false);
+ f.s.save();p.traits=[];setFitness(p,40);f.s.save();f.tick(5000);assert.equal(f.s.fitness.due(),false);assert.ok(Math.abs(f.s.fitness.currentFitness(f.a,p)-(40+1/24))<1e-9);assert.equal(p.state.fitness,40);
+ f.tick(25000);assert.equal(f.s.fitness.due(),true);f.s.save();assert.equal(p.state.fitness,40.25);assert.equal(f.s.fitness.due(),false);
+ f.a.fitnessRecovery.plans[p.id].stopAt=f.now;f.tick(30000);assert.equal(f.s.fitness.due(),false);
+});
+test('read-only fitness projection does not save or compound elapsed recovery, and restart preserves it',()=>{
+ const f=fixture(),p=f.a.draft.roster[1];setFitness(p,40);f.s.save();f.tick(15000);const before=structuredClone(f.a),save=f.s.repository.save;let writes=0;f.s.repository.save=(...args)=>{writes++;return save(...args);};
+ for(let i=0;i<20;i++){assert.equal(f.s.fitness.publicState(f.a).players[p.id].fitness,40.125);assert.equal(f.s.fitness.draftView(f.a,{roster:[structuredClone(p)]}).roster[0].state.fitness,40.125);}
+ assert.equal(writes,0);assert.deepEqual(f.a,before);f.reload();assert.equal(f.a.draft.roster[1].state.fitness,40.125);
+});
+test('30 second recovery checkpoints produce the same aura and arrival result as 5 second saves',()=>{
+ const a=account();setFitness(a.draft.roster[1],40);const start=1000;a.fitnessRecovery={version:1,at:start,plans:Object.fromEntries(a.draft.roster.map(p=>[p.id,{boostFrom:start+17000,boostRate:3,stopAt:null}]))};
+ const b=structuredClone(a),one=new ExpeditionFitnessService({world:{},accounts:new Map([['a',a]])}),two=new ExpeditionFitnessService({world:{},accounts:new Map([['a',b]])});
+ one.plans=()=>a.fitnessRecovery.plans;two.plans=()=>b.fitnessRecovery.plans;
+ for(let t=5000;t<=60000;t+=5000)one.prepare(start+t);for(let t=30000;t<=60000;t+=30000)two.prepare(start+t);
+ assert.ok(Math.abs(a.draft.roster[1].state.fitness-b.draft.roster[1].state.fitness)<1e-9);
+});
+test('idle campaign polling and scheduler coalesce to two saves per minute, not twelve',()=>{
+ const f=fixture({resources:true}),p=f.a.draft.roster[1];setFitness(p,40);f.s.save();const save=f.s.repository.save;let writes=0;f.s.repository.save=(...args)=>{writes++;return save(...args);};
+ for(let i=0;i<60;i++){f.tick(5000);f.s.state(f.a);f.s.state(f.b);if(f.s.economyDue(f.now))f.s.save();}
+ assert.equal(writes,10,'five minutes with two clients must only checkpoint every thirty seconds');assert.equal(p.state.fitness,42.5);
 });

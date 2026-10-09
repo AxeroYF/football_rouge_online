@@ -1,10 +1,10 @@
 import { availabilitySnapshot, healthUnavailable } from './match-availability.mjs';
 import { FITNESS_RULES, boundedFitness, fitnessRedline } from '../config/fitness.mjs';
-import { presentPlayerTraits } from '../config/player-trait-presentation.mjs';
+import { playerTraitFitness } from '../config/player-trait-presentation.mjs';
 import { analyzeElevenBoardFormation } from '../../formation-rules.js';
 import { compareAutomaticSubstitutes, automaticSubstitutionRank, injurySubstitutionCandidate } from '../../engine/s4-v2.1/versus/automatic-substitution.js';
 
-export const effectiveFitness = player => boundedFitness(presentPlayerTraits(player).effectiveFitness);
+export const effectiveFitness = player => boundedFitness(playerTraitFitness(player));
 export function setFitness(player, value) {
   player.state = { ...player.state, fitness: boundedFitness(value) };
   if (Object.hasOwn(player, 'fitness')) player.fitness = player.state.fitness;

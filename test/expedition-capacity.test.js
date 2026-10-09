@@ -69,15 +69,19 @@ test("capacity counts the same representative players as management and match se
 
 test("full squad disables additions, keeps removals available, and does not shrink capacity when filtered", () => {
   const a=fixture(),filters=[];
+  const menuButton={dataset:{teamMode:"list"}};
   const panel={dataset:{},classList:{add(){},remove(){}},setAttribute(){},ownerDocument:{addEventListener(){}},closest:()=>null,querySelector:()=>null,querySelectorAll:selector=>{
+    if(selector==='[data-team-mode]')return [menuButton];
     if(selector==='[data-team-filter]') { const node={tagName:"SELECT",dataset:{teamFilter:"squad"},value:"garrison",addEventListener(type,fn){this.change=fn;}};filters.push(node);return [node]; } return [];
   }};
   const controller=createTeamController({panel,getCampaignState:()=>a});
   controller.render();
+  assert.match(panel.innerHTML,/data-team-mode="batch"/);
+  menuButton.onclick();
   assert.match(panel.innerHTML,/<strong>22 \/ 22<\/strong>/);
   assert.match(panel.innerHTML,/远征队最多 22 人（含首发与替补）/);
   assert.match(panel.innerHTML,/<option value="expedition" selected>远征<\/option>/);
-  filters[0].change();
+  filters[0].onchange();
   assert.doesNotMatch(panel.innerHTML,/data-team-squad-player="expedition-/);
   assert.match(panel.innerHTML,/<option value="expedition" disabled>远征 · 已满 22 人<\/option>/);
   assert.match(panel.innerHTML,/<strong>22 \/ 22<\/strong>/);

@@ -99,13 +99,14 @@ test("card filters preserve equal-level duplicate copies and support the squad f
   assert.equal(filterManagedCards(cards, { search: "Player 0" })[0].id, "c0");
 });
 
-test("management opens with recycle, market and trade-up workflows", async () => {
+test("management opens with recycle, market, purchase and trade-up workflows", async () => {
   const f = fixture(); await f.open();
-  assert.equal((f.root.innerHTML.match(/class="cm-menu-option"/g) ?? []).length, 3);
+  assert.equal((f.root.innerHTML.match(/class="cm-menu-option"/g) ?? []).length, 4);
   assert.match(f.root.innerHTML, /<strong class="cm-option-title">回收<\/strong>/);
   assert.match(f.root.innerHTML, /class="cm-menu-option" data-cm-kind="sell" data-cm-screen="sell">/);
   assert.match(f.root.innerHTML, /class="cm-menu-option" data-cm-kind="trade-up" data-cm-screen="trade-up">/);
   assert.doesNotMatch(f.root.innerHTML, /cm-tabs|我的挂牌|交易市场|汰换合同/);
+  assert.match(f.root.innerHTML, /data-cm-kind="purchase" data-cm-screen="purchase"/);
   f.click({ cmScreen: "recycle" });
   assert.match(f.root.innerHTML, /<header[^>]*>[\s\S]*?data-cm-action="start-batch"[\s\S]*?<\/header>/);
   assert.doesNotMatch(f.root.innerHTML, /cm-overall|minOverall|maxOverall|全部评级|全部位置|上一页|下一页|cm-footer|同名球员不会合并/);
@@ -923,6 +924,24 @@ test("export populated history and detail fixtures without adding extra explanat
   f.click({ cmuHistory: "history-trade-23" }); const detail = f.root.children[0];
   save("trade-up-history-detail", '<dialog open class="' + detail.className + '">' + detail.innerHTML + '</dialog>');
   assert.equal(tradeUpHistory({ history: Array.from({ length: 24 }, (_, i) => tradeHistoryEntry(i)) }).length, 20);
+});
+
+test('trade-up delta preserves warehouse scroll and filters without reloading either full endpoint',async()=>{
+ const f=tradeFixture();await f.trade();f.tradeFilter('squad','garrison');f.five();
+ f.root.querySelector('[data-cmu-scroll]').scrollTop=275;
+ const dialog=await f.previewTrade();dialog.querySelector('[data-cm-confirm]').fire('click',{});
+ const mutation=f.requests.at(-1),requestCount=f.requests.length,removedIds=['c0','c1','c2','c3','c4'];
+ assert.equal(mutation.options.body.warehouseDelta,true);
+ const card={...cards[6],id:'delta-result',playerId:'delta-result',name:'增量新卡',squad:'garrison',blocked:null};
+ mutation.resolve({result:{id:'delta-event',kind:'trade-up',card,cards:tradeView.cards.filter(p=>removedIds.includes(p.id))},cardDelta:{removedIds,cards:[card]},rosterDelta:{removedIds,cards:[card],counts:{},positionCounts:{},pickNumber:7},statePatch:{wallet:{gold:1000}}});await flush();
+ assert.equal(f.requests.length,requestCount,'no full cards or state requests');
+ assert.equal(f.store.getState().draft.roster.filter(p=>p.id===card.id).length,1);
+ assert.ok(!f.store.getState().draft.roster.some(p=>removedIds.includes(p.id)));
+ f.root.children[0].querySelector('[data-cm-dialog-close]').onclick();
+ assert.equal(f.root.querySelector('[data-cmu-scroll]').scrollTop,275);
+ assert.match(f.root.innerHTML,/value="garrison" selected/);assert.match(f.root.innerHTML,/增量新卡/);
+ assert.doesNotMatch(f.root.innerHTML,/正在读取球员卡|data-cmu-select="c0"/);
+ assert.equal(f.requests.length,requestCount);
 });
 
 test('compact trade-up reveals its committed card while map and warehouse refreshes are still pending',async()=>{

@@ -24,3 +24,17 @@ test('repeated markup stays stable and motion identity follows the independent p
  assert.equal(playerCardMarkup(p),playerCardMarkup(p));assert.match(playerCardMarkup(p),/data-card-motion="instance-one"/);
  const next=playerCardMarkup({...p,upgradeLevel:3,effectiveOverall:98});assert.match(next,/data-card-motion="instance-one"/);assert.match(next,/>98<\/text>/);assert.match(next,/>\+3<\/span>/);
 });
+
+
+test('+9/+10 retain legend particle canvas, use independent frames, and expand every trait',()=>{
+ const source=catalog.find(p=>p.id==='legend-messi'),traits=['one','two','three','four'];
+ for(const level of [9,10]){
+  const card={...source,upgradeLevel:level,traits:traits.slice(0,level===9?3:4)};
+  const html=playerCardMarkup(card);
+  assert.match(html,new RegExp('enhancement-'+level+'-frame.svg'));assert.match(html,/s-redgold-background.svg/);
+  assert.match(html,/data-card-motion=/);assert.match(html,/shield-card-enhancement-gloss/);assert.match(html,/shield-card-sheen/);
+  assert.equal((html.match(/class="shield-card-trait-row"/g)||[]).length,level===9?3:4);assert.doesNotMatch(html,/shield-card-trait-more/);
+  const still=playerCardMarkup(card,{animated:false});assert.doesNotMatch(still,/data-card-motion=|shield-card-enhancement-gloss/);
+  const lower=playerCardMarkup({...card,grade:'A'});assert.match(lower,/a-background.svg/);assert.doesNotMatch(lower,/s-redgold-background.svg|data-card-motion=/);
+ }
+});

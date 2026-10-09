@@ -41,6 +41,11 @@ export function createCardMotionController({document:doc,window:win=doc.defaultV
     raf=win.requestAnimationFrame(tick);
   }
   function sync(){
+    // The border sheen shares visibility/lifecycle with the existing legend canvas.
+    for(const node of nodes.values()){
+      const active=Boolean(allowed()&&node.visible&&node.width>0&&node.height>0&&node.canvas.isConnected);
+      if(node.borderActive!==active){node.borderActive=active;node.canvas.closest?.('.player-card-shield')?.classList?.toggle('card-motion-active',active);}
+    }
     if(!allowed()||!activeNodes().length){if(raf!==null)win.cancelAnimationFrame(raf);raf=null;lastTick=null;return;}
     if(raf===null){lastTick=null;raf=win.requestAnimationFrame(tick);}
   }

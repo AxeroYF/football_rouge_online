@@ -2189,3 +2189,11 @@ button {
 .map-loader-actions[hidden] { display:none; }
 .map-loader-actions a { padding:10px 16px; border:1px solid #d6b663; border-radius:8px; background:#17271e; color:#f4d67c; text-decoration:none; font-size:14px; }
 .map-loader-actions a:hover { background:#314434; }
+
+/* Author display rules must respect hidden notification cards. */
+#campaign-notification-list [hidden], .campaign-live-card[hidden] { display: none !important; }
+
+.pvp-attack-confirmation footer { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:12px; margin-top:20px; }
+.pvp-attack-confirmation button { min-height:44px; padding:10px 16px; border:1px solid #70877c; border-radius:8px; background:#153528; color:#f4f0dc; cursor:pointer; font:inherit; }
+.pvp-attack-confirmation [data-pvp-confirm] { border-color:#d6b34b; background:#d6b34b; color:#10261a; font-weight:700; }
+.pvp-attack-confirmation button:focus-visible { outline:2px solid #f5d875; outline-offset:3px; }

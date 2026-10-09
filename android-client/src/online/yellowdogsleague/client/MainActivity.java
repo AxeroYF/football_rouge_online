@@ -30,6 +30,7 @@ import android.widget.Toast;
 
 public final class MainActivity extends Activity {
     private WebView web;
+    private LocalArtCache art;
     private ProgressBar progress;
     private LinearLayout errorPanel;
     private TextView errorText;
@@ -37,36 +38,50 @@ public final class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private long lastCheck;
     private boolean navigationFailed;
+    private boolean backPending;
     private static final int FILE_PICKER = 41;
     private int dp(int n) { return Math.round(n * getResources().getDisplayMetrics().density); }
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
-        LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(16,25,20));
+        art=new LocalArtCache(this);art.refresh();
+        if(Build.VERSION.SDK_INT>=30)getWindow().setDecorFitsSystemWindows(false);
+        LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.HORIZONTAL); root.setBackgroundColor(Color.rgb(16,25,20));
         root.setOnApplyWindowInsetsListener((v,insets)->{
-            if(Build.VERSION.SDK_INT>=30){android.graphics.Insets safe=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());v.setPadding(safe.left,safe.top,safe.right,safe.bottom);}
-            else v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
-            return insets;
+            if(Build.VERSION.SDK_INT>=30){
+                int handled=WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime();
+                android.graphics.Insets safe=insets.getInsets(handled);v.setPadding(safe.left,safe.top,safe.right,safe.bottom);
+                // The native container already avoids these areas. Do not apply them again inside WebView.
+                return new WindowInsets.Builder(insets).setInsets(handled,android.graphics.Insets.NONE).build();
+            }
+            v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+            return insets.replaceSystemWindowInsets(0,0,0,0);
         });
-        LinearLayout bar = new LinearLayout(this); bar.setGravity(Gravity.CENTER_VERTICAL); bar.setPadding(dp(12),0,dp(4),0);
-        TextView title = new TextView(this); title.setText("黄狗风云"); title.setTextColor(0xffeee6d5); title.setTextSize(14);
-        bar.addView(title,new LinearLayout.LayoutParams(0,-1,1));title.setGravity(Gravity.CENTER_VERTICAL);
-        Button menu = new Button(this); menu.setText("⋮"); menu.setTextSize(20); menu.setContentDescription("客户端菜单"); menu.setMinHeight(0);menu.setMinimumHeight(0);menu.setPadding(0,0,0,0);
-        bar.addView(menu,new LinearLayout.LayoutParams(dp(48),dp(36)));root.addView(bar,new LinearLayout.LayoutParams(-1,dp(36)));
-        progress = new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setMax(100);root.addView(progress,new LinearLayout.LayoutParams(-1,dp(2)));
-        FrameLayout content = new FrameLayout(this);root.addView(content,new LinearLayout.LayoutParams(-1,0,1));
+        // A narrow side rail preserves the scarce vertical space on landscape phones.
+        LinearLayout rail = new LinearLayout(this);rail.setOrientation(LinearLayout.VERTICAL);rail.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL);
+        Button back = new Button(this);back.setText("‹");back.setTextSize(26);back.setContentDescription("返回游戏上一层");back.setPadding(0,0,0,0);back.setMinWidth(0);back.setMinimumWidth(0);back.setOnClickListener(v->goBack());
+        rail.addView(back,new LinearLayout.LayoutParams(dp(44),dp(48)));
+        Button menu = new Button(this);menu.setText("⋮");menu.setTextSize(22);menu.setContentDescription("客户端菜单");menu.setPadding(0,0,0,0);menu.setMinWidth(0);menu.setMinimumWidth(0);
+        rail.addView(menu,new LinearLayout.LayoutParams(dp(44),dp(48)));root.addView(rail,new LinearLayout.LayoutParams(dp(44),-1));
+        FrameLayout content = new FrameLayout(this);root.addView(content,new LinearLayout.LayoutParams(0,-1,1));
+        progress = new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setMax(100);
         web = new WebView(this);web.setBackgroundColor(0xff101914);content.addView(web,new FrameLayout.LayoutParams(-1,-1));
         errorPanel = new LinearLayout(this);errorPanel.setOrientation(LinearLayout.VERTICAL);errorPanel.setGravity(Gravity.CENTER);errorPanel.setPadding(dp(24),dp(12),dp(24),dp(12));errorPanel.setBackgroundColor(0xff101914);
         errorText = new TextView(this);errorText.setTextColor(0xffeee6d5);errorText.setTextSize(17);errorText.setGravity(Gravity.CENTER);errorPanel.addView(errorText);
         Button retry = new Button(this);retry.setText("重新连接");retry.setOnClickListener(v->loadGame());errorPanel.addView(retry);errorPanel.setVisibility(View.GONE);content.addView(errorPanel,new FrameLayout.LayoutParams(-1,-1));
+        content.addView(progress,new FrameLayout.LayoutParams(-1,dp(2),Gravity.TOP));
         setContentView(root);
         WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setTextZoom(100);
         settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setSupportMultipleWindows(false);settings.setMediaPlaybackRequiresUserGesture(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);settings.setBuiltInZoomControls(false);settings.setUseWideViewPort(true);settings.setLoadWithOverviewMode(true);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);settings.setBuiltInZoomControls(false);settings.setUseWideViewPort(true);settings.setLoadWithOverviewMode(false);
         CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
         WebView.setWebContentsDebuggingEnabled(false);
         web.setWebViewClient(new WebViewClient(){
+            @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest request){
+                if(!"GET".equals(request.getMethod())||request.isForMainFrame()||request.getRequestHeaders().containsKey("Range"))return null;
+                return art.intercept(request.getUrl().toString());
+            }
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request){
                 String url=request.getUrl().toString();
                 if(UpdatePolicy.sameWebOrigin(BuildConfig.GAME_URL,url))return false;
@@ -105,11 +120,18 @@ public final class MainActivity extends Activity {
         // CSS only: no native JavaScript bridge and no access to account fields.
         view.evaluateJavascript("(()=>{document.documentElement.setAttribute('data-ydl-android','');let s=document.getElementById('ydl-android-layout');if(!s){s=document.createElement('style');s.id='ydl-android-layout';document.head.appendChild(s);}s.textContent="+org.json.JSONObject.quote(BuildConfig.LANDSCAPE_CSS)+";})()",null);
     }
-    private void loadGame(){if(web==null){recreate();return;}errorPanel.setVisibility(View.GONE);web.loadUrl(BuildConfig.GAME_URL);}
+    private void loadGame(){art.refresh();if(web==null){recreate();return;}errorPanel.setVisibility(View.GONE);web.loadUrl(BuildConfig.GAME_URL);}
     private void showError(String text){navigationFailed=true;errorText.setText(text);errorPanel.setVisibility(View.VISIBLE);progress.setVisibility(View.GONE);}
     void toast(String text){Toast.makeText(this,text,Toast.LENGTH_LONG).show();}
     private void confirmExit(){new AlertDialog.Builder(this).setMessage("退出黄狗风云？").setPositiveButton("退出",(d,w)->finish()).setNegativeButton("继续游戏",null).show();}
-    private void goBack(){if(web!=null&&web.canGoBack())web.goBack();else confirmExit();}
+    private void goBack(){
+        if(backPending)return;
+        if(web==null||!UpdatePolicy.sameWebOrigin(BuildConfig.GAME_URL,web.getUrl())){finishBack();return;}
+        if(Build.VERSION.SDK_INT>=30){WindowInsets insets=web.getRootWindowInsets();if(insets!=null&&insets.isVisible(WindowInsets.Type.ime())){getWindow().getInsetsController().hide(WindowInsets.Type.ime());return;}}
+        backPending=true;
+        web.evaluateJavascript("(()=>{try{return window.yellowdogsMobileBack?window.yellowdogsMobileBack():false;}catch(e){return false;}})()",value->{backPending=false;if(!isFinishing()&&!isDestroyed()&&!"true".equals(value))finishBack();});
+    }
+    private void finishBack(){if(web!=null&&web.canGoBack())web.goBack();else confirmExit();}
     @Override public void onBackPressed(){goBack();}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(request==FILE_PICKER&&fileCallback!=null){fileCallback.onReceiveValue(result==RESULT_OK&&data!=null&&data.getData()!=null?new Uri[]{data.getData()}:null);fileCallback=null;}}
     @Override protected void onSaveInstanceState(Bundle out){if(web!=null)web.saveState(out);super.onSaveInstanceState(out);}

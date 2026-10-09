@@ -1,3 +1,4 @@
+import {CARD_MANAGEMENT_DEFAULTS} from '../../shared/config/card-management.mjs';
 import { refreshTrainingGrowth } from "../../shared/football/training-growth.mjs";
 import { remapTerritoryReferences, assertSafeMapMerge } from "./map-version-migration.mjs";
 import { createTerritoryWorld, OWNER_TYPES } from "../../territory-model.js";
@@ -66,12 +67,17 @@ export function hydrateCampaignWorld(index, savedWorld) {
     if(world.activeChallenges[id]&&world.activeChallenges[id].id!==oldChallenge.id)throw Error('合并地块存在多场进行中比赛，已保留原存档');
     const challenge=structuredClone(oldChallenge);remapTerritoryReferences(challenge,index.territoryIdAliases??{});world.activeChallenges[id]=challenge;
   }
+  world.originalOwnersVersion = savedWorld.originalOwnersVersion ?? 0;
   world.schemaVersion = 4;
   world.revision = Number(savedWorld.revision ?? 0);
   world.seasonId = savedWorld.seasonId ?? world.seasonId;
   if(Array.isArray(savedWorld.news))world.news=structuredClone(savedWorld.news.slice(-200));
+  if(savedWorld.pvpBonds){world.pvpBonds=structuredClone(savedWorld.pvpBonds);remapTerritoryReferences(world.pvpBonds,index.territoryIdAliases??{});}
   if(savedWorld.coalitions){world.coalitions=structuredClone(savedWorld.coalitions);remapTerritoryReferences(world.coalitions,index.territoryIdAliases??{});}
+  if(savedWorld.jointScoutingSeed)world.jointScoutingSeed=savedWorld.jointScoutingSeed;
+  if(savedWorld.jointScoutSites)world.jointScoutSites=structuredClone(savedWorld.jointScoutSites);
   if(savedWorld.diplomacy)world.diplomacy=structuredClone(savedWorld.diplomacy);
+  if(savedWorld.dailyLeague)world.dailyLeague=structuredClone(savedWorld.dailyLeague);
   if(savedWorld.eliteChallenges)world.eliteChallenges=structuredClone(savedWorld.eliteChallenges);
   if(savedWorld.eliteRaids){world.eliteRaids=structuredClone(savedWorld.eliteRaids);remapTerritoryReferences(world.eliteRaids,index.territoryIdAliases??{});}
   for(const t of index.territories){const state=world.territories[t.territoryId];if(!Array.isArray(t.eliteClubIds)||state.ownerType==='player')continue;
@@ -155,7 +161,7 @@ function migratePlayerCatalog(context) {
         const source = byId.get(savedPlayer.id);
         if (!source) return savedPlayer;
         if (account.playerCatalogVersion !== context.playerCatalogVersion) changed = true;
-        const trainedAttributes = (base) => Object.fromEntries(Object.entries(base ?? {}).map(([key, value]) => [key, Math.min(99, Number(value) + Number(savedPlayer.trainingBonuses?.[key] ?? 0))]));
+        const trainedAttributes = (base) => Object.fromEntries(Object.entries(base ?? {}).map(([key, value]) => [key, Math.max(1, Number(value) + Number(savedPlayer.trainingBonuses?.[key] ?? 0))]));
         return {
           ...savedPlayer,
           ...source,
@@ -180,7 +186,7 @@ function migratePlayerCatalog(context) {
 function migrateTrainingGrowth(context) {
   let changed = false;
   for (const account of context.accounts.values()) for (const player of account.draft?.roster ?? []) {
-    if (!Object.values(player.trainingBonuses ?? {}).some(value => Number(value) > 0)) continue;
+    if (!Number(player.upgradeLevel) && !Object.values(player.trainingBonuses ?? {}).some(value => Number(value) > 0)) continue;
     const before = JSON.stringify(player);
     refreshTrainingGrowth(player);
     changed = before !== JSON.stringify(player) || changed;
@@ -200,7 +206,17 @@ function migratePlayerSquads(context) {
   return changed;
 }
 
+// Apply once so later administrator adjustments survive restarts.
+export function migrateRecycleBalance({world}) {
+  if(!world || world.cardManagement?.balanceVersion==='20260919-recycle-10')return false;
+  world.cardManagement??={};
+  world.cardManagement.config={...structuredClone(CARD_MANAGEMENT_DEFAULTS),...world.cardManagement.config,recycleRatioBps:1000};
+  world.cardManagement.balanceVersion='20260919-recycle-10';
+  return true;
+}
+
 export const CAMPAIGN_SAVE_MIGRATIONS = Object.freeze([
+  Object.freeze({id:"20260919-recycle-10",apply:migrateRecycleBalance}),
   Object.freeze({ id: "account-defaults", apply: migrateAccountDefaults }),
   Object.freeze({ id: "account-economy", apply: migrateAccountEconomy }),
   Object.freeze({ id: "territory-aliases", apply: migrateTerritoryAliases }),

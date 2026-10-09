@@ -14,7 +14,7 @@ const types = new Map(Object.entries({
   '.glb':'model/gltf-binary', '.gltf':'model/gltf+json', '.bin':'application/octet-stream', '.svg':'image/svg+xml', '.ico':'image/x-icon', '.woff2':'font/woff2', '.woff':'font/woff',
 }));
 const folders = new Set(['assets', 'client', 'shared', 'styles', 'engine']);
-const entries = new Map([['/versus','index.html'],['/versus/','index.html'],['/game','index.html'],['/game/','index.html'],['/admin','admin-v2.html'],['/admin/','admin-v2.html'],['/admin.html','admin-v2.html']]);
+const entries = new Map([['/versus','game.html'],['/versus/','game.html'],['/game','game.html'],['/game/','game.html'],['/admin','admin-v2.html'],['/admin/','admin-v2.html'],['/admin.html','admin-v2.html']]);
 
 export function isPublicFile(relative) {
   const parts = relative.replaceAll('\\', '/').split('/');
@@ -35,6 +35,7 @@ export function publicRequestPath(url) {
 
 export function createStaticHandler(root) {
   const mapAssets = createStaticAssetCache();
+  const codeAssets = createStaticAssetCache({maxBytes:8 * 1024 * 1024});
   return async function handleStatic(request, response) {
     const relative = publicRequestPath(request.url);
     if (!relative) { response.writeHead(404); response.end('Not found'); return; }
@@ -46,11 +47,14 @@ export function createStaticHandler(root) {
       if (!details.isFile()) { response.writeHead(404); response.end('Not found'); return; }
       const extension = path.extname(target).toLowerCase();
       const relativePath = canonical.replaceAll('\\', '/');
-      const asset = Object.hasOwn(MAP_ASSET_HASHES, relativePath) ? await mapAssets.get(target, details) : null;
+      const code = ['.js','.mjs','.css','.html'].includes(extension);
+      const asset = code ? await codeAssets.get(target, details)
+        : (Object.hasOwn(MAP_ASSET_HASHES, relativePath) || relativePath === 'assets/data/desktop-resources.json') ? await mapAssets.get(target, details) : null;
       const compressed = asset?.gzip && acceptsGzip(request.headers['accept-encoding']) ? asset.gzip : null;
       const version = new URL(request.url, 'http://localhost').searchParams.get('v');
       // Check the real bytes, so stale manifests cannot lock changed content into cache.
-      const immutable = asset && version === 'sha256-' + asset.hash;
+      const digest = version?.match(/^sha256-([a-f0-9]{20}|[a-f0-9]{64})$/)?.[1];
+      const immutable = asset && extension !== '.html' && digest && asset.hash.startsWith(digest);
       const etag = asset ? 'W/"' + asset.hash + (compressed ? '-gzip' : '') + '"'
         : 'W/"' + details.size + '-' + details.mtimeMs + '-' + details.ctimeMs + '"';
       const headers = {

@@ -4,3 +4,12 @@
 .coalition-action-window .coalition-buttons{gap:8px;padding:10px 0}
 .coalition-action-window>footer.coalition-buttons{padding:12px 20px;border-top:1px solid #435346}
 .coalition-action-window main>section>p{font-size:13px}
+
+.coalition-window .coalition-quote{padding:14px 16px;min-width:0;box-sizing:border-box;overflow-wrap:anywhere}
+.coalition-window .coalition-quote h3{margin:0 0 12px;line-height:1.4;white-space:normal}
+.coalition-window .coalition-quote>button{min-height:40px;margin:8px 8px 0 0;max-width:100%;white-space:normal}
+.coalition-window .coalition-quote label,.coalition-defence-setting label{display:grid;gap:8px;min-width:0}
+.coalition-window .coalition-quote select,.coalition-defence-setting select{width:100%;min-width:0;max-width:100%}
+#coalition-target-notices .campaign-live-card>button{min-height:40px;margin-top:8px}
+
+.battle-report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.battle-report-actions button{min-height:40px;padding:8px 12px;border:1px solid #65745b;border-radius:6px;background:#233c30;color:#efe7cd;font:inherit;cursor:pointer}.battle-report-actions button:disabled{opacity:.5}

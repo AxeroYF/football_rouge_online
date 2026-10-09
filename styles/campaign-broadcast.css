@@ -135,7 +135,9 @@
 /* Preserve the original 16:25 pitch ratio within the available field area.
    Larger static cards retain their own shield ratio and end-line label gutters. */
 #campaign-broadcast .broadcast-v2-pitch{container-type:inline-size}
-#campaign-broadcast .broadcast-v2-pitch .broadcast-card-magnet{--broadcast-side:#ff6d84;display:block;width:clamp(42px,13cqw,80px);height:auto;min-height:0;padding:0;gap:0;aspect-ratio:26/35;border:0;border-radius:0;background:none;box-shadow:none;opacity:1;overflow:visible;cursor:default}
+/* Grid gives WebKit button contents a definite track instead of a zero-width
+   intrinsic wrapper around the size-contained card. Keep labels outside the face. */
+#campaign-broadcast .broadcast-v2-pitch .broadcast-card-magnet{--broadcast-side:#ff6d84;display:grid;grid-template-columns:minmax(0,1fr);width:clamp(42px,13cqw,80px);height:auto;min-height:0;padding:0;gap:0;aspect-ratio:26/35;border:0;border-radius:0;background:none;box-shadow:none;opacity:1;overflow:visible;cursor:default}
 #campaign-broadcast .broadcast-card-magnet.broadcast-side-1{--broadcast-side:#5aaeff}
 #campaign-broadcast .broadcast-card-magnet::before,#campaign-broadcast .broadcast-card-magnet::after{display:none}
 #campaign-broadcast .broadcast-card-face{position:relative;width:100%;pointer-events:none;user-select:none}
@@ -165,3 +167,5 @@
 
 .broadcast-report-legs{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.broadcast-report-legs [aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
 #battle-result-details{display:block;margin:0 auto 12px}#battle-result-details[hidden]{display:none}
+
+#campaign-defence-notices{display:grid;gap:8px}#campaign-defence-notices[hidden]{display:none}.defence-alert{border:2px solid #f56a58;background:linear-gradient(125deg,#541f20,#251b15)}.defence-alert .campaign-live-kicker{color:#ffb5a2;font-weight:800}.defence-report{text-align:left}

@@ -1,0 +1,57 @@
+{
+  "passed": true,
+  "version": "20260920-r32",
+  "checks": [
+    "Complete 20260920-r31 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r32 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 5,
+  "newFiles": 0,
+  "requiredBaseFiles": 1229,
+  "imports": 32,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "tests": {
+    "pretest": 82,
+    "main": 1154,
+    "posttest": 161,
+    "targeted": 60,
+    "raidMedical": 22,
+    "installer": 9
+  },
+  "http": {
+    "note": "Local synthetic 12-account large-history HTTP test, 12 constructing buildings, 2 active elite matches and 2 waiting raids, 512MiB old-space limit. Not production capacity.",
+    "originalBytes": 23694914,
+    "compactedBytes": 25975118,
+    "startupMs": 4404.2566,
+    "home": {
+      "count": 20,
+      "maxMs": 2464.656499999999,
+      "p95Ms": 2464.656499999999,
+      "meanMs": 193.59570500000055
+    },
+    "health": {
+      "count": 20,
+      "maxMs": 189.01519999999982,
+      "p95Ms": 189.01519999999982,
+      "meanMs": 22.658690000000025
+    },
+    "state": {
+      "count": 240,
+      "maxMs": 2393.9117000000006,
+      "p95Ms": 396.40619999999944,
+      "meanMs": 118.20703041666636
+    },
+    "errors": [],
+    "runtime": [
+      "[campaign-runtime] {\"at\":\"2026-09-20T13:52:46.474Z\",\"memory\":{\"rss\":236527616,\"heapTotal\":165675008,\"heapUsed\":103503216,\"external\":3913695,\"arrayBuffers\":280326},\"accounts\":12,\"receipts\":{\"airportRequests\":0,\"coalitionRequests\":0,\"raidRequests\":0,\"facilityUpgradeRequests\":0,\"elite\":2,\"diplomacy\":0},\"diplomacyRequests\":0,\"friendlyMatches\":0,\"activeMatches\":2,\"save\":{\"count\":25,\"totalBytes\":613466383,\"bytes\":25821468,\"durationMs\":129.26,\"at\":1789912361976},\"eventLoopMs\":{\"p95\":59.408383,\"max\":2397.044735}}"
+    ],
+    "stderr": ""
+  }
+}

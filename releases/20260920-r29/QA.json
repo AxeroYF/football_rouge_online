@@ -1,0 +1,81 @@
+{
+  "passed": true,
+  "version": "20260920-r29",
+  "checks": [
+    "Complete 20260920-r28 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r29 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 15,
+  "newFiles": 2,
+  "requiredBaseFiles": 1217,
+  "imports": 210,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "unitTests": {
+    "passed": 149,
+    "report": "outputs/r29-regression.log"
+  },
+  "browser": {
+    "checks": [
+      {
+        "name": "land list not fetched on ordinary profile or trade open",
+        "pass": true
+      },
+      {
+        "name": "one lazy land request",
+        "pass": true
+      },
+      {
+        "name": "ordinary building shown",
+        "pass": true
+      },
+      {
+        "name": "quote skips full world and player detail response",
+        "pass": true
+      },
+      {
+        "name": "land included in submitted offer",
+        "pass": true
+      },
+      {
+        "name": "recipient notification names land and building",
+        "pass": true
+      },
+      {
+        "name": "accept transfers ownership",
+        "pass": true
+      },
+      {
+        "name": "accept preserves building",
+        "pass": true
+      },
+      {
+        "name": "pack ownership distinguishes max level, base level and missing",
+        "pass": true
+      },
+      {
+        "name": "ownership updates without replacing card or replaying animation",
+        "pass": true
+      },
+      {
+        "name": "ownership sends zero extra requests",
+        "pass": true
+      },
+      {
+        "name": "ownership labels stay inside mobile viewport",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  }
+}

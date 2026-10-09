@@ -1,3 +1,4 @@
+import {receipt} from './receipt-retention.mjs';
 import {canUseTerritory} from '../../shared/config/diplomacy.mjs';
 import {constructionProjectState,assertConstructionSlot} from '../../shared/buildings/construction-limit.mjs';
 import {oilDeposit} from '../../shared/config/oil-deposits.mjs';
@@ -87,6 +88,10 @@ export class BuildingService {
     if (this.getProduction) {
       const pending = Object.values(world.territories ?? {}).flatMap(t => t.buildings ?? []).filter(b => b.status === "constructing" || b.upgradeTo);
       if (!pending.length) return false;
+      // Forecasts are refreshed by economic/ownership changes; polling need only
+      // settle due completions or migrate legacy construction without work state.
+      const now=this.now();
+      if(!pending.some(b=>!b.productionWork||(!b.productionWork.paused&&b.completesAt!=null&&Number.isFinite(Number(b.completesAt))&&Number(b.completesAt)<=now)))return false;
       this.save();
       return pending.some(b => b.status === "active");
     }
@@ -228,7 +233,7 @@ export class BuildingService {
       nextProjectAllocation:capacity/(projects.activeProjects+1)};
   }
 
-  territoryView(account, world, territoryIdValue, includeWonders = true) {
+  territoryView(account, world, territoryIdValue, includeWonders = true, projection = null) {
     const territoryId = String(territoryIdValue ?? "");
     const territory = world?.territories?.[territoryId];
     if (!territory) fail("目标地块不存在");
@@ -239,8 +244,8 @@ export class BuildingService {
     const availableTypes = canManage && !territory.raidSuppression && occupiedSlots < slotLimit
       ? Object.values(BUILDING_DEFINITIONS)
         .filter((definition) => definition.buildable)
-        .filter(definition=>!definition.maxPerPlayer||this.countOwnedType(account,world,definition.type)<definition.maxPerPlayer)
-        .filter((definition) => definition.type !== BUILDING_TYPES.SCOUT_CENTER || this.countOwnedType(account, world, definition.type) < SCOUTING_RULES.maxCentersPerPlayer)
+        .filter(definition=>!definition.maxPerPlayer||(projection?.counts.get(definition.type)??this.countOwnedType(account,world,definition.type))<definition.maxPerPlayer)
+        .filter((definition) => definition.type !== BUILDING_TYPES.SCOUT_CENTER || (projection?.counts.get(definition.type)??this.countOwnedType(account, world, definition.type)) < SCOUTING_RULES.maxCentersPerPlayer)
         .filter((definition) => !territory.buildings.some((building) => building.type === definition.type))
         .filter(definition=>!definition.oilOnly || this.oilDeposit(territoryId))
         .filter((definition) => !definition.coastalOnly || this.isCoastal(territoryId))
@@ -251,7 +256,7 @@ export class BuildingService {
       ownerId: territory.ownerId ?? null,
       canManage,
       raidSuppression:territory.raidSuppression??null,
-      ...(canManage && this.getProduction ? { production: this.productionView(account, world) } : {}),
+      ...(canManage && this.getProduction ? { production: (projection?.production??this.productionView(account, world)) } : {}),
       isCapital: Boolean(territory.capitalOf),
       slotLimit,
       occupiedSlots,
@@ -262,20 +267,31 @@ export class BuildingService {
       ...(canManage && includeWonders && this.wonders ? {availableWonders:territory.raidSuppression?[]:this.wonders.available(account,territoryId)} : {}),
       headquartersLevel:canManage?headquartersLevel(account,world):null,
       fans:canManage?Number(account.resources?.fans??0):null,
-      scoutCenterCount: canManage ? this.countOwnedType(account, world, BUILDING_TYPES.SCOUT_CENTER) : null,
+      scoutCenterCount: canManage ? (projection?.counts.get(BUILDING_TYPES.SCOUT_CENTER)??this.countOwnedType(account, world, BUILDING_TYPES.SCOUT_CENTER)) : null,
       scoutCenterLimit: SCOUTING_RULES.maxCentersPerPlayer,
       buildings: territory.buildings.map((building) => {const value=buildingVisibility(this.publicBuilding(building,this.getAccount(territory.ownerId)??(canManage?account:null)),world,account?.id,territory.ownerId);if(value&&building.type==='airport')value.canUseAirport=building.status==='active'&&!building.raidSuppressed&&!territory.raidSuppression&&canUseTerritory(world,account?.id,territoryId);if(value&&canManage&&this.getRuntimeEffect)value.runtimeEffectText=this.getRuntimeEffect(account,territoryId,building);if(value&&canManage&&includeWonders&&this.getDistrictPreview&&DISTRICT_RULES[building.type]){value.siteYield=this.getDistrictPreview(account,world,territoryId,building.type,building.level,building.id);if(building.level<5)value.nextSiteYield=this.getDistrictPreview(account,world,territoryId,building.type,building.level+1,building.id);}return value&&canManage&&building.type==='medical-center'&&this.medical?{...value,medical:this.medical.view(account,territoryId,building.id)}:value;}).filter(Boolean),
     };
   }
 
+  detailVersion(account,world) {
+    const lands=Object.entries(world?.territories??{}).map(([id,t])=>[id,t.ownerType,t.ownerId,t.capitalOf,t.raidSuppression,(t.buildings??[]).map(b=>[b.id,b.type,b.wonderId,b.level,b.status,b.upgradeTo,b.name])]);
+    const roster=(this.wonders?.roster(account)??account.draft?.roster??[]).map(p=>[p.cardDefinitionId??p.id,p.nationality,p.club,p.pool]);
+    const requirements=this.wonders?.catalog().map(w=>this.wonders.getConstruction(w.wonderId));
+    return crypto.createHash('sha256').update(JSON.stringify([account.id,account.homeTerritoryId,account.resources?.fans,lands,roster,requirements])).digest('hex').slice(0,24);
+  }
+
   accountView(account, world) {
     const territoryIds = world?.players?.[account.id]?.territoryIds ?? [];
+    const counts=new Map(Object.values(BUILDING_DEFINITIONS).map(d=>[d.type,0]));
+    for(const t of Object.values(world?.territories??{}))if(t.ownerType==='player'&&t.ownerId===account.id)for(const b of t.buildings??[])counts.set(b.type,(counts.get(b.type)??0)+1);
+    const projection={counts,production:this.getProduction?this.productionView(account,world):null};
     return {
+      detailVersion:this.detailVersion(account,world),
       rules: { ...BUILDING_RULES },
       catalog: this.catalog(),
       territories: Object.fromEntries(territoryIds.map((territoryId) => [
         territoryId,
-        this.territoryView(account, world, territoryId, false),
+        this.territoryView(account, world, territoryId, false, projection),
       ])),
     };
   }
@@ -337,7 +353,7 @@ export class BuildingService {
     if(!['gold','production'].includes(buildMethod))fail("请选择金币升级或生产力升级");
     if(typeof requestId!=='string'||!/^[A-Za-z0-9:_-]{8,128}$/.test(requestId))fail("升级请求编号无效");
     const signature=JSON.stringify([territoryIdValue,buildingIdValue,buildMethod,expectedLevel]);
-    const previous=account.facilityUpgradeRequests?.[requestId];
+    const previous=receipt(account,'facilityUpgradeRequests',requestId,this.now());
     if(previous){if(previous.signature!==signature)fail("请求编号已用于其他升级",409);return {building:previous.building,territory:this.territoryView(account,world,territoryIdValue)};}
     this.settleConstructions(world);
     const territory=this.ownedTerritory(account,world,territoryIdValue);
@@ -357,7 +373,7 @@ export class BuildingService {
       if(buildMethod==='gold'){this.economy.spend(account,definition.costsGold[level],`building-upgrade:${building.type}:lv${level+1}`);building.level=level+1;building.upgradeCompletedAt=this.now();}
       else {building.upgradeTo=level+1;building.upgradeStartedAt=this.now();building.completesAt=null;building.productionWork={required:definition.costsProduction[level]*BUILDING_RULES.productionPeriodMs,completed:0,updatedAt:this.now(),ownerId:account.id};}
       building.updatedAt=this.now();territory.version=Number(territory.version??0)+1;world.revision=Number(world.revision??0)+1;
-      account.facilityUpgradeRequests??={};account.facilityUpgradeRequests[requestId]={signature,building:this.publicBuilding(building,account)};
+      account.facilityUpgradeRequests??={};account.facilityUpgradeRequests[requestId]={recordedAt:this.now(),signature,building:this.publicBuilding(building,account)};
       this.save();return {building:this.publicBuilding(building,account),territory:this.territoryView(account,world,territoryIdValue)};
     }catch(error){for(const k of Object.keys(account))delete account[k];Object.assign(account,beforeAccount);for(const k of Object.keys(territory))delete territory[k];Object.assign(territory,beforeTerritory);world.revision=revision;throw error;}
   }

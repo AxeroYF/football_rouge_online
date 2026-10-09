@@ -1,0 +1,158 @@
+{
+  "passed": true,
+  "version": "20260920-r28",
+  "checks": [
+    "Complete 20260920-r27 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260920-r28 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 8,
+  "newFiles": 0,
+  "requiredBaseFiles": 1217,
+  "imports": 141,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "unitTests": {
+    "passed": 106,
+    "report": "outputs/r28-regression.log"
+  },
+  "browser": {
+    "checks": [
+      {
+        "name": "phone dismiss button visible",
+        "pass": true
+      },
+      {
+        "name": "acknowledgement persisted",
+        "pass": true
+      },
+      {
+        "name": "report kept",
+        "pass": true
+      },
+      {
+        "name": "dismissed report stays hidden after reload",
+        "pass": true
+      },
+      {
+        "name": "other reports remain",
+        "pass": true
+      },
+      {
+        "name": "defence report also dismissible",
+        "pass": true
+      },
+      {
+        "name": "bond held saved",
+        "pass": true
+      },
+      {
+        "name": "bond refunded saved",
+        "pass": true
+      },
+      {
+        "name": "bond defence saved",
+        "pass": true
+      },
+      {
+        "name": "all bond notices stay hidden after reload",
+        "pass": true
+      },
+      {
+        "name": "bond history retained",
+        "pass": true
+      },
+      {
+        "name": "notification race pending",
+        "pass": true
+      },
+      {
+        "name": "notification race stale",
+        "pass": true
+      },
+      {
+        "name": "notification race retry",
+        "pass": true
+      },
+      {
+        "name": "notification race account",
+        "pass": true
+      },
+      {
+        "name": "raid dismissal pending",
+        "pass": true
+      },
+      {
+        "name": "raid dismissal retry",
+        "pass": true
+      },
+      {
+        "name": "raid dismissal account",
+        "pass": true
+      },
+      {
+        "name": "200 notices / 30 rapid dismissals immediate",
+        "pass": true
+      },
+      {
+        "name": "200 notices / 30 rapid dismissals stable",
+        "pass": true
+      },
+      {
+        "name": "200 notices / 30 rapid dismissals local",
+        "pass": true
+      },
+      {
+        "name": "200 notices / 30 rapid dismissals stale",
+        "pass": true
+      },
+      {
+        "name": "30 dismissals CPU time ms",
+        "value": 1.4000000059604645,
+        "pass": true
+      },
+      {
+        "name": "dismissals stay below 100ms total",
+        "pass": true
+      },
+      {
+        "name": "wonder immediate",
+        "pass": true
+      },
+      {
+        "name": "wonder stale",
+        "pass": true
+      },
+      {
+        "name": "wonder retry",
+        "pass": true
+      },
+      {
+        "name": "social immediate",
+        "pass": true
+      },
+      {
+        "name": "social stable",
+        "pass": true
+      },
+      {
+        "name": "social stale",
+        "pass": true
+      },
+      {
+        "name": "social retry",
+        "pass": true
+      },
+      {
+        "name": "no browser errors",
+        "pass": true
+      }
+    ],
+    "errors": []
+  }
+}

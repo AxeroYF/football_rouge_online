@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+
+export async function reviewRefactorNavigation(page,out) {
+  await page.locator('#topbar-team').click();
+  await page.locator('[data-team-mode="batch"]').click();
+  await page.locator('[data-batch-row]').first().waitFor();
+  await page.locator('[data-batch-filter="search"]').fill('NO_MATCH_REFACTOR');
+  assert.equal(await page.locator('[data-batch-row]').count(),0);
+  await page.locator('[data-batch-filter="search"]').fill('');
+  assert.ok(await page.locator('[data-batch-row]').count()>0);
+  await page.screenshot({path:path.join(out,'batch-desktop.png')});
+  await page.locator('[data-team-back]').click();
+  await page.locator('[data-team-mode="league"]').click();
+  const right=page.locator('[data-registration-column="registered"] [data-registration-card]');
+  const left=page.locator('[data-registration-column="all"] [data-registration-card]');
+  const registered=await right.evaluateAll(nodes=>nodes.map(n=>n.dataset.registrationCard));
+  assert.ok(registered.length>0);
+  assert.ok((await left.evaluateAll(nodes=>nodes.map(n=>n.dataset.registrationCard))).every(id=>!registered.includes(id)));
+  await page.locator('[data-registration-filter="search"]').fill('NO_MATCH_REFACTOR');
+  assert.equal(await left.count(),0);assert.deepEqual(await right.evaluateAll(nodes=>nodes.map(n=>n.dataset.registrationCard)),registered);
+  await page.locator('[data-registration-filter="search"]').fill('');
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:path.join(out,'league-mobile.png')});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('#topbar-map').click();
+  assert.equal(await page.locator('#topbar-map').getAttribute('aria-current'),'page');
+  assert.equal(await page.locator('#campaign-team').isVisible(),false);
+  await page.locator('#topbar-tactics').click();
+  await page.locator('#campaign-tactics').waitFor({state:'visible'});
+  assert.equal(await page.locator('#topbar-tactics').getAttribute('aria-current'),'page');
+  await page.screenshot({path:path.join(out,'tactics-desktop.png')});
+  await page.locator('#topbar-map').click();
+  await page.locator('#topbar-enhancement').click();
+  await page.locator('#enhancement-window').waitFor({state:'visible'});
+  assert.equal(await page.locator('#topbar-enhancement').getAttribute('aria-current'),'page');
+  await page.locator('#topbar-map').click();
+  return {batchFilter:true,registrationFilterIsolation:true,registrationUnique:true,navigation:true,tactics:true};
+}

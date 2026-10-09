@@ -1,3 +1,7 @@
+import {receipt} from './receipt-retention.mjs';
+import crypto from 'node:crypto';
+import {coalitionOilShares} from '../../shared/config/coalition.mjs';
+import {createUnitMovement} from '../domain/expedition-piece.mjs';
 import {canUseTerritory} from '../../shared/config/diplomacy.mjs';
 import {territoryTravelEstimate} from '../domain/expedition-piece.mjs';
 import {airportIdentity} from '../../shared/config/airport-identity.mjs';
@@ -18,28 +22,33 @@ export class AirportService {
   destinations:Object.keys(this.c.world.territories).filter(id=>id!==territoryId&&this.airport(a.id,id)).map(id=>({id,name:this.identity(id).name})),serverNow:this.c.now()};}
  quote(a,body){const entry=this.requireUnit(a,body);this.idle(a,entry);const from=entry.unit.territoryId,to=String(body.territoryId??'');
   if(from===to)fail('单位已经在该机场');const source=this.airport(a.id,from),target=this.airport(a.id,to);if(!source||!target)fail('起点和终点都必须有可使用的已建成机场');
-  const base=territoryTravelEstimate(this.c.territoryIndex,from,to),band=Math.max(1,Math.ceil(base.distanceKm/500)),price={expedition:[500,100],scout:[200,40],coalition:[1000,200]}[entry.kind];
-  return {...base,transport:'airport',mode:'air',durationMs:60000,stepDurationMs:60000,path:[from,to],routeMode:'direct',goldCost:price[0]+price[1]*band,oilSpent:0,useOil:false,
+  const base=territoryTravelEstimate(this.c.territoryIndex,from,to,{displayCoordinates:true}),band=Math.max(1,Math.ceil(base.distanceKm/500)),price=entry.kind==='scout'?[200,40]:[500,100];
+  const goldCost=price[0]+price[1]*band;
+  const shares=(entry.kind==='coalition'?coalitionOilShares(this.c.coalitions.members(entry.unit),goldCost,entry.unit.airportGoldCursor):[{ownerId:a.id,amount:goldCost}]).map(s=>({...s,name:this.c.accounts.get(s.ownerId)?.draft?.teamName??s.ownerId,balance:this.c.accounts.get(s.ownerId)?.gold??0}));
+  const quoteId=crypto.createHash('sha256').update(JSON.stringify([entry.id,entry.unit.revision,from,to,source.id,target.id,shares.map(({ownerId,amount})=>({ownerId,amount}))])).digest('hex');
+  return {...base,distanceBasis:'campaign-map',shares,quoteId,transport:'airport',mode:'air',durationMs:60000,stepDurationMs:60000,path:[from,to],routeMode:'direct',goldCost,oilSpent:0,useOil:false,
     sourceAirportId:source.id,targetAirportId:target.id,fromName:this.identity(from).name,toName:this.identity(to).name};
  }
  move(a,body){if(!a.setupComplete)fail('请先建队',403);if(!/^[\w:.-]{8,128}$/.test(String(body.requestId??'')))fail('请求编号无效',400);
-  const signature=JSON.stringify([body.kind,body.unitId,body.territoryId]),prior=a.airportRequests?.[body.requestId];if(prior){if(prior.signature!==signature)fail('请求编号已用于其他航班');return prior.result;}
+  const signature=JSON.stringify([body.kind,body.unitId,body.territoryId]),prior=receipt(a,'airportRequests',body.requestId,this.c.now());if(prior){if(prior.signature!==signature)fail('请求编号已用于其他航班');return prior.result;}
   this.c.save();const entry=this.requireUnit(a,body),quote=this.quote(a,body);if(body.goldCost!==quote.goldCost)fail('机票价格已变化，请重新预览');
-  const before=structuredClone(a),oldUnit=structuredClone(entry.unit),revision=this.c.world.revision;
-  try{this.c.economy.spend(a,quote.goldCost,'airport-ticket');const startedAt=this.c.now();entry.unit.movement={...quote,id:body.requestId,payerId:a.id,startedAt,arrivesAt:startedAt+60000};if(entry.kind==='coalition'){entry.unit.revision++;entry.unit.proposal=null;}
-   const result={requestId:body.requestId,goldCost:quote.goldCost,arrivesAt:startedAt+60000};a.airportRequests??={};a.airportRequests[body.requestId]={signature,result};this.c.world.revision++;this.c.save();return result;
-  }catch(error){restore(a,before);if(entry.kind==='coalition')restore(entry.unit,oldUnit);this.c.world.revision=revision;throw error;}
+  if(entry.kind==='coalition'&&body.quoteId!==quote.quoteId)fail('机票分摊已变化，请重新预览');
+  const payers=quote.shares.map(s=>this.c.accounts.get(s.ownerId));
+  const before=[...new Set([a,...payers])].map(p=>[p,structuredClone(p)]),oldUnit=structuredClone(entry.unit),revision=this.c.world.revision;
+  try{for(const s of quote.shares)if(s.amount>0)this.c.economy.spend(this.c.accounts.get(s.ownerId),s.amount,'airport-ticket');const startedAt=this.c.now();entry.unit.movement={...createUnitMovement(quote,startedAt),id:body.requestId,payerId:a.id};if(entry.kind==='coalition'){entry.unit.revision++;entry.unit.proposal=null;entry.unit.airportGoldCursor=(entry.unit.airportGoldCursor??0)+quote.goldCost%quote.shares.length;}
+   const result={requestId:body.requestId,goldCost:quote.goldCost,arrivesAt:startedAt+60000};a.airportRequests??={};a.airportRequests[body.requestId]={signature,result,recordedAt:this.c.now()};this.c.world.revision++;this.c.save();return result;
+  }catch(error){for(const [payer,snapshot] of before)restore(payer,snapshot);if(entry.kind==='coalition'){restore(entry.unit,oldUnit);const current=this.c.world.coalitions[entry.id];if(current!==entry.unit)restore(current,oldUnit);}this.c.world.revision=revision;throw error;}
  }
  flights(){return [...this.c.accounts.values()].flatMap(a=>this.units(a).filter(e=>e.unit.movement?.transport==='airport').map(e=>({...e,account:a})));}
  due(at){return this.flights().some(e=>e.unit.movement.arrivesAt<=at);}
- prepare(at){const changes=[],revision=this.c.world?.revision;const rollback=()=>{for(const e of changes.reverse()){restore(e.unit,e.before);e.account.gold=e.gold;e.account.goldLedger=e.ledger;}if(this.c.world)this.c.world.revision=revision;};
-  try{for(const {account:a,unit}of this.flights()){const m=unit.movement;if(m.arrivesAt>at)continue;changes.push({account:a,unit,before:structuredClone(unit),gold:a.gold,ledger:structuredClone(a.goldLedger)});
+ prepare(at){const changes=[],revision=this.c.world?.revision;const rollback=()=>{for(const e of changes.reverse()){restore(e.unit,e.before);for(const p of e.payers){p.account.gold=p.gold;p.account.goldLedger=p.ledger;}}if(this.c.world)this.c.world.revision=revision;};
+  try{for(const {account:a,unit}of this.flights()){const m=unit.movement;if(m.arrivesAt>at)continue;const shares=m.shares??[{ownerId:m.payerId??a.id,amount:m.goldCost}];const payers=shares.map(s=>this.c.accounts.get(s.ownerId)).filter(Boolean);changes.push({unit,before:structuredClone(unit),payers:payers.map(account=>({account,gold:account.gold,ledger:structuredClone(account.goldLedger)}))});
    const valid=this.airport(a.id,m.toTerritoryId)?.id===m.targetAirportId;
    if(valid)unit.territoryId=m.toTerritoryId;
    else{const source=this.airport(a.id,m.fromTerritoryId);unit.territoryId=source?.id===m.sourceAirportId?m.fromTerritoryId:
     canUseTerritory(this.c.world,a.id,a.homeTerritoryId)&&this.c.world.territories[a.homeTerritoryId]?.ownerId===a.id?a.homeTerritoryId:
     Object.keys(this.c.world.territories).find(id=>this.c.world.territories[id].ownerId===a.id)??null;
-    this.c.economy.adjust(a,m.goldCost,'airport-flight-refund');unit.lastAirportNotice='目的机场失效，已返航并退还机票';}
+    for(const s of shares){const payer=this.c.accounts.get(s.ownerId);if(payer&&s.amount>0)this.c.economy.adjust(payer,s.amount,'airport-flight-refund');}unit.lastAirportNotice='目的机场失效，已返航并退还机票';}
    unit.movement=null;if(unit.revision!=null)unit.revision++;this.c.world.revision++;
   }return {rollback};}catch(error){rollback();throw error;}
  }

@@ -1,15 +1,22 @@
-继续 Rougelite 项目。工作树 D:/Project/game_test/.worktrees/Rougelite，分支 codex/rougelite。先读 handoff/CURRENT_STATE.md、handoff/GITHUB_BASELINE_2026-09-19.md、releases/CURRENT.json 和 releases/README.md。
+# 新对话继续提示 · R52 已归档，准备停服封存
 
-上一轮基线整理及 GitHub 合并已经完成：仓库 AxeroYF/football_rouge_online，main 代码基线提交 1511faddb61f39b7d5d62070c204dbfdedec62b7，整理提交 8cc795b。GitHub 连接器没有创建 PR 权限，因此未创建 PR，通过已有 Git 凭据直接推送 main 并 fetch 核实。不要重新做一遍项目合并；后续纯交接提交以 Git 日志为准。
+请先阅读 handoff/README.md、CURRENT_STATE.md、MANIFEST.md、GITHUB_SYNC_20261006.md 和 releases/CURRENT.json。
 
-服务器用户最后确认部署 R10；R11 已交付但未确认部署。本轮仅更新 GitHub 和交接，没有部署服务器，也没有生成新热更新包。已发布的 R9/R10/R11 包及 SHA 不得覆盖重打。增量基线以用户实际安装版本为准，正式服上传目录 /home/admin。
+项目为黄狗风云，工作树 `D:/Project/game_test/.worktrees/Rougelite`，分支 `codex/rougelite`，远端 `https://github.com/AxeroYF/football_rouge_online.git`。不要误改根目录游戏、S4 或 YFFM3 工作树。
 
-当前源码包含 R11 地图加载恢复、豪门仅选择近72小时活跃玩家并在出发和抵达时复查。另有仓库整理：真实停服收益扣除名单外置为 DATA_DIR/downtime-recovery-plan.json（本地 data/，被 Git 忽略）；缺省为空，旧 R10 回执继续防重；移除历史开发管理员密码提示，生产通过 ADMIN_BOOTSTRAP_PASSWORD 配置；补齐三个默认地图高度文件和18张豪门活动礼包封面。上述源码整理不是已发布 R11 包内容，未来打包会单独列为差异。
+用户已确认原版 R51 部署（1299 文件）。最新发布为 R52（20261006-r52，1300 文件），以 R51 为前置，R52 部署未确认。用户目前要求完成 Git 推送并提供停服封存方法；先阅读 SERVER_ARCHIVE_20261009.md，不自行停服或部署。R50 开放 +10 强化、+4/+7/+9/+10 四特性及审阅后的边框；R51 将商店球员卡改为两小时轮换，首次访问立即切换到当前周期。R51 原包哈希以 releases/20261004-r51/ARCHIVE.sha256 为准。
 
-验证已完成：npm run check 前置81、主测试1040、地图/模型161项通过；发布专项56及战术/管理员专项13项通过。干净 Git 检出安装依赖成功；正常地图、WebGL失败后的兼容切换、主模块失败后的恢复入口三项浏览器验证通过。日志在 outputs/repository-sync/；不因接续对话而重复全量测试。
+用户自行测试 +8 卡可拖入后，明确暂停修复并选择原版 R51。fix1 已撤回并保留记录，不在正式源码中；不要继续推进或重新打包，除非用户重新要求。
 
-用户地图问题：账号状态在独立浏览器正常渲染；原浏览器的具体故障尚未复现，不能声称用户已恢复。不要删除存档、重置账号或再次扣除收益。
+维护约束：
+- 保留完整开包动画和传奇流星雨／星际穿越；优化重复重建、请求与存档，不能删效果替代优化。
+- +9 紫银、+10 炽金，传奇红金底图；保持原画框厚度、卡画在边框上方、原角标尺寸，四特性不折叠、不编号。
+- 正式入口是生成的 game.html 和 game-startup.js/css。前端修改后先 build-browser-module-versions.py，再 build-browser-startup.mjs，检查后与源码一起提交。
+- 交易、概率、幂等、资产校验和存档失败回滚由服务端负责。卡包石油价格 2/6/16/40，金币支付保留。
+- 低配服务器优先节点复用、增量响应及有界缓存，不跳过结算或写盘错误。
+- 下次热更新以原版 R51 为基线，核对依赖、生成物、测试与回滚；提供一行式命令。
+- 不上传账号、存档、私有卡画、outputs、node_modules。发布包和冻结哈希不可改写。
 
-发布基线已纳入 releases/<版本>/BASELINE.json；后续打包不依赖本机旧 outputs。保留 .gitattributes 的原始字节规则，避免换行破坏哈希。真实存档、账号种子、私有回收清单、审计报告和本机运维诊断不能上传公开仓库。
+R52：全套 1711 项测试、382 个模块语法检查、Chrome/WebKit 29 项真实页面验收通过。2026-10-09 再次确认生成物有效且 1300 个运行文件与 R52 无差异。封存脚本仅通过本地验证，未在生产服务器执行。
 
-当前没有新增功能待实现，按用户下一条请求继续。操作前检查 Git 状态并保护并行工作树。手机视觉及 Android 暂缓；卡包必须保留流星雨、翻牌和三选一展示。
+本轮 Git 推送与 handoff 已完成。按用户新任务继续，不自行部署新版本。YFFM3 仓库已按用户要求公开，这不授权修改其源码。

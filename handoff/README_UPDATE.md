@@ -1,7 +1,3 @@
-本轮对话交接已更新（2026-09-19）。
+# 当前交接入口 · 2026-10-06
 
-GitHub 项目整理合并已经完成，代码基线为 1511fad，详情见 GITHUB_BASELINE_2026-09-19.md。当前状态以 CURRENT_STATE.md 为准，下一轮可以直接使用 NEW_CHAT_PROMPT.md。
-
-服务器最后确认部署 R10，R11 已交付但未确认部署。本轮没有打包新版本或部署服务器。不要将 GitHub main 等同于正式服已安装版本。
-
-旧的累计更新记录保存在 archive/pre-github-r11-20260918/；历史记录只反映当时状态。
+请从 [README.md](README.md) 和 [CURRENT_STATE.md](CURRENT_STATE.md) 阅读最新状态。原版 R51 已部署；fix1 暂停撤回，不能用于后续增量基线。详细 Git 记录见 [GITHUB_SYNC_20261006.md](GITHUB_SYNC_20261006.md)。

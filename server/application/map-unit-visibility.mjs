@@ -1,6 +1,6 @@
 import {allianceMembers} from '../../shared/config/diplomacy.mjs';
-import { territoryPointToDisplay } from '../../client/map/campaign-map-geometry.js';
-import { project, unproject } from '../../client/map-three/projection.js';
+import { territoryPointToDisplay } from '../../shared/geo/campaign-map-geometry.js';
+import { project, unproject } from '../../shared/geo/projection.js';
 import { unitTravelFrame } from '../../shared/map/unit-travel.mjs';
 import { sponsoredTeamName } from '../../shared/config/sponsorship.mjs';
 
@@ -25,7 +25,8 @@ export function visibleMapUnits({account,world,accounts,territoryIndex,fog,spati
       }}
       if(!position)continue;
       if(!owner.allied&&fog?.enabled&&(plan?!spatial.pointVisible(plan,(()=>{const p=project(position[1],position[0]);return [p.x,p.z];})()):!visible.has(territoryId)))continue;
-      result.push({coalitionId:owner.coalition?.id,allied:owner.allied,id:JSON.stringify([owner.id,unit.id]),kind:unit.kind,ownerId:owner.id,ownerName:sponsoredTeamName(owner,now),color:owner.mapColor??'#4fa86d',name:unit.name,tokenId:unit.kind==='expedition'?unit.tokenId:undefined,position,territoryId,moving});
+      const sharedMovement=owner.allied&&owner.coalition&&frame?{fromTerritoryId:frame.fromTerritoryId,toTerritoryId:frame.toTerritoryId,startedAt:unit.movement.startedAt,arrivesAt:unit.movement.arrivesAt,mode:unit.movement.mode,fromPosition:point(frame.fromTerritoryId),toPosition:point(frame.toTerritoryId)}:undefined;
+      result.push({movement:sharedMovement,coalitionId:owner.coalition?.id,allied:owner.allied,id:JSON.stringify([owner.id,unit.id]),kind:unit.kind,ownerId:owner.id,ownerName:sponsoredTeamName(owner,now),color:owner.mapColor??'#4fa86d',name:unit.name,tokenId:unit.kind==='expedition'?unit.tokenId:undefined,position,territoryId,moving});
     }
   }
   return result;

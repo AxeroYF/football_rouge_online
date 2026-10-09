@@ -31,7 +31,7 @@ function account(id='a') {
       formationLinePresets:{position1:lines,position2:lines,position3:lines},
       tacticalPlans:{opening:{tactic:'balanced',style:'possession',positionPreset:'position1',playerDuties:{[starters[1]]:'support'}},leading:{tactic:'defensive',style:'counterAttack',positionPreset:'position2',playerDuties:{}},trailing:{tactic:'positive',style:'possession',positionPreset:'position3',playerDuties:{}}}}}};
   }
-  return {id,nickname:id,token:id,setupComplete:true,homeTerritoryId:id,gold:10000,draft:{version:DRAFT_VERSION,teamName:id,roster},playerSquads:{schemaVersion:2,assignments},tactics:{schemaVersion:2,activeSquadId:'expedition',squads},expeditionPiece:{schemaVersion:1,territoryId:id,tokenId:'default',movement:null}};
+  return {id,nickname:id,token:id,setupComplete:true,homeTerritoryId:id,gold:100000,draft:{version:DRAFT_VERSION,teamName:id,roster},playerSquads:{schemaVersion:2,assignments},tactics:{schemaVersion:2,activeSquadId:'expedition',squads},expeditionPiece:{schemaVersion:1,territoryId:id,tokenId:'default',movement:null}};
 }
 function reserve(a,role='LB',fitness=90,overall=90,suffix=role+'-bench') {
   const p={...structuredClone(catalog.find(p=>p.role===role)||catalog.find(p=>p.role===(role==='LWB'?'LB':'RB'))),role,id:a.id+'-'+suffix,name:suffix,overall,effectiveOverall:overall};
@@ -153,7 +153,7 @@ test('live injury substitute and tactical presets use engine coordinates, not or
 test('history retains both legs, first-leg consequences, original team mapping and random-event detail after reload',()=>{
  const f=fixture(),c=f.begin();closeLeg(c.live.firstLeg,{injuries:[[1,2]]});const next=secondLeg(f,c);closeLeg(next,{reds:[[0,2]]});
  for(const leg of [c.live.firstLeg,next])for(const type of ['lightning','brawl','blackWhistle','penaltyAwarded'])leg.match.events.unshift({id:type,type,teamIndex:1,minute:3,text:type,detail:'trace'});
- f.s.challenges.settleChallenge(c);f.reload();const battle=f.a.battleHistory.at(-1);assert.equal(battle.broadcasts.length,2);assert.equal(battle.postMatchConsequences.injuries[0].teamIndex,0);assert.equal(battle.postMatchConsequences.injuries[0].legNumber,1);assert.equal(battle.postMatchConsequences.suspensions[0].teamIndex,1);
+ f.s.challenges.settleChallenge(c);f.reload();const battle=f.s.challenges.status(f.a,c.id).battle;assert.equal(battle.broadcasts.length,2);assert.equal(battle.postMatchConsequences.injuries[0].teamIndex,0);assert.equal(battle.postMatchConsequences.injuries[0].legNumber,1);assert.equal(battle.postMatchConsequences.suspensions[0].teamIndex,1);
  for(const number of [1,2])for(const type of ['lightning','brawl','blackWhistle','penaltyAwarded'])assert.ok(battle.events.some(e=>e.legNumber===number&&e.type===type&&e.detail==='trace'));
  assert.equal(new Set(battle.events.filter(e=>e.id).map(e=>e.id)).size,battle.events.filter(e=>e.id).length);
 });

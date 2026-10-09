@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "version": "20261006-r52",
+  "baseline": "20261004-r51",
+  "tests": {
+    "fullSuitePassed": 1711,
+    "failed": 0,
+    "syntaxCheckedModules": 382
+  },
+  "browser": {
+    "passed": true,
+    "checks": 29,
+    "engines": [
+      "Chrome",
+      "WebKit"
+    ],
+    "errors": 0,
+    "maritime": [
+      {
+        "engine": "chromium",
+        "routeCount": 1,
+        "responseBytes": 20708,
+        "elapsedMs": 327,
+        "zoom": 7
+      },
+      {
+        "engine": "webkit",
+        "routeCount": 1,
+        "responseBytes": 20667,
+        "elapsedMs": 226,
+        "zoom": 7
+      }
+    ]
+  },
+  "incremental": {
+    "passed": true,
+    "checks": [
+      "Exact R51 effective file baseline and runtime dependencies accepted",
+      "Modified R51 base rejected",
+      "All payload hashes match release source",
+      "Changed-module relative imports resolve (194)",
+      "Install and idempotent reapply retain save, private file and new module",
+      "Explicit rollback restores R51 while retaining save and user file",
+      "Failed health check automatically rolls back to R51"
+    ],
+    "changedFiles": 20,
+    "newFiles": 1,
+    "requiredBaseFiles": 1299,
+    "imports": 194
+  },
+  "releaseBaseline": {
+    "passed": true,
+    "missingFiles": 0,
+    "archiveIncludesServerUpdater": true
+  },
+  "remoteDeployed": false,
+  "scope": "R51-based isolated Windows file/update/rollback verification; app service hooks mocked; Chrome and WebKit UI checks; no remote deployment"
+}

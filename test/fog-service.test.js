@@ -78,6 +78,20 @@ function campaignFixture() {
   return {service,account:service.accounts.get("p"),repository,territoryIndex};
 }
 
+test("compact sea survey updates only the map, preserves fog redaction and closes without full state", () => {
+  const {service,account}=campaignFixture();service.state(account);
+  service.challenges.maritimeRoutes=()=>({sourceTerritoryId:"a",sourcePoint:[0,40],routes:[{targetTerritoryId:"d"}]});
+  service.state=()=>{throw Error("unnecessary full state composition");};
+  const result=service.maritimeRoutes(account,"a",[0,40],{compact:true});
+  assert.equal(result.state,undefined);assert.equal(result.statePatch.draft,undefined);assert.equal(result.statePatch.training,undefined);
+  assert.ok(result.statePatch.fog.visibleTerritoryIds.includes("d"));
+  assert.ok(!result.statePatch.world.territories.c);assert.ok(!result.statePatch.world.territories.remote);
+  assert.equal(result.statePatch.playerId,account.id);
+  const closed=service.maritimePreview(account,result.previewId,"close",{compact:true});
+  assert.equal(closed.closed,true);assert.equal(closed.state,undefined);
+  assert.ok(!service.fogView(account).visibleTerritoryIds.includes("d"));
+});
+
 test("account state sends only visible land, weather and encountered player identities", () => {
   const {service,account}=campaignFixture();
   const state=service.state(account);

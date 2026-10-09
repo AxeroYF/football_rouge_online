@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "version": "20260921-r35",
+  "checks": [
+    "Complete 20260920-r31 base accepted",
+    "Modified base rejected",
+    "Missing base rejected",
+    "Applied 20260921-r35 supports safe reapply",
+    "Corrupt payload rejected",
+    "Changed-module imports resolve against base plus payload",
+    "Apply and explicit rollback preserve matched save with mocked service hooks",
+    "Health failure automatically rolls back with mocked service hooks"
+  ],
+  "changedFiles": 22,
+  "newFiles": 4,
+  "requiredBaseFiles": 1229,
+  "imports": 232,
+  "scope": "Windows isolated file and transaction rehearsal; service hooks mocked, no Linux service upgrade",
+  "remoteDeployed": false,
+  "testsPassed": 1415,
+  "leagueTests": 15,
+  "seasonReview": {
+    "synthetic": true,
+    "realMatches": 90,
+    "forfeits": 0,
+    "maxLive": 5,
+    "elapsedMs": 483482.5304,
+    "sliceP95Ms": 38.460699999995995,
+    "sliceMaxMs": 131.19160000000556,
+    "finishedDayBytes": 1708325,
+    "resetDayBytes": 13681,
+    "memory": {
+      "rss": 259485696,
+      "heapTotal": 207192064,
+      "heapUsed": 91134888,
+      "external": 2509606,
+      "arrayBuffers": 18863
+    }
+  },
+  "browserReview": {
+    "passed": true,
+    "errors": [],
+    "closedPollingStopped": true,
+    "standings": 10,
+    "fixtures": 90,
+    "live": 5
+  },
+  "intermediateUpgrades": {
+    "passed": true,
+    "results": [
+      {
+        "version": "20260920-r32",
+        "applyAndRollback": true
+      },
+      {
+        "version": "20260920-r33",
+        "applyAndRollback": true
+      },
+      {
+        "version": "20260921-r34",
+        "applyAndRollback": true
+      }
+    ]
+  },
+  "limitations": [
+    "Local synthetic season, not a production capacity guarantee",
+    "Windows service hooks mocked",
+    "Initial full run hit Windows TEMP EPERM; isolated final run passed",
+    "Initial season audit exposed matchStats mapping; fixed and retested"
+  ]
+}
