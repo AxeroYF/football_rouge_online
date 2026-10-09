@@ -7,3 +7,5 @@
 @media(max-width:680px){.shop-header{padding:14px}.shop-header>div{gap:12px}.shop-content{padding:16px 12px}.shop-section-heading{align-items:flex-start;flex-direction:column;gap:10px}.shop-legend-grid{gap:8px}.shop-legend{padding:4px 0;gap:8px}.shop-legend-caption strong{font-size:11px}.shop-legend-caption small{font-size:9px}.shop-legend>button{font-size:10px;padding:5px 1px;min-height:40px;white-space:normal}.shop-legend .gold-amount{--gold-icon-size:14px;gap:2px}.shop-sold-stamp{padding:6px;font-size:12px}.shop-pack-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.shop-pack>img{height:80px}}
 
 .shop-pack .shop-oil-buy{margin-top:8px}
+
+.shop-legend.is-sold .shop-legend-caption{opacity:1}.shop-legend-caption .shop-buyer{overflow-wrap:anywhere;font-size:12px;color:var(--ui-text)}

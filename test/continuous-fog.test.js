@@ -141,7 +141,7 @@ for(const early of [false,true])test(early?"cancelling an in-flight survey close
   const layer=()=>({addTo(){return this;},remove(){},on(){return this;},bindTooltip(){return this;},setLatLng(){},setStyle(){}});
   const point=(x,y)=>({x,y,distanceTo(p){return Math.hypot(x-p.x,y-p.y);}});
   const calls=[],events=[];let resolveSurvey,heartbeat=null;
-  const response={sourcePoint:[.5,0],sourceTerritoryId:"a",previewId:"temporary",routes:[{targetTerritoryId:"b",sourcePoint:[.5,0],targetPoint:[8,0],distanceKm:800}],state:{}};
+  const response={sourcePoint:[.5,0],sourceTerritoryId:"a",previewId:"temporary",routes:[{targetTerritoryId:"b",sourcePoint:[.5,0],targetPoint:[8,0],distanceKm:800}],statePatch:{}};
   const request=(url,options)=>{calls.push({url,...options});return url.endsWith("routes")?new Promise(resolve=>resolveSurvey=resolve):Promise.resolve({});};
   const controller=createMaritimeController({Leaflet:{layerGroup:layer,polyline:layer,circleMarker:layer,point,latLng:(lat,lng)=>({lat,lng})},
     map:{latLngToLayerPoint:({lat,lng})=>point(lng,lat),layerPointToLatLng:({x,y})=>({lat:y,lng:x})},
@@ -160,7 +160,7 @@ for(const early of [false,true])test(early?"cancelling an in-flight survey close
   if(!early){assert.ok(controller.getTargetIds().has("b"));assert.ok(heartbeat);controller.cancelMaritimeCampaign();assert.ok(events.includes("closed"));}
   else assert.ok(!events.includes("revealed"));
   assert.equal(controller.getMode(),null);assert.equal(heartbeat,null);assert.equal(controller.getTargetIds().size,0);
-  assert.deepEqual(calls.at(-1).body,{action:"close",previewId:"temporary"});
+  assert.deepEqual(calls.at(-1).body,{action:"close",previewId:"temporary",compact:true});
 });
 
 test("naval preview endpoint authenticates and forwards matching preview IDs for cancellation and renewal",async()=>{

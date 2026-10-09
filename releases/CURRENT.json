@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "latestPublished": "20261004-r51",
+  "latestPublished": "20261006-r52",
   "lastUserConfirmedDeployed": "20261004-r51",
-  "sourceState": "Original R51 confirmed deployed on 2026-10-06. Source committed and pushed as 37591c4304cca35159b24ab2fe595b5b9b4ec83c. All 1299 runtime files match original R51. Paused fix1 withdrawn; handoff refreshed separately.",
+  "sourceState": "R52 package built from current workspace against the user-confirmed R51 deployment on 2026-10-06. R52 deployment is unconfirmed; keep lastUserConfirmedDeployed at R51. On 2026-10-09 the user requested Git archival/push and instructions to shut down and archive player data; production shutdown has not been executed by this task.",
   "releases": [
     {
       "version": "20260918-r9",
@@ -352,6 +352,14 @@
       "baselineFiles": 1299,
       "changedFiles": 4,
       "deployment": "user-confirmed"
+    },
+    {
+      "version": "20261006-r52",
+      "parent": "20261004-r51",
+      "bundleSha256": "dfea5b9774b7172614722ead98743ea451f2292b3e1def501de6645d393acfa5",
+      "baselineFiles": 1300,
+      "changedFiles": 20,
+      "deployment": "not-confirmed"
     }
   ]
 }

@@ -2,6 +2,7 @@
 from pathlib import Path
 import importlib.util
 import json
+import sys
 from bs4 import BeautifulSoup
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -11,7 +12,8 @@ ui = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ui)
 host = BeautifulSoup((ROOT / 'index.html').read_text(encoding='utf-8'), 'lxml')
 files = [(ROOT / link['href'].split('?')[0].lstrip('/')).resolve() for link in host.select('link[rel="stylesheet"]')]
-soup = BeautifulSoup((OUT / 'pitch.html').read_text(encoding='utf-8'), 'lxml')
+fixture = Path(sys.argv[1]) if len(sys.argv) > 1 else OUT / 'pitch.html'
+soup = BeautifulSoup(fixture.read_text(encoding='utf-8'), 'lxml')
 nodes = soup.select('.broadcast-card-magnet')
 assert len(nodes) == 22
 assert not soup.select('canvas, .shield-card-sheen')
@@ -27,7 +29,7 @@ for theme in ('club', 'legacy'):
     for width in (1920, 1180, 820, 560, 390):
         cascade = ui.Cascade(soup, files, width)
         for node in nodes:
-            for prop, value in {'width': 'clamp(42px,13cqw,80px)', 'min-height': '0', 'height': 'auto', 'padding': '0', 'display': 'block', 'aspect-ratio': '26/35', 'background': 'none', 'opacity': '1'}.items():
+            for prop, value in {'width': 'clamp(42px,13cqw,80px)', 'min-height': '0', 'height': 'auto', 'padding': '0', 'display': 'grid', 'grid-template-columns': 'minmax(0,1fr)', 'aspect-ratio': '26/35', 'background': 'none', 'opacity': '1'}.items():
                 check(cascade, node, prop, value)
             card = node.select_one('.broadcast-shield-card')
             for prop, value in {'width': '100%', 'min-height': '0', 'aspect-ratio': '26/35', 'transform': 'none', 'animation': 'none', 'pointer-events': 'none'}.items():
@@ -43,5 +45,6 @@ for theme in ('club', 'legacy'):
             if 'inactive' in node['class']:
                 check(cascade, node.select_one('.broadcast-card-face'), 'opacity', '.45')
 
+OUT.mkdir(parents=True, exist_ok=True)
 (OUT / 'cascade-checks.json').write_text(json.dumps({'checks': checks, 'fieldCards': 22, 'widths': [1920, 1180, 820, 560, 390], 'themes': ['club', 'legacy'], 'scope': 'Offline CSS cascade, not browser layout'}, indent=2) + '\n', encoding='utf-8')
 print(f'Passed {checks} broadcast card cascade checks.')

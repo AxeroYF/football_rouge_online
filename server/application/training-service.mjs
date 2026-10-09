@@ -134,6 +134,24 @@ export class TrainingService {
       return this.publicTask(task);
     });
   }
+  finishCompleted(account, world, {territoryId, buildingId, taskIds} = {}) {
+    const territory = this.buildings.ownedTerritory(account, world, territoryId);
+    if (!territory.buildings.some(building => building.id === buildingId && building.type === 'training-center')) fail('训练中心不存在', 404);
+    if (!Array.isArray(taskIds) || !taskIds.length || taskIds.length > 100 || taskIds.some(id => typeof id !== 'string')) fail('请选择已完成的训练');
+    const tasks = [...new Set(taskIds)].map(id => {
+      const task = account.training?.tasks?.[id];
+      if (!task || task.territoryId !== territoryId || task.buildingId !== buildingId) fail('训练任务不存在', 404);
+      if (task.completedAt == null || task.cancelledAt != null) fail('只能完成已经结算的训练', 409);
+      return task;
+    }).filter(task => task.finishedAt == null);
+    if (!tasks.length) return {finishedCount: 0};
+    // Growth was settled already. Dismiss the selected results in one durable write.
+    return this.transaction(account, () => {
+      const now = this.now();
+      for (const task of tasks) task.finishedAt = now;
+      return {finishedCount: tasks.length};
+    });
+  }
   cancel(account, taskId) {
     const task = this.tasks(account).find((entry) => entry.id === taskId);
     if (!task) fail("训练任务不存在", 404);

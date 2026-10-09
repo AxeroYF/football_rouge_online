@@ -3,7 +3,7 @@ import {SHOP_ROTATION_MS,SHOP_LEGEND_PRICE,SHOP_LEGEND_OIL_PRICE,SHOP_LEGEND_LEV
 import {createPlayerCardViewModel} from '../../shared/player-card/player-card-contract.js';
 const fail=(message,statusCode=400)=>{throw Object.assign(new Error(message),{statusCode});};
 export class ShopService{
- constructor({world,oil=null,playerDatabase=[],economy,playerPacks,enhancement,now=Date.now,random=Math.random,save=()=>{}}){Object.assign(this,{world,oil,economy,playerPacks,enhancement,now,random,save});this.legends=[...new Map(playerDatabase.filter(p=>p.grade==='S'&&!p.isX&&!p.xPlayer).map(p=>[p.cardDefinitionId??p.id,p])).values()];}
+ constructor({world,getBuyerName=()=>null,oil=null,playerDatabase=[],economy,playerPacks,enhancement,now=Date.now,random=Math.random,save=()=>{}}){Object.assign(this,{world,getBuyerName,oil,economy,playerPacks,enhancement,now,random,save});this.legends=[...new Map(playerDatabase.filter(p=>p.grade==='S'&&!p.isX&&!p.xPlayer).map(p=>[p.cardDefinitionId??p.id,p])).values()];}
  ensureRotation(){
   if(!this.world)fail('商店暂不可用',409);
   const now=this.now(),cycle=Math.floor(now/SHOP_ROTATION_MS),previous=this.world.shop;
@@ -25,7 +25,7 @@ export class ShopService{
   const shop=this.ensureRotation();
   return {serverNow:this.now(),refreshAt:shop.refreshAt,rotationId:String(shop.cycle),gold:account.gold,oil:this.oil?.view(account).balance??account.oil?.balance??0,
    packs:SHOP_PACKS.map(pack=>({...pack,choiceCount:this.playerPacks.wonders?.modifiers(account).packChoices??pack.choiceCount})),
-   offers:shop.offers.map(o=>({id:o.id,price:o.price,oilPrice:o.oilPrice??SHOP_LEGEND_OIL_PRICE,sold:o.soldAt!==null,player:createPlayerCardViewModel(o.player)}))};
+   offers:shop.offers.map(o=>({id:o.id,price:o.price,oilPrice:o.oilPrice??SHOP_LEGEND_OIL_PRICE,sold:o.soldAt!==null,buyerName:o.soldAt!==null?(o.buyerName||this.getBuyerName(o.buyerId)||"未知玩家"):null,player:createPlayerCardViewModel(o.player)}))};
  }
  buy(account,{requestId,kind,itemId,rotationId,currency='gold'}={}){
   if(!account.setupComplete||!account.draft)fail('请先完成初始建队',409);
@@ -52,7 +52,7 @@ export class ShopService{
    else{
     const player=structuredClone(offer.player);player.state={...player.state,fitness:100};
     account.draft.roster.push(player);account.playerSquads??={schemaVersion:2,assignments:{}};account.playerSquads.assignments??={};account.playerSquads.assignments[player.id]='garrison';
-    offer.soldAt=this.now();offer.buyerId=account.id;result={kind,name:player.name,playerId:player.id,price,currency};
+    offer.soldAt=this.now();offer.buyerId=account.id;offer.buyerName=account.nickname||account.draft.teamName||"玩家";result={kind,name:player.name,playerId:player.id,price,currency};
    }
    account.shopReceipts??={};account.shopReceipts[requestId]={signature,result};this.save();return structuredClone(result);
   }catch(error){for(const key of Object.keys(account))delete account[key];Object.assign(account,before);this.world.shop=beforeShop;throw error;}

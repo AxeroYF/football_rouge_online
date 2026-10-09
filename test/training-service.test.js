@@ -25,6 +25,38 @@ function fixture() {
   return { account, catalog, building, world, service, start, setTime: (time) => { clock = time; }, failSave: (value) => { failSave = value; }, saved: () => saved };
 }
 
+test("batch finish frees completed seats across pools once and leaves working tasks alone", () => {
+  const f = fixture(), attack = f.start(), midfield = f.start({pool:"MID",playerId:"MID-0",requestId:"request-mid"});
+  f.setTime(attack.completesAt); f.service.settle(f.account);
+  const working = f.start({pool:"DEF",playerId:"DEF-0",requestId:"request-def"});
+  const roster = structuredClone(f.account.draft.roster), gold = f.account.gold;
+  let saves = 0; f.service.save = () => { saves++; };
+  const options = {territoryId:"home",buildingId:"training-1",taskIds:[attack.id,midfield.id,attack.id]};
+  assert.deepEqual(f.service.finishCompleted(f.account,f.world,options),{finishedCount:2});
+  assert.equal(saves,1);
+  assert.deepEqual(f.service.publicState(f.account).tasks.map(t=>t.id),[working.id]);
+  assert.deepEqual(f.account.draft.roster,roster); assert.equal(f.account.gold,gold);
+  assert.deepEqual(f.service.finishCompleted(f.account,f.world,options),{finishedCount:0});
+  assert.equal(saves,1);
+  assert.doesNotThrow(()=>f.start({playerId:"ATT-1",requestId:"request-next"}));
+});
+
+test("batch finish validates all tasks before mutation and rolls back a failed save", () => {
+  const f = fixture(), done = f.start(); f.setTime(done.completesAt); f.service.settle(f.account);
+  const working = f.start({pool:"MID",playerId:"MID-0",requestId:"request-mid"});
+  const before = structuredClone(f.account), options = {territoryId:"home",buildingId:"training-1",taskIds:[done.id]};
+  for (const taskIds of [[done.id,working.id],[done.id,"foreign"],[],[{}]]) {
+    assert.throws(()=>f.service.finishCompleted(f.account,f.world,{...options,taskIds}));
+    assert.deepEqual(f.account,before);
+  }
+  f.world.territories.home.ownerId = "other";
+  assert.throws(()=>f.service.finishCompleted(f.account,f.world,options),/自己的/);
+  f.world.territories.home.ownerId = "p";
+  f.failSave(true); assert.throws(()=>f.service.finishCompleted(f.account,f.world,options),/disk/);
+  assert.deepEqual(f.account,before);
+  f.failSave(false); assert.equal(f.service.finishCompleted(f.account,f.world,options).finishedCount,1);
+});
+
 test("ten-minute training grants exactly five points once, resumes expedition and preserves results", () => {
   const f = fixture(), before = structuredClone(f.account.playerSquads), task = f.start();
   const player = f.account.draft.roster.find((p) => p.id === "ATT-0");

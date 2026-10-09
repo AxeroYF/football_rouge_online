@@ -21,12 +21,13 @@ export function sortEnhancementEntries(entries, mode='upgrade') {
     return a.grade-b.grade||b.level-a.level||b.overall-a.overall||a.name.localeCompare(b.name,'zh-CN');
   }).flatMap(g=>g.cards.slice().sort((a,b)=>(Number(b.card.upgradeLevel)||0)-(Number(a.card.upgradeLevel)||0)||String(a.player.id).localeCompare(String(b.player.id))||String(a.card.id).localeCompare(String(b.card.id))));
 }
-export function createEnhancementController({ root, getCampaignState, getCampaignRequest, campaignStore, onState = () => {}, onOpen = () => {}, onClose = () => {}, showToast = () => {}, delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
+export function createEnhancementController({ root, getCampaignState, getCampaignRequest, campaignStore, getDefaultProtection = () => false, onState = () => {}, onOpen = () => {}, onClose = () => {}, showToast = () => {}, delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) {
   let view = null, league = { enhancement: {}, wallet: { balance: 0 } }, pending = false, version = 0, readVersion = 0;
   let leagueEnhancementMainCardId = null, leagueEnhancementMaterialCardId = null, leagueEnhancementResult = null;
   let leagueEnhancementPhase = "idle", leagueEnhancementUseProtection = false, leagueEnhancementTraitSelectionOpen = false;
   let leagueBackpackSearch = "", leagueBackpackPosition = "ALL", leagueBackpackUpgrade = "ALL", leagueBackpackSort = "upgrade", leagueEnhancementListingFilter = "ALL";
   let draggedCardId = null, refreshAfterDrag = false;
+  let protectionSelectionKey = null;
   const retryIds = new Map();
   const leagueEnhancementCardEntries = () => enhancementCardEntries(view?.cards);
   const leagueEnhancementCardEntry = (id) => {
@@ -84,6 +85,7 @@ export function createEnhancementController({ root, getCampaignState, getCampaig
   }
   function open() {
     if (!getCampaignState()?.setupComplete) return showToast('请先完成初始建队');
+    protectionSelectionKey = null;
     onOpen(); version++; view = null; leagueEnhancementMainCardId = null; leagueEnhancementMaterialCardId = null; leagueEnhancementResult = null; leagueEnhancementPhase = 'idle';
     root.innerHTML = '<div class="enhancement-window-surface"><header class="enhancement-window-header"><h2>强化</h2><button type="button" data-stage-window-close aria-label="关闭强化">×</button></header><div data-enhancement-content></div></div>';
     activateWideWindow(root); renderLeagueEnhancementInPlace(); load();
@@ -233,6 +235,12 @@ function leagueEnhancementMarkup() {
   const materialLevelTooHigh = compatibleCards && materialLevel > mainLevel;
   const chance = compatibleCards ? leagueEnhancementChance(mainLevel, materialLevel) : 0;
   const protectionAvailable = Boolean(main && compatibleCards && !materialLevelTooHigh && chance < 100 && mainLevel < Number(league.enhancement?.maxLevel ?? S4_ENHANCEMENT.maxLevel));
+  // Reapply the preference for a new card pair; polling must preserve a manual override.
+  const nextProtectionKey = protectionAvailable ? JSON.stringify([main.card.id, mainLevel, material.card.id, materialLevel, Boolean(getDefaultProtection())]) : null;
+  if (nextProtectionKey !== protectionSelectionKey) {
+    protectionSelectionKey = nextProtectionKey;
+    leagueEnhancementUseProtection = protectionAvailable && Boolean(getDefaultProtection());
+  }
   if (!protectionAvailable) leagueEnhancementUseProtection = false;
   const failureChance = Math.max(0, 100 - chance);
   const protectionUnit = Number(league.enhancement?.protectionCostUnit ?? 100);
@@ -492,5 +500,5 @@ function showLeagueEnhancementCelebration(result) {
     }
   });
   registerWideWindow(root, { onRequestClose: close });
-  return { open, close };
+  return { open, close, refreshProtectionPreference: () => { if (!pending) renderLeagueEnhancementInPlace(); } };
 }

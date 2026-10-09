@@ -24,6 +24,38 @@ function fixture() {
   return { controller, facilityActions, demolitions, windowRoot, pickerRoot, notifications, panelContent, pickerContent, title, requests, store, toasts, click, tick: () => timer(), setTime: (time) => { clock = time; } };
 }
 
+test("top navigation opens an owned training center and reports when none is built", async () => {
+  const f=fixture();f.controller.open();assert.equal(f.requests.length,0);assert.match(f.toasts.at(-1),/尚未建设/);
+  const state=f.store.getState();
+  f.store.setState({...state,buildings:{territories:{t:{buildings:[{...baseView.building,type:'training-center'}]}}}});
+  f.controller.open();assert.equal(f.windowRoot.hidden,false);assert.match(f.requests[0].url,/territoryId=t&buildingId=b/);
+  f.requests[0].resolve(structuredClone(baseView));await flush();
+});
+
+test("one-click finish uses one request across pools, locks duplicates and keeps working seats", async () => {
+  const f=fixture(), tasks=['ATT','MID','DEF'].map((pool,i)=>({id:pool,buildingId:'b',territoryId:'t',playerId:pool,pool,slot:0,status:i===2?'working':'completed',gains:{passing:5},startedAt:1000,completesAt:601000}));
+  f.store.setState({...f.store.getState(),training:{tasks,serverNow:1000}});
+  f.controller.open({territoryId:'t',buildingId:'b'});f.requests[0].resolve({...structuredClone(baseView),tasks});await flush();
+  assert.match(f.panelContent.innerHTML,/一键完成训练（2）/);
+  f.click(f.windowRoot,'[data-training-finish-completed]');f.click(f.windowRoot,'[data-training-finish-completed]');
+  assert.equal(f.requests.length,2);assert.equal(f.requests[1].url,'/api/campaign/training/finish-completed');
+  assert.deepEqual(f.requests[1].options.body.taskIds,['ATT','MID']);
+  f.requests[1].resolve({finishedCount:2,statePatch:{training:{tasks:[tasks[2]],serverNow:1000}}});await flush();
+  assert.equal(f.requests.length,2);assert.deepEqual(f.store.getState().training.tasks,[tasks[2]]);
+  assert.match(f.panelContent.innerHTML,/data-training-finish-completed disabled/);
+  assert.match(f.toasts.at(-1),/已完成 2 名/);
+});
+
+test("failed batch completion preserves completed seats and permits retry", async () => {
+  const f=fixture(), task={id:'done',buildingId:'b',territoryId:'t',playerId:'ATT',pool:'ATT',slot:0,status:'completed',gains:{passing:5}};
+  f.controller.open({territoryId:'t',buildingId:'b'});f.requests[0].resolve({...structuredClone(baseView),tasks:[task]});await flush();
+  f.click(f.windowRoot,'[data-training-finish-completed]');f.requests[1].reject(Error('连接中断'));await flush();
+  assert.match(f.panelContent.innerHTML,/一键完成训练（1）/);assert.match(f.toasts.at(-1),/连接中断/);
+  f.click(f.windowRoot,'[data-training-finish-completed]');assert.equal(f.requests.length,3);
+  assert.deepEqual(f.requests[2].options.body,f.requests[1].options.body);
+  f.requests[2].resolve({finishedCount:1,statePatch:{training:{tasks:[],serverNow:1000}}});await flush();
+});
+
 test("four position frames contain level-based seats and picker shows only matching players", () => {
   const html = trainingPanelMarkup(baseView);
   assert.equal((html.match(/class="training-group"/g) ?? []).length, 4);

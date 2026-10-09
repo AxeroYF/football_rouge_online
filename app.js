@@ -21,6 +21,7 @@ import { createUnitTerritoryLayout } from './shared/map/unit-territory-layout.mj
 import { createConquestHud } from './client/challenge/conquest-hud.js?v=20260908-conquest-v1';
 import { createResearchController } from './client/research/research-controller.js?v=20260908-panel-rename-v3';
 import { createTvSettingsController } from './client/settings/tv-settings-controller.js?v=20260908-tv-v1';
+import { createEnhancementSettingsController } from './client/settings/enhancement-settings.js';
 import { createWonderCatalogController } from './client/wonders/wonder-catalog-controller.js?v=20260908-wonder-panel-v2';
 import { createSponsorshipController } from './client/sponsorship/sponsorship-controller.js?v=20260908-sponsorship-v1';
 import { createExpeditionAppearanceController } from './client/map/expedition-appearance-controller.js?v=20260908-expedition-vehicles-v1';
@@ -281,7 +282,7 @@ function applyCampaignWorldSnapshot(snapshot) {
   if (seaMode && (piece?.moving || piece?.territoryId !== seaMode.sourceTerritoryId
     || (seaMode.previewId && campaignState?.fog?.preview?.id !== seaMode.previewId)
     || !canUseTerritory(campaignState?.world,campaignState?.playerId,seaMode.sourceTerritoryId))) {
-    maritimeController.clearMaritimeMode({ keepSelection:true });
+    maritimeController.clearMaritimeMode({ keepSelection:true, previewAlreadyClosed: !campaignState?.fog?.preview });
   }
   const selected = territoryController?.getSelectedTerritoryId();
   if (selected && !territoryVisible(selected)) territoryController.clearTerritorySelection();
@@ -409,6 +410,8 @@ L.DomEvent.disableClickPropagation(document.querySelector("#scouting-selection")
 L.DomEvent.disableScrollPropagation(document.querySelector("#scouting-selection"));
 
 trainingController = createTrainingController({
+  getTerritoryLabel: id => territoryMetadataById.get(id)?.name ?? id,
+  onClose: () => { if(document.querySelector('#topbar-training')?.classList.contains('is-active')) selectNav('topbar-map'); },
   onDemolish: (target, button) => facilityActionsController.open(target, button),
   onUpgrade: target => {trainingController?.close();scoutingController?.close();selectTerritory(target.territoryId);buildingPanelController?.open(target.territoryId);},
   windowRoot: document.querySelector("#training-window"),
@@ -417,8 +420,8 @@ trainingController = createTrainingController({
   getCampaignState: () => campaignState,
   getCampaignRequest: () => campaignRequest,
   campaignStore,
-  onOpen: () => { expeditionPanelController?.close(); scoutUnitController?.cancelMoveMode(); scoutingController?.close(); clearTerritorySelection(); },
-  onState: (state) => { updateTopbarWallet(state); applyCampaignWorldSnapshot(state.world); buildingPanelController?.refreshFromState(); },
+  onOpen: () => { expeditionPanelController?.close(); scoutUnitController?.cancelMoveMode(); scoutingController?.close(); clearTerritorySelection(); selectNav('topbar-training'); },
+  onState: (state, {compact=false} = {}) => { updateTopbarWallet(state); if(!compact)applyCampaignWorldSnapshot(state.world); buildingPanelController?.refreshFromState(); },
   showToast,
 });
 for (const id of ["#training-window", "#training-picker"]) {
@@ -490,10 +493,10 @@ maritimeController = createMaritimeController({
     campaignStore.setState(withoutNavalPreview(campaignState), {source:"sea-preview-close"});
     applyCampaignWorldSnapshot(campaignState.world);
   },
-  onSurveyState: (state, {fit=false}={}) => {
+  onSurveyState: (value, {compact=false}={}) => {
+    const state = compact ? {...campaignState, ...value} : value;
     campaignStore.setState(state, { source:"naval-survey" });
     applyCampaignWorldSnapshot(state.world);
-    if (fit) campaignFogController?.fit();
   },
   selectTerritory,
   refreshTerritoryDisplay,
@@ -1015,7 +1018,7 @@ async function syncCampaignWorldState() {
 function startCampaignStatePolling() {
   if (campaignStatePollTimer) return;
   campaignStatePollTimer = createAdaptivePoller({run:syncCampaignWorldState,isBusy:()=>Boolean(campaignState?.activeChallengeId||campaignState?.expeditionPiece?.moving)});
-  campaignStore.subscribe(({source})=>{if(source!=="world-poll"&&source!=="subscribe"&&source!=="shop-buy-compact"&&source!=="pack-open-compact"&&source!=="pack-choose-compact")campaignStatePollTimer.refresh();});
+  campaignStore.subscribe(({source})=>{if(!["world-poll","subscribe","shop-buy-compact","pack-open-compact","pack-choose-compact","naval-survey","sea-preview-close","training-finish-completed"].includes(source))campaignStatePollTimer.refresh();});
 }
 
 function finishMapLoading() {
@@ -1199,6 +1202,7 @@ const accountMenu = document.querySelector("#account-menu");
 const accountTrigger = document.querySelector("#account-menu-trigger");
 const accountPopover = document.querySelector("#account-menu-popover");
 const accountMenuName = document.querySelector("#account-menu-name");
+const enhancementSettings = createEnhancementSettingsController({trigger:document.querySelector('#account-enhancement-protection'),getState:()=>campaignState,campaignStore,showToast,onChange:()=>enhancementController.refreshProtectionPreference()});
 createTvSettingsController({root:document.querySelector('#tv-settings-window'),trigger:document.querySelector('#account-tv-settings'),getState:()=>campaignState,campaignStore,beforeOpen:()=>{accountPopover.hidden=true;accountTrigger.setAttribute('aria-expanded','false');}});
 L.DomEvent.disableClickPropagation(document.querySelector('#tv-settings-window'));L.DomEvent.disableScrollPropagation(document.querySelector('#tv-settings-window'));
 const expeditionAppearanceController=createExpeditionAppearanceController({trigger:document.querySelector('#account-expedition-style'),windowRoot:document.querySelector('#expedition-appearance-window'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,applyCampaignWorldSnapshot,showToast,beforeOpen:()=>{expeditionPanelController?.close();accountPopover.hidden=true;accountTrigger.setAttribute('aria-expanded','false');expeditionPieceController?.cancelMoveMode();scoutUnitController?.cancelMoveMode();}});
@@ -1423,6 +1427,7 @@ L.DomEvent.disableClickPropagation(document.querySelector('#research-window'));L
 navItems.filter(item=>item.id!=='topbar-research').forEach(item=>item.addEventListener('click',()=>{if(!document.querySelector('#research-window').hidden)researchController.close();}));
 
 const enhancementController = createEnhancementController({
+  getDefaultProtection: () => enhancementSettings.isDefaultProtectionEnabled(),
   root: document.querySelector("#enhancement-window"), getCampaignState: () => campaignState, getCampaignRequest: () => campaignRequest, campaignStore,
   onOpen: () => { expeditionPanelController?.close(); inventoryController.close(); trainingController?.close(); scoutingController?.close(); clearTerritorySelection(); },
   onClose: () => selectNav("topbar-map"), onState: (state, {compact=false} = {}) => { updateTopbarWallet(state); if(!compact)applyCampaignWorldSnapshot(state.world); }, showToast,
@@ -1444,6 +1449,12 @@ featureNavigation.on("topbar-team", () => { enhancementController.close(); fullT
 featureNavigation.on("topbar-tactics", () => { enhancementController.close(); fullTacticsController.open(); selectNav("topbar-tactics"); });
 featureNavigation.on("topbar-enhancement", () => { enhancementController.open(); if (campaignState?.setupComplete) selectNav("topbar-enhancement"); });
 featureNavigation.on("topbar-inventory", () => { enhancementController.close(); fullTacticsController.close(); teamController.close(); selectNav("topbar-inventory"); });
+featureNavigation.on('topbar-training', () => {
+  enhancementController.close(); inventoryController.close(); fullTacticsController.close(); teamController.close(); cardManagementController.close();
+  trainingController.open();
+});
+navItems.filter(item => item.id !== 'topbar-training').forEach(item => item.addEventListener('click', () => trainingController.close()));
+campaignStore.subscribe(({state}) => { document.querySelector('#topbar-training').hidden = !state?.setupComplete; }, {emitCurrent:true});
 
 const playerLadderController=createPlayerLadderController({root:document.querySelector('#player-ladder-window'),getState:()=>campaignState,getRequest:()=>campaignRequest,campaignStore,showToast,
  onOpen:()=>{expeditionPanelController?.close();trainingController?.close();scoutingController?.close();enhancementController.close();inventoryController.close();cardManagementController.close();fullTacticsController.close();teamController.close();selectNav('topbar-player-ladder');},onClose:()=>selectNav("topbar-map")});

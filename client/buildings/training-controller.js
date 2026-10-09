@@ -28,15 +28,20 @@ export function trainingResultMarkup(player, gains = {}, task = {}) {
     return `<div class="${gain ? "is-improved" : ""}"><dt>${label}</dt><dd>${value == null ? "—" : esc(value)}${gain ? `<em>+${gain}</em>` : ""}</dd></div>`;
   }).join("")}</dl></section>`;
 }
-export function trainingPanelMarkup(view, { pending = false, poolFilter = "all" } = {}) {
+export function trainingCenters(state) {
+  return Object.entries(state?.buildings?.territories ?? {}).flatMap(([territoryId, territory]) =>
+    (territory.buildings ?? []).filter(building => building.type === 'training-center').map(building => ({territoryId, buildingId: building.id, building})));
+}
+export function trainingPanelMarkup(view, { pending = false, poolFilter = "all", centers = [] } = {}) {
   if (!view) return '<p class="training-empty">正在读取训练中心…</p>';
   if (view.error) return `<p class="training-empty">${esc(view.error)}</p>`;
   const tasks = view.tasks.filter(task => task.buildingId === view.building.id);
   const workingCount = tasks.filter(task => task.status === "working").length;
   const completedCount = tasks.filter(task => task.status === "completed").length;
   const freeCount = Math.max(0, view.capacity * 4 - tasks.length);
+  const controls = `<div class="training-manage-actions">${centers.length > 1 ? `<label>训练场 <select data-training-center ${pending ? 'disabled' : ''}>${centers.map(center => `<option value="${esc(center.buildingId)}" ${center.buildingId === view.building.id ? 'selected' : ''}>${esc(center.label ?? center.building.name ?? center.territoryId)} · LV.${center.building.level}</option>`).join('')}</select></label>` : ''}<button type="button" class="ui-button" data-training-finish-completed ${pending || !completedCount ? 'disabled' : ''}>一键完成训练${completedCount ? `（${completedCount}）` : ''}</button></div>`;
   const filters = `<nav class="training-pool-tabs" aria-label="训练位置筛选">${Object.entries({all:"全部",...TRAINING_POOLS}).map(([id,label])=>`<button type="button" data-training-filter="${id}" aria-pressed="${poolFilter===id}" ${pending?'disabled':''}>${label}<small>${id==='all'?workingCount:tasks.filter(t=>t.pool===id&&t.status==='working').length}/${view.capacity*(id==='all'?4:1)}</small></button>`).join('')}</nav>`;
-  return `<div class="training-overview"><img src="${facilityArtIcon("training-center", view.building.level)}" alt=""><div><small>LV.${view.building.level}</small><strong>${esc(view.territoryLabel)}</strong></div></div><p class="training-rule">每次 10 分钟 · 能力总计 +${Number(view.rules?.attributePoints??5)}${view.rules?.canSelectAttribute?" · 可指定 1 点属性":" · 随机分配"}</p><div class="training-summary"><span><b>${workingCount}</b> 训练中</span><span><b>${completedCount}</b> 待查看</span><span><b>${freeCount}</b> 空闲名额</span></div>${filters}<div class="training-groups">${Object.entries(TRAINING_POOLS).filter(([pool])=>poolFilter==="all"||pool===poolFilter).map(([pool, label]) => `<section class="training-group"><header><h3>${label}</h3><small>${view.tasks.filter((task) => task.buildingId === view.building.id && task.pool === pool && task.status === "working").length} / ${view.capacity}</small></header><div class="training-seats">${Array.from({ length: view.capacity }, (_, slot) => {
+  return `<div class="training-overview"><img src="${facilityArtIcon("training-center", view.building.level)}" alt=""><div><small>LV.${view.building.level}</small><strong>${esc(view.territoryLabel)}</strong></div></div><p class="training-rule">每次 10 分钟 · 能力总计 +${Number(view.rules?.attributePoints??5)}${view.rules?.canSelectAttribute?" · 可指定 1 点属性":" · 随机分配"}</p><div class="training-summary"><span><b>${workingCount}</b> 训练中</span><span><b>${completedCount}</b> 待查看</span><span><b>${freeCount}</b> 空闲名额</span></div>${controls}${filters}<div class="training-groups">${Object.entries(TRAINING_POOLS).filter(([pool])=>poolFilter==="all"||pool===poolFilter).map(([pool, label]) => `<section class="training-group"><header><h3>${label}</h3><small>${view.tasks.filter((task) => task.buildingId === view.building.id && task.pool === pool && task.status === "working").length} / ${view.capacity}</small></header><div class="training-seats">${Array.from({ length: view.capacity }, (_, slot) => {
     const task = view.tasks.find((entry) => entry.buildingId === view.building.id && entry.pool === pool && entry.slot === slot);
     const working = task?.status === "working";
     const player = task && view.players?.find((entry) => entry.playerId === task.playerId);
@@ -52,7 +57,7 @@ export function trainingPickerMarkup(players, pool, { pending = false, squadFilt
   return `${filters}<p class="training-picker-hint">点击球员支付下方费用开训，总评越高费用越高。未完成取消全额退款；远征球员训练期间比赛自动替补。</p><div class="training-card-list"><div class="training-player-grid">${eligible.slice(0,limit).map((player) => `<button type="button" class="training-player" data-ui-key="${esc(player.playerId)}" data-training-player="${esc(player.playerId)}" ${pending || player.training || !player.canTrain || player.canAfford === false ? "disabled" : ""}>${playerCardMarkup(player, { deferred: true, animated: false })}<span class="training-price">${goldAmountMarkup(player.costGold ?? trainingCostGold(player))}</span><span>${player.training ? "训练中" : !player.canTrain ? "暂不可训练" : player.canAfford === false ? "金币不足" : player.expedition ? "远征 · 比赛时自动替补" : "留守"}</span></button>`).join("") || '<p class="training-empty">当前筛选下暂无该位置球员</p>'}</div>${eligible.length>limit?`<button type="button" class="training-load-more" data-training-more ${pending?'disabled':''}>继续显示 · ${Math.min(limit,eligible.length)} / ${eligible.length}</button>`:''}</div>`;
 }
 
-export function createTrainingController({ windowRoot, pickerRoot, notifications = null, getCampaignState, getCampaignRequest, campaignStore, onOpen = () => {}, onState = () => {}, onDemolish = () => {}, onUpgrade = () => {}, showToast = () => {}, now = Date.now, setIntervalImpl = setInterval }) {
+export function createTrainingController({ windowRoot, pickerRoot, notifications = null, getCampaignState, getCampaignRequest, campaignStore, getTerritoryLabel = id => id, onOpen = () => {}, onClose = () => {}, onState = () => {}, onDemolish = () => {}, onUpgrade = () => {}, showToast = () => {}, now = Date.now, setIntervalImpl = setInterval }) {
   let target = null, view = null, selection = null, pending = false, version = 0, offset = 0;
   let squadFilter = "all", poolFilter = "all", panelHtml = null;
   let pickerLimit = 24, panelKey = null, pickerDataKey = null, noticeHtml = null;
@@ -64,6 +69,7 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
   const pickerContent = pickerRoot.querySelector("[data-training-picker-content]");
   const pickerTitle = pickerRoot.querySelector("[data-training-picker-title]");
   const clock = () => now() + offset;
+  const getCenters = () => trainingCenters(getCampaignState()).map(center => ({...center, label: getTerritoryLabel(center.territoryId)}));
   function tick() {
     const tasks = new Map([...(getCampaignState()?.training?.tasks ?? []), ...(view?.tasks ?? [])].map((task) => [task.id, task]));
     for (const root of [windowRoot, notifications].filter(Boolean)) {
@@ -94,9 +100,9 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     const panelScroll = content.scrollTop;
     const relevantTasks = view?.tasks?.filter(t=>t.buildingId===view.building?.id)??[];
     const ids = new Set(relevantTasks.map(t=>t.playerId));
-    const nextPanelKey = JSON.stringify([pending,poolFilter,view?.error,view?.building,view?.capacity,view?.rules,view?.territoryLabel,relevantTasks,view?.players?.filter(p=>ids.has(p.playerId))]);
+    const nextPanelKey = JSON.stringify([pending,poolFilter,view?.error,view?.building,view?.capacity,view?.rules,view?.territoryLabel,relevantTasks,view?.players?.filter(p=>ids.has(p.playerId)),getCenters()]);
     if (nextPanelKey !== panelKey) {
-      const nextPanel = trainingPanelMarkup(view, { pending, poolFilter });
+      const nextPanel = trainingPanelMarkup(view, { pending, poolFilter, centers: getCenters() });
       if(nextPanel !== panelHtml){patchMarkup(content,nextPanel);panelHtml=nextPanel;}
       panelKey=nextPanelKey;
     }
@@ -139,7 +145,7 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     }
     tick();
   }
-  function close() { pickerRenderKey = null; pickerHtml = null; pickerDataKey = null; version += 1; target = null; view = null; selection = null; windowRoot.hidden = true; pickerRoot.hidden = true; }
+  function close() { const wasOpen = !windowRoot.hidden; pickerRenderKey = null; pickerHtml = null; pickerDataKey = null; version += 1; target = null; view = null; selection = null; windowRoot.hidden = true; pickerRoot.hidden = true; if (wasOpen) onClose(); }
   async function load() {
     if (!target) return;
     const requestVersion = ++version, current = { ...target };
@@ -155,7 +161,30 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
   }
   function open(value) {
     if (!getCampaignState()?.setupComplete) return;
+    if (!value) {
+      const centers = getCenters();
+      value = centers.find(center => center.building.status === 'active') ?? centers[0];
+      if (!value) return showToast('尚未建设训练场，请先在领地建设训练中心');
+    }
     onOpen(); squadFilter = "all"; poolFilter = "all"; panelHtml = null; panelKey = null; pickerLimit = 24; target = { ...value }; view = null; selection = null; render(); load();
+  }
+  async function finishCompleted() {
+    if (pending || !target || !view || view.error) return;
+    const taskIds = view.tasks.filter(task => task.buildingId === target.buildingId && task.status === 'completed').map(task => task.id);
+    if (!taskIds.length) return;
+    const accountId = getCampaignState()?.playerId, requestVersion = ++version;
+    const body = {territoryId: target.territoryId, buildingId: target.buildingId, taskIds};
+    pending = true; render();
+    try {
+      const result = await getCampaignRequest()('/api/campaign/training/finish-completed', {method: 'POST', body});
+      if (getCampaignState()?.playerId !== accountId) return;
+      if (version === requestVersion) selection = null;
+      const state = {...getCampaignState(), ...result.statePatch};
+      campaignStore.setState(state, {source: 'training-finish-completed'}); onState(state, {compact: true});
+      showToast(`已完成 ${result.finishedCount} 名球员的训练，席位已腾空`);
+    } catch (error) {
+      if (getCampaignState()?.playerId === accountId) showToast(error.message || '完成训练失败，请重试');
+    } finally { pending = false; render(); }
   }
   async function start(playerId) {
     if (pending || !target || !selection || !view || view.error) return;
@@ -220,6 +249,7 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
   });
   windowRoot.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-training-close]")) return close();
+    if (event.target.closest?.('[data-training-finish-completed]')) return finishCompleted();
     const filter = event.target.closest?.("[data-training-filter]");
     if (filter && !pending && (filter.dataset.trainingFilter === "all" || Object.hasOwn(TRAINING_POOLS, filter.dataset.trainingFilter))) { poolFilter = filter.dataset.trainingFilter; render(); content.scrollTop = 0; return; }
     const upgrade=event.target.closest?.('[data-facility-upgrade]');
@@ -232,6 +262,11 @@ export function createTrainingController({ windowRoot, pickerRoot, notifications
     const task = view.tasks.find((entry) => entry.buildingId === target.buildingId && entry.pool === pool && entry.slot === slot);
     if (task?.status === "working") return;
     pickerLimit = 24; selection = { pool, slot, taskId: task?.id }; render();
+  });
+  windowRoot.addEventListener('change', event => {
+    if (pending || !event.target.matches?.('[data-training-center]')) return;
+    const next = getCenters().find(center => center.buildingId === event.target.value);
+    if (next) open({territoryId: next.territoryId, buildingId: next.buildingId});
   });
   pickerRoot.addEventListener("click", (event) => {
     if (event.target.closest?.("[data-training-picker-close]")) { selection = null; render(); return; }

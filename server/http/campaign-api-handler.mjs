@@ -161,10 +161,10 @@ export function createCampaignApiHandler({ campaign } = {}) {
       return sendJson(response,200,compact?{tacticsUpdate:result}:{state:result});
     }
     if (request.method === "POST" && pathname === "/api/campaign/maritime/preview") {
-      return sendJson(response, 200, campaign.maritimePreview(account, body.previewId, body.action));
+      return sendJson(response, 200, campaign.maritimePreview(account, body.previewId, body.action, {compact:body.compact===true}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/maritime/routes") {
-      return sendJson(response, 200, campaign.maritimeRoutes(account, body.sourceTerritoryId, body.sourcePoint));
+      return sendJson(response, 200, campaign.maritimeRoutes(account, body.sourceTerritoryId, body.sourcePoint, {compact:body.compact===true}));
     }
     if (request.method === "POST" && pathname === "/api/campaign/territory/liberation") {
       return sendJson(response, 200, campaign.resolveTerritoryLiberation(account, body));

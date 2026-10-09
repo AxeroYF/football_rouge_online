@@ -8,6 +8,19 @@ import {battleSummary} from '../infrastructure/history-archive.mjs';
 import {CAMPAIGN_ENGINE} from '../../engine/campaign-match-engine.mjs';
 import {publicDraft} from './draft-view.mjs';
 
+// A coastal survey changes map visibility, not the roster, inventory or every panel.
+export function composeCampaignMapState(campaign, account) {
+  const now = campaign.now(), fog = campaign.fogView(account);
+  const visible = new Set(fog.visibleTerritoryIds), canSee = id => !fog.enabled || visible.has(id);
+  const expeditionPiece = publicExpeditionPiece(account, campaign.world, now);
+  const activeChallenge = Object.values(campaign.world?.activeChallenges ?? {}).find(challenge => challenge.attackerId === account.id && !challenge.coalitionId);
+  const canExpand = Boolean(account.setupComplete && account.homeTerritoryId && campaign.world?.players?.[account.id] && !activeChallenge && !expeditionPiece?.moving);
+  return {playerId: account.id, fog, world: campaign.publicWorld(account, fog), expeditionPiece,
+    activeChallengeId: activeChallenge?.id ?? null,
+    attackableTerritoryIds: canExpand ? listAttackableTerritoriesFrom(campaign.territoryIndex, campaign.world, account.id, expeditionAttackSource(account, campaign.world, now), now).filter(id => canSee(id) && !campaign.world.activeChallenges?.[id]) : [],
+    coastalTerritoryIds: (campaign.maritimePlanner?.coastalTerritoryIds ?? []).filter(canSee)};
+}
+
 // Compose the response after explicit maintenance. Domain views may still settle
 // due work; do not memoize this whole response using world revision alone.
 export function composeCampaignState(campaign, account, {now, setupComplete, normalizedPlayerSquads}) {

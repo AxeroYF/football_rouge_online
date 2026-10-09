@@ -1,5 +1,5 @@
 import { persistCampaign } from './server/application/campaign-persistence.mjs';
-import { composeCampaignState } from './server/application/campaign-state-view.mjs';
+import { composeCampaignState, composeCampaignMapState } from './server/application/campaign-state-view.mjs';
 import { publicDraft, rosterCounts } from './server/application/draft-view.mjs';
 import { settleAndPersistCampaign } from './server/application/campaign-settlement.mjs';
 import { maintainCampaignState } from './server/application/campaign-state-maintenance.mjs';
@@ -199,7 +199,7 @@ export class CampaignService {
     const rewardsChanged = this.neutralRewards.initialize();
     const buildingsChanged = this.buildings.migrate({ accounts: this.accounts, world: this.world });
     this.enhancement = new EnhancementService({ economy: this.economy, now: this.now, random: this.random, save: () => this.save() });
-    this.shop=new ShopService({world:this.world,oil:this.oil,playerDatabase:this.playerDatabase,economy:this.economy,playerPacks:this.playerPacks,enhancement:this.enhancement,now:this.now,random:this.random,save:()=>this.save()});
+    this.shop=new ShopService({world:this.world,getBuyerName:id=>this.accounts.get(id)?.nickname||this.accounts.get(id)?.draft?.teamName,oil:this.oil,playerDatabase:this.playerDatabase,economy:this.economy,playerPacks:this.playerPacks,enhancement:this.enhancement,now:this.now,random:this.random,save:()=>this.save()});
     this.cardManagement = new CardManagementService({ accounts: this.accounts, world: this.world, catalog: this.playerLibrary, economy: this.economy, now: this.now, random: this.random, save: () => this.save() });
     this.cardPurchases = new CardPurchaseService(this);
     const cardHistoryChanged = this.cardManagement.migrateHistory();
@@ -782,6 +782,11 @@ export class CampaignService {
     return { task, state: this.state(account) };
   }
 
+  finishCompletedTraining(account, options) {
+    const result = this.training.finishCompleted(account, this.world, options);
+    return {...result, statePatch: this.actionState(account)};
+  }
+
   cancelTraining(account, taskId) {
     const task = this.training.cancel(account, taskId);
     return { task, state: this.state(account) };
@@ -1015,16 +1020,17 @@ export class CampaignService {
     return { ...result, previewId: preview?.id, expiresAt: preview?.expiresAt };
   }
 
-  maritimePreview(account, id, action) {
+  maritimePreview(account, id, action, {compact=false} = {}) {
     if (action === "keepalive") return this.fog.renewPreview(account, id);
     if (action !== "close") throw new Error("未知的测绘操作");
     this.fog.clearPreview(account, id);
+    if (compact) return {previewId:id, closed:true};
     return { state: this.state(account) };
   }
 
-  maritimeRoutes(account, sourceTerritoryIdValue, pointValue) {
+  maritimeRoutes(account, sourceTerritoryIdValue, pointValue, {compact=false} = {}) {
     const result = this.surveyMaritimeRoutes(account, sourceTerritoryIdValue, pointValue);
-    return { ...result, state: this.state(account) };
+    return { ...result, ...(compact ? {statePatch:composeCampaignMapState(this,account)} : {state:this.state(account)}) };
   }
 
   // Mutations return affected account fields; regular polling owns world refreshes.

@@ -151,9 +151,8 @@ export function createChallengeController({
       });
       campaignStore.setState(value.state, { source: "challenge-start" });
       applyCampaignWorldSnapshot(getCampaignState().world);
-      refreshTerritoryDisplay();
       renderTerritoryInspector(selectedTerritoryId);
-      if (maritimeRoute) maritimeController.clearMaritimeMode({ keepSelection: true });
+      if (maritimeRoute) maritimeController.clearMaritimeMode({ keepSelection: true, previewAlreadyClosed: !value.state.fog?.preview });
       startCampaignLiveController(value);
       showToast("挑战已锁定该板块；服务器将按 S4 节奏实时推进，赛果只在结束后生成");
     } catch (error) {

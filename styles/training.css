@@ -131,3 +131,5 @@
 @media(max-height:520px) and (min-width:600px){#training-window{max-height:none;top:4px;bottom:4px}#training-window .training-overview{float:left;margin-right:18px}#training-window .training-rule{margin:2px 0 5px}.training-summary{margin-bottom:6px}.training-pool-tabs{clear:both}#training-window .training-seats{grid-template-columns:repeat(5,minmax(0,1fr))}}
 
 .training-load-more{display:block;margin:16px auto;padding:10px 24px;border:1px solid #bba56c;border-radius:6px;background:#263d31;color:#e9dbb5;cursor:pointer;font:inherit;font-size:13px}
+
+.training-manage-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:8px 0 12px}.training-manage-actions label{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px}.training-manage-actions select{min-width:0;max-width:240px;padding:6px;background:#202b23;color:inherit;border:1px solid #8e7851;border-radius:6px}.training-manage-actions button{min-height:36px}.training-manage-actions button:disabled{opacity:.5;cursor:default}

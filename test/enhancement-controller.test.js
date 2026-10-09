@@ -7,16 +7,55 @@ import { S4_ENHANCEMENT } from "../shared/config/enhancement.mjs";
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const cards=[{playerId:"one",cardDefinitionId:"henry",name:"亨利",overall:90,baseOverall:90,grade:"S",role:"ST",pool:"ATT",upgradeLevel:0,traits:[],labels:["训练中","远征首发"]},{playerId:"two",cardDefinitionId:"henry",name:"亨利",overall:90,baseOverall:90,grade:"S",role:"ST",pool:"ATT",upgradeLevel:0,traits:[],labels:["留守首发"]},{playerId:"single",cardDefinitionId:"other",name:"单卡",overall:80,grade:"A",role:"CM",pool:"MID",upgradeLevel:0,traits:[]}];
 const view={...S4_ENHANCEMENT,cards,history:[],traitOffers:[]};
-function fixture(){
+function fixture(options = {}){
  const requests=[],events={},toasts=[];
  const content={innerHTML:"",querySelector:()=>null,querySelectorAll:()=>[]};
  const classes=new Set();
  const root={hidden:true,dataset:{},classList:{add:v=>classes.add(v),remove:v=>classes.delete(v)},ownerDocument:{addEventListener(){},activeElement:null},setAttribute(){},closest:()=>null,innerHTML:"",querySelector:s=>s==='[data-enhancement-content]'?content:null,querySelectorAll:()=>[],addEventListener:(name,fn)=>events[name]=fn};
  const store=createCampaignStore({playerId:"p",setupComplete:true,wallet:{gold:10000},draft:{roster:cards}});
- const controller=createEnhancementController({root,getCampaignState:store.getState,getCampaignRequest:()=>(url,options)=>new Promise((resolve,reject)=>requests.push({url,options,resolve,reject})),campaignStore:store,showToast:v=>toasts.push(v),delay:async()=>{}});
+ const controller=createEnhancementController({root,getCampaignState:store.getState,getCampaignRequest:()=>(url,options)=>new Promise((resolve,reject)=>requests.push({url,options,resolve,reject})),campaignStore:store,showToast:v=>toasts.push(v),delay:async()=>{},...options});
  const click=(selector,dataset={})=>events.click({target:{closest:s=>s===selector?{dataset}:null}});
  return {root,store,requests,content,controller,click,toasts,events};
 }
+
+const protectionInput = f => f.content.innerHTML.match(/<input[^>]*data-enhancement-protection[^>]*>/)?.[0];
+test('default protection applies to each eligible pair and reopening, preserving manual overrides during refresh and retry', async () => {
+ const f=fixture({getDefaultProtection:()=>true});f.controller.open();
+ const upgraded={...structuredClone(view),cards:cards.map(c=>({...c,upgradeLevel:3}))};
+ f.requests[0].resolve(upgraded);await flush();
+ assert.doesNotMatch(protectionInput(f),/checked/);
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});
+ f.click('[data-enhancement-card]',{enhancementCard:'two'});
+ assert.match(protectionInput(f),/checked/);
+ f.events.change({target:{matches:s=>s==='[data-enhancement-protection]',checked:false}});
+ f.store.setState({...f.store.getState(),wallet:{gold:9000}});
+ assert.doesNotMatch(protectionInput(f),/checked/);
+ f.click('[data-enhancement-submit]');assert.equal(f.requests[1].options.body.useProtection,false);
+ f.requests[1].reject(new Error('retry'));await flush();
+ assert.doesNotMatch(protectionInput(f),/checked/);
+ f.click('[data-enhancement-slot-card]',{enhancementSlotCard:'material'});
+ f.click('[data-enhancement-card]',{enhancementCard:'two'});
+ assert.match(protectionInput(f),/checked/);
+ f.click('[data-enhancement-submit]');assert.equal(f.requests[2].options.body.useProtection,true);
+ f.requests[2].reject(new Error('retry'));await flush();
+ f.controller.close();f.controller.open();f.requests[3].resolve(upgraded);await flush();
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'two'});
+ assert.match(protectionInput(f),/checked/);f.controller.close();
+});
+
+test('protection preference leaves guaranteed upgrades unprotected and does not silently bypass insufficient gold', async () => {
+ let enabled=true;const f=fixture({getDefaultProtection:()=>enabled});f.controller.open();
+ f.requests[0].resolve(structuredClone(view));await flush();
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'two'});
+ assert.match(protectionInput(f),/disabled/);assert.doesNotMatch(protectionInput(f),/checked/);
+ f.controller.close();f.controller.open();f.requests[1].resolve({...structuredClone(view),cards:cards.map(c=>({...c,upgradeLevel:3}))});await flush();
+ f.store.setState({...f.store.getState(),wallet:{gold:0}});
+ f.click('[data-enhancement-card]',{enhancementCard:'one'});f.click('[data-enhancement-card]',{enhancementCard:'two'});
+ assert.match(protectionInput(f),/checked/);assert.match(f.content.innerHTML,/data-enhancement-submit disabled/);
+ enabled=false;f.controller.refreshProtectionPreference();
+ assert.doesNotMatch(protectionInput(f),/checked/);assert.match(f.content.innerHTML,/data-enhancement-submit >强化/);
+ f.controller.close();
+});
 test("warehouse contains only independently identified duplicate families, never merges names with different definitions",()=>{
  const copy=structuredClone(cards);assert.deepEqual(enhancementCardEntries(copy).map(e=>e.card.id),["one","two"]);assert.deepEqual(copy,cards);
  assert.equal(enhancementCardEntries([{...cards[0]},{...cards[1],cardDefinitionId:"different-person"}]).length,0);

@@ -1,13 +1,14 @@
-# 黄狗风云 Rougelite 交接 · 2026-10-06
+# 黄狗风云 Rougelite 交接 · 2026-10-09
 
-**原版 R51 已部署，用户已确认；fix1 已暂停并撤回。** 最新发布/部署版本：`20261004-r51`。工作树：`D:\Project\game_test\.worktrees\Rougelite`；分支：`codex/rougelite`；远端：`https://github.com/AxeroYF/football_rouge_online.git`。
+**R52 已打包归档，最近确认部署为 R51；用户准备停服封存。** 最新发布：`20261006-r52`，R52 部署未确认；fix1 已暂停并撤回。工作树：`D:\Project\game_test\.worktrees\Rougelite`；分支：`codex/rougelite`；远端：`https://github.com/AxeroYF/football_rouge_online.git`。
 
 ## 阅读入口
 
 1. [当前状态](CURRENT_STATE.md)：以开头的最新结论为准，后续段落为历史。
 2. [新对话提示](NEW_CHAT_PROMPT.md)：可直接用于继续开发。
 3. [交接索引](MANIFEST.md)：项目结构与近期功能文档。
-4. [R50 强化](R50_UPDATE_20261004.md)、[R51 商店](R51_UPDATE_20261004.md)、[Git 同步](GITHUB_SYNC_20261006.md)、[发布基线](../releases/CURRENT.json)。
+4. [停服封存操作](SERVER_ARCHIVE_20261009.md)、[R52 更新](R52_UPDATE_20261006.md)。
+5. [R50 强化](R50_UPDATE_20261004.md)、[R51 商店](R51_UPDATE_20261004.md)、[Git 同步](GITHUB_SYNC_20261006.md)、[发布基线](../releases/CURRENT.json)。
 
 ## 最近累计更新
 
@@ -18,6 +19,7 @@
 
 - 强化：R50 开放 +10、四特性与审阅后的高阶卡框，保持传奇动效。
 - 商店轮换：R51 改为每两小时全服刷新；用户接受更新后首次访问换轮。
+- R52：强化保卡默认设置、训练一键完成/顶部入口、商店购买者显示、出海响应与缩放优化、Safari 比赛卡片修复。
 
 ## 项目结构
 

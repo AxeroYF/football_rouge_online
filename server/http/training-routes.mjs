@@ -7,6 +7,9 @@ export function trainingRoute({campaign, account, method, pathname, url, body}) 
   if (method === "POST" && pathname === "/api/campaign/training/finish") {
     return {value: campaign.finishTraining(account, body.taskId)};
   }
+  if (method === "POST" && pathname === "/api/campaign/training/finish-completed") {
+    return {value: campaign.finishCompletedTraining(account, body)};
+  }
   if (method === "POST" && pathname === "/api/campaign/training/cancel") {
     return {value: campaign.cancelTraining(account, body.taskId)};
   }
