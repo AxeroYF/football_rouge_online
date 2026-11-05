@@ -51,7 +51,7 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/team/tactical-shape-preview") result = { tacticalShapePreview:yellowDogsLeague.tacticalShapePreview(account, body) };
     else if (pathname === "/api/versus/league/team/lineup-scheme") result = { teamSave:yellowDogsLeague.updateLineupScheme(account, body, { compact:true }) };
     else if (pathname === "/api/versus/league/team/lineup-share/export") result = { lineupShare:yellowDogsLeague.exportLineupScheme(account) };
-    else if (pathname === "/api/versus/league/team/lineup-share/import") result = { teamSave:yellowDogsLeague.importLineupScheme(account, body.code, { compact:true }) };
+    else if (pathname === "/api/versus/league/team/lineup-share/import") result = { teamSave:yellowDogsLeague.importLineupScheme(account, body.code, { compact:true, lineupSchemeId:body.lineupSchemeId, lineupSchemeRevision:body.lineupSchemeRevision }) };
     else if (pathname === "/api/versus/league/world-cup/roster") result = { worldCupSave:yellowDogsLeague.saveWorldCupRoster(account, body.selectedIds) };
     else if (pathname === "/api/versus/league/world-cup/tactics") result = { worldCupSave:yellowDogsLeague.saveWorldCupTactics(account, body) };
     else if (pathname === "/api/versus/league/team/rename") result = { league:yellowDogsLeague.renameTeam(account, body.teamName) };

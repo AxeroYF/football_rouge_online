@@ -1,0 +1,8 @@
+# Accept both LF and CRLF without treating the CR as trailing whitespace.
+* whitespace=trailing-space,space-before-tab,cr-at-eol
+
+# Imported snapshots and their copied assets retain exact upstream bytes.
+# SOURCE-MANIFEST.json records their Git blob hashes.
+reference/** -text -whitespace
+versus/public/assets/card-frames/shield-v1/** -text -whitespace
+versus/public/pack-opening-meteors.js -text -whitespace

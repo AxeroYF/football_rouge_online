@@ -4,6 +4,7 @@ import { activeCaptain } from "../public/captain-rules.js";
 import { calculateV2TacticalFit } from "../public/v2-tactical-fit.js";
 import { advanceV2Match, createV2Match, finishV2Match, publicV2Match, v2TurnoverRestartZone } from "./match-engine-v2.js";
 import { v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
+import {isV3,engineProfile,V3_SPATIAL_VERSION} from "../v3/model-config.js";
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
 
 const REGULATION_LIVE_DURATION_MS = 120_000;
@@ -113,8 +114,8 @@ function buildTacticalReview(match) {
   return {
     version:2,
     source:"v2-possession-chains",
-    chainModelVersion:"possession-chain-v2.1",
-    spatialModelVersion:match.parameters?.dynamicShape?.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2-alpha.1",
+    chainModelVersion:isV3(match.parameters)?"possession-chain-v3.0":"possession-chain-v2.1",
+    spatialModelVersion:isV3(match.parameters)?V3_SPATIAL_VERSION:match.parameters?.dynamicShape?.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2-alpha.1",
     chainCount:(match.chains ?? []).length,
     grid:{ lanes, bands },
     teams,
@@ -373,7 +374,7 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   match.phase = "playing";
   match.segment = "regular";
   match.competitionMode = competitionMode;
-  match.engineProfile = options.engineProfile ?? "v2.1-stable-dynamic.2";
+  match.engineProfile = options.engineProfile ?? engineProfile(match.parameters);
   match.legNumber = legNumber;
   match.regulationOnly = regulationOnly;
   match.aggregateBaseScore = Array.isArray(options.aggregateBaseScore) ? options.aggregateBaseScore.map(Number) : null;

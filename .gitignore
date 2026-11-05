@@ -60,9 +60,12 @@ Desktop.ini
 # ==============================
 # Local runtime data / generated QA artifacts
 # ==============================
+.assessment/
 data/versus-accounts.json
+data/versus-accounts.json.bak
 data/yellowdogs-league.json
 data/yellowdogs-league.json.bak
+data/yellowdogs-league-shards/
 data/yellowdogs-league-backups/
 data/ydl-content-overrides.backup.json
 data/s4-test/

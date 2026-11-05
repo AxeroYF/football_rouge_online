@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { JsonAccountRepository } from "./infrastructure/json-account-repository.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { REAL_PLAYER_BY_ID, REAL_PLAYERS } from "./player-pool.js";
@@ -249,9 +249,9 @@ export class VersusRoomService {
     this.accounts = new Map();
     this.lastAccountActivityPersistedAt = 0;
     this.lineups = options.lineups ?? SHARED_LINEUPS;
-    if (this.accountsPath && existsSync(this.accountsPath)) {
-      try {
-        const saved = JSON.parse(readFileSync(this.accountsPath, "utf8"));
+    this.accountRepository = options.accountRepository ?? new JsonAccountRepository(this.accountsPath);
+    const saved = this.accountRepository.load();
+    if (saved) {
         Object.values(saved.accounts ?? {}).forEach((account) => {
           account.summary = normalizeSummary(account.summary);
           account.matches = (account.matches ?? []).map((match) => ({ ...match, result: match.result === "leg" ? "leg" : match.result === "win" ? "win" : "loss" }));
@@ -261,13 +261,30 @@ export class VersusRoomService {
           this.accounts.set(account.key, account);
         });
         Object.entries(saved.lineups ?? {}).forEach(([code, seed]) => this.lineups.set(code, seed));
-      } catch { this.accounts = new Map(); }
     }
+    this.committedAccounts = JSON.stringify(this.accountState());
+  }
+
+  accountState() {
+    return { version:5, accounts:Object.fromEntries(this.accounts), lineups:Object.fromEntries(this.lineups) };
   }
 
   saveAccounts() {
-    if (!this.accountsPath) return;
-    writeFileSync(this.accountsPath, JSON.stringify({ version: 5, accounts: Object.fromEntries(this.accounts), lineups: Object.fromEntries(this.lineups) }, null, 2));
+    try {
+      this.committedAccounts = this.accountRepository.save(this.accountState());
+    } catch (error) {
+      const saved = JSON.parse(this.committedAccounts);
+      for (const key of this.accounts.keys()) if (!Object.hasOwn(saved.accounts, key)) this.accounts.delete(key);
+      for (const [key, value] of Object.entries(saved.accounts)) {
+        const account = this.accounts.get(key);
+        if (account) { for (const field of Object.keys(account)) delete account[field]; Object.assign(account, value); }
+        else this.accounts.set(key, value);
+      }
+      this.lineups.clear();
+      for (const [key, value] of Object.entries(saved.lineups)) this.lineups.set(key, value);
+      this.lastAccountActivityPersistedAt = 0;
+      throw error;
+    }
   }
 
   touchAccountActivity(account) {
@@ -716,8 +733,8 @@ export class VersusRoomService {
       });
       account.matches = account.matches.slice(0, 100);
     });
-    room.historyRecorded = true;
     this.saveAccounts();
+    room.historyRecorded = true;
   }
 
   autoCompleteDraft(room, seat) {

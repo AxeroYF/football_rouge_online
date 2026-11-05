@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { buildSeasonFinalSeedSnapshot, createSeasonFinalBracket, createSeasonFinalState, cupSeedPoints, positionLine, SEASON_FINAL_RULES, SEASON_FINAL_SCHEDULE_MINUTES, validateFinalBanSelection } from "../versus/season-final-tournament.js";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
+import { LeagueShardStore, unwrapTracked } from "../versus/league-shard-store.js";
 import { REAL_PLAYERS } from "../versus/player-pool.js";
 
 const teams = Array.from({ length: 10 }, (_, index) => ({ id: `T${index + 1}`, name: `队${index + 1}`, ownerId: index === 9 ? null : `u${index + 1}` }));
@@ -30,6 +31,31 @@ function hydrateHumanRosters(service, fitness = 100) {
     team.playerState = Object.fromEntries(roster.map((player) => [player.id, { fitness, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 }]));
   });
 }
+
+test("completed sharded final keeps its full report through reload, core saves and archival", t => {
+  const directory = mkdtempSync(path.join(process.cwd(), ".tmp-p1-completed-final-"));
+  t.after(() => { assert.ok(directory.startsWith(process.cwd() + path.sep + ".tmp-p1-completed-final-")); rmSync(directory, { recursive:true, force:true }); });
+  const statePath = path.join(directory, "shards"), cupFinalAt = Date.UTC(2026, 7, 20, 6, 30), now = cupFinalAt + 20 * 60 * 1000;
+  const service = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => now, rng:() => .37 });
+  service.state.season.date = "2026-08-20";
+  completeCompetitions(service, cupFinalAt);
+  hydrateHumanRosters(service);
+  service.state.teams.forEach(team => team.rosterIds.forEach(id => service.grantS4Card(team, id, { grantOwnership:true, acquisitionSource:"p1-completed-final" })));
+  service.simulateNextSeasonFinalMatch();
+  const match = service.state.seasonFinalTournament.matches[0], expected = unwrapTracked(match.report);
+  assert.equal(expected.teams.length, 2); assert.ok(expected.events.length);
+  const reference = service.shardStore.manifest.shards.seasonFinal;
+  service.save({ scopes:["core"], skipDailyBackup:true });
+  assert.equal(service.shardStore.manifest.shards.seasonFinal, reference);
+  const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => now, rng:() => .37 });
+  assert.equal(reloaded.shardStore.coldCache.reads, 0);
+  const summary = reloaded.seasonFinalTournamentView();
+  assert.equal(summary.matches.length, 1); assert.equal(reloaded.shardStore.coldCache.reads, 0);
+  assert.deepEqual(unwrapTracked(reloaded.state.seasonFinalTournament.matches[0].report), expected);
+  reloaded.archiveSeason("p1-storage-test"); reloaded.save({ scopes:["archives"], skipDailyBackup:true });
+  const reader = new LeagueShardStore(statePath, { backupDir:null }), loaded = reader.load();
+  assert.deepEqual(reader.readFullArchive(loaded.archives.at(-1)).seasonFinalTournament.matches[0].report, expected);
+});
 
 test("season final seed snapshot keeps AI at seed 10 and persists tiebreak inputs", () => {
   const snapshot = buildSeasonFinalSeedSnapshot(teams, Object.fromEntries(teams.map((team, index) => [team.id, index + 1])), Object.fromEntries(teams.map((team) => [team.id, { stage: "group", groupRank: 1 }])));

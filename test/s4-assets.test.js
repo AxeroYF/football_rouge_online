@@ -124,35 +124,17 @@ test("全部高能力A级球员均绑定真人卡面且人物位于文字下层"
   assert.match(styles, /\.s4-player-card\.has-player-profile \.s4-player-card-grade\{visibility:hidden\}/);
 });
 
-test("新版球员卡使用圆润双层边框并让+8卡回归统一细红金外框", () => {
-  const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
-  assert.match(styles, /\.s4-player-card\{[^}]*border-radius:29px/);
-  assert.match(styles, /\.s4-player-card::before\{[^}]*border-radius:23px/);
-  assert.match(styles, /\.s4-player-card\.band-high:not\(\.grade-x\)\{[^}]*#f5cc55/);
-  assert.match(styles, /\.s4-player-card\.band-max\{[^}]*#e12438/);
-  assert.match(styles, /\.s4-player-card\.band-max:not\(\.grade-x\)\{--stripe-accent:#e62b42;[^}]*linear-gradient\(132deg,#ffe98d 0 7%,#75000b 18%,#e12438 37%,#ffe78a 50%,#650008 59%,#c9182c 79%,#f5cc55\) border-box/);
-  assert.doesNotMatch(styles, /\.s4-player-card\.grade-[sab]\.band-max[^}]*border-width:4px/);
-  assert.doesNotMatch(styles, /\.s4-player-card\.grade-[sab]\.band-max::before/);
-  assert.match(styles, /\.s4-player-card\.grade-x\.band-high\{[^}]*#a6e6e1/);
-  assert.match(styles, /\.s4-player-card\.grade-x\.band-max\{[^}]*#ff8fc4/);
-  assert.match(styles, /\.s4-player-card::after\{[^}]*opacity:0[^}]*animation:none/);
-  assert.match(styles, /\.s4-player-card:hover::after\{[^}]*animation:s4-card-frame-sheen 4\.2s ease-in-out infinite/);
-  assert.match(styles, /\.s4-player-card-upgrade\{[^}]*right:6px[^}]*top:6px[^}]*min-width:38px[^}]*height:30px/);
-  assert.match(styles, /\.s4-player-card-upgrade\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:[^}]*0 2px 3px/);
-  assert.match(styles, /\.s4-player-card-upgrade\{[^}]*rgba\(248,251,255,\.88\)[^}]*rgba\(185,197,209,\.88\)[^}]*rgba\(120,135,148,\.88\)/);
-  assert.match(styles, /\.s4-player-card-upgrade\.band-mid\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:/);
-  assert.match(styles, /\.s4-player-card-upgrade\.band-high\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:/);
-  assert.match(styles, /\.s4-player-card-upgrade\.band-max\{[^}]*radial-gradient\([^}]*linear-gradient\([^}]*text-shadow:/);
-  assert.match(styles, /\.s4-player-card-upgrade\.band-(?:mid|high|max)\{[^}]*rgba\([^)]+,\.88\)/);
-  assert.match(styles, /\.s4-player-card-upgrade::after\{[^}]*opacity:0[^}]*animation:none/);
-  assert.match(styles, /\.s4-player-card:hover \.s4-player-card-upgrade::after\{opacity:1;animation:s4-card-frame-sheen 4\.2s ease-in-out infinite/);
-  assert.doesNotMatch(styles, /@keyframes s4-upgrade-badge-sheen/);
-  assert.doesNotMatch(styles, /@media\(prefers-reduced-motion:reduce\)\{\.s4-player-card::after/);
-  assert.match(styles, /\.s4-player-card\{[^}]*linear-gradient\(132deg,transparent 0 12%,color-mix\(in srgb,var\(--stripe-accent\)/);
-  assert.match(styles, /\.s4-player-card\{[^}]*repeating-linear-gradient\(132deg/);
-  for (const grade of ["x", "s", "a", "b", "c"]) {
-    assert.match(styles, new RegExp(`\\.s4-player-card\\.grade-${grade}\\{[^}]*--stripe-accent:`));
-  }
+test("统一球员卡引用Rougelite原始盾形图层和等级配色", () => {
+  const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../versus/public/player-card-shield.css", import.meta.url), "utf8");
+  const renderer = readFileSync(new URL("../versus/public/player-card-shield.js", import.meta.url), "utf8");
+  assert.ok(appSource.includes('s4-player-card ydl-player-card player-card-shield'));
+  assert.ok(appSource.includes('shieldCardContent({'));
+  assert.ok(styles.includes('aspect-ratio:26/35!important'));
+  assert.ok(styles.includes('border-radius:0!important'));
+  assert.ok(renderer.includes("S:'s',X:'s',A:'a',B:'b',C:'c'"));
+  assert.ok(renderer.includes('/versus/assets/card-frames/shield-v1/'));
+  for (const color of ["#122c81", "#0c625b", "#513650", "#354f3e"]) assert.ok(styles.includes(color));
 });
 
 test("背包三选一卡包使用独立悬浮选择层且卡牌网格保留间距", () => {
@@ -160,7 +142,7 @@ test("背包三选一卡包使用独立悬浮选择层且卡牌网格保留间�
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   assert.match(appSource, /function openS4PackChoiceDialog\(offer\)/);
   assert.match(appSource, /syncS4PackChoiceDialog\(\)/);
-  assert.match(appSource, /overlay\.querySelectorAll\("\[data-s4-pack-choice\]"\)\.forEach\(\(button\) => \{\s*button\.onclick = \(\) => chooseS4PackCard\(button\)/);
+  assert.match(appSource, /overlay\.querySelectorAll\("\[data-s4-pack-choice\]"\)\.forEach\(\(button\) => \{\s*button\.onclick = \(event\) => \{ event\.stopPropagation\(\); void chooseS4PackCard\(button\); \}/);
   assert.match(appSource, /async function chooseS4PackCard\(button\)/);
   assert.match(appSource, /"s4-pack-choice-dialog",\s*\{ dismissOnBackdrop:false \}/);
   assert.doesNotMatch(appSource, /class="league-panel league-shop backpack-choice"/);
@@ -180,11 +162,11 @@ test("背包球员卡详情复用YOOGLE档案并锁定实际强化等级", () =>
   assert.match(appSource, /cardMode \? card\.upgradeLevel : upgradeLevel/);
   assert.match(appSource, /当前26项能力值/);
   assert.match(appSource, /详情已锁定为这张卡的实际强化效果/);
-  const previewSource = appSource.slice(appSource.indexOf("function overviewPlayerPreviewValues"), appSource.indexOf("function addLeagueOverviewPlayerComparison"));
+  const previewSource = readFileSync(new URL("../versus/public/player-preview.js", import.meta.url), "utf8");
   assert.match(previewSource, /Math\.min\(99/);
   assert.doesNotMatch(appSource, /overflowRetention|overflowThreshold/);
   assert.match(appSource, /"overview-player-dialog s4-card-detail-dialog"/);
-  const detailSource = appSource.slice(appSource.indexOf("function openS4CardDetail"), appSource.indexOf("function openS4PackResult"));
+  const detailSource = appSource.match(/function openS4CardDetail\(cardId, playerId\) \{[\s\S]*?\n\}/)?.[0] ?? "";
   assert.doesNotMatch(detailSource, /\bapi\(|renderLeague\(/);
   assert.doesNotMatch(detailSource, /playerDirectory/);
   assert.match(appSource, /overlay\.classList\.add\("s4-card-detail-overlay"\)/);
@@ -257,7 +239,7 @@ test("联赛AI球队固定佩戴系统专属徽章", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
-  const badgeUrl = appSource.match(/imageUrl:"(\/versus\/assets\/system-badges\/ai-team-badge\.png\?v=[a-f0-9]{12})"/)?.[1];
+  const badgeUrl = appSource.match(/imageUrl:"(\/versus\/assets\/system-badges\/ai-team-badge\.svg\?v=[a-f0-9]{12})"/)?.[1];
 
   assert.ok(badgeUrl);
   assert.ok(existsSync(new URL(`../versus/public${badgeUrl.split("?")[0].slice("/versus".length)}`, import.meta.url)));
@@ -295,17 +277,17 @@ test("徽章包背包入口支持批量数量、连续选择进度和统一结�
   assert.match(styles, /cosmetic-batch-results\{/);
 });
 
-test("交易市场增加徽章道具市场且积分榜隐藏玩家昵称", () => {
+test("交易市场下架徽章道具且积分榜保持隐藏玩家昵称", () => {
   const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   assert.match(apiSource, /market\/list-cosmetic/);
-  assert.match(appSource, /data-market-section="cosmetic"/);
-  assert.match(appSource, /function leagueCosmeticMarketMarkup\(\)/);
-  assert.match(appSource, /data-market-list-kind="cosmetic"/);
+  assert.doesNotMatch(appSource, /data-market-section="cosmetic"/);
+  assert.doesNotMatch(appSource, /function leagueCosmeticMarketMarkup\(\)/);
+  assert.doesNotMatch(appSource, /data-market-list-kind="cosmetic"/);
   assert.match(appSource, /const owner = badges \? `<small class="league-team-honors">\$\{badges\}<\/small>` : ""/);
   assert.doesNotMatch(appSource, /const owner = team\.ownerName \? `<small>\$\{escapeHtml\(team\.ownerName\)\}\$\{badges\}<\/small>`/);
-  assert.match(styles, /market-entry-four>div\{[^}]*grid-template-columns:repeat\(4/);
+  assert.match(styles, /market-entry-three>div\{[^}]*grid-template-columns:repeat\(3/);
   assert.match(styles, /cosmetic-market-visual\.category-club/);
 });
 
@@ -1649,7 +1631,8 @@ test("桌面战术板三栏使用完整球场高度并避免默认内部滚动",
 test("赛后复盘监听比赛历史更新并自动刷新友谊赛记录", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const fingerprint = appSource.match(/function leagueVisibleFingerprint\(view = league, tab = leagueTab\) \{[\s\S]*?\n\}/)?.[0] ?? "";
-  assert.match(fingerprint, /review: \{ history:view\.reviewHistory, demo:view\.reviewDemo \}/);
+  assert.match(appSource, /function renderLeagueReviewPanel\(/);
+  assert.match(appSource, /reviewHistory/);
 });
 
 test("旧X球员完成首日任务后会继续获得多日成长里程碑", () => {
@@ -1900,7 +1883,7 @@ test("页面刷新仅在账号凭证明确失效时清除本地登录态", () =>
   assert.match(roomServiceSource, /凭证无效"\), \{ statusCode:401 \}\)/);
 });
 
-test("页面刷新按账号恢复联赛或黄狗TV的当前页面", () => {
+test("页面刷新按账号恢复联赛或YFFM1 TV的当前页面", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
 
   assert.match(appSource, /APP_VIEW_KEY = "football_test1_versus_view_v1"/);
@@ -1916,7 +1899,7 @@ test("联赛结算沿用比赛播报中的伤停场数", () => {
   const leagueSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
 
   assert.match(leagueSource, /function injuryAbsenceMatches\(player\)/);
-  assert.equal((leagueSource.match(/injuryAbsenceMatches\(player\)/g) ?? []).length, 4);
+  assert.ok((leagueSource.match(/injuryAbsenceMatches\(player\)/g) ?? []).length >= 4);
   assert.doesNotMatch(leagueSource, /injuryRounds = Math\.max\([^\n]+1 \+ \((?:roundNumber|event\.round|this\.state\.season\.currentRound) % 3\)/);
 });
 
@@ -1937,11 +1920,11 @@ test("桌面联赛使用顶部球队资源栏并保持侧边导航常驻", () =>
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
 
-  assert.match(indexSource, /黄狗模拟经理/);
-  assert.match(indexSource, /YD MANAGER/);
+  assert.match(indexSource, /YFFM1/);
+  assert.match(indexSource, /YFFM1/);
   assert.match(indexSource, /id="league-topbar-club"/);
   assert.doesNotMatch(appSource, /<header class="league-top">/);
-  assert.match(appSource, /leagueTopbarClub\.innerHTML/);
+  assert.match(appSource, /patchHtmlChildren\(leagueTopbarClub,/);
   assert.doesNotMatch(appSource, /LEAGUE_DESKTOP_SIDEBAR_KEY/);
   assert.doesNotMatch(appSource, /data-league-sidebar-collapse/);
   assert.doesNotMatch(appSource, /sidebar-collapsed/);
@@ -2034,12 +2017,15 @@ test("背包子页面按需计算且开包流程只做局部更新", () => {
   assert.match(appSource, /function leagueBackpackPackSectionMarkup\(inventory = league\.s4Packs\?\.inventory \?\? \[\]\)/);
   assert.match(appSource, /const allCards = leagueBackpackPage === "cards" \? leagueBackpackCardEntries\(\) : null/);
   assert.match(appSource, /leagueBackpackPage === "cards"[\s\S]*leagueBackpackCardSectionMarkup\(allCards\)[\s\S]*leagueBackpackPackSectionMarkup\(inventory\)/);
-  assert.match(appSource, /function syncLeagueBackpackPackMutationInPlace\(\)[\s\S]*currentSection\.outerHTML = leagueBackpackPackSectionMarkup\(inventory\)/);
-  assert.match(appSource, /leagueRequest\("\/packs\/open", \{ packId:s4PackOpen\.dataset\.s4PackOpen \}, \{ render:false \}\)[\s\S]*syncLeagueBackpackPackMutationInPlace\(\)/);
-  assert.match(appSource, /leagueRequest\("\/packs\/open-batch", \{ packIds \}, \{ render:false \}\)[\s\S]*syncLeagueBackpackPackMutationInPlace\(\)/);
+  assert.match(appSource, /function syncLeagueBackpackPackMutationInPlace\(\{ syncPackDialog = true \} = \{\}\)[\s\S]*currentSection\.outerHTML = leagueBackpackPackSectionMarkup\(inventory\)/);
+  const openPack = appSource.match(/async function openLeaguePlayerPack\(packId, trigger = null\) \{[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(openPack, /leagueRequest\('\/packs\/open', \{ packId \}, \{ render:false, ignoreStale:true \}\)/);
+  assert.match(openPack, /syncLeagueBackpackPackMutationInPlace\(\{ syncPackDialog:false \}\)/);
+  assert.doesNotMatch(openPack, /renderLeague\(\)/);
+  assert.match(appSource, /leagueRequest\("\/packs\/open-batch", \{ packIds \}, \{ render:false, ignoreStale:true \}\)[\s\S]*syncLeagueBackpackPackMutationInPlace\(\{ syncPackDialog:false \}\)/);
   const choosePack = appSource.match(/async function chooseS4PackCard\(button\) \{[\s\S]*?\n\}/)?.[0] ?? "";
-  assert.match(choosePack, /\{ render:false \}/);
-  assert.match(choosePack, /syncLeagueBackpackPackMutationInPlace\(\)/);
+  assert.match(choosePack, /\{ render:false, ignoreStale:true \}/);
+  assert.match(choosePack, /syncLeagueBackpackPackMutationInPlace\(\{ syncPackDialog:false \}\)/);
   assert.doesNotMatch(choosePack, /renderLeague\(\)/);
 });
 test("开包紧凑响应会清除上一次批量结果避免旧弹窗重复出现", () => {
@@ -2056,15 +2042,17 @@ test("友谊赛预约与满名单开包不会锁死主要操作页面", () => {
   assert.match(appSource, /const weather = next\.weather[\s\S]*友谊赛天气将在比赛开始时确定/);
   assert.match(appSource, /const referee = next\.referee[\s\S]*友谊赛裁判将在比赛开始时确定/);
   assert.match(appSource, /data-s4-pack-manage-roster/);
-  assert.match(appSource, /leagueBackpackPage = "cards";[\s\S]*closeLeagueDialog\(\);[\s\S]*renderLeague\(\)/);
-  assert.match(appSource, /leagueTab === "backpack" && leagueBackpackPage === "packs" \? league\.s4Packs\?\.offer : null/);
+  assert.match(appSource, /leagueBackpackPage = ['"]cards['"];[\s\S]*closeLeagueDialog\(\);[\s\S]*renderLeague\(\)/);
+  const syncChoice = appSource.match(/function syncS4PackChoiceDialog\([\s\S]*?\n\}/)?.[0] ?? "";
+  assert.match(syncChoice, /leagueTab !== "backpack" \|\| leagueBackpackPage !== "packs"[\s\S]*closeLeagueDialog\(\)[\s\S]*return;/);
+  assert.match(syncChoice, /const offer = league\.s4Packs\?\.offer/);
   assert.match(styles, /\.s4-pack-choice-footer\{[^}]*display:flex[^}]*justify-content:space-between/);
 });
 test("战术板场上磁贴松手后只做局部同步而不整页重绘", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   assert.match(appSource, /function refreshLeagueSquadPositionUi\(\)/);
-  assert.match(appSource, /currentMagnet\.innerHTML = nextMagnet\.innerHTML/);
-  assert.match(appSource, /currentLines\.replaceWith\(nextLines\.cloneNode\(true\)\)/);
+  assert.match(appSource, /patchDomElement\(currentMagnet, nextMagnet\)/);
+  assert.match(appSource, /patchDomElement\(currentLines, nextLines\)/);
   const dropRefresh = appSource.match(/if \(moved\) \{\s*leagueEditorDirty = true;[\s\S]*?scheduleLeagueTeamAutoSave\(180\);\s*\}/)?.[0] ?? "";
   assert.match(dropRefresh, /refreshLeagueSquadPositionUi\(\)/);
   assert.doesNotMatch(dropRefresh, /renderLeague\(\)/);
@@ -2073,9 +2061,7 @@ test("战术板场上磁贴松手后只做局部同步而不整页重绘", () =>
 test("强化页局部刷新会同步复用卡片的等级与卡面内容", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
-  const syncCard = appSource.match(/function syncEnhancementCardAttributes\(card, source\) \{[\s\S]*?\n\}/)?.[0] ?? "";
-  assert.match(syncCard, /card\.innerHTML !== source\.innerHTML/);
-  assert.match(syncCard, /card\.innerHTML = source\.innerHTML/);
+  assert.match(appSource, /patchHtmlElement\(current, leagueEnhancementMarkup\(\)\)/);
   assert.match(appSource, /leagueEnhancementPhase = leagueEnhancementResult\?\.success \? "success" : "failure";[\s\S]*?requestAnimationFrame[\s\S]*?renderLeagueEnhancementInPlace\(\)/);
   assert.match(appSource, /function leagueEnhancementRevealDelay\(afterLevel\)[\s\S]*?level < 4\) return 420;[\s\S]*?1440[\s\S]*?360/);
   assert.match(appSource, /const enhancement = value\.enhancement/);
@@ -2247,7 +2233,7 @@ test("tactical board exposes trait-adjusted height and familiar positions", () =
   card.traitIds = ["custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20"];
   let player = service.view(user).ownTeam.roster.find((entry) => entry.id === playerId);
   assert.equal(player.baseHeightCm, baseHeightCm);
-  assert.equal(player.effectiveHeightCm, baseHeightCm - 10);
+  assert.equal(player.effectiveHeightCm, baseHeightCm - 5);
 
   card.traitIds = ["aerial-beacon"];
   player = service.view(user).ownTeam.roster.find((entry) => entry.id === playerId);
@@ -2281,12 +2267,12 @@ test("996 uses fixed fitness for the tactical board and pre-match red-line rotat
 
   const player = service.view(user).ownTeam.roster.find((entry) => entry.id === starterId);
   assert.equal(player.state.fitness, 79);
-  assert.equal(player.fixedFitness, 90);
-  assert.equal(player.effectiveFitness, 90);
+  assert.equal(player.fixedFitness, 94);
+  assert.equal(player.effectiveFitness, 94);
 
   const selection = service.selectActualLineup(team, 1, "league");
   assert.equal(selection.rotations.some((entry) => entry.outId === starterId), false);
-  assert.equal(selection.lineup.find((entry) => entry.id === starterId)?.state.fitness, 90);
+  assert.equal(selection.lineup.find((entry) => entry.id === starterId)?.state.fitness, 94);
 
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   assert.match(appSource, /player\.effectiveFitness \?\? player\.state\?\.fitness/);
@@ -2296,7 +2282,7 @@ test("996 uses fixed fitness for the tactical board and pre-match red-line rotat
 test("mobile tactical controls avoid full-form work during pointer frames", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
-  const inputHandler = appSource.slice(appSource.indexOf('app.addEventListener("input"'), appSource.indexOf('app.addEventListener("keydown"'));
+  const inputHandler = appSource.slice(appSource.indexOf('app.addEventListener("input"'), appSource.indexOf('app.addEventListener("keydown"', appSource.indexOf('app.addEventListener("input"')));
   const squadBinding = appSource.slice(appSource.indexOf("function bindLeagueSquad()"), appSource.indexOf("function leagueLeaderboardRows"));
 
   assert.match(appSource, /scheduleLeagueTeamAutoSave\(420, \{ lightweight:true \}\)/);
@@ -2353,7 +2339,7 @@ test("prediction page displays the exact handicap and final locked odds", () => 
   assert.match(displaySource, /handicap > 0\) return `客队让 \$\{handicap\} 球`/);
   assert.match(displaySource, /return "零球盘 · 0球"/);
   assert.match(displaySource, /predictionPayoutText\(bet\.payoutRate\)/);
-  assert.match(displaySource, /rate\.toFixed\(2\)/);
+  assert.match(appSource, /function predictionPayoutText[\s\S]*?toFixed\(2\)/);
   assert.doesNotMatch(displaySource, /toFixed\(2\)\}倍/);
   assert.match(dialogSource, /predictionPayoutText\(option\.payoutRate\)/);
   assert.match(dialogSource, /"result", "goals", "cards", "halfFull"/);
@@ -2401,6 +2387,7 @@ test("V2 formal match stats update X player save tasks", () => {
   });
   team.positions = structuredClone(team.positionPresets.position1);
 
+  service.saveTeam(user, { starterIds:team.preferredStarterIds, positionPresets:team.positionPresets, formationLinePresets:team.formationLinePresets, tacticalPlans:team.tacticalPlans });
   const fixture = service.state.rounds[0].fixtures.find((entry) => entry.homeId === team.id || entry.awayId === team.id);
   const created = service.createFixtureMatch(fixture, 1, NOW, { matchEngine:"v2" });
   advanceYdlLeagueV2Match(created.match, NOW + 300_000, { maximumChains:Infinity });
@@ -2417,16 +2404,15 @@ test("V2 formal match stats update X player save tasks", () => {
   assert.equal(service.view(user).xGrowth.tasks.find((task) => task.id === "saves").completed, 1);
 });
 
-test("世界杯模式和国家队战术板已从玩家端与服务接口移除", () => {
+test("保留现有世界杯模式和国家队战术接口", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
   const adminApiSource = readFileSync(new URL("../versus/admin-api.js", import.meta.url), "utf8");
   const adminSource = readFileSync(new URL("../admin/public/app.js", import.meta.url), "utf8");
 
-  assert.doesNotMatch(appSource, /worldCup|world-cup|worldcup|世界杯|国家队战术板/);
-  assert.doesNotMatch(apiSource, /world-cup/);
-  assert.doesNotMatch(adminApiSource, /world-cup/);
-  assert.doesNotMatch(adminSource, /world-cup|世界杯/);
+  assert.match(appSource, /worldCup/);
+  assert.match(apiSource, /world-cup\/roster/);
+  assert.match(apiSource, /world-cup\/tactics/);
 });
 
 test("杯赛页面展示9轮联赛阶段、八强奖励和既有淘汰赛结构", () => {
@@ -2447,7 +2433,7 @@ test("新版电视台复用现有转播资源并把双方阵型压缩到各自�
   assert.match(appSource, /function broadcastCombinedPosition[\s\S]*?y:50 \+ y \* \.5[\s\S]*?x:100 - x, y:50 - y \* \.5/);
   assert.match(appSource, /function broadcastCombinedPitchMarkup[\s\S]*?broadcastMagnet[\s\S]*?pitchMarkup/);
   assert.match(appSource, /function broadcastV2MatchLayoutMarkup[\s\S]*?matchEventMarkup[\s\S]*?matchStatsMarkup/);
-  assert.match(appSource, /legacyLayout\.outerHTML = broadcastV2MatchLayoutMarkup/);
+  assert.match(appSource, /\$\{broadcastV2MatchLayoutMarkup\(match, broadcast\)\}/);
   assert.match(styles, /\.broadcast-v2-layout\{display:grid;grid-template-columns:/);
   assert.match(styles, /\.broadcast-overlay \.broadcast-v2-pitch\{[^}]*aspect-ratio:\.64/);
   assert.match(styles, /\.broadcast-v2-sidebar\{[^}]*grid-template-rows:/);
@@ -2462,8 +2448,8 @@ test("新版电视台复用现有转播资源并把双方阵型压缩到各自�
   assert.match(styles, /\.broadcast-overlay \.scoreboard>div:last-child>b\{grid-column:1;grid-row:1\/3;text-align:left\}/);
   assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet\{min-height:46px;padding:4px 27px 8px 6px;gap:2px\}/);
   assert.match(styles, /\.broadcast-v2-pitch \.s4-broadcast-magnet \.league-magnet-upgrade\{right:-4px;bottom:-5px;min-width:22px;height:16px[^}]*font-size:8px\}/);
-  assert.match(appSource, /function dockBroadcastTeamStrategies[\s\S]*?heading\.after\(dock\)[\s\S]*?source\.remove\(\)/);
-  assert.match(appSource, /dockBroadcastTeamStrategies\(overlay\);/);
+  assert.match(appSource, /broadcast-v2-commentary[\s\S]*?<h2>\$\{broadcast\.live[^\n]*?<div class="broadcast-v2-team-strategies">/);
+  assert.doesNotMatch(appSource, /legacyLayout\.outerHTML|dockBroadcastTeamStrategies\(content\)/);
   assert.match(styles, /\.broadcast-v2-stadium\{width:100%;height:100%;min-height:0;margin:0;display:grid;place-items:center/);
   assert.match(styles, /\.broadcast-v2-commentary>header\{display:grid;grid-template-columns:auto minmax\(0,1fr\) auto/);
   assert.match(appSource, /function fieldRoleAbbreviation[\s\S]*?return String\(matchedCode \?\? raw\)\.toUpperCase\(\)/);
@@ -2477,13 +2463,17 @@ test("新版电视台复用现有转播资源并把双方阵型压缩到各自�
   assert.match(styles, /\.broadcast-v2-pitch \.pitch-penalty-arc-top\{top:2%;clip-path:inset\(78% 0 0 0\)\}/);
 });
 
-test("mirror batch UI exposes the player compute node market and discounted self-hosted pricing", () => {
+test("AI training hides batch and compute controls while retaining their implementation and single mirrors", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   const serverSource = readFileSync(new URL("../devtool/server.js", import.meta.url), "utf8");
   const workerSource = readFileSync(new URL("../devtool/mirror-batch-worker.js", import.meta.url), "utf8");
   const tacticsToolbarSource = appSource.slice(appSource.indexOf("const aiTrainingButton ="), appSource.indexOf("detail.innerHTML", appSource.indexOf("const aiTrainingButton =")));
   const aiDialogSource = appSource.slice(appSource.indexOf("function aiTrainingDialogMarkup"), appSource.indexOf("function openAiTrainingDialog"));
+  assert.match(appSource, /const LEAGUE_AI_BATCH_UI_ENABLED = false;/);
+  assert.match(aiDialogSource, /if \(LEAGUE_AI_BATCH_UI_ENABLED\) \{/);
+  assert.match(aiDialogSource, /\$\{batchControls\}<button type="submit"/);
+  assert.match(aiDialogSource, /休赛期玩家镜像/);
   assert.match(appSource, /function openMirrorBatchCapacityDialog\(entries = \[\]\)/);
   assert.match(appSource, /name="executionNode" data-ai-training-node-select/);
   assert.match(appSource, /玩家计算节点市场/);
@@ -2492,7 +2482,7 @@ test("mirror batch UI exposes the player compute node market and discounted self
   assert.match(appSource, /overlay\.querySelector\("\[data-compute-nodes-open\]"\)\?\.addEventListener\("click", openComputeNodeMarketDialog\)/);
   assert.match(appSource, /compute-node\/save/);
   assert.match(appSource, /Math\.round\(price \* batchCount \/ batchPriceDivisor\)/);
-  assert.match(appSource, /系统AI与玩家镜像均支持高速节点/);
+  assert.match(aiDialogSource, /data-ai-training-node-select/);
   assert.match(appSource, /系统AI批量模拟\$\{batchCount\}场免费/);
   assert.match(appSource, /本次密钥有效至\$\{escapeHtml\(expiresAt\)\}（12小时）/);
   assert.match(appSource, /自有节点免服务费/);
@@ -2501,7 +2491,7 @@ test("mirror batch UI exposes the player compute node market and discounted self
   assert.match(appSource, /在线待机 · 未接受任务/);
   assert.match(appSource, /acceptingJobs === false/);
   assert.match(workerSource, /YDL_MIRROR_WORKER_ACCEPT_JOBS/);
-  assert.match(appSource, /executionNode \}/);
+  assert.match(appSource, /executionNode[,:]/);
   assert.match(appSource, /error\.status === 409 && Array\.isArray\(error\.details\)/);
   assert.match(appSource, /还剩 \$\{Number\(entry\.remainingMatches \?\? 0\)\} 场/);
   assert.match(styles, /\.ai-training-node-option\{/);

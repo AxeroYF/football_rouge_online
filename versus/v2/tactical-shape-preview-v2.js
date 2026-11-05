@@ -1,5 +1,6 @@
 import { buildV21DynamicTeamShape } from "./dynamic-shape-v2.js";
 import { tacticalDetailsForPlan, tacticalDimensionsForPlan } from "./match-engine-v2.js";
+import {defensiveInstructionPositions} from "../v3/defensive-shape.js";
 
 const ATTACK_LANES = Object.freeze({
   balanced:"center",
@@ -49,7 +50,7 @@ function targetFrame({ previewTeam, roles, dimensions, attacking, lane, paramete
   // intermediate chain stages.
   const previewConfig = { ...parameters.dynamicShape, mode:"candidate" };
   const shape = buildV21DynamicTeamShape({
-    team:previewTeam,
+    team:attacking?previewTeam:{...previewTeam,positions:defensiveInstructionPositions(previewTeam.positions,roles,previewTeam.outOfPossessionDetails,parameters)},
     teamIndex:0,
     attackingTeamIndex:attacking ? 0 : 1,
     stage:"chance",
@@ -103,6 +104,7 @@ export function buildV21TacticalShapePreview({
   const previewTeam = {
     players:activePlayers,
     positions,
+    outOfPossessionDetails:details.outOfPossessionDetails,
     v2Snapshot:{ scoreState, minute },
   };
   const attackLane = ATTACK_LANES[details.inPossessionDetails.attackDirection] ?? "center";

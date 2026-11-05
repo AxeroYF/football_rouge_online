@@ -1,3 +1,4 @@
+import {playerPreviewValues} from "../versus/public/player-preview.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -28,7 +29,8 @@ test("YOOGLE对比独立计算两侧强化并将26项能力及身高的较高值
     { id:"left", name:"左侧球员", club:"A队", role:"ST", grade:"A", overall:70, heightCm:177, attributes },
     { id:"right", name:"右侧球员", club:"B队", role:"ST", grade:"A", overall:70, heightCm:183, attributes },
   ];
-  const markup = Function("players", `
+  const markup = Function("players", "playerPreviewValues", `
+    const offlineAttributeSettings = {unlocked:false};
     const league = { enhancement:{ abilityBonuses:[0,1,2,3,5,7,9,11,13] }, playerDirectory:{ players } };
     const leagueOverviewPlayerComparison = [
       { playerId:"left", upgradeLevel:1, bondPercent:0 },
@@ -43,7 +45,7 @@ test("YOOGLE对比独立计算两侧强化并将26项能力及身高的较高值
     ${functionSource("overviewPlayerComparisonBar")}
     ${functionSource("overviewPlayerComparisonMarkup")}
     return overviewPlayerComparisonMarkup();
-  `)(players);
+  `)(players, playerPreviewValues);
 
   assert.match(markup, /强化能力 \+1/);
   assert.match(markup, /强化能力 \+3/);

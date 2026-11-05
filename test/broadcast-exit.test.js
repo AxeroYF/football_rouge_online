@@ -15,6 +15,7 @@ function broadcastPollingHarness(apiImpl) {
     const toasts = [];
     const closes = [];
     const api = apiImpl;
+    const document = { hidden:false };
     const renderBroadcast = (broadcast) => rendered.push(broadcast);
     const scheduleSpectatorPolling = (delay) => scheduled.push(delay);
     const clearTimeout = () => {};
@@ -24,6 +25,7 @@ function broadcastPollingHarness(apiImpl) {
     return {
       refreshBroadcast,
       exit:() => { spectatorSession = null; },
+      hide:() => { document.hidden = true; },
       rendered,
       scheduled,
       toasts,
@@ -43,4 +45,20 @@ test("退出观赛后忽略仍在途的直播轮询响应", async () => {
   assert.deepEqual(harness.scheduled, []);
   assert.deepEqual(harness.toasts, []);
   assert.deepEqual(harness.closes, []);
+});
+
+test("后台观赛页面跳过轮询，并忽略切入后台前的响应", async () => {
+  let calls = 0;
+  const hidden = broadcastPollingHarness(() => { calls++; });
+  hidden.hide();
+  await hidden.refreshBroadcast();
+  assert.equal(calls, 0);
+  let resolveRequest;
+  const pending = broadcastPollingHarness(() => new Promise(resolve => { resolveRequest = resolve; }));
+  const request = pending.refreshBroadcast();
+  pending.hide();
+  resolveRequest({ broadcast:{ live:true } });
+  await request;
+  assert.deepEqual(pending.rendered, []);
+  assert.deepEqual(pending.scheduled, []);
 });

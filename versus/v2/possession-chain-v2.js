@@ -9,6 +9,7 @@ import {
   v2DutyStageMultiplier,
 } from "./player-duties-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
+import {isV3} from "../v3/model-config.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const round = (value, digits = 4) => Number(Number(value).toFixed(digits));
@@ -221,7 +222,7 @@ function connectionFrom(team, currentZone, targetBand) {
   }));
 }
 
-function routeScore(team, connection) {
+function routeScore(team, connection, parameters) {
   const target = team.zones[connection.target];
   const direction = team.inPossessionDetails?.attackDirection ?? "balanced";
   const lane = target?.lane ?? connection.target?.split(":")[1];
@@ -234,7 +235,7 @@ function routeScore(team, connection) {
     + target.exploitableSpace * 0.18
     + (target.progressionEdge + 1) / 2 * 0.2
     + (target.overload ? 0.1 : 0)
-    + Number(preferredLanes[lane] ?? 0);
+    + Number(preferredLanes[lane] ?? 0)*(isV3(parameters)?parameters.v3.directionPreference:1);
 }
 
 function lowBlockOutletAvailability(team, parameters) {
@@ -276,7 +277,7 @@ function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, tran
   const routeTargetBand = routeType === "direct" && stage === "progression" ? "box" : targetBand;
   const connections = connectionFrom(team, currentZone, routeTargetBand);
   if (connections.length) {
-    const selected = weightedPick(connections, (connection) => Math.pow(Math.max(0.01, routeScore(team, connection)), 2), rng);
+    const selected = weightedPick(connections, (connection) => Math.pow(Math.max(0.01, routeScore(team, connection, parameters)), 2), rng);
     const quality = routeType === "direct"
       ? clamp(selected.quality - routeParameters.directConnectionPenalty + team.zones[selected.target].exploitableSpace * routeParameters.directSpaceReward, 0.04, 1)
       : routeType === "counter"
@@ -343,26 +344,26 @@ export function v2RepeatYellowCardProbability(cardProbability, directRedProbabil
   );
 }
 
-function normalizeExecution(actor, defender, stage, connection = null, marking = "mixed") {
+function normalizeExecution(actor, defender, stage, connection = null, marking = "mixed", parameters = V2_MATCH_PARAMETERS) {
   const targetSupportWeights = connection?.routeType === "direct" && isV2TargetForward(actor) && ["progression", "finalThird", "chance"].includes(stage)
     ? { aerialFinishing:.34, pressResistance:.32, buildUp:.2, movement:.14 }
     : null;
   const attack = weightedMetric(actor, targetSupportWeights ?? STAGE_METRICS[stage]);
   const defenseWeights = stage === "shot" && roleGroup(defender?.assignedRole) === "GK" ? GOALKEEPER_METRICS : DEFENSE_METRICS[stage];
   const defense = defender ? weightedMetric(defender, defenseWeights) : 50;
-  const baseline = clamp(0.5 + (attack - defense) / 150, 0, 1);
+  const baseline = clamp(0.5 + (attack - defense) / (isV3(parameters)?parameters.v3.executionDifferenceDivisor:150), 0, 1);
   if (marking === "mixed") return baseline;
   const markingAdjustment = v2MarkingExecutionAdjustment(actor, defender, marking);
   return clamp(baseline - markingAdjustment, 0, 1);
 }
 
-function stageFactors(team, opponent, zone, actor, defender, connection, stage) {
+function stageFactors(team, opponent, zone, actor, defender, connection, stage, parameters) {
   const pressure = zone.opponent.pressure;
   const resistance = zone.own.pressResistance;
   const marking = opponent.outOfPossessionDetails?.marking ?? "mixed";
   const markingSpace = marking === "man" ? 0.035 : marking === "zonal" ? -0.018 : 0;
   return {
-    execution:normalizeExecution(actor, defender, stage, connection, marking),
+    execution:normalizeExecution(actor, defender, stage, connection, marking, parameters),
     control:zone.controlShare,
     connection:connection?.quality ?? team.connectionQuality,
     pressureSafety:resistance + pressure > 0 ? resistance / (resistance + pressure) : 0.5,
@@ -464,20 +465,20 @@ function stageProbability(parameters, stage, factors, adjustment) {
   const weights = parameters.chain.factorWeights[stage];
   const factorScore = Object.entries(weights).reduce((sum, [factor, weight]) => sum + factors[factor] * weight, 0);
   const baseline = parameters.chain.baseProbabilities[stage];
-  const raw = baseline + (factorScore - 0.5) * 0.52 + adjustment.total;
+  const raw = baseline + (factorScore - 0.5) * (isV3(parameters)?parameters.v3.factorSensitivity:0.52) + adjustment.total;
   const bounds = parameters.chain.probabilityBounds[stage];
   return round(clamp(raw, bounds.minimum, bounds.maximum));
 }
 
 function attemptStage(context, stage, currentZone, connection = null) {
-  const { team, opponent, parameters, rng, recordRandomRolls, state, environment, chainIndex, possessionType, deferShotResolution, previousActorId, continuationWeight, previousStageContext } = context;
+  const { team, opponent, parameters, rng, outcomeRoll, recordRandomRolls, state, environment, chainIndex, possessionType, deferShotResolution, previousActorId, continuationWeight, previousStageContext } = context;
   const zone = team.zones[currentZone];
   const actor = chooseActor(team, currentZone, stage, rng, previousActorId, continuationWeight, connection, previousStageContext);
   const defender = chooseDefender(team, opponent, currentZone, stage, rng);
-  const factors = stageFactors(team, opponent, zone, actor, defender, connection, stage);
+  const factors = stageFactors(team, opponent, zone, actor, defender, connection, stage, parameters);
   const stateAdjustment = stateProbabilityAdjustment(parameters, team, stage, state, environment, chainIndex, possessionType);
   const probability = stageProbability(parameters, stage, factors, stateAdjustment);
-  const roll = safeRoll(rng);
+  const roll = outcomeRoll?outcomeRoll(`stage:${team.teamIndex}:${stage}`):safeRoll(rng);
   const success = stage === "shot" && deferShotResolution ? true : roll < probability;
   const referee = environment?.referee ?? "standard";
   const refereeFactor = parameters.environment.refereeDiscipline[referee] ?? 1;
@@ -551,7 +552,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
   if (typeof rng !== "function") throw new Error("V2控球链需要随机函数");
   const snapshotTeams = options.snapshotTeams ?? buildV2TeamSnapshots(teams, { parameters, state:options.state, environment:options.environment });
   const spatial = options.spatial ?? buildV2SpatialMatchup(snapshotTeams, { parameters });
-  const stageSpatials = options.stageSpatials ?? buildV2StageSpatialCache(snapshotTeams, { parameters });
+  const stageSpatials = options.stageSpatials ?? buildV2StageSpatialCache(snapshotTeams, { parameters, lazy:isV3(parameters) });
   const selectionExponent = Number(parameters.chain.possessionDuration?.selectionExponent ?? 1);
   const weights = spatial.teams.map((team) => Math.pow(possessionWeight(team, parameters), selectionExponent));
   const possessionShare = weights[0] / (weights[0] + weights[1]);
@@ -560,7 +561,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
   const possessionType = counterOpportunity ? "transition" : "normal";
   const attackingIndex = transitionAttackingIndex === 0 || transitionAttackingIndex === 1
     ? transitionAttackingIndex
-    : safeRoll(rng) < possessionShare ? 0 : 1;
+    : (options.outcomeRoll?options.outcomeRoll("possession"):safeRoll(rng)) < possessionShare ? 0 : 1;
   const openingTeam = spatial.teams[attackingIndex];
   let currentZone = options.transition?.wonZone ?? startingZone(openingTeam, rng);
   const recordRandomRolls = options.recordRandomRolls ?? parameters.events.recordRandomRolls;
@@ -609,7 +610,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
     const continuationWeight = parameters.dynamicShape.mode === "candidate"
       ? Number(parameters.dynamicShape.teamPlay?.sameActorContinuationWeight ?? 0.5)
       : 1;
-    const context = { team, opponent, parameters, rng, recordRandomRolls, state:options.state, environment:options.environment, chainIndex:options.chainIndex, possessionType, deferShotResolution:Boolean(options.deferShotResolution), previousActorId, previousStageContext, continuationWeight };
+    const context = { team, opponent, parameters, rng, outcomeRoll:options.outcomeRoll, recordRandomRolls, state:options.state, environment:options.environment, chainIndex:options.chainIndex, possessionType, deferShotResolution:Boolean(options.deferShotResolution), previousActorId, previousStageContext, continuationWeight };
     const dynamicShape = recordDynamicShape
       ? compactDynamicShapeTrace(effectiveStageSpatial.dynamicShape ?? buildV21StageDynamicShapeSnapshot(snapshotTeams, attackingIndex, stage, {
         parameters,
@@ -672,7 +673,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
     : null;
   return deepFreeze({
     engineVersion:parameters.engineVersion,
-    modelVersion:"possession-chain-v2.1",
+    modelVersion:isV3(parameters)?"possession-chain-v3.0":"possession-chain-v2.1",
     spatialModelVersion:spatial.modelVersion,
     context:{ state:options.state ?? null, environment:options.environment ?? null, transition:options.transition ?? null, chainIndex:Number(options.chainIndex ?? 0) },
     possessionType,

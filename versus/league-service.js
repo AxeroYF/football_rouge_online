@@ -1,9 +1,12 @@
-import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { resolveMatchEngines } from "../src/runtime-config.js";
+import { assertLineupRevision } from "./lineup-revision.js";
+import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { mkdir as mkdirAsync, open as openAsync, rename as renameAsync } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, randomBytes } from "node:crypto";
-import { createTrackedState, LEAGUE_SHARD_SCOPES, LeagueShardStore, isLeagueShardPath, unwrapTracked } from "./league-shard-store.js";
+import { createTrackedState, LEAGUE_SHARD_SCOPES, LeagueShardStore, isLeagueShardPath, matchReportMetadata, unwrapTracked } from "./league-shard-store.js";
+import { collectShardReferences } from "./infrastructure/shard-references.js";
 import { advanceVersusMatch, createVersusMatch, drawVersusReferee, publicMatch, REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "./player-pool.js";
@@ -13,6 +16,8 @@ import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, drawYdlV2Weather, publicYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
 import { createV2MatchRng } from "./v2/match-engine-v2.js";
 import { resolveV2MatchParameters } from "./v2/match-parameters-v2.js";
+import { V3_MATCH_PARAMETERS } from "./v3/match-parameters-v3.js";
+import { engineProfile } from "./v3/model-config.js";
 import { resolveV2PlayerDuty } from "./v2/player-duties-v2.js";
 import { buildV21TacticalShapePreview } from "./v2/tactical-shape-preview-v2.js";
 import { applyS4Enhancement, S4_ECONOMY, S4_ENHANCEMENT, S4_PACK_PRICES, S4_PRICING, s4BaseCardReferenceValue, s4CardValueMultiplier, s4EffectiveOverall, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, s4OwnershipReferenceValue } from "./s4-balance.js";
@@ -149,8 +154,6 @@ function tacticalPlansWithInheritedDuties(tacticalPlans, rotations = []) {
   return plans;
 }
 export const S4_PACK_CATALOG = Object.freeze([
-  COUNTRY_BADGE_PACK,
-  CLUB_BADGE_PACK,
   Object.freeze({ id:"legend-random", name:"传奇随机卡包", price:S4_PACK_PRICES["legend-random"], kind:"legend", pool:"LEGEND", selectionMode:"choice", description:"随机展示3名传奇球员，选择其中1张球员卡。" }),
   Object.freeze({ id:"private-mixed", name:"私有池全位置随机礼包", price:S4_PACK_PRICES["private-mixed"], kind:"private", pool:"MIXED", selectionMode:"direct", description:"通常从你的私有池随机获得1张卡，并有1.5%概率直接获得随机传奇S球员卡。" }),
   Object.freeze({ id:"private-att", name:"私有池前场随机礼包", price:S4_PACK_PRICES["private-att"], kind:"private", pool:"ATT", selectionMode:"direct", description:"从你拥有所有权的前场球员中随机获得1张卡。" }),
@@ -167,6 +170,8 @@ const S4_ADMIN_GIFT_PACK_CATALOG = Object.freeze([
 export const S4_PRIVATE_MIXED_LEGEND_RATE = 0.015;
 const S4_SINGLE_CARD_RECOVERY_MAX_UPGRADE_LEVEL = 6;
 const LEGACY_S4_PACK_CATALOG = Object.freeze([
+  Object.freeze({ ...COUNTRY_BADGE_PACK, retired:true }),
+  Object.freeze({ ...CLUB_BADGE_PACK, retired:true }),
   Object.freeze({ id:"public-carnival", name:"公开池狂欢礼包", price:S4_PACK_PRICES["public-carnival"], kind:"public", pool:"MIXED", selectionMode:"choice", seasonPurchaseLimit:1, cardQuantity:50, description:"赛季限购1次。从公开池随机展示3人，选择1人并获得其所有权及50张+0基础卡。", retired:true }),
 ]);
 const S4_PACK_BY_ID = Object.freeze(Object.fromEntries([...S4_PACK_CATALOG, ...S4_ADMIN_GIFT_PACK_CATALOG, ...LEGACY_S4_PACK_CATALOG].map((pack) => [pack.id, pack])));
@@ -201,6 +206,7 @@ const ADMIN_PACK_TYPES = Object.freeze([
   Object.freeze({ id:"random-legend", name:"随机传奇卡包", pool:"LEGEND", tierId:"legend" }),
 ]);
 const BACKUP_RETENTION_DAYS = 7;
+const SPECIAL_BACKUP_RETENTION_DAYS = 30;
 const ROUND_INTERVAL_MS = 20 * 60 * 1000;
 const CUP_INTERVAL_MS = 20 * 60 * 1000;
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -261,14 +267,13 @@ const CHEMISTRY_VISIBLE_THRESHOLD = 30;
 const CHEMISTRY_MAX_BONUS = 0.015;
 const MATCH_PREDICTION_SIMULATIONS = Math.max(20, Math.min(200, Number(process.env.YDL_PREDICTION_SIMULATIONS ?? 24)));
 const MATCH_PREDICTION_MAX_STAKE = 10000;
-const configuredMatchEngine = (value, fallback = "v2") => String(value ?? fallback).toLowerCase() === "v1" ? "v1" : "v2";
-const DEFAULT_MATCH_ENGINE = configuredMatchEngine(process.env.YDL_MATCH_ENGINE);
-const LEAGUE_MATCH_ENGINE = configuredMatchEngine(process.env.YDL_LEAGUE_MATCH_ENGINE, DEFAULT_MATCH_ENGINE);
-const CUP_MATCH_ENGINE = configuredMatchEngine(process.env.YDL_CUP_MATCH_ENGINE, DEFAULT_MATCH_ENGINE);
-const FRIENDLY_MATCH_ENGINE = configuredMatchEngine(process.env.YDL_FRIENDLY_MATCH_ENGINE, DEFAULT_MATCH_ENGINE);
-const MATCH_ENGINE_BY_COMPETITION = Object.freeze({ league:LEAGUE_MATCH_ENGINE, cup:CUP_MATCH_ENGINE, friendly:FRIENDLY_MATCH_ENGINE });
+const MATCH_ENGINE_BY_COMPETITION = resolveMatchEngines();
+const DEFAULT_MATCH_ENGINE = MATCH_ENGINE_BY_COMPETITION.default;
 const STABLE_V21_PARAMETERS = resolveV2MatchParameters({ dynamicShape:{ mode:"stable" } });
-const createLeagueMatch = (seats, options) => options?.matchEngine === "v2" ? createYdlLeagueV2Match(seats, options) : createVersusMatch(seats, options);
+const parametersForEngine = engine => engine === "v3" ? V3_MATCH_PARAMETERS : STABLE_V21_PARAMETERS;
+const createLeagueMatch = (seats, options) => ["v2", "v3"].includes(options?.matchEngine)
+  ? createYdlLeagueV2Match(seats, {...options, parameters:options.parameters ?? parametersForEngine(options.matchEngine)})
+  : createVersusMatch(seats, options);
 const advanceLeagueMatch = (match, now, options) => match?.version === 2 ? advanceYdlLeagueV2Match(match, now, options) : advanceVersusMatch(match, now);
 const publicLeagueMatch = (match, now, viewerIndex = null, revealAllStrategies = false) => {
   const plainMatch = unwrapTracked(match);
@@ -782,7 +787,7 @@ function loadState(filePath, now) {
       if ([1, 2].includes(state?.version) && state?.teams?.length === TEAM_COUNT) return state;
     } catch { /* 尝试备份文件 */ }
   }
-  throw new Error("YellowDogs League 存档损坏，主文件和备份均无法读取");
+  throw new Error("YFFM1 存档损坏，主文件和备份均无法读取");
 }
 
 function ownershipMinimumListingPrice(player) {
@@ -1165,7 +1170,7 @@ export class YellowDogsLeagueService {
     this.dirtyScopes = new Set(["core"]);
     if (this.shardStore) {
       if (this.shardStore.exists()) this.state = this.shardStore.load();
-      else if (this.shardStore.hasUninitializedData()) throw new Error(`YellowDogs League shard directory is missing manifest.json: ${this.shardStore.root}`);
+      else if (this.shardStore.hasUninitializedData()) throw new Error(`YFFM1 shard directory is missing manifest.json: ${this.shardStore.root}`);
       else this.state = createState(this.now());
     } else {
       this.state = loadState(this.statePath, this.now());
@@ -1370,6 +1375,11 @@ export class YellowDogsLeagueService {
       if (!this.state.cup.nextRoundAt || this.state.cup.nextRoundAt < earliestCupAt) this.state.cup.nextRoundAt = nextCupSlot(this.now(), this.state.season.firstRoundAt);
     }
     this.adoptState(this.state, false);
+    if (this.state.listings.some((listing) => listing.kind === "cosmetic" && listing.status === "active")) {
+      this.backupFile("pre-free-cosmetics-v1.json");
+      this.retireCosmeticListings();
+      this.save();
+    }
     if (shouldReconcileBallonDor) {
       this.backupFile(this.shardStore ? `pre-ballon-dor-reconciliation-v${BALLON_DOR_RECONCILIATION_VERSION}.manifest.json` : `pre-ballon-dor-reconciliation-v${BALLON_DOR_RECONCILIATION_VERSION}.json`);
       if (this.reconcileHistoricalBallonDor()) this.save();
@@ -1410,14 +1420,33 @@ export class YellowDogsLeagueService {
     if (this.lastBackupMaintenanceDate === date && existsSync(path.join(this.backupDir, dailyName))) {
       return readdirSync(this.backupDir).filter((name) => name.endsWith(".json")).sort();
     }
+    if (this.shardStore) {
+      try { collectShardReferences(this.shardStore.root, JSON.parse(readFileSync(this.shardStore.manifestPath, "utf8"))); }
+      catch (error) {
+        // Keep every recovery point if the current save is not fully readable.
+        console.warn("YFFM1 备份保留维护已跳过：", error.message);
+        return existsSync(this.backupDir) ? readdirSync(this.backupDir).filter((name) => name.endsWith(".json")).sort() : [];
+      }
+    }
     this.backupFile(dailyName);
     if (!existsSync(this.backupDir)) return [];
     const cutoff = new Date(this.now());
     cutoff.setDate(cutoff.getDate() - (BACKUP_RETENTION_DAYS - 1));
     const cutoffKey = localDateKey(cutoff);
     for (const name of readdirSync(this.backupDir)) {
-      const match = name.match(this.shardStore ? /^(\d{4}-\d{2}-\d{2})\.manifest\.json$/ : /^(\d{4}-\d{2}-\d{2})\.json$/);
-      if (match && match[1] < cutoffKey) unlinkSync(path.join(this.backupDir, name));
+      if (!name.endsWith(this.shardStore ? ".manifest.json" : ".json")) continue;
+      const daily = name.match(this.shardStore ? /^(\d{4}-\d{2}-\d{2})\.manifest\.json$/ : /^(\d{4}-\d{2}-\d{2})\.json$/);
+      const beforeDaily = name.match(/^before-daily-reset-(\d{4}-\d{2}-\d{2})-/);
+      const file = path.join(this.backupDir, name);
+      if (daily || beforeDaily) {
+        if ((daily ?? beforeDaily)[1] < cutoffKey) unlinkSync(file);
+      } else if (/^(before-|pre-)/.test(name)) {
+        // Migration/admin restore points are bounded separately. Use their creation
+        // time, not the saved season's age, so a freshly created rollback stays usable.
+        const stamped = name.match(/-(\d{13})(?:\.manifest)?\.json$/);
+        const createdAt = stamped ? Number(stamped[1]) : statSync(file).mtimeMs;
+        if (createdAt < this.now() - SPECIAL_BACKUP_RETENTION_DAYS * 86_400_000) unlinkSync(file);
+      }
     }
     this.lastBackupMaintenanceDate = date;
     return readdirSync(this.backupDir).filter((name) => name.endsWith(".json")).sort();
@@ -1435,12 +1464,15 @@ export class YellowDogsLeagueService {
     assertS4AssetInvariants(this.state);
     this.state.updatedAt = Math.max(this.now(), Number(this.state.updatedAt ?? 0) + 1);
     if (this.shardStore) {
+      const scopes = new Set(options.scopes ?? this.dirtyScopes);
+      // Finals used to belong to core; preserve explicit core-save callers.
+      if (scopes.has("core") && this.dirtyScopes.has("seasonFinal")) scopes.add("seasonFinal");
       this.shardStore.save(this.state, {
-        scopes:options.scopes ?? [...this.dirtyScopes],
+        scopes:[...scopes],
         forceFull:options.forceFull,
         matchIds:options.matchIds,
       });
-      if (options.scopes) options.scopes.forEach((scope) => this.dirtyScopes.delete(scope));
+      if (options.scopes) scopes.forEach((scope) => this.dirtyScopes.delete(scope));
       else this.dirtyScopes.clear();
       if (!options.skipDailyBackup) this.maintainBackups();
     } else if (this.statePath) {
@@ -1948,6 +1980,25 @@ export class YellowDogsLeagueService {
     return cosmetics.inventory[accountId] ?? (cosmetics.inventory[accountId] = {});
   }
 
+  retireCosmeticListings() {
+    let retired = 0;
+    for (const listing of this.state.listings) {
+      if (listing.kind !== "cosmetic" || listing.status !== "active") continue;
+      const item = COSMETIC_BADGE_BY_ID[listing.cosmeticItemId];
+      if (item && listing.sellerId) {
+        const inventory = this.cosmeticInventory(listing.sellerId);
+        inventory[item.id] = Number(inventory[item.id] ?? 0) + 1;
+        const equipped = this.equippedCosmeticIds(listing.sellerId);
+        if (listing.wasEquipped && !equipped[item.slot]) equipped[item.slot] = item.id;
+      }
+      listing.status = "cancelled";
+      listing.closedAt = this.now();
+      listing.closedReason = "free-cosmetics";
+      retired += 1;
+    }
+    return retired;
+  }
+
   equippedCosmeticIds(accountId) {
     const cosmetics = this.state.s4Assets.cosmetics;
     return cosmetics.equipped[accountId] ?? (cosmetics.equipped[accountId] = {});
@@ -1966,13 +2017,15 @@ export class YellowDogsLeagueService {
   cosmeticsView(accountId) {
     const inventory = this.cosmeticInventory(accountId);
     const equipped = this.equippedCosmeticIds(accountId);
+    // Free access is derived from the catalog, not 85 inventory writes per account.
     const items = COSMETIC_BADGES
-      .filter((item) => Number(inventory[item.id] ?? 0) > 0)
-      .map((item) => ({ ...item, count:Number(inventory[item.id]), equipped:equipped[item.slot] === item.id, minimumListingPrice:COSMETIC_BADGE_MINIMUM_LISTING_PRICE }));
+      .map((item) => ({ ...item, count:Math.max(1, Number(inventory[item.id] ?? 0)), equipped:equipped[item.slot] === item.id, unlocked:true, tradable:false }));
     const countryOwned = items.filter((item) => item.slot === "teamBadge").length;
     const clubOwned = items.filter((item) => item.slot === "clubBadge").length;
     return {
-      schemaVersion:1,
+      schemaVersion:2,
+      allUnlocked:true,
+      tradable:false,
       items,
       equipped:{ teamBadge:this.equippedTeamBadge(accountId), clubBadge:this.equippedClubBadge(accountId) },
       collection:{
@@ -1993,7 +2046,7 @@ export class YellowDogsLeagueService {
     if (!itemId) delete equipped[requestedSlot];
     else {
       const item = COSMETIC_BADGE_BY_ID[itemId];
-      if (!item || Number(this.cosmeticInventory(account.id)[item.id] ?? 0) < 1) throw new Error("你尚未拥有这件装饰道具");
+      if (!item) throw new Error("请选择有效的国家队或俱乐部装饰");
       equipped[item.slot] = item.id;
     }
     this.save();
@@ -2109,8 +2162,8 @@ export class YellowDogsLeagueService {
     const pack = S4_PACK_BY_ID[String(packType ?? "")];
     const count = Math.floor(Number(quantity));
     if (!team) throw new Error("你还没有加入联赛");
-    if (pack.adminOnly) throw new Error("该礼包只能由管理员发放");
     if (!pack) throw new Error("该礼包已下架或不存在");
+    if (pack.adminOnly) throw new Error("该礼包只能由管理员发放");
     if (pack.retired) throw new Error("该礼包已下架或不存在");
     if (!Number.isInteger(count) || count < 1 || count > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次最多购买${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
     const purchasedQuantity = this.state.ledger
@@ -2589,6 +2642,7 @@ export class YellowDogsLeagueService {
     const pack = S4_PACK_BY_ID[String(body.packType ?? "")];
     const quantity = Math.floor(Number(body.quantity ?? 1));
     if (!pack) throw new Error("请选择有效的S4礼包");
+    if (pack.kind === "cosmetic") throw new Error("国家队和俱乐部装饰已全部免费解锁，无需发放礼包");
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`单次最多发放${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
     const mode = body.recipientMode === "specified" ? "specified" : "all";
     const requestedIds = [...new Set((Array.isArray(body.accountIds) ? body.accountIds : String(body.accountIds ?? "").split(/[\s,，;；]+/)).map(String).filter(Boolean))];
@@ -3991,7 +4045,7 @@ export class YellowDogsLeagueService {
     const finalLeg = cup?.knockout?.final?.[0]?.legs?.[0];
     const finalRecord = finalLeg?.matchId ? this.state.matches.find((match) => match.id === finalLeg.matchId) : null;
     const playedAt = Number(finalRecord?.playedAt);
-    if (Number.isFinite(playedAt) && playedAt > 0 && String(finalRecord?.report?.engineVersion ?? "").startsWith("2.1")) {
+    if (Number.isFinite(playedAt) && playedAt > 0 && /^(2\.1|3\.0)\./.test(String(finalRecord?.report?.engineVersion ?? ""))) {
       const extraTimeDuration = finalRecord.report.extraTimePlayed ? 40_000 : 0;
       const penaltyKickCount = Number(finalRecord.report.penaltyShootout?.kicks?.length ?? 0);
       const penaltyDuration = finalRecord.report.penaltyShootout ? (penaltyKickCount + 1) * 2_000 : 0;
@@ -4041,7 +4095,13 @@ export class YellowDogsLeagueService {
       const startsAt = resolvedStartsAt == null ? null : Number(resolvedStartsAt);
       return { ...node, startsAt, homeName:resolvedName(node.home), awayName:resolvedName(node.away) };
     });
-    return clone({ ...tournament, seedSnapshot:tournament.seedSnapshot.map((entry) => ({ ...entry, teamName:teamName(entry.teamId) })), bracket, finalBan:this.seasonFinalBanView(account, tournament) });
+    // The bracket uses node scores/IDs; full reports belong to matchDetail().
+    // Keep all match metadata without invoking the deferred report getter.
+    const matches = tournament.matches.map(match => ({
+      ...Object.fromEntries(Object.keys(match).filter(key => key !== "report").map(key => [key, match[key]])),
+      ...this.matchSummary(match),
+    }));
+    return clone({ ...tournament, matches, seedSnapshot:tournament.seedSnapshot.map((entry) => ({ ...entry, teamName:teamName(entry.teamId) })), bracket, finalBan:this.seasonFinalBanView(account, tournament) });
   }
 
   seasonFinalNodeTeamId(tournament, source) {
@@ -4559,7 +4619,7 @@ export class YellowDogsLeagueService {
   }
 
   activeListingsView() {
-    const listings = this.state.listings.filter((item) => item.status === "active");
+    const listings = this.state.listings.filter((item) => item.status === "active" && item.kind !== "cosmetic");
     const teamById = new Map(this.state.teams.map((team) => [team.id, team]));
     const assetStats = new Map();
     listings.forEach((listing) => {
@@ -4732,6 +4792,7 @@ export class YellowDogsLeagueService {
   }
 
   matchSummary(match) {
+    const reportMeta = matchReportMetadata(match);
     const home = this.state.teams.find((team) => team.id === match.homeId);
     const away = this.state.teams.find((team) => team.id === match.awayId);
     const competition = match.competition ?? "league";
@@ -4762,11 +4823,11 @@ export class YellowDogsLeagueService {
       score:[...(match.score ?? [0, 0])],
       formations:[...(match.formations ?? [])],
       hasPlayerTeam:Boolean(home?.ownerId || away?.ownerId),
-      hasDetails:Boolean(match.report),
-      hasTacticalReview:Boolean(match.report?.tacticalReview),
-      engineVersion:match.report?.engineVersion ?? null,
-      engineProfile:match.report?.engineProfile ?? null,
-      hasDotReplay:Boolean(match.report?.dotReplay?.frames?.length),
+      hasDetails:reportMeta.hasDetails,
+      hasTacticalReview:reportMeta.hasTacticalReview,
+      engineVersion:reportMeta.engineVersion,
+      engineProfile:reportMeta.engineProfile,
+      hasDotReplay:reportMeta.hasDotReplay,
     };
   }
 
@@ -4827,7 +4888,7 @@ export class YellowDogsLeagueService {
       return {
         id:`league:${this.state.season.id}:${round.number}:${teamId}`,
         competition:"league",
-        competitionName:"黄狗联赛",
+        competitionName:"YFFM1 联赛",
         round:round.number,
         label:`第${round.number}轮`,
         startsAt,
@@ -4949,7 +5010,7 @@ export class YellowDogsLeagueService {
       leagueRound.fixtures.forEach((fixture) => entries.push({
         id:this.predictionMarketId("league", `R${leagueRound.number}`, fixture),
         competition:"league",
-        competitionName:"黄狗联赛",
+        competitionName:"YFFM1 联赛",
         round:leagueRound.number,
         stage:null,
         leg:1,
@@ -5889,7 +5950,7 @@ export class YellowDogsLeagueService {
   }
 
   beginDraft(account, teamNameValue) {
-    if (this.accountTeam(account.id)) throw new Error("你已经拥有一支 YellowDogs League 球队");
+    if (this.accountTeam(account.id)) throw new Error("你已经拥有一支 YFFM1 球队");
     if (this.state.drafts[account.id]) return this.draftMutationView(account);
     const teamName = String(teamNameValue ?? "").trim();
     if (!teamName) throw new Error("球队名称不能为空");
@@ -6176,19 +6237,14 @@ export class YellowDogsLeagueService {
       defenseFocus:body.defenseFocus ?? team.defenseFocus,
       scoreState,
       minute,
-      parameters:STABLE_V21_PARAMETERS,
+      parameters:parametersForEngine(DEFAULT_MATCH_ENGINE),
     });
   }
 
   saveTeam(account, body, options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
-    if (body.lineupSchemeId && body.lineupSchemeId !== team.activeLineupSchemeId) throw new Error("阵容方案已切换，请刷新后重试");
-    const activeScheme = team.lineupSchemes?.find((scheme) => scheme.id === team.activeLineupSchemeId);
-    const currentRevision = Math.max(0, Math.floor(Number(activeScheme?.revision ?? 0)));
-    const submittedRevision = Number(body.lineupSchemeRevision);
-    if (currentRevision > 0 && !Number.isFinite(submittedRevision)) throw new Error("当前阵容方案已被其他设备更新，请刷新后重试");
-    if (Number.isFinite(submittedRevision) && Math.floor(submittedRevision) !== currentRevision) throw new Error("当前阵容方案已被其他设备更新，请刷新后重试");
+    const currentRevision = assertLineupRevision(team, body);
     const starters = [...new Set(body.starterIds ?? [])];
     if (starters.length !== 11 || starters.some((id) => !team.rosterIds.includes(id) || this.rosterOverlimitLocked(team, id))) throw new Error("必须从注册名单中选择11名未被超限锁定的球员");
     const players = starters.map((id) => REAL_PLAYER_BY_ID[id]);
@@ -6331,6 +6387,7 @@ export class YellowDogsLeagueService {
   importLineupScheme(account, codeValue, options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
+    const currentRevision = assertLineupRevision(team, options);
     const code = String(codeValue ?? "").trim();
     if (!/^\d{9}$/.test(code)) throw new Error("请输入有效的9位阵容码");
     const shared = this.state.lineupShares?.[code];
@@ -6368,7 +6425,7 @@ export class YellowDogsLeagueService {
       competitionScope:current.competitionScope,
     }, current.id, current.name);
     repairLineupSchemeAgainstRoster(team, imported);
-    Object.assign(current, imported);
+    Object.assign(current, imported, { revision:currentRevision + 1 });
     applyLineupScheme(team, current);
     rebuildLineupSchemeAssignments(team, current.id);
     this.save();
@@ -6487,36 +6544,7 @@ export class YellowDogsLeagueService {
   }
 
   listCosmetic(account, itemIdValue, priceValue, options = {}) {
-    const team = this.accountTeam(account.id);
-    const item = COSMETIC_BADGE_BY_ID[String(itemIdValue ?? "")];
-    const price = Math.floor(Number(priceValue));
-    const inventory = this.cosmeticInventory(account.id);
-    const availableCount = Number(inventory[item?.id] ?? 0);
-    if (!team || !item || availableCount < 1) throw new Error("这枚徽章不在你的可交易道具中");
-    if (!Number.isFinite(price) || price < COSMETIC_BADGE_MINIMUM_LISTING_PRICE) throw new Error(`道具挂牌价不能低于${COSMETIC_BADGE_MINIMUM_LISTING_PRICE}金币`);
-    const equipped = this.equippedCosmeticIds(account.id);
-    const wasEquipped = equipped[item.slot] === item.id;
-    const remainingCount = availableCount - 1;
-    if (remainingCount > 0) inventory[item.id] = remainingCount;
-    else delete inventory[item.id];
-    if (wasEquipped && remainingCount < 1) delete equipped[item.slot];
-    this.state.listings.push({
-      id:makeId("cosmetic-listing", `${item.id}-${this.state.listings.length}`),
-      kind:"cosmetic",
-      cosmeticItemId:item.id,
-      cosmeticSlot:item.slot,
-      wasEquipped,
-      sellerId:account.id,
-      sellerTeamId:team.id,
-      price,
-      status:"active",
-      createdAt:this.now(),
-    });
-    this.save();
-    const teamBadgeDelta = this.equippedTeamBadge(account.id);
-    const clubBadgeDelta = this.equippedClubBadge(account.id);
-    if (options.compact) return this.compactMutationView(account, { cosmetics:true, extra:{ listing:this.listingView(this.state.listings.at(-1)), teamBadgeDelta, clubBadgeDelta } });
-    return this.view(account);
+    throw new Error("国家队和俱乐部装饰已全部免费解锁，不再支持交易");
   }
 
   inboxMessageDeletable(message) {
@@ -7482,31 +7510,7 @@ export class YellowDogsLeagueService {
     return this.returnOwnerships(account, [playerId], options);
   }
   buyCosmeticListing(account, listing, options = {}) {
-    const buyer = this.accountTeam(account.id);
-    const seller = this.state.teams.find((team) => team.id === listing?.sellerTeamId && team.ownerId === listing?.sellerId);
-    const item = COSMETIC_BADGE_BY_ID[listing?.cosmeticItemId];
-    if (!buyer || !seller || !listing || listing.status !== "active" || listing.kind !== "cosmetic" || listing.sellerId === account.id || !item) throw new Error("当前无法购买这件道具");
-    if (this.wallet(account.id).balance < listing.price) throw new Error("金币不足");
-    const buyerInventory = this.cosmeticInventory(account.id);
-    buyerInventory[item.id] = Number(buyerInventory[item.id] ?? 0) + 1;
-    const buyerEquipped = this.equippedCosmeticIds(account.id);
-    if (!buyerEquipped[item.slot]) buyerEquipped[item.slot] = item.id;
-    this.wallet(account.id).balance -= listing.price;
-    const saleIncome = Math.floor(listing.price * (1 - S4_ECONOMY.marketFeeRate));
-    this.wallet(listing.sellerId).balance += saleIncome;
-    listing.status = "sold";
-    listing.buyerId = account.id;
-    listing.closedAt = this.now();
-    this.state.ledger.push(
-      { id:makeId("ledger", listing.id), accountId:account.id, amount:-listing.price, type:"cosmetic-buy", cosmeticItemId:item.id, counterpartyId:listing.sellerId, listingId:listing.id, createdAt:this.now() },
-      { id:makeId("ledger", `${listing.id}-seller`), accountId:listing.sellerId, amount:saleIncome, type:"cosmetic-sale", cosmeticItemId:item.id, counterpartyId:account.id, listingId:listing.id, createdAt:this.now() },
-    );
-    const fee = listing.price - saleIncome;
-    this.pushInbox(buyer, { id:`cosmetic-buy:${listing.id}`, type:"transfer", title:`${item.name} 购买成功`, summary:`支付${listing.price}金币，道具已经进入背包。`, body:`交易对方：${seller.name}。你当前持有${buyerInventory[item.id]}枚${item.name}。`, payload:{ listingId:listing.id, listingKind:"cosmetic", cosmeticItemId:item.id, price:listing.price, counterpartyId:listing.sellerId, counterpartyName:seller.name, perspective:"buyer" } });
-    this.pushInbox(seller, { id:`cosmetic-sale:${listing.id}`, type:"transfer", title:`${item.name} 出售成功`, summary:`成交价${listing.price}金币，扣除${fee}金币手续费，实际到账${saleIncome}金币。`, body:`买方：${buyer.name}。本次徽章道具交易已经完成。`, payload:{ listingId:listing.id, listingKind:"cosmetic", cosmeticItemId:item.id, price:listing.price, fee, saleIncome, counterpartyId:account.id, counterpartyName:buyer.name, perspective:"seller" } });
-    this.save();
-    if (options.compact) return this.compactMutationView(account, { cosmetics:true, extra:{ marketPurchase:{ listingId:listing.id, listingKind:"cosmetic", cosmeticItemId:item.id, sellerId:listing.sellerId, price:listing.price, item:{ ...item, count:buyerInventory[item.id], equipped:buyerEquipped[item.slot] === item.id, minimumListingPrice:COSMETIC_BADGE_MINIMUM_LISTING_PRICE } }, teamBadgeDelta:this.equippedTeamBadge(account.id), clubBadgeDelta:this.equippedClubBadge(account.id) } });
-    return this.view(account);
+    throw new Error("国家队和俱乐部装饰已全部免费解锁，不再支持交易");
   }
 
   buyListing(account, listingId, options = {}) {
@@ -7853,14 +7857,14 @@ export class YellowDogsLeagueService {
     const matchEngine = options.matchEngine ?? MATCH_ENGINE_BY_COMPETITION[competitionMode] ?? DEFAULT_MATCH_ENGINE;
     const seats = teams.map((team, index) => {
       const starters = this.chemistryAdjustedLineup(team, lineups[index], positions[index]).map((player) => ({ ...player, active:true }));
-      const substitutes = matchEngine === "v2" ? (selections[index].substitutes ?? []).map((player) => {
+      const substitutes = ["v2", "v3"].includes(matchEngine) ? (selections[index].substitutes ?? []).map((player) => {
         const card = this.representativeCard(team.ownerId, player.id);
         return { ...applyS4Enhancement(player, card?.upgradeLevel ?? 0), traits:(card?.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]), active:false };
       }) : [];
       const tacticalPlans = tacticalPlansWithInheritedDuties(unwrapTracked(team.tacticalPlans), selections[index].rotations);
       return { name:team.name, players:[...starters, ...substitutes], positions:positions[index], positionPresets:positionPresets[index], formationLinePresets:formationLinePresets[index], tactic:tacticalPlans.opening?.tactic ?? team.tactic, style:tacticalPlans.opening?.style ?? team.style, tacticalPlans, bondCatalog:S4_BOND_CATALOG, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus, captainId:starters.some((player) => player.id === team.captainId) ? team.captainId : null, captainStyle:normalizeCaptainStyle(team.captainStyle), preserveFitness:true };
     });
-    const match = createLeagueMatch(unwrapTracked(seats), { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode, legNumber:options.legNumber ?? 1, allowSuperStorm:options.allowSuperStorm, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false, matchEngine, parameters:matchEngine === "v2" ? STABLE_V21_PARAMETERS : undefined, engineProfile:"v2.1-stable-dynamic.2", dotReplayEnabled:false });
+    const match = createLeagueMatch(unwrapTracked(seats), { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode, legNumber:options.legNumber ?? 1, allowSuperStorm:options.allowSuperStorm, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false, matchEngine, parameters:["v2", "v3"].includes(matchEngine) ? parametersForEngine(matchEngine) : undefined, engineProfile:engineProfile(parametersForEngine(matchEngine)), dotReplayEnabled:false });
     match.stadium = this.clubBroadcastVenue(home);
     match.leagueAutoRotations = selections.map((selection) => selection.rotations);
     return { home, away, match, startedAt };
@@ -9022,7 +9026,7 @@ export class YellowDogsLeagueService {
           regulationOnly:true,
           competitionMode:"friendly",
           recordEvents:false,
-          matchEngine:"v2",
+          matchEngine:"v3",
         });
         job.activeMatchStartedAt = this.now();
         advanced = true;
@@ -9121,7 +9125,7 @@ export class YellowDogsLeagueService {
         regulationOnly:true,
         competitionMode:"friendly",
         recordEvents:this.recordMatchEvents !== false,
-        matchEngine:"v2",
+        matchEngine:"v3",
       });
       match.stadium = this.clubBroadcastVenue(team);
     } catch (error) {
@@ -10192,7 +10196,7 @@ export class YellowDogsLeagueService {
     this.roundNewUnavailable = null;
     round.status = "complete";
     this.state.season.currentRound = round.number;
-    this.distributePredictionProfit("league", `R${round.number}`, `黄狗联赛第${round.number}轮`);
+    this.distributePredictionProfit("league", `R${round.number}`, `YFFM1 联赛第${round.number}轮`);
     this.payRewards(round.number);
     if (round.number >= this.state.season.totalRounds) {
       this.state.season.status = "completed";
@@ -10429,7 +10433,7 @@ export class YellowDogsLeagueService {
         segment:snapshot.segment,
         weather:snapshot.weather,
         spectatorCount:Object.keys(live.spectators ?? {}).length,
-        competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : live.code.startsWith("YDL-FINAL-") ? "赛季总决赛" : "YellowDogs League",
+        competition:live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : live.code.startsWith("YDL-FINAL-") ? "赛季总决赛" : "YFFM1",
       };
     }));
   }
@@ -10442,9 +10446,9 @@ export class YellowDogsLeagueService {
     const leagueRound = this.state.rounds?.[this.state.season.currentRound];
     const leagueStartsAt = Number(this.state.season.nextRoundAt);
     if (this.state.season.status === "active" && leagueRound?.status === "pending" && leagueStartsAt > now) {
-      leagueRound.fixtures.filter((fixture) => LEAGUE_MATCH_ENGINE === "v2" || hasClubOwner(fixture)).forEach((fixture) => upcoming.push({
+      leagueRound.fixtures.filter((fixture) => ["v2", "v3"].includes(MATCH_ENGINE_BY_COMPETITION.league) || hasClubOwner(fixture)).forEach((fixture) => upcoming.push({
         id:`league:${leagueRound.number}:${fixture.homeId}:${fixture.awayId}`,
-        competition:"league", competitionName:"黄狗联赛", round:leagueRound.number,
+        competition:"league", competitionName:"YFFM1 联赛", round:leagueRound.number,
         label:`第${leagueRound.number}轮`, startsAt:leagueStartsAt,
         homeName:teamName(fixture.homeId), awayName:teamName(fixture.awayId),
       }));
@@ -10509,7 +10513,7 @@ export class YellowDogsLeagueService {
       live:!live.completed && !live.match.report,
       spectators:Object.values(live.spectators ?? {}).map(({ name }) => ({ name })),
       match,
-      competition:live.aiTraining ? "AI 战术训练赛" : live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League",
+      competition:live.aiTraining ? "AI 战术训练赛" : live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YFFM1",
       aiTraining:Boolean(live.aiTraining),
       aiTrainingConfig:live.aiTraining ? { formation:live.formation, actualAverageOverall:live.actualAverageOverall, targetOverall:live.targetOverall } : undefined,
     });
@@ -10541,7 +10545,7 @@ export class YellowDogsLeagueService {
       live:false,
       spectators:Object.values(completed.spectators).map(({ name }) => ({ name })),
       match:completed.match,
-      competition:completed.competition ?? (completed.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YellowDogs League"),
+      competition:completed.competition ?? (completed.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YFFM1"),
     });
   }
 
@@ -10595,7 +10599,7 @@ export class YellowDogsLeagueService {
         type:"reward",
         title:`${season.name} 联赛名次追加奖励已到账`,
         summary:`最终排名第${entry.rank}名，获得${quantity}个私有池+3指定礼包。`,
-        body:`本赛季联赛最终排名第${entry.rank}名，${quantity}个私有池+3指定礼包已经发放到 S4 礼包背包。`,
+        body:`本赛季联赛最终排名第${entry.rank}名，${quantity}个私有池+3指定礼包已经发放到 YFFM1 礼包背包。`,
         payload:{ settlementId, seasonId:season.id, rank:entry.rank, competition:"league", award:"ranking-gift", packType:LEAGUE_RANKING_GIFT_PACK_TYPE, quantity, packIds },
       });
       return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, quantity, packIds };
@@ -11645,10 +11649,11 @@ export class YellowDogsLeagueService {
   }
 
   backupView() {
-    if (!this.backupDir || !existsSync(this.backupDir)) return { directory:this.backupDir, retentionDays:BACKUP_RETENTION_DAYS, files:[] };
+    if (!this.backupDir || !existsSync(this.backupDir)) return { directory:this.backupDir, retentionDays:BACKUP_RETENTION_DAYS, specialRetentionDays:SPECIAL_BACKUP_RETENTION_DAYS, files:[] };
     return {
       directory:this.backupDir,
       retentionDays:BACKUP_RETENTION_DAYS,
+      specialRetentionDays:SPECIAL_BACKUP_RETENTION_DAYS,
       files:readdirSync(this.backupDir).filter((name) => name.endsWith(".json")).sort().reverse().slice(0, 14),
     };
   }

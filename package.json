@@ -1,6 +1,6 @@
 {
-  "name": "football-roguelite-simulator",
-  "version": "0.2.0",
+  "name": "yffm1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -47,7 +47,14 @@
     "simulate:economy": "node versus/economy-simulation.js --config=economy-simulation-config.json",
     "simulate:season:s3": "node versus/season-simulation.js --config=season-simulation-config-s3.json",
     "traits": "node src/trait-cli.js --seed demo --role ST",
-    "test": "node --test test/*.test.js"
+    "test": "node scripts/run-tests.mjs",
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "test:quick": "node scripts/run-tests.mjs --quick",
+    "test:storage": "node scripts/run-tests.mjs storage-p1.test.js storage-policy.test.js shard-compaction.test.js league-shards.test.js league-shard-safety.test.js season-final-tournament.test.js",
+    "check": "node scripts/check-source.mjs && node scripts/run-tests.mjs",
+    "benchmark:static": "node scripts/benchmark-static-assets.mjs",
+    "benchmark:render": "node scripts/compare-rendering.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
@@ -55,5 +62,8 @@
   },
   "overrides": {
     "uuid": "^11.1.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

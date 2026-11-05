@@ -1,0 +1,37 @@
+{
+  "repository": "AxeroYF/football_rouge_online",
+  "branch": "codex/rougelite",
+  "commit": "0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d",
+  "files": [
+    {
+      "path": "client/inventory/inventory-controller.js",
+      "bytes": 23589,
+      "gitBlobSha1": "07a53bf06cb6f1887579b2d6b67f7b4c142c5d2d"
+    },
+    {
+      "path": "client/ui/meteor-background.js",
+      "bytes": 690,
+      "gitBlobSha1": "64bde89468890012b01335ba873dac4e6800b382"
+    },
+    {
+      "path": "styles/inventory.css",
+      "bytes": 21994,
+      "gitBlobSha1": "94b3ade8092b4aaa041eaf589fd3017425a8e215"
+    },
+    {
+      "path": "client/draft/draft-reveal.js",
+      "bytes": 1836,
+      "gitBlobSha1": "c251761ca3ba2bc7b64f1ae70e0121cf2a3ea885"
+    },
+    {
+      "path": "styles/draft.css",
+      "bytes": 7237,
+      "gitBlobSha1": "584aa59d446fc66555a81562a771da4338114d1a"
+    },
+    {
+      "path": "handoff/PACK_GLOW_WONDER_CANCEL_2026-09-08.md",
+      "bytes": 3178,
+      "gitBlobSha1": "ff17fc85ddd9962efb3f1b8574691fc3b188474f"
+    }
+  ]
+}

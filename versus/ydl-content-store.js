@@ -1,5 +1,5 @@
+import { createQueuedJsonWriter } from "./infrastructure/queued-json-writer.js";
 import { randomUUID } from "node:crypto";
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIRECTORY = path.resolve(HERE, "../data");
 const CONTENT_PATH = path.resolve(process.env.YDL_CONTENT_OVERRIDES_PATH ?? path.join(DATA_DIRECTORY, "ydl-content-overrides.json"));
 const BACKUP_PATH = path.join(path.dirname(CONTENT_PATH), `${path.basename(CONTENT_PATH, path.extname(CONTENT_PATH))}.backup.json`);
+const contentWriter = createQueuedJsonWriter(CONTENT_PATH, BACKUP_PATH);
 const CONTENT_SCHEMA_VERSION = 2;
 const TRAIT_ROLE_GROUPS = Object.freeze(["ANY", "GK", "DEF", "MID", "ATT"]);
 const PLAYER_ROLES = Object.freeze(["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
@@ -222,16 +223,11 @@ function loadOverridesSync() {
   if (migrated) void persist().catch((error) => console.error("YDL内容覆盖迁移持久化失败", error));
 }
 
-async function persist() {
-  await mkdir(path.dirname(CONTENT_PATH), { recursive:true });
-  try {
-    await copyFile(CONTENT_PATH, BACKUP_PATH);
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
+function persist() {
   overrides.updatedAt = new Date().toISOString();
-  await writeFile(CONTENT_PATH, `${JSON.stringify(overrides, null, 2)}\n`, "utf8");
+  return contentWriter.write(overrides);
 }
+export const flushContentWrites = () => contentWriter.flush();
 
 loadOverridesSync();
 

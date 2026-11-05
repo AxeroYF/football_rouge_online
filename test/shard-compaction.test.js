@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import {LeagueShardStore} from "../versus/league-shard-store.js";
 
 const SCRIPT = fileURLToPath(new URL("../devtool/compact-league-shards.js", import.meta.url));
 
@@ -72,5 +73,28 @@ test("分片压实将当前引用集中到新 revision，并在移除旧备份�
     assert.equal(existsSync(path.join(root, "revisions/4")), true);
   } finally {
     rmSync(directory, { recursive:true, force:true });
+  }
+});
+
+test("重复压实后回收旧分片仍可读取完整战报", () => {
+  const directory = mkdtempSync(path.join(process.cwd(), ".tmp-repeat-compaction-"));
+  const root = path.join(directory,"shards");
+  const report = {score:[2,1],events:[{type:"goal",minute:7}],teams:[{name:"A"},{name:"B"}]};
+  try {
+    let store = new LeagueShardStore(root,{backupDir:null});
+    store.save({version:2,updatedAt:1,matches:[{id:"m",homeName:"revisions/1/core.json",report}],ledger:[],archives:[]},{forceFull:true});
+    for(let pass=0;pass<3;pass++){
+      run("compact",root,"--apply");
+      store=new LeagueShardStore(root);const state=store.load();assert.deepEqual(state.matches[0].report,report);
+      assert.equal(state.matches[0].homeName,"revisions/1/core.json");
+      for(let i=0;i<2;i++){state.updatedAt++;store.save(state,{scopes:["core"]});}
+      for(const name of readdirSync(path.join(root,"yellowdogs-league-backups"))) rmSync(path.join(root,"yellowdogs-league-backups",name));
+      run("gc",root,"--apply");
+      assert.deepEqual(new LeagueShardStore(root).load().matches[0].report,report);
+      assert.equal(run("analyze",root).exactReferencedFiles>1,true);
+    }
+  } finally {
+    assert.ok(path.resolve(directory).startsWith(process.cwd()+path.sep+".tmp-repeat-compaction-"));
+    rmSync(directory,{recursive:true,force:true});
   }
 });

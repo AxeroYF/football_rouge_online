@@ -1,7 +1,8 @@
 import { REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
+import { V3_MATCH_PARAMETERS } from "./v3/match-parameters-v3.js";
 
-export const MIRROR_BATCH_WORKER_ENGINE_VERSION = "v2.1-cap99-director-r1";
+export const MIRROR_BATCH_WORKER_ENGINE_VERSION = "v3.0-tactical-control-r1";
 export const MIRROR_BATCH_DIRECTOR_NODE = "director";
 export const MIRROR_BATCH_CLOUD_NODE = "cloud";
 export const MIRROR_BATCH_DIRECTOR_CONCURRENCY = 5;
@@ -13,6 +14,9 @@ export const MIRROR_BATCH_WORKER_LEASE_MS = 10 * 60_000;
 function compactMirrorBatchWorkerReport(report) {
   const statisticKeys = ["xg", "shots", "shotsOnTarget", "possession", "possessionControl", "corners", "fouls", "saves", "tackles", "interceptions", "clearances", "pressuresWon"];
   return {
+    engineVersion:report.engineVersion,
+    modelVersion:report.modelVersion,
+    engineProfile:report.engineProfile,
     score:[...report.score],
     teams:report.teams.map((team) => ({
       name:team.name,
@@ -44,6 +48,7 @@ function compactMirrorBatchWorkerReport(report) {
 export function runMirrorBatchWorkerMatch(payload, specification) {
   const startedAt = Date.now();
   const match = createYdlLeagueV2Match(structuredClone([payload.callerSeat, payload.opponentSeat]), {
+    parameters:V3_MATCH_PARAMETERS,
     now:startedAt,
     seed:specification.seed,
     weather:specification.weather,
@@ -51,7 +56,7 @@ export function runMirrorBatchWorkerMatch(payload, specification) {
     regulationOnly:true,
     competitionMode:"friendly",
     recordEvents:false,
-    matchEngine:"v2",
+    matchEngine:"v3",
   });
   advanceYdlLeagueV2Match(match, startedAt + REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + 1, { maximumChains:Infinity });
   if (!match.report) throw new Error(`mirror batch match ${specification.number} did not finish`);

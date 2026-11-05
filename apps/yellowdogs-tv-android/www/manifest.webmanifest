@@ -1,7 +1,7 @@
 {
-  "name": "黄狗TV",
-  "short_name": "黄狗TV",
-  "description": "黄狗联赛直播与赛事预测",
+  "name": "YFFM1 TV",
+  "short_name": "YFFM1 TV",
+  "description": "YFFM1 联赛直播与赛事预测",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#071411",

@@ -1,6 +1,7 @@
 ﻿import { readFileSync } from "node:fs";
 import { ATTRIBUTE_NAMES } from "../../game/public/schema.js";
 import { OFFLINE_ATTRIBUTE_SETTINGS, offlineEngineAttributeValue } from "../offline-attribute-settings.js";
+import { V3_RULES, isV3 } from "../v3/model-config.js";
 
 const PARAMETER_PATH = new URL("./match-parameters-v2.json", import.meta.url);
 const REQUIRED_CHAIN_STAGES = Object.freeze(["possession", "buildUp", "progression", "finalThird", "chance", "shot"]);
@@ -76,7 +77,16 @@ export function validateV2MatchParameters(parameters) {
   const errors = [];
   if (!isObject(parameters)) return { valid:false, errors:["V2参数必须是对象"] };
   if (parameters.schemaVersion !== 1) errors.push("schemaVersion必须为1");
-  if (!/^2\.1\.\d+$/.test(String(parameters.engineVersion ?? ""))) errors.push("engineVersion必须是2.1.x");
+  if (!/^(2\.1|3\.0)\.\d+$/.test(String(parameters.engineVersion ?? ""))) errors.push("engineVersion必须是2.1.x或3.0.x");
+  if (isV3(parameters)) {
+    const rules=parameters.v3??{};
+    for(const [key,minimum,maximum] of [["midfieldTransitionWidth",.1,10],["executionDifferenceDivisor",150,400],["factorSensitivity",.1,1],["directionPreference",1,3]]) {
+      if(!finite(rules[key])||rules[key]<minimum||rules[key]>maximum)errors.push(`v3.${key}超出范围`);
+    }
+    const sampling=rules.sampling??{};
+    if(!Number.isInteger(sampling.bucketSize)||sampling.bucketSize<4||sampling.bucketSize>64)errors.push("v3.sampling.bucketSize必须是4–64的整数");
+    for(const key of ["stageRegularity","goalRegularity"])if(!finite(sampling[key])||sampling[key]<0||sampling[key]>1)errors.push(`v3.sampling.${key}必须位于[0,1]`);
+  }
   if (parameters.status !== "parameter-specification") errors.push("当前V2状态必须是parameter-specification");
 
   validateRange(errors, parameters.ability, "ability");
@@ -313,6 +323,7 @@ assertV2MatchParameters(sourceParameters);
 
 export const V2_MATCH_PARAMETER_SOURCE = PARAMETER_PATH;
 export const V2_MATCH_PARAMETERS = deepFreeze(sourceParameters);
+const resolvedParameters = new WeakSet([V2_MATCH_PARAMETERS]);
 
 export function v2EngineAttributeValue(value, parameters = V2_MATCH_PARAMETERS, attributeSettings = OFFLINE_ATTRIBUTE_SETTINGS) {
   const numeric = Number(value);
@@ -323,9 +334,13 @@ export function v2EngineAttributeValue(value, parameters = V2_MATCH_PARAMETERS, 
 
 
 export function resolveV2MatchParameters(overrides = {}) {
-  const resolved = mergeKnown(V2_MATCH_PARAMETERS, overrides);
+  if (resolvedParameters.has(overrides)) return overrides;
+  const base=isV3(overrides)?{...V2_MATCH_PARAMETERS,v3:V3_RULES}:V2_MATCH_PARAMETERS;
+  const resolved = mergeKnown(base, overrides);
   assertV2MatchParameters(resolved);
-  return deepFreeze(resolved);
+  deepFreeze(resolved);
+  resolvedParameters.add(resolved);
+  return resolved;
 }
 
 export function v2ParameterManifest(parameters = V2_MATCH_PARAMETERS) {

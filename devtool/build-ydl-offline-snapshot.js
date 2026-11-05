@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { LeagueShardStore } from "../versus/league-shard-store.js";
+import { LeagueShardStore, unwrapTracked } from "../versus/league-shard-store.js";
 import { REAL_PLAYERS, isXPlayer } from "../versus/player-pool.js";
 import { repairOfflineAiRoster } from "../offline/ai-roster-repair.js";
 
@@ -39,7 +39,7 @@ if (existsSync(output)) {
 
 const sourceShards = path.join(source, "yellowdogs-league-shards");
 const sourceStore = new LeagueShardStore(sourceShards, { backupDir:null });
-const state = clone(sourceStore.load());
+const state = unwrapTracked(sourceStore.load());
 if (!state?.teams?.length) fail("无法从服务器快照加载球队数据");
 
 const importedAt = Date.now();

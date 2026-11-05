@@ -20,7 +20,7 @@ test("管理员API以二进制流上传卡画并返回轻量概况", async () =>
     return sent;
   }
 
-  const login = await call("/api/admin/login", { method:"POST", body:{ password:"19971019" } });
+  const login = await call("/api/admin/login", { method:"POST", body:{ password:(process.env.YFFM_ADMIN_PASSWORD ?? process.env.VERSUS_ADMIN_PASSWORD ?? "local-dev-admin") } });
   const player = REAL_PLAYERS.find((entry) => entry.grade === "B");
   const result = await call(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}/image`, {
     method:"POST",

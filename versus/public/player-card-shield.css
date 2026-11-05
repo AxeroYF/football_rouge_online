@@ -1,0 +1,88 @@
+/* Approved SABC shield system. Kept last so legacy feature sizing cannot reshape it. */
+.s4-player-card.ydl-player-card.player-card-shield{
+  --shield-ink:#192345;--shield-accent:#edda9b;--shield-mid:#122c81;--shield-metal:#b88a3e;--shield-bright:#fff1c7;
+  position:relative;display:block;isolation:isolate;container-type:inline-size;min-width:0;min-height:0!important;aspect-ratio:26/35!important;
+  padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible;color:var(--shield-accent);
+}
+.s4-player-card.player-card-shield{filter:drop-shadow(0 9px 9px #0006)}
+.s4-player-card.ydl-player-card.player-card-shield::before,.s4-player-card.ydl-player-card.player-card-shield::after{content:none!important;display:none!important}
+.s4-player-card.player-card-shield.grade-a{--shield-ink:#15352f;--shield-accent:#d8fff3;--shield-mid:#0c625b;--shield-metal:#5d9c92;--shield-bright:#effffc}
+.s4-player-card.player-card-shield.grade-b{--shield-ink:#3c2937;--shield-accent:#f0d0b8;--shield-mid:#513650;--shield-metal:#996a56;--shield-bright:#f5ddd1}
+.s4-player-card.player-card-shield.grade-c{--shield-ink:#2c3b2d;--shield-accent:#d0d9b8;--shield-mid:#354f3e;--shield-metal:#748069;--shield-bright:#dce4ca}
+.player-card-shield>.shield-card-surface{position:absolute;inset:0;display:block;isolation:isolate;overflow:hidden;clip-path:polygon(5.2% 11%,12.1% 5.43%,50% 1.14%,87.9% 5.43%,94.8% 11%,94.8% 87.1%,87.7% 94.3%,50% 99%,12.3% 94.3%,5.2% 87.1%);pointer-events:none}
+.player-card-shield .shield-card-layer,.player-card-shield .shield-card-motion{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.player-card-shield .shield-card-background{z-index:0}.player-card-shield .shield-card-motion{z-index:1;clip-path:polygon(8.85% 11.57%,15% 7.86%,50% 3.86%,85% 7.86%,91.15% 11.57%,91.15% 86.14%,85.2% 91.71%,50% 96.14%,14.8% 91.71%,8.85% 86.14%)}
+.player-card-shield .shield-card-plate{z-index:3}.player-card-shield .shield-card-rim{z-index:7}
+.s4-player-card.player-card-shield .shield-card-surface .s4-player-card-profile{position:absolute;z-index:2;left:var(--profile-x,50%);top:var(--profile-y,52%);width:var(--profile-width,200%);height:auto;max-width:none;transform:translate(-50%,-50%);object-fit:initial;opacity:1;mix-blend-mode:normal;filter:drop-shadow(0 5px 6px #0007);pointer-events:none}
+.s4-player-card.player-card-shield:is(.grade-s,.grade-x) .shield-card-surface .s4-player-card-profile{z-index:8}
+.player-card-shield .shield-card-flag{position:absolute;z-index:4;left:12.5%;top:29.6%;width:11.73%;height:5%;display:grid;place-items:center}
+.player-card-shield .shield-card-club{position:absolute;z-index:4;left:12.31%;top:38.14%;width:12.31%;height:11.29%;display:grid;place-items:center;filter:drop-shadow(0 2px 2px #0005)}
+.player-card-shield .shield-card-flag>img,.player-card-shield .shield-card-club>img{width:100%;height:100%;object-fit:contain;pointer-events:none;user-select:none}
+.player-card-shield .shield-card-flag>img{object-fit:fill;box-shadow:0 0 0 .5px color-mix(in srgb,var(--shield-accent) 75%,transparent)}
+.player-card-shield .shield-identity-fallback{display:none;font:600 2.7cqw/1.2 "Microsoft YaHei",sans-serif;color:var(--shield-accent);text-align:center;border:1px solid color-mix(in srgb,var(--shield-accent) 35%,transparent);padding:1cqw;width:100%;background:color-mix(in srgb,var(--shield-mid) 75%,transparent)}
+.player-card-shield .is-missing>.shield-identity-fallback{display:block}.player-card-shield [data-card-identity-image][hidden]{display:none}
+.s4-player-card.player-card-shield .shield-card-surface>.s4-player-card-upgrade{position:absolute;z-index:6;left:auto;right:12.1%;top:11.7%;width:14%;height:7.6%;min-width:0;min-height:0;padding:0;border:1px solid var(--shield-bright);border-radius:0;clip-path:polygon(8% 0,86% 0,100% 20%,100% 80%,86% 100%,8% 100%,0 87%,0 13%);color:var(--shield-accent);background:linear-gradient(135deg,var(--shield-bright),var(--shield-metal) 14%,var(--shield-ink) 17% 75%,var(--shield-metal) 88%,var(--shield-bright));font:800 5.58cqw/1 Arial,sans-serif;text-shadow:0 2px 2px #0008;box-shadow:inset 0 0 0 2px var(--shield-metal)}
+.s4-player-card.player-card-shield .shield-card-surface>.s4-player-card-upgrade.band-high{color:#fff2b6;background:linear-gradient(135deg,#fff1ae,#b88c32 14%,#4e3816 17% 75%,#c89739 88%,#ffefc7)}
+.s4-player-card.player-card-shield .shield-card-surface>.s4-player-card-upgrade.band-max{color:#ffe8a4;background:linear-gradient(135deg,#fff1ae,#bd8c36 14%,#741a2c 17% 75%,#c89739 88%,#ffefc7)}
+.player-card-shield .s4-player-card-upgrade::after{display:none}
+.player-card-shield .shield-card-emblem{position:absolute;z-index:1;left:53.85%;top:51.72%;width:45.4%;aspect-ratio:1;transform:translate(-50%,-50%);display:grid;place-items:center;border:1px solid var(--shield-metal);border-radius:50%;background:color-mix(in srgb,var(--shield-mid) 25%,transparent);color:var(--shield-accent);opacity:.48;font:400 27.3cqw/1 Georgia,serif;box-shadow:inset 0 0 0 5px #0001}
+.player-card-shield .shield-card-emblem::before{content:"";position:absolute;inset:7%;border:1px dotted var(--shield-accent);border-radius:50%;opacity:.55}
+.player-card-shield.has-player-profile .shield-card-emblem{display:none}
+.s4-player-card.player-card-shield .player-card-art-placeholder{position:absolute;z-index:5;inset:42% 21%;font-size:3.4cqw}
+.player-card-shield .shield-card-sheen{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;background:linear-gradient(112deg,transparent 25%,#e8edff06 43%,#fff6d831 49%,transparent 60%);background-size:240% 100%;background-position:100% 0}
+.player-card-shield:hover .shield-card-sheen,.player-card-shield:focus-visible .shield-card-sheen{animation:shield-card-foil .9s ease-out}
+.player-card-shield .shield-card-accessible-traits{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@keyframes shield-card-foil{0%{opacity:0;background-position:100% 0}25%{opacity:.6}100%{opacity:0;background-position:0 0}}
+@media(prefers-reduced-motion:reduce){.player-card-shield .shield-card-sheen{display:none}.s4-player-card.player-card-shield{transition:none}}
+
+.player-card-shield .shield-card-information{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;overflow:visible}
+
+/* Static consumers (the tactics board) allocate no particle canvas or foil animation. */
+.s4-player-card.ydl-player-card.player-card-static,.s4-player-card.ydl-player-card.player-card-static:hover{transform:none!important;transition:none!important;animation:none!important}
+
+/* Trait labels share the upgrade column; no hit targets or animated layers. */
+.player-card-shield .shield-card-traits{position:absolute;z-index:10;right:12.1%;top:21%;max-width:44%;display:flex;flex-direction:column;align-items:flex-end;gap:1cqw;font:600 4.2cqw/1.3 "Microsoft YaHei",sans-serif;color:var(--shield-bright);text-align:right;pointer-events:none}
+.player-card-shield .shield-card-trait-row{display:flex;max-width:100%;gap:1cqw;min-width:0}
+.player-card-shield .shield-card-trait,.player-card-shield .shield-card-trait-more{display:block;padding:.8cqw 1.5cqw;border:1px solid var(--shield-metal);border-radius:1cqw;background:color-mix(in srgb,var(--shield-ink) 94%,transparent);box-sizing:border-box;white-space:nowrap}
+.player-card-shield .shield-card-trait{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.player-card-shield .shield-card-trait-more{flex:none}
+
+/* +9/+10 keep the approved shield geometry and original badge dimensions.
+   Legend portraits remain z=8, above both the rim and its masked highlight (z=7). */
+.s4-player-card.player-card-shield.enhancement-9{--enhancement-glow:#a576d94d;filter:drop-shadow(0 0 3px #9f69d970) drop-shadow(0 0 9px var(--enhancement-glow)) drop-shadow(0 9px 9px #0006)}
+.s4-player-card.player-card-shield.enhancement-10{--enhancement-glow:#e5983140;filter:drop-shadow(0 0 3px #e9a92970) drop-shadow(0 0 10px var(--enhancement-glow)) drop-shadow(0 9px 9px #0006)}
+.s4-player-card.player-card-shield.enhancement-9 .shield-card-surface>.s4-player-card-upgrade{color:#fff1ff;border-color:#dbc5ff;background:linear-gradient(135deg,#f7ecff,#9b72c7 16%,#372046 21%,#200d31 70%,#ceb2ed 90%,#fff)}
+.s4-player-card.player-card-shield.enhancement-10 .shield-card-surface>.s4-player-card-upgrade{color:#ffe59a;border-color:#ffdc7a;background:linear-gradient(135deg,#fff7c0,#e9a826 16%,#3a1e09 21%,#1d1308 70%,#e9a826 90%,#fff3b1)}
+.player-card-shield .shield-card-enhancement-gloss{position:absolute;inset:0;z-index:7;pointer-events:none;mask:url('/versus/assets/card-frames/shield-v1/enhancement-mask.svg') center/100% 100% no-repeat;-webkit-mask:url('/versus/assets/card-frames/shield-v1/enhancement-mask.svg') center/100% 100% no-repeat;background:linear-gradient(115deg,transparent 43%,#fff4 47%,#fff 50%,#fff4 53%,transparent 57%);background-size:350% 100%;background-position:100% 0;opacity:.7;animation:enhancement-border-sweep 7s ease-in-out infinite;animation-play-state:paused}
+.player-card-shield.enhancement-10 .shield-card-enhancement-gloss{background-image:linear-gradient(65deg,transparent 43%,#ffe6a366 47%,#fff3c9 50%,#ffe6a366 53%,transparent 57%);animation-duration:5s;animation-direction:reverse}
+.player-card-shield.card-motion-active .shield-card-enhancement-gloss,.player-card-shield:hover .shield-card-enhancement-gloss,.player-card-shield:focus-visible .shield-card-enhancement-gloss{animation-play-state:running}
+.player-card-shield.enhancement-9 .shield-card-trait{background:#251322ee;border-color:#b2acd2}
+.player-card-shield.enhancement-10 .shield-card-trait{background:#341017ee;border-color:#edcf90}
+@keyframes enhancement-border-sweep{0%,10%{background-position:100% 0}70%,100%{background-position:0 0}}
+@media(prefers-reduced-motion:reduce){.player-card-shield .shield-card-enhancement-gloss{animation:none;opacity:.3}}
+
+/* YFFM1 integration: keep existing click/drag targets and card-instance data.
+   S/X retain Rougelite's portrait-over-nameplate layering. */
+.s4-player-card.ydl-player-card.player-card-shield{height:auto;align-self:start}
+.s4-player-card.ydl-player-card.player-card-shield:hover{box-shadow:none!important}
+.s4-player-card.ydl-player-card.player-card-shield.animated{contain:layout style}
+.player-card-shield .shield-card-portrait{position:absolute;inset:0;z-index:2;clip-path:inset(0 0 20.86%);pointer-events:none}
+.player-card-shield:is(.grade-s,.grade-x) .shield-card-portrait{z-index:8;clip-path:none}
+.player-card-shield:not(:is(.grade-s,.grade-x)) .shield-card-plate{z-index:9}
+.player-card-shield:not(:is(.grade-s,.grade-x)) .shield-card-information{z-index:10}
+.player-card-shield:not(:is(.grade-s,.grade-x)) .shield-card-flag,.player-card-shield:not(:is(.grade-s,.grade-x)) .shield-card-club{z-index:11}
+.s4-player-card.player-card-shield:not(:is(.grade-s,.grade-x)) .shield-card-surface>.s4-player-card-upgrade{z-index:12}
+.player-card-shield:not(:is(.grade-s,.grade-x)) .shield-card-traits{z-index:12}
+.s4-player-card.ydl-player-card.player-card-shield .s4-player-card-ballon-dor{z-index:13;left:27%;right:27%;top:74%;min-width:0;min-height:0;padding:1cqw 1.2cqw;display:flex;flex-direction:row;justify-content:center;align-items:center;gap:1cqw;border-radius:1.5cqw;background:#34290bd9;box-shadow:none}
+.s4-player-card.ydl-player-card.player-card-shield .s4-player-card-ballon-dor i{width:4.6cqw;height:4.6cqw;flex:0 0 4.6cqw;margin:0}
+.s4-player-card.ydl-player-card.player-card-shield .s4-player-card-ballon-dor i::before{inset:12% 25%}
+.s4-player-card.ydl-player-card.player-card-shield .s4-player-card-ballon-dor i::after{left:12%;right:12%;top:31%;height:30%}
+.s4-player-card.ydl-player-card.player-card-shield .s4-player-card-ballon-dor b{margin:0;font-size:3.7cqw}
+.shield-slot-summary{display:none}
+@media(max-width:650px) and (orientation:portrait){
+  .enhancement-card-slot.filled{grid-template-columns:minmax(0,calc(90px * 26 / 35)) minmax(0,1fr);gap:8px;align-items:center}
+  .enhancement-card-slot .s4-player-card.ydl-player-card.player-card-shield{width:100%;height:90px;align-self:center}
+  .enhancement-card-slot .shield-slot-summary{display:grid;align-content:center;gap:5px;min-width:0;max-height:90px;padding:0;border:0;border-radius:0;overflow:hidden;background:transparent;color:var(--ink);text-align:left;cursor:pointer}
+  .shield-slot-summary strong{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+  .shield-slot-summary small{font-size:9px;line-height:1.4;color:var(--muted)}
+}

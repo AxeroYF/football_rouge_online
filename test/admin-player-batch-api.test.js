@@ -22,7 +22,7 @@ test("管理员批量制卡API完成模板、预览、导入、卡画和整批�
     return sent;
   }
 
-  const login = await call("/api/admin/login", { method:"POST", body:{ password:"19971019" } });
+  const login = await call("/api/admin/login", { method:"POST", body:{ password:(process.env.YFFM_ADMIN_PASSWORD ?? process.env.VERSUS_ADMIN_PASSWORD ?? "local-dev-admin") } });
   const token = login.value.token;
   const created = await call("/api/admin/content/player-batches", { method:"POST", token, body:{ name:"API测试批次", description:"完整流水线" } });
   assert.equal(created.statusCode, 201);

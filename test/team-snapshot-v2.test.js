@@ -66,9 +66,9 @@ test("V2球队快照接入属性型和条件型特性", () => {
   away.bondCatalog = [];
   const snapshots = buildV2TeamSnapshots([home, away], { environment:{ weather:"rain" } });
   const traitPlayer = snapshots[0].players.find((entry) => entry.id === "trait");
-  assert.equal(traitPlayer.attributes.finishing, 82.5);
-  assert.equal(traitPlayer.attributes.pace, 82.5);
-  assert.equal(traitPlayer.attributes.passing, 77);
+  assert.equal(traitPlayer.attributes.finishing, 84);
+  assert.equal(traitPlayer.attributes.pace, 84);
+  assert.equal(traitPlayer.attributes.passing, 78.4);
   assert.deepEqual(traitPlayer.v2AppliedTraitIds, ["custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20", "rain-boots"]);
 });
 
@@ -101,7 +101,7 @@ test("固定体能和比分条件特性使用当前比赛状态", () => {
   ];
   const awayPlayers = Array.from({ length:11 }, (_, index) => player(`away-${index}`, index === 0 ? "GK" : "DM", { nationality:"对手国", club:"对手队" }));
   const snapshots = buildV2TeamSnapshots([team("home", homePlayers), team("away", awayPlayers)], { state:{ minute:80, score:[0, 1] } });
-  assert.equal(snapshots[0].players.find((entry) => entry.id === "fixed").state.fitness, 90);
+  assert.equal(snapshots[0].players.find((entry) => entry.id === "fixed").state.fitness, 94);
   assert.equal(snapshots[0].v2Snapshot.scoreState, "trailing");
   assert.equal(snapshots[1].v2Snapshot.scoreState, "leading");
 });
@@ -126,5 +126,5 @@ test("YDL新增三张特性卡按比分和战术条件生效", () => {
     { ...team("home", homePlayers), tactic:"balanced", bondCatalog:[] },
     { ...team("away", awayPlayers), bondCatalog:[] },
   ], { state:{ minute:30, score:[0, 1] } });
-  assert.equal(trailing[0].players.find((entry) => entry.id === "score-state").attributes.finishing, 61.29);
+  assert.equal(trailing[0].players.find((entry) => entry.id === "score-state").attributes.finishing, 72.1);
 });

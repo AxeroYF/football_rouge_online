@@ -57,7 +57,7 @@ test("分片服务在保存后保留最近 manifest 备份", () => {
     service.save({ forceFull:true });
     assert.equal(readdirSync(backupDir).some((name) => name.endsWith(".manifest.json")), true);
     const manifest = JSON.parse(readFileSync(path.join(statePath, "manifest.json"), "utf8"));
-    assert.equal(manifest.schemaVersion, 1);
+    assert.equal(manifest.schemaVersion, 2);
     const reloaded = new YellowDogsLeagueService({ statePath, backupDir, now:() => NOW, rng:() => .37 });
     assert.equal(reloaded.state.teams.length, 10);
   } finally {

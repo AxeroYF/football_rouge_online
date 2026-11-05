@@ -17,6 +17,8 @@ import { v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
 import { buildV2TeamSnapshots } from "./team-snapshot-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
+import {isV3,V3_MODEL_VERSION,V3_ENGINE_PROFILE} from "../v3/model-config.js";
+import {matchOutcomeRoll} from "../v3/outcome-sampling.js";
 import { automaticSubstitutionRank, compareAutomaticSubstitutes } from "../automatic-substitution.js";
 import {
   resolveV2PlayerDuty,
@@ -1470,8 +1472,15 @@ function resolveShot(match, teamIndex, chain, options = {}) {
   const sourceXgKey = possessionType === "transition" ? "transitionXg" : "normalXg";
   attacking.stats[sourceXgKey] = round(attacking.stats[sourceXgKey] + xg);
   shooter.matchStats.shots += 1;
-  const onTarget = match.rng() < outcomeProfile.onTargetProbability;
-  const goal = onTarget && match.rng() < 1 - outcomeProfile.saveProbabilityGivenOnTarget;
+  let onTarget,goal;
+  if(isV3(match.parameters)){
+    goal=matchOutcomeRoll(match,`goal:${teamIndex}`)<outcomeProfile.goalProbability;
+    const remainingOnTarget=(outcomeProfile.onTargetProbability-outcomeProfile.goalProbability)/Math.max(.001,1-outcomeProfile.goalProbability);
+    onTarget=goal||matchOutcomeRoll(match,`onTarget:${teamIndex}`)<clamp(remainingOnTarget,0,1);
+  }else{
+    onTarget=match.rng()<outcomeProfile.onTargetProbability;
+    goal=onTarget&&match.rng()<1-outcomeProfile.saveProbabilityGivenOnTarget;
+  }
   const saved = onTarget && !goal;
   if (onTarget) {
     attacking.stats.shotsOnTarget += 1;
@@ -2179,6 +2188,7 @@ function runV2Chain(match, chainIndex, options = {}) {
     deferShotResolution:true,
     recordRandomRolls:Boolean(options.recordRandomRolls),
     recordReplayShape:Boolean(match.dotReplayEnabled),
+    ...(isV3(match.parameters)?{outcomeRoll:channel=>matchOutcomeRoll(match,channel)}:{}),
   });
   const { replayShape, replaySequence, ...simulatedChainData } = simulatedChain;
   match.currentReplayShape = replayShape ?? null;
@@ -2272,7 +2282,8 @@ export function createV2Match(teams, options = {}) {
   const parameters = options.parameters ?? V2_MATCH_PARAMETERS;
   return {
     engineVersion:parameters.engineVersion,
-    modelVersion:"match-engine-v2.1",
+    modelVersion:isV3(parameters)?V3_MODEL_VERSION:"match-engine-v2.1",
+    ...(isV3(parameters)?{engineProfile:V3_ENGINE_PROFILE}:{}),
     mode:"YDL",
     substitutionsAllowed:Boolean(parameters.state.substitutionsEnabled),
     minute:0,
@@ -2370,7 +2381,7 @@ export function advanceV2Match(match, targetChainCount = match.nextChainIndex + 
   const target = Math.min(chainCount, Math.max(0, Number(targetChainCount)));
   if (!match.started) {
     match.started = true;
-    addEvent(match, "kickoff", null, "比赛开始，YDL V2引擎正式开球。", { importance:"stage" });
+    addEvent(match, "kickoff", null, isV3(match.parameters)?"比赛开始，YFFM1 V3.0引擎正式开球。":"比赛开始，YDL V2引擎正式开球。", { importance:"stage" });
   }
   while (match.nextChainIndex < target && !match.abandoned) {
     if (stopV2MatchForSuperStorm(match)) break;

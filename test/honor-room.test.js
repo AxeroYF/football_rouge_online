@@ -41,6 +41,7 @@ test("每日完赛快照合并联赛杯赛且按赛季ID幂等更新荣誉室", 
   service.state.cup.playerStats[`${team.id}:legend-messi`] = { playerId:"legend-messi", playerName:"梅西", teamId:team.id, teamName:team.name, appearances:6, goals:5, assists:3, redCards:2, ratingTotal:45.6 };
   service.state.ballonDor.results.push({ seasonId:service.state.season.id, status:"completed", winner:{ ownerId:account.id, playerId:"legend-messi", playerName:"梅西" } });
 
+  service.state.seasonFinalTournament = { ...service.state.seasonFinalTournament, seasonId:service.state.season.id, status:"completed" };
   const completedSeasonId = service.state.season.id;
   service.resetDailyCompetitions({ manual:true, skipRewardCheck:true, skipBackup:true, skipArchive:true, skipSave:true, skipView:true });
   const honorRoom = service.honorRoomView(account);

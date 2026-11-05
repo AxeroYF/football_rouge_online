@@ -48,7 +48,7 @@ await writeFile(
 );
 
 const versusIndex = await readFile(path.join(versusSource, "index.html"), "utf8");
-for (const required of ["黄狗模拟经理", "styles.css", "app.js"]) {
+for (const required of ["YFFM1", "styles.css", "app.js"]) {
   if (!versusIndex.includes(required)) throw new Error("versus index.html is missing: " + required);
 }
 await rm(versusTarget, { recursive: true, force: true });

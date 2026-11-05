@@ -105,7 +105,7 @@ function bindDashboard() {
 }
 
 function adminNavMarkup(active) {
-  return `<nav class="admin-section-nav"><button data-admin-view="dashboard" class="${active === "dashboard" ? "active" : ""}">运营总览</button><button data-admin-view="league" class="${active === "league" ? "active" : ""}">黄狗联赛</button><button data-admin-view="content" class="${active === "content" ? "active" : ""}">球员与特性</button></nav>`;
+  return `<nav class="admin-section-nav"><button data-admin-view="dashboard" class="${active === "dashboard" ? "active" : ""}">运营总览</button><button data-admin-view="league" class="${active === "league" ? "active" : ""}">YFFM1 联赛</button><button data-admin-view="content" class="${active === "content" ? "active" : ""}">球员与特性</button></nav>`;
 }
 
 function bindAdminNav() {
@@ -245,7 +245,7 @@ function renderLeagueAdmin() {
   const badgePlayerOptions = leagueData.teams.filter((team) => !team.isAi).map((team) => `<option value="${escapeHtml(team.ownerId)}">${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)} · ${escapeHtml(team.ownerId)}</option>`).join("");
   const badgeRows = leagueData.teams.flatMap((team) => (team.championBadges ?? []).map((badge) => ({ ...badge, ownerId:team.ownerId, ownerName:team.ownerName, teamName:team.name }))).sort((left,right) => Number(right.awardedAt) - Number(left.awardedAt)).map((badge) => { const isCup = badge.competition === "cup" || badge.type === "cup-champion"; return `<tr><td><span class="admin-champion-badge ${isCup ? "cup-champion-badge" : ""}"><i>${isCup ? "🏆" : "♛"}</i>${escapeHtml(badge.season)}${isCup ? " 杯赛" : " 联赛"}</span></td><td><b>${escapeHtml(badge.ownerName)}</b><small>${escapeHtml(badge.ownerId)}</small></td><td>${escapeHtml(badge.teamName)}</td><td>${dateText(badge.awardedAt)}</td></tr>`; }).join("") || `<tr><td colspan="4">尚未发放冠军徽章</td></tr>`;
   logoutButton.hidden = false;
-  app.innerHTML = `${adminNavMarkup("league")}<header class="page-head"><div><h1>YellowDogs League</h1><p>${escapeHtml(season.name)} · ${season.status === "active" ? "进行中" : "已完成"} · 下一轮 ${dateText(season.nextRoundAt)}</p></div><button id="league-refresh">刷新联赛</button></header><section class="kpis league-admin-kpis"><article class="kpi"><small>当前赛季</small><b>${escapeHtml(season.name)}</b></article><article class="kpi"><small>联赛轮次</small><b>${season.currentRound}/${season.totalRounds}</b></article><article class="kpi"><small>已赛场次</small><b>${leagueData.matches}</b></article><article class="kpi"><small>真人球队</small><b>${humanTeams}/10</b></article><article class="kpi"><small>进行中选秀</small><b>${leagueData.drafts.length}</b></article></section><section class="league-admin-actions"><div><small>LEAGUE CONTROL</small><b>赛季运行控制</b><span>重启与新赛季都会保留真人球队、球员名单、金币和交易资产。</span></div><button id="league-simulate">立即模拟下一轮</button><button class="warning" id="league-restart">重启当前赛季</button><button class="danger" id="league-new-season">开启新赛季</button></section><div class="grid league-admin-grid"><section class="panel league-team-panel"><header class="panel-head"><div><h2>联赛球队</h2><small>积分与注册名单状态</small></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>球队</th><th>名单</th><th>赛</th><th>胜-平-负</th><th>进失</th><th>分</th></tr></thead><tbody>${leagueTeamRows()}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>球员池占用</h2><small>真人球队全服唯一，AI 不计入</small></div></header><div class="table-wrap"><table><thead><tr><th>位置池</th><th>总数</th><th>已签</th><th>选秀中</th><th>可用</th></tr></thead><tbody>${poolRows}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>进行中的选秀</h2><small>尚未确认 22 人名单的球队</small></div></header><div class="table-wrap"><table><thead><tr><th>球队/玩家</th><th>进度</th><th>开始时间</th></tr></thead><tbody>${drafts}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>赛季归档</h2><small>最近 12 次重启或换季记录</small></div></header><div class="table-wrap"><table><thead><tr><th>赛季</th><th>原因</th><th>轮次</th><th>比赛</th><th>归档时间</th></tr></thead><tbody>${archives}</tbody></table></div></section><section class="panel league-allocation-panel"><header class="panel-head"><div><h2>真人球员归属</h2><small>查看每名已签或选秀保留球员</small></div><input class="search" id="league-player-search" placeholder="搜索球员、球队或玩家" /></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>位置</th><th>能力</th><th>状态</th><th>归属</th></tr></thead><tbody id="league-allocation-body">${leagueAllocationRows()}</tbody></table></div></section></div>`;
+  app.innerHTML = `${adminNavMarkup("league")}<header class="page-head"><div><h1>YFFM1</h1><p>${escapeHtml(season.name)} · ${season.status === "active" ? "进行中" : "已完成"} · 下一轮 ${dateText(season.nextRoundAt)}</p></div><button id="league-refresh">刷新联赛</button></header><section class="kpis league-admin-kpis"><article class="kpi"><small>当前赛季</small><b>${escapeHtml(season.name)}</b></article><article class="kpi"><small>联赛轮次</small><b>${season.currentRound}/${season.totalRounds}</b></article><article class="kpi"><small>已赛场次</small><b>${leagueData.matches}</b></article><article class="kpi"><small>真人球队</small><b>${humanTeams}/10</b></article><article class="kpi"><small>进行中选秀</small><b>${leagueData.drafts.length}</b></article></section><section class="league-admin-actions"><div><small>LEAGUE CONTROL</small><b>赛季运行控制</b><span>重启与新赛季都会保留真人球队、球员名单、金币和交易资产。</span></div><button id="league-simulate">立即模拟下一轮</button><button class="warning" id="league-restart">重启当前赛季</button><button class="danger" id="league-new-season">开启新赛季</button></section><div class="grid league-admin-grid"><section class="panel league-team-panel"><header class="panel-head"><div><h2>联赛球队</h2><small>积分与注册名单状态</small></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>球队</th><th>名单</th><th>赛</th><th>胜-平-负</th><th>进失</th><th>分</th></tr></thead><tbody>${leagueTeamRows()}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>球员池占用</h2><small>真人球队全服唯一，AI 不计入</small></div></header><div class="table-wrap"><table><thead><tr><th>位置池</th><th>总数</th><th>已签</th><th>选秀中</th><th>可用</th></tr></thead><tbody>${poolRows}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>进行中的选秀</h2><small>尚未确认 22 人名单的球队</small></div></header><div class="table-wrap"><table><thead><tr><th>球队/玩家</th><th>进度</th><th>开始时间</th></tr></thead><tbody>${drafts}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>赛季归档</h2><small>最近 12 次重启或换季记录</small></div></header><div class="table-wrap"><table><thead><tr><th>赛季</th><th>原因</th><th>轮次</th><th>比赛</th><th>归档时间</th></tr></thead><tbody>${archives}</tbody></table></div></section><section class="panel league-allocation-panel"><header class="panel-head"><div><h2>真人球员归属</h2><small>查看每名已签或选秀保留球员</small></div><input class="search" id="league-player-search" placeholder="搜索球员、球队或玩家" /></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>位置</th><th>能力</th><th>状态</th><th>归属</th></tr></thead><tbody id="league-allocation-body">${leagueAllocationRows()}</tbody></table></div></section></div>`;
   const automation = leagueData.dailyAutomation ?? {};
   document.querySelector(".league-admin-actions div span").textContent = automation.enabled
     ? `每日自动化已启用：北京时间09:51重置，10:01自动开启杯赛；联赛沿用10:00起每20分钟整点网格。上次奖励赛季：${automation.lastRewardedSeasonId ?? "暂无"}；上次自动重置：${automation.lastResetDate ?? "暂无"}。`
@@ -460,13 +460,13 @@ function renderLeagueAdmin() {
     else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
   };
   document.querySelector("#league-full-reset").onclick = () => {
-    const confirmation = window.prompt("此操作会移除全部玩家的YDL球队、球员、金币、交易、选秀和比赛数据。玩家账号本身保留。\n\n请输入：完全重置黄狗联赛");
-    if (confirmation === "完全重置黄狗联赛") runLeagueAdminAction("/api/admin/league/full-reset", { confirm:"FULL_RESET_YDL" }, "YellowDogs League 已完全重置，所有玩家可以重新建队");
+    const confirmation = window.prompt("此操作会移除全部玩家的YDL球队、球员、金币、交易、选秀和比赛数据。玩家账号本身保留。\n\n请输入：完全重置YFFM1 联赛");
+    if (confirmation === "完全重置YFFM1 联赛") runLeagueAdminAction("/api/admin/league/full-reset", { confirm:"FULL_RESET_YDL" }, "YFFM1 已完全重置，所有玩家可以重新建队");
     else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
   };
   document.querySelector("#league-fresh-season").onclick = () => {
-    const confirmation = window.prompt("此操作会开启下一个赛季，并移除全部玩家的YDL球队、球员、金币、背包、交易、选秀和比赛数据。玩家账号本身保留，所有玩家需要重新建队选卡。\n\n请输入：开启全新黄狗联赛赛季");
-    if (confirmation === "开启全新黄狗联赛赛季") runLeagueAdminAction("/api/admin/league/fresh-season", { confirm:"FRESH_SEASON_YDL" }, "YellowDogs League 全新赛季已开启，所有玩家可以重新建队");
+    const confirmation = window.prompt("此操作会开启下一个赛季，并移除全部玩家的YDL球队、球员、金币、背包、交易、选秀和比赛数据。玩家账号本身保留，所有玩家需要重新建队选卡。\n\n请输入：开启全新YFFM1 联赛赛季");
+    if (confirmation === "开启全新YFFM1 联赛赛季") runLeagueAdminAction("/api/admin/league/fresh-season", { confirm:"FRESH_SEASON_YDL" }, "YFFM1 全新赛季已开启，所有玩家可以重新建队");
     else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
   };
 }
@@ -483,12 +483,12 @@ async function runLeagueAdminAction(path, body, message, options = {}) {
 
 function renderLeagueRecovery(error) {
   logoutButton.hidden = false;
-  app.innerHTML = `${adminNavMarkup("league")}<section class="league-recovery"><small>SEASON DATA CONFLICT</small><h1>旧赛季数据与新球员评级冲突</h1><p>${escapeHtml(error.message)}</p><p class="league-recovery-note">当前旧赛季不会被迁移。开启全新赛季后，球队、球员卡、金币、背包、交易和比赛数据将清空，玩家账号会保留。</p><label><span>输入“开启全新黄狗联赛赛季”确认</span><input id="league-recovery-confirmation" autocomplete="off" placeholder="开启全新黄狗联赛赛季"></label><div><button id="league-recovery-dashboard">返回运营总览</button><button class="danger" id="league-recovery-fresh" disabled>开启全新赛季</button></div><p class="league-recovery-feedback" id="league-recovery-feedback"></p></section>`;
+  app.innerHTML = `${adminNavMarkup("league")}<section class="league-recovery"><small>SEASON DATA CONFLICT</small><h1>旧赛季数据与新球员评级冲突</h1><p>${escapeHtml(error.message)}</p><p class="league-recovery-note">当前旧赛季不会被迁移。开启全新赛季后，球队、球员卡、金币、背包、交易和比赛数据将清空，玩家账号会保留。</p><label><span>输入“开启全新YFFM1 联赛赛季”确认</span><input id="league-recovery-confirmation" autocomplete="off" placeholder="开启全新YFFM1 联赛赛季"></label><div><button id="league-recovery-dashboard">返回运营总览</button><button class="danger" id="league-recovery-fresh" disabled>开启全新赛季</button></div><p class="league-recovery-feedback" id="league-recovery-feedback"></p></section>`;
   bindAdminNav();
   document.querySelector("#league-recovery-dashboard").onclick = loadDashboard;
   const confirmationInput = document.querySelector("#league-recovery-confirmation");
   const freshButton = document.querySelector("#league-recovery-fresh");
-  confirmationInput.oninput = () => { freshButton.disabled = confirmationInput.value.trim() !== "开启全新黄狗联赛赛季"; };
+  confirmationInput.oninput = () => { freshButton.disabled = confirmationInput.value.trim() !== "开启全新YFFM1 联赛赛季"; };
   freshButton.onclick = async () => {
     const feedback = document.querySelector("#league-recovery-feedback");
     freshButton.disabled = true;
@@ -512,7 +512,7 @@ function renderLeagueUnavailable(error) {
 }
 
 async function loadLeagueAdmin() {
-  app.innerHTML = `<section class="loading">正在读取黄狗联赛数据…</section>`;
+  app.innerHTML = `<section class="loading">正在读取YFFM1 联赛数据…</section>`;
   try { const [league, enforcement] = await Promise.all([api("/api/admin/league"), api("/api/admin/league/roster-enforcement/preview")]); leagueData = league.league; rosterEnforcementData = enforcement.enforcement; renderLeagueAdmin(); }
   catch (error) {
     if (error.status === 401) renderLogin("登录已失效，请重新输入密码");

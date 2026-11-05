@@ -1,3 +1,4 @@
+import {REAL_PLAYERS, isXPlayer} from "../versus/player-pool.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -13,7 +14,7 @@ async function request(pathname, { method = "GET", token = "", body = {}, addres
 test("联赛旧数据冲突时后台提供开启全新赛季的恢复入口", () => {
   const source = readFileSync(new URL("../admin/public/app.js", import.meta.url), "utf8");
   assert.match(source, /function renderLeagueRecovery\(error\)/);
-  assert.match(source, /开启全新黄狗联赛赛季/);
+  assert.match(source, /开启全新YFFM1 联赛赛季/);
   assert.match(source, /\/api\/admin\/league\/fresh-season/);
   assert.match(source, /error\.status === 409 && error\.code === "YDL_SEASON_DATA_CONFLICT"/);
   assert.match(source, /function renderLeagueUnavailable\(error\)/);
@@ -49,7 +50,7 @@ test("管理员后台拒绝错误密码和未授权数据访问", async () => {
 });
 
 test("管理员登录后可以读取去敏玩家列表和竞技统计", async () => {
-  const login = await request("/api/admin/login", { method:"POST", body:{ password:"19971019" }, address:"127.0.0.2" });
+  const login = await request("/api/admin/login", { method:"POST", body:{ password:(process.env.YFFM_ADMIN_PASSWORD ?? process.env.VERSUS_ADMIN_PASSWORD ?? "local-dev-admin") }, address:"127.0.0.2" });
   assert.equal(login.statusCode, 200);
   assert.match(login.value.token, /^[A-Za-z0-9_-]+$/);
   const dashboard = await request("/api/admin/dashboard", { token:login.value.token });
@@ -62,7 +63,7 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal(league.value.league.teams.length, 10);
   assert.ok(league.value.league.pools.ATT.total > 0);
   assert.equal(league.value.league.s4Assets.schemaVersion, 1);
-  assert.equal(league.value.league.s4PlayerCatalog.length, 676);
+  assert.equal(league.value.league.s4PlayerCatalog.length, REAL_PLAYERS.filter(p => !isXPlayer(p)).length);
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅西"));
   assert.ok(league.value.league.s4PlayerCatalog.some((player) => player.name === "梅老鼠"));
   assert.ok(Array.isArray(league.value.league.s4CardGrants));
@@ -76,13 +77,17 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal(typeof predictions.value.predictions.totals.realizedNet, "number");
   const content = await request("/api/admin/content", { token:login.value.token });
   assert.equal(content.statusCode, 200);
-  assert.equal(content.value.content.players.length, 676);
+  assert.equal(content.value.content.players.length, REAL_PLAYERS.filter(p => !isXPlayer(p)).length);
   assert.ok(content.value.content.traits.length > 0);
   assert.deepEqual(content.value.content.roleGroups, ["ANY", "GK", "DEF", "MID", "ATT"]);
   assert.deepEqual(content.value.content.playerRoles, ["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
   assert.ok(content.value.content.traits.every((trait) => !("rarity" in trait)));
   assert.ok(content.value.content.traits.filter((trait) => trait.status === "active").every((trait) => trait.rules.length > 0));
-  assert.ok(content.value.content.players.find((entry) => entry.name === "布冯" && entry.overall === 90));
+  const buffon = REAL_PLAYERS.find((entry) => entry.name === "布冯");
+  assert.ok(buffon);
+  const contentBuffon = content.value.content.players.find((entry) => entry.id === buffon.id);
+  assert.ok(contentBuffon);
+  assert.equal(contentBuffon.overall, buffon.overall);
   const player = dashboard.value.dashboard.players[0];
   if (player) {
     const detail = await request(`/api/admin/players/${encodeURIComponent(player.id)}`, { token:login.value.token });

@@ -4,7 +4,7 @@ if ($env:YDL_OFFLINE_NO_BROWSER -eq "1") { $NoBrowser = $true }
 $ErrorActionPreference = "Stop"
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
-$Host.UI.RawUI.WindowTitle = "YDL S4 Offline"
+$Host.UI.RawUI.WindowTitle = "YFFM1 Offline"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $node = Join-Path $root "runtime\node.exe"
@@ -50,7 +50,7 @@ if ($Stop) {
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "          YDL S4 Offline Windows x64" -ForegroundColor Cyan
+Write-Host "          YFFM1 Offline Windows x64" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -80,7 +80,7 @@ if (-not (Test-Path -LiteralPath $profileDir)) {
 
 $env:YDL_OFFLINE_MODE = "1"
 $env:APP_ENV = "production"
-$env:APP_LABEL = "YDL S4 Offline"
+$env:APP_LABEL = "YFFM1 Offline"
 $env:VERSUS_HOST = "127.0.0.1"
 $env:DEVTOOL_PORT = "4318"
 $env:VERSUS_ADMIN_PASSWORD = "ydl-offline"

@@ -40,7 +40,7 @@ const DEMO = {
   account:{ accountToken:"demo", profile:{ id:"YD-DEMO", nickname:"铁血蓝白AFA", passwordSet:true } },
   live:{
     team:{ name:"铁血蓝白AFA" },
-    season:{ name:"S4 黄狗联赛", currentRound:22, totalRounds:33 },
+    season:{ name:"S4 YFFM1 联赛", currentRound:22, totalRounds:33 },
     schedule:[
       { id:"s1", startsAt:demoNow + 32*60*1000, competitionName:"黄狗甲级联赛", label:"第23轮", homeName:"铁血蓝白AFA", awayName:"海港竞技" },
       { id:"s2", startsAt:demoNow + 2*86400000, competitionName:"黄狗杯", label:"四分之一决赛", homeName:"南城联队", awayName:"铁血蓝白AFA" },
@@ -264,7 +264,7 @@ function ownMatchResult(match) {
 }
 
 function loginMarkup() {
-  return `<main class="login-shell"><section><div class="login-brand"><div class="brand-mark">YD</div><small>YELLOWDOGS TELEVISION</small><h1>黄狗TV</h1><p>登录球队账号，观看直播并参与赛事预测。</p></div><form class="login-panel" data-login-form><label class="field"><span>昵称</span><input name="nickname" autocomplete="username" required /></label><label class="field"><span>密码</span><input name="password" type="password" autocomplete="current-password" required /></label><div class="login-actions"><button class="button primary wide" type="submit">登录黄狗TV</button></div><p class="login-note">正在连接 YellowDogs League 正式服务器</p></form></section></main>`;
+  return `<main class="login-shell"><section><div class="login-brand"><div class="brand-mark">YD</div><small>YELLOWDOGS TELEVISION</small><h1>YFFM1 TV</h1><p>登录球队账号，观看直播并参与赛事预测。</p></div><form class="login-panel" data-login-form><label class="field"><span>昵称</span><input name="nickname" autocomplete="username" required /></label><label class="field"><span>密码</span><input name="password" type="password" autocomplete="current-password" required /></label><div class="login-actions"><button class="button primary wide" type="submit">登录YFFM1 TV</button></div><p class="login-note">正在连接 YFFM1 正式服务器</p></form></section></main>`;
 }
 
 function standingsTableMarkup(rows, ownTeamId, options = {}) {
@@ -355,9 +355,9 @@ function honorRoomMarkup() {
 }
 
 function shellMarkup(content) {
-  const teamName = state.live?.team?.name ?? state.account?.profile?.nickname ?? "黄狗TV";
+  const teamName = state.live?.team?.name ?? state.account?.profile?.nickname ?? "YFFM1 TV";
   const balance = state.predictions?.wallet?.balance;
-  return `<div class="app-shell"><header class="topbar"><div class="brand-mark">YD</div><div class="brand-copy"><b>黄狗TV</b><small>YELLOWDOGS TELEVISION</small></div><div class="topbar-status"><b>${escapeHtml(teamName)}</b><small>${Number.isFinite(Number(balance)) ? `${Number(balance).toLocaleString("zh-CN")} 金币` : state.demo ? "演示模式" : "已登录"}</small></div></header><main class="content">${content}</main><nav class="bottom-nav"><button data-tab="tv" class="${state.tab === "tv" ? "active" : ""}"><span>◉</span>黄狗TV</button><button data-tab="yoogle" class="${state.tab === "yoogle" ? "active" : ""}"><span>⌕</span>YOOGLE</button><button data-tab="predictions" class="${state.tab === "predictions" ? "active" : ""}"><span>◆</span>预测</button><button data-tab="honor" class="${state.tab === "honor" ? "active" : ""}"><span>♛</span>荣誉</button><button data-tab="mine" class="${state.tab === "mine" ? "active" : ""}"><span>●</span>我的</button></nav></div>`;
+  return `<div class="app-shell"><header class="topbar"><div class="brand-mark">YD</div><div class="brand-copy"><b>YFFM1 TV</b><small>YELLOWDOGS TELEVISION</small></div><div class="topbar-status"><b>${escapeHtml(teamName)}</b><small>${Number.isFinite(Number(balance)) ? `${Number(balance).toLocaleString("zh-CN")} 金币` : state.demo ? "演示模式" : "已登录"}</small></div></header><main class="content">${content}</main><nav class="bottom-nav"><button data-tab="tv" class="${state.tab === "tv" ? "active" : ""}"><span>◉</span>YFFM1 TV</button><button data-tab="yoogle" class="${state.tab === "yoogle" ? "active" : ""}"><span>⌕</span>YOOGLE</button><button data-tab="predictions" class="${state.tab === "predictions" ? "active" : ""}"><span>◆</span>预测</button><button data-tab="honor" class="${state.tab === "honor" ? "active" : ""}"><span>♛</span>荣誉</button><button data-tab="mine" class="${state.tab === "mine" ? "active" : ""}"><span>●</span>我的</button></nav></div>`;
 }
 
 function yoogleResults() {
@@ -400,7 +400,7 @@ function yoogleCardMarkup(player) {
   const profileUrl = profileData.imageUrl ? (String(profileData.imageUrl).startsWith("http") ? String(profileData.imageUrl) : `${PRODUCTION_SERVER_URL}${String(profileData.imageUrl).startsWith("/") ? "" : "/"}${profileData.imageUrl}`) : "";
   const profile = profileUrl ? `<img src="${escapeHtml(profileUrl)}" alt="" loading="lazy" decoding="async" style="--profile-x:${Number(profileData.xPercent ?? 50)}%;--profile-y:${Number(profileData.yPercent ?? 18)}%;--profile-width:${Number(profileData.widthPercent ?? 100)}%">` : "";
   const secondary = player.secondaryRole && player.secondaryRole !== player.role ? ` / ${player.secondaryRole}` : "";
-  return `<article class="yoogle-card grade-${escapeHtml(String(player.grade ?? "C").toLowerCase())}">${profile}<div class="yoogle-card-glow"></div><small>${escapeHtml(player.grade ?? "C")} RATED</small><strong>${Number(player.overall ?? 0)}</strong><b>${escapeHtml(player.name)}</b><span>${escapeHtml(player.role ?? "-")}${escapeHtml(secondary)}</span><em>${escapeHtml(player.club ?? "YellowDogs League")}</em></article>`;
+  return `<article class="yoogle-card grade-${escapeHtml(String(player.grade ?? "C").toLowerCase())}">${profile}<div class="yoogle-card-glow"></div><small>${escapeHtml(player.grade ?? "C")} RATED</small><strong>${Number(player.overall ?? 0)}</strong><b>${escapeHtml(player.name)}</b><span>${escapeHtml(player.role ?? "-")}${escapeHtml(secondary)}</span><em>${escapeHtml(player.club ?? "YFFM1")}</em></article>`;
 }
 
 function openYooglePlayer(playerId) {
@@ -415,7 +415,7 @@ function openYooglePlayer(playerId) {
 
 function tvMarkup() {
   const leagueBroadcasts = state.broadcasts.filter((entry) => String(entry.code ?? "").startsWith("YDL-"));
-  const liveCards = leagueBroadcasts.map((broadcast) => `<button class="live-card" data-watch="${escapeHtml(broadcast.code)}"><header><span class="live-pill">LIVE</span><small>${escapeHtml(broadcast.competition ?? broadcast.competitionName ?? "黄狗联赛")} · ${Number(broadcast.minute ?? 0)}'</small></header><div class="live-score"><b>${escapeHtml(broadcast.teams?.[0]?.name)}</b><strong>${Number(broadcast.score?.[0] ?? 0)} : ${Number(broadcast.score?.[1] ?? 0)}</strong><b>${escapeHtml(broadcast.teams?.[1]?.name)}</b></div><footer><span>${Number(broadcast.spectatorCount ?? 0)} 人正在观看</span><b>进入直播 ›</b></footer></button>`).join("");
+  const liveCards = leagueBroadcasts.map((broadcast) => `<button class="live-card" data-watch="${escapeHtml(broadcast.code)}"><header><span class="live-pill">LIVE</span><small>${escapeHtml(broadcast.competition ?? broadcast.competitionName ?? "YFFM1 联赛")} · ${Number(broadcast.minute ?? 0)}'</small></header><div class="live-score"><b>${escapeHtml(broadcast.teams?.[0]?.name)}</b><strong>${Number(broadcast.score?.[0] ?? 0)} : ${Number(broadcast.score?.[1] ?? 0)}</strong><b>${escapeHtml(broadcast.teams?.[1]?.name)}</b></div><footer><span>${Number(broadcast.spectatorCount ?? 0)} 人正在观看</span><b>进入直播 ›</b></footer></button>`).join("");
   const scheduleRows = (state.live?.schedule ?? []).map((fixture) => {
     const statusText = fixture.status === "complete" ? `${Number(fixture.score?.[0] ?? 0)} : ${Number(fixture.score?.[1] ?? 0)}` : fixture.status === "live" ? "进行中" : countdown(fixture.startsAt);
     const action = fixture.status === "live" && fixture.broadcastCode
@@ -423,22 +423,22 @@ function tvMarkup() {
       : fixture.status === "complete" && fixture.matchId
         ? `<button class="mini-action" data-match-detail="${escapeHtml(fixture.matchId)}">比赛详情</button>`
         : `<strong>${escapeHtml(statusText)}</strong>`;
-    return `<article class="schedule-card ${escapeHtml(fixture.status ?? "scheduled")}"><time><b>${time(fixture.startsAt, false)}</b><small>${time(fixture.startsAt)}</small></time><div><b>${fixture.venue === "home" ? "主场" : "客场"} · ${escapeHtml(fixture.opponentName ?? "待定球队")}</b><small>${escapeHtml(fixture.competitionName ?? "黄狗联赛")} · ${escapeHtml(fixture.label ?? "待开赛")}</small></div>${action}</article>`;
+    return `<article class="schedule-card ${escapeHtml(fixture.status ?? "scheduled")}"><time><b>${time(fixture.startsAt, false)}</b><small>${time(fixture.startsAt)}</small></time><div><b>${fixture.venue === "home" ? "主场" : "客场"} · ${escapeHtml(fixture.opponentName ?? "待定球队")}</b><small>${escapeHtml(fixture.competitionName ?? "YFFM1 联赛")} · ${escapeHtml(fixture.label ?? "待开赛")}</small></div>${action}</article>`;
   }).join("");
   const historyRows = (state.live?.history ?? []).map((match) => {
     const result = ownMatchResult(match);
     const opponent = result.ownHome ? match.awayName : match.homeName;
     return `<button class="history-card ${result.result}" ${match.hasDetails ? `data-match-detail="${escapeHtml(match.id)}"` : "disabled"}><span><small>${time(match.playedAt)}</small><b>${escapeHtml(opponent)}</b><em>${escapeHtml(match.label ?? (match.competition === "cup" ? "黄狗冠军杯" : `联赛第${match.round}轮`))} · ${result.ownHome ? "主场" : "客场"}</em></span><strong>${result.ownScore} : ${result.opponentScore}</strong><i>${match.hasDetails ? "查看详情 ›" : "旧比赛无详情"}</i></button>`;
   }).join("");
-  const upcomingRows = state.upcoming.slice(0, 6).map((fixture) => `<article class="schedule-card"><time><b>${time(fixture.startsAt, false)}</b><small>${countdown(fixture.startsAt)}</small></time><div><b>${escapeHtml(fixture.homeName)} vs ${escapeHtml(fixture.awayName)}</b><small>${escapeHtml(fixture.competitionName ?? "黄狗联赛")} · ${escapeHtml(fixture.label ?? "待开赛")}</small></div><strong>待播</strong></article>`).join("");
+  const upcomingRows = state.upcoming.slice(0, 6).map((fixture) => `<article class="schedule-card"><time><b>${time(fixture.startsAt, false)}</b><small>${countdown(fixture.startsAt)}</small></time><div><b>${escapeHtml(fixture.homeName)} vs ${escapeHtml(fixture.awayName)}</b><small>${escapeHtml(fixture.competitionName ?? "YFFM1 联赛")} · ${escapeHtml(fixture.label ?? "待开赛")}</small></div><strong>待播</strong></article>`).join("");
   const season = state.live?.season;
-  const liveNowContent = `<section class="panel"><header class="panel-head"><div><small>LIVE NOW</small><b>正在直播</b></div><strong>${leagueBroadcasts.length} 场</strong></header><div class="live-list">${liveCards || `<p class="empty">当前没有正在进行的黄狗联赛直播。</p>`}</div></section>`;
+  const liveNowContent = `<section class="panel"><header class="panel-head"><div><small>LIVE NOW</small><b>正在直播</b></div><strong>${leagueBroadcasts.length} 场</strong></header><div class="live-list">${liveCards || `<p class="empty">当前没有正在进行的YFFM1 联赛直播。</p>`}</div></section>`;
   const nextBroadcastContent = `<section class="panel"><header class="panel-head"><div><small>NEXT BROADCASTS</small><b>全场直播预告</b></div><strong>自动更新</strong></header><div class="schedule-list">${upcomingRows || `<p class="empty">暂时没有已确定的直播。</p>`}</div></section>`;
   const scheduleContent = `<section class="panel"><header class="panel-head"><div><small>CLUB CALENDAR</small><b>我的完整日程</b></div><strong>${state.live?.schedule?.length ?? 0} 场</strong></header><div class="schedule-list">${scheduleRows || `<p class="empty">当前没有已确定的球队赛程。</p>`}</div></section>`;
   const historyContent = `<section class="panel"><header class="panel-head"><div><small>TEAM HISTORY</small><b>历史战绩</b></div><strong>${state.live?.history?.length ?? 0} 场</strong></header><div class="history-list">${historyRows || `<p class="empty">你的球队还没有比赛记录。</p>`}</div></section>`;
   const recordContent = clubRecordMarkup();
   const content = state.tvSection === "schedule" ? scheduleContent : state.tvSection === "history" ? historyContent : state.tvSection === "records" ? recordContent : `${liveNowContent}${quickTeamSummaryMarkup()}${nextBroadcastContent}`;
-  return `<header class="view-head"><div><small>YDL TELEVISION</small><h1>黄狗TV</h1></div><span>${season ? `${escapeHtml(season.name)}<br>第 ${season.currentRound}/${season.totalRounds} 轮` : "实时更新"}</span></header><section class="panel hero"><small>YOUR CLUB</small><h2>${escapeHtml(state.live?.team?.name ?? state.account.profile.nickname)}</h2><p>赛程、直播、历史战绩和比赛详情集中在这里。</p><div class="hero-stats"><span><b>${leagueBroadcasts.length}</b><small>正在直播</small></span><span><b>${(state.live?.schedule ?? []).length}</b><small>我的赛程</small></span><span><b>${(state.live?.history ?? []).length}</b><small>历史比赛</small></span></div></section><nav class="section-tabs tv-tabs"><button data-tv-section="live" class="${state.tvSection === "live" ? "active" : ""}">电视台</button><button data-tv-section="records" class="${state.tvSection === "records" ? "active" : ""}">球队战绩</button><button data-tv-section="schedule" class="${state.tvSection === "schedule" ? "active" : ""}">我的日程</button><button data-tv-section="history" class="${state.tvSection === "history" ? "active" : ""}">历史战绩</button></nav>${content}`;
+  return `<header class="view-head"><div><small>YDL TELEVISION</small><h1>YFFM1 TV</h1></div><span>${season ? `${escapeHtml(season.name)}<br>第 ${season.currentRound}/${season.totalRounds} 轮` : "实时更新"}</span></header><section class="panel hero"><small>YOUR CLUB</small><h2>${escapeHtml(state.live?.team?.name ?? state.account.profile.nickname)}</h2><p>赛程、直播、历史战绩和比赛详情集中在这里。</p><div class="hero-stats"><span><b>${leagueBroadcasts.length}</b><small>正在直播</small></span><span><b>${(state.live?.schedule ?? []).length}</b><small>我的赛程</small></span><span><b>${(state.live?.history ?? []).length}</b><small>历史比赛</small></span></div></section><nav class="section-tabs tv-tabs"><button data-tv-section="live" class="${state.tvSection === "live" ? "active" : ""}">电视台</button><button data-tv-section="records" class="${state.tvSection === "records" ? "active" : ""}">球队战绩</button><button data-tv-section="schedule" class="${state.tvSection === "schedule" ? "active" : ""}">我的日程</button><button data-tv-section="history" class="${state.tvSection === "history" ? "active" : ""}">历史战绩</button></nav>${content}`;
 }
 
 function predictionsMarkup() {
@@ -446,7 +446,7 @@ function predictionsMarkup() {
   const cards = markets.map((market) => {
     const resultOdds = (market.options?.result ?? []).map((option) => `<span class="odds-preview"><small>${escapeHtml(option.label)}</small><b>${Number(option.payoutRate ?? 0).toFixed(2)}</b></span>`).join("");
     const betSummary = market.myBets?.length ? `<div class="market-bet-summary">${market.myBets.map((bet) => `<span><small>${PREDICTION_CATEGORY_LABELS[bet.category] ?? bet.category}</small><b>${escapeHtml(marketOption(market, bet.category, bet.selection)?.label ?? bet.selection)}</b><em>${Number(bet.amount).toLocaleString("zh-CN")}金币 · ${BET_STATUS_LABELS[bet.status] ?? bet.status}</em></span>`).join("")}</div>` : "";
-    return `<article class="market-card"><header><small>${escapeHtml(market.competitionName ?? market.competition ?? "黄狗联赛")} · 第${escapeHtml(market.round ?? "-")}轮</small><span>${market.status === "open" ? `${countdown(market.closesAt)}截止` : "已截止"}</span></header><div class="market-teams"><b>${escapeHtml(market.homeName)}</b><i>VS</i><b>${escapeHtml(market.awayName)}</b></div><p class="market-hint">${escapeHtml(marketHandicap(market))}</p><div class="odds-preview-grid">${resultOdds}</div>${betSummary}<footer class="market-footer"><span>${market.eligible ? `${availablePredictionCategories(market).length}种玩法已开放` : escapeHtml(market.lockedReason ?? "暂不可预测")}</span><button class="mini-action" data-open-market="${escapeHtml(market.id)}">查看全部盘口</button></footer></article>`;
+    return `<article class="market-card"><header><small>${escapeHtml(market.competitionName ?? market.competition ?? "YFFM1 联赛")} · 第${escapeHtml(market.round ?? "-")}轮</small><span>${market.status === "open" ? `${countdown(market.closesAt)}截止` : "已截止"}</span></header><div class="market-teams"><b>${escapeHtml(market.homeName)}</b><i>VS</i><b>${escapeHtml(market.awayName)}</b></div><p class="market-hint">${escapeHtml(marketHandicap(market))}</p><div class="odds-preview-grid">${resultOdds}</div>${betSummary}<footer class="market-footer"><span>${market.eligible ? `${availablePredictionCategories(market).length}种玩法已开放` : escapeHtml(market.lockedReason ?? "暂不可预测")}</span><button class="mini-action" data-open-market="${escapeHtml(market.id)}">查看全部盘口</button></footer></article>`;
   }).join("");
   const activeRecords = markets.flatMap((market) => (market.myBets ?? []).map((bet) => ({ ...bet, homeName:market.homeName, awayName:market.awayName, categoryLabel:PREDICTION_CATEGORY_LABELS[bet.category] ?? bet.category, selectionLabel:marketOption(market, bet.category, bet.selection)?.label ?? bet.selection })));
   const records = (state.predictions?.predictionHistory ?? activeRecords).slice().sort((left, right) => Number(right.createdAt ?? 0) - Number(left.createdAt ?? 0));
@@ -461,7 +461,7 @@ function predictionsMarkup() {
 }
 
 function mineMarkup() {
-  return `<header class="view-head"><div><small>MY YELLOWDOGS</small><h1>我的</h1></div><span>${CLIENT_VERSION}</span></header><section class="panel hero"><small>CLUB ACCOUNT</small><h2>${escapeHtml(state.live?.team?.name ?? state.account.profile.nickname)}</h2><p>玩家ID ${escapeHtml(state.account.profile.id)}</p></section><section class="panel"><header class="panel-head"><div><small>CONNECTION</small><b>连接信息</b></div><strong>ONLINE</strong></header><div class="profile-list"><div class="profile-row"><span>账号昵称</span><b>${escapeHtml(state.account.profile.nickname)}</b></div><div class="profile-row"><span>服务器</span><b>YellowDogs League 正式服</b></div><div class="profile-row"><span>客户端版本</span><b>${CLIENT_VERSION}</b></div></div><div class="action-stack"><button class="button secondary wide" data-refresh>立即刷新数据</button><button class="button danger wide" data-logout>退出账号</button></div></section><section class="panel"><p class="empty">赛程、直播、历史战绩和赛事预测均与正式服务器同步。</p></section>`;
+  return `<header class="view-head"><div><small>MY YELLOWDOGS</small><h1>我的</h1></div><span>${CLIENT_VERSION}</span></header><section class="panel hero"><small>CLUB ACCOUNT</small><h2>${escapeHtml(state.live?.team?.name ?? state.account.profile.nickname)}</h2><p>玩家ID ${escapeHtml(state.account.profile.id)}</p></section><section class="panel"><header class="panel-head"><div><small>CONNECTION</small><b>连接信息</b></div><strong>ONLINE</strong></header><div class="profile-list"><div class="profile-row"><span>账号昵称</span><b>${escapeHtml(state.account.profile.nickname)}</b></div><div class="profile-row"><span>服务器</span><b>YFFM1 正式服</b></div><div class="profile-row"><span>客户端版本</span><b>${CLIENT_VERSION}</b></div></div><div class="action-stack"><button class="button secondary wide" data-refresh>立即刷新数据</button><button class="button danger wide" data-logout>退出账号</button></div></section><section class="panel"><p class="empty">赛程、直播、历史战绩和赛事预测均与正式服务器同步。</p></section>`;
 }
 
 function quickTeamSummaryMarkup() {
@@ -472,7 +472,7 @@ function quickTeamSummaryMarkup() {
   const form = history.map((match) => { const home = match.homeId === team.id; const own = Number(match.score?.[home ? 0 : 1] ?? 0); const rival = Number(match.score?.[home ? 1 : 0] ?? 0); return own > rival ? "W" : own < rival ? "L" : "D"; });
   const next = (live.schedule ?? []).find((fixture) => fixture.status === "scheduled" || fixture.status === "live");
   const nextOpponent = next ? `${next.venue === "home" ? "主场" : "客场"} · ${next.opponentName ?? "待定"}` : "暂无下一场比赛";
-  const nextMeta = next ? `${next.status === "live" ? "正在进行" : countdown(next.startsAt)} · ${next.competitionName ?? "黄狗联赛"}` : "赛程尚未生成";
+  const nextMeta = next ? `${next.status === "live" ? "正在进行" : countdown(next.startsAt)} · ${next.competitionName ?? "YFFM1 联赛"}` : "赛程尚未生成";
   const rank = standing?.rank ? `第 ${standing.rank} 名` : "暂无排名";
   const record = standing ? `${standing.won ?? 0}胜 ${standing.drawn ?? 0}平 ${standing.lost ?? 0}负` : "暂无战绩";
   const cup = live.cup ?? {};
@@ -487,7 +487,7 @@ function render() {
     return;
   }
   if (state.loading && !state.live && !state.demo) {
-    app.innerHTML = shellMarkup(`<div class="loading">正在连接黄狗TV…</div>`);
+    app.innerHTML = shellMarkup(`<div class="loading">正在连接YFFM1 TV…</div>`);
     return;
   }
   const content = state.tab === "yoogle" ? yoogleMarkup() : state.tab === "predictions" ? predictionsMarkup() : state.tab === "honor" ? honorRoomMarkup() : state.tab === "mine" ? mineMarkup() : tvMarkup();
@@ -714,7 +714,7 @@ function showPredictionMarket(marketId) {
     const maxStake = Number(market.maxStakes?.[category] ?? market.maxStake ?? 0);
     return `<section class="market-category ${existing ? "completed" : ""}"><header><div><small>${category === "result" ? escapeHtml(marketHandicap(market)) : "提交后赔率锁定"}</small><b>${escapeHtml(PREDICTION_CATEGORY_LABELS[category] ?? category)}</b></div><strong>${existing ? "已投入" : `上限 ${maxStake.toLocaleString("zh-CN")}`}</strong></header>${existing ? `<div class="existing-bet"><span>${escapeHtml(marketOption(market, category, existing.selection)?.label ?? existing.selection)}</span><b>${Number(existing.payoutRate).toFixed(2)} · ${Number(existing.amount).toLocaleString("zh-CN")}金币</b><small>${escapeHtml(BET_STATUS_LABELS[existing.status] ?? existing.status)}</small></div>` : `<div class="market-options category-${escapeHtml(category)}">${options}</div>`}</section>`;
   }).join("");
-  document.body.insertAdjacentHTML("beforeend", `<div class="market-sheet"><section class="market-dialog"><header class="sheet-toolbar"><button data-close-market>←</button><div><small>${escapeHtml(market.competitionName ?? "黄狗联赛")} · ${time(market.startsAt)}</small><b>${escapeHtml(market.homeName)} vs ${escapeHtml(market.awayName)}</b></div></header>${market.eligible ? "" : `<p class="market-lock">${escapeHtml(market.lockedReason ?? "本场暂不可预测")}</p>`}<main>${categories || `<p class="empty">本场盘口仍在生成中。</p>`}<p class="prediction-footnote">半全场按照主队视角的45分钟和90分钟常规时间结果结算；加时赛与点球大战不计入。命中返还包含投入本金。</p></main></section></div>`);
+  document.body.insertAdjacentHTML("beforeend", `<div class="market-sheet"><section class="market-dialog"><header class="sheet-toolbar"><button data-close-market>←</button><div><small>${escapeHtml(market.competitionName ?? "YFFM1 联赛")} · ${time(market.startsAt)}</small><b>${escapeHtml(market.homeName)} vs ${escapeHtml(market.awayName)}</b></div></header>${market.eligible ? "" : `<p class="market-lock">${escapeHtml(market.lockedReason ?? "本场暂不可预测")}</p>`}<main>${categories || `<p class="empty">本场盘口仍在生成中。</p>`}<p class="prediction-footnote">半全场按照主队视角的45分钟和90分钟常规时间结果结算；加时赛与点球大战不计入。命中返还包含投入本金。</p></main></section></div>`);
 }
 
 function openPredictionMarket(marketId) {

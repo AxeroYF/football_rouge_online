@@ -13,7 +13,7 @@ if (-not $OutputDir) { $OutputDir = Join-Path $ProjectRoot "handoff" }
 $MacBuildKit = (Resolve-Path -LiteralPath $MacBuildKit).Path
 $OutputDir = (Resolve-Path -LiteralPath $OutputDir).Path
 
-$packageName = "YDL-S4-Offline-Windows-x64-v$Version"
+$packageName = "YFFM1-Offline-Windows-x64-v$Version"
 $stageRoot = Join-Path $OutputDir ".$packageName-build"
 $packageRoot = Join-Path $stageRoot $packageName
 $zipPath = Join-Path $OutputDir "$packageName.zip"
@@ -76,7 +76,7 @@ foreach ($name in $sourceDirs) {
   if (-not (Test-Path -LiteralPath $source)) { throw "缺少源码目录：$source" }
   Copy-Item -LiteralPath $source -Destination (Join-Path $appRoot $name) -Recurse
 }
-foreach ($name in @("package.json", "package-lock.json")) {
+foreach ($name in @("package.json", "package-lock.json", "server.mjs")) {
   Copy-Item -LiteralPath (Join-Path $ProjectRoot $name) -Destination (Join-Path $appRoot $name)
 }
 Copy-Item -LiteralPath (Join-Path $ProjectRoot "node_modules") -Destination (Join-Path $appRoot "node_modules") -Recurse
@@ -85,13 +85,13 @@ Copy-Item -LiteralPath $seedProfiles -Destination (Join-Path $packageRoot "seed-
 Copy-Item -LiteralPath $nodeSource -Destination (Join-Path $packageRoot "runtime\node.exe")
 
 $windowsSource = Join-Path $ProjectRoot "offline\windows"
-$launcherExe = Join-Path $packageRoot "YDL S4 Offline.exe"
+$launcherExe = Join-Path $packageRoot "YFFM1 Offline.exe"
 $launcherSource = Join-Path $windowsSource "YdlOfflineLauncher.cs"
 & $cscPath /nologo /target:winexe /platform:x64 /optimize+ /reference:System.Windows.Forms.dll /reference:System.Drawing.dll "/out:$launcherExe" $launcherSource
 if ($LASTEXITCODE -ne 0) { throw "Windows GUI 启动器编译失败。" }
 Copy-Item -LiteralPath (Join-Path $windowsSource "launcher.ps1") -Destination (Join-Path $packageRoot "launcher.ps1")
-Copy-Item -LiteralPath (Join-Path $windowsSource "start.cmd") -Destination (Join-Path $packageRoot "启动 YDL S4 Offline.cmd")
-Copy-Item -LiteralPath (Join-Path $windowsSource "stop.cmd") -Destination (Join-Path $packageRoot "停止 YDL S4 Offline.cmd")
+Copy-Item -LiteralPath (Join-Path $windowsSource "start.cmd") -Destination (Join-Path $packageRoot "启动 YFFM1 Offline.cmd")
+Copy-Item -LiteralPath (Join-Path $windowsSource "stop.cmd") -Destination (Join-Path $packageRoot "停止 YFFM1 Offline.cmd")
 Copy-Item -LiteralPath (Join-Path $windowsSource "open-data.cmd") -Destination (Join-Path $packageRoot "打开存档目录.cmd")
 Copy-Item -LiteralPath (Join-Path $windowsSource "self-test.mjs") -Destination (Join-Path $packageRoot "self-test.mjs")
 Copy-Item -LiteralPath (Join-Path $windowsSource "self-test.cmd") -Destination (Join-Path $packageRoot "检测离线版.cmd")
@@ -102,7 +102,7 @@ $migration = Get-Content -LiteralPath (Join-Path $packageRoot "seed-data\OFFLINE
 $gitCommit = (& git -C $ProjectRoot rev-parse HEAD).Trim()
 $gitDirty = [bool](& git -C $ProjectRoot status --porcelain)
 $buildReport = [ordered]@{
-  product = "YDL S4 Offline"
+  product = "YFFM1 Offline"
   version = $Version
   target = "Windows 10/11 x64"
   generatedAt = (Get-Date).ToString("o")

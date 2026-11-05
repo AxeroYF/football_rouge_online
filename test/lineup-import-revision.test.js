@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { YellowDogsLeagueService } from '../versus/league-service.js';
+test('lineup import advances the revision and rejects stale, absent or switched submissions',()=>{
+  const service=new YellowDogsLeagueService({statePath:null,now:()=>Date.parse('2026-08-27T10:01:00+08:00')});
+  const user={id:'revision-check',nickname:'Revision'};
+  service.beginDraft(user,'Revision FC');service.autoDraft(user);service.finishDraft(user);
+  const team=service.accountTeam(user.id);
+  const current=team.lineupSchemes.find(s=>s.id===team.activeLineupSchemeId);
+  current.revision=9;
+  const {code}=service.exportLineupScheme(user);
+  const options={compact:true,lineupSchemeId:current.id,lineupSchemeRevision:9};
+  service.importLineupScheme(user,code,options);
+  assert.equal(current.revision,10);
+  const unchanged=structuredClone(current);
+  assert.throws(()=>service.importLineupScheme(user,code,options),/其他设备更新/);
+  assert.throws(()=>service.importLineupScheme(user,code,{compact:true}),/其他设备更新/);
+  assert.throws(()=>service.importLineupScheme(user,code,{...options,lineupSchemeId:'other'}),/方案已切换/);
+  assert.throws(()=>service.saveTeam(user,{lineupSchemeId:current.id,lineupSchemeRevision:9,starterIds:[]}),/其他设备更新/);
+  assert.deepEqual(current,unchanged);
+});

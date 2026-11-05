@@ -1,0 +1,14 @@
+import {readFile,stat} from 'node:fs/promises';
+import {gzipSync} from 'node:zlib';
+import {performance} from 'node:perf_hooks';
+import {createStaticAssetCache} from '../devtool/static-asset-cache.js';
+const file=new URL('../versus/public/app.js',import.meta.url);
+const details=await stat(file),runs=50;
+const before=performance.now();
+for(let n=0;n<runs;n++)gzipSync(await readFile(file));
+const uncachedMs=performance.now()-before;
+const cache=createStaticAssetCache();await cache.get(file,details,true);
+const after=performance.now();
+for(let n=0;n<runs;n++)await cache.get(file,details,true);
+const cachedMs=performance.now()-after;
+console.log(JSON.stringify({scenario:'local static asset read/compress, warm cache; excludes HTTP and stat',runs,bytes:details.size,uncachedMs,cachedMs},null,2));

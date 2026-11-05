@@ -1,3 +1,4 @@
+import { resolveAdminPassword } from "../src/runtime-config.js";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { versusRooms } from "./room-service.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
@@ -16,7 +17,7 @@ import {
 } from "./player-card-studio-store.js";
 import { buildPlayerBondAnalysisWorkbook, buildPlayerImportWorkbook, parsePlayerImportWorkbook } from "./player-card-excel.js";
 
-const ADMIN_PASSWORD = process.env.VERSUS_ADMIN_PASSWORD ?? "19971019";
+const ADMIN_PASSWORD = resolveAdminPassword();
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 const MAX_LOGIN_FAILURES = 8;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;

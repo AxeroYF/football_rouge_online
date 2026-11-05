@@ -15,8 +15,8 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import {applyShardGarbageCollection,planShardGarbageCollection,shardIndexName} from "../versus/infrastructure/shard-references.js";
 
-const INDEX_FILES = new Set(["matches-index.json", "archives-index.json"]);
 const mode = String(process.argv[2] ?? "analyze");
 const root = path.resolve(process.argv[3] ?? "");
 const flags = new Set(process.argv.slice(4));
@@ -24,6 +24,8 @@ const expectedRevisionFlag = [...flags].find((value) => value.startsWith("--expe
 const expectedRevision = expectedRevisionFlag ? Number(expectedRevisionFlag.split("=")[1]) : null;
 const serviceFlag = [...flags].find((value) => value.startsWith("--service="));
 const serviceName = serviceFlag?.split("=")[1] || "football-s4";
+const backupFlag = [...flags].find((value) => value.startsWith("--backup-dir="));
+const backupDirectory = backupFlag ? path.resolve(backupFlag.slice("--backup-dir=".length)) : path.join(root, "yellowdogs-league-backups");
 
 function fail(message) {
   throw new Error(message);
@@ -76,20 +78,23 @@ function collectReferenceGraph(manifest) {
     if (isRevisionReference(value)) {
       references.add(value);
       const filePath = assertInsideRoot(resolveReference(value));
-      if (INDEX_FILES.has(path.basename(filePath)) && !seenIndexes.has(filePath)) {
+      if (shardIndexName(filePath) && !seenIndexes.has(filePath)) {
         seenIndexes.add(filePath);
-        queuedIndexes.push(filePath);
+        queuedIndexes.push({filePath,kind:shardIndexName(filePath)});
       }
       return;
     }
     if (Array.isArray(value)) value.forEach(collect);
     else if (value && typeof value === "object") Object.values(value).forEach(collect);
   };
-  collect(manifest.shards);
+  const {archives,...otherShards}=manifest.shards;
+  collect(otherShards);
+  collect(archives?.index);
+  for(const entry of archives?.entries??[])collect(entry.path);
   while (queuedIndexes.length) {
-    const filePath = queuedIndexes.pop();
+    const {filePath,kind} = queuedIndexes.pop();
     if (!existsSync(filePath)) fail(`引用索引不存在：${filePath}`);
-    collect(readJson(filePath));
+    for(const entry of readJson(filePath).entries??[])collect(kind==='archives-index.json'?entry.path:entry.reportPath);
   }
   return references;
 }
@@ -212,17 +217,21 @@ function compact() {
     const sourcePath = assertInsideRoot(resolveReference(reference));
     if (!existsSync(sourcePath)) fail(`压实源文件不存在：${reference}`);
     sequence += 1;
-    const safeName = path.basename(sourcePath).replace(/[^a-zA-Z0-9._-]+/g, "-");
+    const safeName = (shardIndexName(sourcePath) ?? path.basename(sourcePath)).replace(/[^a-zA-Z0-9._-]+/g, "-");
     const relativeTarget = `revisions/${newRevision}/compacted/${String(sequence).padStart(6, "0")}-${safeName}`;
     const temporaryTarget = path.join(temporaryRevisionPath, "compacted", `${String(sequence).padStart(6, "0")}-${safeName}`);
     mapping.set(reference, relativeTarget);
-    if (INDEX_FILES.has(path.basename(sourcePath))) writeJson(temporaryTarget, rewriteValue(readJson(sourcePath)));
+    if (shardIndexName(sourcePath)) {
+      const index=readJson(sourcePath),field=shardIndexName(sourcePath)==='archives-index.json'?'path':'reportPath';
+      writeJson(temporaryTarget,{...index,entries:(index.entries??[]).map(entry=>({...entry,...(entry[field]?{[field]:rewriteReference(entry[field])}:{})}))});
+    }
     else copyFileSync(sourcePath, temporaryTarget);
     return relativeTarget;
   };
   try {
-    const rewrittenShards = rewriteValue(manifest.shards);
-    const backupDirectory = path.join(root, "yellowdogs-league-backups");
+    const {archives,...otherShards}=manifest.shards;
+    const rewrittenShards = rewriteValue(otherShards);
+    if(archives)rewrittenShards.archives={...archives,...(archives.index?{index:rewriteReference(archives.index)}:{}),entries:(archives.entries??[]).map(entry=>({...entry,path:rewriteReference(entry.path)}))};
     mkdirSync(backupDirectory, { recursive:true });
     const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+$/, "Z");
     const backupPath = path.join(backupDirectory, `before-shard-compaction-${manifest.revision}-${stamp}.manifest.json`);
@@ -251,44 +260,25 @@ function compact() {
   }
 }
 
-function collectProtectedRevisionIds(manifest) {
-  return new Set([...collectReferenceGraph(manifest)].map((reference) => reference.split("/")[1]));
-}
 
 function gc() {
   if (serviceIsActive()) fail(`服务 ${serviceName} 仍在运行；垃圾回收前必须停止服务`);
   const { manifest } = loadCurrentManifest();
-  const protectedIds = collectProtectedRevisionIds(manifest);
-  const backupDirectory = path.join(root, "yellowdogs-league-backups");
-  if (existsSync(backupDirectory)) {
-    readdirSync(backupDirectory).filter((name) => name.endsWith(".manifest.json")).forEach((name) => {
-      protectedIdsForBackup(name, protectedIds);
-    });
-  }
-  const directories = revisionDirectories();
-  directories.slice(-2).forEach((name) => protectedIds.add(name));
-  const candidates = directories.filter((name) => !protectedIds.has(name));
-  const bytes = candidates.reduce((total, name) => total + directorySize(path.join(root, "revisions", name)), 0);
+  const plan = planShardGarbageCollection(root, manifest, { backupDir:backupDirectory });
   const result = {
     status:flags.has("--apply") ? "deleted" : "dry-run",
     manifestRevision:Number(manifest.revision),
-    protectedRevisionDirectories:protectedIds.size,
-    deletableRevisionDirectories:candidates.length,
-    deletableBytes:bytes,
-    deletableSize:human(bytes),
+    protectedRevisionDirectories:plan.protectedRevisionDirectories,
+    deletableRevisionDirectories:plan.deletableRevisionDirectories,
+    deletableTemporaryDirectories:plan.deletableTemporaryDirectories,
+    deletableFiles:plan.deletableFiles,
+    deletableBytes:plan.deletableBytes,
+    deletableSize:human(plan.deletableBytes),
   };
-  if (flags.has("--apply")) candidates.forEach((name) => rmSync(assertInsideRoot(path.join(root, "revisions", name)), { recursive:true, force:true }));
+  if (flags.has("--apply")) Object.assign(result, applyShardGarbageCollection(plan));
   return result;
 }
 
-function protectedIdsForBackup(name, protectedIds) {
-  const filePath = path.join(root, "yellowdogs-league-backups", name);
-  try {
-    collectProtectedRevisionIds(readJson(filePath)).forEach((id) => protectedIds.add(id));
-  } catch (error) {
-    fail(`备份 manifest 无法读取：${name}：${error.message}`);
-  }
-}
 
 if (!root || root === path.parse(root).root) fail("必须提供明确的分片根目录，禁止使用文件系统根目录");
 if (!existsSync(root) || !statSync(root).isDirectory()) fail(`分片目录不存在：${root}`);

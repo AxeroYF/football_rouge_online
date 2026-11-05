@@ -1,5 +1,8 @@
-﻿import http from "node:http";
-import { readFile, stat } from "node:fs/promises";
+import { acceptsGzip, createStaticAssetCache } from "./static-asset-cache.js";
+import { resolveMatchEngines } from "../src/runtime-config.js";
+import { V3_ENGINE_VERSION, V3_ENGINE_PROFILE } from "../versus/v3/model-config.js";
+import http from "node:http";
+import { stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
@@ -34,9 +37,10 @@ const port = Number(process.env.DEVTOOL_PORT ?? 4310);
 const host = process.env.VERSUS_HOST ?? "127.0.0.1";
 const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
 const offlineYdl = process.env.YDL_OFFLINE_MODE === "1";
-const environment = process.env.APP_ENV ?? "production";
-const environmentLabel = process.env.APP_LABEL ?? "正式服";
-const matchEngine = (offlineYdl || process.env.APP_ENV === "test") && process.env.YDL_MATCH_ENGINE === "v2" ? "v2" : "v1";
+const environment = process.env.APP_ENV ?? "development";
+const environmentLabel = process.env.APP_LABEL ?? (environment === "production" ? "正式服" : "开发环境");
+const matchEngines = resolveMatchEngines();
+const matchEngine = matchEngines.league;
 const maximumBodyBytes = 18 * 1024 * 1024;
 const metricsToken = process.env.YDL_METRICS_TOKEN ?? "";
 const mirrorWorkerToken = process.env.YDL_MIRROR_WORKER_TOKEN ?? "";
@@ -125,7 +129,7 @@ async function handleApi(request, response, pathname) {
   }
   if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson, readBuffer);
   if (request.method === "GET" && pathname === "/api/versus/config") {
-    return sendJson(response, 200, { ok: true, publicOnly, offlineYdl, environment, environmentLabel, matchEngine, offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
+    return sendJson(response, 200, { ok: true, publicOnly, offlineYdl, environment, environmentLabel, matchEngine, matchEngines, engineVersion:matchEngine === "v3" ? V3_ENGINE_VERSION : matchEngine === "v2" ? "2.1.0" : "1", engineProfile:matchEngine === "v3" ? V3_ENGINE_PROFILE : matchEngine === "v2" ? "v2.1-stable-dynamic.2" : "v1", offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
   }
   if (publicOnly) {
     if (request.method === "GET" && pathname === "/api/health") {
@@ -206,7 +210,10 @@ function handleVersusStream(request, response, url) {
   return true;
 }
 
-async function serveStatic(response, pathname, searchParams = new URLSearchParams()) {
+const staticAssets = createStaticAssetCache();
+
+async function serveStatic(response, pathname, searchParams = new URLSearchParams(), request = response.req) {
+  if (!["GET", "HEAD"].includes(request?.method ?? "GET")) { response.writeHead(405, { allow:"GET, HEAD" }); response.end(); return; }
   if (publicOnly && pathname === "/") {
     response.writeHead(302, { location: "/versus/", "cache-control": "no-store" });
     return response.end();
@@ -243,7 +250,6 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
   try {
     const fileStat = await stat(filePath);
     if (!fileStat.isFile()) throw new Error("not a file");
-    const content = await readFile(filePath);
     const hasImmutableVersion = /^[a-f0-9]{12}$/.test(searchParams.get("v") ?? "");
     const isVersionedPlayerProfile = (
       servesAPlayerProfile
@@ -256,31 +262,32 @@ async function serveStatic(response, pathname, searchParams = new URLSearchParam
       && (
         path.extname(filePath).toLowerCase() === ".webp"
           && /^\/assets\/(?:country|club)-badges\/[a-z0-9-]+\.webp$/.test(versusPath)
-        || path.extname(filePath).toLowerCase() === ".png"
-          && /^\/assets\/system-badges\/ai-team-badge\.png$/.test(versusPath)
+        || [".png", ".svg"].includes(path.extname(filePath).toLowerCase())
+          && /^\/assets\/system-badges\/ai-team-badge\.(?:png|svg)$/.test(versusPath)
       )
       && hasImmutableVersion;
     const isImmutableAsset = isVersionedPlayerProfile || isVersionedBadgeAsset;
     const contentType = mimeTypes[path.extname(filePath)] ?? "application/octet-stream";
     const compressible = /^(text\/|application\/json|application\/javascript)/.test(contentType);
-    let body = content;
+    const asset = await staticAssets.get(filePath, fileStat, compressible);
+    const encoded = acceptsGzip(request?.headers["accept-encoding"]) && asset.gzip;
+    const body = encoded || asset.content;
+    const etag = `W/"${asset.hash}${encoded ? "-gzip" : ""}"`;
     const headers = {
       "content-type": contentType,
-      "cache-control":isImmutableAsset ? "public, max-age=31536000, immutable" : "no-store",
+      "cache-control":isImmutableAsset ? "public, max-age=31536000, immutable" : "no-cache",
+      etag,
+      vary:"Accept-Encoding",
       "x-content-type-options": "nosniff",
       "x-frame-options": "DENY",
     };
-    // 文本类静态资源（js/css/html/json）gzip 传输，香港链路下显著减少页面加载时间
-    if (compressible && content.length >= 1024) {
-      const gzipped = gzipSync(content);
-      if (gzipped.length < content.length) {
-        body = gzipped;
-        headers["content-encoding"] = "gzip";
-      }
+    if (encoded) headers["content-encoding"] = "gzip";
+    if (String(request?.headers["if-none-match"] ?? "").split(",").map(s => s.trim()).some(tag => tag === "*" || tag.replace(/^W\//, "") === etag.replace(/^W\//, ""))) {
+      response.writeHead(304, headers); response.end(); return;
     }
     headers["content-length"] = body.length;
     response.writeHead(200, headers);
-    response.end(body);
+    response.end(request?.method === "HEAD" ? undefined : body);
   } catch {
     sendJson(response, 404, { ok: false, error: "file not found" });
   }
@@ -305,7 +312,7 @@ const server = http.createServer(async (request, response) => {
     if (url.pathname.startsWith("/api/")) {
       await handleApi(request, response, url.pathname);
     } else {
-      await serveStatic(response, url.pathname, url.searchParams);
+      await serveStatic(response, url.pathname, url.searchParams, request);
     }
   } catch (error) {
     sendJson(response, error.statusCode ?? 400, {
@@ -317,15 +324,16 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log("本地足球项目已启动：http://" + host + ":" + port);
+  const listeningPort = server.address().port;
+  console.log("YFFM1 已启动：http://" + host + ":" + listeningPort);
   if (offlineYdl) {
-    console.log("YDL 单机版：http://" + host + ":" + port + "/versus/");
-    console.log("本地管理员后台：http://" + host + ":" + port + "/admin/");
+    console.log("YFFM1 离线版：http://" + host + ":" + listeningPort + "/versus/");
+    console.log("本地管理员后台：http://" + host + ":" + listeningPort + "/admin/");
     console.log("仅允许本机访问；好友对战、计算节点与线上运营接口均未开放。");
   } else {
-    console.log("游戏 Demo：http://" + host + ":" + port + "/game/");
-    console.log("好友对战：http://" + host + ":" + port + "/versus/");
-    console.log("管理员后台：http://" + host + ":" + port + "/admin/");
+    console.log("游戏 Demo：http://" + host + ":" + listeningPort + "/game/");
+    console.log("好友对战：http://" + host + ":" + listeningPort + "/versus/");
+    console.log("管理员后台：http://" + host + ":" + listeningPort + "/admin/");
     if (publicOnly) console.log("公网试玩安全模式：开放好友对战及需要密码认证的管理员后台。");
     else console.log(host === "127.0.0.1" ? "仅允许本机访问，按 Ctrl+C 停止。" : "已开放网络访问，请仅在可信局域网中使用。");
   }
@@ -333,13 +341,13 @@ server.listen(port, host, () => {
 
 const leagueTimer = setInterval(() => {
   try { measureRuntimeSync("league.tick", () => yellowDogsLeague.tick()); }
-  catch (error) { console.error("YellowDogs League 定时任务失败：", error); }
+  catch (error) { console.error("YFFM1 定时任务失败：", error); }
 }, 15_000);
 leagueTimer.unref();
 
 const liveSliceIntervalMs = Math.max(100, Math.min(2_000, Number(process.env.YDL_LIVE_SLICE_INTERVAL_MS ?? 100)));
 const liveSliceTimer = setInterval(() => {
   try { measureRuntimeSync("league.liveSlice", () => yellowDogsLeague.advanceLiveSlice()); }
-  catch (error) { console.error("YellowDogs League 直播切片失败：", error); }
+  catch (error) { console.error("YFFM1 直播切片失败：", error); }
 }, liveSliceIntervalMs);
 liveSliceTimer.unref();

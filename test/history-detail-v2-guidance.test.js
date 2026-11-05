@@ -55,6 +55,21 @@ function guidanceFor(options) {
   return buildMatchReview(detail(options), 0).guidance;
 }
 
+test("V3比赛记录沿用兼容的复盘结构并保留实际引擎版本", () => {
+  const match=detail();
+  match.engineVersion="3.0.0";
+  match.modelVersion="match-engine-v3.0";
+  match.engineProfile="v3.0-tactical-control.1";
+  delete match.tacticalReview.source;
+  match.tacticalReview.chainModelVersion="possession-chain-v3.0";
+  match.tacticalReview.spatialModelVersion="spatial-v3.0-tactical.1";
+  const review=buildMatchReview(match,0);
+  assert.equal(review.engineFacts.engineProfile,"v3.0-tactical-control.1");
+  assert.equal(review.engineFacts.chainModelVersion,"possession-chain-v3.0");
+  assert.equal(review.engineFacts.spatialModelVersion,"spatial-v3.0-tactical.1");
+  assert.equal(review.guidance.units.length,5);
+});
+
 test("V2教练复盘输出五项判断、因果链和优先建议", () => {
   const guidance = guidanceFor();
   assert.equal(guidance.method, "v2-coach-guidance-v1");

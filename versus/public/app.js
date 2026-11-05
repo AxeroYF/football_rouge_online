@@ -1,3 +1,8 @@
+import { playerPreviewValues } from "./player-preview.js";
+import { createPackOpeningEffects } from "./pack-opening.js";
+import { meteorLayer } from "./pack-opening-meteors.js";
+import { shieldCardContent } from "./player-card-shield.js";
+import { patchHtmlChildren, patchHtmlElement, patchDomElement, htmlChildrenMatch } from "./dom-patch.js";
 import { applyS4BondBonuses, evaluateS4LineupBonds } from "./bond-rules.js";
 import { CAPTAIN_STYLES, DEFAULT_CAPTAIN_STYLE, normalizeCaptainStyle } from "./captain-rules.js";
 import { aPlayerProfileForPlayer } from "./a-player-profiles.js";
@@ -69,7 +74,7 @@ const BROWSER_SESSION_KEY = "football_test1_versus_browser_session_v1";
 const LEAGUE_DESKTOP_THEME_KEY = "yellowdogs_league_desktop_theme_v1";
 const OFFLINE_SAVE_KEY = "ydl_offline_save_id_v1";
 const AI_TEAM_BADGE = Object.freeze({
-  imageUrl:"/versus/assets/system-badges/ai-team-badge.png?v=60c73314770c",
+  imageUrl:"/versus/assets/system-badges/ai-team-badge.svg?v=7d79a362983a",
   displayName:"AI球队",
   grade:"SYSTEM",
 });
@@ -117,11 +122,11 @@ function applyEnvironment(config = {}) {
   if (config.offlineYdl) {
     offlineYdl = true;
     document.documentElement.dataset.offlineYdl = "1";
-    document.title = `YDL S4 Offline | ${document.title}`;
+    document.title = `YFFM1 Offline | ${document.title}`;
   }
   if (config.environment !== "test") return;
   document.documentElement.dataset.environment = "test";
-  document.title = `${config.environmentLabel ?? "S4 测试服"} | ${document.title}`;
+  document.title = `${config.environmentLabel ?? "YFFM1 测试服"} | ${document.title}`;
 }
 let publicHosting = false;
 let offlineYdl = false;
@@ -251,6 +256,11 @@ let leagueXGrowthResetSecondaryRole = null;
 let leagueMobileNavOpen = false;
 let leagueDesktopTheme = readLeagueDesktopTheme();
 const PLAYER_GRADE_ORDER = Object.freeze({ X:0, S:1, A:2, B:3, C:4 });
+// Keep the batch/compute implementation available without exposing its player UI.
+const LEAGUE_AI_BATCH_UI_ENABLED = false;
+let leaguePackOpeningEffects = null;
+let leaguePackOpeningContext = null;
+let leaguePackChoicePending = false;
 const LEAGUE_TAB_LABELS = Object.freeze({ overview:"联赛总览", cup:"杯赛总览", seasonFinal:"赛季总决赛", predictions:"比赛预测", schedule:"日程表", squad:"阵容战术", coach:"主教练", inbox:"收件箱", backpack:"背包", enhancement:"球员强化", "x-growth":"巨星之路", players:"球员信息", television:"电视台", stats:"数据榜单", club:"俱乐部", shop:"商店", market:"交易市场" });
 const LEAGUE_INBOX_CATEGORIES = Object.freeze([
   { id:"all", label:"全部" },
@@ -459,7 +469,7 @@ function updateChrome() {
   accountSettingsButton.hidden = !account || active || leagueActive;
   roomStatus.hidden = !active;
   leaveButton.hidden = !active && !leagueActive;
-  if (account) accountStatus.innerHTML = `<small>当前账号</small><b>${escapeHtml(account.profile.nickname)}</b>`;
+  if (account) patchHtmlChildren(accountStatus, `<small>当前账号</small><b>${escapeHtml(account.profile.nickname)}</b>`);
   roomStatus.classList.toggle("reconnecting", connectionState !== "online");
   if (active) roomStatus.innerHTML = `<i></i><span>${connectionState === "online" ? "房间" : "重连中"}</span><b>${escapeHtml(room.code)}</b><span>${({ lobby:"等待好友",draft:"限时选秀",tactics:"战术准备",match:"比赛中",report:"比赛结束" })[room.phase] ?? room.phase}</span>`;
   updateLeagueTopbarClub();
@@ -488,12 +498,12 @@ function updateLeagueTopbarClub() {
   if (!leagueTopbarClub) return;
   leagueTopbarClub.hidden = !active;
   if (!active) {
-    leagueTopbarClub.innerHTML = "";
+    if (leagueTopbarClub.firstChild) leagueTopbarClub.replaceChildren();
     return;
   }
   const rosterSlotsUsed = league.ownTeam.s4Assets?.rosterSlotsUsed ?? league.ownTeam.roster.length;
   const rosterLimit = league.ownTeam.s4Assets?.rosterLimit ?? 33;
-  leagueTopbarClub.innerHTML = `<div class="league-club-resources"><span><small>大名单</small><b>${rosterSlotsUsed}<i>/</i>${rosterLimit}</b></span><span class="league-wallet-balance"><small>球队金币</small><b>${Number(league.wallet.balance).toLocaleString("zh-CN")}</b></span></div><div class="league-team-mark"><small>球队</small><div class="league-team-name-row"><b>${escapeHtml(league.ownTeam.name)}</b><button type="button" class="league-team-name-edit" data-league-team-name-edit aria-label="修改球队名称" title="修改球队名称">&#9998;</button></div></div>`;
+  patchHtmlChildren(leagueTopbarClub, `<div class="league-club-resources"><span><small>大名单</small><b>${rosterSlotsUsed}<i>/</i>${rosterLimit}</b></span><span class="league-wallet-balance"><small>球队金币</small><b>${Number(league.wallet.balance).toLocaleString("zh-CN")}</b></span></div><div class="league-team-mark"><small>球队</small><div class="league-team-name-row"><b>${escapeHtml(league.ownTeam.name)}</b><button type="button" class="league-team-name-edit" data-league-team-name-edit aria-label="修改球队名称" title="修改球队名称">&#9998;</button></div></div>`);
 }
 
 function clockText(milliseconds) {
@@ -670,7 +680,7 @@ function broadcastListMarkup(leagueOnly = false) {
     : upcoming.length
       ? `<div class="broadcast-upcoming-list"><header><b>下一轮直播预告</b><small>${upcoming.length} 场待播</small></header>${upcoming.map((fixture) => `<article class="broadcast-upcoming"><time><b>${yellowDogsTvTime(fixture.startsAt, false)}</b><small>${yellowDogsTvTime(fixture.startsAt)}</small></time><div><small>${escapeHtml(fixture.competitionName)} · ${escapeHtml(fixture.label ?? "下一轮")}</small><strong>${escapeHtml(fixture.homeName)} <i>vs</i> ${escapeHtml(fixture.awayName)}</strong></div></article>`).join("")}</div>`
       : `<p class="broadcast-empty">当前没有正在进行的公开比赛，也没有已确定的下一场赛事。</p>`;
-  return `<section class="broadcast-hub ${leagueOnly ? "league-television" : ""}"><header><div><small>${leagueOnly ? "YDL TELEVISION" : "FT1 TELEVISION"}</small><h2>${leagueOnly ? "黄狗联赛电视台" : "比赛电视台"}</h2></div><b>${broadcasts.length} 场直播</b></header><div class="broadcast-list">${matches}</div></section>`;
+  return `<section class="broadcast-hub ${leagueOnly ? "league-television" : ""}"><header><div><small>${leagueOnly ? "YDL TELEVISION" : "FT1 TELEVISION"}</small><h2>${leagueOnly ? "YFFM1 联赛电视台" : "比赛电视台"}</h2></div><b>${broadcasts.length} 场直播</b></header><div class="broadcast-list">${matches}</div></section>`;
 }
 
 function matchTacticalFitPercent(team) {
@@ -679,16 +689,23 @@ function matchTacticalFitPercent(team) {
   return Math.round(Number(team?.styleFit ?? 0) * 100);
 }
 
+let broadcastRefreshPromise = null;
 async function refreshBroadcasts() {
-  if (spectatorSession) return;
-  try {
-    const value = await api("/api/versus/broadcasts");
-    liveBroadcasts = value.broadcasts ?? [];
-    upcomingBroadcasts = value.upcomingBroadcasts ?? [];
-    const hub = document.querySelector(".broadcast-hub");
-    if (hub) hub.outerHTML = broadcastListMarkup(leagueMode && leagueTab === "television");
-    if (leagueMode) syncLeagueShellChrome();
-  } catch { /* 房间轮询会继续处理网络状态 */ }
+  if (spectatorSession || document.hidden) return;
+  if (broadcastRefreshPromise) return broadcastRefreshPromise;
+  broadcastRefreshPromise = (async () => {
+    try {
+      const value = await api("/api/versus/broadcasts");
+      if (document.hidden) return;
+      liveBroadcasts = value.broadcasts ?? [];
+      upcomingBroadcasts = value.upcomingBroadcasts ?? [];
+      const hub = document.querySelector(".broadcast-hub");
+      if (hub) patchHtmlElement(hub, broadcastListMarkup(leagueMode && leagueTab === "television"));
+      if (leagueMode) syncLeagueShellChrome();
+    } catch { /* 房间轮询会继续处理网络状态 */ }
+  })();
+  try { await broadcastRefreshPromise; }
+  finally { broadcastRefreshPromise = null; }
 }
 
 function broadcastPitchMarkup(team) {
@@ -775,21 +792,12 @@ function broadcastV2MatchLayoutMarkup(match, broadcast) {
   const venue = broadcastVenueProfile(match);
   const sponsorAds = broadcastSponsorBoardsMarkup(venue);
   const strategies = match.teams.map((team) => `${TACTICS[team.tactic] ?? team.tactic} · ${STYLES[team.style] ?? team.style} · ${team.formation} · 适配 ${matchTacticalFitPercent(team)}%`);
-  const eventFeed = match.events.length ? [...match.events].reverse().map(matchEventMarkup).join("") : `<p class="feed-empty">比赛进行中</p>`;
-  return `<div class="broadcast-v2-layout"><section class="broadcast-v2-field-column stand-${escapeHtml(venue.standStyle)}"><header class="broadcast-v2-venue-head"><div><small>HOME STADIUM</small><h2>${escapeHtml(venue.name)}</h2></div><span>${weatherIcon(match.weather)} ${escapeHtml(match.weather?.name ?? "比赛天气")} · ${broadcast.live ? "实时比赛阵型" : "最终比赛阵型"}</span></header><div class="broadcast-v2-stadium pitch-${escapeHtml(venue.pitchStyle)}">${sponsorAds}${broadcastCombinedPitchMarkup(match.teams)}</div><footer class="broadcast-v2-team-strategies"><div><i></i><span><b>${escapeHtml(match.teams[0].name)}</b><small>${escapeHtml(strategies[0])}</small></span></div><div><i></i><span><b>${escapeHtml(match.teams[1].name)}</b><small>${escapeHtml(strategies[1])}</small></span></div></footer></section><aside class="broadcast-v2-sidebar"><section class="commentary-panel match-center-panel broadcast-v2-commentary"><header><h2>${broadcast.live ? "实时战况" : "比赛详情"}</h2><span>${match.events.length}</span></header>${latestEvent ? `<div class="latest-event event-${latestEvent.type}"><i>${latestIcon}</i><b>${latestEvent.minute}'</b><span>${escapeHtml(latestEvent.text)}</span></div>` : ""}<div class="event-feed">${eventFeed}</div></section><section class="broadcast-v2-data-panel"><header><div><small>MATCH DATA</small><h2>比赛数据</h2></div><span>${escapeHtml(match.teams[0].name)} / ${escapeHtml(match.teams[1].name)}</span></header>${matchStatsMarkup(match)}</section></aside></div>`;
+  const eventFeed = match.events.length ? [...match.events].reverse().map((entry) => matchEventMarkup(entry, true)).join("") : `<p class="feed-empty">比赛进行中</p>`;
+  return `<div class="broadcast-v2-layout"><section class="broadcast-v2-field-column stand-${escapeHtml(venue.standStyle)}"><header class="broadcast-v2-venue-head"><div><small>HOME STADIUM</small><h2>${escapeHtml(venue.name)}</h2></div><span>${weatherIcon(match.weather)} ${escapeHtml(match.weather?.name ?? "比赛天气")} · ${broadcast.live ? "实时比赛阵型" : "最终比赛阵型"}</span></header><div class="broadcast-v2-stadium pitch-${escapeHtml(venue.pitchStyle)}">${sponsorAds}${broadcastCombinedPitchMarkup(match.teams)}</div></section><aside class="broadcast-v2-sidebar"><section class="commentary-panel match-center-panel broadcast-v2-commentary"><header><h2>${broadcast.live ? "实时战况" : "比赛详情"}</h2><div class="broadcast-v2-team-strategies"><div><i></i><span><b>${escapeHtml(match.teams[0].name)}</b><small>${escapeHtml(strategies[0])}</small></span></div><div><i></i><span><b>${escapeHtml(match.teams[1].name)}</b><small>${escapeHtml(strategies[1])}</small></span></div></div><span>${match.events.length}</span></header>${latestEvent ? `<div class="latest-event event-${latestEvent.type}"><i>${latestIcon}</i><b>${latestEvent.minute}'</b><span>${escapeHtml(latestEvent.text)}</span></div>` : ""}<div class="event-feed">${eventFeed}</div></section><section class="broadcast-v2-data-panel"><header><div><small>MATCH DATA</small><h2>比赛数据</h2></div><span>${escapeHtml(match.teams[0].name)} / ${escapeHtml(match.teams[1].name)}</span></header>${matchStatsMarkup(match)}</section></aside></div>`;
 }
 
 
-function dockBroadcastTeamStrategies(root) {
-  const source = root?.querySelector?.(".broadcast-v2-field-column>.broadcast-v2-team-strategies");
-  const heading = root?.querySelector?.(".broadcast-v2-commentary>header>h2");
-  if (!source || !heading) return;
-  const dock = document.createElement("div");
-  dock.className = source.className;
-  dock.innerHTML = source.innerHTML;
-  heading.after(dock);
-  source.remove();
-}
+
 function captureEventFeedScroll(root) {
   const feed = root?.querySelector?.(".event-feed");
   if (!feed) return null;
@@ -805,15 +813,13 @@ function restoreEventFeedScroll(root, snapshot) {
 
 function broadcastScreenMarkup(broadcast) {
   const match = broadcast.match;
-  const latestEvent = match.events.at(-1);
-  const latestIcon = latestEvent ? ({ goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",lightning:"ϟ",weather:"≈",penaltyAwarded:"P",shootout:"P",tactical:"↔" }[latestEvent.type] ?? "•") : "";
   const centerValue = match.segment === "penalties" ? `${match.penalties?.score?.[0] ?? 0}:${match.penalties?.score?.[1] ?? 0}` : `${match.minute}'`;
   const viewerNames = broadcast.spectators.length ? broadcast.spectators.map((viewer) => escapeHtml(viewer.name)).join("、") : "暂无其他观众";
   const toolbarTitle = broadcast.aiTraining ? "AI 战术训练赛" : "FT1 比赛电视台";
   const toolbarMeta = broadcast.aiTraining
     ? `${escapeHtml(broadcast.aiTrainingConfig?.formation ?? "AI")} · AI 均值 ${escapeHtml(broadcast.aiTrainingConfig?.actualAverageOverall ?? "-")}`
     : `房间 ${escapeHtml(broadcast.code)} · 第 ${broadcast.round} 轮`;
-  return `<section class="broadcast-screen ${broadcast.aiTraining ? "ai-training-broadcast" : ""}"><header class="broadcast-toolbar"><button class="button secondary" data-leave-broadcast>${broadcast.aiTraining ? "结束 AI 对战" : broadcast.live ? "退出观赛" : "关闭详情"}</button><div><i>${broadcast.live ? "LIVE" : "FT"}</i><b>${toolbarTitle}</b><small>${toolbarMeta}</small></div><span><b>${broadcast.aiTraining ? "不计正式消耗" : `${broadcast.spectators.length} 人观看`}</b><small>${broadcast.aiTraining ? "不记录体力、伤停与纪律" : viewerNames}</small></span></header>${broadcast.live ? "" : `<div class="broadcast-ended">${broadcast.aiTraining ? "训练赛已经结束，可查看最终赛况或关闭对战。" : "比赛已经结束，正在显示最终比赛详情。"}</div>`}<section class="match-shell broadcast-match-shell"><header class="scoreboard"><div><small>${escapeHtml(match.teams[0].name)}</small><b>${match.score[0]}</b><em>${match.teams[0].activeCount} 人 · ${escapeHtml(match.teams[0].formation)}</em></div><span><small>${broadcast.live ? matchPhaseLabel(match) : "比赛结束"}</small><strong>${centerValue}</strong><em>${weatherIcon(match.weather)} ${escapeHtml(match.weather.name)}</em></span><div><small>${escapeHtml(match.teams[1].name)}</small><b>${match.score[1]}</b><em>${match.teams[1].activeCount} 人 · ${escapeHtml(match.teams[1].formation)}</em></div></header><div class="match-layout match-triple-layout">${broadcastTeamPanel(match.teams[0])}<section class="commentary-panel match-center-panel"><header><h2>${broadcast.live ? "实时战况" : "比赛详情"}</h2><span>${match.events.length}</span></header>${latestEvent ? `<div class="latest-event event-${latestEvent.type}"><i>${latestIcon}</i><b>${latestEvent.minute}'</b><span>${escapeHtml(latestEvent.text)}</span></div>` : ""}<div class="event-feed">${match.events.length ? [...match.events].reverse().map(matchEventMarkup).join("") : `<p class="feed-empty">比赛进行中</p>`}</div>${matchStatsMarkup(match)}</section>${broadcastTeamPanel(match.teams[1])}</div></section></section>`;
+  return `<section class="broadcast-screen ${broadcast.aiTraining ? "ai-training-broadcast" : ""}"><header class="broadcast-toolbar"><button class="button secondary" data-leave-broadcast>${broadcast.aiTraining ? "结束 AI 对战" : broadcast.live ? "退出观赛" : "关闭详情"}</button><div><i>${broadcast.live ? "LIVE" : "FT"}</i><b>${toolbarTitle}</b><small>${toolbarMeta}</small></div><span><b>${broadcast.aiTraining ? "不计正式消耗" : `${broadcast.spectators.length} 人观看`}</b><small>${broadcast.aiTraining ? "不记录体力、伤停与纪律" : viewerNames}</small></span></header>${broadcast.live ? "" : `<div class="broadcast-ended">${broadcast.aiTraining ? "训练赛已经结束，可查看最终赛况或关闭对战。" : "比赛已经结束，正在显示最终比赛详情。"}</div>`}<section class="match-shell broadcast-match-shell"><header class="scoreboard"><div><small>${escapeHtml(match.teams[0].name)}</small><b>${match.score[0]}</b><em>${match.teams[0].activeCount} 人 · ${escapeHtml(match.teams[0].formation)}</em></div><span><small>${broadcast.live ? matchPhaseLabel(match) : "比赛结束"}</small><strong>${centerValue}</strong><em>${weatherIcon(match.weather)} ${escapeHtml(match.weather.name)}${match.referee ? escapeHtml(` · ⚖ ${refereeText(match.referee)}`) : ""}</em></span><div><small>${escapeHtml(match.teams[1].name)}</small><b>${match.score[1]}</b><em>${match.teams[1].activeCount} 人 · ${escapeHtml(match.teams[1].formation)}</em></div></header>${broadcastV2MatchLayoutMarkup(match, broadcast)}</section></section>`;
 }
 
 function renderBroadcast(broadcast) {
@@ -846,13 +852,8 @@ function renderBroadcast(broadcast) {
   if (fingerprint === lastBroadcastRenderFingerprint && content.querySelector(".broadcast-screen")) return;
   lastBroadcastRenderFingerprint = fingerprint;
   const feedScroll = captureEventFeedScroll(content);
-  content.innerHTML = broadcastScreenMarkup(broadcast);
-  const legacyLayout = content.querySelector(".match-triple-layout");
-  if (legacyLayout) legacyLayout.outerHTML = broadcastV2MatchLayoutMarkup(broadcast.match, broadcast);
-  dockBroadcastTeamStrategies(content);
+  patchHtmlChildren(content, broadcastScreenMarkup(broadcast));
   restoreEventFeedScroll(content, feedScroll);
-  const environment = content.querySelector(".scoreboard>span>em");
-  if (environment && broadcast.match.referee) environment.textContent += ` · ⚖ ${refereeText(broadcast.match.referee)}`;
   content.querySelector("[data-leave-broadcast]").onclick = closeBroadcast;
 }
 async function startWatching(code) {
@@ -878,15 +879,15 @@ async function startWatching(code) {
 
 function scheduleSpectatorPolling(delay = 700) {
   clearTimeout(spectatorPolling);
-  if (spectatorSession) spectatorPolling = setTimeout(refreshBroadcast, delay);
+  if (spectatorSession && !document.hidden) spectatorPolling = setTimeout(refreshBroadcast, delay);
 }
 
 async function refreshBroadcast() {
   const active = spectatorSession;
-  if (!active) return;
+  if (!active || document.hidden) return;
   try {
     const value = await api(`/api/versus/watch/${active.code}`, { token:active.token });
-    if (spectatorSession !== active) return;
+    if (spectatorSession !== active || document.hidden) return;
     spectatorPollingFailures = 0;
     renderBroadcast(value.broadcast);
     if (value.broadcast.live) scheduleSpectatorPolling(700);
@@ -954,6 +955,7 @@ async function authenticate(event) {
 function logoutAccount() {
   clearTimeout(polling);
   stopRoomStream();
+  closeLeagueDialog();
   storeSession(null);
   clearAppView();
   storeAccount(null);
@@ -973,11 +975,11 @@ async function renderOfflineTeamPicker() {
   league = null;
   room = null;
   updateChrome();
-  app.innerHTML = `<section class="offline-team-picker"><header><div><small>YDL S4 OFFLINE SANDBOX</small><h1>选择要接管的球队</h1><p>进入任意球队后，其他球队继续由本地 AI 管理。你可以随时返回这里切换身份。</p></div><a href="/admin/" target="_blank" rel="noopener">打开本地后台</a></header><p class="league-loading">正在读取停服联赛快照…</p></section>`;
+  app.innerHTML = `<section class="offline-team-picker"><header><div><small>YFFM1 OFFLINE</small><h1>选择要接管的球队</h1><p>进入任意球队后，其他球队继续由本地 AI 管理。你可以随时返回这里切换身份。</p></div><a href="/admin/" target="_blank" rel="noopener">打开本地后台</a></header><p class="league-loading">正在读取停服联赛快照…</p></section>`;
   try {
     const catalog = await api("/api/offline/teams", { timeoutMs:10_000 });
     const cards = catalog.teams.map((team) => `<article><div><small>联赛排名</small><strong>${team.rank ?? "-"}</strong></div><section><small>${escapeHtml(team.ownerName ?? "本地球队")}</small><h2>${escapeHtml(team.name)}</h2><p>${team.played} 场 · ${team.points} 分 · ${team.rosterSize} 名球员</p><span>${escapeHtml(team.formation ?? "默认阵型")} · ${escapeHtml(TACTICS[team.tactic] ?? team.tactic)}</span></section><button type="button" data-offline-team="${escapeHtml(team.id)}">进入球队</button></article>`).join("");
-    app.innerHTML = `<section class="offline-team-picker"><header><div><small>YDL S4 OFFLINE SANDBOX</small><h1>选择要接管的球队</h1><p>${escapeHtml(catalog.season.name)} 已完成 · 停服世界线已脱敏导入</p></div><a href="/admin/" target="_blank" rel="noopener">打开本地后台</a></header><div>${cards}</div><footer><b>本地沙盒权限</b><span>可进入任意球队、修改阵容与战术；未接管球队由 AI 继续参赛。</span></footer></section>`;
+    app.innerHTML = `<section class="offline-team-picker"><header><div><small>YFFM1 OFFLINE</small><h1>选择要接管的球队</h1><p>${escapeHtml(catalog.season.name)} 已完成 · 停服世界线已脱敏导入</p></div><a href="/admin/" target="_blank" rel="noopener">打开本地后台</a></header><div>${cards}</div><footer><b>本地沙盒权限</b><span>可进入任意球队、修改阵容与战术；未接管球队由 AI 继续参赛。</span></footer></section>`;
     app.querySelectorAll("[data-offline-team]").forEach((button) => {
       button.onclick = async () => {
         button.disabled = true;
@@ -1013,7 +1015,7 @@ function renderLanding() {
   storeAppView("landing");
   updateChrome();
   const developerControls = publicHosting ? "" : `<div class="divider">开发者测试</div><div class="developer-actions"><button class="button secondary" id="dev-full-flow">单人完整流程</button><button class="button secondary" id="dev-quick-start">快速进入比赛</button></div>`;
-  app.innerHTML = `<section class="landing"><div class="landing-copy"><h1>选出你的十一人，<span>决定比赛的方式。</span></h1>${profileMarkup()}</div><section class="room-console mode-console"><h2>${escapeHtml(account.profile.nickname)}</h2><p class="bound-player-id">玩家ID <b>${escapeHtml(account.profile.id)}</b></p><label class="field"><span>自定义分享码</span><input id="custom-room-code" maxlength="20" autocomplete="off" placeholder="快速比赛与锦标赛可选" /></label><div class="competition-create mode-selector"><button class="mode-button mode-league" id="open-league">黄狗联赛</button><button class="mode-button mode-tv" id="open-yellowdogs-tv">黄狗TV</button><button class="mode-button mode-quick" id="create-room">快速比赛</button><button class="mode-button mode-cup" id="create-tournament">锦标赛</button></div><div class="divider">加入已有好友房间</div><label class="field"><span>分享码</span><input id="room-code" maxlength="20" autocomplete="off" placeholder="输入分享码" /></label><button class="button secondary wide" id="join-room">加入房间</button>${developerControls}</section></section>`;
+  app.innerHTML = `<section class="landing"><div class="landing-copy"><h1>选出你的十一人，<span>决定比赛的方式。</span></h1>${profileMarkup()}</div><section class="room-console mode-console"><h2>${escapeHtml(account.profile.nickname)}</h2><p class="bound-player-id">玩家ID <b>${escapeHtml(account.profile.id)}</b></p><label class="field"><span>自定义分享码</span><input id="custom-room-code" maxlength="20" autocomplete="off" placeholder="快速比赛与锦标赛可选" /></label><div class="competition-create mode-selector"><button class="mode-button mode-league" id="open-league">YFFM1 联赛</button><button class="mode-button mode-tv" id="open-yellowdogs-tv">YFFM1 TV</button><button class="mode-button mode-quick" id="create-room">快速比赛</button><button class="mode-button mode-cup" id="create-tournament">锦标赛</button></div><div class="divider">加入已有好友房间</div><label class="field"><span>分享码</span><input id="room-code" maxlength="20" autocomplete="off" placeholder="输入分享码" /></label><button class="button secondary wide" id="join-room">加入房间</button>${developerControls}</section></section>`;
   document.querySelector(".landing-copy")?.insertAdjacentHTML("beforeend", broadcastListMarkup());
   refreshBroadcasts();
   document.querySelector("#create-room").onclick = () => createRoom("quick");
@@ -1084,24 +1086,29 @@ function renderYellowDogsTv() {
   storeAppView("yellowDogsTv", { yellowDogsTvTab });
   updateChrome();
   if (!yellowDogsTv?.team) {
-    app.innerHTML = `<section class="ydtv-shell"><header class="ydtv-hero"><button type="button" class="button secondary" data-tv-back>返回</button><div><small>YELLOWDOGS TV</small><h1>黄狗TV</h1></div></header><section class="ydtv-panel"><p class="league-empty">你还没有建立黄狗联赛球队，请先进入黄狗联赛完成建队。</p></section></section>`;
+    app.innerHTML = `<section class="ydtv-shell"><header class="ydtv-hero"><button type="button" class="button secondary" data-tv-back>返回</button><div><small>YFFM1 TV</small><h1>YFFM1 TV</h1></div></header><section class="ydtv-panel"><p class="league-empty">你还没有建立YFFM1 联赛球队，请先进入YFFM1 联赛完成建队。</p></section></section>`;
     return;
   }
   const content = yellowDogsTvTab === "history" ? yellowDogsTvHistoryMarkup() : yellowDogsTvTab === "television" ? yellowDogsTvBroadcastMarkup() : yellowDogsTvScheduleMarkup();
-  app.innerHTML = `<section class="ydtv-shell"><header class="ydtv-hero"><button type="button" class="button secondary" data-tv-back>返回</button><div><small>${escapeHtml(yellowDogsTv.season.name)} · ROUND ${yellowDogsTv.season.currentRound}/${yellowDogsTv.season.totalRounds}</small><h1>黄狗TV</h1><p>${escapeHtml(yellowDogsTv.team.name)}</p></div><span>每 10 秒自动刷新</span></header><nav class="ydtv-tabs"><button data-tv-tab="schedule" class="${yellowDogsTvTab === "schedule" ? "active" : ""}">我的日程</button><button data-tv-tab="history" class="${yellowDogsTvTab === "history" ? "active" : ""}">历史战绩</button><button data-tv-tab="television" class="${yellowDogsTvTab === "television" ? "active" : ""}">电视台</button></nav>${content}</section>`;
+  app.innerHTML = `<section class="ydtv-shell"><header class="ydtv-hero"><button type="button" class="button secondary" data-tv-back>返回</button><div><small>${escapeHtml(yellowDogsTv.season.name)} · ROUND ${yellowDogsTv.season.currentRound}/${yellowDogsTv.season.totalRounds}</small><h1>YFFM1 TV</h1><p>${escapeHtml(yellowDogsTv.team.name)}</p></div><span>每 10 秒自动刷新</span></header><nav class="ydtv-tabs"><button data-tv-tab="schedule" class="${yellowDogsTvTab === "schedule" ? "active" : ""}">我的日程</button><button data-tv-tab="history" class="${yellowDogsTvTab === "history" ? "active" : ""}">历史战绩</button><button data-tv-tab="television" class="${yellowDogsTvTab === "television" ? "active" : ""}">电视台</button></nav>${content}</section>`;
 }
 
 async function refreshYellowDogsTv(silent = false) {
   clearTimeout(yellowDogsTvTimer);
+  if (!yellowDogsTvMode || document.hidden) return;
+  const identity = leagueIdentity();
   try {
-    const value = await api("/api/versus/live", { method:"POST", body:leagueIdentity() });
+    const value = await api("/api/versus/live", { method:"POST", body:identity });
+    if (!yellowDogsTvMode || document.hidden || account?.profile?.id !== identity.playerId) return;
     yellowDogsTv = value.live;
     const shell = silent && yellowDogsTvMode ? app.querySelector(".ydtv-shell") : null;
     if (shell && yellowDogsTv?.team) {
       const nextContent = yellowDogsTvTab === "history" ? yellowDogsTvHistoryMarkup() : yellowDogsTvTab === "television" ? yellowDogsTvBroadcastMarkup() : yellowDogsTvScheduleMarkup();
-      shell.querySelector(".ydtv-panel")?.replaceWith(document.createRange().createContextualFragment(nextContent));
+      const panel = shell.querySelector(".ydtv-panel");
+      if (panel) patchHtmlElement(panel, nextContent);
       const seasonLabel = shell.querySelector(".ydtv-hero small");
-      if (seasonLabel) seasonLabel.textContent = `${yellowDogsTv.season.name} · ROUND ${yellowDogsTv.season.currentRound}/${yellowDogsTv.season.totalRounds}`;
+      const seasonText = `${yellowDogsTv.season.name} · ROUND ${yellowDogsTv.season.currentRound}/${yellowDogsTv.season.totalRounds}`;
+      if (seasonLabel && seasonLabel.textContent !== seasonText) seasonLabel.textContent = seasonText;
     } else {
       renderYellowDogsTv();
     }
@@ -1119,7 +1126,7 @@ function openYellowDogsTv() {
   storeSession(null);
   storeAppView("yellowDogsTv", { yellowDogsTvTab });
   updateChrome();
-  app.innerHTML = `<section class="league-loading"><p class="eyebrow">YELLOWDOGS TV</p><h1>正在读取比赛中心…</h1></section>`;
+  app.innerHTML = `<section class="league-loading"><p class="eyebrow">YFFM1 TV</p><h1>正在读取比赛中心…</h1></section>`;
   refreshYellowDogsTv();
 }
 
@@ -1231,9 +1238,11 @@ function applyLeagueMutationDeltas(nextLeague) {
 }
 
 async function leagueRequest(path, body = {}, options = {}) {
+  const requestAccountId = account?.profile?.id;
   leagueMutationPending = true;
   try {
     const value = await api(`/api/versus/league${path}`, { method:"POST", body:leagueIdentity(body) });
+    if (options.ignoreStale && requestAccountId !== account?.profile?.id) return null;
     const nextLeague = value.league ?? {};
     if (nextLeague.compact) {
       const { packOpening:previousPackOpening, packBatchOpening:previousPackBatchOpening, s4CardDeltas:previousCardDeltas, s4PlayerDeltas:previousPlayerDeltas, s4RosterSlotsUsed:previousRosterSlotsUsed, removedS4CardIds:previousRemovedCardIds, removedS4PlayerIds:previousRemovedPlayerIds, returnedS4OwnershipPlayerIds:previousReturnedOwnershipPlayerIds, s4RosterDelta:previousRosterDelta, cardRecoveryResult:previousCardRecoveryResult, ownershipRecoveryResult:previousOwnershipRecoveryResult, listing:previousListing, cancelledListingId:previousCancelledListingId, marketPurchase:previousMarketPurchase, ...stableLeague } = league;
@@ -1294,7 +1303,7 @@ async function leagueFriendlyRespondRequest(invitationId, action) {
     leagueInboxMessageId = null;
     updateLeagueTopbarClub();
     const currentInbox = app.querySelector(".league-inbox");
-    if (leagueTab === "inbox" && currentInbox) currentInbox.outerHTML = leagueInboxMarkup();
+    if (leagueTab === "inbox" && currentInbox) patchHtmlElement(currentInbox, leagueInboxMarkup());
     else if (leagueTab === "inbox") renderLeague();
     return receipt;
   } finally {
@@ -1894,7 +1903,7 @@ function openLeagueLineupImport() {
       confirmText:"确认覆盖",
       onConfirm:async () => {
         await flushLeagueTeamAutoSave();
-        const value = await api("/api/versus/league/team/lineup-share/import", { method:"POST", body:leagueIdentity({ code }) });
+        const value = await api("/api/versus/league/team/lineup-share/import", { method:"POST", body:leagueIdentity({ code, lineupSchemeId:league.ownTeam.activeLineupSchemeId, lineupSchemeRevision:league.ownTeam.lineupSchemes?.find(s => s.id === league.ownTeam.activeLineupSchemeId)?.revision ?? 0 }) });
         adoptLineupSchemeReceipt(value.teamSave);
         renderLeague();
         showToast("阵容已导入并覆盖当前方案");
@@ -1972,10 +1981,14 @@ function leagueVisibleFingerprint(view = league, tab = leagueTab) {
 async function refreshLeagueSilently() {
   if (!leagueMode || !league || !account?.profile?.id || document.hidden || leagueSyncPending || leagueInteractionActive()) return;
   leagueSyncPending = true;
+  const identity = leagueIdentity();
+  const stillCurrent = () => !document.hidden && leagueMode && league && account?.profile?.id === identity.playerId
+    && account?.accountToken === identity.accountToken;
   try {
     await refreshBroadcasts();
     // 轻量同步：先查 head（几十字节），数据真正变化后才拉完整视图。
-    const headValue = await api("/api/versus/league/head", { method:"POST", body:leagueIdentity() });
+    const headValue = await api("/api/versus/league/head", { method:"POST", body:identity });
+    if (!stillCurrent()) return;
     const head = headValue.head;
     league.serverTime = head.serverTime;
     const changed = league.updatedAt === undefined
@@ -1987,11 +2000,15 @@ async function refreshLeagueSilently() {
       await refreshPredictionsSilently();
       return;
     }
-    const value = await api("/api/versus/league", { method:"POST", body:leagueIdentity() });
+    const value = await api("/api/versus/league", { method:"POST", body:identity });
+    // If the user began editing while the request was in flight, retry next time
+    // rather than adopting a new revision without rendering its visible state.
+    if (!stillCurrent() || leagueInteractionActive()) return;
     const before = leagueVisibleFingerprint(league, leagueTab);
     league = leagueWithCachedLazyViews(value.league);
     if (leagueTab === "club" && leagueClubPage === "honorRoom" && !league.honorRoom) {
-      const honorValue = await api("/api/versus/league/honor-room", { method:"POST", body:leagueIdentity() });
+      const honorValue = await api("/api/versus/league/honor-room", { method:"POST", body:identity });
+      if (!stillCurrent()) return;
       league = { ...league, honorRoom:honorValue.honorRoom };
     }
     const after = leagueVisibleFingerprint(league, leagueTab);
@@ -2022,7 +2039,7 @@ async function openLeague() {
   storeSession(null);
   storeLeagueView();
   updateChrome();
-  app.innerHTML = `<section class="league-loading"><p class="eyebrow">YELLOWDOGS LEAGUE</p><h1>正在读取联赛数据…</h1></section>`;
+  app.innerHTML = `<section class="league-loading"><p class="eyebrow">YFFM1</p><h1>正在读取联赛数据…</h1></section>`;
   try { await leagueRequest(""); await refreshBroadcasts(); }
   catch (error) { leagueMode = false; showToast(error.message); renderLanding(); }
 }
@@ -2066,7 +2083,7 @@ function leagueJoinMarkup() {
   const create = league.aiSlotsRemaining > 0
     ? `<form class="league-create-team" id="league-create-team-form"><label class="field"><span>球队名称</span><input name="teamName" maxlength="30" autocomplete="off" required autofocus /></label><button class="button primary wide" type="submit">创建球队并开始选秀</button></form>`
     : `<p class="league-empty">当前10支球队都已由真人创建，新玩家将在后续扩容时加入。</p>`;
-  return `<section class="league-shell league-join"><header class="league-hero"><div><p class="eyebrow">S1 · YELLOWDOGS LEAGUE</p><h1>创建你的球队</h1></div><div class="league-clock"><small>比赛时段</small><b>10:00—22:00</b><span>每20分钟一轮 · 服务器离线暂停</span></div></header><div class="league-create-shell"><div><small>CREATE A CLUB</small><h2>球队将加入当前联赛</h2><p>剩余席位 ${league.aiSlotsRemaining}/10</p></div>${create}</div><button class="button secondary" data-league-back>返回首页</button></section>`;
+  return `<section class="league-shell league-join"><header class="league-hero"><div><p class="eyebrow">S1 · YFFM1</p><h1>创建你的球队</h1></div><div class="league-clock"><small>比赛时段</small><b>10:00—22:00</b><span>每20分钟一轮 · 服务器离线暂停</span></div></header><div class="league-create-shell"><div><small>CREATE A CLUB</small><h2>球队将加入当前联赛</h2><p>剩余席位 ${league.aiSlotsRemaining}/10</p></div>${create}</div><button class="button secondary" data-league-back>返回首页</button></section>`;
 }
 
 function s4UpgradeBand(level) {
@@ -2088,22 +2105,18 @@ function s4PlayerCardMarkup(player, options = {}) {
   const xPlayerProfile = (player.xPlayer || player.grade === "X") ? xPlayerProfileForPlayer(player) : null;
   const playerProfile = player.cardProfile ?? legendaryProfile ?? aPlayerProfile ?? xPlayerProfile;
   const traits = (card?.traits ?? options.traits ?? []).map((trait) => typeof trait === "string" ? trait : trait?.name).filter(Boolean);
-  const traitMarkup = traits.length ? `<strong class="s4-player-card-traits">${traits.map(escapeHtml).join("<br>")}</strong>` : "";
-  const upgradeMarkup = upgradeLevel ? `<span class="s4-player-card-upgrade band-${band}">+${upgradeLevel}</span>` : "";
   const ballonDorMarkup = ballonDorWins ? `<span class="s4-player-card-ballon-dor" title="${ballonDorWins}次赛季金球奖" aria-label="${ballonDorWins}次赛季金球奖">${Array.from({ length:Math.min(5, ballonDorWins) }, () => '<i aria-hidden="true"></i>').join("")}${ballonDorWins > 5 ? `<b>+${ballonDorWins - 5}</b>` : ""}</span>` : "";
-  const playerProfileMarkup = playerProfile
-    ? `<img class="s4-player-card-profile" src="${escapeHtml(playerProfile.imageUrl)}" alt="" draggable="false" decoding="async"${options.lazyImage ? ' loading="lazy" fetchpriority="low"' : ""} style="--profile-x:${playerProfile.xPercent}%;--profile-y:${playerProfile.yPercent}%;--profile-width:${playerProfile.widthPercent}%">`
-    : "";
+  const art = playerProfile ? { url:playerProfile.imageUrl, x:playerProfile.xPercent, y:playerProfile.yPercent, width:playerProfile.widthPercent } : null;
+  const shield = shieldCardContent({
+    playerId:player.id, cardInstanceId:card?.id, name:player.name, sourceName:player.sourceName,
+    grade:player.grade ?? "C", role:player.role ?? "", overall:displayedOverall, upgradeLevel,
+    club:player.club ?? "无俱乐部", nationality:player.nationality ?? "无国家队", traits, art,
+  }, { animated:false, eager:!options.lazyImage }, escapeHtml, value => String(value ?? "").replace(/[^a-z0-9_-]/gi, ""));
+  const profileStyle = art ? `--profile-x:${art.x}%;--profile-y:${art.y}%;--profile-width:${art.width}%;` : "";
   const attributes = options.attributes ?? "";
   const delay = Number(options.delay ?? 0);
-  return `<button type="button" class="s4-player-card grade-${String(player.grade ?? "C").toLowerCase()} band-${band} ${playerProfile ? "has-player-profile" : ""} ${ballonDorWins ? "has-ballon-dor" : ""} ${options.compact ? "compact" : ""} ${options.animated ? "animated" : ""} ${escapeHtml(options.className ?? "")}" style="--delay:${delay}ms" ${attributes} aria-label="${escapeHtml(`${player.name}，能力${displayedOverall}，${ROLE_LABELS[player.role] ?? player.role ?? "待选择位置"}${upgradeLevel ? `，强化+${upgradeLevel}` : ""}${ballonDorWins ? `，${ballonDorWins}次赛季金球奖` : ""}`)}">
-    ${ballonDorMarkup}
-    ${upgradeMarkup}
-    <div class="s4-player-card-head"><strong>${displayedOverall}</strong>${player.role ? `<b>${escapeHtml(player.role)}</b>` : ""}</div>
-    <div class="s4-player-card-grade"><span>${escapeHtml(player.grade ?? "C")}</span></div>
-    <div class="s4-player-card-name"><h3>${escapeHtml(player.name)}</h3></div>
-    <footer><b>${escapeHtml(player.club ?? "无俱乐部")} / ${escapeHtml(player.nationality ?? "无国家队")}</b>${traitMarkup}</footer>
-    ${playerProfileMarkup}
+  return `<button type="button" class="s4-player-card ydl-player-card player-card-shield grade-${String(player.grade ?? "C").toLowerCase()} band-${band} ${upgradeLevel >= 10 ? "enhancement-10" : upgradeLevel >= 9 ? "enhancement-9" : ""} ${playerProfile ? "has-player-profile" : ""} ${ballonDorWins ? "has-ballon-dor" : ""} ${options.compact ? "compact" : ""} ${options.animated ? "animated" : ""} ${escapeHtml(options.className ?? "")}" data-player-card-skin="shield-v1" data-player-card-id="${escapeHtml(player.id)}" style="${profileStyle}--delay:${delay}ms" ${attributes} aria-label="${escapeHtml(`${player.name}，能力${displayedOverall}，${ROLE_LABELS[player.role] ?? player.role ?? "待选择位置"}，${player.grade ?? "C"}级${upgradeLevel ? `，强化+${upgradeLevel}` : ""}${ballonDorWins ? `，${ballonDorWins}次赛季金球奖` : ""}${traits.length ? `，特性：${traits.join("、")}` : ""}，${player.club ?? "无俱乐部"} / ${player.nationality ?? "无国家队"}`)}">
+    ${shield}${ballonDorMarkup}
   </button>`;
 }
 
@@ -2253,16 +2266,7 @@ function refreshLeagueOverviewPlayerSearch() {
 }
 
 function overviewPlayerPreviewValues(player, upgradeLevel = 0, bondPercent = 0) {
-  const level = Math.max(0, Math.min(8, Math.floor(Number(upgradeLevel) || 0)));
-  const bond = Math.max(-100, Math.min(100, Number(bondPercent) || 0));
-  const abilityBonuses = league.enhancement?.abilityBonuses ?? [0, 1, 2, 3, 5, 7, 9, 11, 13];
-  const enhancementBonus = Number(abilityBonuses[level] ?? 0);
-  const multiplier = 1 + bond / 100;
-  const attributes = Object.fromEntries(Object.entries(player.attributes ?? {}).map(([key, value]) => {
-    const enhanced = Math.round((Number(value) + enhancementBonus) * multiplier);
-    return [key, Math.max(1, offlineAttributeSettings.unlocked ? enhanced : Math.min(99, enhanced))];
-  }));
-  return { level, bond, enhancementBonus, attributes, overall:Math.round((Number(player.overall) + enhancementBonus) * multiplier) };
+  return playerPreviewValues(player, upgradeLevel, bondPercent, { abilityBonuses:league.enhancement?.abilityBonuses, unlocked:offlineAttributeSettings.unlocked });
 }
 
 function addLeagueOverviewPlayerComparison(playerId) {
@@ -2452,7 +2456,7 @@ function resolvedLeagueScheduleFixtures() {
     return {
       id:`league:${league.season.id}:${round.round}:${ownTeamId}`,
       competition:"league",
-      competitionName:"YellowDogs League",
+      competitionName:"YFFM1",
       round:round.round,
       label:`联赛第${round.round}轮`,
       startsAt,
@@ -3156,16 +3160,16 @@ function leagueBackpackCardSectionMarkup(allCards = leagueBackpackCardEntries())
         const reason = rosterLocked ? "超限锁定" : !card.systemRecyclable ? "+7及以上不可回收" : listed ? "资产已挂牌" : tradeLocked ? "交易报价中" : lastOwnershipCard ? "请使用所有权回收" : "";
         const selected = leagueBackpackSelectedCardIds.has(card.id);
         const attributes = disabled ? `aria-disabled="true"` : `data-backpack-recovery-card="${card.id}" data-s4-player-id="${player.id}"`;
-        return `<div class="backpack-recovery-card ${disabled ? "disabled" : ""} ${selected ? "selected" : ""}">${s4PlayerCardMarkup(player, { card, compact:leagueBackpackCompact, attributes })}<span>${disabled ? escapeHtml(reason) : selected ? `已选择 · ${card.systemRecoveryValue}金币` : `${card.systemRecoveryValue}金币`}</span></div>`;
+        return `<div data-render-key="${escapeHtml(card.id)}" class="backpack-recovery-card ${disabled ? "disabled" : ""} ${selected ? "selected" : ""}">${s4PlayerCardMarkup(player, { card, compact:leagueBackpackCompact, attributes })}<span>${disabled ? escapeHtml(reason) : selected ? `已选择 · ${card.systemRecoveryValue}金币` : `${card.systemRecoveryValue}金币`}</span></div>`;
       }
       if (leagueBackpackRecoveryMode === "ownership") {
         const listed = activeListings.some((item) => item.playerId === player.id);
         const selected = leagueBackpackSelectedOwnershipIds.has(player.id);
         const attributes = listed ? `aria-disabled="true"` : `data-backpack-recovery-ownership="${player.id}"`;
-        return `<div class="backpack-recovery-card ownership ${listed ? "disabled" : ""} ${selected ? "selected" : ""}">${s4PlayerCardMarkup(player, { card, compact:leagueBackpackCompact, attributes })}<span>${listed ? "资产已挂牌" : selected ? "已选择所有权" : `预计 ${player.ownershipReturnPreview?.totalAmount ?? 0}金币`}</span></div>`;
+        return `<div data-render-key="${escapeHtml(card.id)}" class="backpack-recovery-card ownership ${listed ? "disabled" : ""} ${selected ? "selected" : ""}">${s4PlayerCardMarkup(player, { card, compact:leagueBackpackCompact, attributes })}<span>${listed ? "资产已挂牌" : selected ? "已选择所有权" : `预计 ${player.ownershipReturnPreview?.totalAmount ?? 0}金币`}</span></div>`;
       }
       const cardMarkup = s4PlayerCardMarkup(player, { card, compact:leagueBackpackCompact, attributes:`data-s4-card-detail="${card.id}" data-s4-player-id="${player.id}"` });
-      const content = stackCount > 1 ? `<div class="backpack-card-stack">${cardMarkup}<b>×${stackCount}</b></div>` : cardMarkup;
+      const content = stackCount > 1 ? `<div data-render-key="${escapeHtml(card.id)}" class="backpack-card-stack">${cardMarkup}<b>×${stackCount}</b></div>` : cardMarkup;
       return rosterLocked ? `<div class="backpack-card-locked">${content}<span>超限锁定 · 无法上场/合卡</span></div>` : content;
     }).join("")
     : `<p class="league-empty backpack-card-empty">${leagueBackpackRecoveryMode === "ownership" ? "当前没有可回收的非传奇球员所有权。" : "没有符合当前筛选条件的球员卡。"}</p>`;
@@ -3222,32 +3226,31 @@ function leagueBackpackPackSectionMarkup(inventory = league.s4Packs?.inventory ?
 
 function leagueBackpackItemSectionMarkup() {
   const allItems = [...(league.cosmetics?.items ?? [])];
-  const totalCount = allItems.reduce((sum, item) => sum + Number(item.count ?? 0), 0);
   const collection = league.cosmetics?.collection ?? { ownedUnique:allItems.length, total:85 };
-  const groupMarkup = ({ slot, title, kicker, price, fallbackTotal }) => {
+  const groupMarkup = ({ slot, title, kicker, fallbackTotal }) => {
     const items = allItems.filter((item) => item.slot === slot).sort((left, right) => (PLAYER_GRADE_ORDER[left.grade] ?? 99) - (PLAYER_GRADE_ORDER[right.grade] ?? 99) || String(left.displayName ?? "").localeCompare(String(right.displayName ?? ""), "zh-CN"));
     const groupCollection = collection[slot === "clubBadge" ? "club" : "country"] ?? { ownedUnique:items.length, total:fallbackTotal };
     const cards = items.length ? items.map((item) => {
       const displayName = item.displayName ?? item.countryName ?? item.clubName ?? item.name;
-      return `<article class="cosmetic-item-card grade-${String(item.grade).toLowerCase()} ${item.equipped ? "is-equipped" : ""}"><div class="cosmetic-item-art"><span>${escapeHtml(item.grade)}</span><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}"></div><div class="cosmetic-item-copy"><small>${escapeHtml(title)} · ${escapeHtml(item.grade)}级</small><h3>${escapeHtml(displayName)}</h3><span>持有 ×${Number(item.count ?? 0)}</span></div><button type="button" class="button ${item.equipped ? "secondary" : "primary"}" data-cosmetic-slot="${slot}" data-cosmetic-equip="${item.equipped ? "" : escapeHtml(item.id)}">${item.equipped ? "取消佩戴" : "佩戴"}</button></article>`;
-    }).join("") : `<div class="backpack-item-empty"><b>暂无${escapeHtml(title)}</b><span>前往商店购买${price}金币的${escapeHtml(title)}包，打开后从3枚徽章中选择1枚。</span></div>`;
+      return `<article class="cosmetic-item-card grade-${String(item.grade).toLowerCase()} ${item.equipped ? "is-equipped" : ""}"><div class="cosmetic-item-art"><span>${escapeHtml(item.grade)}</span><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" loading="lazy" decoding="async"></div><div class="cosmetic-item-copy"><small>${escapeHtml(title)} · ${escapeHtml(item.grade)}级</small><h3>${escapeHtml(displayName)}</h3><span>免费使用</span></div><button type="button" class="button ${item.equipped ? "secondary" : "primary"}" data-cosmetic-slot="${slot}" data-cosmetic-equip="${item.equipped ? "" : escapeHtml(item.id)}">${item.equipped ? "取消佩戴" : "佩戴"}</button></article>`;
+    }).join("") : `<div class="backpack-item-empty"><b>暂无可用${escapeHtml(title)}</b><span>装饰均已免费开放，请刷新后重试。</span></div>`;
     return `<section class="cosmetic-item-group"><header><div><small>${escapeHtml(kicker)}</small><h3>${escapeHtml(title)}</h3></div><b>${groupCollection.ownedUnique}/${groupCollection.total}</b></header><div class="cosmetic-item-grid">${cards}</div></section>`;
   };
-  return `<section class="backpack-item-section"><header><div><small>COSMETIC ITEM MANAGEMENT</small><h2>道具</h2></div><div><b>${collection.ownedUnique}/${collection.total}</b><span>已收集 · 共${totalCount}件</span></div></header><div class="cosmetic-item-groups">${groupMarkup({ slot:"teamBadge", title:"国家徽章", kicker:"NATIONAL BADGES", price:1000, fallbackTotal:34 })}${groupMarkup({ slot:"clubBadge", title:"俱乐部徽章", kicker:"CLUB BADGES", price:1200, fallbackTotal:51 })}</div></section>`;
+  return `<section class="backpack-item-section"><header><div><small>COSMETIC ITEM MANAGEMENT</small><h2>装饰</h2></div><div><b>${collection.ownedUnique}/${collection.total}</b><span>全部免费解锁 · 可随时切换</span></div></header><div class="cosmetic-item-groups">${groupMarkup({ slot:"teamBadge", title:"国家徽章", kicker:"NATIONAL BADGES", fallbackTotal:34 })}${groupMarkup({ slot:"clubBadge", title:"俱乐部徽章", kicker:"CLUB BADGES", fallbackTotal:51 })}</div></section>`;
 }
 
 function leagueBackpackMarkup() {
   const inventory = league.s4Packs?.inventory ?? [];
   const allCards = leagueBackpackPage === "cards" ? leagueBackpackCardEntries() : null;
   const cardCount = allCards?.length ?? leagueBackpackCardCount();
-  const itemCount = league.cosmetics?.items?.reduce((sum, item) => sum + Number(item.count ?? 0), 0) ?? 0;
+  const itemCount = league.cosmetics?.items?.length ?? 0;
   const content = leagueBackpackPage === "cards"
     ? leagueBackpackCardSectionMarkup(allCards)
     : leagueBackpackPage === "items" ? leagueBackpackItemSectionMarkup() : leagueBackpackPackSectionMarkup(inventory);
   return `<section class="league-backpack"><header><div><small>S4 CLUB INVENTORY</small><h2>球队背包</h2></div><div class="backpack-summary"><span><b data-backpack-card-count>${cardCount}</b>张球员卡</span><span><b data-backpack-pack-count>${inventory.length}</b>份礼包</span><span><b data-backpack-item-count>${itemCount}</b>件道具</span></div></header><nav class="backpack-page-tabs"><button type="button" class="${leagueBackpackPage === "packs" ? "active" : ""}" data-backpack-page="packs">卡包管理<span data-backpack-pack-count>${inventory.length}</span></button><button type="button" class="${leagueBackpackPage === "cards" ? "active" : ""}" data-backpack-page="cards">球员卡管理<span data-backpack-card-count>${cardCount}</span></button><button type="button" class="${leagueBackpackPage === "items" ? "active" : ""}" data-backpack-page="items">道具<span data-backpack-item-count>${itemCount}</span></button></nav>${content}</section>`;
 }
 
-function syncLeagueBackpackPackMutationInPlace() {
+function syncLeagueBackpackPackMutationInPlace({ syncPackDialog = true } = {}) {
   const root = leagueTab === "backpack" && leagueBackpackPage === "packs"
     ? app.querySelector(".league-backpack")
     : null;
@@ -3261,10 +3264,10 @@ function syncLeagueBackpackPackMutationInPlace() {
   root.querySelectorAll("[data-backpack-pack-count]").forEach((element) => { element.textContent = String(inventory.length); });
   const cardCount = leagueBackpackCardCount();
   root.querySelectorAll("[data-backpack-card-count]").forEach((element) => { element.textContent = String(cardCount); });
-  const itemCount = league.cosmetics?.items?.reduce((sum, item) => sum + Number(item.count ?? 0), 0) ?? 0;
+  const itemCount = league.cosmetics?.items?.length ?? 0;
   root.querySelectorAll("[data-backpack-item-count]").forEach((element) => { element.textContent = String(itemCount); });
   syncLeagueShellChrome();
-  syncS4PackChoiceDialog();
+  if (syncPackDialog) syncS4PackChoiceDialog();
   return true;
 }
 
@@ -3322,7 +3325,12 @@ function openLeagueBatchEnhancementResultDialog(result) {
 }
 
 function leagueEnhancementCardEntry(cardId) {
-  return leagueEnhancementCardEntries().find(({ card }) => card.id === cardId) ?? null;
+  if (!cardId) return null;
+  for (const player of league.ownTeam?.roster ?? []) {
+    const card = player.cards?.find((entry) => entry.id === cardId);
+    if (card) return { player, card };
+  }
+  return null;
 }
 
 function leagueEnhancementChance(mainLevel, materialLevel) {
@@ -3337,7 +3345,7 @@ function leagueEnhancementChance(mainLevel, materialLevel) {
 
 function leagueEnhancementSlotMarkup(slot, entry) {
   if (!entry) return `<div class="enhancement-card-slot empty" data-enhancement-drop="${slot}"><b>${slot === "main" ? "主卡" : "副卡"}</b><span>+</span></div>`;
-  return `<div class="enhancement-card-slot filled" data-enhancement-drop="${slot}"><b>${slot === "main" ? "主卡" : "副卡"}</b>${s4PlayerCardMarkup(entry.player, { card:entry.card, compact:true, attributes:`draggable="true" data-enhancement-slot-card="${slot}" data-enhancement-card-id="${entry.card.id}" title="点击移回仓库"` })}</div>`;
+  return `<div class="enhancement-card-slot filled" data-enhancement-drop="${slot}"><b>${slot === "main" ? "主卡" : "副卡"}</b>${s4PlayerCardMarkup(entry.player, { card:entry.card, compact:true, attributes:`draggable="true" data-enhancement-slot-card="${slot}" data-enhancement-card-id="${entry.card.id}" title="点击移回仓库"` })}<button type="button" class="shield-slot-summary" data-enhancement-slot-card="${slot}" title="点击移回仓库"><strong>${escapeHtml(entry.player.name)}</strong><small>${escapeHtml(entry.player.grade)} · ${escapeHtml(entry.player.role)} · +${Number(entry.card.upgradeLevel ?? 0)}</small><small>能力 ${Number(entry.card.effectiveOverall ?? entry.player.effectiveOverall ?? entry.player.overall)}</small></button></div>`;
 }
 
 function leagueEnhancementCardListed(playerId, cardId) {
@@ -3449,7 +3457,7 @@ function leagueEnhancementMarkup() {
     ? warehouseCards.map(({ player, card }) => {
       const listed = leagueEnhancementCardListed(player.id, card.id);
       const attributes = listed ? `draggable="false" aria-disabled="true"` : `draggable="true" data-enhancement-card="${card.id}" data-enhancement-player="${player.id}"`;
-      return `<div class="enhancement-warehouse-card ${listed ? "listed" : ""} ${card.ownershipAnchorRequired ? "anchor-required" : ""}">${s4PlayerCardMarkup(player, { card, compact:true, attributes })}${listed ? "<span>已挂牌</span>" : card.ownershipAnchorRequired ? "<span>末张锚点 · 仅可作主卡</span>" : ""}</div>`;
+      return `<div class="enhancement-warehouse-card ${listed ? "listed" : ""} ${card.ownershipAnchorRequired ? "anchor-required" : ""}" data-render-key="${escapeHtml(card.id)}">${s4PlayerCardMarkup(player, { card, compact:true, attributes })}${listed ? "<span>已挂牌</span>" : card.ownershipAnchorRequired ? "<span>末张锚点 · 仅可作主卡</span>" : ""}</div>`;
     }).join("")
     : `<div class="enhancement-warehouse-empty">没有符合条件的卡片</div>`;
   return `<section class="league-enhancement phase-${leagueEnhancementPhase}">
@@ -3488,6 +3496,60 @@ function openS4CardDetail(cardId, playerId) {
   overlay.classList.add("s4-card-detail-overlay");
 }
 
+function leaguePackOpeningScene() {
+  let overlay = document.querySelector('#league-dialog-overlay[data-pack-opening-scene]');
+  if (overlay) return overlay;
+  overlay = openLeagueDialog(`${meteorLayer()}<header data-pack-opening-header></header><main data-pack-opening-content></main><footer data-pack-opening-actions></footer>`, "s4-pack-choice-dialog", { dismissOnBackdrop:false });
+  overlay.classList.add("s4-pack-choice-overlay", "rougelite-pack-overlay");
+  overlay.dataset.packOpeningScene = "true";
+  const dialog = overlay.querySelector('.league-dialog');
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-labelledby', 'pack-opening-title');
+  leaguePackOpeningEffects = createPackOpeningEffects(overlay);
+  overlay.addEventListener('click', (event) => {
+    if (event.target.closest('[data-pack-opening-next]')) {
+      event.stopPropagation();
+      const item = (league.s4Packs?.inventory ?? []).find(item => item.status === 'unopened' && item.packType === leaguePackOpeningContext?.packType);
+      if (item) void openLeaguePlayerPack(item.id, event.target.closest('button'));
+    } else if (event.target.closest('[data-s4-pack-manage-roster]')) {
+      event.stopPropagation();
+      leagueBackpackPage = 'cards'; closeLeagueDialog(); renderLeague();
+    }
+  });
+  return overlay;
+}
+
+function leaguePackOpeningHeader(title, note, progress = '') {
+  return `<div><small>YFFM1 PACK OPENING</small><h2 id="pack-opening-title">${escapeHtml(title)}</h2><p>${escapeHtml(note)}</p></div><div>${progress}<button type="button" class="icon-button" data-close-league-dialog aria-label="关闭开包展示">×</button></div>`;
+}
+
+function leaguePackOpeningActions(note) {
+  const remaining = (league.s4Packs?.inventory ?? []).filter(item => item.status === 'unopened' && item.packType === leaguePackOpeningContext?.packType).length;
+  return `<p>${escapeHtml(note)}${leaguePackOpeningContext?.packName ? `<br>${escapeHtml(leaguePackOpeningContext.packName)} · 剩余 ${remaining} 包` : ''}</p><div>${leaguePackOpeningContext?.packType ? `<button type="button" data-pack-opening-next ${remaining && !league.s4Packs?.offer ? '' : 'disabled'}>${remaining ? '开下一包' : '该卡包已开完'}</button>` : ''}<button type="button" data-close-league-dialog>返回背包</button></div>`;
+}
+
+async function openLeaguePlayerPack(packId, trigger = null) {
+  if (leagueMutationPending || leaguePackChoicePending) return;
+  const item = (league.s4Packs?.inventory ?? []).find(item => item.id === packId && item.status === 'unopened');
+  if (!item) return;
+  const accountId = account?.profile?.id;
+  const previousOverlay = document.querySelector('#league-dialog-overlay');
+  leaguePackOpeningContext = { packType:item.packType, packName:item.name };
+  if (trigger) trigger.disabled = true;
+  try {
+    const value = await leagueRequest('/packs/open', { packId }, { render:false, ignoreStale:true });
+    if (!value || accountId !== account?.profile?.id || !leagueMode || leagueTab !== 'backpack' || leagueBackpackPage !== 'packs' || previousOverlay !== document.querySelector('#league-dialog-overlay')) return;
+    syncLeagueBackpackPackMutationInPlace({ syncPackDialog:false });
+    if (value.packOpening?.player || value.packOpening?.item) openS4PackResult(value.packOpening);
+    else syncS4PackChoiceDialog({ force:true });
+  } catch (error) {
+    if (accountId !== account?.profile?.id) return;
+    if (trigger?.isConnected) trigger.disabled = false;
+    showToast(error.message);
+  }
+}
+
 function openS4PackResult(result) {
   if (result?.item) {
     openLeagueDialog(`<header><div><small>COSMETIC ITEM ACQUIRED</small><h2>获得 ${escapeHtml(result.item.name)}</h2><p>${result.item.equipped ? "这是该类别的第一枚徽章，已自动佩戴。" : "徽章已收入背包的道具栏。"}</p></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="cosmetic-pack-result grade-${String(result.item.grade).toLowerCase()}"><img src="${escapeHtml(result.item.imageUrl)}" alt="${escapeHtml(result.item.name)}"><section><small>${escapeHtml(result.item.grade)} GRADE ${result.item.slot === "clubBadge" ? "CLUB" : "COUNTRY"} BADGE</small><h3>${escapeHtml(result.item.displayName ?? result.item.countryName ?? result.item.clubName)}</h3><p>当前持有 ×${Number(result.item.count ?? 1)}</p><button type="button" class="button primary wide" data-close-league-dialog>收入道具栏</button></section></div>`);
@@ -3495,7 +3557,19 @@ function openS4PackResult(result) {
   }
   if (!result?.player || !result?.card) return;
   const ownershipText = result.legendaryHit ? "触发1.5%传奇概率，传奇S球员卡已进入背包" : result.cardCount > 1 ? `同时获得该球员所有权及 ${result.cardCount} 张+0基础卡` : result.ownershipGranted ? "同时获得该球员所有权" : result.mode === "direct" ? "球员卡已进入背包" : "传奇球员卡已进入背包";
-  openLeagueDialog(`<header><div><small>${result.legendaryHit ? "LEGENDARY HIT · 1.5%" : "PACK OPENING RESULT"}</small><h2>获得 ${escapeHtml(result.player.name)}</h2><p>${escapeHtml(ownershipText)}</p></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="s4-pack-result ${result.legendaryHit ? "legendary-hit" : ""}"><div>${s4PlayerCardMarkup(result.player, { card:result.card })}</div><section><small>${result.legendaryHit ? "LEGENDARY S PLAYER" : "NEW PLAYER CARD"}</small><h3>${escapeHtml(result.player.name)}</h3><p>${escapeHtml(result.player.club)} / ${escapeHtml(result.player.nationality)}</p><b>${result.card.upgradeLevel ? `强化 +${result.card.upgradeLevel}` : "未强化球员卡"}</b><button type="button" class="button primary wide" data-close-league-dialog>收入背包</button></section></div>`);
+  const overlay = leaguePackOpeningScene();
+  const selected = leaguePackOpeningEffects?.busy && leaguePackOpeningEffects.selectedPlayerId === String(result.player.id)
+    ? leaguePackOpeningEffects.confirm() : null;
+  if (selected) {
+    // Keep the selected card and its artwork mounted while its granted level updates.
+    patchHtmlElement(selected, s4PlayerCardMarkup(result.player, { card:result.card, attributes:'disabled aria-pressed="true"' }));
+  } else {
+    overlay.querySelector('[data-pack-opening-content]').innerHTML = `<div class="inventory-acquired-card ${result.legendaryHit ? 'legendary-hit' : ''}">${s4PlayerCardMarkup(result.player, { card:result.card })}</div>`;
+    leaguePackOpeningEffects.reveal();
+  }
+  overlay.dataset.packOpeningComplete = 'true';
+  overlay.querySelector('[data-pack-opening-header]').innerHTML = leaguePackOpeningHeader(`获得 ${result.player.name}`, ownershipText);
+  overlay.querySelector('[data-pack-opening-actions]').innerHTML = leaguePackOpeningActions(`${result.card.upgradeLevel ? `强化 +${result.card.upgradeLevel}` : '未强化球员卡'} · ${result.player.club ?? ''} / ${result.player.nationality ?? ''}`);
 }
 
 function openS4PackBatchResults(batch) {
@@ -3517,20 +3591,25 @@ function openS4PackBatchResults(batch) {
   const pageCount = Math.max(1, Math.ceil(results.length / pageSize));
   const legendaryHitCount = results.filter((result) => result.legendaryHit).length;
   let page = 0;
-  const overlay = openLeagueDialog("", "s4-pack-batch-dialog");
+  const overlay = leaguePackOpeningScene();
   const renderPage = () => {
     const start = page * pageSize;
-    const cards = results.slice(start, start + pageSize).map((result, index) => `<article class="${result.legendaryHit ? "legendary-hit" : ""}"><span>${result.legendaryHit ? "S" : start + index + 1}</span>${s4PlayerCardMarkup(result.player, { card:result.card, compact:true })}</article>`).join("");
-    const pager = pageCount > 1 ? `<nav class="s4-pack-batch-pager"><button type="button" class="button secondary" data-pack-batch-page="previous" ${page <= 0 ? "disabled" : ""}>上一页</button><b>${page + 1} / ${pageCount}</b><button type="button" class="button secondary" data-pack-batch-page="next" ${page >= pageCount - 1 ? "disabled" : ""}>下一页</button></nav>` : "";
-    overlay.querySelector(".league-dialog").innerHTML = `<header><div><small>BATCH PACK OPENING</small><h2>批量开包完成</h2><p>共获得 ${results.length} 张球员卡${legendaryHitCount ? `，其中触发 ${legendaryHitCount} 次1.5%传奇命中` : ""}；每页最多展示 ${pageSize} 张</p></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="s4-pack-batch-results">${cards}</div><footer class="s4-pack-batch-footer">${pager}<button type="button" class="button primary" data-close-league-dialog>全部收入背包</button></footer>`;
+    const cards = results.slice(start, start + pageSize).map((result, index) => `<article class="${result.legendaryHit ? "legendary-hit" : ""}"><span>${result.legendaryHit ? "S" : start + index + 1}</span>${s4PlayerCardMarkup(result.player, { card:result.card, compact:true, lazyImage:true })}</article>`).join("");
+    const pager = pageCount > 1 ? `<nav class="s4-pack-batch-pager"><button type="button" data-pack-batch-page="previous" ${page <= 0 ? "disabled" : ""}>上一页</button><b>${page + 1} / ${pageCount}</b><button type="button" data-pack-batch-page="next" ${page >= pageCount - 1 ? "disabled" : ""}>下一页</button></nav>` : "";
+    overlay.querySelector('[data-pack-opening-header]').innerHTML = leaguePackOpeningHeader('批量开包完成', `共获得 ${results.length} 张球员卡${legendaryHitCount ? `，其中触发 ${legendaryHitCount} 次1.5%传奇命中` : ""}；每页最多展示 ${pageSize} 张`);
+    overlay.querySelector('[data-pack-opening-content]').innerHTML = `<div class="s4-pack-batch-results">${cards}</div>`;
+    overlay.querySelector('[data-pack-opening-actions]').innerHTML = `<div>${pager}<button type="button" data-close-league-dialog>全部收入背包</button></div>`;
+    overlay.querySelectorAll('[data-pack-batch-page]').forEach(button => {
+      button.onclick = (event) => {
+        event.stopPropagation();
+        page = Math.max(0, Math.min(pageCount - 1, page + (button.dataset.packBatchPage === 'next' ? 1 : -1)));
+        renderPage();
+      };
+    });
   };
-  overlay.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-pack-batch-page]");
-    if (!button) return;
-    page = Math.max(0, Math.min(pageCount - 1, page + (button.dataset.packBatchPage === "next" ? 1 : -1)));
-    renderPage();
-  });
   renderPage();
+  leaguePackOpeningEffects.reveal();
+  overlay.dataset.packOpeningComplete = 'true';
 }
 
 function leagueRewardPanelMarkup() {
@@ -3673,6 +3752,7 @@ function aiTrainingOptionMarkup(options, selected) {
 }
 
 function openComputeNodeCredentialDialog(credential, concurrency = 1) {
+  if (!LEAGUE_AI_BATCH_UI_ENABLED) return;
   const serverUrl = globalThis.location?.origin ?? "https://你的游戏服务器";
   const command = `$env:YDL_MIRROR_WORKER_TOKEN='${credential.token}'\n.\\devtool\\start-mirror-compute-node.ps1 -ServerUrl '${serverUrl}' -WorkerId '${credential.nodeId}' -Concurrency ${concurrency} -AcceptJobs true`;
   const expiresAt = new Date(Number(credential.expiresAt)).toLocaleString("zh-CN", { hour12:false });
@@ -3684,6 +3764,7 @@ function openComputeNodeCredentialDialog(credential, concurrency = 1) {
 }
 
 function openComputeNodeMarketDialog() {
+  if (!LEAGUE_AI_BATCH_UI_ENABLED) return;
   const ownNodes = league.mirrorMarketplace?.ownComputeNodes ?? [];
   const rows = ownNodes.length
     ? ownNodes.map((node) => `<li><span><b>${escapeHtml(node.label)}</b><small>${node.visibility === "public" ? "公开给所有玩家" : "仅自己使用"} · ${node.online ? node.acceptingJobs ? "在线接单" : "在线待机" : "离线"} · ${Number(node.capacity ?? 1)}槽 · ${node.credentialExpiresAt ? `密钥至${new Date(Number(node.credentialExpiresAt)).toLocaleString("zh-CN", { hour12:false })}` : "管理员常驻密钥"}</small></span><div><button type="button" class="button secondary" data-compute-node-rotate="${escapeHtml(node.id)}">重置密钥</button><button type="button" class="button danger" data-compute-node-remove="${escapeHtml(node.id)}">删除</button></div></li>`).join("")
@@ -3719,6 +3800,7 @@ function openComputeNodeMarketDialog() {
   }));
 }
 function openMirrorBatchCapacityDialog(entries = []) {
+  if (!LEAGUE_AI_BATCH_UI_ENABLED) return;
   const nodeId = entries[0]?.executionNode ?? "cloud";
   const node = (league.mirrorMarketplace?.batchNodes ?? []).find((entry) => entry.id === nodeId);
   const capacity = Number(node?.capacity ?? (nodeId === "cloud" ? 2 : 1));
@@ -3737,29 +3819,33 @@ function aiTrainingDialogMarkup() {
     const plan = defaults[state] ?? {};
     return `<section class="ai-training-phase"><header><b>${label}</b></header><div><label><span>比赛心态</span><select name="${state}Tactic">${aiTrainingOptionMarkup(TACTICS, plan.tactic ?? "balanced")}</select></label><label><span>基础打法</span><select name="${state}Style">${aiTrainingOptionMarkup(STYLES, plan.style ?? "possession")}</select></label></div></section>`;
   }).join("");
-  const batchDefaultCount = Number(league.mirrorMarketplace?.batchMatchCount ?? 10);
-  const batchMinimumCount = Number(league.mirrorMarketplace?.batchMinimumMatchCount ?? 10);
-  const batchMaximumCount = Number(league.mirrorMarketplace?.batchMaximumMatchCount ?? 50);
-  const batchFeePercent = Math.round(Number(league.mirrorMarketplace?.batchServiceFeeRate ?? .3) * 100);
-  const activeBatch = league.mirrorMarketplace?.activeBatchJob;
-  const selectedBatchCount = Number(activeBatch?.totalMatches ?? batchDefaultCount);
-  const batchCountOptions = Array.from({ length:Math.floor((batchMaximumCount - batchMinimumCount) / 10) + 1 }, (_, index) => batchMinimumCount + index * 10)
-    .map((count) => `<option value="${count}" ${count === selectedBatchCount ? "selected" : ""}>${count}场</option>`).join("");
-  const batchCopy = activeBatch
-    ? `队列进行中 · ${Number(activeBatch.completedMatches ?? 0)}/${Number(activeBatch.totalMatches ?? selectedBatchCount)}`
-    : "批量模拟";
-  const batchControl = `<label class="ai-training-batch-option ${activeBatch ? "is-running" : ""}"><input type="checkbox" name="batchSimulation" value="true" data-ai-training-batch ${activeBatch ? "disabled" : ""}><span><b>${batchCopy}</b><small>10–50场 · 批量单场价为普通单场1/3 · 自有节点免${batchFeePercent}%服务费</small></span><select name="batchMatchCount" data-ai-training-batch-count aria-label="批量模拟场次" ${activeBatch ? "disabled" : ""}>${batchCountOptions}</select></label>`;
-  const batchNodes = league.mirrorMarketplace?.batchNodes ?? [{ id:"cloud", label:"云服务器", online:true, acceptingJobs:true, status:"accepting", capacity:2, availableSlots:2, estimatedSeconds:1_350, surchargePerMatch:0 }];
-  const batchNodeStateText = (node) => !node.online ? "离线" : node.acceptingJobs === false ? "在线待机" : Number(node.availableSlots ?? 0) <= 0 ? "任务已满" : `可接单 · ${Number(node.availableSlots ?? 0)}/${Number(node.capacity ?? 0)}空闲`;
-  const batchNodeOptions = batchNodes.map((node) => `<option value="${escapeHtml(node.id)}" ${node.id !== "cloud" && (!node.online || node.acceptingJobs === false) ? "disabled" : ""}>${node.isOwned ? "我的节点 · " : ""}${escapeHtml(node.label)} · ${batchNodeStateText(node)}${node.isOwned ? " · 免服务费" : ""}${node.online && node.acceptingJobs !== false && Number(node.availableSlots ?? 0) > 0 ? ` · 约${Number(node.estimatedSeconds ?? 0) <= 180 ? "2分钟" : "22–25分钟"}` : ""}</option>`).join("");
-  const batchNodeControl = `<label class="ai-training-node-option" data-ai-training-node hidden><span>运行节点</span><select name="executionNode" data-ai-training-node-select>${batchNodeOptions}</select><small data-ai-training-node-status></small></label>`;
-  const computeNodeSettingsControl = `<button type="button" class="button secondary ai-training-compute-node-open" data-compute-nodes-open>管理计算节点</button>`;
-  return `<header><div><small>AI TACTICAL MATCH</small><h2>AI 对战</h2><p>系统阵型免费；玩家镜像按列表价格收费。</p></div><button type="button" class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><form class="ai-training-form"><section class="ai-training-basics"><label><span>AI 阵型 / 镜像</span><select name="formation" data-ai-training-opponent>${opponentOptions}</select></label><label data-ai-training-average><span>AI 平均能力</span><output data-ai-training-overall-output>82</output><input type="range" name="averageOverall" min="62" max="95" step="1" value="82"></label><label><span>主攻方向</span><select name="attackFocus">${aiTrainingOptionMarkup(FOCUSES, "balanced")}</select></label><label><span>主守方向</span><select name="defenseFocus">${aiTrainingOptionMarkup(FOCUSES, "balanced")}</select></label></section><div class="ai-training-phases">${phaseMarkup}</div><footer><span data-ai-training-price>系统阵型免费 · 当前金币 ${Number(league.wallet.balance).toLocaleString("zh-CN")}</span>${batchControl}${batchNodeControl}${computeNodeSettingsControl}<button type="submit" class="button primary" data-ai-training-submit><span aria-hidden="true">▶</span> 开始对战</button></footer></form>`;
+  let batchControls = "";
+  if (LEAGUE_AI_BATCH_UI_ENABLED) {
+    const batchDefaultCount = Number(league.mirrorMarketplace?.batchMatchCount ?? 10);
+    const batchMinimumCount = Number(league.mirrorMarketplace?.batchMinimumMatchCount ?? 10);
+    const batchMaximumCount = Number(league.mirrorMarketplace?.batchMaximumMatchCount ?? 50);
+    const batchFeePercent = Math.round(Number(league.mirrorMarketplace?.batchServiceFeeRate ?? .3) * 100);
+    const activeBatch = league.mirrorMarketplace?.activeBatchJob;
+    const selectedBatchCount = Number(activeBatch?.totalMatches ?? batchDefaultCount);
+    const batchCountOptions = Array.from({ length:Math.floor((batchMaximumCount - batchMinimumCount) / 10) + 1 }, (_, index) => batchMinimumCount + index * 10)
+      .map((count) => `<option value="${count}" ${count === selectedBatchCount ? "selected" : ""}>${count}场</option>`).join("");
+    const batchCopy = activeBatch
+      ? `队列进行中 · ${Number(activeBatch.completedMatches ?? 0)}/${Number(activeBatch.totalMatches ?? selectedBatchCount)}`
+      : "批量模拟";
+    const batchControl = `<label class="ai-training-batch-option ${activeBatch ? "is-running" : ""}"><input type="checkbox" name="batchSimulation" value="true" data-ai-training-batch ${activeBatch ? "disabled" : ""}><span><b>${batchCopy}</b><small>10–50场 · 批量单场价为普通单场1/3 · 自有节点免${batchFeePercent}%服务费</small></span><select name="batchMatchCount" data-ai-training-batch-count aria-label="批量模拟场次" ${activeBatch ? "disabled" : ""}>${batchCountOptions}</select></label>`;
+    const batchNodes = league.mirrorMarketplace?.batchNodes ?? [{ id:"cloud", label:"云服务器", online:true, acceptingJobs:true, status:"accepting", capacity:2, availableSlots:2, estimatedSeconds:1_350, surchargePerMatch:0 }];
+    const batchNodeStateText = (node) => !node.online ? "离线" : node.acceptingJobs === false ? "在线待机" : Number(node.availableSlots ?? 0) <= 0 ? "任务已满" : `可接单 · ${Number(node.availableSlots ?? 0)}/${Number(node.capacity ?? 0)}空闲`;
+    const batchNodeOptions = batchNodes.map((node) => `<option value="${escapeHtml(node.id)}" ${node.id !== "cloud" && (!node.online || node.acceptingJobs === false) ? "disabled" : ""}>${node.isOwned ? "我的节点 · " : ""}${escapeHtml(node.label)} · ${batchNodeStateText(node)}${node.isOwned ? " · 免服务费" : ""}${node.online && node.acceptingJobs !== false && Number(node.availableSlots ?? 0) > 0 ? ` · 约${Number(node.estimatedSeconds ?? 0) <= 180 ? "2分钟" : "22–25分钟"}` : ""}</option>`).join("");
+    const batchNodeControl = `<label class="ai-training-node-option" data-ai-training-node hidden><span>运行节点</span><select name="executionNode" data-ai-training-node-select>${batchNodeOptions}</select><small data-ai-training-node-status></small></label>`;
+    const computeNodeSettingsControl = `<button type="button" class="button secondary ai-training-compute-node-open" data-compute-nodes-open>管理计算节点</button>`;
+    batchControls = `${batchControl}${batchNodeControl}${computeNodeSettingsControl}`;
+  }
+  return `<header><div><small>AI TACTICAL MATCH</small><h2>AI 对战</h2><p>系统阵型免费；玩家镜像按列表价格收费。</p></div><button type="button" class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><form class="ai-training-form"><section class="ai-training-basics"><label><span>AI 阵型 / 镜像</span><select name="formation" data-ai-training-opponent>${opponentOptions}</select></label><label data-ai-training-average><span>AI 平均能力</span><output data-ai-training-overall-output>82</output><input type="range" name="averageOverall" min="62" max="95" step="1" value="82"></label><label><span>主攻方向</span><select name="attackFocus">${aiTrainingOptionMarkup(FOCUSES, "balanced")}</select></label><label><span>主守方向</span><select name="defenseFocus">${aiTrainingOptionMarkup(FOCUSES, "balanced")}</select></label></section><div class="ai-training-phases">${phaseMarkup}</div><footer><span data-ai-training-price>系统阵型免费 · 当前金币 ${Number(league.wallet.balance).toLocaleString("zh-CN")}</span>${batchControls}<button type="submit" class="button primary" data-ai-training-submit><span aria-hidden="true">▶</span> 开始对战</button></footer></form>`;
 }
 
 function openAiTrainingDialog() {
   const overlay = openLeagueDialog(aiTrainingDialogMarkup(), "ai-training-dialog");
-  overlay.querySelector("[data-compute-nodes-open]")?.addEventListener("click", openComputeNodeMarketDialog);
+  if (LEAGUE_AI_BATCH_UI_ENABLED) overlay.querySelector("[data-compute-nodes-open]")?.addEventListener("click", openComputeNodeMarketDialog);
   const form = overlay.querySelector(".ai-training-form");
   const overall = form?.elements.namedItem("averageOverall");
   const output = overlay.querySelector("[data-ai-training-overall-output]");
@@ -3772,8 +3858,8 @@ function openAiTrainingDialog() {
   const nodeSelect = overlay.querySelector("[data-ai-training-node-select]");
   const nodeStatus = overlay.querySelector("[data-ai-training-node-status]");
   const submit = form?.querySelector("[data-ai-training-submit]");
-  const activeBatch = league.mirrorMarketplace?.activeBatchJob;
-  const batchNodes = league.mirrorMarketplace?.batchNodes ?? [];
+  const activeBatch = LEAGUE_AI_BATCH_UI_ENABLED ? league.mirrorMarketplace?.activeBatchJob : null;
+  const batchNodes = LEAGUE_AI_BATCH_UI_ENABLED ? (league.mirrorMarketplace?.batchNodes ?? []) : [];
   const selectedBatchCount = () => Math.max(10, Math.min(50, Number(batchCountSelect?.value ?? league.mirrorMarketplace?.batchMatchCount ?? 10)));
   const batchFeeRate = Number(league.mirrorMarketplace?.batchServiceFeeRate ?? .3);
   let batchRequestId = null;
@@ -3799,6 +3885,12 @@ function openAiTrainingDialog() {
     if (output) output.textContent = mirror ? "镜像" : overall.value;
     if (batch) batch.disabled = Boolean(activeBatch);
     const price = Number(opponent?.selectedOptions?.[0]?.dataset.price ?? 0);
+    if (!LEAGUE_AI_BATCH_UI_ENABLED) {
+      if (priceText) priceText.textContent = mirror
+        ? `本次调用 ${price} 金币 · 当前金币 ${Number(league.wallet.balance).toLocaleString("zh-CN")}`
+        : `系统阵型免费 · 当前金币 ${Number(league.wallet.balance).toLocaleString("zh-CN")}`;
+      return;
+    }
     const batched = Boolean(batch?.checked);
     const batchCount = selectedBatchCount();
     if (nodeField) nodeField.hidden = !batched;
@@ -3855,7 +3947,7 @@ function openAiTrainingDialog() {
         defenseFocus:data.get("defenseFocus"),
         tacticalPlans,
       });
-      if (data.get("batchSimulation")) {
+      if (LEAGUE_AI_BATCH_UI_ENABLED && data.get("batchSimulation")) {
         if (!selectedNodeHasCapacity(true)) throw new Error(`${selectedNode().label}当前不可用`);
         batchRequestId ??= globalThis.crypto?.randomUUID?.() ?? `mirror-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const executionNode = String(data.get("executionNode") ?? "cloud");
@@ -3879,7 +3971,7 @@ function openAiTrainingDialog() {
       showToast(`AI 对战已开始，实际平均能力 ${value.actualAverageOverall}`);
     } catch (error) {
       if (submit) submit.disabled = false;
-      if (error.status === 409 && Array.isArray(error.details) && error.details.length) {
+      if (LEAGUE_AI_BATCH_UI_ENABLED && error.status === 409 && Array.isArray(error.details) && error.details.length) {
         openMirrorBatchCapacityDialog(error.details);
         return;
       }
@@ -3934,11 +4026,7 @@ function refreshLeagueSquadPositionUi() {
   for (const nextMagnet of nextPitch.querySelectorAll("[data-league-magnet]")) {
     const currentMagnet = currentMagnets.get(nextMagnet.dataset.leagueMagnet);
     if (!currentMagnet) return renderLeague();
-    for (const attribute of [...currentMagnet.attributes]) {
-      if (!nextMagnet.hasAttribute(attribute.name)) currentMagnet.removeAttribute(attribute.name);
-    }
-    for (const attribute of nextMagnet.attributes) currentMagnet.setAttribute(attribute.name, attribute.value);
-    currentMagnet.innerHTML = nextMagnet.innerHTML;
+    patchDomElement(currentMagnet, nextMagnet);
   }
 
   const nextReferenceLines = new Map([...nextPitch.querySelectorAll("[data-formation-line]")]
@@ -3953,24 +4041,24 @@ function refreshLeagueSquadPositionUi() {
 
   const currentLines = currentPitch.querySelector(".league-chemistry-lines");
   const nextLines = nextPitch.querySelector(".league-chemistry-lines");
-  if (currentLines && nextLines) currentLines.replaceWith(nextLines.cloneNode(true));
+  if (currentLines && nextLines) patchDomElement(currentLines, nextLines);
   else if (currentLines) currentLines.remove();
   else if (nextLines) currentPitch.insertBefore(nextLines.cloneNode(true), currentPitch.firstChild);
 
   const currentZones = currentPitch.querySelector(".formation-role-zones");
   const nextZones = nextPitch.querySelector(".formation-role-zones");
-  if (currentZones && nextZones) currentZones.replaceWith(nextZones.cloneNode(true));
+  if (currentZones && nextZones) patchDomElement(currentZones, nextZones);
   else if (currentZones) currentZones.remove();
   else if (nextZones) currentPitch.insertBefore(nextZones.cloneNode(true), currentPitch.firstChild);
 
   const currentSummary = currentForm.querySelector(".league-bench-summary");
   const nextSummary = nextForm.querySelector(".league-bench-summary");
-  if (currentSummary && nextSummary) currentSummary.replaceWith(nextSummary.cloneNode(true));
+  if (currentSummary && nextSummary) patchDomElement(currentSummary, nextSummary);
 
   const currentControls = currentForm.querySelector(".league-board-controls");
   const currentBond = currentControls?.querySelector(".league-bond-ready");
   const nextBond = nextForm.querySelector(".league-bond-ready");
-  if (currentBond && nextBond) currentBond.replaceWith(nextBond.cloneNode(true));
+  if (currentBond && nextBond) patchDomElement(currentBond, nextBond);
   else if (currentBond) currentBond.remove();
   else if (nextBond) {
     const currentSide = currentControls?.querySelector(".league-board-side");
@@ -3988,7 +4076,7 @@ function refreshLeagueSquadPositionUi() {
 
   const currentWarning = currentForm.querySelector(".league-position-save-warning");
   const nextWarning = nextForm.querySelector(".league-position-save-warning");
-  if (currentWarning && nextWarning) currentWarning.replaceWith(nextWarning.cloneNode(true));
+  if (currentWarning && nextWarning) patchDomElement(currentWarning, nextWarning);
   else if (currentWarning) currentWarning.remove();
   else if (nextWarning) currentForm.appendChild(nextWarning.cloneNode(true));
 }
@@ -4544,39 +4632,11 @@ function leagueCardTradeMarkup() {
   return `<section class="card-trade-shell"><header><button type="button" class="button secondary" data-market-section="back">返回市场选择</button><div><small>PLAYER TO PLAYER TRADE</small><h2>发起交易</h2></div><b>${league.wallet.balance} 金币</b></header><div class="card-trade-target"><label><span>交易对象</span><select data-card-trade-target><option value="">请选择真人玩家</option>${playerOptions}</select></label><div><span>已选择</span><b>对方 ${leagueTradeRequestedCardIds.size} 张 / 我方 ${leagueTradeOfferedCardIds.size} 张</b></div></div>${xTradeSelected ? `<p class="card-trade-x-notice">X级球员交易仅支持双方各选择1名X级球员，且不能附带金币。</p>` : ""}<div class="card-trade-columns"><section><header><div><small>REQUESTED CARDS</small><h3>${targetTeam ? `${escapeHtml(targetTeam.ownerName)}的强化卡 / X球员` : "对方强化卡 / X球员"}</h3></div></header><div class="s4-market-card-grid">${targetGrid}</div></section><section><header><div><small>MY OFFER</small><h3>我的强化卡 / X球员</h3></div></header><div class="s4-market-card-grid">${ownGrid}</div><footer><label><span>附带金币</span><input type="number" min="0" step="1" value="${xTradeSelected ? "0" : escapeHtml(leagueTradeCoinAmount)}" placeholder="0" data-card-trade-coins ${xTradeSelected ? "disabled" : ""}></label><button type="button" class="button primary" data-card-trade-submit ${tradeReady ? "" : "disabled"}>发起交易</button></footer></section></div><section class="card-trade-history"><header><div><small>MY TRADE OFFERS</small><h3>我发起的交易</h3></div></header><div>${history}</div></section></section>`;
 }
 
-function cosmeticMarketVisualMarkup(item) {
-  const categoryLabel = item.slot === "clubBadge" ? "俱乐部徽章" : "国家队徽章";
-  return `<div class="cosmetic-market-visual category-${item.slot === "clubBadge" ? "club" : "country"} grade-${String(item.grade).toLowerCase()}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}"><i>${escapeHtml(item.grade)}</i><small>${categoryLabel}</small></div>`;
-}
-
-function cosmeticMarketListingMarkup(listing) {
-  const item = listing.item;
-  if (!item) return "";
-  const action = listing.sellerId === account.profile.id
-    ? `<button class="button secondary" data-market-cancel="${escapeHtml(listing.id)}">撤回挂牌</button>`
-    : `<button class="button primary" data-market-buy="${escapeHtml(listing.id)}">立即购买</button>`;
-  return `<article class="s4-market-listing cosmetic-market-listing">${cosmeticMarketVisualMarkup(item)}<div class="cosmetic-market-copy"><b>${Number(listing.price).toLocaleString("zh-CN")} 金币</b><strong>${escapeHtml(item.displayName ?? item.name)}</strong><small>${escapeHtml(listing.sellerTeamName)} · ${escapeHtml(item.grade)}级${item.slot === "clubBadge" ? "俱乐部" : "国家队"}徽章</small>${action}</div></article>`;
-}
-
-function leagueCosmeticMarketMarkup() {
-  const gradeOrder = { S:0, A:1, B:2, C:3 };
-  const listings = (league.listings ?? []).filter((listing) => listing.kind === "cosmetic" && listing.item)
-    .sort((left, right) => Number(left.price) - Number(right.price) || (gradeOrder[left.item.grade] ?? 9) - (gradeOrder[right.item.grade] ?? 9) || String(left.item.name).localeCompare(String(right.item.name), "zh-CN"));
-  const inventory = [...(league.cosmetics?.items ?? [])].filter((item) => Number(item.count ?? 0) > 0)
-    .sort((left, right) => (gradeOrder[left.grade] ?? 9) - (gradeOrder[right.grade] ?? 9) || String(left.name).localeCompare(String(right.name), "zh-CN"));
-  const listingPage = marketPage(listings, leagueMarketListingPage);
-  const warehousePage = marketPage(inventory, leagueMarketWarehousePage);
-  leagueMarketListingPage = listingPage.page;
-  leagueMarketWarehousePage = warehousePage.page;
-  const listingCards = listingPage.items.length ? listingPage.items.map(cosmeticMarketListingMarkup).join("") : `<p class="s4-market-empty">当前没有徽章道具挂牌。</p>`;
-  const warehouseCards = warehousePage.items.length ? warehousePage.items.map((item) => `<article class="s4-market-warehouse-card cosmetic-market-warehouse-card">${cosmeticMarketVisualMarkup(item)}<div class="cosmetic-market-copy"><strong>${escapeHtml(item.displayName ?? item.name)}</strong><small>${escapeHtml(item.grade)}级 · 当前持有 ×${Number(item.count)}${item.equipped ? " · 正在佩戴" : ""}</small></div><button type="button" class="button secondary s4-market-list-button" data-market-list-kind="cosmetic" data-market-list-asset="${escapeHtml(item.id)}">挂牌一枚</button></article>`).join("") : `<p class="s4-market-empty">你当前没有可挂牌的徽章道具。</p>`;
-  return `<section class="s4-market-shell cosmetic-market-shell"><header><button type="button" class="button secondary" data-market-section="back">返回市场选择</button><div><small>COSMETIC ITEM MARKET</small><h2>道具交易</h2></div><b>${league.wallet.balance} 金币</b></header><div class="s4-market-columns"><section class="s4-market-board"><header><div><small>ITEM LISTINGS</small><h3>徽章挂牌</h3></div><span>国家队与俱乐部徽章均可交易</span></header><div class="s4-market-card-grid cosmetic-market-grid">${listingCards}</div>${marketPagerMarkup("listing", listingPage)}</section><aside class="s4-market-warehouse"><header><div><small>MY COSMETIC ITEMS</small><h3>我的徽章道具</h3></div><span>每次挂牌1枚 · 成交收取5%手续费</span></header><div class="s4-market-card-grid cosmetic-market-grid">${warehouseCards}</div>${marketPagerMarkup("warehouse", warehousePage)}</aside></div></section>`;
-}
 
 function leagueMarketMarkup() {
-  if (!leagueMarketSection) return `<section class="s4-market-entry market-entry-four"><header><small>S4 TRANSFER MARKET</small><h2>交易市场</h2><p>选择需要进入的资产市场</p></header><div><button type="button" data-market-section="card"><i>+8</i><b>传奇 / 强化单卡市场</b><span>购买或挂牌传奇卡及强化球员卡</span></button><button type="button" data-market-section="ownership"><i>OWN</i><b>球员所有权市场</b><span>转移非传奇球员的全服唯一所有权</span></button><button type="button" data-market-section="trade"><i>⇄</i><b>发起交易</b><span>与其他真人玩家交换强化卡并附带金币</span></button><button type="button" data-market-section="cosmetic"><i>BDG</i><b>道具交易</b><span>挂牌或购买国家队与俱乐部徽章</span></button></div></section>`;
+  if (!["card", "ownership", "trade"].includes(leagueMarketSection)) leagueMarketSection = null;
+  if (!leagueMarketSection) return `<section class="s4-market-entry market-entry-three"><header><small>YFFM1 TRANSFER MARKET</small><h2>交易市场</h2><p>选择需要进入的资产市场</p></header><div><button type="button" data-market-section="card"><i>+8</i><b>传奇 / 强化单卡市场</b><span>购买或挂牌传奇卡及强化球员卡</span></button><button type="button" data-market-section="ownership"><i>OWN</i><b>球员所有权市场</b><span>转移非传奇球员的全服唯一所有权</span></button><button type="button" data-market-section="trade"><i>⇄</i><b>发起交易</b><span>与其他真人玩家交换强化卡并附带金币</span></button></div></section>`;
   if (leagueMarketSection === "trade") return leagueCardTradeMarkup();
-  if (leagueMarketSection === "cosmetic") return leagueCosmeticMarketMarkup();
   const ownership = leagueMarketSection === "ownership";
   const listings = league.listings.filter((item) => item.kind === (ownership ? "ownership" : "card"))
     .filter((item) => marketMatches(item.player, leagueMarketListingSearch, leagueMarketListingPosition));
@@ -4633,7 +4693,7 @@ function refreshLeagueInboxInPlace() {
   const current = app.querySelector(".league-inbox, .league-inbox-empty");
   if (!current) return renderLeague();
   const scrollTop = current.querySelector("[data-league-mail-scroll]")?.scrollTop ?? 0;
-  current.outerHTML = leagueInboxMarkup();
+  patchHtmlElement(current, leagueInboxMarkup());
   const nextScroll = app.querySelector("[data-league-mail-scroll]");
   if (nextScroll) nextScroll.scrollTop = scrollTop;
   syncLeagueShellChrome();
@@ -4749,7 +4809,7 @@ function leagueInboxDetailMarkup(message) {
     const payload = message.payload ?? {};
     const results = (payload.results ?? []).map((match) => leagueMatchRow(match, league.ownTeam.id)).join("");
     const alerts = [...(payload.injured ?? []).map((player) => `${escapeHtml(player.name)}伤缺${player.rounds}轮`), ...(payload.suspended ?? []).map((player) => `${escapeHtml(player.name)}停赛${player.rounds}轮`)];
-    const next = payload.next ? `<section class="mail-next-match"><small>${escapeHtml(payload.next.competitionName ?? "黄狗联赛")} · ${escapeHtml(payload.next.label ?? `第${payload.next.round}轮`)}</small><b>${escapeHtml(payload.next.name)}</b><span>${weatherIcon(payload.next.weather)} ${escapeHtml(payload.next.weather.name)} · 裁判 ${escapeHtml(payload.next.referee.name)}</span></section>` : "";
+    const next = payload.next ? `<section class="mail-next-match"><small>${escapeHtml(payload.next.competitionName ?? "YFFM1 联赛")} · ${escapeHtml(payload.next.label ?? `第${payload.next.round}轮`)}</small><b>${escapeHtml(payload.next.name)}</b><span>${weatherIcon(payload.next.weather)} ${escapeHtml(payload.next.weather.name)} · 裁判 ${escapeHtml(payload.next.referee.name)}</span></section>` : "";
     const income = payload.homeTicketIncome;
     const homeIncome = income ? `<section class="mail-home-income"><header><div><small>HOME MATCH REVENUE</small><h3>主场比赛日收入</h3></div><strong>+${Number(income.amount ?? 0).toLocaleString("zh-CN")} 金币</strong></header><dl><div><dt>入场观众</dt><dd>${Number(income.attendance ?? 0).toLocaleString("zh-CN")}</dd></div><div><dt>球场容量</dt><dd>${Number(income.capacity ?? 0).toLocaleString("zh-CN")}</dd></div><div><dt>上座率</dt><dd>${Math.round(Number(income.attendanceRate ?? 0) * 100)}%</dd></div></dl></section>` : "";
     return `${header}<div class="league-mail-body"><p>${escapeHtml(message.body)}</p><div class="mail-kpis"><span><small>当前排名</small><b>${payload.rank ?? "-"}</b></span><span><small>联赛积分</small><b>${payload.points ?? "-"}</b></span><span><small>阵容提醒</small><b>${alerts.length}</b></span></div>${homeIncome}${next}${alerts.length ? `<section class="mail-alert"><b>阵容可用性</b><p>${alerts.join("；")}</p></section>` : ""}<section class="mail-round-results"><h3>本轮全部赛果</h3>${results}</section></div>`;
@@ -4760,7 +4820,7 @@ function leagueInboxDetailMarkup(message) {
 function leagueShopMarkup() {
   const rosterSlotsUsed = league.ownTeam.s4Assets?.rosterSlotsUsed ?? league.ownTeam.roster.length;
   const rosterLimit = league.ownTeam.s4Assets?.rosterLimit ?? 33;
-  const packs = league.shop.catalog.map((pack) => {
+  const packs = league.shop.catalog.filter((pack) => pack.kind !== "cosmetic").map((pack) => {
     const limited = pack.seasonPurchaseLimit != null;
     const soldOut = limited && pack.remainingQuantity < 1;
     const limitText = limited ? `<small class="league-pack-limit">赛季限购 ${pack.purchasedQuantity}/${pack.seasonPurchaseLimit}</small>` : "";
@@ -5339,32 +5399,40 @@ function leagueShellMarkup(content) {
   return `<section class="league-shell"><button type="button" class="league-mobile-nav-toggle" data-league-mobile-nav aria-expanded="${leagueMobileNavOpen}" aria-controls="league-primary-nav"><span>☰</span><b>${escapeHtml(LEAGUE_TAB_LABELS[leagueTab] ?? "功能导航")}</b><small>${leagueMobileNavOpen ? "收起" : "展开"}</small></button><div class="league-main-layout ${leagueMobileNavOpen ? "mobile-nav-open" : "mobile-nav-collapsed"}">${leagueNavMarkup()}${leagueThemeToggleMarkup()}<main class="league-page-content">${content}</main></div></section>`;
 }
 
+function syncLeagueNavBadge(button, selector, markup) {
+  if (!button) return;
+  const badge = button.querySelector(selector);
+  if (!markup) badge?.remove();
+  else if (badge) patchHtmlElement(badge, markup);
+  else button.insertAdjacentHTML("beforeend", markup);
+}
+
 function syncLeagueShellChrome() {
   const shell = app.querySelector(":scope > .league-shell");
-  const nav = shell?.querySelector("#league-primary-nav");
   const layout = shell?.querySelector(":scope > .league-main-layout");
   const mobileToggle = shell?.querySelector("[data-league-mobile-nav]");
   if (!layout || !mobileToggle) return false;
   layout.classList.toggle("mobile-nav-open", leagueMobileNavOpen);
   layout.classList.toggle("mobile-nav-collapsed", !leagueMobileNavOpen);
-  mobileToggle.setAttribute("aria-expanded", String(leagueMobileNavOpen));
+  if (mobileToggle.getAttribute("aria-expanded") !== String(leagueMobileNavOpen)) mobileToggle.setAttribute("aria-expanded", String(leagueMobileNavOpen));
   const mobileLabel = mobileToggle.querySelector("b");
   const mobileState = mobileToggle.querySelector("small");
-  if (mobileLabel) mobileLabel.textContent = LEAGUE_TAB_LABELS[leagueTab] ?? "功能导航";
-  if (mobileState) mobileState.textContent = leagueMobileNavOpen ? "收起" : "展开";
+  const label = LEAGUE_TAB_LABELS[leagueTab] ?? "功能导航";
+  const state = leagueMobileNavOpen ? "收起" : "展开";
+  if (mobileLabel && mobileLabel.textContent !== label) mobileLabel.textContent = label;
+  if (mobileState && mobileState.textContent !== state) mobileState.textContent = state;
   shell.querySelectorAll("[data-league-tab]").forEach((button) => button.classList.toggle("active", button.dataset.leagueTab === leagueTab));
   const inboxButton = shell.querySelector('[data-league-tab="inbox"]');
-  inboxButton?.querySelector(":scope > span")?.remove();
-  if (inboxButton && league.inboxUnreadCount) inboxButton.insertAdjacentHTML("beforeend", `<span>${league.inboxUnreadCount}</span>`);
+  syncLeagueNavBadge(inboxButton, ":scope > span", league.inboxUnreadCount ? `<span>${league.inboxUnreadCount}</span>` : "");
   const growthButton = shell.querySelector('[data-league-tab="x-growth"]');
-  growthButton?.querySelector(':scope > span[title="可用加成点数"]')?.remove();
   const xGrowthPoints = Number(league.xGrowth?.points ?? 0);
-  if (growthButton && xGrowthPoints > 0) growthButton.insertAdjacentHTML("beforeend", `<span title="可用加成点数">${xGrowthPoints}</span>`);
+  syncLeagueNavBadge(growthButton, ':scope > span[title="可用加成点数"]', xGrowthPoints > 0 ? `<span title="可用加成点数">${xGrowthPoints}</span>` : "");
   const televisionButton = shell.querySelector('[data-league-tab="television"]');
-  televisionButton?.querySelector(":scope > .league-nav-live-badge")?.remove();
-  if (televisionButton && liveBroadcasts.some((broadcast) => String(broadcast.code).startsWith("YDL-"))) televisionButton.insertAdjacentHTML("beforeend", `<span class="league-nav-live-badge">LIVE</span>`);
+  syncLeagueNavBadge(televisionButton, ":scope > .league-nav-live-badge", liveBroadcasts.some((broadcast) => String(broadcast.code).startsWith("YDL-")) ? `<span class="league-nav-live-badge">LIVE</span>` : "");
   return true;
 }
+
+let renderedLeagueTab = null;
 
 function renderLeague() {
   if (leagueTacticalShapePreviewPlaying) stopLeagueTacticalShapePreview({ restore:false });
@@ -5383,11 +5451,18 @@ function renderLeague() {
   else {
     const content = leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "seasonFinal" ? seasonFinalTournamentMarkup() : leagueTab === "predictions" ? leaguePredictionsMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "coach" ? leagueCoachMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "x-growth" ? leagueXGrowthMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "club" ? leagueClubMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
     const pageContent = app.querySelector(":scope > .league-shell > .league-main-layout > .league-page-content");
-    if (pageContent) pageContent.innerHTML = content;
+    const unchangedSquad = pageContent && renderedLeagueTab === leagueTab && leagueTab === "squad"
+      && htmlChildrenMatch(pageContent, content);
+    if (unchangedSquad) {
+      // Keep the existing drag bindings when the requested squad HTML is identical.
+    } else if (pageContent && renderedLeagueTab === leagueTab && !["squad", "x-growth"].includes(leagueTab)) {
+      patchHtmlChildren(pageContent, content);
+    } else if (pageContent) pageContent.innerHTML = content;
     else app.innerHTML = leagueShellMarkup(content);
+    renderedLeagueTab = leagueTab;
     syncLeagueShellChrome();
     if (leagueTab === "x-growth" && league.xGrowth) document.querySelector(".x-growth-hero")?.insertAdjacentHTML("afterend", leagueXGrowthResetMarkup(league.xGrowth));
-    if (leagueTab === "squad") bindLeagueSquad();
+    if (leagueTab === "squad" && !unchangedSquad) bindLeagueSquad();
     if (leagueTab === "television") refreshBroadcasts();
     if (leagueTab === "schedule") {
       leagueScheduleClockOffset = Number(league.serverTime ?? Date.now()) - Date.now();
@@ -5403,6 +5478,8 @@ function renderLeague() {
 }
 
 function closeLeagueDialog() {
+  leaguePackOpeningEffects?.destroy();
+  leaguePackOpeningEffects = null;
   document.querySelector("#league-dialog-overlay")?.remove();
 }
 
@@ -5432,39 +5509,41 @@ function openS4PackChoiceDialog(offer) {
     const overlay = openLeagueDialog(`<header><div><small>${isClubBadge ? "CLUB" : "COUNTRY"} BADGE PACK</small><h2>${badgeType}三选一</h2><p>${choiceNote}</p></div>${progress}</header><div class="cosmetic-choice-grid">${cards}</div><footer class="s4-pack-choice-footer"><span>S 5% · A 15% · B 30% · C 50%（每个展示位独立抽取等级）</span></footer>`, "cosmetic-pack-choice-dialog", { dismissOnBackdrop:false });
     overlay.classList.add("s4-pack-choice-overlay");
     overlay.querySelector(".league-dialog").dataset.s4PackChoiceDialog = offer.id;
-    overlay.querySelectorAll("[data-s4-pack-choice]").forEach((button) => { button.onclick = () => chooseS4PackCard(button); });
+    overlay.querySelectorAll("[data-s4-pack-choice]").forEach((button) => { button.onclick = (event) => { event.stopPropagation(); void chooseS4PackCard(button); }; });
     return;
   }
   const designated = offer.choiceMode === "all";
   const title = designated ? offer.packType === "admin-private-choice-plus3" ? "私有池指定球员+3礼包" : `指定传奇球员卡+${offer.packType.endsWith("plus2") ? "2" : "1"}礼包` : offer.kind === "legend" ? "传奇随机卡包" : "公共池随机礼包";
-  const progress = offer.batchTotal
-    ? `<b class="backpack-batch-progress">第 ${offer.batchIndex}/${offer.batchTotal} 份</b>`
-    : "";
-  const note = designated ? "从全部可用球员中选择一名，确认后立即获得指定强化等级的球员卡。" : offer.batchTotal
-    ? "选择一名球员后，将自动展示下一份礼包。"
-    : "从三张悬浮卡牌中选择一名球员。";
-  const overlay = openLeagueDialog(
-    `<header><div><small>S4 PACK OPENING</small><h2>${title}</h2><p>${designated ? "请选择一名球员完成定向开包。" : "选择一名球员完成开包；名单已满时可先清理球员卡。"}</p></div>${progress}</header><div class="s4-pack-choice-stage"><div class="s4-player-card-choice-grid">${offer.players.map((player, index) => s4PlayerCardMarkup(player, { animated:true, delay:index * 30, attributes:`data-s4-pack-choice="${player.id}" data-s4-offer-id="${offer.id}"` })).join("")}</div></div><footer class="s4-pack-choice-footer"><span>${note}</span><button type="button" class="button secondary" data-s4-pack-manage-roster>先去球员卡管理</button></footer>`,
-    "s4-pack-choice-dialog",
-    { dismissOnBackdrop:false },
-  );
-  overlay.classList.add("s4-pack-choice-overlay");
+  const progress = offer.batchTotal ? `<b class="backpack-batch-progress">第 ${offer.batchIndex}/${offer.batchTotal} 份</b>` : "";
+  const note = designated ? "从全部可用球员中选择一名，确认后立即获得指定强化等级的球员卡。" : offer.batchTotal ? "选择一名球员后，将自动展示下一份礼包。" : "从三张悬浮卡牌中选择一名球员。";
+  const previousContext = leaguePackOpeningContext;
+  leaguePackOpeningContext = { packType:offer.packType, packName:previousContext?.packType === offer.packType ? previousContext.packName : title };
+  const overlay = leaguePackOpeningScene();
+  overlay.querySelector('[data-pack-opening-header]').innerHTML = leaguePackOpeningHeader(title, "选择一名球员完成开包；名单已满时可先清理球员卡。", progress);
+  const cards = offer.players.map((player, index) => {
+    const owned = league.ownTeam?.roster?.find(item => item.id === player.id)?.cards?.length ?? 0;
+    return `<article class="inventory-choice-card" data-pack-player-id="${escapeHtml(player.id)}" style="--reveal-index:${index}">${s4PlayerCardMarkup(player, { lazyImage:designated, attributes:`data-s4-pack-choice="${escapeHtml(player.id)}" data-s4-offer-id="${escapeHtml(offer.id)}"` })}<p class="inventory-owned-status">${owned ? `当前持有 ${owned} 张` : "尚未持有"}</p></article>`;
+  }).join("");
+  overlay.querySelector('[data-pack-opening-content]').innerHTML = `<div class="inventory-choice-grid ${designated ? 'is-designated' : ''}" data-choice-count="${offer.players.length}">${cards}</div>`;
+  overlay.querySelector('[data-pack-opening-actions]').innerHTML = `<p>${escapeHtml(note)}</p><div><button type="button" data-s4-pack-manage-roster>先去球员卡管理</button></div>`;
   overlay.querySelector(".league-dialog").dataset.s4PackChoiceDialog = offer.id;
   overlay.querySelectorAll("[data-s4-pack-choice]").forEach((button) => {
-    button.onclick = () => chooseS4PackCard(button);
+    button.onclick = (event) => { event.stopPropagation(); void chooseS4PackCard(button); };
   });
-  overlay.querySelector("[data-s4-pack-manage-roster]")?.addEventListener("click", () => {
-    leagueBackpackPage = "cards";
-    closeLeagueDialog();
-    renderLeague();
-  });
+  leaguePackOpeningEffects.reveal();
 }
 
-function syncS4PackChoiceDialog() {
+function syncS4PackChoiceDialog({ force = false } = {}) {
+  if (leaguePackChoicePending && !force) return;
   const existing = document.querySelector("[data-s4-pack-choice-dialog]");
-  const offer = leagueTab === "backpack" && leagueBackpackPage === "packs" ? league.s4Packs?.offer : null;
+  const scene = document.querySelector('#league-dialog-overlay[data-pack-opening-scene]');
+  if (leagueTab !== "backpack" || leagueBackpackPage !== "packs") {
+    if (existing || scene) closeLeagueDialog();
+    return;
+  }
+  const offer = league.s4Packs?.offer;
   if (!offer) {
-    if (existing) closeLeagueDialog();
+    if (existing && scene?.dataset.packOpeningComplete !== 'true') closeLeagueDialog();
     return;
   }
   if (existing?.dataset.s4PackChoiceDialog === offer.id) return;
@@ -5472,25 +5551,37 @@ function syncS4PackChoiceDialog() {
 }
 
 async function chooseS4PackCard(button) {
+  if (leaguePackChoicePending || button.disabled) return;
+  const overlay = button.closest('#league-dialog-overlay');
+  const effects = leaguePackOpeningEffects?.root === overlay ? leaguePackOpeningEffects : null;
+  if (effects && !effects.select(button.dataset.s4PackChoice)) return;
+  leaguePackChoicePending = true;
+  const accountId = account?.profile?.id;
   const choices = [...button.closest(".league-dialog").querySelectorAll("[data-s4-pack-choice]")];
   choices.forEach((choice) => { choice.disabled = true; });
   try {
     const value = await leagueRequest("/packs/choose", {
       offerId:button.dataset.s4OfferId,
       choiceId:button.dataset.s4PackChoice,
-    }, { render:false });
-    syncLeagueBackpackPackMutationInPlace();
+    }, { render:false, ignoreStale:true });
+    if (!value || accountId !== account?.profile?.id || overlay !== document.querySelector('#league-dialog-overlay')) return;
+    syncLeagueBackpackPackMutationInPlace({ syncPackDialog:false });
     if (value.packBatchOpening?.complete) openS4PackBatchResults(value.packBatchOpening);
-    else if (value.packBatchOpening || value.s4Packs?.batchOpening) showToast(`已完成第${value.s4Packs?.batchOpening?.completed ?? value.packBatchOpening?.completed ?? 0}份选择`);
+    else if (value.s4Packs?.offer) syncS4PackChoiceDialog({ force:true });
     else if (value.packOpening?.player || value.packOpening?.item) openS4PackResult(value.packOpening);
+    else syncS4PackChoiceDialog({ force:true });
   } catch (error) {
-    choices.forEach((choice) => { choice.disabled = false; });
+    if (accountId !== account?.profile?.id || overlay !== document.querySelector('#league-dialog-overlay')) return;
+    if (effects) effects.resetSelection();
+    else choices.forEach((choice) => { choice.disabled = false; });
     showToast(error.message);
+  } finally {
+    leaguePackChoicePending = false;
   }
 }
 
 function openLeagueConfirm({ title, text, confirmText = "确认", onConfirm }) {
-  const overlay = openLeagueDialog(`<header><div><small>YELLOWDOGS LEAGUE</small><h2>${escapeHtml(title)}</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="league-confirm-body"><p>${escapeHtml(text)}</p><div><button class="button secondary" data-close-league-dialog>取消</button><button class="button primary" data-confirm-league-action>${escapeHtml(confirmText)}</button></div></div>`, "league-confirm-dialog");
+  const overlay = openLeagueDialog(`<header><div><small>YFFM1</small><h2>${escapeHtml(title)}</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="league-confirm-body"><p>${escapeHtml(text)}</p><div><button class="button secondary" data-close-league-dialog>取消</button><button class="button primary" data-confirm-league-action>${escapeHtml(confirmText)}</button></div></div>`, "league-confirm-dialog");
   overlay.querySelector("[data-confirm-league-action]").onclick = async (event) => {
     event.currentTarget.disabled = true;
     try { await onConfirm(); closeLeagueDialog(); }
@@ -5565,34 +5656,9 @@ function openBackpackOwnershipRecoveryConfirm() {
     } catch (error) { event.currentTarget.disabled = false; showToast(error.message); }
   };
 }
-function openCosmeticMarketListingDialog(itemId) {
-  const item = league.cosmetics?.items?.find((entry) => entry.id === itemId);
-  if (!item || Number(item.count ?? 0) < 1) return;
-  const minimumPrice = Number(item.minimumListingPrice ?? 100);
-  const overlay = openLeagueDialog(`<header><div><small>COSMETIC ITEM MARKET</small><h2>挂牌 ${escapeHtml(item.name)}</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><form id="market-listing-form" class="s4-market-sale-form" data-market-kind="cosmetic" data-market-asset="${escapeHtml(item.id)}"><div class="cosmetic-market-dialog-item">${cosmeticMarketVisualMarkup(item)}<p>本次挂牌1枚，当前持有${Number(item.count)}枚。${item.equipped && Number(item.count) === 1 ? "这是正在佩戴的最后一枚，挂牌后将自动卸下。" : "挂牌后道具会进入市场托管。"}</p></div><label><span>挂牌金币价格</span><input name="price" type="number" min="${minimumPrice}" value="${minimumPrice}" required><small>最低挂牌价 ${minimumPrice} 金币，成交后收取 5% 手续费。</small></label><footer><button type="button" class="button secondary" data-close-league-dialog>取消</button><button type="submit" class="button primary">确认挂牌</button></footer></form>`, "s4-market-sale-dialog");
-  const form = overlay.querySelector("#market-listing-form");
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const submit = form.querySelector('[type="submit"]');
-    submit.disabled = true;
-    leagueTab = "market";
-    leagueMarketSection = "cosmetic";
-    try {
-      await leagueRequest("/market/list-cosmetic", { cosmeticItemId:item.id, price:new FormData(form).get("price") });
-      leagueTab = "market";
-      leagueMarketSection = "cosmetic";
-      closeLeagueDialog();
-      showToast(`${item.name}已挂牌`);
-    } catch (error) {
-      submit.disabled = false;
-      showToast(error.message);
-    }
-  });
-  form.querySelector('[name="price"]')?.select();
-}
 
 function openMarketListingDialog(kind, assetId) {
-  if (kind === "cosmetic") return openCosmeticMarketListingDialog(assetId);
+  if (kind === "cosmetic") return;
   const ownership = kind === "ownership";
   const player = ownership
     ? league.ownTeam.roster.find((entry) => entry.id === assetId)
@@ -5608,7 +5674,7 @@ function openMarketListingDialog(kind, assetId) {
     : "";
   const minimumPrice = ownership ? player.minimumPrice : Number(card.minimumListingPrice ?? player.minimumPrice);
   const title = ownership ? `挂牌 ${player.name} 的所有权` : `挂牌 ${player.name} +${card.upgradeLevel ?? 0}`;
-  const overlay = openLeagueDialog(`<header><div><small>S4 TRANSFER MARKET</small><h2>${escapeHtml(title)}</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><form id="market-listing-form" class="s4-market-sale-form" data-market-kind="${kind}" data-market-asset="${escapeHtml(assetId)}">${warning}<label><span>挂牌金币价格</span><input name="price" type="number" min="${minimumPrice}" value="${minimumPrice}" required><small>最低挂牌价 ${minimumPrice} 金币，成交后收取 5% 手续费。</small></label><footer><button type="button" class="button secondary" data-close-league-dialog>取消</button><button type="submit" class="button primary">确认挂牌</button></footer></form>`, "s4-market-sale-dialog");
+  const overlay = openLeagueDialog(`<header><div><small>YFFM1 TRANSFER MARKET</small><h2>${escapeHtml(title)}</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><form id="market-listing-form" class="s4-market-sale-form" data-market-kind="${kind}" data-market-asset="${escapeHtml(assetId)}">${warning}<label><span>挂牌金币价格</span><input name="price" type="number" min="${minimumPrice}" value="${minimumPrice}" required><small>最低挂牌价 ${minimumPrice} 金币，成交后收取 5% 手续费。</small></label><footer><button type="button" class="button secondary" data-close-league-dialog>取消</button><button type="submit" class="button primary">确认挂牌</button></footer></form>`, "s4-market-sale-dialog");
   const form = overlay.querySelector("#market-listing-form");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -6098,10 +6164,10 @@ function matchPhaseLabel(match) {
   return match.minute <= 45 ? "上半场" : "下半场";
 }
 
-function matchEventMarkup(entry) {
+function matchEventMarkup(entry, keyed = false) {
   const marks = { kickoff:"开",duel:"对抗",attack:"推进",counter:"反击",save:"扑救",miss:"射门",block:"封堵",tackle:"抢断",interception:"拦截",goal:"进球",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",foul:"犯规",yellow:"黄牌",red:"红牌",injury:"伤退",substitution:"换人",lightning:"雷击",weather:"天气",blackWhistle:"争议判罚",corner:"角球",setPiece:"定位球",setPieceDuel:"争顶",clearance:"解围",penaltyAwarded:"点球",halftime:"半场",extra:"加时",extraTimeEnd:"加时结束",penaltyShootoutStart:"点球大战",penaltyShootoutEqualise:"人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球结束",tactical:"战术",penalty:"点球",shootout:"点球大战",fulltime:"结束",abandoned:"终止" };
   const icons = { goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",blackWhistle:"⚖",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",save:"◆",block:"◆",tackle:"◆",interception:"◆",setPiece:"◆",setPieceDuel:"◆",clearance:"◇",corner:"◇",miss:"○",tactical:"↔",halftime:"Ⅱ",extraTimeEnd:"Ⅱ",fulltime:"■",abandoned:"!" };
-  return `<details class="match-event event-${entry.type} importance-${entry.importance}" ${entry.importance === "major" ? "open" : ""}><summary><b>${entry.minute}'</b><span class="event-icon" aria-hidden="true">${icons[entry.type] ?? "•"}</span><i>${marks[entry.type] ?? "动态"}</i><span>${escapeHtml(entry.text)}${entry.assistId ? `<mark class="assist-mark">助攻</mark>` : ""}</span></summary>${entry.detail ? `<p>${escapeHtml(entry.detail)}</p>` : ""}${Number.isFinite(entry.xg) ? `<small>xG ${entry.xg}</small>` : ""}</details>`;
+  return `<details ${keyed === true && entry.id ? `data-render-key="${escapeHtml(entry.id)}"` : ""} class="match-event event-${entry.type} importance-${entry.importance}" ${entry.importance === "major" ? "open" : ""}><summary><b>${entry.minute}'</b><span class="event-icon" aria-hidden="true">${icons[entry.type] ?? "•"}</span><i>${marks[entry.type] ?? "动态"}</i><span>${escapeHtml(entry.text)}${entry.assistId ? `<mark class="assist-mark">助攻</mark>` : ""}</span></summary>${entry.detail ? `<p>${escapeHtml(entry.detail)}</p>` : ""}${Number.isFinite(entry.xg) ? `<small>xG ${entry.xg}</small>` : ""}</details>`;
 }
 
 function liveStatusMarkers(player) {
@@ -6131,7 +6197,7 @@ function broadcastMagnet(player) {
   const upgrade = Number(player.upgradeLevel ?? 0);
   const overall = Math.round(player.overall ?? player.rating ?? 0);
   const broadcastSide = Number.isInteger(player.broadcastTeamIndex) ? ` broadcast-side-${player.broadcastTeamIndex}` : "";
-  return `<button type="button" class="magnet live-magnet league-squad-magnet s4-broadcast-magnet${broadcastSide} grade-${String(player.grade ?? "C").toLowerCase()} fit-primary ${status ? "inactive unavailable" : ""}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" disabled>${captainBadgeMarkup(Boolean(player.captain && player.active))}${liveStatusMarkers(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole))}</span><b>${escapeHtml(player.name)}</b><i>${overall}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness}"><span style="width:${fitness}%"></span></span><span class="s4-broadcast-rating">评分 ${Number(player.rating ?? 0).toFixed(1)}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
+  return `<button data-render-key="${escapeHtml(`${player.broadcastTeamIndex ?? 0}:${player.id}`)}" type="button" class="magnet live-magnet league-squad-magnet s4-broadcast-magnet${broadcastSide} grade-${String(player.grade ?? "C").toLowerCase()} fit-primary ${status ? "inactive unavailable" : ""}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" disabled>${captainBadgeMarkup(Boolean(player.captain && player.active))}${liveStatusMarkers(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole))}</span><b>${escapeHtml(player.name)}</b><i>${overall}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness}"><span style="width:${fitness}%"></span></span><span class="s4-broadcast-rating">评分 ${Number(player.rating ?? 0).toFixed(1)}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
 }
 
 function matchStatsMarkup(match, teamOrder = [0, 1]) {
@@ -6688,34 +6754,12 @@ function assignLeagueEnhancementCard(cardId, slot = null) {
   renderLeagueEnhancementInPlace();
 }
 
-function enhancementCardDomKey(card) {
-  return card?.dataset?.enhancementCard ?? card?.dataset?.enhancementCardId ?? card?.dataset?.enhancementResultCard ?? null;
-}
-
-function syncEnhancementCardAttributes(card, source) {
-  card.getAttributeNames().forEach((name) => card.removeAttribute(name));
-  source.getAttributeNames().forEach((name) => card.setAttribute(name, source.getAttribute(name)));
-  if (card.innerHTML !== source.innerHTML) card.innerHTML = source.innerHTML;
-}
-
 function renderLeagueEnhancementInPlace() {
   const current = app.querySelector(".league-enhancement");
   if (leagueTab !== "enhancement" || !current) return renderLeague();
-  const scrollTop = current.querySelector(".enhancement-card-grid")?.scrollTop ?? 0;
-  const reusableCards = new Map([...current.querySelectorAll(".s4-player-card")]
-    .map((card) => [enhancementCardDomKey(card), card])
-    .filter(([key]) => key));
-  const template = document.createElement("template");
-  template.innerHTML = leagueEnhancementMarkup().trim();
-  const next = template.content.firstElementChild;
-  next.querySelectorAll(".s4-player-card").forEach((card) => {
-    const existing = reusableCards.get(enhancementCardDomKey(card));
-    if (!existing) return;
-    syncEnhancementCardAttributes(existing, card);
-    card.replaceWith(existing);
-  });
-  current.replaceWith(next);
-  const warehouse = next.querySelector(".enhancement-card-grid");
+  const warehouse = current.querySelector(".enhancement-card-grid");
+  const scrollTop = warehouse?.scrollTop ?? 0;
+  patchHtmlElement(current, leagueEnhancementMarkup());
   if (warehouse) warehouse.scrollTop = scrollTop;
 }
 
@@ -7007,7 +7051,7 @@ app.addEventListener("click", async (event) => {
     toggleLeagueDesktopTheme();
     return;
   }
-  if (event.target.closest("[data-compute-nodes-open]")) {
+  if (LEAGUE_AI_BATCH_UI_ENABLED && event.target.closest("[data-compute-nodes-open]")) {
     openComputeNodeMarketDialog();
     return;
   }
@@ -7335,18 +7379,12 @@ app.addEventListener("click", async (event) => {
   }
   const s4PackOpen = event.target.closest("[data-s4-pack-open]");
   if (s4PackOpen) {
-    s4PackOpen.disabled = true;
-    leagueRequest("/packs/open", { packId:s4PackOpen.dataset.s4PackOpen }, { render:false }).then((value) => {
-      syncLeagueBackpackPackMutationInPlace();
-      if (value.packOpening?.player || value.packOpening?.item) openS4PackResult(value.packOpening);
-    }).catch((error) => {
-      s4PackOpen.disabled = false;
-      showToast(error.message);
-    });
+    void openLeaguePlayerPack(s4PackOpen.dataset.s4PackOpen, s4PackOpen);
     return;
   }
   const s4PackBatchOpen = event.target.closest("[data-s4-pack-open-batch]");
   if (s4PackBatchOpen) {
+    if (leagueMutationPending || leaguePackChoicePending) return;
     const packType = s4PackBatchOpen.dataset.s4PackOpenBatch;
     const openable = (league.s4Packs?.inventory ?? []).filter((item) =>
       item.packType === packType
@@ -7356,12 +7394,20 @@ app.addEventListener("click", async (event) => {
     const quantity = Math.max(1, Math.min(100, openable.length, Math.floor(Number(input?.value ?? openable.length))));
     const packIds = openable.slice(0, quantity).map((item) => item.id);
     if (packIds.length) {
+      const accountId = account?.profile?.id;
+      const previousOverlay = document.querySelector('#league-dialog-overlay');
+      leaguePackOpeningContext = { packType, packName:openable[0].name };
       s4PackBatchOpen.disabled = true;
-      leagueRequest("/packs/open-batch", { packIds }, { render:false }).then((value) => {
-        syncLeagueBackpackPackMutationInPlace();
+      leagueRequest("/packs/open-batch", { packIds }, { render:false, ignoreStale:true }).then((value) => {
+        if (!value || accountId !== account?.profile?.id || !leagueMode || leagueTab !== 'backpack' || leagueBackpackPage !== 'packs' || previousOverlay !== document.querySelector('#league-dialog-overlay')) return;
+        syncLeagueBackpackPackMutationInPlace({ syncPackDialog:false });
         if (value.packBatchOpening?.complete) openS4PackBatchResults(value.packBatchOpening);
-        else if (value.s4Packs?.batchOpening) showToast(`批量开包已开始，共${value.s4Packs.batchOpening.total}份`);
+        else {
+          syncS4PackChoiceDialog({ force:true });
+          if (value.s4Packs?.batchOpening) showToast(`批量开包已开始，共${value.s4Packs.batchOpening.total}份`);
+        }
       }).catch((error) => {
+        if (accountId !== account?.profile?.id) return;
         s4PackBatchOpen.disabled = false;
         showToast(error.message);
       });
@@ -7453,7 +7499,7 @@ app.addEventListener("click", async (event) => {
     if (pack) {
       const quantity = pack.seasonPurchaseLimit ? 1 : Math.max(1, Math.min(league.shop.maxPurchaseQuantity, Number(document.querySelector(`#s4-pack-quantity-${CSS.escape(pack.id)}`)?.value ?? 1)));
       const total = pack.price * quantity;
-      openLeagueConfirm({ title:"确认购买S4礼包", text:`花费 ${total} 金币购买 ${quantity} 份${pack.name}？礼包将进入背包。`, confirmText:"确认购买", onConfirm:() => leagueRequest("/shop/buy-s4", { packType:pack.id, quantity }) });
+      openLeagueConfirm({ title:"确认购买YFFM1礼包", text:`花费 ${total} 金币购买 ${quantity} 份${pack.name}？礼包将进入背包。`, confirmText:"确认购买", onConfirm:() => leagueRequest("/shop/buy-s4", { packType:pack.id, quantity }) });
     }
     return;
   }
@@ -7939,7 +7985,18 @@ app.addEventListener("submit", (event) => {
   scheduleLeagueTeamAutoSave(0);
 });
 
-document.addEventListener("visibilitychange", () => { if (session) schedulePolling(document.hidden ? 3000 : 0); });
+document.addEventListener("visibilitychange", () => {
+  if (session) schedulePolling(document.hidden ? 3000 : 0);
+  if (document.hidden) {
+    clearTimeout(spectatorPolling);
+    clearTimeout(yellowDogsTvTimer);
+  } else {
+    if (spectatorSession) scheduleSpectatorPolling(0);
+    else refreshBroadcasts();
+    if (yellowDogsTvMode) refreshYellowDogsTv(true);
+    if (leagueMode) refreshLeagueSilently();
+  }
+});
 window.addEventListener("online", () => { connectionState = "online"; networkFailures = 0; if (session) schedulePolling(0); });
 window.addEventListener("offline", () => { connectionState = "reconnecting"; updateChrome(); });
 

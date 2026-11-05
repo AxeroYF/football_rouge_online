@@ -31,7 +31,7 @@ test("new league states use Chinese Super League names without migrating names i
   assert.equal(service.state.teams[1].name, "旧存档AI球队");
 });
 
-test("黄狗联赛共用球员池包含新增梅老鼠传奇", () => {
+test("YFFM1 联赛共用球员池包含新增梅老鼠传奇", () => {
   const legends = REAL_PLAYERS.filter((player) => player.grade === "S");
   assert.equal(legends.length, 24);
   assert.ok(["贝利", "齐达内", "贝肯鲍尔", "大罗", "罗纳尔迪尼奥", "马拉多纳", "贝克汉姆", "梅老鼠"].every((name) => legends.some((player) => player.name === name)));
@@ -644,7 +644,7 @@ test("league match switches opening, leading and trailing tactical plans with th
   assert.ok(ownSnapshots.every((snapshot) => snapshot.positions && snapshot.players.length === 11));
 });
 
-test("联赛、杯赛与友谊赛默认统一使用V2且预测仍可显式使用V1", () => {
+test("联赛、杯赛与友谊赛默认统一使用V3且预测仍可显式使用V1", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("all-v2-competitions", "All V2 Manager");
   join(service, user, "All V2 FC");
@@ -657,15 +657,19 @@ test("联赛、杯赛与友谊赛默认统一使用V2且预测仍可显式使用
   assert.equal(leagueMatch.version, 2);
   assert.equal(cupMatch.version, 2);
   assert.equal(friendlyMatch.version, 2);
-  assert.equal(leagueMatch.engineProfile, "v2.1-stable-dynamic.2");
-  assert.equal(cupMatch.engineProfile, "v2.1-stable-dynamic.2");
+  assert.equal(leagueMatch.engineVersion, "3.0.0");
+  assert.equal(leagueMatch.engineProfile, "v3.0-tactical-control.1");
+  assert.equal(cupMatch.engineProfile, "v3.0-tactical-control.1");
   assert.equal(leagueMatch.parameters.dynamicShape.mode, "stable");
   assert.equal(cupMatch.parameters.dynamicShape.mode, "stable");
   assert.equal(leagueMatch.dotReplayEnabled, false);
   assert.equal(cupMatch.dotReplayEnabled, false);
-  assert.equal(friendlyMatch.engineProfile, "v2.1-stable-dynamic.2");
+  assert.equal(friendlyMatch.engineProfile, "v3.0-tactical-control.1");
   assert.equal(friendlyMatch.parameters.dynamicShape.mode, "stable");
   assert.equal(friendlyMatch.dotReplayEnabled, false);
+  const legacyMatch = service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"league", matchEngine:"v2" }).match;
+  assert.equal(legacyMatch.engineVersion, "2.1.0");
+  assert.equal(legacyMatch.engineProfile, "v2.1-stable-dynamic.2");
   assert.notEqual(service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"league", matchEngine:"v1" }).match.version, 2);
 });
 
@@ -922,16 +926,15 @@ test("team can be renamed and private-pool packs support bulk purchase and direc
   assert.deepEqual(team.positions, positionsBefore);
 });
 
-test("国家徽章包按等级三选一，道具可佩戴并进入公开球队信息", () => {
+test("历史国家徽章包仍可开启并佩戴，全部装饰已免费解锁", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("badge-owner", "Badge Owner");
   join(service, user, "Badge FC");
   const balanceBefore = service.wallet(user.id).balance;
-  const bought = service.buyS4Packs(user, "country-badge-pack", 1);
-  assert.equal(bought.wallet.balance, balanceBefore - 1000);
-  assert.equal(bought.s4Packs.inventory[0].kind, "cosmetic");
+  const legacyPack = service.grantS4Pack(user.id, "country-badge-pack", 1, { source:"legacy" })[0];
+  assert.equal(service.wallet(user.id).balance, balanceBefore);
 
-  const opened = service.openS4Pack(user, bought.s4Packs.inventory[0].id);
+  const opened = service.openS4Pack(user, legacyPack.id);
   assert.equal(opened.s4Packs.offer.kind, "cosmetic");
   assert.equal(opened.s4Packs.offer.items.length, 3);
   assert.equal(new Set(opened.s4Packs.offer.items.map((item) => item.id)).size, 3);
@@ -947,23 +950,23 @@ test("国家徽章包按等级三选一，道具可佩戴并进入公开球队�
   const unequipped = service.equipCosmetic(user, "", { compact:true });
   assert.equal(unequipped.teamBadgeDelta, null);
   assert.equal(unequipped.cosmetics.equipped.teamBadge, null);
-  assert.throws(() => service.equipCosmetic(user, "country-badge-china"), /尚未拥有/);
+  assert.equal(service.equipCosmetic(user, "country-badge-china", { compact:true }).teamBadgeDelta.id, "country-badge-china");
   assert.equal(COUNTRY_BADGES.find((item) => item.countryId === "china").grade, "S");
   assert.deepEqual(COUNTRY_BADGE_GRADE_RATES, { S:.05, A:.15, B:.30, C:.50 });
 });
 
-test("俱乐部徽章包按知名度与成绩分级，并可与国家徽章同时佩戴", () => {
+test("历史俱乐部徽章包兼容开启，并可与国家徽章同时佩戴", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("dual-badge-owner", "Dual Badge Owner");
   join(service, user, "Dual Badge FC");
   const balanceBefore = service.wallet(user.id).balance;
 
-  const countryPack = service.buyS4Packs(user, "country-badge-pack", 1).s4Packs.inventory.find((item) => item.packType === "country-badge-pack");
+  const countryPack = service.grantS4Pack(user.id, "country-badge-pack", 1, { source:"legacy" })[0];
   const countryOffer = service.openS4Pack(user, countryPack.id).s4Packs.offer;
   const countryChoice = countryOffer.items[0];
   service.chooseS4Pack(user, countryOffer.id, countryChoice.id, { compact:true });
 
-  const clubPack = service.buyS4Packs(user, "club-badge-pack", 1).s4Packs.inventory.find((item) => item.packType === "club-badge-pack");
+  const clubPack = service.grantS4Pack(user.id, "club-badge-pack", 1, { source:"legacy" })[0];
   const opened = service.openS4Pack(user, clubPack.id);
   assert.equal(opened.s4Packs.offer.cosmeticType, "club-badge");
   assert.equal(opened.s4Packs.offer.items.length, 3);
@@ -972,7 +975,7 @@ test("俱乐部徽章包按知名度与成绩分级，并可与国家徽章同�
   const clubChoice = opened.s4Packs.offer.items[0];
   const chosen = service.chooseS4Pack(user, opened.s4Packs.offer.id, clubChoice.id, { compact:true });
 
-  assert.equal(chosen.wallet.balance, balanceBefore - 2200);
+  assert.equal(chosen.wallet.balance, balanceBefore);
   assert.equal(chosen.cosmetics.equipped.teamBadge.id, countryChoice.id);
   assert.equal(chosen.cosmetics.equipped.clubBadge.id, clubChoice.id);
   assert.equal(chosen.ownTeam.equippedBadge.id, countryChoice.id);
@@ -994,15 +997,14 @@ test("俱乐部徽章包按知名度与成绩分级，并可与国家徽章同�
   assert.deepEqual(CLUB_BADGE_GRADE_RATES, { S:.05, A:.15, B:.30, C:.50 });
 });
 
-test("国家与俱乐部徽章包支持连续批量三选一并统一返回结果", () => {
+test("历史国家与俱乐部徽章包保留连续批量开启兼容", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("cosmetic-batch-owner", "徽章批量玩家");
   join(service, user, "徽章批量队");
   service.wallet(user.id).balance = 100000;
 
   for (const packType of ["country-badge-pack", "club-badge-pack"]) {
-    const bought = service.buyS4Packs(user, packType, 3);
-    const packIds = bought.s4Packs.inventory.filter((item) => item.packType === packType).map((item) => item.id);
+    const packIds = service.grantS4Pack(user.id, packType, 3, { source:"legacy" }).map((item) => item.id);
     let view = service.openS4PacksBatch(user, packIds, { compact:true });
     assert.equal(view.s4Packs.batchOpening.total, 3);
     assert.equal(view.s4Packs.offer.kind, "cosmetic");
@@ -1030,54 +1032,26 @@ test("国家与俱乐部徽章包支持连续批量三选一并统一返回结�
 
   const finalView = service.view(user);
   assert.equal(finalView.s4Packs.inventory.length, 0);
-  assert.equal(finalView.cosmetics.items.reduce((sum, item) => sum + item.count, 0), 6);
+  assert.equal(finalView.cosmetics.items.length, COUNTRY_BADGES.length + CLUB_BADGES.length);
+  assert.equal(Object.values(service.cosmeticInventory(user.id)).reduce((sum, count) => sum + count, 0), 6);
   assert.ok(finalView.cosmetics.equipped.teamBadge);
   assert.ok(finalView.cosmetics.equipped.clubBadge);
 });
 
-test("国家与俱乐部徽章可以通过道具市场托管挂牌、撤单和成交", () => {
+test("国家与俱乐部装饰已免费使用，禁止挂牌和购买旧道具挂牌", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const seller = account("cosmetic-market-seller", "徽章卖家");
   const buyer = account("cosmetic-market-buyer", "徽章买家");
   join(service, seller, "徽章卖方队");
   join(service, buyer, "徽章买方队");
-  const countryBadge = COUNTRY_BADGES.find((item) => item.countryId === "china");
-  const clubBadge = CLUB_BADGES.find((item) => item.clubId === "real-madrid");
-  const sellerInventory = service.cosmeticInventory(seller.id);
-  sellerInventory[countryBadge.id] = 1;
-  sellerInventory[clubBadge.id] = 1;
-  service.equippedCosmeticIds(seller.id).teamBadge = countryBadge.id;
-  service.equippedCosmeticIds(seller.id).clubBadge = clubBadge.id;
-
-  const clubListed = service.listCosmetic(seller, clubBadge.id, 800, { compact:true });
-  assert.equal(clubListed.listing.kind, "cosmetic");
-  assert.equal(clubListed.listing.item.id, clubBadge.id);
-  assert.equal(clubListed.cosmetics.items.some((item) => item.id === clubBadge.id), false);
-  assert.equal(clubListed.clubBadgeDelta, null);
-  assert.throws(() => service.listCosmetic(seller, clubBadge.id, 800), /可交易道具/);
-  const clubCancelled = service.cancelListing(seller, clubListed.listing.id, { compact:true });
-  assert.equal(clubCancelled.cosmetics.items.find((item) => item.id === clubBadge.id).count, 1);
-  assert.equal(clubCancelled.clubBadgeDelta.id, clubBadge.id);
-
-  const sellerBalanceBefore = service.wallet(seller.id).balance;
-  const buyerBalanceBefore = service.wallet(buyer.id).balance;
-  const countryListed = service.listCosmetic(seller, countryBadge.id, 700, { compact:true });
-  assert.equal(countryListed.teamBadgeDelta, null);
-  const publicListing = service.view(buyer).listings.find((item) => item.id === countryListed.listing.id);
-  assert.equal(publicListing.item.id, countryBadge.id);
-  assert.equal(publicListing.sellerTeamName, "徽章卖方队");
-  const purchased = service.buyListing(buyer, countryListed.listing.id, { compact:true });
-  assert.equal(purchased.marketPurchase.listingKind, "cosmetic");
-  assert.equal(purchased.marketPurchase.item.id, countryBadge.id);
-  assert.equal(purchased.cosmetics.items.find((item) => item.id === countryBadge.id).count, 1);
-  assert.equal(purchased.teamBadgeDelta.id, countryBadge.id);
-  assert.equal(service.state.listings.find((item) => item.id === countryListed.listing.id).status, "sold");
-  assert.equal(service.wallet(buyer.id).balance, buyerBalanceBefore - 700);
-  assert.equal(service.wallet(seller.id).balance, sellerBalanceBefore + Math.floor(700 * (1 - S4_ECONOMY.marketFeeRate)));
-  assert.ok(service.state.ledger.some((entry) => entry.type === "cosmetic-buy" && entry.cosmeticItemId === countryBadge.id));
-  assert.ok(service.state.ledger.some((entry) => entry.type === "cosmetic-sale" && entry.cosmeticItemId === countryBadge.id));
-  assert.ok(service.inbox(service.accountTeam(buyer.id)).some((message) => message.id === `cosmetic-buy:${countryListed.listing.id}`));
-  assert.ok(service.inbox(service.accountTeam(seller.id)).some((message) => message.id === `cosmetic-sale:${countryListed.listing.id}`));
+  const badge = COUNTRY_BADGES[0];
+  const listing = { id:"legacy-cosmetic-listing", kind:"cosmetic", cosmeticItemId:badge.id, sellerId:seller.id, sellerTeamId:service.accountTeam(seller.id).id, status:"active", price:700 };
+  service.state.listings.push(listing);
+  const balances = [service.wallet(seller.id).balance, service.wallet(buyer.id).balance];
+  assert.throws(() => service.listCosmetic(seller, badge.id, 800), /免费解锁.*不再支持交易/);
+  assert.throws(() => service.buyListing(buyer, listing.id), /免费解锁.*不再支持交易/);
+  assert.equal(service.view(buyer).listings.some((entry) => entry.kind === "cosmetic"), false);
+  assert.deepEqual([service.wallet(seller.id).balance, service.wallet(buyer.id).balance], balances);
 });
 
 test("shop mutations return compact payloads without rebuilding the full league view", () => {
@@ -1415,7 +1389,7 @@ test("比赛预测按轮统计系统收益并将正收益的50%均分给所有�
     status:"lost",
   });
 
-  const distribution = service.distributePredictionProfit("league", "R99", "黄狗联赛第99轮");
+  const distribution = service.distributePredictionProfit("league", "R99", "YFFM1 联赛第99轮");
   assert.equal(distribution.stakes, 4001);
   assert.equal(distribution.payouts, 0);
   assert.equal(distribution.systemProfit, 4001);
@@ -1440,7 +1414,7 @@ test("比赛预测按轮统计系统收益并将正收益的50%均分给所有�
   }
 
   const firstAfter = service.wallet(first.id).balance;
-  const repeated = service.distributePredictionProfit("league", "R99", "黄狗联赛第99轮");
+  const repeated = service.distributePredictionProfit("league", "R99", "YFFM1 联赛第99轮");
   assert.equal(repeated.id, distribution.id);
   assert.equal(service.wallet(first.id).balance, firstAfter);
   assert.equal(service.state.matchPredictions.distributions.filter((entry) => entry.id === distribution.id).length, 1);
@@ -3366,7 +3340,7 @@ test("友谊赛以100体力直播且结算不消耗体力或累计停赛，只�
   service.tick();
   const live = service.state.liveFriendlies[0];
   assert.equal(live.match.version, 2);
-  assert.equal(live.match.engineVersion, "2.1.0");
+  assert.equal(live.match.engineVersion, "3.0.0");
   const liveStarter = live.match.teams[0].players.find((player) => player.id === starterId);
   assert.equal(liveStarter.state.fitness, 100);
   assert.equal(service.broadcasts().some((entry) => entry.code === live.code && entry.competition === "YDL友谊赛"), true);

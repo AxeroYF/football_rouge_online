@@ -5,6 +5,8 @@ import { buildV21DynamicShapeSnapshot } from "./dynamic-shape-v2.js";
 import { resolveV2MatchParameters, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
 import { v2DutyMovement, v2DutySpatialMultipliers } from "./player-duties-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
+import { isV3, V3_SPATIAL_VERSION } from "../v3/model-config.js";
+import {defensiveInstructionPositions} from "../v3/defensive-shape.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const round = (value, digits = 4) => Number(Number(value).toFixed(digits));
@@ -230,12 +232,19 @@ export function v2MidfieldStructureProfile(players = [], parameters = V2_MATCH_P
     const x = Number(player.localPosition?.x ?? 50);
     return x >= Number(config.centralMinimumX ?? 20) && x <= Number(config.centralMaximumX ?? 80);
   });
+  const smoothStep = value => { const x=clamp(value,0,1);return x*x*(3-2*x); };
+  const width=Number(parameters.v3?.midfieldTransitionWidth??4);
+  const membership=(value,minimum,maximum)=>smoothStep((value-minimum+width)/(2*width))*smoothStep((maximum+width-value)/(2*width));
+  const midfieldCount=isV3(parameters)?outfield.reduce((sum,player)=>sum+membership(Number(player.localPosition?.y??50),minimumY,maximumY),0):midfielders.length;
+  const centralCount=isV3(parameters)?outfield.reduce((sum,player)=>sum
+    +membership(Number(player.localPosition?.y??50),minimumY,maximumY)
+    *membership(Number(player.localPosition?.x??50),Number(config.centralMinimumX??20),Number(config.centralMaximumX??80)),0):centralMidfielders.length;
   const sortedY = outfield.map((player) => Number(player.localPosition?.y ?? 50)).sort((left, right) => left - right);
   const maximumVerticalGap = sortedY.slice(1).reduce((maximum, value, index) => Math.max(maximum, value - sortedY[index]), 0);
   const minimumPlayers = Math.max(1, Number(config.minimumPlayers ?? 3));
-  const countRisk = clamp((minimumPlayers - midfielders.length) / minimumPlayers, 0, 1);
+  const countRisk = clamp((minimumPlayers - midfieldCount) / minimumPlayers, 0, 1);
   const verticalGapRisk = normalizedRisk(maximumVerticalGap, Number(config.safeMaximumGap ?? 29), Number(config.criticalMaximumGap ?? 52));
-  const centralVacancyRisk = centralMidfielders.length ? 0 : 1;
+  const centralVacancyRisk = isV3(parameters)?1-clamp(centralCount,0,1):centralMidfielders.length ? 0 : 1;
   const integrity = clamp(
     1
       - countRisk * Number(config.countRiskWeight ?? 0.58)
@@ -255,8 +264,8 @@ export function v2MidfieldStructureProfile(players = [], parameters = V2_MATCH_P
     integrity:round(integrity),
     longShotExposure:round(longShotExposure),
     breakdown:Object.freeze({
-      midfieldPlayerCount:midfielders.length,
-      centralMidfieldPlayerCount:centralMidfielders.length,
+      midfieldPlayerCount:isV3(parameters)?round(midfieldCount):midfieldCount,
+      centralMidfieldPlayerCount:isV3(parameters)?round(centralCount):centralCount,
       maximumVerticalGap:round(maximumVerticalGap),
       countRisk:round(countRisk),
       verticalGapRisk:round(verticalGapRisk),
@@ -539,7 +548,9 @@ function teamZoneView(teamProjection, opponentProjection, teamIndex, zones, para
       coverageDeficit:round(coverageDeficit),
       overload:numericalAdvantage >= parameters.spatial.overloadPlayerAdvantage,
       pressureDelta:round(own.pressure - opponent.pressResistance),
-      exploitableSpace:round(clamp(1 - opponentOccupancy / 1.6 + exposure * Number(exposureConfig.spaceBonusMaximum) + coverageDeficit * Number(laneCoverageConfig.deficitSpaceBonusMaximum ?? 0), 0, 1)),
+      exploitableSpace:round(clamp(isV3(parameters)
+        ? (1-opponentOccupancy/1.6)*.65+coverageDeficit*.25+exposure*.1
+        : 1 - opponentOccupancy / 1.6 + exposure * Number(exposureConfig.spaceBonusMaximum) + coverageDeficit * Number(laneCoverageConfig.deficitSpaceBonusMaximum ?? 0), 0, 1)),
       progressionEdge:round(clamp((attackingValue - resistance) / 100, -1, 1)),
     };
   }
@@ -648,6 +659,15 @@ function buildV2StageContexts(teams, parameters) {
   });
 }
 
+function applyV3DefensiveInstructions(teams, attackingTeamIndex, contexts, parameters) {
+  if(!isV3(parameters))return teams;
+  return teams.map((team,index)=>{
+    if(index===attackingTeamIndex)return team;
+    const positions=defensiveInstructionPositions(team.positions??{},contexts[index].roles,team.outOfPossessionDetails,parameters);
+    return positions===team.positions?team:{...team,positions};
+  });
+}
+
 export function buildV21StageDynamicShapeSnapshot(teams, attackingTeamIndex, stage, options = {}) {
   if (![0, 1].includes(attackingTeamIndex)) throw new Error("V2.1 dynamic shape requires a valid attacking team index");
   const parameters = resolveStageParameters(options);
@@ -682,9 +702,10 @@ export function buildV2StageSpatialMatchup(teams, attackingTeamIndex, stage, opt
       })),
     };
   });
-  const stableMatchup = buildV2SpatialMatchup(stagedTeams, { parameters });
+  const needsStable=!isV3(parameters)||!["stable","candidate"].includes(parameters.dynamicShape.mode)||options.includeDynamicShape===false;
+  const stableMatchup = needsStable?buildV2SpatialMatchup(stagedTeams, { parameters }):null;
   if (!["shadow", "stable", "candidate"].includes(parameters.dynamicShape.mode) || options.includeDynamicShape === false) return stableMatchup;
-  const shapeTeams = parameters.dynamicShape.mode === "stable" ? stagedTeams : teams;
+  const shapeTeams = applyV3DefensiveInstructions(parameters.dynamicShape.mode === "stable" ? stagedTeams : teams,attackingTeamIndex,contexts,parameters);
   const dynamicShape = buildV21DynamicShapeSnapshot({
     teams:shapeTeams,
     attackingTeamIndex,
@@ -703,14 +724,23 @@ export function buildV2StageSpatialMatchup(teams, attackingTeamIndex, stage, opt
   const candidateMatchup = buildV2SpatialMatchup(dynamicTeams, { parameters, positionsResolved:true });
   return Object.freeze({
     ...candidateMatchup,
-    modelVersion:parameters.dynamicShape.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2.1d-candidate.4",
-    stableModelVersion:stableMatchup.modelVersion,
+    modelVersion:isV3(parameters)?V3_SPATIAL_VERSION:parameters.dynamicShape.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2.1d-candidate.4",
+    stableModelVersion:stableMatchup?.modelVersion??"spatial-v2-alpha.1",
     dynamicShape,
   });
 }
 
 export function buildV2StageSpatialCache(teams, options = {}) {
   const parameters = options.parameters ? resolveV2MatchParameters(options.parameters) : V2_MATCH_PARAMETERS;
+  if(options.lazy){
+    return Object.freeze([0,1].map(attackingTeamIndex=>{
+      const values=Object.create(null),cache={};
+      for(const stage of parameters.chain.stages.slice(1))Object.defineProperty(cache,stage,{enumerable:true,get(){
+        return values[stage]??=buildV2StageSpatialMatchup(teams,attackingTeamIndex,stage,{parameters,parametersResolved:true,includeDynamicShape:false});
+      }});
+      return Object.freeze(cache);
+    }));
+  }
   return Object.freeze([0, 1].map((attackingTeamIndex) => Object.freeze(Object.fromEntries(
     parameters.chain.stages.slice(1).map((stage) => [stage, buildV2StageSpatialMatchup(teams, attackingTeamIndex, stage, { parameters, parametersResolved:true, includeDynamicShape:false })]),
   ))));

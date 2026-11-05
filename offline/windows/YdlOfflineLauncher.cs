@@ -20,7 +20,7 @@ namespace YdlOfflineLauncher
             Application.SetCompatibleTextRenderingDefault(false);
             Application.ThreadException += delegate(object sender, System.Threading.ThreadExceptionEventArgs args)
             {
-                MessageBox.Show(args.Exception.Message, "YDL S4 Offline", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(args.Exception.Message, "YFFM1 Offline", MessageBoxButtons.OK, MessageBoxIcon.Error);
             };
             Application.Run(new LauncherForm());
         }
@@ -81,7 +81,7 @@ namespace YdlOfflineLauncher
             SetActiveSavePaths("default");
             settingsPath = Path.Combine(supportDir, "launcher-settings.ini");
 
-            Text = "YDL S4 Offline v1.2";
+            Text = "YFFM1 Offline v1.2";
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(600, 560);
             MinimumSize = new Size(600, 560);
@@ -111,7 +111,7 @@ namespace YdlOfflineLauncher
             header.Controls.Add(headerLine);
 
             Label title = new Label();
-            title.Text = "YDL S4 Offline";
+            title.Text = "YFFM1 Offline";
             title.ForeColor = Color.White;
             title.Font = new Font("Microsoft YaHei UI", 18F, FontStyle.Bold);
             title.AutoSize = true;
@@ -353,7 +353,7 @@ Label saveLabel = new Label();
         private void DeleteActiveSave()
         {
             if (busy || lastHealthy || activeSaveId == "default") return;
-            DialogResult result = MessageBox.Show("确定删除当前存档？该存档数据将被永久删除。", "YDL S4 Offline", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            DialogResult result = MessageBox.Show("确定删除当前存档？该存档数据将被永久删除。", "YFFM1 Offline", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result != DialogResult.Yes) return;
             string target = Path.Combine(supportDir, "saves", activeSaveId);
             if (Directory.Exists(target)) Directory.Delete(target, true);
@@ -535,7 +535,7 @@ Label saveLabel = new Label();
             {
                 StopServer();
                 SetReady(false, "启动失败", "可点击“查看日志”检查详细信息");
-                MessageBox.Show(error.Message, "YDL S4 Offline 启动失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(error.Message, "YFFM1 Offline 启动失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -665,7 +665,7 @@ Label saveLabel = new Label();
             info.RedirectStandardError = true;
             info.EnvironmentVariables["YDL_OFFLINE_MODE"] = "1";
             info.EnvironmentVariables["APP_ENV"] = "production";
-            info.EnvironmentVariables["APP_LABEL"] = "YDL S4 Offline";
+            info.EnvironmentVariables["APP_LABEL"] = "YFFM1 Offline";
             info.EnvironmentVariables["VERSUS_HOST"] = "127.0.0.1";
             info.EnvironmentVariables["DEVTOOL_PORT"] = "4318";
             info.EnvironmentVariables["VERSUS_ADMIN_PASSWORD"] = "ydl-offline";
@@ -797,7 +797,7 @@ Label saveLabel = new Label();
         {
             if (!lastHealthy)
             {
-                MessageBox.Show("离线服务尚未就绪。", "YDL S4 Offline", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("离线服务尚未就绪。", "YFFM1 Offline", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             string separator = url.IndexOf("?") >= 0 ? "&" : "?";

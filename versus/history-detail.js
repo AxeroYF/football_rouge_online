@@ -43,7 +43,7 @@ function normalizeFit(value) {
 }
 
 function hydrateV2AnalysisTimeline(detail) {
-  if (!Array.isArray(detail.analysisTimeline) || !String(detail.modelVersion ?? detail.engineVersion ?? "").includes("v2")) return;
+  if (!Array.isArray(detail.analysisTimeline) || !(/v[23]|^[23]\./.test(String(detail.modelVersion ?? detail.engineVersion ?? "")))) return;
   detail.analysisTimeline = detail.analysisTimeline.map((snapshot) => ({
     ...snapshot,
     teams:(snapshot.teams ?? []).map((team, teamIndex) => {
@@ -198,7 +198,7 @@ function buildLegacyLossAttribution(detail, viewerIndex, opponentIndex, outcome)
 
 function isV2Report(detail) {
   const versionText = `${detail?.modelVersion ?? ""} ${detail?.engineVersion ?? ""} ${detail?.engineProfile ?? ""}`.toLowerCase();
-  return versionText.includes("v2") || /^2\./.test(String(detail?.engineVersion ?? "")) || Boolean(detail?.tacticalReview?.source === "v2-possession-chains");
+  return /v[23]/.test(versionText) || /^[23]\./.test(String(detail?.engineVersion ?? "")) || Boolean(detail?.tacticalReview?.source === "v2-possession-chains");
 }
 
 function timelineAverage(detail, teamIndex, key) {

@@ -16,7 +16,7 @@ const attributeSettingsModule = await import(pathToFileURL(path.join(root, "app"
 const matchParametersModule = await import(pathToFileURL(path.join(root, "app", "versus", "v2", "match-parameters-v2.js")).href);
 
 if (!existsSync(path.join(root, "runtime", "node.exe"))) throw new Error("缺少 runtime/node.exe");
-if (!existsSync(path.join(root, "YDL S4 Offline.exe"))) throw new Error("缺少 Windows GUI 启动器");
+if (!existsSync(path.join(root, "YFFM1 Offline.exe"))) throw new Error("缺少 Windows GUI 启动器");
 if (!existsSync(path.join(root, "app", "devtool", "public-server.js"))) throw new Error("缺少游戏服务入口");
 if (report.after?.teams !== 10 || report.after?.matches !== 148 || report.after?.archives !== 12) throw new Error("离线赛季数据数量不正确");
 if (Object.keys(accounts.accounts ?? {}).length !== 10) throw new Error("本地球队身份数量不正确");

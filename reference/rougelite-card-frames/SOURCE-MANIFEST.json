@@ -1,0 +1,232 @@
+{
+  "repository": "AxeroYF/football_rouge_online",
+  "branch": "codex/rougelite",
+  "commit": "0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d",
+  "acquiredAt": "2026-11-04T01:44:22.814Z",
+  "scope": "Player-card renderer, shield-v1 SVG assets, styles, controllers and original review/tests. This is a component source snapshot, not the entire Rougelite checkout.",
+  "verification": "All source bytes verified against Git blob SHA-1 and size before writing.",
+  "files": [
+    {
+      "path": "assets/card-frames/shield-v1/README.md",
+      "bytes": 343,
+      "gitBlobSha1": "dbd1d4681fa7774988928916873c8238916fde00",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/README.md"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/a-background.svg",
+      "bytes": 26731,
+      "gitBlobSha1": "2f88ff9dab0dd770dac853233a1ac93014c84db3",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/a-background.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/a-frame.svg",
+      "bytes": 3112,
+      "gitBlobSha1": "11d843697904460b3a4fcdb269d1892880624e97",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/a-frame.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/a-plate.svg",
+      "bytes": 2716,
+      "gitBlobSha1": "920261797f40c36a46933fac5e2e6b2de57b3e25",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/a-plate.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/b-background.svg",
+      "bytes": 26731,
+      "gitBlobSha1": "7d31d28b1cd625d7f694c80ae4aaa86d1f8eb90c",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/b-background.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/b-frame.svg",
+      "bytes": 3112,
+      "gitBlobSha1": "60aff8b4257cf2c3c1386f735d856632b2da05c9",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/b-frame.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/b-plate.svg",
+      "bytes": 2716,
+      "gitBlobSha1": "9f0feec8d0dbb03784a4c26fce0e7c50d5f8c9be",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/b-plate.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/c-background.svg",
+      "bytes": 26731,
+      "gitBlobSha1": "498bf0ac36a68f073fceeec85508e6793814aad4",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/c-background.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/c-frame.svg",
+      "bytes": 2913,
+      "gitBlobSha1": "98716e89b0678394a79c39f268c92080274849e0",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/c-frame.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/c-plate.svg",
+      "bytes": 2716,
+      "gitBlobSha1": "fc71254378d7a3f6f28dc9007264c503ce82dd7c",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/c-plate.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/enhancement-10-frame.svg",
+      "bytes": 2859,
+      "gitBlobSha1": "d01f64da767901cbcb4ee5e082b487067db9315a",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/enhancement-10-frame.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/enhancement-9-frame.svg",
+      "bytes": 2731,
+      "gitBlobSha1": "5b6f5bbbd5fa52686f0e65b69b15f1282199315b",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/enhancement-9-frame.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/enhancement-mask.svg",
+      "bytes": 250,
+      "gitBlobSha1": "5d44ed89fdcbe584d2d325705f3c88d34fdf95bf",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/enhancement-mask.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/s-background.svg",
+      "bytes": 26731,
+      "gitBlobSha1": "3e1cde46fff5a31719099bc86f76298d236d534d",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/s-background.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/s-frame.svg",
+      "bytes": 3198,
+      "gitBlobSha1": "1dda44756d959e9360e24b473a744b4fcb64a909",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/s-frame.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/s-plate.svg",
+      "bytes": 2716,
+      "gitBlobSha1": "a41b627a9cfdf6e3c6a39aac2b92513f49e1b04c",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/s-plate.svg"
+    },
+    {
+      "path": "assets/card-frames/shield-v1/s-redgold-background.svg",
+      "bytes": 26731,
+      "gitBlobSha1": "5ba2648206cc446592900e5b7804c97d81f8b18c",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/assets/card-frames/shield-v1/s-redgold-background.svg"
+    },
+    {
+      "path": "client/player-card/broadcast-card.js",
+      "bytes": 1565,
+      "gitBlobSha1": "54850c536237a6cbaf1163dbae769e875895b181",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/broadcast-card.js"
+    },
+    {
+      "path": "client/player-card/card-identities.js",
+      "bytes": 3379,
+      "gitBlobSha1": "c7bba42c1966077752d7259524d1d457c5b346de",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/card-identities.js"
+    },
+    {
+      "path": "client/player-card/card-motion-controller.js",
+      "bytes": 6382,
+      "gitBlobSha1": "4c3e7dfa836ef3809cd976ca73a9cbcbd543ecef",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/card-motion-controller.js"
+    },
+    {
+      "path": "client/player-card/card-motion-model.js",
+      "bytes": 3733,
+      "gitBlobSha1": "2e2d19d4663def5e17ef0e4affcda0f371aa1ae2",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/card-motion-model.js"
+    },
+    {
+      "path": "client/player-card/card-shield-markup.js",
+      "bytes": 4753,
+      "gitBlobSha1": "f935df5bdc67c5699b10862d286506e9d5c65a9e",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/card-shield-markup.js"
+    },
+    {
+      "path": "client/player-card/deferred-card-controller.js",
+      "bytes": 5547,
+      "gitBlobSha1": "9977e0c2462633644c9a9ea48fdb53d3da675d41",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/deferred-card-controller.js"
+    },
+    {
+      "path": "client/player-card/player-card.js",
+      "bytes": 4011,
+      "gitBlobSha1": "ac5427767db092d567757393c6b471d98765284a",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/player-card.js"
+    },
+    {
+      "path": "client/player-card/player-detail-window.js",
+      "bytes": 6954,
+      "gitBlobSha1": "94598a7954a0b913ca2b0ec56481ce1cccc85317",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/player-detail-window.js"
+    },
+    {
+      "path": "client/player-card/player-filter.js",
+      "bytes": 999,
+      "gitBlobSha1": "8a755c00aeca7ad844d0b17e8b1213f77e478f4a",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/client/player-card/player-filter.js"
+    },
+    {
+      "path": "scripts/review-shield-cards.mjs",
+      "bytes": 7040,
+      "gitBlobSha1": "540ea171a0ad4479e3d4ead5fe08f533ea26a81c",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/scripts/review-shield-cards.mjs"
+    },
+    {
+      "path": "shared/player-card/README.md",
+      "bytes": 1518,
+      "gitBlobSha1": "379e87aeb555d14f303a655a2c6f8917402a1649",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/shared/player-card/README.md"
+    },
+    {
+      "path": "shared/player-card/player-card-contract.js",
+      "bytes": 5257,
+      "gitBlobSha1": "74eb6869d384d315dd9c8a204f9910eb9374db4c",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/shared/player-card/player-card-contract.js"
+    },
+    {
+      "path": "styles/mobile-player-cards.css",
+      "bytes": 5273,
+      "gitBlobSha1": "788ae70bf8a3c10f97be009349a23eab9fd8343d",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/styles/mobile-player-cards.css"
+    },
+    {
+      "path": "styles/player-card-shield.css",
+      "bytes": 10089,
+      "gitBlobSha1": "2c0b041a71f76c10ac5a8851a13b1efecd699ee7",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/styles/player-card-shield.css"
+    },
+    {
+      "path": "styles/player-card.css",
+      "bytes": 13587,
+      "gitBlobSha1": "b7581e61ba5b5f587b82878b359cf738defaa263",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/styles/player-card.css"
+    },
+    {
+      "path": "styles/tactics-cards.css",
+      "bytes": 11950,
+      "gitBlobSha1": "8527e171d8bb6de82d17994126bd81ea493a4ae1",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/styles/tactics-cards.css"
+    },
+    {
+      "path": "test/card-motion.test.js",
+      "bytes": 6579,
+      "gitBlobSha1": "8234da980f3153f27b820f749588af049be2d38b",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/test/card-motion.test.js"
+    },
+    {
+      "path": "test/card-shield.test.js",
+      "bytes": 3401,
+      "gitBlobSha1": "03463f957fd45a890ff7dd3fc19c4391f00adfed",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/test/card-shield.test.js"
+    },
+    {
+      "path": "test/deferred-card.test.js",
+      "bytes": 9307,
+      "gitBlobSha1": "c427436034433d7d4ecc07b3542a0d2b47b63fa4",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/test/deferred-card.test.js"
+    },
+    {
+      "path": "test/player-card.test.js",
+      "bytes": 9227,
+      "gitBlobSha1": "1f78ba7f50a0ef9ebbee6483801c9105943d3f62",
+      "url": "https://github.com/AxeroYF/football_rouge_online/blob/0bdeaa8b9d5e900eda205a7c83b3fc8f4e39db0d/test/player-card.test.js"
+    }
+  ]
+}

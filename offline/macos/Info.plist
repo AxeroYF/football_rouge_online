@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
-  <key>CFBundleDisplayName</key><string>YDL S4 Offline</string>
+  <key>CFBundleDisplayName</key><string>YFFM1 Offline</string>
   <key>CFBundleExecutable</key><string>YDL-S4-Offline</string>
   <key>CFBundleIdentifier</key><string>com.ydl.s4.offline</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-  <key>CFBundleName</key><string>YDL S4 Offline</string>
+  <key>CFBundleName</key><string>YFFM1 Offline</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0.0</string>
   <key>CFBundleVersion</key><string>1</string>

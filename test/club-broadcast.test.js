@@ -45,7 +45,7 @@ test("broadcast meteor background node survives commentary refreshes and is hidd
   const clubCssSource = readFileSync(new URL("../versus/public/club.css", import.meta.url), "utf8");
   assert.match(appSource, /let content = overlay\.querySelector\(":scope > \.broadcast-v2-content"\)/);
   assert.match(appSource, /let layer = overlay\.querySelector\(":scope > \.broadcast-v2-meteor-background"\)[\s\S]*?if \(layer\) return;/);
-  assert.match(appSource, /content\.innerHTML = broadcastScreenMarkup\(broadcast\)/);
+  assert.match(appSource, /patchHtmlChildren\(content, broadcastScreenMarkup\(broadcast\)\)/);
   assert.doesNotMatch(appSource, /overlay\.innerHTML = broadcastScreenMarkup\(broadcast\)/);
   assert.match(cssSource, /@media\(max-width:820px\)\{\.broadcast-v2-meteor-background\{display:none\}/);
   assert.match(appSource, /broadcast-v2-ad-layout sponsor-stack/);

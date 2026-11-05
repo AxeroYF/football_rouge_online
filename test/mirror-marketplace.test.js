@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
 import { createTrackedState } from "../versus/league-shard-store.js";
-import { runMirrorBatchWorkerMatch } from "../versus/mirror-batch-worker-protocol.js";
+import { MIRROR_BATCH_WORKER_ENGINE_VERSION, runMirrorBatchWorkerMatch } from "../versus/mirror-batch-worker-protocol.js";
 
 const account = (id, nickname) => ({ id, nickname });
 
@@ -372,7 +372,7 @@ test("legacy director worker remains permanent and transfers the 30 percent serv
   service.wallet(viewer.id).balance = 10_000;
   service.wallet(nextViewer.id).balance = 10_000;
   service.wallet(axero.id).balance = 500;
-  const engineVersion = "v2.1-cap99-director-r1";
+  const engineVersion = MIRROR_BATCH_WORKER_ENGINE_VERSION;
   const workerId = "axero-director-pc";
   service.registerDirectorMirrorWorker({ workerId, engineVersion, maximumConcurrency:5, activeLeaseIds:[] });
   const directorNode = service.mirrorMarketplaceCatalog(viewer).batchNodes.find((node) => node.id === "director");
@@ -545,7 +545,7 @@ test("system AI formations can use the permanent director high-speed node during
   service.state.season.status = "active";
   service.wallet(viewer.id).balance = 5000;
   service.wallet(axero.id).balance = 500;
-  const engineVersion = "v2.1-cap99-director-r1";
+  const engineVersion = MIRROR_BATCH_WORKER_ENGINE_VERSION;
   service.registerDirectorMirrorWorker({ workerId:"axero-director-pc", engineVersion, maximumConcurrency:5, activeLeaseIds:[], acceptingJobs:true });
 
   const created = service.createMirrorBatchSimulation(viewer, {

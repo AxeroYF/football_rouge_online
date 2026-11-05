@@ -196,7 +196,7 @@ test("V2.1 injury substitution inherits the outgoing player's tactical duty", ()
 
   const match = createV2Match([home, away], {
     possessionChains:1,
-    parameters:quietParameters({ events:{ injuryPerChain:1, blackWhistlePerMatch:0 } }),
+    parameters:quietParameters({ events:{ injuryPerChain:1, blackWhistlePerMatch:0, brawl:{basePerEligibleMatch:0} } }),
     rng:() => 0,
   });
   advanceV2Match(match, 1);
