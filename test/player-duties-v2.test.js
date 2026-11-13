@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
 import { V2_PLAYER_DUTY_OPTIONS, v2PlayerDutyOptionsForRole } from "../versus/public/v2-player-duty-options.js";
 import { buildV21DynamicTeamShape } from "../versus/v2/dynamic-shape-v2.js";
 import { advanceV2Match, createV2Match, publicV2Match, v2SelectSetPieceTaker } from "../versus/v2/match-engine-v2.js";

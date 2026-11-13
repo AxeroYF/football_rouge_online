@@ -445,11 +445,18 @@ export function buildV21DynamicTeamShape({
     });
   });
   if (attacking) enforceAttackingRoleDepthOrder(moved, config);
-  protectAttackingRestDefense(moved, { attacking, ballX:localBallX, stage, config });
+  const continuous=String(config.modelVersion).startsWith("dynamic-shape-v3.2");
+  const protectedCount=({adventurous:2,balanced:3,conservative:4})[team.restDefense]??3;
+  const protectionConfig=continuous?{...config,restDefense:{...config.restDefense,attackingMinimum:protectedCount,lateWideMinimum:protectedCount,protectionLineY:56}}:config;
+  protectAttackingRestDefense(moved, { attacking, ballX:localBallX, stage, config:protectionConfig });
+  if(continuous&&attacking)for(const player of moved) {
+    if(!player.restDefenseProtected&&["FB","WB","DM"].includes(player.genericRole))player.targetPosition.y=Math.max(12,player.targetPosition.y-8*intensity);
+  }
   const separated = enforceGeometryConstraints(moved, config).map((player) => ({
     id:player.id,
     assignedRole:player.assignedRole,
     tacticalDuty:player.tacticalDuty ?? null,
+    ...(continuous?{restDefenseProtected:Boolean(player.restDefenseProtected)}:{}),
     genericRole:player.genericRole,
     basePosition:{ x:round(player.basePosition.x), y:round(player.basePosition.y) },
     targetPosition:{ x:round(player.targetPosition.x), y:round(player.targetPosition.y) },

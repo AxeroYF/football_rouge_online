@@ -13,20 +13,14 @@ import { measureRuntimeSync, recordRuntimeMetric, snapshotRuntimeMetrics } from 
 // 模块求值期间即构造并执行 33 人大名单校验，若覆盖未先行应用，这些球员会按
 // 静态评级占用名单名额，导致线上超限启动崩溃。
 import "../versus/ydl-content-store.js";
-import { loadDatabase, resetDatabase, saveDatabase } from "./store.js";
-import { runSimulation } from "./simulation.js";
 import { handleVersusApi } from "../versus/api.js";
 import { handleAdminApi } from "../versus/admin-api.js";
 import { handleOfflineApi } from "../offline/api.js";
-import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
 import { versusRooms } from "../versus/room-service.js";
 import { yellowDogsLeague } from "../versus/league-service.js";
 import { OFFLINE_ATTRIBUTE_SETTINGS } from "../versus/offline-attribute-settings.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const publicDirectory = path.join(here, "public");
-const gameDirectory = path.resolve(here, "../game/public");
-const sourceDirectory = path.resolve(here, "../src");
 const versusDirectory = path.resolve(here, "../versus/public");
 const aPlayerProfileDirectory = path.resolve(here, "../A_profile");
 const legendaryProfileDirectory = path.resolve(here, "../legendary_profile");
@@ -131,40 +125,12 @@ async function handleApi(request, response, pathname) {
   if (request.method === "GET" && pathname === "/api/versus/config") {
     return sendJson(response, 200, { ok: true, publicOnly, offlineYdl, environment, environmentLabel, matchEngine, matchEngines, engineVersion:matchEngine === "v3" ? V3_ENGINE_VERSION : matchEngine === "v2" ? "2.1.0" : "1", engineProfile:matchEngine === "v3" ? V3_ENGINE_PROFILE : matchEngine === "v2" ? "v2.1-stable-dynamic.2" : "v1", offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
   }
-  if (publicOnly) {
-    if (request.method === "GET" && pathname === "/api/health") {
-      return sendJson(response, 200, { ok: true, publicOnly:true, offlineYdl, environment, environmentLabel, offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
-    }
-    if (pathname === "/api/versus/dev-room" || !pathname.startsWith("/api/versus/")) {
-      return sendJson(response, 404, { ok: false, error: "API not found" });
-    }
-    return handleVersusApi(request, response, pathname, readJson, sendJson);
+  if (request.method === "GET" && pathname === "/api/health") {
+    return sendJson(response, 200, { ok: true, publicOnly, localOnly:isLoopback(host), offlineYdl, environment, environmentLabel, offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
   }
-  if (request.method === "GET" && pathname === "/api/versus-traits") {
-    return sendJson(response, 200, { ok: true, traits: VERSUS_TRAIT_CARDS });
-  }
+  if (publicOnly && pathname === "/api/versus/dev-room") return sendJson(response, 404, { ok: false, error: "API not found" });
   if (pathname.startsWith("/api/versus/")) {
     return handleVersusApi(request, response, pathname, readJson, sendJson);
-  }
-  if (request.method === "GET" && pathname === "/api/health") {
-    return sendJson(response, 200, { ok: true, localOnly:true, environment, environmentLabel });
-  }
-  if (request.method === "GET" && pathname === "/api/state") {
-    return sendJson(response, 200, { ok: true, state: await loadDatabase() });
-  }
-  if (request.method === "POST" && pathname === "/api/state") {
-    const body = await readJson(request);
-    const state = await saveDatabase(body.state ?? body);
-    return sendJson(response, 200, { ok: true, state });
-  }
-  if (request.method === "POST" && pathname === "/api/reset") {
-    const state = await resetDatabase();
-    return sendJson(response, 200, { ok: true, state });
-  }
-  if (request.method === "POST" && pathname === "/api/simulate") {
-    const body = await readJson(request);
-    const state = await loadDatabase();
-    return sendJson(response, 200, { ok: true, result: runSimulation(state, body) });
   }
   return sendJson(response, 404, { ok: false, error: "API not found" });
 }
@@ -214,32 +180,25 @@ const staticAssets = createStaticAssetCache();
 
 async function serveStatic(response, pathname, searchParams = new URLSearchParams(), request = response.req) {
   if (!["GET", "HEAD"].includes(request?.method ?? "GET")) { response.writeHead(405, { allow:"GET, HEAD" }); response.end(); return; }
-  if (publicOnly && pathname === "/") {
+  if (pathname === "/") {
     response.writeHead(302, { location: "/versus/", "cache-control": "no-store" });
     return response.end();
   }
-  const servesGame = pathname === "/game" || pathname.startsWith("/game/");
   const servesVersus = pathname === "/versus" || pathname.startsWith("/versus/");
   const servesAPlayerProfile = pathname.startsWith("/versus/A_profile/");
   const servesLegendaryProfile = pathname.startsWith("/versus/legendary_profile/");
   const servesXPlayerProfile = pathname.startsWith("/versus/x_profile/");
   const servesPlayerProfile = pathname.startsWith("/versus/player_profiles/");
   const servesAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
-  const servesSource = pathname.startsWith("/src/");
-  if (publicOnly && !servesVersus && !servesAdmin) return sendJson(response, 404, { ok: false, error: "not found" });
-  const directory = servesSource ? sourceDirectory : servesAdmin ? adminDirectory : servesAPlayerProfile ? aPlayerProfileDirectory : servesLegendaryProfile ? legendaryProfileDirectory : servesXPlayerProfile ? xPlayerProfileDirectory : servesPlayerProfile ? playerProfileDirectory : servesVersus ? versusDirectory : servesGame ? gameDirectory : publicDirectory;
-  const gamePath = pathname === "/game"
-    ? "/"
-    : pathname.startsWith("/game/public/")
-      ? pathname.slice("/game/public".length)
-      : pathname.slice(5);
+  if (!servesVersus && !servesAdmin) return sendJson(response, 404, { ok: false, error: "not found" });
+  const directory = servesAdmin ? adminDirectory : servesAPlayerProfile ? aPlayerProfileDirectory : servesLegendaryProfile ? legendaryProfileDirectory : servesXPlayerProfile ? xPlayerProfileDirectory : servesPlayerProfile ? playerProfileDirectory : versusDirectory;
   const versusPath = pathname.slice("/versus".length) || "/";
   const aPlayerProfilePath = pathname.slice("/versus/A_profile".length) || "/";
   const legendaryProfilePath = pathname.slice("/versus/legendary_profile".length) || "/";
   const xPlayerProfilePath = pathname.slice("/versus/x_profile".length) || "/";
   const playerProfilePath = pathname.slice("/versus/player_profiles".length) || "/";
   const adminPath = pathname.slice("/admin".length) || "/";
-  const requestedPath = servesSource ? pathname.slice(4) : servesAdmin ? adminPath : servesAPlayerProfile ? aPlayerProfilePath : servesLegendaryProfile ? legendaryProfilePath : servesXPlayerProfile ? xPlayerProfilePath : servesPlayerProfile ? playerProfilePath : servesVersus ? versusPath : servesGame ? gamePath : pathname;
+  const requestedPath = servesAdmin ? adminPath : servesAPlayerProfile ? aPlayerProfilePath : servesLegendaryProfile ? legendaryProfilePath : servesXPlayerProfile ? xPlayerProfilePath : servesPlayerProfile ? playerProfilePath : versusPath;
   const decodedRequestedPath = decodeURIComponent(requestedPath);
   const requested = decodedRequestedPath === "/" ? "/index.html" : decodedRequestedPath;
   const safeRelative = path.normalize(requested).replace(/^(\.\.[/\\])+/, "");
@@ -318,6 +277,7 @@ const server = http.createServer(async (request, response) => {
     sendJson(response, error.statusCode ?? 400, {
       ok: false,
       error: error.message,
+      errorCode: error.code,
       details: error.details ?? [],
     });
   }
@@ -331,10 +291,9 @@ server.listen(port, host, () => {
     console.log("本地管理员后台：http://" + host + ":" + listeningPort + "/admin/");
     console.log("仅允许本机访问；好友对战、计算节点与线上运营接口均未开放。");
   } else {
-    console.log("游戏 Demo：http://" + host + ":" + listeningPort + "/game/");
-    console.log("好友对战：http://" + host + ":" + listeningPort + "/versus/");
+    console.log("YFFM1 游戏：http://" + host + ":" + listeningPort + "/versus/");
     console.log("管理员后台：http://" + host + ":" + listeningPort + "/admin/");
-    if (publicOnly) console.log("公网试玩安全模式：开放好友对战及需要密码认证的管理员后台。");
+    if (publicOnly) console.log("公开模式：开放 YFFM1 及需要密码认证的管理员后台。");
     else console.log(host === "127.0.0.1" ? "仅允许本机访问，按 Ctrl+C 停止。" : "已开放网络访问，请仅在可信局域网中使用。");
   }
 });

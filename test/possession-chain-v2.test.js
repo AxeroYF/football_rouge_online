@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
 import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
 import { simulateV2PossessionChain } from "../versus/v2/possession-chain-v2.js";
 import { buildV2SpatialMatchup, buildV2StageSpatialCache } from "../versus/v2/spatial-model-v2.js";

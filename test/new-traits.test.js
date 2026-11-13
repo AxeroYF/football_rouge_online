@@ -1,15 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { NEW_TRAIT_BATCH } from "../src/new-trait-batch.js";
-import { simulateMatch } from "../src/model.js";
-import { createGeneratedTeam } from "../src/teams.js";
 import {
   hydratePlayerTraits,
   injuryImmune,
   traitAdjustedAttribute,
   traitPositionFit,
   weatherPenaltyMultiplier,
-} from "../game/public/trait-runtime.js";
+} from "../shared/football/trait-runtime.js";
 
 const catalog = NEW_TRAIT_BATCH;
 
@@ -54,15 +52,4 @@ test("一脚成名在任意一次进球后激活而非限定第一次射门", ()
   assert.equal(traitAdjustedAttribute(player, "finishing", 60, { minute: 40 }), 60);
   player.matchTraitState = { scored: true };
   assert.equal(traitAdjustedAttribute(player, "finishing", 60, { minute: 70 }), 78);
-});
-
-test("肉身门柱会挡下必进球并触发当场离场及1至3场伤停", () => {
-  const home = createGeneratedTeam("肉身队", 55, "balanced");
-  const away = createGeneratedTeam("猛攻队", 90, "attacking");
-  home.lineup[1] = hydratePlayerTraits({ ...home.lineup[1], traitCards: ["human-goalpost"] }, catalog, "human-goalpost-test");
-  const result = simulateMatch(home, away, { seed: "human-0" });
-  const injury = result.events.find((event) => event.type === "injury" && event.traitName === "肉身门柱");
-  assert.ok(injury);
-  assert.ok(injury.matchesOut >= 1 && injury.matchesOut <= 3);
-  assert.equal(injury.forceUnavailable, true);
 });

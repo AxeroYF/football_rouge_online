@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import { ATTRIBUTE_NAMES, playerOverallFromAttributes } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES, playerOverallFromAttributes } from "../shared/football/schema.js";
 import { isS4Legend, isXPlayer, REAL_PLAYERS } from "./player-pool.js";
 import { S4_BOND_POOL_MINIMUM } from "./public/bond-rules.js";
 

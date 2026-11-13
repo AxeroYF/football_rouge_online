@@ -1,3 +1,5 @@
+import {X_PLAYER_FEATURE_ENABLED} from "/versus/team-draft-config.js";
+import { ADMIN_SEASON_ACTIONS } from "./season-controls.js";
 import { aPlayerProfileForPlayer } from "/versus/a-player-profiles.js";
 import { legendaryProfileForPlayer } from "/versus/legendary-profiles.js";
 import { xPlayerProfileForPlayer } from "/versus/x-player-profiles.js";
@@ -34,6 +36,9 @@ let selectedPlayerBatchId = null;
 let playerExcelPreview = null;
 let batchImageQueue = [];
 let batchUploadRunning = false;
+let leagueAdminActionPending = false;
+let seasonControlRequest = 0;
+let seasonControlPending = false;
 
 async function loadEnvironment() {
   try {
@@ -245,20 +250,20 @@ function renderLeagueAdmin() {
   const badgePlayerOptions = leagueData.teams.filter((team) => !team.isAi).map((team) => `<option value="${escapeHtml(team.ownerId)}">${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)} · ${escapeHtml(team.ownerId)}</option>`).join("");
   const badgeRows = leagueData.teams.flatMap((team) => (team.championBadges ?? []).map((badge) => ({ ...badge, ownerId:team.ownerId, ownerName:team.ownerName, teamName:team.name }))).sort((left,right) => Number(right.awardedAt) - Number(left.awardedAt)).map((badge) => { const isCup = badge.competition === "cup" || badge.type === "cup-champion"; return `<tr><td><span class="admin-champion-badge ${isCup ? "cup-champion-badge" : ""}"><i>${isCup ? "🏆" : "♛"}</i>${escapeHtml(badge.season)}${isCup ? " 杯赛" : " 联赛"}</span></td><td><b>${escapeHtml(badge.ownerName)}</b><small>${escapeHtml(badge.ownerId)}</small></td><td>${escapeHtml(badge.teamName)}</td><td>${dateText(badge.awardedAt)}</td></tr>`; }).join("") || `<tr><td colspan="4">尚未发放冠军徽章</td></tr>`;
   logoutButton.hidden = false;
-  app.innerHTML = `${adminNavMarkup("league")}<header class="page-head"><div><h1>YFFM1</h1><p>${escapeHtml(season.name)} · ${season.status === "active" ? "进行中" : "已完成"} · 下一轮 ${dateText(season.nextRoundAt)}</p></div><button id="league-refresh">刷新联赛</button></header><section class="kpis league-admin-kpis"><article class="kpi"><small>当前赛季</small><b>${escapeHtml(season.name)}</b></article><article class="kpi"><small>联赛轮次</small><b>${season.currentRound}/${season.totalRounds}</b></article><article class="kpi"><small>已赛场次</small><b>${leagueData.matches}</b></article><article class="kpi"><small>真人球队</small><b>${humanTeams}/10</b></article><article class="kpi"><small>进行中选秀</small><b>${leagueData.drafts.length}</b></article></section><section class="league-admin-actions"><div><small>LEAGUE CONTROL</small><b>赛季运行控制</b><span>重启与新赛季都会保留真人球队、球员名单、金币和交易资产。</span></div><button id="league-simulate">立即模拟下一轮</button><button class="warning" id="league-restart">重启当前赛季</button><button class="danger" id="league-new-season">开启新赛季</button></section><div class="grid league-admin-grid"><section class="panel league-team-panel"><header class="panel-head"><div><h2>联赛球队</h2><small>积分与注册名单状态</small></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>球队</th><th>名单</th><th>赛</th><th>胜-平-负</th><th>进失</th><th>分</th></tr></thead><tbody>${leagueTeamRows()}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>球员池占用</h2><small>真人球队全服唯一，AI 不计入</small></div></header><div class="table-wrap"><table><thead><tr><th>位置池</th><th>总数</th><th>已签</th><th>选秀中</th><th>可用</th></tr></thead><tbody>${poolRows}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>进行中的选秀</h2><small>尚未确认 22 人名单的球队</small></div></header><div class="table-wrap"><table><thead><tr><th>球队/玩家</th><th>进度</th><th>开始时间</th></tr></thead><tbody>${drafts}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>赛季归档</h2><small>最近 12 次重启或换季记录</small></div></header><div class="table-wrap"><table><thead><tr><th>赛季</th><th>原因</th><th>轮次</th><th>比赛</th><th>归档时间</th></tr></thead><tbody>${archives}</tbody></table></div></section><section class="panel league-allocation-panel"><header class="panel-head"><div><h2>真人球员归属</h2><small>查看每名已签或选秀保留球员</small></div><input class="search" id="league-player-search" placeholder="搜索球员、球队或玩家" /></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>位置</th><th>能力</th><th>状态</th><th>归属</th></tr></thead><tbody id="league-allocation-body">${leagueAllocationRows()}</tbody></table></div></section></div>`;
+  app.innerHTML = `${adminNavMarkup("league")}<header class="page-head"><div><h1>YFFM1</h1><p>${escapeHtml(season.name)} · ${season.status === "active" ? "进行中" : "已完成"} · 下一轮 ${dateText(season.nextRoundAt)}</p></div><button id="league-refresh">刷新联赛</button></header><section class="kpis league-admin-kpis"><article class="kpi"><small>当前赛季</small><b>${escapeHtml(season.name)}</b></article><article class="kpi"><small>联赛轮次</small><b>${season.currentRound}/${season.totalRounds}</b></article><article class="kpi"><small>已赛场次</small><b>${leagueData.matches}</b></article><article class="kpi"><small>真人球队</small><b>${humanTeams}/10</b></article><article class="kpi"><small>进行中选秀</small><b>${leagueData.drafts.length}</b></article></section><section class="league-admin-actions"><div><small>LEAGUE CONTROL</small><b>赛季运行控制</b><span>重赛与换季保留当前金币；只有完全重置会清空玩家资产。</span></div><button id="league-simulate">立即模拟下一轮</button><button class="warning" id="league-season-controls">赛季与重置</button></section><div class="grid league-admin-grid"><section class="panel league-team-panel"><header class="panel-head"><div><h2>联赛球队</h2><small>积分与注册名单状态</small></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>球队</th><th>名单</th><th>赛</th><th>胜-平-负</th><th>进失</th><th>分</th></tr></thead><tbody>${leagueTeamRows()}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>球员池占用</h2><small>真人球队全服唯一，AI 不计入</small></div></header><div class="table-wrap"><table><thead><tr><th>位置池</th><th>总数</th><th>已签</th><th>选秀中</th><th>可用</th></tr></thead><tbody>${poolRows}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>进行中的选秀</h2><small>尚未确认 22 人名单的球队</small></div></header><div class="table-wrap"><table><thead><tr><th>球队/玩家</th><th>进度</th><th>开始时间</th></tr></thead><tbody>${drafts}</tbody></table></div></section><section class="panel"><header class="panel-head"><div><h2>赛季归档</h2><small>最近 12 次重启或换季记录</small></div></header><div class="table-wrap"><table><thead><tr><th>赛季</th><th>原因</th><th>轮次</th><th>比赛</th><th>归档时间</th></tr></thead><tbody>${archives}</tbody></table></div></section><section class="panel league-allocation-panel"><header class="panel-head"><div><h2>真人球员归属</h2><small>查看每名已签或选秀保留球员</small></div><input class="search" id="league-player-search" placeholder="搜索球员、球队或玩家" /></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>位置</th><th>能力</th><th>状态</th><th>归属</th></tr></thead><tbody id="league-allocation-body">${leagueAllocationRows()}</tbody></table></div></section></div>`;
   const automation = leagueData.dailyAutomation ?? {};
   document.querySelector(".league-admin-actions div span").textContent = automation.enabled
     ? `每日自动化已启用：北京时间09:51重置，10:01自动开启杯赛；联赛沿用10:00起每20分钟整点网格。上次奖励赛季：${automation.lastRewardedSeasonId ?? "暂无"}；上次自动重置：${automation.lastResetDate ?? "暂无"}。`
-    : "每日自动化尚未启用；只有执行一次“完全重置联赛”后才会开始，并从次日按北京时间运行。";
+    : "每日自动化尚未启用；手动重赛与换季会返回报名阶段，金币保留。";
+  document.querySelector(".league-admin-actions div span").textContent += " 只有完全重置会清空现有金币与建队资产。";
   document.querySelector(".league-admin-kpis").insertAdjacentHTML("beforeend", `<article class="kpi"><small>S4所有权</small><b>${assetSummary.ownershipCount}</b></article><article class="kpi"><small>流通球员卡</small><b>${assetSummary.activeCardCount}</b></article><article class="kpi"><small>系统回收卡</small><b>${assetSummary.recycledCardCount}</b></article>`);
   document.querySelector(".page-head p").textContent = `${season.name} · ${seasonStatusLabel} · ${registrationOpen ? "等待管理员开启联赛推进" : `下一轮 ${dateText(season.nextRoundAt)}`}`;
   const simulateButton = document.querySelector("#league-simulate");
-  simulateButton.disabled = registrationOpen || season.status === "completed";
+  simulateButton.disabled = !leagueData.manualSimulation?.allowed;
+  simulateButton.title = leagueData.manualSimulation?.reason ?? "请等待当前赛事结束";
   if (registrationOpen) simulateButton.textContent = "等待开启联赛推进";
   document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button class="primary" id="league-start-simulation" ${registrationOpen ? "" : "disabled"}>${registrationOpen ? "开启联赛推进" : season.status === "active" ? "联赛推进已开启" : "赛季已结束"}</button>`);
-  document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button class="danger full-reset" id="league-full-reset">完全重置联赛</button>`);
-  document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button class="danger full-reset" id="league-fresh-season">开启全新赛季</button>`);
-  document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button id="league-cup-start" ${leagueData.cup?.status === "waiting" && season.status === "active" ? "" : "disabled"}>${registrationOpen ? "联赛推进后可开启杯赛" : leagueData.cup?.status === "waiting" ? "开启黄狗冠军杯" : `黄狗冠军杯：${leagueData.cup?.stage ?? "进行中"}`}</button><button class="warning" id="league-daily-reward">补发联赛排名奖励及追加礼包</button><button class="danger" id="league-daily-reset">手动立即重置联赛与杯赛</button>`);
+  document.querySelector(".league-admin-actions").insertAdjacentHTML("beforeend", `<button id="league-cup-start" ${leagueData.cup?.status === "waiting" && season.status === "active" ? "" : "disabled"}>${registrationOpen ? "联赛推进后可开启杯赛" : leagueData.cup?.status === "waiting" ? "开启黄狗冠军杯" : `黄狗冠军杯：${leagueData.cup?.stage ?? "进行中"}`}</button><button class="warning" id="league-daily-reward">补发联赛排名奖励及追加礼包</button>`);
   document.querySelector(".league-admin-actions").insertAdjacentHTML("afterend", `<section class="league-prediction-monitor"><div><small>PREDICTION MONITOR</small><b>预测系统监测</b><span>查看北京时间当天各玩家的投注方案、已结算收益和未结算本金。</span></div><button class="primary" id="league-predictions-today">查看今日投注明细</button></section>`);
   document.querySelector(".league-allocation-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-backup-panel"><header class="panel-head"><div><h2>联赛数据备份</h2><small>每天一份，自动保留最近 ${leagueData.backups.retentionDays} 天；完全重置前额外保存快照</small></div></header><div class="table-wrap"><table><thead><tr><th>文件</th><th>类型</th></tr></thead><tbody>${backupRows}</tbody></table></div></section>`);
   const enforcementPanel = document.querySelector(".league-team-panel");
@@ -267,7 +272,7 @@ function renderLeagueAdmin() {
   document.querySelector(".league-team-panel").insertAdjacentHTML("afterend", `<section class="panel league-reward-mail-panel"><header class="panel-head"><div><h2>S4礼包发放</h2><small>旧赛季礼包已经下架；可向所有已建队玩家或指定玩家立即发放新礼包。</small></div></header><form id="league-s4-pack-grant-form" class="league-reward-mail-form"><label><span>礼包类型</span><select name="packType">${s4PackTypeOptions}</select></label><label><span>每人数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-s4-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4PackTypeOptions ? "" : "disabled"}>立即发放礼包</button></form><div class="table-wrap"><table><thead><tr><th>礼包</th><th>数量</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${s4GrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-admin-mail-panel"><header class="panel-head"><div><h2>全服更新邮件</h2><small>向所有已建队玩家发送管理员公告，邮件会立即出现在玩家收件箱。</small></div></header><form id="league-admin-mail-form" class="league-reward-mail-form league-admin-mail-form"><label><span>邮件标题</span><input name="title" maxlength="80" placeholder="例如：V2引擎与阵型线更新" required></label><label><span>邮件摘要（可选）</span><input name="summary" maxlength="200" placeholder="留空时自动截取正文"></label><label class="league-admin-mail-body"><span>邮件正文</span><textarea name="body" maxlength="5000" rows="7" placeholder="填写完整更新内容" required></textarea></label><button type="submit" ${humanTeams ? "" : "disabled"}>发送给全体玩家</button></form><div class="table-wrap"><table><thead><tr><th>标题</th><th>摘要</th><th>接收人数</th><th>发送时间</th></tr></thead><tbody>${mailBroadcastRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("beforebegin", `<section class="panel league-coin-grant-panel"><header class="panel-head"><div><h2>金币即时发放</h2><small>向所有已建队玩家或指定玩家发放金币，提交后余额立即到账并发送邮件通知。</small></div></header><form id="league-coin-grant-form" class="league-reward-mail-form"><label><span>每人金币数量</span><input name="amount" type="number" min="1" max="1000000000" step="1" value="1000" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有玩家</option><option value="specified">指定玩家</option></select></label><label id="league-coin-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${s4RecipientOptions ? "" : "disabled"}>立即发放金币</button></form><div class="table-wrap"><table><thead><tr><th>每人金额</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${coinGrantRows}</tbody></table></div></section>`);
-  document.querySelector(".league-coin-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-x-growth-grant-panel"><header class="panel-head"><div><h2>X球员加成点数发放</h2><small>向所有或指定的、已经拥有X球员的玩家发放加成点数，提交后立即到账并发送邮件通知。</small></div></header><form id="league-x-growth-grant-form" class="league-reward-mail-form"><label><span>每名X球员获得点数</span><input name="points" type="number" min="1" max="1000" step="1" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有X球员玩家</option><option value="specified">指定玩家</option></select></label><label id="league-x-growth-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${humanTeams ? "" : "disabled"}>发放X球员点数</button></form><div class="table-wrap"><table><thead><tr><th>每人点数</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${xGrowthGrantRows}</tbody></table></div></section>`);
+  if (X_PLAYER_FEATURE_ENABLED) document.querySelector(".league-coin-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-x-growth-grant-panel"><header class="panel-head"><div><h2>X球员加成点数发放</h2><small>向所有或指定的、已经拥有X球员的玩家发放加成点数，提交后立即到账并发送邮件通知。</small></div></header><form id="league-x-growth-grant-form" class="league-reward-mail-form"><label><span>每名X球员获得点数</span><input name="points" type="number" min="1" max="1000" step="1" value="1" required></label><label><span>发放范围</span><select name="recipientMode"><option value="all">所有X球员玩家</option><option value="specified">指定玩家</option></select></label><label id="league-x-growth-recipient-field" hidden><span>指定玩家</span><select name="accountIds" multiple size="5">${s4RecipientOptions}</select></label><button type="submit" ${humanTeams ? "" : "disabled"}>发放X球员点数</button></form><div class="table-wrap"><table><thead><tr><th>每人点数</th><th>范围</th><th>接收人数</th><th>时间</th></tr></thead><tbody>${xGrowthGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-reward-mail-panel").insertAdjacentHTML("afterend", `<section class="panel league-card-grant-panel"><header class="panel-head"><div><h2>指定球员卡发放</h2><small>向任意已建队玩家发放指定球员、指定强化等级的测试卡；强化等级支持0至8级。</small></div></header><form id="league-s4-card-grant-form" class="league-card-grant-form"><label><span>接收玩家</span><select name="accountId" ${s4RecipientOptions ? "" : "disabled"}>${s4RecipientOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>搜索球员</span><input id="league-s4-player-search" placeholder="输入中文名、俱乐部、位置或ID"></label><label><span>指定球员</span><select id="league-s4-player-select" name="playerId" ${s4PlayerOptions ? "" : "disabled"}>${s4PlayerOptions || `<option>暂无球员数据</option>`}</select></label><label><span>强化等级</span><select name="upgradeLevel">${Array.from({ length:9 }, (_, level) => `<option value="${level}">${level ? `+${level}` : "无强化"}</option>`).join("")}</select></label><label><span>发放数量</span><input name="quantity" type="number" min="1" max="50" value="1" required></label><button type="submit" ${s4RecipientOptions && s4PlayerOptions ? "" : "disabled"}>发放指定球员卡</button></form><div class="table-wrap"><table><thead><tr><th>球员</th><th>强化</th><th>数量</th><th>接收玩家</th><th>所有权</th><th>时间</th></tr></thead><tbody>${s4CardGrantRows}</tbody></table></div></section>`);
   document.querySelector(".league-card-grant-panel").insertAdjacentHTML("afterend", `<section class="panel league-badge-panel"><header class="panel-head"><div><h2>冠军徽章发放</h2><small>可发放皇冠联赛冠军徽章，或带赛季标记的奖杯杯赛冠军徽章</small></div></header><form id="league-badge-form" class="league-badge-form"><label><span>联赛玩家</span><select name="accountId" ${badgePlayerOptions ? "" : "disabled"}>${badgePlayerOptions || `<option>暂无真人玩家</option>`}</select></label><label><span>冠军荣誉</span><select name="badge">${BADGE_OPTIONS.map((badge) => `<option value="${badge.competition}:${badge.season}">${badge.label}</option>`).join("")}</select></label><button type="submit" ${badgePlayerOptions ? "" : "disabled"}>发放徽章</button></form><div class="table-wrap"><table><thead><tr><th>徽章</th><th>玩家</th><th>球队</th><th>发放时间</th></tr></thead><tbody>${badgeRows}</tbody></table></div></section>`);
   bindAdminNav();
@@ -321,6 +326,7 @@ function renderLeagueAdmin() {
     }
   };
   const xGrowthGrantForm = document.querySelector("#league-x-growth-grant-form");
+  if (xGrowthGrantForm) {
   const xGrowthRecipientMode = xGrowthGrantForm.querySelector("[name=recipientMode]");
   const xGrowthRecipientField = document.querySelector("#league-x-growth-recipient-field");
   const syncXGrowthRecipients = () => {
@@ -340,6 +346,7 @@ function renderLeagueAdmin() {
     if (recipientMode === "specified" && !accountIds.length) return window.alert("请至少选择一名玩家");
     if (window.confirm(`确认向${scope}每人发放${points}点X球员加成点数？点数会立即到账。`)) runLeagueAdminAction("/api/admin/league/x-growth/grant", { points, recipientMode, accountIds }, "X球员加成点数已经发放并立即到账");
   };
+  }
   document.querySelector("#league-simulate").onclick = () => runLeagueAdminAction("/api/admin/league/simulate", {}, "下一轮联赛及期间杯赛已模拟完成");
   document.querySelector("#league-start-simulation").onclick = () => {
     if (window.confirm(`确认结束 ${season.name} 报名选人阶段并开启联赛推进？首轮会安排在开启后的下一个20分钟时间档。当前已有 ${humanTeams} 支玩家球队，其余席位由AI球队保留。`)) runLeagueAdminAction("/api/admin/league/start-simulation", { confirm:"START_LEAGUE_SIMULATION" }, "联赛推进已开启，首轮时间已经安排");
@@ -442,36 +449,19 @@ function renderLeagueAdmin() {
       runLeagueAdminAction("/api/admin/league/champion-badge", { accountId, season:seasonName, competition }, `${seasonName}${competitionName}冠军徽章已发放`);
     }
   };
-  document.querySelector("#league-restart").onclick = () => {
-    if (window.confirm("确认重启当前赛季？积分、赛果和伤停会重置，真人球队、名单、金币和交易资产保留。")) runLeagueAdminAction("/api/admin/league/restart", { confirm:"RESTART" }, "当前赛季已重启");
-  };
-  document.querySelector("#league-new-season").onclick = () => {
-    if (window.confirm("确认结束并归档当前赛季，立即开启下一赛季？真人球队、名单、金币和交易资产保留。")) runLeagueAdminAction("/api/admin/league/new-season", { confirm:"NEW_SEASON" }, "新赛季已开启");
-  };
+  document.querySelector("#league-season-controls").onclick = () => openSeasonControls();
   document.querySelector("#league-cup-start").onclick = () => {
     if (window.confirm("确认开启黄狗冠军杯？当前10支球队将进行9轮单循环联赛，前八名进入两回合淘汰赛。")) runLeagueAdminAction("/api/admin/league/cup/start", {}, "黄狗冠军杯已开启，首轮将在下一个杯赛时间档开始");
   };
   document.querySelector("#league-daily-reward").onclick = () => {
     if (window.confirm("确认按当前已完成赛季排名补发金币、传奇礼包及联赛名次追加礼包？已发放的奖励不会重复发放。")) runLeagueAdminAction("/api/admin/league/daily-settlement/reward", {}, "联赛排名奖励及追加礼包已补发或已确认发放");
   };
-  document.querySelector("#league-daily-reset").onclick = () => {
-    const confirmation = window.prompt("此操作只重置联赛和杯赛进度，并恢复球员体力、伤病和停赛状态；球队、球员、金币、邮件、卡包、卡牌与交易资产均保留。\n\n请输入：立即重置每日联赛");
-    if (confirmation === "立即重置每日联赛") runLeagueAdminAction("/api/admin/league/daily-reset", { confirm:"DAILY_RESET_YDL" }, "每日联赛与杯赛已重置，玩家资产保持不变");
-    else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
-  };
-  document.querySelector("#league-full-reset").onclick = () => {
-    const confirmation = window.prompt("此操作会移除全部玩家的YDL球队、球员、金币、交易、选秀和比赛数据。玩家账号本身保留。\n\n请输入：完全重置YFFM1 联赛");
-    if (confirmation === "完全重置YFFM1 联赛") runLeagueAdminAction("/api/admin/league/full-reset", { confirm:"FULL_RESET_YDL" }, "YFFM1 已完全重置，所有玩家可以重新建队");
-    else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
-  };
-  document.querySelector("#league-fresh-season").onclick = () => {
-    const confirmation = window.prompt("此操作会开启下一个赛季，并移除全部玩家的YDL球队、球员、金币、背包、交易、选秀和比赛数据。玩家账号本身保留，所有玩家需要重新建队选卡。\n\n请输入：开启全新YFFM1 联赛赛季");
-    if (confirmation === "开启全新YFFM1 联赛赛季") runLeagueAdminAction("/api/admin/league/fresh-season", { confirm:"FRESH_SEASON_YDL" }, "YFFM1 全新赛季已开启，所有玩家可以重新建队");
-    else if (confirmation !== null) window.alert("确认文字不正确，操作已取消");
-  };
+
 }
 
 async function runLeagueAdminAction(path, body, message, options = {}) {
+  if (leagueAdminActionPending) return;
+  leagueAdminActionPending = true;
   try {
     const value = await api(path, { method:"POST", body });
     if (value.league) leagueData = value.league;
@@ -479,28 +469,68 @@ async function runLeagueAdminAction(path, body, message, options = {}) {
     renderLeagueAdmin();
     window.alert(message);
   } catch (error) { window.alert(error.message); }
+  finally { leagueAdminActionPending = false; }
+}
+
+async function openSeasonControls(actionId = "replay") {
+  if (seasonControlPending) return;
+  const request = ++seasonControlRequest;
+  showModal(`<header class="dialog-head"><button data-close aria-label="关闭">×</button><div><small>SEASON CONTROL</small><h2>正在读取操作影响…</h2></div></header>`);
+  try {
+    const { preview } = await api("/api/admin/league/season-controls/preview");
+    if (request !== seasonControlRequest || modal.hidden) return;
+    renderSeasonControls(preview, actionId);
+  } catch (error) {
+    if (request !== seasonControlRequest || modal.hidden) return;
+    showModal(`<header class="dialog-head"><button data-close aria-label="关闭">×</button><h2>无法读取操作影响</h2></header><p class="season-control-feedback">${escapeHtml(error.message)}</p>`);
+  }
+}
+
+function renderSeasonControls(preview, actionId) {
+  const action = preview.operations.find(entry => entry.id === actionId) ?? preview.operations[0];
+  const description = ADMIN_SEASON_ACTIONS.find(entry => entry.id === action.id);
+  showModal(`<header class="dialog-head"><button data-close aria-label="关闭">×</button><div><small>SEASON CONTROL</small><h2>赛季与重置</h2><p>当前 ${escapeHtml(preview.seasonName)} · ${preview.humanTeams} 支玩家球队 · 当前金币合计 ${Number(preview.totalCoins).toLocaleString("zh-CN")}</p></div></header>
+    <form class="season-control-form"><div class="season-control-choices">${preview.operations.map(entry => `<label class="${entry.id === action.id ? "selected" : ""} ${entry.id === "full" ? "destructive" : ""}"><input type="radio" name="season-action" value="${entry.id}" ${entry.id === action.id ? "checked" : ""}><b>${escapeHtml(entry.label)}</b><small>${escapeHtml(entry.coins)}</small></label>`).join("")}</div>
+    <section class="season-control-impact ${action.id === "full" ? "destructive" : ""}"><h3>${escapeHtml(action.label)} → ${escapeHtml(action.targetSeason)}</h3><strong>${escapeHtml(action.coins)}</strong><p>${escapeHtml(description.description)}</p><ul><li>操作前自动保存备份。</li><li>完成后回到报名阶段，由管理员开启联赛推进。</li>${action.id !== "full" ? "<li>金币流水和已发资产保留，已发奖励不会追回；重赛不是资产回滚。</li>" : "<li>所有玩家需要重新建队；账号、纪律记录和正式球员库保留。</li>"}</ul></section>
+    ${action.blockedReason ? `<p class="season-control-blocked">${escapeHtml(action.blockedReason)}</p>` : ""}
+    <label class="season-control-confirm">输入“${escapeHtml(action.confirmation)}”确认<input name="confirmation" autocomplete="off" placeholder="${escapeHtml(action.confirmation)}" ${action.blockedReason ? "disabled" : ""}></label>
+    <footer><button type="button" data-season-preview-refresh>刷新预览</button><button type="submit" class="${action.id === "full" ? "danger" : "warning"}" disabled>${escapeHtml(action.label)}</button></footer><p class="season-control-feedback" role="status"></p></form>`);
+  const form = modal.querySelector("form");
+  form.querySelectorAll("[name=season-action]").forEach(input => { input.onchange = () => renderSeasonControls(preview, input.value); });
+  form.querySelector("[data-season-preview-refresh]").onclick = () => openSeasonControls(action.id);
+  const confirmation = form.elements.confirmation;
+  const submit = form.querySelector("[type=submit]");
+  confirmation.oninput = () => { submit.disabled = Boolean(action.blockedReason) || confirmation.value.trim() !== action.confirmation; };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (seasonControlPending || action.blockedReason || confirmation.value.trim() !== action.confirmation) return;
+    seasonControlPending = true;
+    form.querySelectorAll("input,button").forEach(node => { node.disabled = true; });
+    modal.querySelector("[data-close]").disabled = true;
+    const feedback = form.querySelector(".season-control-feedback");
+    feedback.textContent = "正在执行，请稍候…";
+    try {
+      const value = await api("/api/admin/league/season-controls", { method:"POST", body:{ action:action.id, confirm:action.confirmation, seasonId:preview.seasonId, revision:preview.revision } });
+      leagueData = value.league;
+      seasonControlPending = false;
+      closeModal();
+      renderLeagueAdmin();
+      window.alert(`${value.operation.label}已完成。${value.operation.coins}。`);
+    } catch (error) {
+      feedback.textContent = `${error.message}。请刷新预览后重试。`;
+      form.querySelector("[data-season-preview-refresh]").disabled = false;
+      modal.querySelector("[data-close]").disabled = false;
+    } finally { seasonControlPending = false; }
+  };
 }
 
 function renderLeagueRecovery(error) {
-  logoutButton.hidden = false;
-  app.innerHTML = `${adminNavMarkup("league")}<section class="league-recovery"><small>SEASON DATA CONFLICT</small><h1>旧赛季数据与新球员评级冲突</h1><p>${escapeHtml(error.message)}</p><p class="league-recovery-note">当前旧赛季不会被迁移。开启全新赛季后，球队、球员卡、金币、背包、交易和比赛数据将清空，玩家账号会保留。</p><label><span>输入“开启全新YFFM1 联赛赛季”确认</span><input id="league-recovery-confirmation" autocomplete="off" placeholder="开启全新YFFM1 联赛赛季"></label><div><button id="league-recovery-dashboard">返回运营总览</button><button class="danger" id="league-recovery-fresh" disabled>开启全新赛季</button></div><p class="league-recovery-feedback" id="league-recovery-feedback"></p></section>`;
-  bindAdminNav();
-  document.querySelector("#league-recovery-dashboard").onclick = loadDashboard;
-  const confirmationInput = document.querySelector("#league-recovery-confirmation");
-  const freshButton = document.querySelector("#league-recovery-fresh");
-  confirmationInput.oninput = () => { freshButton.disabled = confirmationInput.value.trim() !== "开启全新YFFM1 联赛赛季"; };
-  freshButton.onclick = async () => {
-    const feedback = document.querySelector("#league-recovery-feedback");
-    freshButton.disabled = true;
-    feedback.textContent = "正在建立全新赛季…";
-    try {
-      leagueData = (await api("/api/admin/league/fresh-season", { method:"POST", body:{ confirm:"FRESH_SEASON_YDL" } })).league;
-      renderLeagueAdmin();
-    } catch (reason) {
-      feedback.textContent = reason.message;
-      freshButton.disabled = false;
-    }
-  };
+  renderLeagueUnavailable(error);
+  const controls = document.createElement("button");
+  controls.textContent = "查看完全重置影响";
+  controls.className = "danger";
+  controls.onclick = () => openSeasonControls("full");
+  app.querySelector(".league-recovery>div").append(controls);
 }
 
 function renderLeagueUnavailable(error) {
@@ -1367,7 +1397,7 @@ async function loadContentAdmin() {
 }
 
 function showModal(content) { modal.hidden = false; modal.innerHTML = `<section class="dialog">${content}</section>`; modal.querySelector("[data-close]").onclick = closeModal; }
-function closeModal() { modal.hidden = true; modal.innerHTML = ""; }
+function closeModal() { if (seasonControlPending) return; seasonControlRequest++; modal.hidden = true; modal.innerHTML = ""; }
 
 async function openPlayer(id) {
   showModal(`<header class="dialog-head"><button data-close>×</button><div><small>玩家详情</small><h2>正在读取…</h2></div></header>`);

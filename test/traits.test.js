@@ -8,7 +8,11 @@ import {
   TRAIT_CARDS,
   validateTraitCatalog,
 } from "../src/traits.js";
-import { makePlayer } from "../src/teams.js";
+import { ATTRIBUTE_NAMES, normalizePlayerSchema } from "../shared/football/schema.js";
+
+function makePlayer(name, role, rating) {
+  return normalizePlayerSchema({ id:name, name, role, attributes:Object.fromEntries(ATTRIBUTE_NAMES.map(key => [key, rating])) });
+}
 
 test("正式卡池包含100张结构有效且ID唯一的特性卡", () => {
   assert.equal(TRAIT_CARDS.length, 100);

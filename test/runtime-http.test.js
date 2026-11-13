@@ -25,8 +25,30 @@ test('YFFM1 serves negotiated cached assets, its current engine config and persi
   assert.equal(head.body.length,0);assert.equal(head.headers['content-length'],zipped.headers['content-length']);
   assert.equal((await request(base+'/versus/app.js',{},'POST')).status,405);
   assert.equal((await request(base+'/versus/assets/system-badges/ai-team-badge.svg')).status,200);
-  const config=await (await fetch(base+'/api/versus/config')).json();assert.equal(config.matchEngine,'v3');assert.equal(config.engineVersion,'3.0.0');
+  const config=await (await fetch(base+'/api/versus/config')).json();assert.equal(config.matchEngine,'v3');assert.equal(config.engineVersion,'3.3.0');
   const post=async(route,body)=>(await fetch(base+route,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})).json();
   const user=await post('/api/versus/register',{nickname:'HTTP Manager',password:'http-test-password'});assert.equal(user.ok,true);
   const login=await post('/api/versus/login',{nickname:'HTTP Manager',password:'http-test-password'});assert.equal(login.profile.id,user.profile.id);
 });
+
+for (const publicOnly of [true, false]) {
+  test(`YFFM1 exposes its game and admin without legacy prototype routes (publicOnly=${publicOnly})`, async t => {
+    const server = await startLocalServer({publicOnly});
+    t.after(() => server.stop());
+    const home = await request(server.url + '/');
+    assert.equal(home.status, 302);
+    assert.equal(home.headers.location, '/versus/');
+    for (const route of ['/versus/', '/admin/', '/api/health', '/api/versus/config']) {
+      assert.equal((await request(server.url + route)).status, 200, route);
+    }
+    for (const route of ['/game', '/game/', '/game/public/', '/game/game.js', '/src/model.js', '/app.js', '/styles.css']) {
+      assert.equal((await request(server.url + route)).status, 404, route);
+    }
+    for (const [route, method] of [
+      ['/api/state', 'GET'], ['/api/state', 'POST'], ['/api/reset', 'POST'],
+      ['/api/simulate', 'POST'], ['/api/versus-traits', 'GET'],
+    ]) {
+      assert.equal((await request(server.url + route, {}, method)).status, 404, `${method} ${route}`);
+    }
+  });
+}

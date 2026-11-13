@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync} from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import {YellowDogsLeagueService} from '../versus/league-service.js';
+import {advanceYdlLeagueV2Match,createYdlLeagueV2Match} from '../versus/v2/ydl-league-engine-adapter.js';
+import {V31_MATCH_PARAMETERS} from '../versus/v3/match-parameters-v3.js';
+
+for(const storage of ['json','shards'])test(`V3.1 service restores exact continuation from asynchronous checkpoint (${storage})`,async t=>{
+  const dir=mkdtempSync(path.join(os.tmpdir(),'yffm-v31-resume-'));
+  t.after(()=>rmSync(dir,{recursive:true,force:true}));
+  const now=Date.parse('2026-11-12T03:00:00Z');
+  const settings={statePath:path.join(dir,storage==='json'?'league.json':'league-shards'),backupDir:null,now:()=>now,rng:()=>.37};
+  const service=new YellowDogsLeagueService(settings);
+  const round=service.state.rounds[0];
+  const current=service.createFixtureMatch(round.fixtures[0],round.number,now,{competitionMode:'league'}).match;
+  const match=createYdlLeagueV2Match(current.configuration.initialTeams,{parameters:V31_MATCH_PARAMETERS,seed:current.simulationSeed,now,competitionMode:'league'});
+  service.state.liveRound={roundNumber:round.number,startedAt:now,matches:[{code:'V31-RESTORE',fixtureIndex:0,spectators:{},match}],newUnavailable:[]};
+  service.save({skipDailyBackup:true});
+  const live=service.state.liveRound.matches[0];
+  advanceYdlLeagueV2Match(live.match,now+30000,{maximumChains:17});
+  service.persistLiveMatch(live,now+30000,true);await service.flushLiveCheckpointIo();
+  const control=JSON.parse(JSON.stringify(live.match));
+  const restoredService=new YellowDogsLeagueService(settings);
+  const restored=restoredService.state.liveRound.matches[0].match;
+  assert.equal(restored.nextChainIndex,17);
+  assert.equal(restored.randomState.recovery,'exact');
+  assert.equal(Object.isFrozen(restored.parameters),true);
+  advanceYdlLeagueV2Match(control,now+120001,{maximumChains:Infinity});
+  advanceYdlLeagueV2Match(restored,now+120001,{maximumChains:Infinity});
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.report)),JSON.parse(JSON.stringify(control.report)));
+  assert.deepEqual(restored.randomState,control.randomState);
+});

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
 import { createS4BondCatalog } from "../versus/public/bond-rules.js";
 import { buildV2TeamSnapshots } from "../versus/v2/team-snapshot-v2.js";
 

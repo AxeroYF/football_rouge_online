@@ -70,7 +70,7 @@ New-Item -ItemType Directory -Path $packageRoot | Out-Null
 $appRoot = Join-Path $packageRoot "app"
 New-Item -ItemType Directory -Path $appRoot,(Join-Path $packageRoot "runtime") | Out-Null
 
-$sourceDirs = @("A_profile", "admin", "devtool", "game", "legendary_profile", "offline", "src", "versus", "x_profile")
+$sourceDirs = @("A_profile", "admin", "devtool", "legendary_profile", "offline", "shared", "src", "versus", "x_profile")
 foreach ($name in $sourceDirs) {
   $source = Join-Path $ProjectRoot $name
   if (-not (Test-Path -LiteralPath $source)) { throw "缺少源码目录：$source" }

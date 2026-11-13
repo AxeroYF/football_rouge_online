@@ -1,5 +1,5 @@
-import { DEFAULT_GAME_CONFIG } from "../game/public/config.js";
-import { positionFitScore, roleGroup } from "../game/public/schema.js";
+import { DEFAULT_GAME_CONFIG } from "../shared/football/config.js";
+import { positionFitScore, roleGroup } from "../shared/football/schema.js";
 import {
   fixedTraitFitness,
   hasTraitRule,
@@ -7,7 +7,7 @@ import {
   traitAdjustedAttribute,
   traitPositionFit,
   traitRules,
-} from "../game/public/trait-runtime.js";
+} from "../shared/football/trait-runtime.js";
 import { analyzeElevenFormation, formationStructureProfile, sanitizePositions } from "./rules.js";
 import { legendAbilityForName } from "./legend-abilities.js";
 import { VERSUS_TRAIT_CARDS } from "./trait-pool.js";

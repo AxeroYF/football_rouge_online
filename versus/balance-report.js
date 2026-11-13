@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { roleGroup } from "../game/public/schema.js";
+import { roleGroup } from "../shared/football/schema.js";
 import { EXTRA_DURATION_MS, HALFTIME_ADJUSTMENT_MS, PENALTY_KICK_INTERVAL_MS, REGULAR_DURATION_MS, advanceVersusMatch, createVersusMatch } from "./match-engine.js";
 import { REAL_PLAYER_POOLS, REAL_PLAYERS } from "./player-pool.js";
 import { VERSUS_TRAIT_CARDS } from "./trait-pool.js";

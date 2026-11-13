@@ -1,0 +1,22 @@
+.game-settings-trigger{white-space:nowrap;min-height:40px}
+#league-dialog-overlay.game-settings-dialog-overlay{padding:16px;place-items:center;overflow:hidden}
+.league-dialog.game-settings-dialog{width:min(760px,100%);max-height:calc(100dvh - 32px);margin:0;padding:0;display:flex;flex-direction:column;overflow:hidden;background:var(--panel);color:var(--ink)}
+.game-settings-dialog>header{flex:none;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
+.game-settings-dialog>header h2{font-size:24px;margin:3px 0 6px}
+.game-settings-dialog>header small{color:var(--cyan);font-size:11px}
+.game-settings-dialog>header p{margin:0;color:var(--muted);font-size:13px}
+.game-settings-content{min-height:0;overflow:auto;overscroll-behavior:contain;padding:4px 24px 18px}
+.game-settings-content>section{padding:18px 0 4px;border-bottom:1px solid var(--line)}
+.game-settings-content>section:last-child{border-bottom:0}
+.game-settings-content h3{font-size:16px;margin:0 0 6px;color:var(--ink)}
+.game-setting-row{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:14px 0;min-height:68px}
+.game-setting-row>span{display:grid;gap:5px;min-width:0}
+.game-setting-row b{font-size:14px;font-weight:600}
+.game-setting-row small{font-size:12px;color:var(--muted);line-height:1.6}
+.game-setting-row select{flex:none;min-width:130px;min-height:40px;padding:7px 12px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:6px;font:inherit;font-size:14px}
+.game-setting-row input[type=checkbox]{flex:none;appearance:auto;width:21px;height:21px;accent-color:var(--cyan);margin:12px 4px}
+.game-settings-motion-note{font-size:12px;line-height:1.6;color:var(--muted);padding:0 0 8px;margin:0}
+.game-settings-account .button{margin:10px 0}
+.game-settings-footer{flex:none;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:16px 24px;border-top:1px solid var(--line);background:var(--panel)}
+.game-settings-footer>span{margin-right:auto;font-size:12px;color:var(--muted)}
+@media(max-width:650px){.game-settings-dialog>header{padding:18px 16px}.game-settings-content{padding-inline:16px}.game-setting-row{gap:12px}.game-setting-row select{min-width:112px;min-height:44px;font-size:16px}.game-settings-footer{padding:12px 16px}.game-settings-footer>span{width:100%}.topbar .game-settings-trigger{min-height:36px;padding:0 9px;font-size:11px}}

@@ -1,4 +1,4 @@
-import { roleGroup } from "../../game/public/schema.js";
+import { roleGroup } from "../../shared/football/schema.js";
 import { resolveV2MatchParameters, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
 import { buildV21StageDynamicShapeSnapshot, buildV2SpatialMatchup, buildV2StageSpatialCache, buildV2StageSpatialMatchup } from "./spatial-model-v2.js";
 import { buildV2TeamSnapshots } from "./team-snapshot-v2.js";
@@ -9,7 +9,10 @@ import {
   v2DutyStageMultiplier,
 } from "./player-duties-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
-import {isV3} from "../v3/model-config.js";
+import {isV3,isV32} from "../v3/model-config.js";
+import {simulatePossessionFlow} from "../v3/possession-flow.js";
+import {chooseBounded} from "../v3/action-policy.js";
+import {zonePoint} from "../v3/flow-state.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
 const round = (value, digits = 4) => Number(Number(value).toFixed(digits));
@@ -158,17 +161,22 @@ function safeRoll(rng) {
   return clamp(value, 0, 0.999999999999);
 }
 
-function weightedPick(entries, weight, rng) {
+function weightedPick(entries, weight, rng, trace = null) {
   if (!entries.length) return null;
   const weighted = entries.map((entry) => ({ entry, weight:Math.max(0, Number(weight(entry)) || 0) }));
   const total = weighted.reduce((sum, item) => sum + item.weight, 0);
-  if (total <= 0) return entries[Math.floor(safeRoll(rng) * entries.length)];
-  let roll = safeRoll(rng) * total;
+  const unitRoll=safeRoll(rng);
+  const record=selected=>{
+    if(trace)trace({selected:selected.id??selected.target,candidates:weighted.map(({entry,weight})=>({id:entry.id??entry.target,weight:round(weight),share:round(total>0?weight/total:1/entries.length)})),roll:unitRoll});
+    return selected;
+  };
+  if (total <= 0) return record(entries[Math.floor(unitRoll * entries.length)]);
+  let roll = unitRoll * total;
   for (const item of weighted) {
     roll -= item.weight;
-    if (roll <= 0) return item.entry;
+    if (roll <= 0) return record(item.entry);
   }
-  return weighted.at(-1).entry;
+  return record(weighted.at(-1).entry);
 }
 
 function playerById(team) {
@@ -184,12 +192,12 @@ function zoneCandidates(zoneTeam, playerTeam, zoneId, side) {
   })).filter((player) => player.id);
 }
 
-function chooseActor(team, zoneId, stage, rng, previousActorId = null, continuationWeight = 1, connection = null, previousStageContext = null) {
+function chooseActor(team, zoneId, stage, rng, previousActorId = null, continuationWeight = 1, connection = null, previousStageContext = null, trace = null, parameters = V2_MATCH_PARAMETERS) {
   const candidates = zoneCandidates(team, team, zoneId, "own");
   const outfield = candidates.filter((player) => roleGroup(player.assignedRole) !== "GK");
   const pool = outfield.length ? outfield : candidates;
   const hasPassingOption = Boolean(previousActorId) && pool.some((player) => player.id !== previousActorId);
-  return weightedPick(pool, (player) => {
+  const score=(player) => {
     const targetLayoff = previousStageContext?.targetSupport && previousStageContext?.routeType === "direct"
       ? (player.id === previousActorId ? .46 : 1.34)
       : 1;
@@ -197,19 +205,28 @@ function chooseActor(team, zoneId, stage, rng, previousActorId = null, continuat
       * v2DutyStageMultiplier(player, stage, { routeType:connection?.routeType })
       * (hasPassingOption && player.id === previousActorId ? continuationWeight : 1)
       * targetLayoff;
-  }, rng);
+  };
+  return isV32(parameters)?chooseBounded(pool,score,rng,{judgment:Number(team.players.find(p=>p.id===previousActorId)?.attributes?.decisions??75),trace,kind:"actor",tolerance:parameters.v32.decisionTolerance}):weightedPick(pool,score,rng,trace);
 }
 
-function chooseDefender(team, opponent, zoneId, stage, rng) {
+function chooseDefender(team, opponent, zoneId, stage, rng, trace = null, parameters = V2_MATCH_PARAMETERS) {
   const candidates = zoneCandidates(team, opponent, zoneId, "opponent");
   if (stage === "shot") {
     const goalkeepers = opponent.players.filter((player) => roleGroup(player.assignedRole) === "GK");
-    if (goalkeepers.length) return weightedPick(goalkeepers, (player) => weightedMetric(player, GOALKEEPER_METRICS), rng);
+    if (goalkeepers.length) return weightedPick(goalkeepers, (player) => weightedMetric(player, GOALKEEPER_METRICS), rng, trace);
   }
   const outfield = candidates.filter((player) => roleGroup(player.assignedRole) !== "GK");
   const pool = outfield.length ? outfield : candidates;
   const marking = opponent.outOfPossessionDetails?.marking ?? "mixed";
-  return weightedPick(pool, (player) => player.influence * (stage === "shot" ? weightedMetric(player, DEFENSE_METRICS[stage]) : v2MarkingDefenderScore(player, marking, stage)) * v2DutyDefenderMultiplier(player, stage), rng);
+  if(isV32(parameters)) {
+    const point=zonePoint(zoneId),defendingPoint={x:100-point.x,y:100-point.y};
+    return chooseBounded(pool,player=>{
+      const distance=Math.hypot(player.localPosition.x-defendingPoint.x,player.localPosition.y-defendingPoint.y);
+      const arrival=distance/(.5+Number(player.metrics?.movement??65)/100);
+      return (v2MarkingDefenderScore(player,marking,stage)+35)*v2DutyDefenderMultiplier(player,stage)/(4+arrival);
+    },rng,{judgment:85,tolerance:.08,trace,kind:"defender-arrival"});
+  }
+  return weightedPick(pool, (player) => player.influence * (stage === "shot" ? weightedMetric(player, DEFENSE_METRICS[stage]) : v2MarkingDefenderScore(player, marking, stage)) * v2DutyDefenderMultiplier(player, stage), rng, trace);
 }
 
 function connectionFrom(team, currentZone, targetBand) {
@@ -257,7 +274,7 @@ function lowBlockOutletAvailability(team, parameters) {
   return minimumMultiplier + (1 - minimumMultiplier) * countMultiplier * qualityMultiplier;
 }
 
-function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, transition) {
+function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, transition, trace = null) {
   const directness = team.tacticalDimensions.directness;
   const counter = team.tacticalDimensions.counterAttack;
   const routeParameters = parameters.chain.route;
@@ -274,10 +291,11 @@ function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, tran
     : 0;
   const roll = safeRoll(rng);
   const routeType = roll < counterChance ? "counter" : roll < counterChance + directChance ? "direct" : "structured";
+  if(trace)trace({kind:"route-type",routeType,counterChance,directChance,roll});
   const routeTargetBand = routeType === "direct" && stage === "progression" ? "box" : targetBand;
   const connections = connectionFrom(team, currentZone, routeTargetBand);
   if (connections.length) {
-    const selected = weightedPick(connections, (connection) => Math.pow(Math.max(0.01, routeScore(team, connection, parameters)), 2), rng);
+    const selected = weightedPick(connections, (connection) => Math.pow(Math.max(0.01, routeScore(team, connection, parameters)), 2), rng, trace?value=>trace({kind:"route-target",...value}):null);
     const quality = routeType === "direct"
       ? clamp(selected.quality - routeParameters.directConnectionPenalty + team.zones[selected.target].exploitableSpace * routeParameters.directSpaceReward, 0.04, 1)
       : routeType === "counter"
@@ -298,7 +316,7 @@ function chooseRoute(team, currentZone, targetBand, stage, rng, parameters, tran
     return { ...selected, quality:round(quality), routeType };
   }
   const fallbackZones = Object.values(team.zones).filter((zone) => zone.band === routeTargetBand && zone.own.occupancy > 0);
-  const target = weightedPick(fallbackZones, (zone) => Math.max(0.01, zone.controlShare + zone.exploitableSpace + (zone.progressionEdge + 1) / 2), rng);
+  const target = weightedPick(fallbackZones, (zone) => Math.max(0.01, zone.controlShare + zone.exploitableSpace + (zone.progressionEdge + 1) / 2), rng, trace?value=>trace({kind:"route-fallback",...value}):null);
   const fallbackCounterQuality = clamp(
     0.24 * counterRouteMultiplier * outletAvailability - deepSeverity * Number(commitmentConfig.counterConnectionPenaltyMaximum ?? 0.045),
     0.04,
@@ -425,7 +443,7 @@ function stateProbabilityAdjustment(parameters, team, stage, state, environment,
   const midfieldPenalty = (1 - midfieldIntegrity) * Number(parameters.spatial.midfieldStructure?.stagePenaltyMaximum?.[stage] ?? 0);
   const underThreeDefenderFailure = clamp(Number(team.underThreeDefenderFailure ?? 0), 0, 1);
   const backlineConfig = parameters.spatial.backlineExposure ?? {};
-  const underThreeDefenderPenalty = underThreeDefenderFailure * Number(backlineConfig.underThreeDefenderStagePenaltyMaximum?.[stage] ?? 0);
+  const underThreeDefenderPenalty = isV32(parameters)?0:underThreeDefenderFailure * Number(backlineConfig.underThreeDefenderStagePenaltyMaximum?.[stage] ?? 0);
   const styleProgressionBonus = stage === "progression"
     ? (Number(team.styleIdentity?.progressionMultiplier ?? 1) - 1) * 0.1
     : 0;
@@ -471,12 +489,19 @@ function stageProbability(parameters, stage, factors, adjustment) {
 }
 
 function attemptStage(context, stage, currentZone, connection = null) {
-  const { team, opponent, parameters, rng, outcomeRoll, recordRandomRolls, state, environment, chainIndex, possessionType, deferShotResolution, previousActorId, continuationWeight, previousStageContext } = context;
+  const { team, opponent, parameters, rng, outcomeRoll, domainRoll, recordRandomRolls, state, environment, chainIndex, possessionType, deferShotResolution, previousActorId, continuationWeight, previousStageContext } = context;
+  const disciplineRng=domainRoll?()=>domainRoll("discipline"):rng;
   const zone = team.zones[currentZone];
-  const actor = chooseActor(team, currentZone, stage, rng, previousActorId, continuationWeight, connection, previousStageContext);
-  const defender = chooseDefender(team, opponent, currentZone, stage, rng);
+  const trace=context.decisionTrace;
+  const actor = (isV32(parameters)&&context.preferredActorId?team.players.find(p=>p.id===context.preferredActorId):null)??chooseActor(team, currentZone, stage, rng, previousActorId, continuationWeight, connection, previousStageContext, trace?value=>trace({kind:"actor",...value}):null,parameters);
+  const defender = chooseDefender(team, opponent, currentZone, stage, rng, trace?value=>trace({kind:"defender",...value}):null,parameters);
   const factors = stageFactors(team, opponent, zone, actor, defender, connection, stage, parameters);
   const stateAdjustment = stateProbabilityAdjustment(parameters, team, stage, state, environment, chainIndex, possessionType);
+  if(isV32(parameters)) {
+    const actionAdjustment=(["recycle","switch"].includes(context.actionType)?.08:context.actionType==="carry"?(Number(actor?.attributes?.dribbling??70)-75)/350:0)
+      -(team.clockManagement==="quick"?.018:0);
+    stateAdjustment.actionDecision=actionAdjustment;stateAdjustment.total+=actionAdjustment;
+  }
   const probability = stageProbability(parameters, stage, factors, stateAdjustment);
   const roll = outcomeRoll?outcomeRoll(`stage:${team.teamIndex}:${stage}`):safeRoll(rng);
   const success = stage === "shot" && deferShotResolution ? true : roll < probability;
@@ -493,8 +518,8 @@ function attemptStage(context, stage, currentZone, connection = null) {
   const foulProbability = !success && defender && stage !== "shot"
     ? clamp((Number(parameters.events.baseFoulProbability ?? 0.025) + Math.max(0, defenderAggression - 65) / 700 + Math.max(0, 68 - defenderDiscipline) / 600) * refereeFactor * foulIntensityFactor * Number(defensiveCaptaincy?.foulMultiplier ?? 1) * Number(penaltyDraw?.foulMultiplier ?? 1), 0.01, 0.32)
     : 0;
-  const foul = foulProbability > 0 && safeRoll(rng) < foulProbability;
-  const penalty = foul && zone.band === "box" && safeRoll(rng) < clamp(
+  const foul = foulProbability > 0 && safeRoll(disciplineRng) < foulProbability;
+  const penalty = foul && zone.band === "box" && safeRoll(disciplineRng) < clamp(
     (Number(parameters.events.penaltyFoulBaseProbability ?? 0.025) + zone.own.attack * Number(parameters.events.penaltyFoulAttackWeight ?? (1 / 3000))) * Number(penaltyDraw?.penaltyMultiplier ?? 1),
     Number(parameters.events.minimumPenaltyFoulProbability ?? 0.04),
     Number(parameters.events.maximumPenaltyFoulProbability ?? 0.24),
@@ -502,11 +527,11 @@ function attemptStage(context, stage, currentZone, connection = null) {
   const cardProbability = foul ? clamp((parameters.environment.cardProbability[referee] ?? 0.2) * (usesRoughPlay ? Number(roughPlay.cardMultiplier ?? 1.55) : duelIntensity === "cautious" ? 0.76 : 1) * Number(defensiveCaptaincy?.cardMultiplier ?? 1), 0, 0.9) : 0;
   const directRedProbability = foul ? clamp((parameters.environment.directRedProbability[referee] ?? 0.02) * (usesRoughPlay ? Number(roughPlay.directRedMultiplier ?? 2.2) : duelIntensity === "cautious" ? 0.68 : 1) * Number(defensiveCaptaincy?.directRedMultiplier ?? 1), 0, 0.35) : 0;
   const effectiveCardProbability = v2RepeatYellowCardProbability(cardProbability, directRedProbability, defender?.matchStats?.yellowCards, parameters);
-  const cardRoll = foul ? safeRoll(rng) : 1;
+  const cardRoll = foul ? safeRoll(disciplineRng) : 1;
   const card = cardRoll < directRedProbability ? "red" : cardRoll < effectiveCardProbability ? "yellow" : null;
   const simulationYellowChance = Number(penaltyDraw?.simulationYellowChance ?? 0)
     * (Number(actor?.matchStats?.yellowCards ?? 0) >= 1 ? Number(parameters.events.secondYellowCardMultiplier ?? 1) : 1);
-  const simulationYellow = Boolean(foul && simulationYellowChance > 0 && safeRoll(rng) < simulationYellowChance);
+  const simulationYellow = Boolean(foul && simulationYellowChance > 0 && safeRoll(disciplineRng) < simulationYellowChance);
   const failureOutcome = foul ? (penalty ? "penaltyWon" : "setPieceWon") : defender ? "defensiveTurnover" : "unforcedTurnover";
   return {
     stage,
@@ -548,6 +573,7 @@ function attemptStage(context, stage, currentZone, connection = null) {
 export function simulateV2PossessionChain(teams, options = {}) {
   if (!Array.isArray(teams) || teams.length !== 2) throw new Error("V2控球链需要恰好两支球队");
   const parameters = options.parameters ? resolveV2MatchParameters(options.parameters) : V2_MATCH_PARAMETERS;
+  if(isV32(parameters))return simulatePossessionFlow(teams,{...options,parameters,rng:options.rng??Math.random},{attemptStage,compactReplayShape});
   const rng = options.rng ?? Math.random;
   if (typeof rng !== "function") throw new Error("V2控球链需要随机函数");
   const snapshotTeams = options.snapshotTeams ?? buildV2TeamSnapshots(teams, { parameters, state:options.state, environment:options.environment });
@@ -584,12 +610,14 @@ export function simulateV2PossessionChain(teams, options = {}) {
   const replaySequence = [];
   let previousActorId = null;
   let previousStageContext = null;
+  const decisionTrace=options.recordDecisionTrace?[]:null;
   for (const stage of parameters.chain.stages.slice(firstStageIndex)) {
     const stageSpatial = stageSpatials[attackingIndex]?.[stage];
     if (!stageSpatial) throw new Error(`V2控球链缺少${stage}阶段空间快照`);
     let team = stageSpatial.teams[attackingIndex];
     const targetBand = STAGE_TARGET_BAND[stage];
-    const connection = targetBand ? chooseRoute(team, currentZone, targetBand, stage, rng, parameters, counterOpportunity ? options.transition : null) : null;
+    const trace=decisionTrace?value=>decisionTrace.push({stage,...value}):null;
+    const connection = targetBand ? chooseRoute(team, currentZone, targetBand, stage, rng, parameters, counterOpportunity ? options.transition : null, trace) : null;
     if (targetBand && !connection) break;
     if (connection) currentZone = connection.target;
     const ballLane = currentZone.split(":")[1] ?? "center";
@@ -610,7 +638,8 @@ export function simulateV2PossessionChain(teams, options = {}) {
     const continuationWeight = parameters.dynamicShape.mode === "candidate"
       ? Number(parameters.dynamicShape.teamPlay?.sameActorContinuationWeight ?? 0.5)
       : 1;
-    const context = { team, opponent, parameters, rng, outcomeRoll:options.outcomeRoll, recordRandomRolls, state:options.state, environment:options.environment, chainIndex:options.chainIndex, possessionType, deferShotResolution:Boolean(options.deferShotResolution), previousActorId, previousStageContext, continuationWeight };
+    const context = { team, opponent, parameters, rng, outcomeRoll:options.outcomeRoll, domainRoll:options.domainRoll, recordRandomRolls, state:options.state, environment:options.environment, chainIndex:options.chainIndex, possessionType, deferShotResolution:Boolean(options.deferShotResolution), previousActorId, previousStageContext, continuationWeight };
+    context.decisionTrace=trace;
     const dynamicShape = recordDynamicShape
       ? compactDynamicShapeTrace(effectiveStageSpatial.dynamicShape ?? buildV21StageDynamicShapeSnapshot(snapshotTeams, attackingIndex, stage, {
         parameters,
@@ -633,7 +662,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
         return runners.length ? runners.reduce((sum, player) => sum + v2DutyOffsideMultiplier(player), 0) / runners.length : 1;
       })();
       const boundedOffsideProbability = clamp(offsideProbability, Number(offside.minimumProbability ?? 0.006), Number(offside.maximumProbability ?? 0.14));
-      const offsideRoll = safeRoll(rng);
+      const offsideRoll = options.domainRoll?options.domainRoll("execution"):safeRoll(rng);
       const usesOffsideTrap = opponent.outOfPossessionDetails?.lineStrategy === "offside";
       if ((usesOffsideTrap && offsideRoll < boundedOffsideProbability) || (!usesOffsideTrap && offsideRoll > 0 && offsideRoll < boundedOffsideProbability)) {
         if (stageReplayShape) replaySequence.push({ ...stageReplayShape, zone:currentZone, success:false, outcome:"offside" });
@@ -668,7 +697,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
   const finalStage = stages.at(-1);
   const weather = options.environment?.weather ?? "sunny";
   const weatherEventProbability = parameters.environment.weatherEventPerChain[weather] ?? 0;
-  const weatherEvent = safeRoll(rng) < weatherEventProbability
+  const weatherEvent = (options.domainRoll?options.domainRoll("environment"):safeRoll(rng)) < weatherEventProbability
     ? { type:["storm", "superStorm"].includes(weather) ? "lightningInjury" : "weatherInjury", weather, probability:weatherEventProbability }
     : null;
   return deepFreeze({
@@ -686,6 +715,7 @@ export function simulateV2PossessionChain(teams, options = {}) {
     goal:finalStage.stage === "shot" && finalStage.success && !options.deferShotResolution,
     xg:finalStage.stage === "shot" ? finalStage.probability : 0,
     independentEvents:weatherEvent ? [weatherEvent] : [],
+    ...(decisionTrace?{decisionTrace}:{}),
     ...(replayShape ? { replayShape } : {}),
     ...(replaySequence.length ? { replaySequence } : {}),
     stages,

@@ -2,10 +2,16 @@ import { VERSUS_REFEREES } from "../match-engine.js";
 import { analyzeElevenBoardFormation } from "../public/formation-rules.js";
 import { activeCaptain } from "../public/captain-rules.js";
 import { calculateV2TacticalFit } from "../public/v2-tactical-fit.js";
-import { advanceV2Match, createV2Match, finishV2Match, publicV2Match, v2TurnoverRestartZone } from "./match-engine-v2.js";
+import { advanceV2Match, createV2Match, finishV2Match, publicV2Match, restoreV2MatchRuntime, v2TurnoverRestartZone } from "./match-engine-v2.js";
 import { v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
-import {isV3,engineProfile,V3_SPATIAL_VERSION} from "../v3/model-config.js";
+import {isV3,isV32,isV33,engineProfile,V3_SPATIAL_VERSION} from "../v3/model-config.js";
+import {tacticalExecutionFields} from "../public/tactical-execution.js";
+import {tacticalProcessSummary} from "../v3/tactical-execution.js";
+import {flowClock} from "../v3/flow-state.js";
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
+import {matchRandom} from "../v3/random-state.js";
+import {matchReliabilitySummary,lockMatchConfiguration} from "../v3/match-configuration.js";
+import {diagnosticSummary} from "../v3/diagnostics.js";
 
 const REGULATION_LIVE_DURATION_MS = 120_000;
 const EXTRA_TIME_LIVE_DURATION_MS = 40_000;
@@ -114,8 +120,8 @@ function buildTacticalReview(match) {
   return {
     version:2,
     source:"v2-possession-chains",
-    chainModelVersion:isV3(match.parameters)?"possession-chain-v3.0":"possession-chain-v2.1",
-    spatialModelVersion:isV3(match.parameters)?V3_SPATIAL_VERSION:match.parameters?.dynamicShape?.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2-alpha.1",
+      chainModelVersion:isV33(match.parameters)?"possession-chain-v3.3":isV32(match.parameters)?"possession-chain-v3.2":isV3(match.parameters)?"possession-chain-v3.0":"possession-chain-v2.1",
+    spatialModelVersion:isV32(match.parameters)?"spatial-v3.2-continuous.1":isV3(match.parameters)?V3_SPATIAL_VERSION:match.parameters?.dynamicShape?.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2-alpha.1",
     chainCount:(match.chains ?? []).length,
     grid:{ lanes, bands },
     teams,
@@ -158,6 +164,10 @@ function reportTeam(match, team, teamIndex) {
   return {
     name:team.name, importedLineup:Boolean(team.importedLineup), captainId:team.captainId ?? null, activeCaptainId:activeCaptain(team)?.id ?? null, captainStyle:team.captainStyle ?? null, tactic:team.tactic, style:team.style, possessionStyle:team.possessionStyle, defensiveBlock:team.defensiveBlock, transitionStyle:team.transitionStyle, duelIntensity:team.duelIntensity, inPossessionDetails:structuredClone(team.inPossessionDetails ?? null), outOfPossessionDetails:structuredClone(team.outOfPossessionDetails ?? null),
     attackFocus:team.attackFocus ?? "center", defenseFocus:team.defenseFocus ?? "center", styleFit:Number((tacticalFit / 100).toFixed(3)), tacticalFit,
+    tacticalModelVersion:team.tacticalModelVersion, activePlan:team.activePlan,
+    ...(isV33(match.parameters)?tacticalExecutionFields(team):{}),
+    ...(isV32(match.parameters)?{lossTransition:team.lossTransition,restDefense:team.restDefense,clockManagement:team.clockManagement}:{}),
+    activePlanTrigger:{ goalDifference:Number(team.score) - Number(match.teams[1 - teamIndex].score), threshold:Number(team.tacticalPlans?.[team.activePlan]?.triggerGoalDifference ?? 1) },
     positionStructure:null, inMatchPositionAdjustment:team.activePlan !== "opening", markingTargetId:null,
     formation:analyzeElevenBoardFormation(activePlayers, team.positions, team.formationLines).name, activeCount:activePlayers.length,
     positions:structuredClone(team.positions),
@@ -195,8 +205,8 @@ export function v2PenaltyShootout(match) {
     .filter((player) => !excludedIds[teamIndex].has(player.id))
     .sort((left, right) => Number(right.id === captainIds[teamIndex]) - Number(left.id === captainIds[teamIndex]) || shootoutAbility(shootoutEnginePlayer(match, teamIndex, right)) - shootoutAbility(shootoutEnginePlayer(match, teamIndex, left)) || left.id.localeCompare(right.id)));
   const keepers = match.teams.map((team) => team.players.find((player) => player.active && player.role === "GK") ?? team.players.find((player) => player.role === "GK"));
-  const goalTeamIndex = match.rng() < 0.5 ? 0 : 1;
-  const firstTeamIndex = match.rng() < 0.5 ? 0 : 1;
+  const goalTeamIndex = matchRandom(match,"shot") < 0.5 ? 0 : 1;
+  const firstTeamIndex = matchRandom(match,"shot") < 0.5 ? 0 : 1;
   const attempts = [0, 0];
   const kicks = [];
   adapterEvent(match, "penaltyShootoutStart", 120, firstTeamIndex, `点球大战开始。掷硬币决定在${match.teams[goalTeamIndex].name}一侧球门进行，${match.teams[firstTeamIndex].name}选择先罚。`, {
@@ -216,7 +226,7 @@ export function v2PenaltyShootout(match) {
     const engineKeeper = shootoutEnginePlayer(match, 1 - teamIndex, keeper);
     const keeping = Number(engineKeeper?.attributes?.goalkeeping ?? engineKeeper?.overall ?? 55) * 0.58 + Number(engineKeeper?.attributes?.reflexes ?? 55) * 0.42;
     const probability = clamp(0.74 + (finishing - keeping) / 300, 0.58, 0.9);
-    const roll = match.rng();
+    const roll = matchRandom(match,"shot");
     const scored = roll < probability;
     const saved = !scored && roll < probability + (1 - probability) * 0.72;
     attempts[teamIndex] += 1;
@@ -262,6 +272,8 @@ function finishReport(match) {
   match.penalties = penalties;
   match.report = {
     engineVersion:match.engineVersion, modelVersion:match.modelVersion, engineProfile:match.engineProfile,
+    reliability:matchReliabilitySummary(match),
+    clock:flowClock(match),
     dynamicShapeMode:match.parameters?.dynamicShape?.mode ?? "off",
     dynamicShapeModelVersion:match.parameters?.dynamicShape?.modelVersion ?? null,
     dynamicShapeInfluence:Number(match.parameters?.dynamicShape?.stableInfluence ?? 0),
@@ -276,6 +288,8 @@ function finishReport(match) {
     importantEvents:publicEvents(match.events.filter((event) => event.importance !== "normal")),
     events:publicEvents(match.events), analysisTimeline:structuredClone(match.analysisTimeline ?? []),
     tacticalReview:buildTacticalReview(match),
+    ...(isV33(match.parameters)?{tacticalExecution:tacticalProcessSummary(match)}:{}),
+    engineDiagnostics:diagnosticSummary(match),
     dotReplay:match.dotReplayEnabled ? {
       version:9,
       engineProfile:match.engineProfile,
@@ -352,6 +366,7 @@ function finishAtRegulation(match) {
 }
 
 export function createYdlLeagueV2Match(seats, options = {}) {
+  const startedAt=Number(options.now??Date.now());
   const competitionMode = options.competitionMode ?? "league";
   const legNumber = Number(options.legNumber ?? 1);
   const weather = normalizeYdlV2WeatherKey(options.weather ?? "sunny", { competitionMode, legNumber, allowSuperStorm:options.allowSuperStorm });
@@ -367,6 +382,11 @@ export function createYdlLeagueV2Match(seats, options = {}) {
     parameters:options.parameters,
     dotReplayEnabled:Boolean(options.dotReplayEnabled),
     superStormStopMinute:options.superStormStopMinute,
+    diagnosticTrace:options.diagnosticTrace,
+    configurationContext:{regulationOnly,regulationChainCount:REGULATION_CHAIN_COUNT,
+      scheduledDurationMinutes:regulationOnly?90:120,competitionMode,legNumber,
+      aggregateBaseScore:Array.isArray(options.aggregateBaseScore)?options.aggregateBaseScore.map(Number):null,
+      startedAt},
   });
   match.regulationChainCount = REGULATION_CHAIN_COUNT;
   match.scheduledDurationMinutes = regulationOnly ? 90 : 120;
@@ -374,7 +394,8 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   match.phase = "playing";
   match.segment = "regular";
   match.competitionMode = competitionMode;
-  match.engineProfile = options.engineProfile ?? engineProfile(match.parameters);
+  const expectedProfile=options.engineProfile??engineProfile(match.parameters);
+  if(match.engineProfile!==expectedProfile)match.engineProfile=expectedProfile;
   match.legNumber = legNumber;
   match.regulationOnly = regulationOnly;
   match.aggregateBaseScore = Array.isArray(options.aggregateBaseScore) ? options.aggregateBaseScore.map(Number) : null;
@@ -385,22 +406,33 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   match.extraTimeStarted = false;
   match.extraTimeHalfTimeRecorded = false;
   match.penalties = null;
-  match.startedAt = Number(options.now ?? Date.now());
+  match.startedAt = startedAt;
   match.lastAdvancedAt = match.startedAt;
   match.pause = null;
   match.pauseUsed = [true, true];
   match.report = null;
+  lockMatchConfiguration(match);
   return match;
 }
 
 export function advanceYdlLeagueV2Match(match, now = Date.now(), options = {}) {
   if (match.finished) return match;
+  if(typeof match.rng!=="function")restoreV2MatchRuntime(match);
   if (match.pendingPenaltyShootout) {
     advancePenaltyShootout(match, now);
     match.lastAdvancedAt = Number(now);
     return match;
   }
   const elapsed = Math.max(0, Number(now) - Number(match.startedAt ?? now));
+  if(isV32(match.parameters)) {
+    advanceV2Match(match,Infinity,{maximumChains:Number(options.maximumChains??8),wallElapsedMs:elapsed});
+    if(match.finished&&match.extraTimeStarted&&!match.abandoned&&currentDecisionScore(match)[0]===currentDecisionScore(match)[1]&&!match.penaltyShootout)preparePenaltyShootout(match,now);
+    if(match.finished&&match.extraTimeStarted&&!match.extraTimeScore)match.extraTimeScore=match.score.map((score,index)=>score-Number(match.regulationScore?.[index]??0));
+    match.aggregateScore=Array.isArray(match.aggregateBaseScore)?currentDecisionScore(match):null;
+    match.lastAdvancedAt=Number(now);match.phase=match.finished?"finished":"playing";
+    if(match.finished&&!match.report)finishReport(match);
+    return match;
+  }
   const maximumChains = Number(options.maximumChains ?? 8);
   let remainingChains = Number.isFinite(maximumChains) ? Math.max(0, maximumChains) : Infinity;
   const advanceTo = (desiredTarget) => {
@@ -461,6 +493,8 @@ export function publicYdlLeagueV2Match(match, now = Date.now(), viewerIndex = nu
   });
   return structuredClone({
     engineVersion:match.engineVersion, modelVersion:match.modelVersion, engineProfile:match.engineProfile, phase:match.phase, segment:match.segment,
+    reliability:matchReliabilitySummary(match),
+    clock:flowClock(match),
     minute:publicMinute(snapshot.minute), score:snapshot.score, competitionMode:match.competitionMode, legNumber:match.legNumber,
     aggregateBaseScore:match.aggregateBaseScore ? [...match.aggregateBaseScore] : null, aggregateScore:match.aggregateScore ? [...match.aggregateScore] : null, weather:publicWeather(match.environment.weather), referee:publicReferee(match.environment.referee),
     abandoned:Boolean(match.abandoned), abandonmentReason:match.abandonmentReason ?? null, stoppedAtMinute:match.weatherStopped ? Number(match.minute) : null,

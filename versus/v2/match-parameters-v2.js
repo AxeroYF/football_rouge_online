@@ -1,7 +1,7 @@
 ﻿import { readFileSync } from "node:fs";
-import { ATTRIBUTE_NAMES } from "../../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../../shared/football/schema.js";
 import { OFFLINE_ATTRIBUTE_SETTINGS, offlineEngineAttributeValue } from "../offline-attribute-settings.js";
-import { V3_RULES, isV3 } from "../v3/model-config.js";
+import { V3_RULES, V32_RULES, isV3, isV32 } from "../v3/model-config.js";
 
 const PARAMETER_PATH = new URL("./match-parameters-v2.json", import.meta.url);
 const REQUIRED_CHAIN_STAGES = Object.freeze(["possession", "buildUp", "progression", "finalThird", "chance", "shot"]);
@@ -77,7 +77,15 @@ export function validateV2MatchParameters(parameters) {
   const errors = [];
   if (!isObject(parameters)) return { valid:false, errors:["V2参数必须是对象"] };
   if (parameters.schemaVersion !== 1) errors.push("schemaVersion必须为1");
-  if (!/^(2\.1|3\.0)\.\d+$/.test(String(parameters.engineVersion ?? ""))) errors.push("engineVersion必须是2.1.x或3.0.x");
+  if (!/^(2\.1|3\.[0123])\.\d+$/.test(String(parameters.engineVersion ?? ""))) errors.push("engineVersion必须是2.1.x或3.0/3.1/3.2/3.3.x");
+  if(isV32(parameters))for(const [key,value] of Object.entries(V32_RULES)) {
+    if(!finite(parameters.v32?.[key])||parameters.v32[key]<=0||parameters.v32[key]>value*4)errors.push(`v32.${key}超出范围`);
+  }
+  if(isV32(parameters)) {
+    for(const key of ['maxChains','maxActions','maxRecycles'])if(!Number.isInteger(parameters.v32?.[key]))errors.push(`v32.${key}必须为整数`);
+    for(const key of ['counterPressMaximum','decisionTolerance'])if(parameters.v32?.[key]>1)errors.push(`v32.${key}不能大于1`);
+    if(parameters.v32?.counterPressSeconds>parameters.v32?.counterPressWindow)errors.push('反抢行动时间不能超过反抢窗口');
+  }
   if (isV3(parameters)) {
     const rules=parameters.v3??{};
     for(const [key,minimum,maximum] of [["midfieldTransitionWidth",.1,10],["executionDifferenceDivisor",150,400],["factorSensitivity",.1,1],["directionPreference",1,3]]) {
@@ -335,7 +343,7 @@ export function v2EngineAttributeValue(value, parameters = V2_MATCH_PARAMETERS, 
 
 export function resolveV2MatchParameters(overrides = {}) {
   if (resolvedParameters.has(overrides)) return overrides;
-  const base=isV3(overrides)?{...V2_MATCH_PARAMETERS,v3:V3_RULES}:V2_MATCH_PARAMETERS;
+  const base=isV3(overrides)?{...V2_MATCH_PARAMETERS,v3:V3_RULES,...(isV32(overrides)?{v32:V32_RULES}:{})}:V2_MATCH_PARAMETERS;
   const resolved = mergeKnown(base, overrides);
   assertV2MatchParameters(resolved);
   deepFreeze(resolved);

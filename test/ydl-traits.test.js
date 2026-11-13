@@ -6,7 +6,7 @@ import {
   traitAdjustedAttribute,
   traitAffinityMatches,
   traitPositionFit,
-} from "../game/public/trait-runtime.js";
+} from "../shared/football/trait-runtime.js";
 import { REAL_PLAYER_POOLS } from "../versus/player-pool.js";
 import {
   REGULAR_DURATION_MS,

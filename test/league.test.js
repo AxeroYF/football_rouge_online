@@ -1,3 +1,4 @@
+import {addLegacyXPlayer} from "./helpers/legacy-x-player.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -10,7 +11,7 @@ import { inferElevenBoardRoles as inferFormationBoardRoles } from "../versus/pub
 import { inferElevenBoardRoles } from "../versus/rules.js";
 import { automaticSubstitutionRank } from "../versus/automatic-substitution.js";
 import { buildV2TeamSnapshots } from "../versus/v2/team-snapshot-v2.js";
-import { publicYdlLeagueV2Match } from "../versus/v2/ydl-league-engine-adapter.js";
+import { publicYdlLeagueV2Match, advanceYdlLeagueV2Match } from "../versus/v2/ydl-league-engine-adapter.js";
 import { CLUB_BADGES, CLUB_BADGE_GRADE_RATES, COUNTRY_BADGES, COUNTRY_BADGE_GRADE_RATES } from "../versus/cosmetic-items.js";
 
 const NOW = Date.parse("2026-07-23T10:01:00+08:00");
@@ -39,64 +40,13 @@ test("YFFM1 联赛共用球员池包含新增梅老鼠传奇", () => {
     .every((name) => legends.some((player) => player.name === name)));
 });
 
-test("真人球队通过翻卡三选一接管AI且球员全服唯一", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
-  const first = account("player-a", "甲");
-  const second = account("player-b", "乙");
-  service.beginDraft(first, "Team Alpha");
-  let firstDraft = service.drawDraft(first, "GK").draft;
-  assert.equal(firstDraft.offer.length, 3);
-  const firstPlayerId = firstDraft.offer[0].id;
-  service.chooseDraft(first, firstPlayerId);
-  service.beginDraft(second, "Team Beta");
-  const secondDraft = service.drawDraft(second, "GK").draft;
-  assert.equal(secondDraft.offer.some((player) => player.id === firstPlayerId), false);
-  assert.throws(() => service.chooseDraft(second, firstPlayerId), /三张卡牌/);
-  service.autoDraft(first);
-  service.finishDraft(first);
-  join(service, second, "Team Beta");
-  const firstIds = new Set(service.accountTeam(first.id).rosterIds);
-  const secondIds = service.accountTeam(second.id).rosterIds;
-  assert.equal(firstIds.size, 23);
-  assert.equal(secondIds.length, 23);
-  assert.ok(secondIds.every((id) => !firstIds.has(id)));
-  assert.equal(service.accountTeam(first.id).name, "Team Alpha");
-});
-
-test("manual draft permits any positional composition", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
-  const user = account("all-attackers", "Attacker Collector");
-  service.beginDraft(user, "All Attack FC");
-  for (let index = 0; index < 22; index += 1) {
-    const draft = service.drawDraft(user, "ATT").draft;
-    assert.deepEqual(draft.allowedPools, ["ATT", "MID", "DEF", "GK"]);
-    service.chooseDraft(user, draft.offer[0].id);
-  }
-  service.autoDraft(user);
-  const result = service.finishDraft(user);
-  assert.equal(result.ownTeam.name, "All Attack FC");
-  assert.equal(result.ownTeam.roster.length, 23);
-  assert.ok(result.ownTeam.roster.every((player) => player.pool === "ATT"));
-  assert.equal(result.ownTeam.roster.filter((player) => player.starter).length, 11);
-  assert.equal(Object.keys(result.ownTeam.positions).length, 11);
-});
-
-test("draft choice returns to the four positional packs before the next three-card offer", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
-  const user = account("draft-step", "Draft Step");
-  const started = service.beginDraft(user, "Draft Step FC");
-  assert.deepEqual(Object.keys(started).sort(), ["draft", "serverTime", "updatedAt"]);
-  const first = service.drawDraft(user, "ATT").draft;
-  const chosenId = first.offer[0].id;
-  const picked = service.chooseDraft(user, chosenId).draft;
-  assert.equal(picked.selectedIds.includes(chosenId), true);
-  assert.equal(picked.selectedPlayers.length, 1);
-  assert.equal(picked.offerPool, null);
-  assert.deepEqual(picked.offer, []);
-  assert.deepEqual(picked.allowedPools, ["ATT", "MID", "DEF", "GK"]);
-  const next = service.drawDraft(user, "GK").draft;
-  assert.equal(next.offerPool, "GK");
-  assert.equal(next.offer.length, 3);
+test("批量建队接管AI且两位玩家的球员全服唯一", () => {
+  const service = new YellowDogsLeagueService({statePath:null,now:()=>NOW,rng:()=>.37});
+  const first=account("player-a","甲"),second=account("player-b","乙");
+  join(service,first,"Team Alpha");join(service,second,"Team Beta");
+  const ids=new Set(service.accountTeam(first.id).rosterIds);
+  assert.equal(ids.size,22);assert.equal(service.accountTeam(second.id).rosterIds.length,22);
+  assert.ok(service.accountTeam(second.id).rosterIds.every(id=>!ids.has(id)));
 });
 
 test("mid-season player takeover notifies existing players of the joining round and replaced AI team", () => {
@@ -657,14 +607,14 @@ test("联赛、杯赛与友谊赛默认统一使用V3且预测仍可显式使用
   assert.equal(leagueMatch.version, 2);
   assert.equal(cupMatch.version, 2);
   assert.equal(friendlyMatch.version, 2);
-  assert.equal(leagueMatch.engineVersion, "3.0.0");
-  assert.equal(leagueMatch.engineProfile, "v3.0-tactical-control.1");
-  assert.equal(cupMatch.engineProfile, "v3.0-tactical-control.1");
+  assert.equal(leagueMatch.engineVersion, "3.3.0");
+  assert.equal(leagueMatch.engineProfile, "v3.3-tactical-execution.1");
+  assert.equal(cupMatch.engineProfile, "v3.3-tactical-execution.1");
   assert.equal(leagueMatch.parameters.dynamicShape.mode, "stable");
   assert.equal(cupMatch.parameters.dynamicShape.mode, "stable");
   assert.equal(leagueMatch.dotReplayEnabled, false);
   assert.equal(cupMatch.dotReplayEnabled, false);
-  assert.equal(friendlyMatch.engineProfile, "v3.0-tactical-control.1");
+  assert.equal(friendlyMatch.engineProfile, "v3.3-tactical-execution.1");
   assert.equal(friendlyMatch.parameters.dynamicShape.mode, "stable");
   assert.equal(friendlyMatch.dotReplayEnabled, false);
   const legacyMatch = service.createFixtureMatch(fixture, 1, NOW, { competitionMode:"league", matchEngine:"v2" }).match;
@@ -766,7 +716,8 @@ test("服务重启后从V2直播检查点继续而不重新模拟已完成控球
     const round = first.state.rounds[0];
     const fixtureIndex = 0;
     const match = first.createFixtureMatch(round.fixtures[fixtureIndex], round.number, NOW, { competitionMode:"league" }).match;
-    match.nextChainIndex = 37;
+    advanceYdlLeagueV2Match(match, NOW + 60_000, { maximumChains:37 });
+    assert.equal(match.nextChainIndex,37);
     first.state.liveRound = { roundNumber:round.number, startedAt:NOW, matches:[{ code:"RESUME-1", fixtureIndex, spectators:{}, match }], newUnavailable:[] };
     first.save({ skipDailyBackup:true });
 
@@ -1532,25 +1483,27 @@ test("admin economy view summarizes S4 bulk purchases and duplicate-card release
   assert.ok(economy.ledger.some((entry) => entry.type === "s4-pack-buy" && entry.packType === "private-mixed" && entry.quantity === 2));
 });
 
-test("admin season controls preserve human squads, reset wallets to 100000 and archive results", () => {
+test("admin season controls preserve human squads and wallets and archive results", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW });
   const user = account("season-owner", "Season Owner");
   join(service, user, "Season FC");
   const rosterIds = [...service.accountTeam(user.id).rosterIds];
   service.wallet(user.id).balance = 12345;
   service.simulateNextRound();
+  const balanceBefore = service.wallet(user.id).balance;
   const restarted = service.restartSeason();
+  assert.equal(restarted.season.status, "registration");
   assert.equal(restarted.season.name, "S1");
   assert.equal(restarted.season.currentRound, 0);
   assert.equal(restarted.matches, 0);
   assert.equal(restarted.archives.length, 1);
   assert.deepEqual(service.accountTeam(user.id).rosterIds, rosterIds);
-  assert.equal(service.wallet(user.id).balance, 100000);
+  assert.equal(service.wallet(user.id).balance, balanceBefore);
   const nextSeason = service.startNewSeason();
   assert.equal(nextSeason.season.name, "S2");
   assert.equal(nextSeason.archives.length, 2);
   assert.deepEqual(service.accountTeam(user.id).rosterIds, rosterIds);
-  assert.equal(service.wallet(user.id).balance, 100000);
+  assert.equal(service.wallet(user.id).balance, balanceBefore);
 });
 
 test("daily reports summarize matches, players, availability, tactics and economy", () => {
@@ -1562,7 +1515,7 @@ test("daily reports summarize matches, players, availability, tactics and econom
   assert.equal(view.report.date, "2026-07-23");
   assert.equal(view.report.today.played, 1);
   assert.equal(view.report.topPlayers.length > 0, true);
-  assert.equal(view.report.availability.total, 23);
+  assert.equal(view.report.availability.total, 22);
   assert.ok(view.report.tactics.formation);
   assert.equal(typeof view.report.managerNote, "string");
   assert.equal(view.reportHistory[0].date, "2026-07-23");
@@ -2405,6 +2358,7 @@ test("最高处罚会清算并解散球队、由AI补位、均分补偿且按每
   const first = account("dissolution-recipient-a", "Recipient A");
   const second = account("dissolution-recipient-b", "Recipient B");
   join(service, punished, "违规球队");
+  addLegacyXPlayer(service,punished);
   join(service, first, "补偿甲队");
   join(service, second, "补偿乙队");
   service.grantS4Pack(punished.id, "legend-random", 1, { source:"test" });
@@ -2475,50 +2429,15 @@ test("奖励暂停会扣留联赛最终排名奖励且恢复后不补发", () =>
   assert.equal(service.wallet(user.id).balance, startingBalance);
 });
 
-test("admin X growth grants immediately reach every completed player with an X player", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
-  const first = account("x-grant-first", "X First");
-  const second = account("x-grant-second", "X Second");
-  join(service, first, "X First FC");
-  join(service, second, "X Second FC");
-  const firstTeam = service.accountTeam(first.id);
-  const secondTeam = service.accountTeam(second.id);
-  const firstX = firstTeam.rosterIds.find(isXPlayer);
-  const secondX = secondTeam.rosterIds.find(isXPlayer);
-
-  const adminView = service.grantXGrowthPointsFromAdmin({ points:4 });
-  assert.equal(service.view(first).xGrowth.points, 4);
-  assert.equal(service.view(second).xGrowth.points, 4);
-  assert.equal(service.view(first).xGrowth.grantedPoints, 4);
-  assert.equal(adminView.xGrowthGrants[0].recipientCount, 2);
-  assert.ok(service.view(second).inbox.some((message) => message.payload?.playerId === secondX && message.payload?.points === 4));
-  assert.ok(service.state.ledger.some((entry) => entry.playerId === firstX && entry.type === "admin-x-growth-grant" && entry.points === 4));
-  assert.throws(() => service.grantXGrowthPointsFromAdmin({ points:0 }), /1至1000/);
+test("admin X growth grants are paused without charging or issuing rewards", () => {
+  const service = new YellowDogsLeagueService({statePath:null,now:()=>NOW,rng:()=>.37});
+  const user=account("x-grant-first","X First");join(service,user,"No X FC");
+  const before=JSON.stringify(service.state.xPlayers),balance=service.wallet(user.id).balance;
+  assert.throws(()=>service.grantXGrowthPointsFromAdmin({points:4}),/暂时关闭/);
+  assert.throws(()=>service.grantXGrowthPointsFromAdmin({points:7,recipientMode:"specified",accountIds:[user.id]}),/暂时关闭/);
+  assert.equal(JSON.stringify(service.state.xPlayers),before);assert.equal(service.wallet(user.id).balance,balance);
 });
 
-test("admin X growth grants can target specified players", () => {
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
-  const first = account("x-grant-target", "X Target");
-  const second = account("x-grant-other", "X Other");
-  join(service, first, "X Target FC");
-  join(service, second, "X Other FC");
-  const firstX = service.accountTeam(first.id).rosterIds.find(isXPlayer);
-
-  const adminView = service.grantXGrowthPointsFromAdmin({
-    points:7,
-    recipientMode:"specified",
-    accountIds:[first.id],
-  });
-
-  assert.equal(service.view(first).xGrowth.points, 7);
-  assert.equal(service.view(second).xGrowth.points, 0);
-  assert.equal(adminView.xGrowthGrants[0].recipientMode, "specified");
-  assert.deepEqual(adminView.xGrowthGrants[0].recipientIds, [first.id]);
-  assert.equal(adminView.xGrowthGrants[0].recipientCount, 1);
-  assert.equal(service.state.ledger.filter((entry) => entry.type === "admin-x-growth-grant" && entry.playerId === firstX).length, 1);
-  assert.equal(service.state.ledger.some((entry) => entry.type === "admin-x-growth-grant" && entry.accountId === second.id), false);
-  assert.throws(() => service.grantXGrowthPointsFromAdmin({ points:1, recipientMode:"specified", accountIds:["missing-account"] }), /missing-account/);
-});
 test("admin can grant every S4 pack type through the replacement grant system", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("admin-mixed-owner", "Mixed Manager");
@@ -3340,7 +3259,7 @@ test("友谊赛以100体力直播且结算不消耗体力或累计停赛，只�
   service.tick();
   const live = service.state.liveFriendlies[0];
   assert.equal(live.match.version, 2);
-  assert.equal(live.match.engineVersion, "3.0.0");
+  assert.equal(live.match.engineVersion, "3.3.0");
   const liveStarter = live.match.teams[0].players.find((player) => player.id === starterId);
   assert.equal(liveStarter.state.fitness, 100);
   assert.equal(service.broadcasts().some((entry) => entry.code === live.code && entry.competition === "YDL友谊赛"), true);

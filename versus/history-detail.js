@@ -1,4 +1,4 @@
-import { positionFitScore } from "../game/public/schema.js";
+import { positionFitScore } from "../shared/football/schema.js";
 import { REAL_PLAYER_BY_ID } from "./player-pool.js";
 import { analyzeElevenFormation, defaultElevenPositions } from "./rules.js";
 

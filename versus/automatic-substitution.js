@@ -1,4 +1,4 @@
-import { roleGroup } from "../game/public/schema.js";
+import { roleGroup } from "../shared/football/schema.js";
 
 function hasUtilityPlayerTrait(candidate) {
   if (candidate?.utilityPlayer === true) return true;

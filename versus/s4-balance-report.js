@@ -1,7 +1,7 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { playerOverallFromAttributes, positionFitScore, roleGroup } from "../game/public/schema.js";
+import { playerOverallFromAttributes, positionFitScore, roleGroup } from "../shared/football/schema.js";
 import { advanceVersusMatch, createVersusMatch, HALFTIME_ADJUSTMENT_MS, REGULAR_DURATION_MS } from "./match-engine.js";
 import { isXPlayer, REAL_PLAYERS } from "./player-pool.js";
 import { defaultElevenPositions, inferElevenBoardRoles } from "./rules.js";

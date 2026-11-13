@@ -1,4 +1,4 @@
-import {ATTRIBUTE_NAMES} from '../game/public/schema.js';
+import {ATTRIBUTE_NAMES} from '../shared/football/schema.js';
 import {inferElevenBoardRoles,DEFAULT_FORMATION_LINES} from '../versus/public/formation-rules.js';
 
 export const layouts={

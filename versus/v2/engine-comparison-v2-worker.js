@@ -1,5 +1,5 @@
 import { parentPort, workerData } from "node:worker_threads";
-import { roleGroup } from "../../game/public/schema.js";
+import { roleGroup } from "../../shared/football/schema.js";
 import { advanceVersusMatch, createVersusMatch, HALFTIME_ADJUSTMENT_MS, REGULAR_DURATION_MS } from "../match-engine.js";
 import { buildS4BalanceSeat, createS4BalanceRng, pickS4BalanceArchetype } from "../s4-balance-report.js";
 import { simulateV2Match } from "./match-engine-v2.js";

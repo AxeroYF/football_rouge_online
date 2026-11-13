@@ -1,5 +1,10 @@
+import {TEAM_DRAFT_FORMATIONS as AI_TRAINING_FORMATIONS,TEAM_DRAFT_LIMIT,X_PLAYER_FEATURE_ENABLED} from "./public/team-draft-config.js";
+import {generateTeamDraft,validateTeamDraftPreferences,batchDraftView,recommendedDraftEntries} from "./team-draft.js";
+import {EXECUTION_GROUPS} from "./public/tactical-execution.js";
 import { resolveMatchEngines } from "../src/runtime-config.js";
 import { assertLineupRevision } from "./lineup-revision.js";
+import { withBroadcastRevision } from "./broadcast-revision.js";
+import { ADMIN_SEASON_ACTIONS } from "../admin/public/season-controls.js";
 import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { mkdir as mkdirAsync, open as openAsync, rename as renameAsync } from "node:fs/promises";
 import path from "node:path";
@@ -11,15 +16,20 @@ import { advanceVersusMatch, createVersusMatch, drawVersusReferee, publicMatch, 
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "./player-pool.js";
 import { analyzeElevenFormation, drawUniqueMixedPlayers, drawUniquePlayers, inferElevenBoardRoles, sanitizePositions } from "./rules.js";
-import { ATTRIBUTE_LABELS, ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../game/public/schema.js";
+import { ATTRIBUTE_LABELS, ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../shared/football/schema.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, drawYdlV2Weather, publicYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
-import { createV2MatchRng } from "./v2/match-engine-v2.js";
+import { restoreV2MatchRuntime } from "./v2/match-engine-v2.js";
 import { resolveV2MatchParameters } from "./v2/match-parameters-v2.js";
 import { V3_MATCH_PARAMETERS } from "./v3/match-parameters-v3.js";
 import { engineProfile } from "./v3/model-config.js";
 import { resolveV2PlayerDuty } from "./v2/player-duties-v2.js";
 import { buildV21TacticalShapePreview } from "./v2/tactical-shape-preview-v2.js";
+import { buildV2TeamSnapshots } from "./v2/team-snapshot-v2.js";
+import { buildV2TacticalProjection, resolveV2TacticalDimensions } from "./v2/spatial-model-v2.js";
+import { buildTacticalOutlook } from "./v2/tactical-outlook.js";
+import { tacticalPrincipleFields, isPrinciplesPlan } from "./public/tactical-principles.js";
+import { hasV2SplitTacticalPlan, resolveV2SplitTacticalPlan } from "./public/v2-tactical-profiles.js";
 import { applyS4Enhancement, S4_ECONOMY, S4_ENHANCEMENT, S4_PACK_PRICES, S4_PRICING, s4BaseCardReferenceValue, s4CardValueMultiplier, s4EffectiveOverall, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, s4OwnershipReferenceValue } from "./s4-balance.js";
 import { applyS4BondBonuses, createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
 import { DEFAULT_CAPTAIN_STYLE, normalizeCaptainStyle } from "./public/captain-rules.js";
@@ -371,40 +381,6 @@ const TEAM_NAMES = ["上海海港", "上海申花", "北京国安", "山东泰�
 const TACTICS = new Set(["allOutAttack", "positive", "balanced", "defensive", "parkBus"]);
 const STYLES = new Set(["possession", "longBall", "wingPlay", "counterAttack", "highPress", "lowBlock", "roughPlay"]);
 const FOCUSES = new Set(["balanced", "left", "center", "right"]);
-const AI_TRAINING_FORMATIONS = Object.freeze({
-  "4-3-3":Object.freeze([
-    ["GK",50,90], ["LB",18,68], ["CB",40,68], ["CB",60,68], ["RB",82,68],
-    ["DM",50,49], ["AM",40,40], ["AM",60,40], ["LW",20,20], ["ST",50,17], ["RW",80,20],
-  ]),
-  "4-4-2":Object.freeze([
-    ["GK",50,90], ["LB",18,68], ["CB",40,68], ["CB",60,68], ["RB",82,68],
-    ["LM",18,44], ["DM",40,47], ["AM",60,41], ["RM",82,44], ["ST",40,18], ["ST",60,18],
-  ]),
-  "4-2-3-1":Object.freeze([
-    ["GK",50,90], ["LB",18,68], ["CB",40,68], ["CB",60,68], ["RB",82,68],
-    ["DM",40,51], ["DM",60,51], ["LM",20,38], ["AM",50,36], ["RM",80,38], ["ST",50,16],
-  ]),
-  "4-1-4-1":Object.freeze([
-    ["GK",50,90], ["LB",18,68], ["CB",40,68], ["CB",60,68], ["RB",82,68],
-    ["DM",50,54], ["LM",18,39], ["AM",40,40], ["AM",60,40], ["RM",82,39], ["ST",50,17],
-  ]),
-  "3-4-3":Object.freeze([
-    ["GK",50,90], ["CB",34,68], ["CB",50,68], ["CB",66,68],
-    ["LM",18,44], ["DM",40,47], ["AM",60,41], ["RM",82,44], ["LW",20,20], ["ST",50,17], ["RW",80,20],
-  ]),
-  "3-5-2":Object.freeze([
-    ["GK",50,90], ["CB",34,68], ["CB",50,68], ["CB",66,68],
-    ["LM",16,44], ["DM",42,49], ["AM",50,38], ["AM",58,42], ["RM",84,44], ["ST",40,18], ["ST",60,18],
-  ]),
-  "5-3-2":Object.freeze([
-    ["GK",50,90], ["LB",12,69], ["CB",31,69], ["CB",50,69], ["CB",69,69], ["RB",88,69],
-    ["DM",50,50], ["AM",40,39], ["AM",60,39], ["ST",40,18], ["ST",60,18],
-  ]),
-  "5-4-1":Object.freeze([
-    ["GK",50,90], ["LB",12,69], ["CB",31,69], ["CB",50,69], ["CB",69,69], ["RB",88,69],
-    ["LM",18,43], ["DM",40,47], ["AM",60,41], ["RM",82,43], ["ST",50,17],
-  ]),
-});
 const AI_TRAINING_BENCH_ROLES = Object.freeze(["GK", "CB", "LB", "RB", "DM", "AM", "ST"]);
 const AI_TRAINING_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 const MIRROR_MARKETPLACE_COMMISSION_RATE = 0.3;
@@ -1253,7 +1229,7 @@ export class YellowDogsLeagueService {
     resumedLiveEntries.forEach((live) => {
       const match = live?.match;
       if (match?.version !== 2 || match.finished) return;
-      match.rng = createV2MatchRng(`${match.simulationSeed ?? "ydl-v2"}:resume:${match.nextChainIndex ?? 0}:${match.events?.length ?? 0}`);
+      restoreV2MatchRuntime(match);
     });
     this.state.cup ??= { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     this.state.cup.finalStartedAt ??= null;
@@ -1286,7 +1262,7 @@ export class YellowDogsLeagueService {
       job.directorServiceFeeRevenue = Math.max(0, Number(job.directorServiceFeeRevenue ?? 0));
       job.playerComputeNodeServiceFeeRevenue = Math.max(0, Number(job.playerComputeNodeServiceFeeRevenue ?? 0));
       const match = job.activeMatch;
-      if (match?.version === 2 && !match.finished) match.rng = createV2MatchRng(`${match.simulationSeed ?? "ydl-v2"}:resume:${match.nextChainIndex ?? 0}:${match.events?.length ?? 0}`);
+      if (match?.version === 2 && !match.finished) restoreV2MatchRuntime(match);
     });
     const completedBatchJobIds = new Set(this.state.mirrorMarketplace.batchReceipts.map((receipt) => receipt.id));
     this.state.mirrorMarketplace.batchJobs = this.state.mirrorMarketplace.batchJobs.filter((job) => {
@@ -1722,6 +1698,7 @@ export class YellowDogsLeagueService {
   }
 
   settleXGrowthTasks(playerId) {
+    if (!X_PLAYER_FEATURE_ENABLED) return 0;
     const player = REAL_PLAYER_BY_ID[playerId];
     const config = this.xPlayerConfig(playerId);
     if (!player || !config) return 0;
@@ -1773,7 +1750,7 @@ export class YellowDogsLeagueService {
       updatedAt:this.state.updatedAt,
       serverTime:this.now(),
       wallet:this.wallet(account.id),
-      xGrowth:this.publicXGrowth(account.id),
+      xGrowth:X_PLAYER_FEATURE_ENABLED ? this.publicXGrowth(account.id) : null,
     });
   }
 
@@ -1783,6 +1760,7 @@ export class YellowDogsLeagueService {
   }
 
   buyXGrowthPoints(account, quantity = 1, options = {}) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("巨星之路暂时关闭");
     if (!this.accountTeam(account.id)) throw new Error("你还没有加入联赛");
     const player = this.accountXPlayer(account.id);
     if (!player) throw new Error("当前球队没有X球员");
@@ -1804,6 +1782,7 @@ export class YellowDogsLeagueService {
   }
 
   spendXGrowthPoints(account, field, amount = 1, options = {}) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("巨星之路暂时关闭");
     if (!this.accountTeam(account.id)) throw new Error("你还没有加入联赛");
     const player = this.accountXPlayer(account.id);
     if (!player) throw new Error("当前球队没有X球员");
@@ -1840,6 +1819,7 @@ export class YellowDogsLeagueService {
   }
 
   resetXGrowth(account, role, secondaryRole = null, options = {}) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("巨星之路暂时关闭");
     if (!this.accountTeam(account.id)) throw new Error("浣犺繕娌℃湁鍔犲叆鑱旇禌");
     const player = this.accountXPlayer(account.id);
     if (!player) throw new Error("褰撳墠鐞冮槦娌℃湁X鐞冨憳");
@@ -3165,6 +3145,7 @@ export class YellowDogsLeagueService {
   }
 
   grantXGrowthPointsFromAdmin(body = {}) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("巨星之路暂时关闭");
     const points = Number(body.points);
     if (!Number.isInteger(points) || points < 1 || points > 1000) throw new Error("单次X球员加成点数必须为1至1000的整数");
     const mode = body.recipientMode === "specified" ? "specified" : "all";
@@ -3250,7 +3231,7 @@ export class YellowDogsLeagueService {
 
   reservedPlayerIds(exceptAccountId = null) {
     return new Set([
-      ...Object.entries(this.state.drafts).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, draft]) => draft.selectedIds),
+      ...Object.entries(this.state.drafts).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, draft]) => draft.mode === "batch" ? [...(draft.current?.entries ?? []), ...(draft.candidates ?? []).flatMap(attempt => attempt.entries)].map(entry => entry.id) : draft.selectedIds),
       ...Object.entries(this.state.shopOffers).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, offer]) => offer.playerIds ?? []),
       ...Object.entries(this.state.rewardOffers).filter(([accountId]) => accountId !== exceptAccountId).flatMap(([, offers]) => (offers ?? []).flatMap((offer) => offer.playerIds ?? [])),
       ...Object.entries(this.state.s4Packs.offers).filter(([accountId, offer]) => accountId !== exceptAccountId && offer?.status === "pending").flatMap(([, offer]) => offer.playerIds ?? []),
@@ -3904,6 +3885,8 @@ export class YellowDogsLeagueService {
   draftView(account) {
     const draft = this.state.drafts[account.id] ?? null;
     if (!draft) return null;
+    if (draft.mode === "batch") return clone(batchDraftView(draft, playerSummary));
+    if (!X_PLAYER_FEATURE_ENABLED) return clone({mode:"legacy",teamName:draft.teamName,selectedPlayers:[],offer:[]});
     const regularDraftComplete = validDraft(draft.selectedIds);
     return clone({
       teamId:draft.teamId,
@@ -4045,7 +4028,7 @@ export class YellowDogsLeagueService {
     const finalLeg = cup?.knockout?.final?.[0]?.legs?.[0];
     const finalRecord = finalLeg?.matchId ? this.state.matches.find((match) => match.id === finalLeg.matchId) : null;
     const playedAt = Number(finalRecord?.playedAt);
-    if (Number.isFinite(playedAt) && playedAt > 0 && /^(2\.1|3\.0)\./.test(String(finalRecord?.report?.engineVersion ?? ""))) {
+    if (Number.isFinite(playedAt) && playedAt > 0 && /^(2\.1|3\.[0123])\./.test(String(finalRecord?.report?.engineVersion ?? ""))) {
       const extraTimeDuration = finalRecord.report.extraTimePlayed ? 40_000 : 0;
       const penaltyKickCount = Number(finalRecord.report.penaltyShootout?.kicks?.length ?? 0);
       const penaltyDuration = finalRecord.report.penaltyShootout ? (penaltyKickCount + 1) * 2_000 : 0;
@@ -4669,7 +4652,7 @@ export class YellowDogsLeagueService {
   view(account, options = {}) {
     this.pruneInvalidS4EnhancementTraitOffers();
     const team = this.accountTeam(account.id);
-    const pendingTraitOffer = Object.values(this.state.s4Assets.traitOffers ?? {}).find((offer) => offer.ownerId === account.id && offer.status === "pending") ?? null;
+    const pendingTraitOffer = Object.values(this.state.s4Assets.traitOffers ?? {}).find((offer) => offer.ownerId === account.id && offer.status === "pending" && (X_PLAYER_FEATURE_ENABLED || !isXPlayer(offer.playerId))) ?? null;
     const ownTeam = team ? this.ownTeamView(account) : null;
     return clone({
       updatedAt:this.state.updatedAt,
@@ -4684,7 +4667,7 @@ export class YellowDogsLeagueService {
       draft:this.draftView(account),
       aiSlotsRemaining:this.state.teams.filter((entry) => !entry.ownerId && !Object.values(this.state.drafts).some((item) => item.teamId === entry.id)).length,
       wallet:this.wallet(account.id),
-      xGrowth:this.publicXGrowth(account.id),
+      xGrowth:X_PLAYER_FEATURE_ENABLED ? this.publicXGrowth(account.id) : null,
       shop:this.shopView(account.id),
       enhancement:{
         maxLevel:S4_ENHANCEMENT_MAX_LEVEL,
@@ -5949,7 +5932,7 @@ export class YellowDogsLeagueService {
     return clone(detail);
   }
 
-  beginDraft(account, teamNameValue) {
+  beginDraft(account, teamNameValue, preferences = {}) {
     if (this.accountTeam(account.id)) throw new Error("你已经拥有一支 YFFM1 球队");
     if (this.state.drafts[account.id]) return this.draftMutationView(account);
     const teamName = String(teamNameValue ?? "").trim();
@@ -5965,7 +5948,8 @@ export class YellowDogsLeagueService {
       ? availableTeams[0]
       : availableTeams.sort((left, right) => (cupRanks.get(left.id) ?? TEAM_COUNT) - (cupRanks.get(right.id) ?? TEAM_COUNT))[0];
     if (!team) throw new Error("当前10支球队都已由真人接管");
-    this.state.drafts[account.id] = { teamId:team.id, teamName, selectedIds:[], offerIds:[], offerPool:null, xPlayerId:null, xRole:null, xSecondaryRole:null, xHeightCm:null, xTemplatePlayerId:null, xAttributes:null, xTraitId:null, startedAt:this.now() };
+    const validated = validateTeamDraftPreferences(preferences);
+    this.state.drafts[account.id] = { mode:"batch", teamId:team.id, teamName, preferences:validated, attemptsUsed:0, current:null, candidates:[], selectedIds:[], offerIds:[], startedAt:this.now() };
     this.save();
     return this.draftMutationView(account);
   }
@@ -5975,6 +5959,7 @@ export class YellowDogsLeagueService {
   }
 
   drawDraft(account, pool) {
+    if (!X_PLAYER_FEATURE_ENABLED || this.state.drafts[account.id]?.mode === "batch") throw new Error("请使用三批整队揭晓流程");
     const draft = this.state.drafts[account.id];
     if (!draft || !REAL_PLAYER_POOLS[pool]) throw new Error("当前没有可用的选秀位置");
     if (draft.offerIds?.length) throw new Error("请先从当前三张卡牌中签下一人");
@@ -5989,6 +5974,7 @@ export class YellowDogsLeagueService {
   }
 
   chooseDraft(account, playerId) {
+    if (!X_PLAYER_FEATURE_ENABLED || this.state.drafts[account.id]?.mode === "batch") throw new Error("请使用三批整队揭晓流程");
     const draft = this.state.drafts[account.id];
     if (!draft?.offerIds?.includes(playerId)) throw new Error("只能选择本次翻开的三张卡牌");
     if (draft.selectedIds.length >= DRAFT_ROSTER_SIZE) throw new Error("建队选秀最多22人");
@@ -6006,6 +5992,7 @@ export class YellowDogsLeagueService {
   }
 
   chooseXPlayer(account, playerIdValue) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("X球员新获取已暂停");
     const draft = this.state.drafts[account.id];
     const playerId = String(playerIdValue ?? "");
     if (!draft || !validDraft(draft.selectedIds) || draft.offerIds?.length) throw new Error("请先完成22人初始球员选秀");
@@ -6022,6 +6009,7 @@ export class YellowDogsLeagueService {
   }
 
   configureXPlayer(account, body = {}) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("X球员新获取已暂停");
     const draft = this.state.drafts[account.id];
     if (!draft?.xPlayerId || !isXPlayer(draft.xPlayerId)) throw new Error("请先选择一名X级球员");
     const role = String(body.role ?? "");
@@ -6043,6 +6031,7 @@ export class YellowDogsLeagueService {
   }
 
   chooseXPlayerTrait(account, traitIdValue) {
+    if (!X_PLAYER_FEATURE_ENABLED) throw new Error("X球员新获取已暂停");
     const draft = this.state.drafts[account.id];
     const traitId = String(traitIdValue ?? "");
     if (!draft?.xPlayerId || !draft.xRole || !draft.xHeightCm) throw new Error("请先完成X级球员的位置与身高设置");
@@ -6052,20 +6041,56 @@ export class YellowDogsLeagueService {
     return this.draftMutationView(account);
   }
 
-  resetDraft(account) {
+  configureBatchDraft(account, body = {}) {
     const draft = this.state.drafts[account.id];
-    if (!draft) throw new Error("当前没有可重置的选秀");
-    draft.selectedIds = [];
-    draft.offerIds = [];
-    draft.offerPool = null;
-    draft.xPlayerId = null;
-    draft.xRole = null;
-    draft.xSecondaryRole = null;
-    draft.xHeightCm = null;
-    draft.xTemplatePlayerId = null;
-    draft.xAttributes = null;
-    draft.xTraitId = null;
-    draft.startedAt = this.now();
+    if (!draft) throw new Error("请先创建球队");
+    const preferences = validateTeamDraftPreferences(body);
+    if (draft.mode === "batch" && draft.current) throw new Error("当前一套尚未结束，请先完成三批揭晓");
+    if (draft.mode !== "batch") Object.assign(draft, {mode:"batch",attemptsUsed:0,current:null,candidates:[],selectedIds:[],offerIds:[],xPlayerId:null});
+    draft.preferences = preferences;
+    this.save();
+    return this.draftMutationView(account);
+  }
+
+  revealBatchDraft(account, body = {}) {
+    const draft = this.state.drafts[account.id];
+    if (!draft || draft.mode !== "batch") throw new Error("请先选择阵型与风格");
+    const stage = body.stage, number = body.attempt;
+    if (!Number.isInteger(stage) || stage < 0 || stage > 2 || !Number.isInteger(number)) throw new Error("无效的揭晓步骤");
+    if (number !== (draft.current?.number ?? draft.attemptsUsed + 1)) throw new Error("这套阵容已更新，请刷新后继续");
+    if (!draft.current) {
+      if (stage !== 0) throw new Error("请先揭晓前场球员");
+      if (draft.attemptsUsed >= TEAM_DRAFT_LIMIT) throw new Error("五次整队机会已经用完，请从当前阵容或候选中确认");
+      const attempt = generateTeamDraft(draft.preferences, this.unavailablePlayerIds(account.id), this.rng, number, draft.previousIds);
+      draft.current = attempt;
+      draft.attemptsUsed++;
+    }
+    if (stage > draft.current.revealed) throw new Error("请按前场、中场、后场及门将顺序揭晓");
+    if (stage === draft.current.revealed) { draft.current.revealed++; this.save(); }
+    return this.draftMutationView(account);
+  }
+
+  favoriteBatchDraft(account, body = {}) {
+    const draft = this.state.drafts[account.id];
+    if (draft?.mode !== "batch") throw new Error("当前没有整队候选");
+    const attempt = draft.current?.number === body.attempt ? draft.current : draft.candidates.find(a => a.number === body.attempt);
+    if (!attempt || attempt.revealed !== 3 || typeof body.saved !== "boolean") throw new Error("只能将已完整揭晓的阵容加入候选");
+    attempt.candidate = body.saved;
+    draft.candidates = draft.candidates.filter(a => a.number !== attempt.number);
+    if (body.saved) draft.candidates.push(clone(attempt));
+    this.save();
+    return this.draftMutationView(account);
+  }
+
+  resetDraft(account, body = {}) {
+    const draft = this.state.drafts[account.id];
+    if (draft?.mode !== "batch") throw new Error("旧版选人已暂停，请先选择阵型与风格");
+    if (!Number.isInteger(body.attempt)) throw new Error("请提供当前阵容编号");
+    if (!draft.current && body.attempt === draft.attemptsUsed) return this.view(account);
+    if (draft.current?.number !== body.attempt || draft.current.revealed !== 3) throw new Error("请完成本套三批揭晓后再重新开队");
+    if (draft.attemptsUsed >= TEAM_DRAFT_LIMIT) throw new Error("五次整队机会已经用完");
+    draft.previousIds = draft.current.entries.map(e => e.id);
+    draft.current = null;
     this.save();
     return this.view(account);
   }
@@ -6073,38 +6098,28 @@ export class YellowDogsLeagueService {
   autoDraft(account) {
     const draft = this.state.drafts[account.id];
     if (!draft) throw new Error("当前没有可用的选秀");
-    const targets = { GK:2, DEF:8, MID:7, ATT:5 };
-    draft.offerIds = [];
-    draft.offerPool = null;
-    while (draft.selectedIds.length < DRAFT_ROSTER_SIZE) {
-      const counts = draftCounts(draft.selectedIds);
-      const pool = Object.keys(targets).find((key) => counts[key] < targets[key]) ?? this.allowedDraftPools(draft)[0];
-      const unavailable = [...this.unavailablePlayerIds(account.id), ...draft.selectedIds];
-      const choices = drawUniquePlayers(pool, unavailable, this.rng, 3);
-      if (!choices.length) throw new Error("自动选秀无法补齐阵容");
-      choices.sort((a,b) => b.overall - a.overall);
-      draft.selectedIds.push(choices[0].id);
-    }
-    const xPlayer = this.availableXPlayers(account.id)[0];
-    if (!xPlayer) throw new Error("当前没有可用的X级球员");
-    draft.xPlayerId = xPlayer.id;
-    draft.xRole = "ST";
-    draft.xSecondaryRole = "LW";
-    draft.xHeightCm = 178;
-    const template = xPlayerAttributeTemplate(draft.xRole);
-    draft.xTemplatePlayerId = template.templatePlayerId;
-    draft.xAttributes = template.attributes;
-    draft.xTraitId = this.eligibleXTraits(draft.xRole)[0]?.id ?? null;
-    this.save();
+    if (draft.mode !== "batch") this.configureBatchDraft(account);
+    const number = draft.current?.number ?? draft.attemptsUsed + 1;
+    for (let stage = draft.current?.revealed ?? 0; stage < 3; stage++) this.revealBatchDraft(account, {stage,attempt:number});
     return this.draftMutationView(account);
   }
 
-  finishDraft(account) {
+  finishDraft(account, body = {}) {
     const draft = this.state.drafts[account.id];
-    if (!draft || draft.offerIds?.length || !validDraft(draft.selectedIds)) throw new Error("需要完成全部22次三选一");
-    if (!draft.xPlayerId || !draft.xRole || !draft.xHeightCm || !draft.xTraitId) throw new Error("需要完成X级球员选择、位置、身高和开局特性设置");
-    if (!this.availableXPlayers(account.id).some((player) => player.id === draft.xPlayerId)) throw new Error("该X级球员已经被其他玩家选择");
-    if (draft.selectedIds.some((id) => this.unavailablePlayerIds(account.id).has(id))) throw new Error("选秀期间有球员被其他球队签下，请重新选择");
+    let chosen = null;
+    if (!draft) {
+      if (this.accountTeam(account.id)) return this.view(account);
+      throw new Error("当前没有待确认的球队");
+    }
+    if (draft.mode === "batch") {
+      const number = body.attempt ?? draft.current?.number;
+      const attempt = draft.current?.number === number ? draft.current : draft.candidates.find(a => a.number === number);
+      if (!attempt || attempt.revealed !== 3 || !validDraft(attempt.entries.map(e => e.id))) throw new Error("请选择已完整揭晓的当前阵容或候选");
+      // Commit only the chosen full roster; candidate previews never grant assets.
+      chosen = {...attempt,entries:recommendedDraftEntries(attempt)};
+    } else if (draft.offerIds?.length || !validDraft(draft.selectedIds)) throw new Error("请先切换至新版整队建队流程");
+    const selectedIds = chosen?.entries.map(e => e.id) ?? draft.selectedIds;
+    if (selectedIds.some((id) => this.unavailablePlayerIds(account.id).has(id))) throw new Error("选秀期间有球员被其他球队签下，请重新选择");
     const team = this.state.teams.find((entry) => entry.id === draft.teamId && !entry.ownerId);
     if (!team) throw new Error("AI球队席位已经不可用");
     const replacedTeamName = team.name;
@@ -6116,28 +6131,25 @@ export class YellowDogsLeagueService {
     team.ownerId = account.id;
     team.ownerName = account.nickname;
     team.joinedAt = this.now();
-    team.rosterIds = [...draft.selectedIds, draft.xPlayerId];
-    team.preferredStarterIds = pickStartingIds(team.rosterIds);
-    team.positions = leagueBoardPositions(team.preferredStarterIds.map((id) => REAL_PLAYER_BY_ID[id]));
+    team.rosterIds = [...selectedIds];
+    team.preferredStarterIds = chosen ? chosen.entries.filter(e => e.starter).sort((a,b) => a.slot-b.slot).map(e => e.id) : pickStartingIds(team.rosterIds);
+    team.positions = chosen ? Object.fromEntries(chosen.entries.filter(e => e.starter).sort((a,b) => a.slot-b.slot).map(e => [e.id, {...e.position}])) : leagueBoardPositions(team.preferredStarterIds.map((id) => REAL_PLAYER_BY_ID[id]));
+    if (chosen) {
+      team.tactic = chosen.plan.tactic;
+      team.style = chosen.plan.style;
+      team.tacticalPlans = Object.fromEntries(["opening","leading","trailing"].map((state,index) => [state,{...clone(chosen.plan),positionPreset:POSITION_PRESET_KEYS[index],triggerGoalDifference:1}]));
+      const lines = deriveFormationLines(team.preferredStarterIds.map(id => ({id,position:team.positions[id]})));
+      team.formationLinePresets = Object.fromEntries(POSITION_PRESET_KEYS.map(key => [key,clone(lines)]));
+    }
     team.positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions)]));
     team.activeLineupSchemeId = "lineup-1";
     team.lineupSchemes = [lineupSchemeSnapshot({ ...team, competitionScope:"all" }, "lineup-1", "方案 1")];
     team.lineupSchemeAssignments = { league:"lineup-1", cup:"lineup-1", friendly:"lineup-1" };
     team.playerState = Object.fromEntries(team.rosterIds.map((id) => [id, { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 }]));
-    draft.selectedIds.forEach((playerId) => this.grantS4Card(team, playerId, {
+    selectedIds.forEach((playerId) => this.grantS4Card(team, playerId, {
       grantOwnership:true,
       acquisitionSource:"initial-draft",
     }));
-    this.state.xPlayers.assignments[draft.xPlayerId] = account.id;
-    this.state.xPlayers.configs[draft.xPlayerId] = { role:draft.xRole, secondaryRole:draft.xSecondaryRole, heightCm:draft.xHeightCm, templatePlayerId:draft.xTemplatePlayerId, attributes:clone(draft.xAttributes), overall:62, baseAbilityOverall:playerOverallFromAttributes(draft.xAttributes, draft.xRole) };
-    const xPlayer = REAL_PLAYER_BY_ID[draft.xPlayerId];
-    xPlayer.role = draft.xRole;
-    xPlayer.secondaryRole = draft.xSecondaryRole;
-    xPlayer.heightCm = draft.xHeightCm;
-    xPlayer.pool = roleGroup(draft.xRole);
-    xPlayer.attributes = clone(draft.xAttributes);
-    xPlayer.referenceAttributes = clone(draft.xAttributes);
-    this.grantS4Card(team, draft.xPlayerId, { grantOwnership:true, traitIds:[draft.xTraitId], acquisitionSource:"initial-x-player" });
     delete this.state.drafts[account.id];
     this.wallet(account.id);
     if (this.state.season.currentRound > 0) {
@@ -6224,6 +6236,7 @@ export class YellowDogsLeagueService {
       outOfPossession:OUT_OF_POSSESSION_PLANS.has(submitted.outOfPossession) ? submitted.outOfPossession : fallback.outOfPossession ?? "balanced",
       ...v2TacticalDetailsProperty(submitted, fallback),
       ...v2TacticalDimensionsProperty(submitted.tacticalDimensions, fallback.tacticalDimensions, submitted),
+      ...tacticalPrincipleFields(submitted, fallback),
       ...v2PlayerDutiesProperty(submitted.playerDuties, starters, roles, fallback.playerDuties),
     };
     const scoreState = planState === "leading" ? "leading" : planState === "trailing" ? "trailing" : "level";
@@ -6241,10 +6254,52 @@ export class YellowDogsLeagueService {
     });
   }
 
+  tacticalOutlook(account, body = {}) {
+    const team = this.accountTeam(account.id);
+    if (!team) throw new Error("你还没有加入联赛");
+    const preview = this.tacticalShapePreview(account, body);
+    const state = ["opening", "leading", "trailing"].includes(body.planState) ? body.planState : "opening";
+    const preset = { opening:"position1", leading:"position2", trailing:"position3" }[state];
+    const positions = Object.fromEntries(preview.frames[0].players.map(player => [player.id, player.basePosition]));
+    const roles = Object.fromEntries(preview.frames[0].players.map(player => [player.id, player.assignedRole]));
+    const starters = Object.keys(positions);
+    const formationLines = sanitizeFormationLines(body.formationLinePresets?.[preset] ?? team.formationLinePresets?.[preset]);
+    const raw = starters.map(id => ({ ...REAL_PLAYER_BY_ID[id], state:{ fitness:100, ...team.playerState[id] } }));
+    const shape = analyzeElevenBoardFormation(raw, positions, formationLines);
+    if (shape.counts.GK !== 1 || state === "opening" && [shape.counts.DEF, shape.counts.MID, shape.counts.ATT].some(count => count < 1)) {
+      return { valid:false, axes:[], message:"请先调整当前预案的阵型结构" };
+    }
+    const fallback = team.tacticalPlans?.[state] ?? { tactic:team.tactic, style:team.style };
+    const submitted = body.tacticalPlans?.[state] ?? {};
+    const plan = {
+      tactic:TACTICS.has(submitted.tactic) ? submitted.tactic : fallback.tactic,
+      style:STYLES.has(submitted.style) ? submitted.style : fallback.style,
+      inPossession:IN_POSSESSION_PLANS.has(submitted.inPossession) ? submitted.inPossession : fallback.inPossession ?? "balanced",
+      outOfPossession:OUT_OF_POSSESSION_PLANS.has(submitted.outOfPossession) ? submitted.outOfPossession : fallback.outOfPossession ?? "balanced",
+      ...v2TacticalDetailsProperty(submitted, fallback),
+      ...v2TacticalDimensionsProperty(submitted.tacticalDimensions, fallback.tacticalDimensions, submitted),
+      ...tacticalPrincipleFields(submitted, fallback),
+      ...v2PlayerDutiesProperty(submitted.playerDuties, starters, roles, fallback.playerDuties),
+    };
+    const parameters = parametersForEngine(DEFAULT_MATCH_ENGINE);
+    const seat = { ...plan, ...resolveV2SplitTacticalPlan(plan), splitTacticsExplicit:hasV2SplitTacticalPlan(plan),
+      players:this.chemistryAdjustedLineup(team, raw, positions), positions, formationLines,
+      tacticalDimensions:preview.dimensions, bondCatalog:S4_BOND_CATALOG,
+      captainId:Object.hasOwn(body, "captainId") ? body.captainId : team.captainId, captainStyle:body.captainStyle ?? team.captainStyle };
+    const score = state === "leading" ? [1,0] : state === "trailing" ? [0,1] : [0,0];
+    const snapshot = buildV2TeamSnapshots([seat], { parameters, state:{ minute:preview.minute, score }, environment:{ weather:"sunny", precipitation:5 } })[0];
+    const outlookPlan = { ...plan, tacticalDimensions:resolveV2TacticalDimensions(plan.tactic, isPrinciplesPlan(plan) ? "__split__" : plan.style, plan.tacticalDimensions, parameters) };
+    const effectivePreview = buildV21TacticalShapePreview({ players:snapshot.players, positions, roles, plan:outlookPlan, parameters,
+      scoreState:preview.scoreState, minute:preview.minute, attackFocus:body.attackFocus ?? team.attackFocus, defenseFocus:body.defenseFocus ?? team.defenseFocus });
+    return buildTacticalOutlook({ projection:buildV2TacticalProjection(snapshot, parameters), preview:effectivePreview, plan,
+      unavailableCount:raw.filter(player => Number(player.state.injuryRounds ?? 0) > 0 || Number(player.state.suspension ?? 0) > 0).length });
+  }
+
   saveTeam(account, body, options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
     const currentRevision = assertLineupRevision(team, body);
+    Object.values(body.tacticalPlans ?? {}).forEach(plan => tacticalPrincipleFields(plan));
     const starters = [...new Set(body.starterIds ?? [])];
     if (starters.length !== 11 || starters.some((id) => !team.rosterIds.includes(id) || this.rosterOverlimitLocked(team, id))) throw new Error("必须从注册名单中选择11名未被超限锁定的球员");
     const players = starters.map((id) => REAL_PLAYER_BY_ID[id]);
@@ -6278,7 +6333,9 @@ export class YellowDogsLeagueService {
     if (Number.isFinite(threshold)) team.fitnessThreshold = Math.max(45, Math.min(100, Math.round(threshold)));
     const plans = body.tacticalPlans ?? {};
     team.tacticalPlans = Object.fromEntries(["opening", "leading", "trailing"].map((state, index) => {
-      const fallback = state === "opening" ? { tactic:team.tactic, style:team.style, positionPreset:"position1" } : team.tacticalPlans?.[state] ?? { tactic:state === "leading" ? "defensive" : "positive", style:state === "leading" ? "counterAttack" : "possession", positionPreset:POSITION_PRESET_KEYS[index] };
+      const fallback = state === "opening"
+        ? { ...team.tacticalPlans?.opening, tactic:team.tactic, style:team.style, positionPreset:"position1" }
+        : team.tacticalPlans?.[state] ?? { tactic:state === "leading" ? "defensive" : "positive", style:state === "leading" ? "counterAttack" : "possession", positionPreset:POSITION_PRESET_KEYS[index] };
       const preset = POSITION_PRESET_KEYS[index];
       const roles = inferFormationBoardRoles(players.map((player) => ({ id:player.id, position:positionPresets[preset]?.[player.id] })), formationLinePresets[preset]);
       return [state, {
@@ -6290,6 +6347,7 @@ export class YellowDogsLeagueService {
         outOfPossession:OUT_OF_POSSESSION_PLANS.has(plans[state]?.outOfPossession) ? plans[state].outOfPossession : fallback.outOfPossession ?? "balanced",
         ...v2TacticalDetailsProperty(plans[state], fallback),
         ...v2TacticalDimensionsProperty(plans[state]?.tacticalDimensions, fallback.tacticalDimensions, plans[state]),
+        ...tacticalPrincipleFields(plans[state], fallback),
         ...v2PlayerDutiesProperty(plans[state]?.playerDuties, starters, roles, fallback.playerDuties),
       }];
     }));
@@ -6638,6 +6696,7 @@ export class YellowDogsLeagueService {
 
   createS4EnhancementTraitOffer(accountId, card, details = {}) {
     if (!card || card.status !== "active" || card.ownerId !== accountId) return null;
+    if (!X_PLAYER_FEATURE_ENABLED && isXPlayer(card.playerId)) return null;
     const existing = Object.values(this.state.s4Assets.traitOffers ?? {}).find((offer) => offer.cardId === card.id && offer.status === "pending");
     if (existing) return existing;
     const player = REAL_PLAYER_BY_ID[card.playerId];
@@ -6780,6 +6839,7 @@ export class YellowDogsLeagueService {
     const materialPlayer = REAL_PLAYER_BY_ID[materialCard.playerId];
     if (isXPlayer(materialPlayer)) throw new Error("X级球员只能作为强化主卡");
     if (isXPlayer(mainPlayer)) {
+      if (!X_PLAYER_FEATURE_ENABLED) throw new Error("X球员成长暂时关闭");
       if (mainPlayer.role !== materialPlayer?.role) throw new Error("X级球员强化只能使用相同位置的普通球员卡");
     } else if (mainCard.playerId !== materialCard.playerId) throw new Error("强化只允许使用同名球员卡");
     const materialFamilyCards = cardsForOwner(this.state, account.id, materialCard.playerId);
@@ -7003,6 +7063,7 @@ export class YellowDogsLeagueService {
     const traitId = String(traitIdValue ?? "");
     const card = this.state.s4Assets.cards[offer?.cardId];
     if (!offer || offer.status !== "pending" || offer.ownerId !== account.id) throw new Error("强化特性候选不存在或已经完成");
+    if (!X_PLAYER_FEATURE_ENABLED && isXPlayer(offer.playerId)) throw new Error("X球员成长暂时关闭");
     if (!offer.traitIds.includes(traitId) || !YDL_TRAIT_BY_ID[traitId]) throw new Error("请选择有效的强化特性");
     if (!card || card.status !== "active" || card.ownerId !== account.id) throw new Error("对应球员卡已经不可用");
     card.traitIds = [...new Set([...(card.traitIds ?? []), traitId])];
@@ -7902,6 +7963,9 @@ export class YellowDogsLeagueService {
         style:STYLES.has(source.style) ? source.style : state === "leading" ? "counterAttack" : "possession",
         positionPreset:POSITION_PRESET_KEYS[index],
         ...(state === "opening" ? {} : { triggerGoalDifference:Math.max(1, Math.min(5, Math.round(Number(source.triggerGoalDifference) || 1))) }),
+        ...v2TacticalDetailsProperty(source),
+        ...v2TacticalDimensionsProperty(source.tacticalDimensions),
+        ...tacticalPrincipleFields(source),
       }];
     }));
   }
@@ -9338,7 +9402,7 @@ export class YellowDogsLeagueService {
         this.finalizeFriendlyFixture(fixture, live.match);
         live.completed = true;
         delete live.settlementPending;
-        this.state.completedBroadcasts.push({ code:live.code, round:"友谊赛", matchId:fixture.matchId, completedAt:this.now(), spectators:clone(live.spectators ?? {}), match:publicLeagueMatch(live.match, this.now(), null, true), competition:"YDL友谊赛" });
+        this.state.completedBroadcasts.push({ code:live.code, round:"友谊赛", matchId:fixture.matchId, completedAt:this.now(), spectators:clone(live.spectators ?? {}), spectatorRecoveries:clone(live.spectatorRecoveries ?? {}), match:publicLeagueMatch(live.match, this.now(), null, true), competition:"YDL友谊赛" });
         this.state.liveFriendlies = this.state.liveFriendlies.filter((entry) => !entry.completed);
         if (!this.scheduleLiveSettlementSave([live.code])) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
       }) || advanced;
@@ -9348,6 +9412,8 @@ export class YellowDogsLeagueService {
   }
 
   finalizeFixture(fixture, roundNumber, match) {
+    const settled = this.settledLeagueFixture(fixture, roundNumber);
+    if (settled) { fixture.matchId = settled.id; return settled; }
     const home = this.state.teams.find((team) => team.id === fixture.homeId);
     const away = this.state.teams.find((team) => team.id === fixture.awayId);
     const report = match.report;
@@ -9399,9 +9465,16 @@ export class YellowDogsLeagueService {
   }
 
   simulateFixture(fixture, roundNumber) {
+    const settled = this.settledLeagueFixture(fixture, roundNumber);
+    if (settled) return settled;
     const created = this.createFixtureMatch(fixture, roundNumber);
     settleAutomatedMatch(created.match, created.startedAt);
     return this.finalizeFixture(fixture, roundNumber, created.match);
+  }
+
+  settledLeagueFixture(fixture, roundNumber) {
+    const id = `${this.state.season.id}-R${roundNumber}-${fixture.homeId}-${fixture.awayId}`;
+    return this.state.matches.find(record => record.id === id) ?? null;
   }
 
   finalizeCupFixture(fixture, event, match) {
@@ -10271,10 +10344,15 @@ export class YellowDogsLeagueService {
   }
 
   simulateNextRound() {
+    if (this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound || this.liveSettlementJobs.length || this.liveSettlementJobKeys.size) {
+      throw Object.assign(new Error("当前有正在直播或等待结算的赛事，请等待结束后再模拟下一轮"), { statusCode:409 });
+    }
     if (this.state.season.status === "registration") throw new Error("联赛仍在报名选人阶段，请先在后台开启联赛推进");
     if (this.state.season.status === "completed") throw new Error("本赛季已经结束");
     const round = this.state.rounds[this.state.season.currentRound];
     if (!round || round.status === "complete") throw new Error("没有可模拟的轮次");
+    if (round.status !== "pending") throw Object.assign(new Error("当前轮次已经开始，请等待直播结算完成"), { statusCode:409 });
+    if (round.number === 1) this.settleMirrorMarketplace("9999-12-31");
     round.status = "running";
     this.roundNewUnavailable = new Set();
     round.fixtures.forEach((fixture) => this.simulateFixture(fixture, round.number));
@@ -10287,7 +10365,7 @@ export class YellowDogsLeagueService {
     const round = this.state.rounds[this.state.season.currentRound];
     if (!round || round.status !== "pending") return false;
     round.status = "running";
-    if (round.number === 1) this.settleMirrorMarketplace(localDateKey(new Date(this.now())));
+    if (round.number === 1) this.settleMirrorMarketplace("9999-12-31");
     this.roundNewUnavailable = new Set();
     const liveMatches = [];
     round.fixtures.forEach((fixture, fixtureIndex) => {
@@ -10392,6 +10470,7 @@ export class YellowDogsLeagueService {
         matchId:fixture?.matchId ?? live.matchId ?? null,
         completedAt:this.now(),
         spectators:clone(live.spectators ?? {}),
+        spectatorRecoveries:clone(live.spectatorRecoveries ?? {}),
         match:publicLeagueMatch(live.match, this.now(), null, true),
       });
     });
@@ -10415,7 +10494,11 @@ export class YellowDogsLeagueService {
   cleanupLiveSpectators(live) {
     const cutoff = this.now() - 30_000;
     Object.entries(live.spectators ?? {}).forEach(([token, spectator]) => {
-      if (spectator.lastSeenAt < cutoff) delete live.spectators[token];
+      if (spectator.lastSeenAt < cutoff) {
+        live.spectatorRecoveries ??= {};
+        live.spectatorRecoveries[token] = { name:spectator.name };
+        delete live.spectators[token];
+      }
     });
   }
 
@@ -10497,7 +10580,8 @@ export class YellowDogsLeagueService {
     if (protectMirrorTactics) {
       const hideOpponentTacticalDetails = (team) => {
         if (!team) return;
-        ["inPossessionDetails", "outOfPossessionDetails", "tacticalDimensions", "playerDuties"].forEach((key) => { delete team[key]; });
+        ["inPossessionDetails", "outOfPossessionDetails", "tacticalDimensions", "playerDuties", "tacticalModelVersion", "activePlan", "activePlanTrigger", ...Object.keys(EXECUTION_GROUPS), "lossTransition", "restDefense", "clockManagement", "possessionStyle", "defensiveBlock", "transitionStyle", "duelIntensity"].forEach((key) => { delete team[key]; });
+        team.tacticsHidden = true;
         (team.players ?? []).forEach((player) => { delete player.tacticalDuty; });
       };
       hideOpponentTacticalDetails(match.teams?.[1]);
@@ -10505,9 +10589,29 @@ export class YellowDogsLeagueService {
       if (match.report) {
         delete match.report.analysisTimeline;
         delete match.report.tacticalReview;
+        delete match.report.engineDiagnostics;
+        delete match.report.tacticalExecution;
+      }
+      const protectEvent = event => {
+        if (["tactical", "tacticalAction", "cornerPlan"].includes(event.type) && event.teamIndex === 1) {
+          return { id:event.id, minute:event.minute, type:event.type, teamIndex:1, text:event.type === "tactical" ? "对手调整了战术预案（细节已保护）" : "对手完成一次战术配合（细节已保护）", importance:event.importance };
+        }
+        const attacker = event.attackingTeamIndex ?? (event.type === "save" ? 1-event.teamIndex : event.teamIndex);
+        if (attacker === 1 && event.cornerRoutine) {
+          const sanitized = {...event};
+          delete sanitized.cornerRoutine;
+          delete sanitized.commitment;
+          return sanitized;
+        }
+        return event;
+      };
+      match.events = match.events.map(protectEvent);
+      if (match.report) {
+        match.report.events = match.report.events?.map(protectEvent);
+        match.report.importantEvents = match.report.importantEvents?.map(protectEvent);
       }
     }
-    return clone({
+    return withBroadcastRevision(clone({
       code:live.code,
       round:live.round ?? this.state.liveRound?.roundNumber ?? this.state.cup?.stage ?? 0,
       live:!live.completed && !live.match.report,
@@ -10516,14 +10620,14 @@ export class YellowDogsLeagueService {
       competition:live.aiTraining ? "AI 战术训练赛" : live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YFFM1",
       aiTraining:Boolean(live.aiTraining),
       aiTrainingConfig:live.aiTraining ? { formation:live.formation, actualAverageOverall:live.actualAverageOverall, targetOverall:live.targetOverall } : undefined,
-    });
+    }));
   }
 
   watch(code, spectatorName, existingToken = null) {
     const live = this.liveMatch(code);
-    if (live.aiTraining && !live.spectators?.[existingToken]) throw new Error("AI 对战只能由创建者观看");
+    if (live.aiTraining && !Object.hasOwn(live.spectators ?? {}, existingToken)) throw new Error("AI 对战只能由创建者观看");
     live.spectators ??= {};
-    const spectatorToken = existingToken && live.spectators[existingToken] ? existingToken : makeId("viewer", code);
+    const spectatorToken = existingToken && Object.hasOwn(live.spectators, existingToken) ? existingToken : makeId("viewer", code);
     live.spectators[spectatorToken] = { name:String(spectatorName ?? "匿名观众").trim().slice(0, 30) || "匿名观众", lastSeenAt:this.now() };
     return { spectatorToken, broadcast:this.broadcastView(live) };
   }
@@ -10532,13 +10636,14 @@ export class YellowDogsLeagueService {
     const codeKey = String(code ?? "").toUpperCase();
     const live = this.liveAiTrainings.get(codeKey) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
     if (live) {
-      if (!live.spectators?.[spectatorToken]) throw new Error("观赛会话已过期，请重新进入直播");
+      if (!Object.hasOwn(live.spectators ?? {}, spectatorToken)) throw Object.assign(new Error("观赛会话已过期，请重新进入直播"), { code:"BROADCAST_SESSION_EXPIRED" });
       live.spectators[spectatorToken].lastSeenAt = this.now();
       return this.broadcastView(live);
     }
     const completed = this.completedBroadcast(code);
-    if (!completed?.spectators?.[spectatorToken]) throw new Error("这场联赛直播已经结束");
-    return clone({
+    if (completed && !Object.hasOwn(completed.spectators ?? {}, spectatorToken)) throw Object.assign(new Error("观赛会话已过期，请重新进入直播"), { code:"BROADCAST_SESSION_EXPIRED" });
+    if (!completed) throw Object.assign(new Error("这场联赛直播已经结束"), { code:"BROADCAST_ENDED" });
+    return withBroadcastRevision(clone({
       code:completed.code,
       round:completed.round,
       matchId:completed.matchId,
@@ -10546,15 +10651,33 @@ export class YellowDogsLeagueService {
       spectators:Object.values(completed.spectators).map(({ name }) => ({ name })),
       match:completed.match,
       competition:completed.competition ?? (completed.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YFFM1"),
-    });
+    }));
+  }
+
+  resumeWatch(code, spectatorName, existingToken, account = null) {
+    const codeKey = String(code ?? "").toUpperCase();
+    let live;
+    try { live = this.liveMatch(codeKey); } catch { /* It may have finished while the viewer was away. */ }
+    if (live?.aiTraining && live.ownerId !== account?.id) throw Object.assign(new Error("AI 对战只能由创建者恢复观看，请重新登录"), { code:"BROADCAST_FORBIDDEN" });
+    const target = live ?? this.completedBroadcast(codeKey);
+    if (!target) throw Object.assign(new Error("这场比赛直播及详情已结束"), { code:"BROADCAST_ENDED" });
+    target.spectators ??= {};
+    const known = Object.hasOwn(target.spectators, existingToken) ? target.spectators[existingToken]
+      : Object.hasOwn(target.spectatorRecoveries ?? {}, existingToken) ? target.spectatorRecoveries[existingToken] : null;
+    const spectatorToken = known ? existingToken : makeId("viewer", codeKey);
+    target.spectators[spectatorToken] = { name:known?.name ?? (String(spectatorName ?? "匿名观众").trim().slice(0, 30) || "匿名观众"), lastSeenAt:this.now() };
+    if (target.spectatorRecoveries) delete target.spectatorRecoveries[spectatorToken];
+    return { spectatorToken, broadcast:live ? this.broadcastView(live) : this.watchView(codeKey, spectatorToken) };
   }
 
   leaveWatch(code, spectatorToken) {
     const codeKey = String(code ?? "").toUpperCase();
     const live = this.liveAiTrainings.get(codeKey) ?? [...(this.state.liveRound?.matches ?? []), ...(this.state.liveCupRound?.matches ?? []), ...(this.state.liveSeasonFinalRound?.matches ?? []), ...this.state.liveFriendlies].find((entry) => entry.code.toUpperCase() === codeKey && !entry.completed);
     if (live) delete live.spectators?.[spectatorToken];
+    if (live) delete live.spectatorRecoveries?.[spectatorToken];
     const completed = this.completedBroadcast(code);
     if (completed) delete completed.spectators?.[spectatorToken];
+    if (completed) delete completed.spectatorRecoveries?.[spectatorToken];
     return { left:true };
   }
 
@@ -11124,6 +11247,11 @@ export class YellowDogsLeagueService {
     const date = localDateKey(new Date(now));
     const automation = this.state.dailyAutomation;
     if (!options.manual && automation.lastResetDate === date) return false;
+    if (options.reason !== "admin-team-dissolution") {
+      const busy = this.adminSeasonControlBlocker("full");
+      if (busy) throw Object.assign(new Error(busy), { statusCode:409 });
+      if ((this.state.matchPredictions?.bets ?? []).some(bet => bet.status === "pending")) throw Object.assign(new Error("仍有未结算预测，不能重置赛事进度"), { statusCode:409 });
+    }
     const seasonFinalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
     if (process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed" && (this.state.cup?.status !== "completed" || !seasonFinalResolved)) {
       throw new Error("杯赛或赛季总决赛尚未结束，不能在金球奖完成评选前重置当日赛事");
@@ -11181,6 +11309,7 @@ export class YellowDogsLeagueService {
     automation.lastResetDate = date;
     automation.lastCupStartDate = null;
     if (!options.skipSave) this.save();
+    this.adminSeasonControlVersion = Number(this.adminSeasonControlVersion ?? 0) + 1;
     return options.skipView ? true : this.adminView();
   }
 
@@ -11193,6 +11322,7 @@ export class YellowDogsLeagueService {
     const date = localDateKey(new Date(now));
     const automation = this.state.dailyAutomation;
     if (!automation.enabled) return false;
+    if (this.state.season.status === "registration") return false;
     let changed = false;
     if (this.state.season.status === "completed") changed = Boolean(this.settleDailySeason() ?? changed);
 
@@ -11546,25 +11676,21 @@ export class YellowDogsLeagueService {
   }
 
   resetCompetition(name, reason, status = "active", options = {}) {
-    if (process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed" && (this.state.cup?.status !== "completed" || this.state.seasonFinalTournament?.status !== "completed")) throw new Error("杯赛或赛季总决赛尚未结束，不能在金球奖完成评选前开启新赛季");
-    if (this.state.season.status === "completed") this.settleBallonDor();
+    this.assertAdminSeasonControlAllowed(reason === "restarted" ? "replay" : "next");
+    this.backupFile(`before-competition-reset-${this.now()}.json`);
     this.archiveSeason(reason);
-    const previousRanks = new Map(this.standings().map((entry) => [entry.id, entry.rank]));
     const completedSeasonId = this.state.season.id;
     this.state.teams.forEach((team) => {
       if (options.advanceSponsorContracts === true) this.settleClubSponsorContractsForSeason(team, completedSeasonId);
       team.table = freshTable();
       team.form = [];
       if (team.ownerId) {
-        this.wallet(team.ownerId).balance = INITIAL_WALLET_BALANCE;
         team.rosterIds.forEach((id) => {
           team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 };
         });
       }
     });
-    // 休赛期跨过00:00后产生的镜像调用与新赛季重置可能处于同一自然日。
-    // 钱包重置完成后一次结清全部待结算日期，避免严格“小于当天”导致收益永久滞留。
-    this.settleMirrorMarketplace("9999-12-31");
+    // Resets never touch wallets. Pending mirror income is settled by league kickoff.
     const startedAt = this.now();
     const firstRoundAt = status === "active" ? nextSlot(startedAt) : null;
     this.state.season = { id:`${name}-${localDateKey(new Date(startedAt))}-${startedAt.toString(36)}`, name, date:localDateKey(new Date(startedAt)), status, currentRound:0, totalRounds:18, nextRoundAt:firstRoundAt, firstRoundAt, startedAt:status === "active" ? startedAt : null, registrationOpenedAt:status === "registration" ? startedAt : null, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null };
@@ -11573,10 +11699,7 @@ export class YellowDogsLeagueService {
     this.state.playerStats = {};
     this.state.seasonFinalTournament = null;
     this.syncForcedSeedMirrorUploads();
-    this.state.ledger = [];
-    this.state.adminPackGrants = [];
-    this.state.adminCoinGrants = [];
-    this.state.adminXGrowthGrants = [];
+    this.state.matchPredictions = { schemaVersion:1, markets:{}, bets:[], distributions:[] };
     this.state.reports = {};
     this.state.liveRound = null;
     this.state.liveCupRound = null;
@@ -11586,11 +11709,12 @@ export class YellowDogsLeagueService {
     this.state.friendlyFixtures = [];
     this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     this.save();
+    this.adminSeasonControlVersion = Number(this.adminSeasonControlVersion ?? 0) + 1;
     return this.adminView();
   }
 
   restartSeason() {
-    return this.resetCompetition(this.state.season.name, "restarted");
+    return this.resetCompetition(this.state.season.name, "restarted", "registration");
   }
 
   startNewSeason() {
@@ -11598,12 +11722,14 @@ export class YellowDogsLeagueService {
     return this.resetCompetition(`S${current + 1}`, "new-season", "registration", { advanceSponsorContracts:true });
   }
 
-  fullReset() {
+  fullReset(options = {}) {
+    this.assertAdminSeasonControlAllowed("full");
     const resetAt = this.now();
     this.backupFile(`before-full-reset-${localDateKey(new Date(resetAt))}-${resetAt}.json`);
     const discipline = clone(this.state.discipline);
     const adminCoinPenalties = clone(this.state.adminCoinPenalties);
-    this.adoptState(createState(resetAt));
+    this.adoptState(createState(resetAt, options.seasonName ?? "S1"));
+    this.liveAiTrainings.clear();
     this.state.discipline = discipline;
     this.state.adminCoinPenalties = adminCoinPenalties;
     this.state.dailyAutomation.enabled = true;
@@ -11615,26 +11741,58 @@ export class YellowDogsLeagueService {
     this.state.season.registrationOpenedAt = resetAt;
     this.state.lastFullResetAt = resetAt;
     this.save();
+    this.adminSeasonControlVersion = Number(this.adminSeasonControlVersion ?? 0) + 1;
     return this.adminView();
   }
 
   startFreshSeason() {
-    const resetAt = this.now();
     const current = Number(String(this.state.season.name).match(/\d+/)?.[0] ?? 0);
-    const seasonName = `S${current + 1}`;
-    this.backupFile(`before-fresh-season-${seasonName.toLowerCase()}-${localDateKey(new Date(resetAt))}-${resetAt}.json`);
-    const discipline = clone(this.state.discipline);
-    const adminCoinPenalties = clone(this.state.adminCoinPenalties);
-    this.adoptState(createState(resetAt, seasonName));
-    this.state.discipline = discipline;
-    this.state.adminCoinPenalties = adminCoinPenalties;
-    this.state.season.status = "registration";
-    this.state.season.nextRoundAt = null;
-    this.state.season.startedAt = null;
-    this.state.season.registrationOpenedAt = resetAt;
-    this.state.lastFreshSeasonAt = resetAt;
-    this.save();
-    return this.adminView();
+    // Compatibility alias: the same full wipe, with the historical next-season name.
+    return this.fullReset({ seasonName:`S${current + 1}` });
+  }
+
+  adminSeasonControlBlocker(action) {
+    const aiPlaying = [...this.liveAiTrainings.values()].some(live => !live.match.report);
+    if (this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound
+      || this.state.liveFriendlies.some(live => !live.completed) || aiPlaying
+      || this.liveSettlementJobs.length || this.liveSettlementJobKeys.size) return "存在正在直播或等待结算的比赛，请结束后再操作";
+    if (action !== "full") {
+      if ((this.state.matchPredictions?.bets ?? []).some(bet => bet.status === "pending")) return "仍有未结算预测，请先完成赛事结算，避免丢失投注本金";
+      if (action === "next" && process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed") {
+        const finalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(this.now());
+        if (this.state.cup?.status !== "completed" || !finalResolved) return "杯赛或赛季总决赛尚未结束，请先完成赛季结算";
+        if (this.state.dailyAutomation.lastRewardedSeasonId !== this.state.season.id) return "当前赛季排名奖励尚未结算，请先补发奖励再操作";
+      }
+    }
+    return null;
+  }
+
+  assertAdminSeasonControlAllowed(action) {
+    const reason = this.adminSeasonControlBlocker(action);
+    if (reason) throw Object.assign(new Error(reason), { statusCode:409 });
+  }
+
+  adminSeasonControlsPreview() {
+    const seasonId = this.state.season.id;
+    const seasonName = this.state.season.name;
+    const nextNumber = Number(String(seasonName).match(/\d+/)?.[0] ?? 1) + 1;
+    const players = this.state.teams.filter(team => team.ownerId);
+    const snapshot = { seasonId, updatedAt:this.state.updatedAt, version:this.adminSeasonControlVersion ?? 0, players:players.map(team => [team.ownerId, this.wallet(team.ownerId).balance]), round:this.state.season.currentRound };
+    return {
+      seasonId, seasonName, revision:createHash("sha256").update(JSON.stringify(snapshot)).digest("hex"),
+      humanTeams:players.length, totalCoins:players.reduce((sum, team) => sum + this.wallet(team.ownerId).balance, 0),
+      operations:ADMIN_SEASON_ACTIONS.map(action => ({ ...action, targetSeason:action.id === "replay" ? seasonName : action.id === "next" ? `S${nextNumber}` : "S1", blockedReason:this.adminSeasonControlBlocker(action.id) })),
+    };
+  }
+
+  applyAdminSeasonControl(body) {
+    const action = ADMIN_SEASON_ACTIONS.find(entry => entry.id === body.action);
+    if (!action || body.confirm !== action.confirmation) throw new Error("操作确认文字不匹配");
+    const preview = this.adminSeasonControlsPreview();
+    if (body.seasonId !== preview.seasonId || body.revision !== preview.revision) throw Object.assign(new Error("赛季或资产状态已变化，请刷新操作预览后重新确认"), { statusCode:409 });
+    this.assertAdminSeasonControlAllowed(action.id);
+    const league = action.id === "replay" ? this.restartSeason() : action.id === "next" ? this.startNewSeason() : this.fullReset();
+    return { league, operation:{ action:action.id, label:action.label, coins:action.coins, targetSeason:league.season.name } };
   }
 
   startLeagueSimulation() {
@@ -11644,6 +11802,9 @@ export class YellowDogsLeagueService {
     this.state.season.startedAt = startedAt;
     this.state.season.nextRoundAt = nextSlot(startedAt);
     this.state.season.firstRoundAt = this.state.season.nextRoundAt;
+    // An explicit registration gate must not be bypassed by the next daily tick.
+    this.state.dailyAutomation.lastResetDate = localDateKey(new Date(startedAt));
+    this.state.dailyAutomation.lastCupStartDate = null;
     this.save();
     return this.adminView();
   }
@@ -11920,7 +12081,10 @@ export class YellowDogsLeagueService {
       if (team) owned.set(playerId, team);
     });
     const reserved = new Map();
-    Object.entries(this.state.drafts).forEach(([accountId, draft]) => draft.selectedIds.forEach((id) => reserved.set(id, { accountId, teamName:draft.teamName })));
+    Object.entries(this.state.drafts).forEach(([accountId, draft]) => {
+      const ids = draft.mode === "batch" ? [...(draft.current?.entries ?? []), ...(draft.candidates ?? []).flatMap(a => a.entries)].map(e => e.id) : draft.selectedIds;
+      ids.forEach(id => reserved.set(id, {accountId,teamName:draft.teamName}));
+    });
     const pools = Object.fromEntries(Object.entries(REAL_PLAYER_POOLS).map(([pool, players]) => {
       const selected = players.filter((player) => owned.has(player.id)).length;
       const drafting = players.filter((player) => reserved.has(player.id)).length;
@@ -11962,6 +12126,7 @@ export class YellowDogsLeagueService {
     return unwrapTracked({
       season:this.state.season,
       cup:this.cupView(),
+      manualSimulation:{ allowed:this.state.season.status === "active" && !this.state.liveRound && !this.state.liveCupRound && !this.state.liveSeasonFinalRound && !this.liveSettlementJobs.length && !this.liveSettlementJobKeys.size && this.state.rounds[this.state.season.currentRound]?.status === "pending", reason:"仅能模拟尚未开始的轮次；直播和结算中不可重复模拟" },
       seasonFinalTournament:this.seasonFinalTournamentView(),
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20 },
       dailyAutomation:clone(this.state.dailyAutomation),
@@ -11971,7 +12136,7 @@ export class YellowDogsLeagueService {
       }),
       pools,
       allocations,
-      drafts:Object.entries(this.state.drafts).map(([accountId, draft]) => ({ accountId, teamName:draft.teamName, selectedCount:draft.selectedIds.length, startedAt:draft.startedAt })),
+      drafts:Object.entries(this.state.drafts).map(([accountId, draft]) => ({ accountId, teamName:draft.teamName, selectedCount:draft.mode === "batch" ? draft.current?.entries.filter(e => e.stage < draft.current.revealed).length ?? 0 : draft.selectedIds.length, attemptsUsed:draft.attemptsUsed ?? 0, candidateCount:draft.candidates?.length ?? 0, startedAt:draft.startedAt })),
       matches:this.state.matches.length,
       backups:this.backupView(),
       s4PackCatalog:[...S4_PACK_CATALOG, ...S4_ADMIN_GIFT_PACK_CATALOG].map((pack) => ({ ...pack })),

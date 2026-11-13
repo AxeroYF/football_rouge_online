@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
 import {
   buildV2SpatialMatchup,
   buildV2StageSpatialCache,

@@ -70,7 +70,7 @@ function normalizedProfile(profile, player, profileKey) {
   };
 }
 
-export async function syncAPlayerProfiles({ assetTargetDirectory = null } = {}) {
+export async function syncAPlayerProfiles({ assetTargetDirectory = null, requireOriginals = true } = {}) {
   const source = JSON.parse(await readFile(POSITION_PATH, "utf8"));
   if (source?.profileType !== "a" || source?.grade !== "A") throw new Error("A级头像定位文件类型无效");
   const profiles = source?.profiles ?? {};
@@ -81,7 +81,7 @@ export async function syncAPlayerProfiles({ assetTargetDirectory = null } = {}) 
   for (const profileKey of sourceKeys) {
     const player = playerForProfileKey(profileKey, players);
     const profile = normalizedProfile(profiles[profileKey], player, profileKey);
-    await stat(path.join(PROFILE_DIRECTORY, profile.fileName));
+    if (requireOriginals) await stat(path.join(PROFILE_DIRECTORY, profile.fileName));
     Object.assign(profile, await optimizedProfileAsset(PROFILE_DIRECTORY, "A_profile", profile.fileName));
     entries.push(profile);
   }
@@ -97,7 +97,7 @@ export async function syncAPlayerProfiles({ assetTargetDirectory = null } = {}) 
   const pngFileNames = (await readdir(PROFILE_DIRECTORY)).filter((fileName) => fileName.toLowerCase().endsWith(".png"));
   const extraPngs = pngFileNames.filter((fileName) => !sourceFileNames.has(fileName));
   const missingPngs = [...sourceFileNames].filter((fileName) => !pngFileNames.includes(fileName));
-  if (extraPngs.length || missingPngs.length) {
+  if (extraPngs.length || requireOriginals && missingPngs.length) {
     throw new Error(`A级头像文件与定位JSON不一致：多余 ${extraPngs.join(", ") || "无"}；缺少 ${missingPngs.join(", ") || "无"}`);
   }
 

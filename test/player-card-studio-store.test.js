@@ -10,7 +10,7 @@ test("球员卡工作台支持全等级WebP、26项回归、暂存和批量上�
   process.env.YDL_PLAYER_CARD_STUDIO_PATH = path.join(root, "studio.json");
   process.env.YDL_PLAYER_PROFILE_ROOT = path.join(root, "profiles");
   const studio = await import(`../versus/player-card-studio-store.js?test=${Date.now()}`);
-  const { ATTRIBUTE_NAMES, playerOverallFromAttributes } = await import("../game/public/schema.js");
+  const { ATTRIBUTE_NAMES, playerOverallFromAttributes } = await import("../shared/football/schema.js");
   const { REAL_PLAYER_BY_ID, REAL_PLAYERS } = await import("../versus/player-pool.js");
 
   const regression = studio.regressPlayerAttributes("AM", 84);
@@ -34,7 +34,7 @@ test("球员卡工作台支持全等级WebP、26项回归、暂存和批量上�
       widthPercent:188,
     });
     assert.equal(profile.grade, grade);
-    assert.match(profile.imageUrl, /^\/versus\/player_profiles\/webp\/[a-f0-9]{24}\.webp\?v=[a-f0-9]{12}$/);
+    assert.match(profile.imageUrl, /^\/versus\/player_profiles\/webp\/[a-f0-9]{24}-[a-f0-9]{12}\.webp\?v=[a-f0-9]{12}$/);
     const file = path.join(root, "profiles", "webp", profile.optimizedFileName);
     assert.ok((await stat(file)).size < png.length);
     const header = await readFile(file);

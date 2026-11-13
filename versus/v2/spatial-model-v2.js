@@ -1,11 +1,14 @@
-import { positionFitScore, roleGroup } from "../../game/public/schema.js";
-import { traitPositionFit } from "../../game/public/trait-runtime.js";
+import {tacticalExecutionFields} from "../public/tactical-execution.js";
+import { positionFitScore, roleGroup } from "../../shared/football/schema.js";
+import { traitPositionFit } from "../../shared/football/trait-runtime.js";
 import { inferElevenBoardRoles } from "../public/formation-rules.js";
 import { buildV21DynamicShapeSnapshot } from "./dynamic-shape-v2.js";
+import { isPrinciplesPlan } from "../public/tactical-principles.js";
 import { resolveV2MatchParameters, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
 import { v2DutyMovement, v2DutySpatialMultipliers } from "./player-duties-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
-import { isV3, V3_SPATIAL_VERSION } from "../v3/model-config.js";
+import { isV3, isV32, isV33, V3_SPATIAL_VERSION } from "../v3/model-config.js";
+import {continuousShape} from "../v3/flow-shape.js";
 import {defensiveInstructionPositions} from "../v3/defensive-shape.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
@@ -141,6 +144,17 @@ function styleFitMultiplier(score, parameters) {
 }
 
 export function v2StyleIdentityProfile(team, players, parameters = V2_MATCH_PARAMETERS) {
+  if (isPrinciplesPlan(team)) {
+    const legacy = style => v2StyleIdentityProfile({ ...team, tacticalModelVersion:undefined, splitTacticsExplicit:false, style }, players, parameters);
+    const organization = legacy(team.possessionStyle);
+    const defense = legacy(team.defensiveBlock);
+    const transition = legacy(team.transitionStyle === "counterAttack" ? "counterAttack" : "balanced");
+    return Object.freeze({ ...organization,
+      defenseMultiplier:defense.defenseMultiplier, pressureMultiplier:defense.pressureMultiplier,
+      recoveryMultiplier:defense.recoveryMultiplier, transitionMultiplier:transition.transitionMultiplier,
+      outletMultiplier:team.transitionStyle === "counterAttack" ? transition.outletMultiplier : defense.outletMultiplier,
+    });
+  }
   const style = styleKey(team);
   const byRole = (roles) => players.filter((player) => roles.includes(player.assignedRole));
   const wide = byRole(["LW", "RW", "LM", "RM", "LB", "RB", "LWB", "RWB"]);
@@ -612,6 +626,8 @@ export function buildV2SpatialMatchup(teams, options = {}) {
     zones,
     teams:projections.map((team, index) => ({
       ...summarizeTeam(team, zoneViews[index], connections[index], parameters),
+      ...(isV33(parameters)?tacticalExecutionFields(teams[index]):{}),
+      ...(isV32(parameters)?Object.fromEntries(["lossTransition","restDefense","clockManagement","splitTacticsExplicit","transitionStyle","possessionStyle","defensiveBlock","duelIntensity"].map(key=>[key,teams[index][key]])):{}),
       players:team.players.map((player) => ({
         id:player.id,
         name:player.name,
@@ -624,11 +640,17 @@ export function buildV2SpatialMatchup(teams, options = {}) {
         localPosition:player.localPosition,
         worldPosition:player.worldPosition,
         metrics:{ ...player.metrics },
+        ...(isV32(parameters)?{attributes:{...teams[index].players.find(p=>p.id===player.id)?.attributes}}:{}),
       })),
       zones:zoneViews[index],
       connections:connections[index],
     })),
   });
+}
+
+// The same attribute, position and fitness projection, without inventing an opponent.
+export function buildV2TacticalProjection(team, parameters = V2_MATCH_PARAMETERS) {
+  return projectTeam(team, 0, createV2Zones(parameters), parameters, {});
 }
 
 function stageMovementPosition(player, position, assignedRole, movement, direction, dimensions, parameters) {
@@ -706,7 +728,7 @@ export function buildV2StageSpatialMatchup(teams, attackingTeamIndex, stage, opt
   const stableMatchup = needsStable?buildV2SpatialMatchup(stagedTeams, { parameters }):null;
   if (!["shadow", "stable", "candidate"].includes(parameters.dynamicShape.mode) || options.includeDynamicShape === false) return stableMatchup;
   const shapeTeams = applyV3DefensiveInstructions(parameters.dynamicShape.mode === "stable" ? stagedTeams : teams,attackingTeamIndex,contexts,parameters);
-  const dynamicShape = buildV21DynamicShapeSnapshot({
+  let dynamicShape = buildV21DynamicShapeSnapshot({
     teams:shapeTeams,
     attackingTeamIndex,
     stage,
@@ -715,6 +737,7 @@ export function buildV2StageSpatialMatchup(teams, attackingTeamIndex, stage, opt
     possessionType:options.possessionType ?? "normal",
     config:parameters.dynamicShape,
   });
+  if(isV32(parameters)&&options.flowState)dynamicShape=continuousShape(dynamicShape,teams,options.flowState,Number(options.elapsedSeconds??0),parameters.v32);
   if (parameters.dynamicShape.mode === "shadow") return Object.freeze({ ...stableMatchup, dynamicShape });
   const dynamicTeams = teams.map((team, teamIndex) => ({
     ...team,
@@ -724,7 +747,7 @@ export function buildV2StageSpatialMatchup(teams, attackingTeamIndex, stage, opt
   const candidateMatchup = buildV2SpatialMatchup(dynamicTeams, { parameters, positionsResolved:true });
   return Object.freeze({
     ...candidateMatchup,
-    modelVersion:isV3(parameters)?V3_SPATIAL_VERSION:parameters.dynamicShape.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2.1d-candidate.4",
+    modelVersion:isV32(parameters)?"spatial-v3.2-continuous.1":isV3(parameters)?V3_SPATIAL_VERSION:parameters.dynamicShape.mode === "stable" ? "spatial-v2.1-stable-dynamic.2" : "spatial-v2.1d-candidate.4",
     stableModelVersion:stableMatchup?.modelVersion??"spatial-v2-alpha.1",
     dynamicShape,
   });

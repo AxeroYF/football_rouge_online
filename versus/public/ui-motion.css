@@ -1,0 +1,34 @@
+/* Interaction feedback stays out of draggable player pieces and pack choreography. */
+html[data-ui-motion="on"] :is(.button,.icon-button,.game-settings-trigger,[data-league-tab],[data-backpack-page],[data-league-theme-toggle]){transition:background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease,opacity 160ms ease,scale 120ms ease}
+html[data-ui-motion="on"] :is(.button,.icon-button,.game-settings-trigger,[data-league-tab],[data-backpack-page]):active:not(:disabled){scale:.97}
+@media(hover:hover){html[data-ui-motion="on"] :is(.button,.game-settings-trigger):hover:not(:disabled){box-shadow:0 3px 12px #1767b321}}
+html[data-ui-motion="on"] :is(input,select,textarea){transition:border-color 160ms ease,box-shadow 160ms ease}
+html[data-ui-motion="on"] :is(.league-magnet-fitness>span,.live-fitness>span){transition:width 350ms ease}
+html[data-ui-motion="on"] .broadcast-v2-commentary .match-event{animation:broadcast-feed-arrival .25s ease-out}
+html[data-ui-motion="on"] .broadcast-highlight{animation:broadcast-highlight-arrival .3s ease-out}
+html[data-ui-motion="off"] :is(.broadcast-v2-commentary .match-event,.broadcast-highlight){animation:none!important}
+html[data-ui-motion="off"] :is(.button,.icon-button,.game-settings-trigger,[data-league-tab],[data-backpack-page],.toast,input,select,textarea){transition:none!important}
+html[data-ui-motion="off"] .broadcast-v2-commentary>.event-feed{scroll-behavior:auto}
+
+html[data-ui-motion="off"] .league-autosave-status[data-state="saving"]>i{animation:none!important}
+
+/* Request state remains readable with motion disabled. Leave draggable transforms alone. */
+[data-request-state="pending"]{position:relative;min-inline-size:96px;color:transparent!important;cursor:wait!important}
+[data-request-state="pending"]>*{visibility:hidden}
+[data-request-state="pending"]::after{content:"处理中…";position:absolute;inset:0;display:grid;place-content:center;color:var(--request-ink,#224539);font-size:12px;font-weight:600}
+[data-request-state="pending"]::before{content:"";position:absolute;inset-inline:8px;bottom:3px;height:2px;background:#4cbfa6;opacity:.6;transform-origin:left;scale:.35 1}
+html[data-ui-motion="on"] [data-request-state="pending"]::before{animation:interaction-request-progress 1s ease-in-out infinite alternate}
+@keyframes interaction-request-progress{to{scale:1 1;opacity:1}}
+.interaction-resource-delta{position:fixed;z-index:10070;pointer-events:none;translate:-50% 0;padding:3px 8px;border-radius:12px;background:#12392f;color:#bcffe0;font:700 13px/1.4 system-ui;box-shadow:0 2px 10px #0003;white-space:nowrap}
+.interaction-resource-delta.is-cost{background:#4b341a;color:#ffe0b0}
+.interaction-notice{position:fixed;z-index:10060;right:24px;bottom:72px;display:flex;align-items:center;gap:12px;width:max-content;max-width:min(360px,calc(100vw - 32px));padding:14px 16px;border:1px solid #4cbfa666;border-radius:12px;background:#12332ef5;color:#effff9;box-shadow:0 8px 28px #0003;box-sizing:border-box}
+.interaction-notice.is-error{background:#46252af5;border-color:#ed647277}
+.interaction-notice-icon{display:grid;place-items:center;flex:0 0 26px;height:26px;border-radius:50%;background:#4cbfa62b;color:#91e5c1;font-weight:800}
+.interaction-notice.is-error .interaction-notice-icon{background:#ed64722b;color:#ffbcc5}
+.interaction-notice>div{min-width:0}.interaction-notice strong,.interaction-notice small{display:block;overflow-wrap:anywhere}
+.interaction-notice strong{font-size:14px;line-height:1.5}.interaction-notice small{margin-top:4px;font-size:12px;line-height:1.5;color:#c8dbd5}
+.interaction-notice>button{flex:0 0 32px;align-self:center;width:32px;height:32px;border:0;border-radius:8px;background:#ffffff10;color:inherit;font-size:22px;cursor:pointer}
+.card-trade-choice{position:relative}
+.card-trade-choice.selected::after{content:"✓";position:absolute;top:8px;right:8px;z-index:4;display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:#25876d;color:white;font-size:14px;pointer-events:none}
+html[data-ui-motion="on"] .card-trade-choice{transition:background-color 160ms ease,border-color 160ms ease,box-shadow 160ms ease}
+@media(max-width:600px){.interaction-notice{right:12px;bottom:72px;max-width:calc(100vw - 24px);padding:12px;gap:8px}.interaction-notice>button{flex-basis:40px;width:40px;height:40px}}

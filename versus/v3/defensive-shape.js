@@ -1,4 +1,4 @@
-import {roleGroup} from '../../game/public/schema.js';
+import {roleGroup} from '../../shared/football/schema.js';
 import {isV3} from './model-config.js';
 
 export function defensiveInstructionPositions(positions,roles,details={},parameters) {

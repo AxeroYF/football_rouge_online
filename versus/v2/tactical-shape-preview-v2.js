@@ -1,6 +1,7 @@
 import { buildV21DynamicTeamShape } from "./dynamic-shape-v2.js";
 import { tacticalDetailsForPlan, tacticalDimensionsForPlan } from "./match-engine-v2.js";
 import {defensiveInstructionPositions} from "../v3/defensive-shape.js";
+import {tacticalFlowFields} from "../public/tactical-flow.js";
 
 const ATTACK_LANES = Object.freeze({
   balanced:"center",
@@ -102,6 +103,7 @@ export function buildV21TacticalShapePreview({
     active:true,
   }));
   const previewTeam = {
+    ...tacticalFlowFields(plan),
     players:activePlayers,
     positions,
     outOfPossessionDetails:details.outOfPossessionDetails,

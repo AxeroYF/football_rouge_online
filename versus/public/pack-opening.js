@@ -1,7 +1,16 @@
 // Adapted from Rougelite 0bdeaa8: bounded reveal, in-place claims and scene cleanup.
-export function createPackOpeningEffects(root, env = root.ownerDocument.defaultView) {
+const MOTION_STORAGE_KEY = 'yffm1_pack_opening_motion_v1';
+
+function normalizeMotionPreference(value) {
+  return ['on', 'off'].includes(value) ? value : 'system';
+}
+
+export function createPackOpeningEffects(root, env = root.ownerDocument.defaultView, settings = null) {
   const doc = root.ownerDocument;
   const motion = env.matchMedia('(prefers-reduced-motion: reduce)');
+  let motionPreference = 'system';
+  try { motionPreference = normalizeMotionPreference(env.localStorage?.getItem(MOTION_STORAGE_KEY)); } catch { /* Storage is optional. */ }
+  if (settings) motionPreference = normalizeMotionPreference(settings.value.packMotion);
   let frame = null, decodeTimer = null, finishTimer = null, epoch = 0;
   let destroyed = false, pending = false, claimed = false, selectedId = null;
   let originalDisabled = new Map(), originalStatus = new Map();
@@ -19,9 +28,33 @@ export function createPackOpeningEffects(root, env = root.ownerDocument.defaultV
       card.classList.add('is-revealed');
     }
   }
+  function reducedMotion() {
+    return motionPreference === 'off' || motionPreference === 'system' && motion.matches;
+  }
+  function motionStatus() {
+    return motionPreference === 'system' ? (motion.matches ? '系统已关闭动画' : '系统已开启动画') : motionPreference === 'on' ? '动画已开启' : '动画已关闭';
+  }
+  function motionControlMarkup() {
+    return `<label class="pack-opening-motion"><span>开包动画</span><select data-pack-opening-motion aria-label="开包动画"><option value="system" ${motionPreference === 'system' ? 'selected' : ''}>跟随系统</option><option value="on" ${motionPreference === 'on' ? 'selected' : ''}>开启</option><option value="off" ${motionPreference === 'off' ? 'selected' : ''}>关闭</option></select><small data-pack-opening-motion-status role="status">${motionStatus()}</small></label>`;
+  }
   function syncMotion() {
-    root.classList.toggle('is-motion-paused', doc.hidden || motion.matches);
-    if (doc.hidden || motion.matches) { ++epoch; finishReveal(); }
+    const wasDisabled = root.dataset.packMotionActive === 'false';
+    const disabled = reducedMotion();
+    root.dataset.packMotionActive = String(!disabled);
+    root.classList.toggle('is-motion-paused', doc.hidden || disabled);
+    const select = root.querySelector('[data-pack-opening-motion]');
+    if (select) select.value = motionPreference;
+    const status = root.querySelector('[data-pack-opening-motion-status]');
+    if (status) status.textContent = motionStatus();
+    if (doc.hidden || disabled) { ++epoch; finishReveal(); }
+    else if (wasDisabled && !pending && !claimed) reveal();
+  }
+  function changeMotion(event) {
+    if (!event.target.matches?.('[data-pack-opening-motion]')) return;
+    motionPreference = normalizeMotionPreference(event.target.value);
+    if (settings) { settings.update({ packMotion:motionPreference }); return; }
+    try { env.localStorage?.setItem(MOTION_STORAGE_KEY, motionPreference); } catch { /* Keep this scene usable without storage. */ }
+    syncMotion();
   }
   function animationEnd(event) {
     const revealing = root.querySelectorAll('.inventory-choice-card.is-revealing');
@@ -43,12 +76,12 @@ export function createPackOpeningEffects(root, env = root.ownerDocument.defaultV
       const status = card.querySelector('.inventory-owned-status');
       if (status) originalStatus.set(status, status.textContent);
     }
-    if (!candidates.length || motion.matches || doc.hidden) { finishReveal(); syncMotion(); return; }
+    if (!candidates.length || reducedMotion() || doc.hidden) { finishReveal(); return; }
     root.classList.add('is-preparing');
     let started = false;
     function start() {
       if (destroyed || current !== epoch || started) return;
-      if (doc.hidden || motion.matches) { finishReveal(); return; }
+      if (doc.hidden || reducedMotion()) { finishReveal(); return; }
       started = true; env.clearTimeout(decodeTimer);
       frame = env.requestAnimationFrame(() => {
         frame = null;
@@ -102,19 +135,24 @@ export function createPackOpeningEffects(root, env = root.ownerDocument.defaultV
     return card?.querySelector('.s4-player-card') ?? null;
   }
   root.addEventListener('animationend', animationEnd);
+  root.addEventListener('change', changeMotion);
   doc.addEventListener('visibilitychange', syncMotion);
   motion.addEventListener('change', syncMotion);
+  const unsubscribeSettings = settings?.subscribe(value => { motionPreference = normalizeMotionPreference(value.packMotion); syncMotion(); });
   syncMotion();
   return {
-    root, reveal, select, resetSelection, confirm,
+    root, reveal, select, resetSelection, confirm, motionControlMarkup,
+    get motionPreference() { return motionPreference; },
     get busy() { return pending; },
     get selectedPlayerId() { return selectedId; },
     destroy() {
       if (destroyed) return;
       destroyed = true; ++epoch; clearPending();
       root.removeEventListener('animationend', animationEnd);
+      root.removeEventListener('change', changeMotion);
       doc.removeEventListener('visibilitychange', syncMotion);
       motion.removeEventListener('change', syncMotion);
+      unsubscribeSettings?.();
       originalDisabled.clear(); originalStatus.clear();
     },
   };

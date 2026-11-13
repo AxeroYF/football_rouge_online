@@ -479,7 +479,11 @@ export class VersusRoomService {
     if (!room.spectators) return;
     const cutoff = this.now() - SPECTATOR_TTL_MS;
     Object.entries(room.spectators).forEach(([spectatorToken, spectator]) => {
-      if (spectator.lastSeenAt < cutoff) delete room.spectators[spectatorToken];
+      if (spectator.lastSeenAt < cutoff) {
+        room.spectatorRecoveries ??= {};
+        room.spectatorRecoveries[spectatorToken] = { name:spectator.name };
+        delete room.spectators[spectatorToken];
+      }
     });
   }
 
@@ -535,8 +539,8 @@ export class VersusRoomService {
 
   watchView(codeValue, spectatorToken) {
     const room = this.getRoom(codeValue);
-    const spectator = room.spectators?.[spectatorToken];
-    if (!spectator) throw new Error("观赛会话已过期，请重新进入直播");
+    const spectator = Object.hasOwn(room.spectators ?? {}, spectatorToken) ? room.spectators[spectatorToken] : null;
+    if (!spectator) throw Object.assign(new Error("观赛会话已过期，请重新进入直播"), { code:"BROADCAST_SESSION_EXPIRED" });
     spectator.lastSeenAt = this.now();
     return this.broadcastView(room);
   }
@@ -544,7 +548,19 @@ export class VersusRoomService {
   leaveWatch(codeValue, spectatorToken) {
     const room = this.getRoom(codeValue);
     if (room.spectators?.[spectatorToken]) delete room.spectators[spectatorToken];
+    if (room.spectatorRecoveries?.[spectatorToken]) delete room.spectatorRecoveries[spectatorToken];
     return { left: true };
+  }
+
+  resumeWatch(codeValue, spectatorName, existingToken) {
+    const room = this.getRoom(codeValue);
+    if (!room.match || !["match", "report"].includes(room.phase)) throw Object.assign(new Error("这场比赛直播及详情已结束"), { code:"BROADCAST_ENDED" });
+    room.spectators ??= {};
+    const known = Object.hasOwn(room.spectators, existingToken) || Object.hasOwn(room.spectatorRecoveries ?? {}, existingToken);
+    const spectatorToken = known ? existingToken : token(18);
+    room.spectators[spectatorToken] = { name:cleanName(spectatorName, "匿名观众"), lastSeenAt:this.now() };
+    if (room.spectatorRecoveries) delete room.spectatorRecoveries[spectatorToken];
+    return { spectatorToken, broadcast:this.broadcastView(room) };
   }
 
   create(playerName, customCode = null, playerId = null, accountToken = null, competitionMode = "quick") {

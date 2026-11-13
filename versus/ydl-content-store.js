@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ATTRIBUTE_NAMES, playerOverallFromAttributes, POSITION_GROUPS, roleGroup } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES, playerOverallFromAttributes, POSITION_GROUPS, roleGroup } from "../shared/football/schema.js";
 import { isS4Legend, isXPlayer, moveRealPlayerToPool, normalizedS4LegendAttributes, REAL_PLAYER_BY_ID, REAL_PLAYERS, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP } from "./player-pool.js";
 import { playerCardStudioView } from "./player-card-studio-store.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
@@ -13,6 +13,12 @@ const DATA_DIRECTORY = path.resolve(HERE, "../data");
 const CONTENT_PATH = path.resolve(process.env.YDL_CONTENT_OVERRIDES_PATH ?? path.join(DATA_DIRECTORY, "ydl-content-overrides.json"));
 const BACKUP_PATH = path.join(path.dirname(CONTENT_PATH), `${path.basename(CONTENT_PATH, path.extname(CONTENT_PATH))}.backup.json`);
 const contentWriter = createQueuedJsonWriter(CONTENT_PATH, BACKUP_PATH);
+let mutationTail = Promise.resolve();
+function mutateContent(command) {
+  const pending = mutationTail.then(command);
+  mutationTail = pending.catch(() => {});
+  return pending;
+}
 const CONTENT_SCHEMA_VERSION = 2;
 const TRAIT_ROLE_GROUPS = Object.freeze(["ANY", "GK", "DEF", "MID", "ATT"]);
 const PLAYER_ROLES = Object.freeze(["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "AM", "LM", "RM", "ST", "LW", "RW"]);
@@ -77,7 +83,8 @@ function attributesForOverall(attributes, role, overall, maximum = 99) {
   return normalized;
 }
 
-function applyPlayerPatch(player, patch, options = {}) {
+function patchedPlayer(original, patch, options = {}) {
+  const player = clone(original);
   if (Object.hasOwn(patch, "name")) player.name = nonEmpty(patch.name, "球员姓名");
   if (Object.hasOwn(patch, "grade")) {
     const grade = String(patch.grade);
@@ -89,7 +96,7 @@ function applyPlayerPatch(player, patch, options = {}) {
     const role = String(patch.role);
     if (!PLAYER_ROLES.includes(role)) throw new Error("主位置无效");
     player.role = role;
-    moveRealPlayerToPool(player, roleGroup(role));
+    player.pool = roleGroup(role);
     if (player.secondaryRole === role) player.secondaryRole = null;
   }
   if (Object.hasOwn(patch, "secondaryRole")) {
@@ -121,6 +128,17 @@ function applyPlayerPatch(player, patch, options = {}) {
   }
   player.referenceAttributes = clone(player.attributes);
   return player;
+}
+
+function commitPlayer(player, candidate) {
+  const changedPool = player.pool !== candidate.pool;
+  Object.assign(player, candidate);
+  if (changedPool) moveRealPlayerToPool(player, candidate.pool);
+  return player;
+}
+
+function applyPlayerPatch(player, patch, options = {}) {
+  return commitPlayer(player, patchedPlayer(player, patch, options));
 }
 
 function applyTraitPatch(trait, patch) {
@@ -338,67 +356,65 @@ export function ydlContentView() {
 }
 
 export async function updateYdlPlayer(id, patch) {
-  const player = REAL_PLAYER_BY_ID[id];
-  if (!player) throw Object.assign(new Error("球员不存在"), { statusCode:404 });
-  const allowed = {
-    name:patch.name,
-    overall:patch.overall,
-    grade:patch.grade,
-    role:patch.role,
-    secondaryRole:patch.secondaryRole,
-    nationality:patch.nationality,
-    club:patch.club,
-    heightCm:patch.heightCm,
-    attributes:patch.attributes,
-  };
-  const cleanPatch = Object.fromEntries(Object.entries(allowed).filter(([, value]) => value !== undefined));
-  applyPlayerPatch(player, cleanPatch);
-  cleanPatch.overall = player.overall;
-  cleanPatch.attributes = clone(player.attributes);
-  overrides.players[id] = { ...(overrides.players[id] ?? {}), ...clone(cleanPatch) };
-  if (id === "legend-messi" && REAL_PLAYER_BY_ID["legend-messi-rat"]) {
-    const mirroredPatch = { ...clone(cleanPatch), name:"梅老鼠" };
-    applyPlayerPatch(REAL_PLAYER_BY_ID["legend-messi-rat"], mirroredPatch);
-    overrides.players["legend-messi-rat"] = { ...(overrides.players["legend-messi-rat"] ?? {}), ...mirroredPatch };
-  }
-  await persist();
-  return ydlContentView().players.find((candidate) => candidate.id === id);
+  return mutateContent(async () => {
+    const player = REAL_PLAYER_BY_ID[id];
+    if (!player) throw Object.assign(new Error("球员不存在"), { statusCode:404 });
+    const allowed = { name:patch.name, overall:patch.overall, grade:patch.grade, role:patch.role,
+      secondaryRole:patch.secondaryRole, nationality:patch.nationality, club:patch.club,
+      heightCm:patch.heightCm, attributes:patch.attributes };
+    const cleanPatch = Object.fromEntries(Object.entries(allowed).filter(([, value]) => value !== undefined));
+    const candidate = patchedPlayer(player, cleanPatch);
+    cleanPatch.overall = candidate.overall;
+    cleanPatch.attributes = clone(candidate.attributes);
+    const next = clone(overrides);
+    next.players[id] = { ...(next.players[id] ?? {}), ...clone(cleanPatch) };
+    let mirroredCandidate;
+    if (id === "legend-messi" && REAL_PLAYER_BY_ID["legend-messi-rat"]) {
+      const mirroredPatch = { ...clone(cleanPatch), name:"梅老鼠" };
+      mirroredCandidate = patchedPlayer(REAL_PLAYER_BY_ID["legend-messi-rat"], mirroredPatch);
+      next.players["legend-messi-rat"] = { ...(next.players["legend-messi-rat"] ?? {}), ...mirroredPatch };
+    }
+    next.updatedAt = new Date().toISOString();
+    await contentWriter.write(next);
+    overrides = next;
+    commitPlayer(player, candidate);
+    if (mirroredCandidate) commitPlayer(REAL_PLAYER_BY_ID["legend-messi-rat"], mirroredCandidate);
+    return ydlContentSection("players").players.find(entry => entry.id === id);
+  });
 }
 
 export async function updateYdlTrait(id, patch) {
-  const trait = YDL_TRAIT_BY_ID[id];
-  const draft = overrides.traitDrafts?.[id];
-  if (!trait && !draft) throw Object.assign(new Error("特性卡不存在"), { statusCode:404 });
-  const allowed = {
-    name:patch.name,
-    summary:patch.summary,
-    eligibleRoleGroups:patch.eligibleRoleGroups,
-    rules:patch.rules,
-  };
-  const cleanPatch = Object.fromEntries(Object.entries(allowed).filter(([, value]) => value !== undefined));
-  if (trait) {
-    applyTraitPatch(trait, cleanPatch);
-    overrides.traits[id] = { ...(overrides.traits[id] ?? {}), ...clone(cleanPatch) };
-  } else {
-    overrides.traitDrafts[id] = normalizeTraitDraft(id, {
-      ...draft,
-      ...clone(cleanPatch),
-      updatedAt:new Date().toISOString(),
-    });
-  }
-  await persist();
-  return ydlContentView().traits.find((candidate) => candidate.id === id);
+  return mutateContent(async () => {
+    const trait = YDL_TRAIT_BY_ID[id];
+    const draft = overrides.traitDrafts?.[id];
+    if (!trait && !draft) throw Object.assign(new Error("特性卡不存在"), { statusCode:404 });
+    const allowed = { name:patch.name, summary:patch.summary, eligibleRoleGroups:patch.eligibleRoleGroups, rules:patch.rules };
+    const cleanPatch = Object.fromEntries(Object.entries(allowed).filter(([, value]) => value !== undefined));
+    const next = clone(overrides);
+    const candidate = trait ? clone(trait) : null;
+    if (trait) {
+      applyTraitPatch(candidate, cleanPatch);
+      next.traits[id] = { ...(next.traits[id] ?? {}), ...clone(cleanPatch) };
+    } else {
+      next.traitDrafts[id] = normalizeTraitDraft(id, { ...draft, ...clone(cleanPatch), updatedAt:new Date().toISOString() });
+    }
+    next.updatedAt = new Date().toISOString();
+    await contentWriter.write(next);
+    overrides = next;
+    if (trait) Object.assign(trait, candidate);
+    return ydlContentSection("traits").traits.find(entry => entry.id === id);
+  });
 }
 
 export async function createYdlTraitDraft(patch) {
-  const id = `custom-${randomUUID()}`;
-  const draft = normalizeTraitDraft(id, {
-    name:patch.name,
-    summary:patch.summary,
-    eligibleRoleGroups:patch.eligibleRoleGroups,
-    rules:[],
+  return mutateContent(async () => {
+    const id = "custom-" + randomUUID();
+    const draft = normalizeTraitDraft(id, { name:patch.name, summary:patch.summary, eligibleRoleGroups:patch.eligibleRoleGroups, rules:[] });
+    const next = clone(overrides);
+    next.traitDrafts[id] = draft;
+    next.updatedAt = new Date().toISOString();
+    await contentWriter.write(next);
+    overrides = next;
+    return traitView(draft, { status:"draft", custom:true });
   });
-  overrides.traitDrafts[id] = draft;
-  await persist();
-  return traitView(draft, { status:"draft", custom:true });
 }

@@ -1,5 +1,6 @@
-import { positionFitScore, roleGroup } from "../../game/public/schema.js";
+import { positionFitScore, roleGroup } from "../../shared/football/schema.js";
 import { analyzeElevenBoardFormation, inferElevenBoardRoles } from "../public/formation-rules.js";
+import { compilePrincipleDimensions, isPrinciplesPlan } from "../public/tactical-principles.js";
 import { activeCaptain } from "../public/captain-rules.js";
 import { calculateV2StructureFit, calculateV2TacticalFit } from "../public/v2-tactical-fit.js";
 import {
@@ -13,12 +14,21 @@ import {
 } from "../public/v2-tactical-profiles.js";
 import { YDL_TRAIT_BY_ID } from "../trait-pool.js";
 import { simulateV2PossessionChain } from "./possession-chain-v2.js";
-import { v2EngineAttributeValue, V2_MATCH_PARAMETERS } from "./match-parameters-v2.js";
+import { v2EngineAttributeValue, V2_MATCH_PARAMETERS, resolveV2MatchParameters } from "./match-parameters-v2.js";
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
 import { buildV2TeamSnapshots } from "./team-snapshot-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
-import {isV3,V3_MODEL_VERSION,V3_ENGINE_PROFILE} from "../v3/model-config.js";
+import {isV3,isV31,isV32,isV33,engineModel,engineProfile} from "../v3/model-config.js";
+import {tacticalExecutionFields} from "../public/tactical-execution.js";
+import {conditionalPlanName,conditionalReplacement} from "../v3/conditional-tactics.js";
+import {resolveCornerRoutine} from "../v3/corner-routines.js";
+import {initializeFlowState,assertFlowState,flowMinute,FLOW_PERIODS,periodRemaining,resetFlowRestart,commitFlowClock,finishFlowPossession} from "../v3/flow-state.js";
+import {tacticalFlowFields} from "../public/tactical-flow.js";
+import {chooseBounded} from "../v3/action-policy.js";
 import {matchOutcomeRoll} from "../v3/outcome-sampling.js";
+import {createSerializableMatchRng,initializeMatchRandom,restoreMatchRandom,matchRandom} from "../v3/random-state.js";
+import {captureMatchConfiguration,lockMatchConfiguration} from "../v3/match-configuration.js";
+import {initializeDiagnostics,wantsDecisionTrace,recordChainDiagnostics,recordShotDiagnostics,recordPlanDiagnostic} from "../v3/diagnostics.js";
 import { automaticSubstitutionRank, compareAutomaticSubstitutes } from "../automatic-substitution.js";
 import {
   resolveV2PlayerDuty,
@@ -28,6 +38,7 @@ import {
 } from "./player-duties-v2.js";
 
 const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+const runtimeMatches=new WeakSet();
 const round = (value, digits = 3) => Number(Number(value).toFixed(digits));
 const SHOT_TYPE_LABELS = Object.freeze({
   throughBall:"直塞配合",
@@ -66,6 +77,7 @@ function isDeepBlockPlan(plan = {}) {
 }
 
 export function tacticalDimensionsForPlan(plan = {}) {
+  if (isPrinciplesPlan(plan)) return compilePrincipleDimensions(plan);
   const adjustments = v2TacticalProfileAdjustments(plan.inPossession, plan.outOfPossession);
   Object.entries(v2TacticalDetailAdjustments(plan.inPossessionDetails, plan.outOfPossessionDetails)).forEach(([key, value]) => { adjustments[key] = Number(adjustments[key] ?? 0) + Number(value); });
   if (!hasV2SplitTacticalPlan(plan)) {
@@ -135,20 +147,14 @@ function resolveSuperStormStopMinute(seed, range, requestedMinute) {
 }
 
 export function createV2MatchRng(seed = "ydl-v2") {
-  let state = hashSeed(seed) || 1;
-  return () => {
-    state += 0x6D2B79F5;
-    let value = state;
-    value = Math.imul(value ^ value >>> 15, value | 1);
-    value ^= value + Math.imul(value ^ value >>> 7, value | 61);
-    return ((value ^ value >>> 14) >>> 0) / 4294967296;
-  };
+  return createSerializableMatchRng(seed);
 }
 
 function cloneTeam(team, index) {
   const opening = team.tacticalPlans?.opening ?? {
     tactic:team.tactic ?? "balanced",
     style:team.style ?? "possession",
+    tacticalModelVersion:team.tacticalModelVersion,
     possessionStyle:team.possessionStyle,
     defensiveBlock:team.defensiveBlock,
     transitionStyle:team.transitionStyle,
@@ -168,6 +174,7 @@ function cloneTeam(team, index) {
     style:opening.style,
     ...split,
     splitTacticsExplicit:hasV2SplitTacticalPlan(opening),
+    tacticalModelVersion:opening.tacticalModelVersion,
     inPossession:opening.inPossession ?? "balanced",
     outOfPossession:opening.outOfPossession ?? "balanced",
     inPossessionDetails:details.inPossessionDetails,
@@ -196,7 +203,7 @@ function cloneTeam(team, index) {
 }
 
 function traitHook(player, hook) {
-  const definitions = player?.traitDefinitions ?? (player?.traits ?? []).map((entry) => YDL_TRAIT_BY_ID[typeof entry === "string" ? entry : entry?.id]).filter(Boolean);
+  const definitions = player?.matchTraitDefinitions ?? player?.traitDefinitions ?? (player?.traits ?? []).map((entry) => YDL_TRAIT_BY_ID[typeof entry === "string" ? entry : entry?.id]).filter(Boolean);
   return definitions.flatMap((trait) => (trait.rules ?? []).map((rule) => ({ ...rule, traitId:trait.id, traitName:trait.name }))).find((rule) => rule.hook === hook);
 }
 
@@ -241,10 +248,11 @@ function displayMetric(match, teamIndex, player, weights) {
   return metric({ ...snapshot, attributes:snapshot.displayAttributes }, weights);
 }
 
-function pick(match, entries, weight = () => 1) {
+function pick(match, entries, weight = () => 1, domain = "decision") {
   if (!entries.length) return null;
+  if(isV32(match.parameters)&&["decision","shot"].includes(domain))return chooseBounded(entries,weight,()=>matchRandom(match,domain),{judgment:80,tolerance:match.parameters.v32.decisionTolerance});
   const values = entries.map((entry) => Math.max(0.001, Number(weight(entry)) || 0.001));
-  let roll = match.rng() * values.reduce((sum, value) => sum + value, 0);
+  let roll = matchRandom(match,domain) * values.reduce((sum, value) => sum + value, 0);
   for (let index = 0; index < entries.length; index += 1) {
     roll -= values[index];
     if (roll <= 0) return entries[index];
@@ -693,20 +701,28 @@ function chooseTacticalPlan(team, state) {
 }
 
 function applyTacticalPlan(match, team) {
-  const planName = tacticalPlanName(match, team.index);
+  const candidate=tacticalPlanName(match,team.index);
+  const planName = isV33(match.parameters)?conditionalPlanName(match,team,candidate):candidate;
   const plan = chooseTacticalPlan(team, planName);
-  if (team.activePlan === planName && team.tactic === plan.tactic && team.style === plan.style) return;
+  const signature = isPrinciplesPlan(plan) ? JSON.stringify(plan) : null;
+  if (team.activePlan === planName && team.tactic === plan.tactic && team.style === plan.style
+    && (!signature || team.activeTacticalSignature === signature)) return;
+  team.activeTacticalSignature = signature;
+  if(isV33(match.parameters))team.lastPlanChangedAt=match.flowState.elapsedSeconds;
   team.activePlan = planName;
   team.tactic = plan.tactic ?? team.tactic;
   team.style = plan.style ?? team.style;
   Object.assign(team, resolveV2SplitTacticalPlan(plan));
   team.splitTacticsExplicit = hasV2SplitTacticalPlan(plan);
+  team.tacticalModelVersion = plan.tacticalModelVersion;
   team.inPossession = plan.inPossession ?? "balanced";
   team.outOfPossession = plan.outOfPossession ?? "balanced";
   const details = tacticalDetailsForPlan(plan, team);
   team.inPossessionDetails = details.inPossessionDetails;
   team.outOfPossessionDetails = details.outOfPossessionDetails;
   team.tacticalDimensions = tacticalDimensionsForPlan(plan);
+  if(isV32(match.parameters))Object.assign(team,tacticalFlowFields(plan));
+  if(isV33(match.parameters))Object.assign(team,tacticalExecutionFields(plan));
   team.playerDuties = structuredClone(plan.playerDuties ?? team.openingPlan?.playerDuties ?? team.playerDuties ?? {});
   const preset = plan.positionPreset ?? "position1";
   team.positions = structuredClone(team.positionPresets?.[preset] ?? team.positions);
@@ -721,7 +737,14 @@ function applyTacticalPlan(match, team) {
       player.tacticalDuty = resolveV2PlayerDuty(player.assignedRole, team.playerDuties?.[player.id] ?? null);
     }
   });
-  addEvent(match, "tactical", team.index, `${team.name}根据实时比分切换为${PLAN_LABELS[planName] ?? "当前"}战术计划。`, { plan:planName, tactic:team.tactic, style:team.style, positionPreset:preset });
+  addEvent(match, "tactical", team.index, `${team.name}根据实时比分切换为${PLAN_LABELS[planName] ?? "当前"}战术计划。`, {
+    plan:planName, tactic:team.tactic, style:team.style, positionPreset:preset,
+    score:[...match.score], goalDifference:Number(team.score) - Number(match.teams[1 - team.index].score),
+    triggerGoalDifference:Number(plan.triggerGoalDifference ?? 1), tacticalModelVersion:team.tacticalModelVersion,
+    possessionStyle:team.possessionStyle, defensiveBlock:team.defensiveBlock, transitionStyle:team.transitionStyle, duelIntensity:team.duelIntensity,
+    ...(isV33(match.parameters)?{planAfter:team.planAfter,reason:'score-and-time'}:{}),
+  });
+  recordPlanDiagnostic(match,team,{plan:planName,reason:isV33(match.parameters)?"score-and-time":"score-threshold",goalDifference:Number(team.score)-Number(match.teams[1-team.index].score),threshold:Number(plan.triggerGoalDifference??1),...(isV33(match.parameters)?{planAfter:team.planAfter}:{})});
 }
 
 function captureAnalysisSnapshot(match) {
@@ -729,6 +752,7 @@ function captureAnalysisSnapshot(match) {
     plan:team.activePlan,
     tactic:team.tactic,
     style:team.style,
+    tacticalModelVersion:team.tacticalModelVersion,
     possessionStyle:team.possessionStyle,
     defensiveBlock:team.defensiveBlock,
     transitionStyle:team.transitionStyle,
@@ -805,11 +829,12 @@ function replaceDutyPlayer(duties, outgoingId, incomingId) {
   return true;
 }
 
-function autoSubstituteInjuredPlayer(match, team, injuredPlayer) {
+function autoSubstituteInjuredPlayer(match, team, injuredPlayer, replacement=null) {
   if (!match.parameters.state.substitutionsEnabled) return null;
+  if(isV33(match.parameters)&&team.stats.substitutions>=5)return null;
   const targetRole = injuredPlayer.assignedRole ?? injuredPlayer.role;
-  const substitute = team.players
-    .filter((player) => player.active === false && !player.injury && !player.sentOff && automaticSubstitutionRank(targetRole, player) > 0)
+  const substitute = replacement?.incoming??team.players
+    .filter((player) => player.active === false && !player.injury && !player.sentOff && (!isV33(match.parameters)||!player.substitutedOut) && automaticSubstitutionRank(targetRole, player) > 0)
     .sort((left, right) => compareAutomaticSubstitutes(targetRole, left, right))[0];
   if (!substitute) return null;
   const outgoingRole = injuredPlayer.assignedRole ?? injuredPlayer.role;
@@ -825,15 +850,22 @@ function autoSubstituteInjuredPlayer(match, team, injuredPlayer) {
   substitute.enteredAsSubstitute = true;
   substitute.substitutedForId = injuredPlayer.id;
   injuredPlayer.substitutedOut = true;
+  if(isV33(match.parameters)) {
+    injuredPlayer.active=false;
+    const shape=match.flowState.shapes[team.index];
+    shape[substitute.id]={...(shape[injuredPlayer.id]??substitute.boardPosition??{x:50,y:70})};delete shape[injuredPlayer.id];
+    if(match.flowState.carrierId===injuredPlayer.id)match.flowState.carrierId=substitute.id;
+  }
   team.stats.substitutions = Number(team.stats.substitutions ?? 0) + 1;
-  addEvent(match, "substitution", team.index, `${team.name}完成伤病换人：${substitute.name}替换${injuredPlayer.name}出场。`, {
+  addEvent(match, "substitution", team.index, `${team.name}完成${replacement?'条件':'伤病'}换人：${substitute.name}替换${injuredPlayer.name}出场。`, {
     actorId:substitute.id,
     opponentId:injuredPlayer.id,
     incomingPlayerId:substitute.id,
     incomingPlayerName:substitute.name,
     outgoingPlayerId:injuredPlayer.id,
     outgoingPlayerName:injuredPlayer.name,
-    reason:"injury",
+    reason:replacement?"conditional":"injury",
+    ...(replacement?{condition:replacement.condition,fitnessBefore:injuredPlayer.state.fitness}:{}),
     assignedRole:outgoingRole,
     tacticalDuty:substitute.tacticalDuty,
     detail:`换下：${injuredPlayer.name}；换上：${substitute.name}；位置匹配顺序：主位置、次位置、同位置线；${substitute.name}接管${outgoingRole}职责。`,
@@ -852,8 +884,9 @@ function currentMatchRating(player) {
 
 export function autoSubstituteDismissedGoalkeeper(match, team, dismissedGoalkeeper) {
   if (!match.parameters.state.substitutionsEnabled || (dismissedGoalkeeper.assignedRole ?? dismissedGoalkeeper.role) !== "GK") return null;
+  if(isV33(match.parameters)&&team.stats.substitutions>=5)return null;
   const substitute = team.players
-    .filter((player) => player.active === false && !player.injury && !player.sentOff && automaticSubstitutionRank("GK", player) > 0)
+    .filter((player) => player.active === false && !player.injury && !player.sentOff && (!isV33(match.parameters)||!player.substitutedOut) && automaticSubstitutionRank("GK", player) > 0)
     .sort((left, right) => compareAutomaticSubstitutes("GK", left, right))[0];
   const outgoingCenterBack = activePlayers(team)
     .filter((player) => (player.assignedRole ?? player.role) === "CB")
@@ -998,10 +1031,10 @@ export function v2FatigueLoadMultiplier(dimensions = {}, parameters = V2_MATCH_P
     + aggressivePressingLoad * attackingLoad * Number(parameters.state.attackingPressFatigueMaximum ?? 0);
 }
 
-function applyFatigue(match) {
+function applyFatigue(match,chain=null) {
   const weatherFatigueMultiplier = Number(match.parameters.environment?.weatherFatigueMultiplier?.[match.environment.weather] ?? 1);
   for (const team of match.teams) {
-    for (const player of activePlayers(team)) {
+    for (const player of (isV32(match.parameters)&&chain?.activePlayerIds?team.players.filter(player=>chain.activePlayerIds[team.index].includes(player.id)):activePlayers(team))) {
       const fixed = traitHook(player, "fixedFitness");
       if (fixed) {
         player.state.fitness = Number(fixed.value);
@@ -1011,7 +1044,19 @@ function applyFatigue(match) {
         const stamina = effectiveMetric(match, team.index, player, { stamina:1 });
         const dimensions = resolveV2TacticalDimensions(team.tactic, team.style, team.tacticalDimensions, match.parameters);
         const pressing = v2FatigueLoadMultiplier(dimensions, match.parameters);
-        const baseLoss = Number(match.parameters.state.fatiguePerChain ?? 0.085) * pressing * (1.2 - stamina / 300) * v2DutyFatigueMultiplier(player);
+        let exposure=1;
+        if(isV32(match.parameters)&&chain) {
+          const press=chain.actions?.find(action=>action.type==="counterPress"&&action.teamIndex===team.index);
+          const sprint=press?.pressers?.includes(player.id)?press.seconds*.8:0;
+          const tacticalLoad=isV33(match.parameters)?(chain.actions??[]).reduce((sum,action)=>sum+(action.pressure?.teamIndex===team.index&&action.pressure.pressers.includes(player.id)?action.seconds*.4:0),0):0;
+          exposure=(chain.activeDurationSeconds+chain.deadBallSeconds*.15+sprint+tacticalLoad)/30;
+          match.flowState.loadByPlayer[player.id]=(match.flowState.loadByPlayer[player.id]??0)+exposure*30;
+        }
+        const baseLoss = Number(match.parameters.state.fatiguePerChain ?? 0.085) * pressing * (1.2 - stamina / 300) * v2DutyFatigueMultiplier(player)*exposure;
+        if(isV32(match.parameters)) {
+          player.state.fitness=round(clamp(player.state.fitness-baseLoss*weatherFatigueMultiplier,18,100),3);
+          continue;
+        }
         player.v2WeatherFatigueRemainder = Number(player.v2WeatherFatigueRemainder ?? 0) + baseLoss * Math.max(0, weatherFatigueMultiplier - 1);
         const weatherLoss = Math.floor((player.v2WeatherFatigueRemainder + 1e-9) * 10) / 10;
         player.v2WeatherFatigueRemainder -= weatherLoss;
@@ -1046,7 +1091,8 @@ function longShotProfile(match, teamIndex, team, candidate, chain, requestedType
   const config = match.parameters.chain.longShot;
   const skill = effectiveMetric(match, teamIndex, candidate, { longShots:0.55, composure:0.2, decisions:0.15, firstTouch:0.1 });
   const defending = match.teams[1 - teamIndex];
-  const lowBlock = (defending.splitTacticsExplicit ? defending.defensiveBlock : defending.style) === "lowBlock" || ["defensive", "parkBus"].includes(defending.tactic);
+  const lowBlock = (defending.splitTacticsExplicit ? defending.defensiveBlock : defending.style) === "lowBlock"
+    || (!isPrinciplesPlan(defending) && ["defensive", "parkBus"].includes(defending.tactic));
   const attackingMentality = ["positive", "allOutAttack"].includes(team.tactic);
   const longShotInstruction = team.inPossessionDetails?.longShots ?? "balanced";
   const chanceInstruction = team.inPossessionDetails?.chanceCreation ?? "balanced";
@@ -1416,22 +1462,36 @@ export function v2HighLineBreakawayProfile(baseXg, chain, shotType, parameters =
   };
 }
 
+function reserveContinuousAction(match,chain,seconds,type) {
+  if(!isV32(match.parameters))return true;
+  chain=match.activeFlowChain??chain;
+  const remaining=periodRemaining(match.flowState)-Number(chain.activeDurationSeconds??0);
+  if(remaining+1e-6<seconds)return false;
+  chain.activeDurationSeconds=round(chain.activeDurationSeconds+seconds);
+  (chain.secondaryActions??=[]).push({type,seconds});
+  const p=FLOW_PERIODS[match.flowState.period];
+  match.minute=round(Math.min(p.end,p.start+(match.flowState.periodElapsed+chain.activeDurationSeconds)/60),2);
+  return true;
+}
+
 function resolveShot(match, teamIndex, chain, options = {}) {
+  if((chain.stages.at(-1)?.stage!=="shot"||Object.hasOwn(options,"setPieceDepth")||Number(options.reboundDepth??0)>0)&&!reserveContinuousAction(match,chain,2,"secondaryShot"))return {outcome:"timeExpired",xg:0};
+  const domainPick=(entries,weight)=>pick(match,entries,weight,"shot");
   const attacking = match.teams[teamIndex];
   const defending = match.teams[1 - teamIndex];
   const shotStage = chain.stages.at(-1);
   let type = options.type ?? shotTypeFrom(chain, attacking);
   const candidates = activePlayers(attacking).filter((player) => roleGroup(player.assignedRole ?? player.role) !== "GK");
-  let shooter = options.taker ?? candidates.find((player) => player.id === shotStage.actor?.id) ?? pick(match, candidates, (player) => effectiveMetric(match, teamIndex, player, { finishing:0.45, offBall:0.3, composure:0.25 }));
+  let shooter = options.taker ?? candidates.find((player) => player.id === shotStage.actor?.id) ?? domainPick( candidates, (player) => effectiveMetric(match, teamIndex, player, { finishing:0.45, offBall:0.3, composure:0.25 }));
   const longShotCandidate = options.type ? null : bestLongShotCandidate(match, teamIndex, attacking);
-  const longShot = longShotProfile(match, teamIndex, attacking, longShotCandidate, chain, type, options.type);
+  const longShot = isV32(match.parameters)?null:longShotProfile(match, teamIndex, attacking, longShotCandidate, chain, type, options.type);
   if (longShot) {
     type = "longShot";
     shooter = longShot.candidate;
   }
   const possessionStyle = attacking.splitTacticsExplicit ? attacking.possessionStyle : attacking.style;
   if (!options.taker && !longShot && type === "cross") {
-    shooter = pick(match, candidates, (player) => effectiveMetric(match, teamIndex, player, { heading:0.42, jumping:0.22, strength:0.18, offBall:0.18 }) + (Number(snapshotPlayer(match, teamIndex, player.id)?.heightCm ?? player.heightCm ?? 180) - 180) * 0.65);
+    shooter = domainPick( candidates, (player) => effectiveMetric(match, teamIndex, player, { heading:0.42, jumping:0.22, strength:0.18, offBall:0.18 }) + (Number(snapshotPlayer(match, teamIndex, player.id)?.heightCm ?? player.heightCm ?? 180) - 180) * 0.65);
   }
   const shotZone = longShot?.zone ?? chain.endZone ?? shotStage?.zone ?? "box:center";
   const keeper = goalkeeper(defending);
@@ -1478,10 +1538,11 @@ function resolveShot(match, teamIndex, chain, options = {}) {
     const remainingOnTarget=(outcomeProfile.onTargetProbability-outcomeProfile.goalProbability)/Math.max(.001,1-outcomeProfile.goalProbability);
     onTarget=goal||matchOutcomeRoll(match,`onTarget:${teamIndex}`)<clamp(remainingOnTarget,0,1);
   }else{
-    onTarget=match.rng()<outcomeProfile.onTargetProbability;
-    goal=onTarget&&match.rng()<1-outcomeProfile.saveProbabilityGivenOnTarget;
+    onTarget=matchRandom(match,"shot")<outcomeProfile.onTargetProbability;
+    goal=onTarget&&matchRandom(match,"shot")<1-outcomeProfile.saveProbabilityGivenOnTarget;
   }
   const saved = onTarget && !goal;
+  recordShotDiagnostics(match,teamIndex,type,outcomeProfile,goal,{xg,scoreStateXgMultiplier});
   if (onTarget) {
     attacking.stats.shotsOnTarget += 1;
     shooter.matchStats.shotsOnTarget += 1;
@@ -1540,14 +1601,14 @@ function resolveShot(match, teamIndex, chain, options = {}) {
     defending.stats.saves += 1;
     keeper.matchStats.saves += 1;
   }
-  const looseBall = type !== "penalty" && match.rng() < clamp(0.18 + xg * 0.25 - keeperValue / 1000, 0.05, 0.22);
+  const looseBall = type !== "penalty" && matchRandom(match,"shot") < clamp(0.18 + xg * 0.25 - keeperValue / 1000, 0.05, 0.22);
   addEvent(match, "save", 1 - teamIndex, `${keeper?.name ?? "防守球员"}扑出${shooter.name}在${zoneLabel(shotZone)}接应${typeLabel}后的射门${looseBall ? "，皮球脱手形成补射机会" : "并稳稳控制住皮球"}。`, {
     actorId:keeper?.id ?? null, opponentId:shooter.id, attackType:type, xg, bodyPart:bodyPartProfile.bodyPart, bodyPartLabel:bodyPartProfile.label, goalProbability:outcomeProfile.goalProbability, onTargetProbability:outcomeProfile.onTargetProbability, saveProbability:outcomeProfile.saveProbabilityGivenOnTarget, scoreStateXgMultiplier, looseBall, zone:shotZone, attackingTeamIndex:teamIndex, possessionType, breakaway:breakawayProfile.breakaway, breakawayBonus:breakawayProfile.bonus, defendingLine:breakawayProfile.defendingLine,
     detail:`射门球员：${shooter.name}；门将：${keeper?.name ?? "无有效门将"}；进攻方式：${typeLabel}；起脚区域：${zoneLabel(shotZone)}；机会质量：xG ${xg.toFixed(3)}；终结能力：${Math.round(displayedFinishing)}；扑救能力：${Math.round(displayedKeeperValue)}；${looseBall ? "扑救后未能控制皮球" : "扑救后控制住皮球"}。`,
   });
   if (looseBall && Number(options.reboundDepth ?? 0) < 1) {
-    const rebounder = pick(match, candidates.filter((player) => player.id !== shooter.id), (player) => effectiveMetric(match, teamIndex, player, { offBall:0.5, finishing:0.3, acceleration:0.2 }));
-    if (rebounder && match.rng() < 0.48) return resolveShot(match, teamIndex, chain, { type:"rebound", taker:rebounder, xg:clamp(xg * 0.52, 0.06, 0.28), possessionType, reboundDepth:Number(options.reboundDepth ?? 0) + 1, setPieceDepth:Number(options.setPieceDepth ?? 0) });
+    const rebounder = domainPick( candidates.filter((player) => player.id !== shooter.id), (player) => effectiveMetric(match, teamIndex, player, { offBall:0.5, finishing:0.3, acceleration:0.2 }));
+    if (rebounder && matchRandom(match,"shot") < 0.48) return resolveShot(match, teamIndex, chain, { type:"rebound", taker:rebounder, xg:clamp(xg * 0.52, 0.06, 0.28), possessionType, reboundDepth:Number(options.reboundDepth ?? 0) + 1, setPieceDepth:Number(options.setPieceDepth ?? 0) });
   }
   if (type !== "penalty") {
     const corner = maybeAwardCorner(match, teamIndex, chain, "save", Number(match.parameters.chain.setPiece?.cornerFromSaveChance ?? 0), Number(options.setPieceDepth ?? 0), possessionType);
@@ -1598,6 +1659,18 @@ export function v2SelectSetPieceTaker(match, teamIndex, kind = "freeKick") {
 }
 
 function resolveSetPiece(match, teamIndex, kind, setPieceDepth = 0, possessionType = "normal", sourceZone = null) {
+  const cornerPlan=isV33(match.parameters)&&kind==='corner'&&(match.teams[teamIndex].setPieceRoutine!=='balanced'||match.teams[teamIndex].setPieceCommitment!=='balanced');
+  if(cornerPlan) {
+    const result=resolveCornerRoutine(match,teamIndex,sourceZone,{
+      reserve:(seconds,type)=>reserveContinuousAction(match,match.activeFlowChain,seconds,type),
+      event:(...args)=>addEvent(match,...args),metric:(...args)=>effectiveMetric(match,...args),roll:domain=>matchRandom(match,domain),
+      taker:v2SelectSetPieceTaker(match,teamIndex,kind),
+      shot:(taker,creator,xg,type,zone)=>resolveShot(match,teamIndex,{possessionType,context:{chainIndex:match.nextChainIndex},endZone:zone,stages:[{actor:{id:taker.id},probability:xg}]},{type,taker,creator,xg,setPieceDepth,possessionType}),
+    });
+    if(result.outcome!=='timeExpired')match.teams[teamIndex].stats.setPieces++;
+    return result;
+  }
+  if(isV32(match.parameters)&&match.activeFlowChain&&!reserveContinuousAction(match,match.activeFlowChain,5,"setPiece"))return null;
   const attacking = match.teams[teamIndex];
   const candidates = activePlayers(attacking).filter((player) => roleGroup(player.assignedRole ?? player.role) !== "GK");
   const taker = v2SelectSetPieceTaker(match, teamIndex, kind);
@@ -1612,6 +1685,7 @@ function resolveSetPiece(match, teamIndex, kind, setPieceDepth = 0, possessionTy
     const guaranteed = keeper && traitHook(keeper, "firstPenaltySave")?.guaranteed && !keeper.v2FirstPenaltySaveUsed;
     if (guaranteed) {
       keeper.v2FirstPenaltySaveUsed = true;
+      recordShotDiagnostics(match,teamIndex,"penaltyTraitSave",{goalProbability:0},false,{xg:.76,scoreStateXgMultiplier:1});
       attacking.stats.shots += 1;
       attacking.stats[possessionType === "transition" ? "transitionShots" : "normalShots"] += 1;
       attacking.stats.shotsOnTarget += 1;
@@ -1646,7 +1720,7 @@ function resolveSetPiece(match, teamIndex, kind, setPieceDepth = 0, possessionTy
   const targetMovement = target ? effectiveMetric(match, teamIndex, target, { offBall:0.46, decisions:0.2, acceleration:0.14, heading:0.2 }) : 40;
   const chanceProfile = v2SetPieceChanceProfile({ kind, sourceLane, delivery, targetAerial, markerAerial, targetMovement, directAbility:directFreeKickAbility }, match.parameters);
   const directFreeKickChance = chanceProfile.directFreeKickChance;
-  if (directFreeKickChance > 0 && match.rng() < directFreeKickChance) {
+  if (directFreeKickChance > 0 && matchRandom(match,"execution") < directFreeKickChance) {
     const xg = chanceProfile.directFreeKickXg;
     addEvent(match, "setPiece", teamIndex, `${taker.name}选择直接主罚任意球，瞄准球门完成攻门。`, {
       actorId:taker.id, setPieceType:kind, direct:true, sourceZone, directFreeKickChance:round(directFreeKickChance),
@@ -1654,25 +1728,25 @@ function resolveSetPiece(match, teamIndex, kind, setPieceDepth = 0, possessionTy
     });
     return resolveShot(match, teamIndex, { possessionType, context:{ chainIndex:match.nextChainIndex }, endZone:sourceZone ?? "finalThird:center", stages:[{ actor:{ id:taker.id }, probability:xg }] }, { type:"freeKick", taker, xg, setPieceDepth, possessionType });
   }
-  const deliveryLane = ["leftHalfSpace", "center", "rightHalfSpace"][Math.floor(match.rng() * 3)] ?? "center";
+  const deliveryLane = ["leftHalfSpace", "center", "rightHalfSpace"][Math.floor(matchRandom(match,"execution") * 3)] ?? "center";
   const deliveryZone = `box:${deliveryLane}`;
   addEvent(match, "setPiece", teamIndex, `${taker.name}为${attacking.name}主罚${kind === "corner" ? "角球" : "前场定位球"}，将球送向${zoneLabel(deliveryZone)}${target ? `，${target.name}向第一落点前插` : ""}。`, {
     actorId:taker.id, targetId:target?.id ?? null, markerId:marker?.id ?? null, setPieceType:kind, direct:false, deliveryZone, sourceZone,
   });
   const deliveryProbability = chanceProfile.deliveryProbability;
-  if (match.rng() >= deliveryProbability) {
+  if (matchRandom(match,"execution") >= deliveryProbability) {
     recordClearance(marker);
     addEvent(match, "clearance", 1 - teamIndex, `${marker?.name ?? "防守球员"}判断落点，直接解围定位球。`, { actorId:marker?.id ?? null, setPieceType:kind, deliveryZone, deliveryProbability:round(deliveryProbability) });
     return { outcome:"cleared", xg:0 };
   }
   const duelProbability = chanceProfile.duelProbability;
-  if (!target || match.rng() >= duelProbability) {
+  if (!target || matchRandom(match,"execution") >= duelProbability) {
     recordClearance(marker);
     addEvent(match, "clearance", 1 - teamIndex, `${marker?.name ?? "防守球员"}赢下定位球争顶并完成解围。`, { actorId:marker?.id ?? null, targetId:target?.id ?? null, setPieceType:kind, deliveryZone, duelProbability:round(duelProbability) });
     return { outcome:"aerialLost", xg:0 };
   }
   const shotCreationProbability = chanceProfile.shotCreationProbability;
-  if (match.rng() >= shotCreationProbability) {
+  if (matchRandom(match,"execution") >= shotCreationProbability) {
     recordClearance(marker);
     addEvent(match, "clearance", 1 - teamIndex, `${target.name}抢到第一落点，但${marker?.name ?? "防守球员"}贴身干扰，没有让他完成攻门。`, {
       actorId:marker?.id ?? null, opponentId:target.id, setPieceType:kind, deliveryZone, shotCreationProbability:round(shotCreationProbability), secondBall:true,
@@ -1746,6 +1820,7 @@ function processDiscipline(match, chain) {
 }
 
 function processInjuries(match, chain) {
+  const domainPick=(entries,weight)=>pick(match,entries,weight,"injury");
   const events = [...chain.independentEvents];
   const highPressInjuryConfig = match.parameters.events.highPressInjury ?? {};
   const highPressInjurySeverity = (team) => {
@@ -1761,13 +1836,14 @@ function processInjuries(match, chain) {
   const injuryMultiplier = highPressTeams.length
     ? Math.max(...highPressTeams.map(({ severity }) => Number(highPressInjuryConfig.minimumMultiplier ?? 1.08) + (Number(highPressInjuryConfig.maximumMultiplier ?? 1.65) - Number(highPressInjuryConfig.minimumMultiplier ?? 1.08)) * severity))
     : 1;
-  const injuryProbability = clamp(Number(match.parameters.events.injuryPerChain ?? 0) * injuryMultiplier, 0, 1);
-  if (match.rng() < injuryProbability) events.push({ type:"matchInjury", probability:injuryProbability, highPressTeams });
+  const exposure=isV32(match.parameters)?Number(chain.activeDurationSeconds??0)/30:1;
+  const injuryProbability = isV32(match.parameters)?1-Math.exp(-Number(match.parameters.events.injuryPerChain??0)*injuryMultiplier*exposure):clamp(Number(match.parameters.events.injuryPerChain ?? 0) * injuryMultiplier, 0, 1);
+  if (matchRandom(match,"injury") < injuryProbability) events.push({ type:"matchInjury", probability:injuryProbability, highPressTeams });
   for (const event of events) {
     if (event.type === "lightningInjury") {
       if (match.lightningResolved) continue;
       match.lightningResolved = true;
-      const targetTeam = pick(match, match.teams.filter((team) => activePlayers(team).length > 0));
+      const targetTeam = domainPick( match.teams.filter((team) => activePlayers(team).length > 0));
       if (!targetTeam) continue;
       const protection = activePlayers(targetTeam)
         .map((player) => ({ player, hook:traitHook(player, "teamLightningProtection") }))
@@ -1782,7 +1858,7 @@ function processInjuries(match, chain) {
         });
         continue;
       }
-      const victim = pick(match, activePlayers(targetTeam).filter((player) => !injuryImmune(player)));
+      const victim = domainPick( activePlayers(targetTeam).filter((player) => !injuryImmune(player)));
       if (!victim) {
         addEvent(match, "lightning", targetTeam.index, `雷电击向${targetTeam.name}，但没有球员因此受伤。`, {
           prevented:true,
@@ -1802,7 +1878,7 @@ function processInjuries(match, chain) {
     }
     const candidates = match.teams.flatMap((team) => activePlayers(team).map((player) => ({ team, player })));
     const eligible = candidates.filter(({ player }) => !injuryImmune(player));
-    const victim = pick(match, eligible, ({ team, player }) => {
+    const victim = domainPick( eligible, ({ team, player }) => {
       const pressEntry = highPressTeams.find((entry) => entry.team.index === team.index);
       if (!pressEntry) return 1;
       const roleWeight = ["ST", "LW", "RW", "LM", "RM", "AM", "CM", "DM"].includes(player.assignedRole) ? 1.25 : 0.8;
@@ -1815,7 +1891,7 @@ function processInjuries(match, chain) {
         sunny:"在高温下出现肌肉不适",
       };
       const accidentalDescriptions = ["在无对抗冲刺中拉伤大腿后侧", "在变向时支撑脚不稳扭伤脚踝", "在落地时膝部不适", "旧伤突然复发"];
-      const accidentIndex = Math.floor(match.rng() * accidentalDescriptions.length) % accidentalDescriptions.length;
+      const accidentIndex = Math.floor(matchRandom(match,"presentation") * accidentalDescriptions.length) % accidentalDescriptions.length;
       removePlayer(match, victim.team, victim.player, "injury", {
         cause:event.type,
         injuryRounds:1,
@@ -1835,7 +1911,7 @@ function processInjuries(match, chain) {
     const aggression = defender ? effectiveMetric(match, chain.defendingTeamIndex, defender, { aggression:1 }) : 60;
     const defendingTactics = match.teams[chain.defendingTeamIndex];
     const roughMultiplier = (defendingTactics.splitTacticsExplicit ? defendingTactics.duelIntensity : defendingTactics.style) === "roughPlay" ? Number(match.parameters.events.roughPlay?.foulInjuryMultiplier ?? 1.35) : 1;
-    if (match.rng() < clamp((0.006 + Math.max(0, aggression - 65) / 2400) * roughMultiplier, 0.004, 0.06)) removePlayer(match, team, player, "injury", {
+    if (matchRandom(match,"injury") < clamp((0.006 + Math.max(0, aggression - 65) / 2400) * roughMultiplier, 0.004, 0.06)) removePlayer(match, team, player, "injury", {
       cause:"foul",
       injuryRounds:1,
       offender:defender ? { id:defender.id, name:defender.name } : null,
@@ -1847,11 +1923,12 @@ function processInjuries(match, chain) {
 }
 
 function maybeWeatherImpact(match, chainIndex) {
+  const domainPick=(entries,weight)=>pick(match,entries,weight,"presentation");
   if (match.weatherImpactResolved || match.environment.weather === "sunny") return false;
-  if (chainIndex !== 0 || match.rng() >= Number(match.parameters.events.weatherImpactPerMatch ?? 0)) return false;
+  if (chainIndex !== 0 || matchRandom(match,"presentation") >= Number(match.parameters.events.weatherImpactPerMatch ?? 0)) return false;
   match.weatherImpactResolved = true;
-  const team = pick(match, match.teams.filter((entry) => activePlayers(entry).length));
-  const player = team ? pick(match, activePlayers(team)) : null;
+  const team = domainPick( match.teams.filter((entry) => activePlayers(entry).length));
+  const player = team ? domainPick( activePlayers(team)) : null;
   if (!team || !player) return false;
   const descriptions = {
     rain:`雨水让草皮变得湿滑，${player.name}接球时脚下打滑，${team.name}被迫重新组织进攻。`,
@@ -1873,13 +1950,14 @@ function ownGoalCandidateWeight(match, teamIndex, player) {
 }
 
 function maybeOwnGoal(match, chainIndex) {
+  const domainPick=(entries,weight)=>pick(match,entries,weight,"shot");
   if (match.ownGoalResolved || chainIndex !== 0) return false;
   match.ownGoalResolved = true;
   if (!match.forceOwnGoal && seededEventRoll(match, "ownGoal", 0, 0) >= Number(match.parameters.events.ownGoalPerMatch ?? 0)) return false;
   const candidates = match.teams.flatMap((team) => activePlayers(team)
     .filter((player) => roleGroup(player.assignedRole ?? player.role) !== "ATT")
     .map((player) => ({ team, player })));
-  const target = pick(match, candidates, ({ team, player }) => ownGoalCandidateWeight(match, team.index, player));
+  const target = domainPick( candidates, ({ team, player }) => ownGoalCandidateWeight(match, team.index, player));
   if (!target) return false;
   const scoringIndex = 1 - target.team.index;
   const scoringTeam = match.teams[scoringIndex];
@@ -1911,7 +1989,7 @@ function pickBrawlDismissals(match, team, count) {
   const candidates = activePlayers(team).filter((player) => (player.assignedRole ?? player.role) !== "GK");
   const selected = [];
   while (selected.length < count && candidates.length) {
-    selected.push(candidates.splice(Math.floor(match.rng() * candidates.length), 1)[0]);
+    selected.push(candidates.splice(Math.floor(matchRandom(match,"discipline") * candidates.length), 1)[0]);
   }
   return selected;
 }
@@ -1930,7 +2008,8 @@ function brawlCheckChainIndex(match, config, regulationChainCount) {
 function maybeBrawl(match, chainIndex, regulationChainCount) {
   if (match.brawlTriggered || match.brawlChecked) return false;
   const config = match.parameters.events?.brawl ?? {};
-  if (chainIndex < brawlCheckChainIndex(match, config, regulationChainCount)) return false;
+  const brawlIndex=brawlCheckChainIndex(match,config,regulationChainCount);
+  if(isV32(match.parameters)?match.minute<brawlIndex/regulationChainCount*90:chainIndex<brawlIndex)return false;
   match.brawlChecked = true;
   const goalDifference = Math.abs(Number(match.teams[0].score) - Number(match.teams[1].score));
   if (!match.forceBrawl && goalDifference > Number(config.maximumGoalDifference ?? 1)) return false;
@@ -1945,10 +2024,10 @@ function maybeBrawl(match, chainIndex, regulationChainCount) {
       : 1;
   const refereeMultiplier = Number(config.refereeMultiplier?.[match.environment.referee] ?? 1);
   const probability = clamp(Number(config.basePerEligibleMatch ?? 0) * aggressionMultiplier * roughMultiplier * refereeMultiplier, 0, 1);
-  if (!match.forceBrawl && match.rng() >= probability) return false;
+  if (!match.forceBrawl && matchRandom(match,"discipline") >= probability) return false;
   const minimum = Math.max(1, Math.round(Number(config.dismissalsPerTeamMinimum ?? 1)));
   const maximum = Math.max(minimum, Math.round(Number(config.dismissalsPerTeamMaximum ?? 3)));
-  const sharedDismissals = minimum + Math.floor(match.rng() * (maximum - minimum + 1));
+  const sharedDismissals = minimum + Math.floor(matchRandom(match,"discipline") * (maximum - minimum + 1));
   const dismissalCounts = rough[0] !== rough[1]
     ? [sharedDismissals + Number(rough[0]), sharedDismissals + Number(rough[1])]
     : [sharedDismissals, sharedDismissals];
@@ -1978,10 +2057,11 @@ function maybeBrawl(match, chainIndex, regulationChainCount) {
 }
 
 function maybeBlackWhistle(match, chainIndex, regulationChainCount) {
+  const domainPick=(entries,weight)=>pick(match,entries,weight,"discipline");
   if (match.blackWhistleTriggered) return false;
   if (!match.blackWhistleChecked) {
     match.blackWhistleChecked = true;
-    if (!match.forceBlackWhistle && match.rng() >= Number(match.parameters.events.blackWhistlePerMatch ?? 0)) return false;
+    if (!match.forceBlackWhistle && matchRandom(match,"discipline") >= Number(match.parameters.events.blackWhistlePerMatch ?? 0)) return false;
     const counts = match.teams.map(argentinaCount);
     if (counts[0] === counts[1]) return false;
     const firstEligibleChain = Math.max(0, Math.min(regulationChainCount - 1, Number(chainIndex) || 0));
@@ -1990,14 +2070,14 @@ function maybeBlackWhistle(match, chainIndex, regulationChainCount) {
     match.blackWhistleArgentinaCounts = counts;
     match.blackWhistleFavoredIndex = counts[0] > counts[1] ? 0 : 1;
   }
-  if (!Number.isInteger(match.blackWhistleChainIndex) || chainIndex !== match.blackWhistleChainIndex) return false;
+  if (!Number.isInteger(match.blackWhistleChainIndex) || (isV32(match.parameters)?match.minute<match.blackWhistleChainIndex/regulationChainCount*90:chainIndex !== match.blackWhistleChainIndex)) return false;
   const counts = match.blackWhistleArgentinaCounts ?? match.teams.map(argentinaCount);
   const favoredIndex = Number(match.blackWhistleFavoredIndex);
   const punishedIndex = 1 - favoredIndex;
   const favored = match.teams[favoredIndex];
   const punished = match.teams[punishedIndex];
   const dismissible = activePlayers(punished).filter((player) => !traitHook(player, "redCardImmune")?.immune);
-  const offender = pick(match, dismissible.filter((player) => roleGroup(player.assignedRole ?? player.role) !== "GK")) ?? pick(match, dismissible);
+  const offender = domainPick( dismissible.filter((player) => roleGroup(player.assignedRole ?? player.role) !== "GK")) ?? domainPick( dismissible);
   match.blackWhistleTriggered = true;
   addEvent(match, "blackWhistle", favoredIndex, `裁判出现争议判罚，${favored.name}获得明显偏向。`, { argentinaCounts:counts, punishedTeamIndex:punishedIndex, importance:"major" });
   if (offender) removePlayer(match, punished, offender, "red", { cause:"blackWhistle" });
@@ -2159,38 +2239,51 @@ function ensureV2SourceStats(match) {
 }
 
 function runV2Chain(match, chainIndex, options = {}) {
+  const continuous=isV32(match.parameters);
+  const prelude=continuous?{activeDurationSeconds:0,secondaryActions:[]}:null;
+  if(continuous)match.activeFlowChain=prelude;
+  const before={goals:match.teams.reduce((sum,team)=>sum+team.score,0),injuries:match.teams.reduce((sum,team)=>sum+team.stats.injuries,0),substitutions:match.teams.reduce((sum,team)=>sum+team.stats.substitutions,0)};
   const chainCount = Number(match.possessionChainCount ?? 180);
   const regulationChainCount = Math.min(chainCount, Number(match.regulationChainCount ?? chainCount));
   const extraTimeChainCount = Math.max(0, chainCount - regulationChainCount);
   ensureV2SourceStats(match);
-  match.minute = chainIndex < regulationChainCount || !extraTimeChainCount
+  match.minute = continuous?flowMinute(match.flowState):chainIndex < regulationChainCount || !extraTimeChainCount
     ? round((chainIndex + 0.5) / regulationChainCount * 90, 2)
     : round(90 + (chainIndex - regulationChainCount + 0.5) / extraTimeChainCount * 30, 2);
   match.teams.forEach((team) => applyTacticalPlan(match, team));
+  if(isV33(match.parameters))for(const team of match.teams) {
+    const replacement=conditionalReplacement(match,team);
+    if(replacement&&autoSubstituteInjuredPlayer(match,team,replacement.outgoing,replacement))team.lastConditionalRotationAt=match.flowState.elapsedSeconds;
+  }
   captureAnalysisSnapshot(match);
   maybeBlackWhistle(match, chainIndex, regulationChainCount);
   maybeBrawl(match, chainIndex, regulationChainCount);
   maybeWeatherImpact(match, chainIndex);
   maybeOwnGoal(match, chainIndex);
+  const activePlayerIds=continuous?match.teams.map(team=>activePlayers(team).map(player=>player.id)):null;
   match.snapshotTeams = buildV2TeamSnapshots(match.teams, {
     parameters:match.parameters,
     state:{ minute:match.minute, score:match.teams.map((team) => team.score) },
     environment:match.environment,
   });
   const simulatedChain = simulateV2PossessionChain(match.teams, {
-    rng:match.rng,
+    rng:()=>matchRandom(match,"decision"),
+    ...(isV31(match.parameters)?{domainRoll:domain=>matchRandom(match,domain)}:{}),
     chainIndex,
     state:{ minute:match.minute, score:match.teams.map((team) => team.score) },
     environment:match.environment,
     parameters:match.parameters,
     snapshotTeams:match.snapshotTeams,
+    ...(continuous?{flowState:match.flowState,availableSeconds:Math.max(0,(options.availableSeconds??periodRemaining(match.flowState))-prelude.activeDurationSeconds)}:{}),
     transition:match.transition,
     deferShotResolution:true,
-    recordRandomRolls:Boolean(options.recordRandomRolls),
+    recordRandomRolls:Boolean(options.recordRandomRolls)||wantsDecisionTrace(match),
+    recordDecisionTrace:wantsDecisionTrace(match),
     recordReplayShape:Boolean(match.dotReplayEnabled),
     ...(isV3(match.parameters)?{outcomeRoll:channel=>matchOutcomeRoll(match,channel)}:{}),
   });
-  const { replayShape, replaySequence, ...simulatedChainData } = simulatedChain;
+  const { replayShape, replaySequence, nextFlow, ...simulatedChainData } = simulatedChain;
+  if(continuous)match.flowState=nextFlow;
   match.currentReplayShape = replayShape ?? null;
   match.currentReplaySequence = replaySequence ?? null;
   if (replayShape) match.lastReplayShape = replayShape;
@@ -2200,25 +2293,46 @@ function runV2Chain(match, chainIndex, options = {}) {
     stages:simulatedChainData.stages.map((stage) => ({ ...stage })),
     completedStages:[...(simulatedChainData.completedStages ?? [])],
   };
-  const midfieldVacuumLongShot = materializeMidfieldVacuumLongShot(match, chain, chainIndex);
+  if(continuous) {
+    chain.activePlayerIds=activePlayerIds;
+    chain.activeDurationSeconds+=prelude.activeDurationSeconds;chain.secondaryActions=[...prelude.secondaryActions];match.activeFlowChain=chain;
+    match.minute=round(Math.min(FLOW_PERIODS[match.flowState.period].end,FLOW_PERIODS[match.flowState.period].start+(match.flowState.periodElapsed+chain.activeDurationSeconds)/60),2);
+  }
+  const midfieldVacuumLongShot = continuous?{eligible:false}:materializeMidfieldVacuumLongShot(match, chain, chainIndex);
   if (midfieldVacuumLongShot.eligible) chain.midfieldVacuumLongShot = midfieldVacuumLongShot;
   chain.possessionDurationProfile = v2PossessionDurationProfile(chain, attacking, match.parameters);
   match.chains.push(chain);
+  recordChainDiagnostics(match,chain);
   const possessionType = chain.possessionType === "transition" ? "transition" : "normal";
   attacking.stats.possessions += 1;
   attacking.stats[possessionType === "transition" ? "transitionPossessions" : "normalPossessions"] += 1;
-  recalculateV2PossessionSeconds(match);
+  if(!continuous)recalculateV2PossessionSeconds(match);
   const selectedProbability = Number(chain.stages?.[0]?.probability ?? 0.5);
   const homeControl = chain.attackingTeamIndex === 0 ? selectedProbability : 1 - selectedProbability;
   match.teams[0].stats.possessionControl += homeControl;
   match.teams[1].stats.possessionControl += 1 - homeControl;
   processDiscipline(match, chain);
-  processInjuries(match, chain);
+  if(isV33(match.parameters)&&chainIndex%8===0) {
+    const observed=chain.actions.find(action=>action.pressure?.trigger||action.pressure?.mark||action.reasons?.length);
+    if(observed) {
+      const pressure=observed.pressure,defensive=Boolean(pressure?.trigger||pressure?.mark),index=defensive?pressure.teamIndex:chain.attackingTeamIndex;
+      const observation=pressure?.trigger?`触发协同压迫，${pressure.pressers.length}人上抢或封线`:
+        pressure?.mark?'对关键接应球员实施重点盯防':observed.reasons.includes('escape')?'受压后尝试备用出球路线':'尝试优先出球路线或接应点';
+      const actor=attacking.players.find(player=>player.id===observed.actorId);
+      const actionLabel=({pass:'传递',direct:'直接出球',switch:'横向转移',recycle:'回传',carry:'带球',create:'创造机会',shoot:'射门',longShot:'远射',clearance:'解围'})[observed.type]??'处理';
+      addEvent(match,'tacticalAction',index,`${match.teams[index].name}${observation}；${actor?.name??'持球方'}在${zoneLabel(observed.to)}${actionLabel}，${observed.turnover?'球权转换':observed.success?'完成处理':'未能完成'}。`,
+        {zone:observed.to,actorId:observed.actorId,actionType:observed.type,observedTurnover:observed.turnover});
+    }
+  }
+  if(!continuous)processInjuries(match, chain);
   const finalStage = chain.stages.at(-1);
   const defensiveAction = recordDefensiveTurnover(match, chain);
   let cornerRestart = null;
   if (finalStage?.stage === "shot" && finalStage.outcome === "shotCreated") {
-    if (finalStage.midfieldVacuumOpportunity) {
+    if(continuous&&finalStage.actionType==="longShot") {
+      const taker=attacking.players.find(player=>player.id===finalStage.actor?.id)??null;
+      resolveShot(match,chain.attackingTeamIndex,chain,{type:"longShot",taker,xg:finalStage.baseXg,applyOpenPlayScale:true,possessionType});
+    } else if (finalStage.midfieldVacuumOpportunity) {
       const taker = attacking.players.find((player) => player.id === finalStage.actor?.id) ?? null;
       resolveShot(match, chain.attackingTeamIndex, chain, { type:"longShot", taker, xg:finalStage.baseXg, possessionType, applyOpenPlayScale:true });
     } else resolveShot(match, chain.attackingTeamIndex, chain);
@@ -2236,6 +2350,12 @@ function runV2Chain(match, chainIndex, options = {}) {
     cornerRestart = maybeAwardCorner(match, chain.attackingTeamIndex, chain, "clearance", Number(match.parameters.chain.setPiece?.cornerFromClearanceChance ?? 0), 0, chain.possessionType ?? "normal");
     if (!cornerRestart) describeTurnover(match, chain, chainIndex, defensiveAction);
   } else describeTurnover(match, chain, chainIndex, defensiveAction);
+  if(continuous) {
+    processInjuries(match,chain);
+    commitFlowClock(match,chain,{goals:match.teams.reduce((s,t)=>s+t.score,0)-before.goals,
+      injuries:match.teams.reduce((s,t)=>s+t.stats.injuries,0)-before.injuries,substitutions:match.teams.reduce((s,t)=>s+t.stats.substitutions,0)-before.substitutions});
+    applyFatigue(match,chain);finishFlowPossession(match,chain,cornerRestart);
+  } else {
   applyFatigue(match);
   if (cornerRestart) match.transition = null;
   else if (finalStage?.turnover) {
@@ -2268,22 +2388,27 @@ function runV2Chain(match, chainIndex, options = {}) {
       highPressCounterBonus:round(highPressCounterBonus),
     };
   } else match.transition = null;
+  }
   match.nextChainIndex = chainIndex + 1;
   match.score = match.teams.map((team) => team.score);
   ensurePlayable(match);
   match.currentReplayShape = null;
   match.currentReplaySequence = null;
+  if(continuous)delete match.activeFlowChain;
   return chain;
 }
 
 export function createV2Match(teams, options = {}) {
   if (!Array.isArray(teams) || teams.length !== 2) throw new Error("YDL V2比赛需要两支球队");
-  const rng = options.rng ?? createV2MatchRng(options.seed);
-  const parameters = options.parameters ?? V2_MATCH_PARAMETERS;
-  return {
+  const parameters = resolveV2MatchParameters(options.parameters ?? V2_MATCH_PARAMETERS);
+  const lockedTeams=isV31(parameters)?structuredClone(teams):teams;
+  if(isV31(parameters))for(const team of lockedTeams)for(const player of [...(team.players??[]),...(team.substitutes??[])]) {
+    player.matchTraitDefinitions=(player.traits??[]).map(entry=>YDL_TRAIT_BY_ID[typeof entry==="string"?entry:entry?.id]).filter(Boolean).map(value=>structuredClone(value));
+  }
+  const match = {
     engineVersion:parameters.engineVersion,
-    modelVersion:isV3(parameters)?V3_MODEL_VERSION:"match-engine-v2.1",
-    ...(isV3(parameters)?{engineProfile:V3_ENGINE_PROFILE}:{}),
+    modelVersion:engineModel(parameters),
+    ...(isV3(parameters)?{engineProfile:engineProfile(parameters)}:{}),
     mode:"YDL",
     substitutionsAllowed:Boolean(parameters.state.substitutionsEnabled),
     minute:0,
@@ -2291,11 +2416,10 @@ export function createV2Match(teams, options = {}) {
     environment:{ weather:options.weather ?? "sunny", referee:options.referee ?? "standard", precipitation:Number(options.precipitation ?? (options.weather === "superStorm" ? 100 : ["rain", "storm"].includes(options.weather) ? 70 : options.weather === "snow" ? 45 : 0)) },
     parameters,
     simulationSeed:String(options.seed ?? "ydl-v2"),
-    possessionChainCount:Number(options.possessionChains ?? 180),
-    teams:teams.map(cloneTeam),
+    possessionChainCount:isV32(parameters)?parameters.v32.maxChains:Number(options.possessionChains ?? 180),
+    teams:lockedTeams.map(cloneTeam),
     events:[],
     commentary:[],
-    rng,
     chains:[],
     analysisTimeline:[],
     lastAnalysisSignature:null,
@@ -2331,11 +2455,28 @@ export function createV2Match(teams, options = {}) {
     lastReplayShape:null,
     lastDotReplayBall:null,
   };
+  initializeMatchRandom(match,options.rng);
+  if(isV32(parameters))match.teams.forEach(team=>Object.assign(team,tacticalFlowFields(team.tacticalPlans?.opening??team.openingPlan)));
+  if(isV33(parameters))match.teams.forEach(team=>Object.assign(team,tacticalExecutionFields(team.tacticalPlans?.opening??team.openingPlan)));
+  initializeFlowState(match);
+  initializeDiagnostics(match,options);
+  captureMatchConfiguration(match,lockedTeams,options);
+  runtimeMatches.add(match);
+  return match;
+}
+
+export function restoreV2MatchRuntime(match,options={}) {
+  if(Object.getOwnPropertyDescriptor(match,"parameters")?.writable!==false)match.parameters=resolveV2MatchParameters(match.parameters);
+  lockMatchConfiguration(match);
+  assertFlowState(match);
+  restoreMatchRandom(match,options);
+  runtimeMatches.add(match);
+  return match;
 }
 
 export function simulateV2Match(teams, options = {}) {
   const match = createV2Match(teams, options);
-  advanceV2Match(match, match.possessionChainCount, options);
+  advanceV2Match(match, isV32(match.parameters)?Infinity:match.possessionChainCount, options);
   return match;
 }
 
@@ -2347,7 +2488,7 @@ function stopV2MatchForSuperStorm(match) {
   if (match.finished || match.environment.weather !== "superStorm" || !Number.isInteger(match.superStormStopMinute)) return false;
   const regulationChainCount = Number(match.regulationChainCount ?? match.possessionChainCount ?? 180);
   const stopChain = Math.ceil(match.superStormStopMinute / 90 * regulationChainCount);
-  if (match.nextChainIndex < stopChain) return false;
+  if (isV32(match.parameters)?flowMinute(match.flowState)<match.superStormStopMinute:match.nextChainIndex < stopChain) return false;
   match.minute = match.superStormStopMinute;
   match.abandoned = true;
   match.abandonmentReason = "superStorm";
@@ -2375,14 +2516,60 @@ export function finishV2Match(match, options = {}) {
   delete match.currentReplaySequence;
 }
 
+function finishContinuousPeriod(match) {
+  const f=match.flowState,period=FLOW_PERIODS[f.period];
+  f.periods.push({period:f.period+1,addedSeconds:f.addedSeconds,footballSeconds:f.elapsedSeconds});
+  if(f.period===0) {
+    match.halfTimeScore=[...match.score];
+    addEvent(match,"halftime",null,`上半场结束，比分${match.score[0]}:${match.score[1]}。`,{importance:"stage",score:[...match.score]});
+  } else if(f.period===1) {
+    match.regulationScore=[...match.score];
+    const totals=match.score.map((score,index)=>score+Number(match.aggregateBaseScore?.[index]??0));
+    if(match.regulationOnly!==false||totals[0]!==totals[1]) {finishV2Match(match,{minute:90});return;}
+    match.extraTimeStarted=true;match.segment="extraTimeFirstHalf";
+    addEvent(match,"extraTimeStart",null,"常规时间及总比分仍然相同，进入加时赛。",{importance:"stage",score:[...match.score]});
+  } else if(f.period===2) {
+    match.extraTimeHalfTimeRecorded=true;match.segment="extraTimeSecondHalf";
+    addEvent(match,"extraTimeHalfTime",null,"加时赛上半场结束，双方交换场地。",{importance:"stage",score:[...match.score]});
+  } else {finishV2Match(match,{minute:120});return;}
+  f.period++;f.periodElapsed=0;f.addedSeconds=0;
+  match.minute=FLOW_PERIODS[f.period].start;match.transition=null;
+  resetFlowRestart(match,f.period===1&&[0,1].includes(f.openingOwner)?1-f.openingOwner:null);
+  for(const team of match.teams)for(const player of activePlayers(team))if(!traitHook(player,"fixedFitness"))player.state.fitness=round(Math.min(100,player.state.fitness+(f.period===1?2:1)),3);
+}
+
+function advanceContinuousMatch(match,targetChainCount,options) {
+  const target=Math.min(match.possessionChainCount,Math.max(0,Number(targetChainCount)));
+  const budget=Math.max(0,Number(options.maximumChains??Infinity));
+  let advanced=0;
+  while(!match.finished&&!match.abandoned) {
+    const f=match.flowState,period=FLOW_PERIODS[f.period];
+    if(periodRemaining(f)<=.001) {finishContinuousPeriod(match);continue;}
+    if(match.nextChainIndex>=target||advanced>=budget)break;
+    const wall=options.wallElapsedMs;
+    const desired=wall===undefined?Infinity:Math.max(0,Math.min(1,(wall-period.wallStart)/(period.wallEnd-period.wallStart)))*(period.seconds+f.addedSeconds);
+    if(f.periodElapsed>=desired)break;
+    if(stopV2MatchForSuperStorm(match))break;
+    let available=periodRemaining(f);
+    if(match.environment.weather==="superStorm"&&Number.isInteger(match.superStormStopMinute)&&match.superStormStopMinute>=period.start&&match.superStormStopMinute<=period.end)available=Math.min(available,Math.max(0,(match.superStormStopMinute-period.start)*60-f.periodElapsed));
+    runV2Chain(match,match.nextChainIndex,{...options,availableSeconds:available});advanced++;
+  }
+  if(stopV2MatchForSuperStorm(match)||match.abandoned)finishV2Match(match);
+  if(!match.finished&&match.nextChainIndex>=match.possessionChainCount)throw new Error("V3.2 比赛超过安全行动上限");
+  syncCommentary(match);
+  return match;
+}
+
 export function advanceV2Match(match, targetChainCount = match.nextChainIndex + 1, options = {}) {
   if (!match || match.finished) return match;
+  if(!runtimeMatches.has(match))restoreV2MatchRuntime(match);
   const chainCount = Number(match.possessionChainCount ?? 180);
   const target = Math.min(chainCount, Math.max(0, Number(targetChainCount)));
   if (!match.started) {
     match.started = true;
-    addEvent(match, "kickoff", null, isV3(match.parameters)?"比赛开始，YFFM1 V3.0引擎正式开球。":"比赛开始，YDL V2引擎正式开球。", { importance:"stage" });
+    addEvent(match, "kickoff", null, isV3(match.parameters)?`比赛开始，YFFM1 V${match.engineVersion.split(".").slice(0,2).join(".")}引擎正式开球。`:"比赛开始，YDL V2引擎正式开球。", { importance:"stage" });
   }
+  if(isV32(match.parameters))return advanceContinuousMatch(match,targetChainCount,options);
   while (match.nextChainIndex < target && !match.abandoned) {
     if (stopV2MatchForSuperStorm(match)) break;
     runV2Chain(match, match.nextChainIndex, options);
@@ -2410,7 +2597,8 @@ export function publicV2Match(match, options = {}) {
       score:team.score,
       tactic:team.tactic,
       style:team.style,
-      possessionStyle:team.possessionStyle,
+      tacticalModelVersion:team.tacticalModelVersion,
+    possessionStyle:team.possessionStyle,
       defensiveBlock:team.defensiveBlock,
       transitionStyle:team.transitionStyle,
       duelIntensity:team.duelIntensity,

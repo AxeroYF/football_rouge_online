@@ -1,5 +1,5 @@
-import { normalizePlayerSchema, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../game/public/schema.js";
-import { LEGEND_PROFILES } from "../game/public/legends.js";
+import { normalizePlayerSchema, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../shared/football/schema.js";
+import { LEGEND_PROFILES } from "../shared/football/legends.js";
 import { legendAbilityForName } from "./legend-abilities.js";
 import { S4_PLAYER_DATABASE } from "./player-pool-s4-generated.js";
 import { S4_DLC_PLAYER_DATABASE } from "./player-pool-s4-dlc-generated.js";

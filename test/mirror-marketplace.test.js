@@ -571,8 +571,8 @@ test("system AI formations can use the permanent director high-speed node during
   assert.match(lease.opponentSeat.name, /AI 训练队 · 4-2-3-1/);
 });
 
-test("same-day seed mirror batch revenue is paid after the new-season wallet reset", () => {
-  const now = Date.parse("2026-08-07T09:51:00+08:00");
+test("season reset preserves the wallet and same-day mirror revenue is paid once at league kickoff", () => {
+  let now = Date.parse("2026-08-07T09:51:00+08:00");
   const service = new YellowDogsLeagueService({ statePath:null, now:() => now, rng:() => .37 });
   const viewer = account("reset-batch-viewer", "Batch viewer");
   const seedOwner = account("reset-seed-owner", "Akira");
@@ -607,7 +607,12 @@ test("same-day seed mirror batch revenue is paid after the new-season wallet res
   service.state.season.status = "registration";
   service.resetCompetition("S2", "new-season", "registration");
 
-  assert.equal(service.wallet(seedOwner.id).balance, 100_700);
+  assert.equal(service.wallet(seedOwner.id).balance, 321);
+  assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"][seedOwner.id].ownerRevenue, 700);
+  service.startLeagueSimulation();
+  now = Date.parse("2026-08-07T10:00:00+08:00");
+  service.startScheduledRound();
+  assert.equal(service.wallet(seedOwner.id).balance, 1021);
   assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"], undefined);
   const settlements = service.state.inbox[seedTeam.id].filter((message) => message.type === "mirror-settlement");
   assert.equal(settlements.length, 1);

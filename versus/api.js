@@ -24,6 +24,7 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     const allowed = pathname.startsWith("/api/versus/league")
       || ["/api/versus/live", "/api/versus/activity", "/api/versus/broadcasts", "/api/versus/profile"].includes(pathname)
       || pathname === "/api/versus/watch" && isLeagueBroadcast(body.code)
+      || pathname === "/api/versus/watch/resume" && isLeagueBroadcast(body.code)
       || /^\/api\/versus\/watch\/YDL-/i.test(pathname)
       || pathname.endsWith("/leave-watch") && isLeagueBroadcast(code);
     if (!allowed || disabledLeagueFeature) return sendJson(response, 404, { ok:false, error:"该功能未包含在YDL单机版中" });
@@ -38,17 +39,21 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/season-final/ban") { yellowDogsLeague.submitSeasonFinalBan(account, body.selection); result = { league:yellowDogsLeague.view(account, { developer, includePlayerDirectory:false }) }; }
     else if (pathname === "/api/versus/league/season-final/simulate" && developer) result = { seasonFinalTournament:yellowDogsLeague.simulateNextSeasonFinalMatch() };
     else if (pathname === "/api/versus/league/head") result = { head:measureRuntimeSync("league.head", () => yellowDogsLeague.leagueHead(account)) };
-    else if (pathname === "/api/versus/league/draft/start") result = yellowDogsLeague.beginDraft(account, body.teamName);
+    else if (pathname === "/api/versus/league/draft/start") result = yellowDogsLeague.beginDraft(account, body.teamName, body);
+    else if (pathname === "/api/versus/league/draft/preferences") result = yellowDogsLeague.configureBatchDraft(account, body);
+    else if (pathname === "/api/versus/league/draft/reveal") result = yellowDogsLeague.revealBatchDraft(account, body);
+    else if (pathname === "/api/versus/league/draft/candidate") result = yellowDogsLeague.favoriteBatchDraft(account, body);
     else if (pathname === "/api/versus/league/draft/draw") result = yellowDogsLeague.drawDraft(account, body.pool);
     else if (pathname === "/api/versus/league/draft/choose") result = yellowDogsLeague.chooseDraft(account, body.leaguePlayerId);
     else if (pathname === "/api/versus/league/draft/x-player") result = yellowDogsLeague.chooseXPlayer(account, body.leaguePlayerId);
     else if (pathname === "/api/versus/league/draft/x-configure") result = yellowDogsLeague.configureXPlayer(account, body);
     else if (pathname === "/api/versus/league/draft/x-trait") result = yellowDogsLeague.chooseXPlayerTrait(account, body.traitId);
-    else if (pathname === "/api/versus/league/draft/reset") result = { league:yellowDogsLeague.resetDraft(account) };
+    else if (pathname === "/api/versus/league/draft/reset") result = { league:yellowDogsLeague.resetDraft(account, body) };
     else if (pathname === "/api/versus/league/draft/auto" && developer) result = yellowDogsLeague.autoDraft(account);
-    else if (pathname === "/api/versus/league/draft/finish") result = { league:yellowDogsLeague.finishDraft(account) };
+    else if (pathname === "/api/versus/league/draft/finish") result = { league:yellowDogsLeague.finishDraft(account, body) };
     else if (pathname === "/api/versus/league/team") result = { teamSave:yellowDogsLeague.saveTeam(account, body, { compact:true }) };
     else if (pathname === "/api/versus/league/team/tactical-shape-preview") result = { tacticalShapePreview:yellowDogsLeague.tacticalShapePreview(account, body) };
+    else if (pathname === "/api/versus/league/team/tactical-outlook") result = { tacticalOutlook:yellowDogsLeague.tacticalOutlook(account, body) };
     else if (pathname === "/api/versus/league/team/lineup-scheme") result = { teamSave:yellowDogsLeague.updateLineupScheme(account, body, { compact:true }) };
     else if (pathname === "/api/versus/league/team/lineup-share/export") result = { lineupShare:yellowDogsLeague.exportLineupScheme(account) };
     else if (pathname === "/api/versus/league/team/lineup-share/import") result = { teamSave:yellowDogsLeague.importLineupScheme(account, body.code, { compact:true, lineupSchemeId:body.lineupSchemeId, lineupSchemeRevision:body.lineupSchemeRevision }) };
@@ -120,6 +125,14 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
   else if (request.method === "POST" && pathname === "/api/versus/register") result = versusRooms.register(body.nickname, body.password, body.legacyAccountToken);
   else if (request.method === "POST" && pathname === "/api/versus/login") result = versusRooms.login(body.nickname, body.password);
   else if (request.method === "POST" && pathname === "/api/versus/watch") result = isLeagueBroadcast(body.code) ? yellowDogsLeague.watch(body.code, body.name, body.spectatorToken) : versusRooms.watch(body.code, body.name, body.spectatorToken);
+  else if (request.method === "POST" && pathname === "/api/versus/watch/resume") {
+    let account = null;
+    if (body.playerId || body.accountToken) {
+      try { account = versusRooms.account(body.playerId, body.accountToken); }
+      catch { return sendJson(response, 401, { ok:false, error:"账号登录已失效，请重新登录后观看", errorCode:"BROADCAST_FORBIDDEN" }); }
+    }
+    result = isLeagueBroadcast(body.code) ? yellowDogsLeague.resumeWatch(body.code, body.name, body.spectatorToken, account) : versusRooms.resumeWatch(body.code, body.name, body.spectatorToken);
+  }
   else if (request.method === "GET" && /^\/api\/versus\/watch\/[^/]+$/.test(pathname)) result = { broadcast:isLeagueBroadcast(code) ? yellowDogsLeague.watchView(code, playerToken) : versusRooms.watchView(code, playerToken) };
   else if (request.method === "POST" && pathname.endsWith("/leave-watch")) result = isLeagueBroadcast(code) ? yellowDogsLeague.leaveWatch(code, playerToken) : versusRooms.leaveWatch(code, playerToken);
   else if (request.method === "POST" && pathname === "/api/versus/identity") result = versusRooms.bindAccount(body.playerId, body.accountToken, body.name);

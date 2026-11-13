@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import ExcelJS from "exceljs";
-import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
 import { buildPlayerImportWorkbook, parsePlayerImportWorkbook } from "../versus/player-card-excel.js";
 
 test("球员Excel模板可生成并解析总评回归与完整26项能力", async () => {

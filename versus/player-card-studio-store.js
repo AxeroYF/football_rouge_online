@@ -1,10 +1,11 @@
 import { createHash, randomUUID } from "node:crypto";
+import { createQueuedJsonWriter } from "./infrastructure/queued-json-writer.js";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
-import { copyFile, mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ATTRIBUTE_NAMES, normalizePlayerSchema, playerOverallFromAttributes, roleGroup } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES, normalizePlayerSchema, playerOverallFromAttributes, roleGroup } from "../shared/football/schema.js";
 import {
   isXPlayer,
   normalizedS4LegendAttributes,
@@ -19,6 +20,18 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const STUDIO_PATH = path.resolve(process.env.YDL_PLAYER_CARD_STUDIO_PATH ?? path.join(ROOT, "data", "ydl-player-card-studio.json"));
 const STUDIO_BACKUP_PATH = `${STUDIO_PATH}.backup`;
+const studioWriter = createQueuedJsonWriter(STUDIO_PATH, STUDIO_BACKUP_PATH);
+let mutationTail = Promise.resolve();
+function mutateStudio(command) {
+  const pending = mutationTail.then(async () => {
+    const previous = studio;
+    studio = clone(studio);
+    try { return await command(); }
+    catch (error) { studio = previous; throw error; }
+  });
+  mutationTail = pending.catch(() => {});
+  return pending;
+}
 const PROFILE_ROOT = path.resolve(process.env.YDL_PLAYER_PROFILE_ROOT ?? path.join(ROOT, "player_profiles"));
 const PROFILE_WEBP_DIRECTORY = path.join(PROFILE_ROOT, "webp");
 const STUDIO_SCHEMA_VERSION = 2;
@@ -35,6 +48,7 @@ let studio = {
   published:{},
   profiles:{},
 };
+let committedStudio = studio;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -224,121 +238,132 @@ function loadStudioSync() {
 }
 
 async function persistStudio() {
-  await mkdir(path.dirname(STUDIO_PATH), { recursive:true });
-  try { await copyFile(STUDIO_PATH, STUDIO_BACKUP_PATH); } catch (error) { if (error.code !== "ENOENT") throw error; }
   studio.updatedAt = new Date().toISOString();
-  const temporaryPath = `${STUDIO_PATH}.${process.pid}.tmp`;
-  await writeFile(temporaryPath, `${JSON.stringify(studio, null, 2)}\n`, "utf8");
-  await rm(STUDIO_PATH, { force:true });
-  await rename(temporaryPath, STUDIO_PATH);
+  await studioWriter.write(studio);
+  committedStudio = studio;
 }
 
-function publicDraft(draft) {
-  return { ...clone(draft), cardProfile:clone(studio.profiles[draft.id] ?? null) };
+function publicDraft(draft, source = studio) {
+  return { ...clone(draft), cardProfile:clone(source.profiles[draft.id] ?? null) };
 }
 
 export function playerCardStudioView() {
-  const batches = Object.values(studio.batches).map((batch) => {
-    const drafts = Object.values(studio.drafts).filter((draft) => draft.batchId === batch.id);
-    const published = Object.values(studio.published).filter((player) => player.batchId === batch.id);
-    const profileCount = [...drafts, ...published].filter((player) => studio.profiles[player.id]).length;
+  const source = committedStudio;
+  const batches = Object.values(source.batches).map((batch) => {
+    const drafts = Object.values(source.drafts).filter((draft) => draft.batchId === batch.id);
+    const published = Object.values(source.published).filter((player) => player.batchId === batch.id);
+    const profileCount = [...drafts, ...published].filter((player) => source.profiles[player.id]).length;
     return {
       ...clone(batch),
       draftCount:drafts.length,
       publishedCount:published.length,
       profileCount,
-      readyCount:drafts.filter((player) => studio.profiles[player.id]).length,
-      missingProfileCount:drafts.filter((player) => !studio.profiles[player.id]).length,
+      readyCount:drafts.filter((player) => source.profiles[player.id]).length,
+      missingProfileCount:drafts.filter((player) => !source.profiles[player.id]).length,
       issueCount:0,
     };
   }).sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
   return {
     schemaVersion:STUDIO_SCHEMA_VERSION,
-    updatedAt:studio.updatedAt,
+    updatedAt:source.updatedAt,
     mediaStorage:{ directory:PROFILE_ROOT, format:"webp", quality:90, maximumDimension:1600, environmentVariable:"YDL_PLAYER_PROFILE_ROOT" },
     batches,
-    drafts:Object.values(studio.drafts).map(publicDraft).sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt))),
-    published:Object.values(studio.published).map((record) => ({ ...clone(record), cardProfile:clone(studio.profiles[record.id] ?? null) })),
-    profiles:clone(studio.profiles),
+    drafts:Object.values(source.drafts).map(draft => publicDraft(draft, source)).sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt))),
+    published:Object.values(source.published).map((record) => ({ ...clone(record), cardProfile:clone(source.profiles[record.id] ?? null) })),
+    profiles:clone(source.profiles),
   };
 }
 
 export async function createPlayerCardDraft(input) {
-  const draft = normalizedDraft(input);
-  if (draft.batchId && !studio.batches[draft.batchId]) throw new Error("发布批次不存在");
-  if (REAL_PLAYER_BY_ID[draft.id] || studio.drafts[draft.id] || studio.published[draft.id]) throw new Error("球员ID已存在");
-  studio.drafts[draft.id] = draft;
-  await persistStudio();
-  return publicDraft(draft);
+  return mutateStudio(async () => {
+    const draft = normalizedDraft(input);
+    if (draft.batchId && !studio.batches[draft.batchId]) throw new Error("发布批次不存在");
+    if (REAL_PLAYER_BY_ID[draft.id] || studio.drafts[draft.id] || studio.published[draft.id]) throw new Error("球员ID已存在");
+    studio.drafts[draft.id] = draft;
+    await persistStudio();
+    return publicDraft(draft);
+  });
 }
 
 export async function createPlayerCardDrafts(inputs, batchId = null) {
-  if (!Array.isArray(inputs) || !inputs.length) throw new Error("没有可导入的球员数据");
-  if (batchId && !studio.batches[batchId]) throw new Error("发布批次不存在");
-  const drafts = inputs.map((input) => normalizedDraft({ ...input, batchId:batchId ?? input.batchId ?? null }));
-  const ids = new Set();
-  for (const draft of drafts) {
-    if (ids.has(draft.id) || REAL_PLAYER_BY_ID[draft.id] || studio.drafts[draft.id] || studio.published[draft.id]) throw new Error(`球员ID重复：${draft.id}`);
-    ids.add(draft.id);
-  }
-  drafts.forEach((draft) => { studio.drafts[draft.id] = draft; });
-  await persistStudio();
-  return drafts.map(publicDraft);
+  return mutateStudio(async () => {
+    if (!Array.isArray(inputs) || !inputs.length) throw new Error("没有可导入的球员数据");
+    if (batchId && !studio.batches[batchId]) throw new Error("发布批次不存在");
+    const drafts = inputs.map((input) => normalizedDraft({ ...input, batchId:batchId ?? input.batchId ?? null }));
+    const ids = new Set();
+    for (const draft of drafts) {
+      if (ids.has(draft.id) || REAL_PLAYER_BY_ID[draft.id] || studio.drafts[draft.id] || studio.published[draft.id]) throw new Error(`球员ID重复：${draft.id}`);
+      ids.add(draft.id);
+    }
+    drafts.forEach((draft) => { studio.drafts[draft.id] = draft; });
+    await persistStudio();
+    return drafts.map(draft => publicDraft(draft));
+  });
 }
 
 export async function updatePlayerCardDraft(id, input) {
-  const current = studio.drafts[id];
-  if (!current) throw Object.assign(new Error("暂存球员不存在"), { statusCode:404 });
-  const draft = normalizedDraft({ ...input, id }, current);
-  if (draft.batchId && !studio.batches[draft.batchId]) throw new Error("发布批次不存在");
-  studio.drafts[id] = draft;
-  await persistStudio();
-  return publicDraft(draft);
+  return mutateStudio(async () => {
+    const current = studio.drafts[id];
+    if (!current) throw Object.assign(new Error("暂存球员不存在"), { statusCode:404 });
+    const draft = normalizedDraft({ ...input, id }, current);
+    if (draft.batchId && !studio.batches[draft.batchId]) throw new Error("发布批次不存在");
+    studio.drafts[id] = draft;
+    await persistStudio();
+    return publicDraft(draft);
+  });
 }
 
 export async function createPlayerCardBatch(input) {
-  const now = new Date().toISOString();
-  const batch = {
-    id:`player-batch-${randomUUID()}`,
-    name:nonEmpty(input.name, "批次名称"),
-    description:String(input.description ?? "").trim().slice(0, 500),
-    status:"staging",
-    createdAt:now,
-    updatedAt:now,
-    publishedAt:null,
-  };
-  studio.batches[batch.id] = batch;
-  await persistStudio();
-  return clone(batch);
+  return mutateStudio(async () => {
+    const now = new Date().toISOString();
+    const batch = {
+      id:`player-batch-${randomUUID()}`,
+      name:nonEmpty(input.name, "批次名称"),
+      description:String(input.description ?? "").trim().slice(0, 500),
+      status:"staging",
+      createdAt:now,
+      updatedAt:now,
+      publishedAt:null,
+    };
+    studio.batches[batch.id] = batch;
+    await persistStudio();
+    return clone(batch);
+  });
 }
 
 export async function updatePlayerCardBatch(id, input) {
-  const current = studio.batches[id];
-  if (!current) throw Object.assign(new Error("发布批次不存在"), { statusCode:404 });
-  if (current.status === "published") throw new Error("已发布批次不能再修改");
-  const batch = {
-    ...current,
-    name:Object.hasOwn(input, "name") ? nonEmpty(input.name, "批次名称") : current.name,
-    description:Object.hasOwn(input, "description") ? String(input.description ?? "").trim().slice(0, 500) : current.description,
-    updatedAt:new Date().toISOString(),
-  };
-  studio.batches[id] = batch;
-  await persistStudio();
-  return clone(batch);
+  return mutateStudio(async () => {
+    const current = studio.batches[id];
+    if (!current) throw Object.assign(new Error("发布批次不存在"), { statusCode:404 });
+    if (current.status === "published") throw new Error("已发布批次不能再修改");
+    const batch = {
+      ...current,
+      name:Object.hasOwn(input, "name") ? nonEmpty(input.name, "批次名称") : current.name,
+      description:Object.hasOwn(input, "description") ? String(input.description ?? "").trim().slice(0, 500) : current.description,
+      updatedAt:new Date().toISOString(),
+    };
+    studio.batches[id] = batch;
+    await persistStudio();
+    return clone(batch);
+  });
 }
 
 export async function publishPlayerCardBatch(id) {
-  const batch = studio.batches[id];
-  if (!batch) throw Object.assign(new Error("发布批次不存在"), { statusCode:404 });
-  if (batch.status === "published") throw new Error("该批次已经发布");
-  const ids = Object.values(studio.drafts).filter((draft) => draft.batchId === id).map((draft) => draft.id);
-  if (!ids.length) throw new Error("该批次没有待上线球员");
-  const players = await publishDraftIds(ids, batch);
-  return { batch:clone(batch), players };
+  return mutateStudio(async () => {
+    const batch = studio.batches[id];
+    if (!batch) throw Object.assign(new Error("发布批次不存在"), { statusCode:404 });
+    if (batch.status === "published") throw new Error("该批次已经发布");
+    const ids = Object.values(studio.drafts).filter((draft) => draft.batchId === id).map((draft) => draft.id);
+    if (!ids.length) throw new Error("该批次没有待上线球员");
+    const players = await publishDraftIds(ids, batch);
+    return { batch:clone(batch), players };
+  });
 }
 
 export async function publishPlayerCardDrafts(ids) {
-  return publishDraftIds(ids);
+  return mutateStudio(async () => {
+    return publishDraftIds(ids);
+  });
 }
 
 async function publishDraftIds(ids, batch = null) {
@@ -387,51 +412,61 @@ function profileOwner(playerId) {
 }
 
 export async function savePlayerCardProfile(playerId, input) {
-  const owner = profileOwner(playerId);
-  if (!owner) throw Object.assign(new Error("球员或暂存卡不存在"), { statusCode:404 });
-  const existing = studio.profiles[playerId];
-  let fileName = existing?.optimizedFileName;
-  let contentHash = existing?.contentHash;
-  let sourceFileName = existing?.sourceFileName ?? null;
-  let width = existing?.pixelWidth ?? null;
-  let height = existing?.pixelHeight ?? null;
-  if (input.imageDataUrl || input.imageBuffer) {
-    const buffer = uploadedImageBuffer(input);
-    const processor = imageProcessor()(buffer, { failOn:"error" });
-    const metadata = await processor.metadata();
-    if (!metadata.width || !metadata.height || metadata.width > 8000 || metadata.height > 8000) throw new Error("卡画尺寸无效或超过8000像素");
-    fileName = profileTargetFileName(playerId);
-    sourceFileName = String(input.sourceFileName ?? `${playerId}.png`).slice(0, 180);
-    await mkdir(PROFILE_WEBP_DIRECTORY, { recursive:true });
-    const output = await imageProcessor()(buffer, { failOn:"error" })
-      .resize({ width:1600, height:1600, fit:"inside", withoutEnlargement:true })
-      .webp({ quality:90, alphaQuality:100, smartSubsample:true })
-      .toBuffer({ resolveWithObject:true });
-    await writeFile(path.join(PROFILE_WEBP_DIRECTORY, fileName), output.data);
-    contentHash = createHash("sha256").update(output.data).digest("hex").slice(0, 12);
-    width = output.info.width;
-    height = output.info.height;
-  }
-  if (!fileName || !contentHash) throw new Error("请先上传球员卡画PNG");
-  const grade = PROFILE_GRADES.includes(String(owner.grade)) ? String(owner.grade) : "C";
-  const profile = {
-    playerId,
-    grade,
-    sourceFileName,
-    optimizedFileName:fileName,
-    imageUrl:profileUrl(fileName, contentHash),
-    contentHash,
-    xPercent:rounded(clamp(input.xPercent ?? existing?.xPercent ?? 50, -50, 150, "横向位置")),
-    yPercent:rounded(clamp(input.yPercent ?? existing?.yPercent ?? 52, -50, 150, "纵向位置")),
-    widthPercent:rounded(clamp(input.widthPercent ?? existing?.widthPercent ?? 200, 40, 360, "人物宽度")),
-    pixelWidth:width,
-    pixelHeight:height,
-    updatedAt:new Date().toISOString(),
-  };
-  studio.profiles[playerId] = profile;
-  await persistStudio();
-  applyProfileToPlayer(playerId);
-  return clone(profile);
+  return mutateStudio(async () => {
+    const owner = profileOwner(playerId);
+    if (!owner) throw Object.assign(new Error("球员或暂存卡不存在"), { statusCode:404 });
+    const existing = studio.profiles[playerId];
+    const position = {
+      xPercent:rounded(clamp(input.xPercent ?? existing?.xPercent ?? 50, -50, 150, "横向位置")),
+      yPercent:rounded(clamp(input.yPercent ?? existing?.yPercent ?? 52, -50, 150, "纵向位置")),
+      widthPercent:rounded(clamp(input.widthPercent ?? existing?.widthPercent ?? 200, 40, 360, "人物宽度")),
+    };
+    let fileName = existing?.optimizedFileName;
+    let contentHash = existing?.contentHash;
+    let sourceFileName = existing?.sourceFileName ?? null;
+    let width = existing?.pixelWidth ?? null;
+    let height = existing?.pixelHeight ?? null;
+    if (input.imageDataUrl || input.imageBuffer) {
+      const buffer = uploadedImageBuffer(input);
+      const processor = imageProcessor()(buffer, { failOn:"error" });
+      const metadata = await processor.metadata();
+      if (!metadata.width || !metadata.height || metadata.width > 8000 || metadata.height > 8000) throw new Error("卡画尺寸无效或超过8000像素");
+      sourceFileName = String(input.sourceFileName ?? `${playerId}.png`).slice(0, 180);
+      await mkdir(PROFILE_WEBP_DIRECTORY, { recursive:true });
+      const output = await imageProcessor()(buffer, { failOn:"error" })
+        .resize({ width:1600, height:1600, fit:"inside", withoutEnlargement:true })
+        .webp({ quality:90, alphaQuality:100, smartSubsample:true })
+        .toBuffer({ resolveWithObject:true });
+      contentHash = createHash("sha256").update(output.data).digest("hex").slice(0, 12);
+      fileName = profileTargetFileName(playerId).replace(/\.webp$/, `-${contentHash}.webp`);
+      const temporaryPath = path.join(PROFILE_WEBP_DIRECTORY, `${fileName}.${randomUUID()}.tmp`);
+      try {
+        await writeFile(temporaryPath, output.data, { flag:"wx" });
+        await rename(temporaryPath, path.join(PROFILE_WEBP_DIRECTORY, fileName));
+      } finally { await rm(temporaryPath, { force:true }); }
+      width = output.info.width;
+      height = output.info.height;
+    }
+    if (!fileName || !contentHash) throw new Error("请先上传球员卡画PNG");
+    const grade = PROFILE_GRADES.includes(String(owner.grade)) ? String(owner.grade) : "C";
+    const profile = {
+      playerId,
+      grade,
+      sourceFileName,
+      optimizedFileName:fileName,
+      imageUrl:profileUrl(fileName, contentHash),
+      contentHash,
+      ...position,
+      pixelWidth:width,
+      pixelHeight:height,
+      updatedAt:new Date().toISOString(),
+    };
+    studio.profiles[playerId] = profile;
+    await persistStudio();
+    applyProfileToPlayer(playerId);
+    return clone(profile);
+  });
 }
 
 loadStudioSync();
+committedStudio = studio;

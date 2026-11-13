@@ -1,7 +1,7 @@
 import { Random } from "./random.js";
 import { NEW_TRAIT_BATCH } from "./new-trait-batch.js";
-import { roleGroup } from "../game/public/schema.js";
-export { roleGroup } from "../game/public/schema.js";
+import { roleGroup } from "../shared/football/schema.js";
+export { roleGroup } from "../shared/football/schema.js";
 
 export const TRAIT_RULES = Object.freeze({
   offerSize: 3,

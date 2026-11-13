@@ -222,6 +222,11 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     }
     if (request.method === "GET" && pathname === "/api/admin/dashboard") return sendJson(response, 200, { ok: true, dashboard: buildDashboard() });
     if (request.method === "GET" && pathname === "/api/admin/league") return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
+    if (request.method === "GET" && pathname === "/api/admin/league/season-controls/preview") return sendJson(response, 200, { ok:true, preview:yellowDogsLeague.adminSeasonControlsPreview() });
+    if (request.method === "POST" && pathname === "/api/admin/league/season-controls") {
+      const body = await readJson(request);
+      return sendJson(response, 200, { ok:true, ...yellowDogsLeague.applyAdminSeasonControl(body) });
+    }
     if (request.method === "GET" && pathname === "/api/admin/league/season-final") return sendJson(response, 200, { ok:true, seasonFinalTournament:yellowDogsLeague.seasonFinalTournamentView() });
     if (request.method === "POST" && pathname === "/api/admin/league/season-final/simulate") return sendJson(response, 200, { ok:true, seasonFinalTournament:yellowDogsLeague.simulateNextSeasonFinalMatch() });
     if (request.method === "GET" && pathname === "/api/admin/league/roster-enforcement/preview") return sendJson(response, 200, { ok:true, enforcement:yellowDogsLeague.rosterEnforcementPreview() });
@@ -361,7 +366,8 @@ export async function handleAdminApi(request, response, pathname, readJson, send
     if (request.method === "POST" && pathname === "/api/admin/league/daily-reset") {
       const body = await readJson(request);
       if (body.confirm !== "DAILY_RESET_YDL") throw new Error("需要确认立即重置每日联赛");
-      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.resetDailyCompetitions({ manual:true }) });
+      // Old manual daily reset now shares the same replay semantics as the dialog.
+      return sendJson(response, 200, { ok:true, league:yellowDogsLeague.restartSeason() });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/s4-packs/grant") {
       const body = await readJson(request);

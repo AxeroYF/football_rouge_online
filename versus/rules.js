@@ -1,4 +1,4 @@
-import { roleGroup } from "../game/public/schema.js";
+import { roleGroup } from "../shared/football/schema.js";
 import { REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, VERSUS_LINES, VERSUS_PLAYER_GRADE_WEIGHTS } from "./player-pool.js";
 
 export const VERSUS_TEAM_SIZE = 11;

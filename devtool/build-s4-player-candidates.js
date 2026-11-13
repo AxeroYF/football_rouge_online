@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { LEGEND_PROFILES } from "../game/public/legends.js";
+import { LEGEND_PROFILES } from "../shared/football/legends.js";
 import { REAL_PLAYERS } from "../versus/player-pool.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));

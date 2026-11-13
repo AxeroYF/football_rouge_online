@@ -1,5 +1,6 @@
-﻿import { roleGroup } from "../../game/public/schema.js";
+﻿import { roleGroup } from "../../shared/football/schema.js";
 import { offlineAttributeMaximum, offlineDisplayAttributeValue } from "../offline-attribute-settings.js";
+import { tacticalStyleMatches } from "../public/tactical-principles.js";
 import { applyS4BondBonuses, evaluateS4LineupBonds } from "../public/bond-rules.js";
 import { captainStyleModifiers } from "../public/captain-rules.js";
 import { inferElevenBoardRoles } from "../public/formation-rules.js";
@@ -14,7 +15,7 @@ function traitIds(player) {
 
 function conditionMatches(condition = {}, context, assignedRole) {
   if (condition.weather && !(Array.isArray(condition.weather) ? condition.weather : [condition.weather]).includes(context.weather)) return false;
-  if (condition.teamStyle && !(Array.isArray(condition.teamStyle) ? condition.teamStyle : [condition.teamStyle]).includes(context.style)) return false;
+  if (condition.teamStyle && !(Array.isArray(condition.teamStyle) ? condition.teamStyle : [condition.teamStyle]).some(style => tacticalStyleMatches(context, style))) return false;
   if (condition.teamTactic && !(Array.isArray(condition.teamTactic) ? condition.teamTactic : [condition.teamTactic]).includes(context.tactic)) return false;
   if (condition.minuteGte != null && context.minute < condition.minuteGte) return false;
   if (condition.minuteLte != null && context.minute > condition.minuteLte) return false;
@@ -32,7 +33,7 @@ function applyTraitAttributes(player, assignedRole, context) {
   let heightCm = Number.isFinite(Number(player.heightCm)) ? Number(player.heightCm) : 180;
   const eventHooks = [];
   for (const id of traitIds(player)) {
-    const trait = YDL_TRAIT_BY_ID[id];
+    const trait = player.matchTraitDefinitions ? player.matchTraitDefinitions.find(entry=>entry.id===id) : YDL_TRAIT_BY_ID[id];
     for (const rule of trait?.rules ?? []) {
       if (!conditionMatches(rule.when, context, assignedRole)) continue;
       if (rule.hook === "attribute") for (const [key, value] of Object.entries(rule.add ?? {})) attributes[key] = Number(attributes[key] ?? 50) + Number(value);
@@ -49,7 +50,7 @@ function applyTraitAttributes(player, assignedRole, context) {
     state:{ ...player.state, fitness:fixedFitness ?? player.state?.fitness ?? player.fitness ?? 100 },
     v2AppliedTraitIds:traitIds(player),
     v2TraitHooks:eventHooks,
-    traitDefinitions:traitIds(player).map((id) => YDL_TRAIT_BY_ID[id]).filter(Boolean),
+    traitDefinitions:player.matchTraitDefinitions ?? traitIds(player).map((id) => YDL_TRAIT_BY_ID[id]).filter(Boolean),
   };
 }
 
@@ -79,7 +80,9 @@ export function buildV2TeamSnapshots(teams, options = {}) {
   return teams.map((team, teamIndex) => {
     const roles = inferElevenBoardRoles((team.players ?? []).map((player) => ({ id:player.id, position:team.positions?.[player.id] })), team.formationLines);
     const scoreState = score[teamIndex] > score[1 - teamIndex] ? "leading" : score[teamIndex] < score[1 - teamIndex] ? "trailing" : "level";
-    const context = { minute, weather, precipitation, scoreState, style:team.style, tactic:team.tactic, roleGroup:null };
+    const context = { minute, weather, precipitation, scoreState, style:team.style, tactic:team.tactic, roleGroup:null,
+      tacticalModelVersion:team.tacticalModelVersion, possessionStyle:team.possessionStyle, defensiveBlock:team.defensiveBlock,
+      transitionStyle:team.transitionStyle, duelIntensity:team.duelIntensity };
     const traitPlayers = (team.players ?? []).filter((player) => player.active !== false).map((player) => {
       const assignedRole = roles[player.id] ?? player.assignedRole ?? player.role;
       return { ...applyTraitAttributes(player, assignedRole, { ...context, roleGroup:roleGroup(assignedRole) }), assignedRole };

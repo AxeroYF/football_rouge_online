@@ -2,7 +2,7 @@ import { REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
 import { V3_MATCH_PARAMETERS } from "./v3/match-parameters-v3.js";
 
-export const MIRROR_BATCH_WORKER_ENGINE_VERSION = "v3.0-tactical-control-r1";
+export const MIRROR_BATCH_WORKER_ENGINE_VERSION = "v3.3-tactical-execution-r1";
 export const MIRROR_BATCH_DIRECTOR_NODE = "director";
 export const MIRROR_BATCH_CLOUD_NODE = "cloud";
 export const MIRROR_BATCH_DIRECTOR_CONCURRENCY = 5;

@@ -1,11 +1,13 @@
+import {addLegacyXPlayer} from "./helpers/legacy-x-player.js";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
+import { DEFAULT_GAME_SETTINGS } from "../versus/public/game-settings.js";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
-import { ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes } from "../shared/football/schema.js";
 import { assertS4AssetInvariants, ownershipOwner } from "../versus/s4-assets.js";
 import { isXPlayer, normalizedGameAttributes, REAL_PLAYER_BY_ID, REAL_PLAYERS, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP } from "../versus/player-pool.js";
 import { VERSUS_TRAIT_CARDS } from "../versus/trait-pool.js";
@@ -347,9 +349,9 @@ test("S4新赛季选秀为每名球员创建独立卡，并为非传奇建立有
   const assets = service.view(user).ownTeam.s4Assets;
   const publicRoster = service.view(user).ownTeam.roster;
 
-  assert.equal(assets.cards.length, 23);
+  assert.equal(assets.cards.length, 22);
   assert.equal(assets.rosterSlotsUsed, 22);
-  assert.equal(new Set(assets.cards.map((card) => card.id)).size, 23);
+  assert.equal(new Set(assets.cards.map((card) => card.id)).size, 22);
   assert.ok(team.rosterIds.every((playerId) => REAL_PLAYER_BY_ID[playerId].grade === "S" || ownershipOwner(service.state, playerId) === user.id));
   assert.ok(publicRoster.every((player) => !("legendAbility" in player) && !("signature" in player)));
   assert.doesNotThrow(() => assertS4AssetInvariants(service.state));
@@ -1227,7 +1229,7 @@ test("主动返还所有权保留全部并列最高强化卡，只有基础卡�
 test("批量所有权回收会原子校验并一次结算多名球员", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("batch-rights-returner");
-  const team = join(service, user);
+  const team = join(service, user); addLegacyXPlayer(service, user);
   const playerIds = team.rosterIds.filter((id) => !isXPlayer(REAL_PLAYER_BY_ID[id]) && REAL_PLAYER_BY_ID[id].grade !== "S").slice(-2);
   const xPlayerId = team.rosterIds.find((id) => isXPlayer(REAL_PLAYER_BY_ID[id]));
   const balanceBefore = service.wallet(user.id).balance;
@@ -1244,7 +1246,7 @@ test("批量所有权回收会原子校验并一次结算多名球员", () => {
     assert.equal(service.playerCards(user.id, playerId).length, 0);
   });
 });
-test("X级球员完成位置身高特性配置且全服唯一并免占名单", () => {
+test("X级球员完成位置身高特性配置且全服唯一并免占名单", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const first = account("x-config-first");
   const second = account("x-config-second");
@@ -1281,7 +1283,7 @@ test("X级球员完成位置身高特性配置且全服唯一并免占名单", (
 test("X级球员不会进入普通卡包且不可后台发卡、挂牌或回收", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-protected-owner");
-  const team = join(service, user);
+  const team = join(service, user); addLegacyXPlayer(service, user);
   const xPlayerId = team.rosterIds.find(isXPlayer);
   const xCard = service.representativeCard(user.id, xPlayerId);
 
@@ -1295,7 +1297,7 @@ test("X级球员不会进入普通卡包且不可后台发卡、挂牌或回收"
   assert.throws(() => service.returnOwnership(user, xPlayerId), /不可回收/);
 });
 
-test("X球员成长任务、商店加成点与27项加点会实时生效", () => {
+test("X球员成长任务、商店加成点与27项加点会实时生效", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-owner");
   const team = join(service, user);
@@ -1342,7 +1344,7 @@ test("X球员成长任务、商店加成点与27项加点会实时生效", () =>
   assert.throws(() => service.spendXGrowthPoints(user, "heightCm", 1), /身高最高为230cm/);
 });
 
-test("X球员成长支持批量和最大加点并在保存前结算任务", () => {
+test("X球员成长支持批量和最大加点并在保存前结算任务", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-batch-owner");
   const team = join(service, user);
@@ -1374,7 +1376,7 @@ test("X球员成长支持批量和最大加点并在保存前结算任务", () =
   assert.equal(view.xGrowth.attributes.find((field) => field.key === "passing").value, passingBefore + 10);
 });
 
-test("X球员成长响应只查询一次代表卡", () => {
+test("X球员成长响应只查询一次代表卡", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-card-query");
   join(service, user);
@@ -1389,7 +1391,7 @@ test("X球员成长响应只查询一次代表卡", () => {
   assert.equal(calls, 1);
 });
 
-test("X球员洗点返还已用点数并切换位置", () => {
+test("X球员洗点返还已用点数并切换位置", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-reset-owner");
   const team = join(service, user);
@@ -1415,7 +1417,7 @@ test("X球员洗点返还已用点数并切换位置", () => {
   assert.equal(service.state.ledger.filter((entry) => entry.type === "x-growth-reset").length, 1);
 });
 
-test("X球员洗点可从全部位置适配特性中自由选择并保留强化特性", () => {
+test("X球员洗点可从全部位置适配特性中自由选择并保留强化特性", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-trait-reset");
   const team = join(service, user);
@@ -1436,7 +1438,7 @@ test("X球员洗点可从全部位置适配特性中自由选择并保留强化�
   assert.equal(service.wallet(user.id).balance, balanceBeforeInvalid);
 });
 
-test("X球员成长操作可返回轻量响应并保留旧完整响应", () => {
+test("X球员成长操作可返回轻量响应并保留旧完整响应", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-compact-owner");
   join(service, user);
@@ -1455,7 +1457,7 @@ test("X球员成长操作可返回轻量响应并保留旧完整响应", () => {
   assert.ok(full.xGrowth);
 });
 
-test("X球员洗点请求重试时不会重复扣费或重复写账", () => {
+test("X球员洗点请求重试时不会重复扣费或重复写账", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-idempotent-owner");
   join(service, user);
@@ -1529,42 +1531,23 @@ test("友谊赛邀请使用轻量响应并避免完整联赛重绘", () => {
   assert.match(serviceSource, /this\.save\(\{ skipDailyBackup:true \}\)/);
 });
 
-test("细节战术保留八项连续滑杆并按比赛阶段保存持球与无球方案", () => {
+test("战术原则界面保留分阶段详细指令与七项高级微调", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const ui = readFileSync(new URL("../versus/public/tactics-interface.js", import.meta.url), "utf8");
   const serviceSource = readFileSync(new URL("../versus/league-service.js", import.meta.url), "utf8");
-  const engineSource = readFileSync(new URL("../versus/v2/match-engine-v2.js", import.meta.url), "utf8");
-  const profileSource = readFileSync(new URL("../versus/public/v2-tactical-profiles.js", import.meta.url), "utf8");
-  assert.match(appSource, /<header><b>持球进攻<\/b><\/header>/);
-  assert.match(appSource, /<header><b>无球防守<\/b><\/header>/);
-  assert.match(appSource, /name="\$\{state\}InDetail_\$\{key\}"/);
-  assert.match(appSource, /name="\$\{state\}OutDetail_\$\{key\}"/);
-  assert.match(appSource, /<span>比赛心态<\/span><select name="\$\{state\}Tactic">/);
-  assert.match(appSource, /<span>预设打法<\/span><select name="\$\{state\}Style">/);
-  assert.doesNotMatch(appSource, /name="\$\{state\}(PossessionStyle|DefensiveBlock|TransitionStyle|DuelIntensity)"/);
-  assert.match(appSource, /Object\.entries\(V2_TACTICAL_DIMENSIONS\)/);
-  assert.match(appSource, /name="\$\{state\}Dimension_\$\{key\}" min="0" max="100" step="1"/);
-  assert.match(appSource, /data-tactical-dimension-output/);
-  assert.match(appSource, /scroll\.append\(summary, plans\)/);
-  assert.doesNotMatch(appSource, /directionSection\.innerHTML = "<header><b>攻防方向<\/b><\/header>"/);
-  assert.match(serviceSource, /IN_POSSESSION_PLANS\.has\(plans\[state\]\?\.inPossession\)/);
-  assert.match(serviceSource, /OUT_OF_POSSESSION_PLANS\.has\(plans\[state\]\?\.outOfPossession\)/);
-  assert.match(engineSource, /function tacticalDimensionsForPlan\(plan = \{\}\)/);
-  assert.match(engineSource, /v2TacticalProfileAdjustments\(plan\.inPossession, plan\.outOfPossession\)/);
-  assert.match(engineSource, /v2TacticalDetailAdjustments\(plan\.inPossessionDetails, plan\.outOfPossessionDetails\)/);
-  assert.match(profileSource, /highPress:\{ pressing:22, defensiveLine:14, compactness:4 \}/);
-  assert.match(profileSource, /chanceCreation:\{ patient:"耐心寻找", balanced:"均衡", shootOnSight:"尽快起脚" \}/);
-  assert.match(profileSource, /lineStrategy:\{ drop:"回收", hold:"保持", offside:"造越位" \}/);
+  assert.ok(ui.includes("有球进攻") && ui.includes("无球防守"));
+  assert.ok(ui.includes('"InDetail"') && ui.includes('"OutDetail"'));
+  assert.ok(ui.includes("TACTICAL_DIMENSION_LABELS") && ui.includes("data-tactical-dimension-output"));
+  assert.ok(ui.includes("data-tactical-mentality") && ui.includes("data-league-principle"));
+  assert.ok(appSource.includes("principlePlanMarkup(state, label, plan, effectiveLeaguePlanDimensions(plan))"));
+  assert.ok(serviceSource.includes("tacticalPrincipleFields(plans[state], fallback)"));
 });
-test("切换比赛心态或原有预设打法会同步刷新常驻的八项战术滑杆", () => {
+test("新版心态与原则控件不再进入旧版整体滑杆重置入口", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  const presetSync = appSource.match(/function syncLeagueTacticalPresetControls\(control\) \{[\s\S]*?\n\}/)?.[0] ?? "";
-  assert.match(presetSync, /Tactic\|Style/);
-  assert.match(presetSync, /defaultV2TacticalDimensions\(tactic, style\)/);
-  assert.match(presetSync, /draft\.tacticalPlans\[state\] = \{ \.\.\.draft\.tacticalPlans\[state\], tactic, style, tacticalDimensions \}/);
-  assert.match(presetSync, /form\.elements\.namedItem\(name\)/);
-  assert.match(presetSync, /data-tactical-dimension-output/);
-  assert.match(appSource, /if \(syncLeagueTacticalPresetControls\(event\.target\)\) \{\s*scheduleLeagueTeamAutoSave\(260\);\s*return;/);
-  assert.match(appSource, /function originalV2StyleForPlan\(plan = \{\}, fallbackStyle = "possession"\)/);
+  assert.ok(appSource.includes("applyLeaguePrincipleChange(mentalityButton.dataset.planState"));
+  assert.ok(appSource.includes("changeTacticalPrinciple(previous, key, value"));
+  assert.ok(!appSource.includes("syncLeagueTacticalPresetControls"));
+  assert.ok(appSource.includes("function originalV2StyleForPlan("));
 });
 test("球员职责在电脑磁贴下循环切换并在手机底部面板单独编辑", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
@@ -1635,7 +1618,7 @@ test("赛后复盘监听比赛历史更新并自动刷新友谊赛记录", () =>
   assert.match(appSource, /reviewHistory/);
 });
 
-test("旧X球员完成首日任务后会继续获得多日成长里程碑", () => {
+test("旧X球员完成首日任务后会继续获得多日成长里程碑", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-growth-long-chain");
   const team = join(service, user);
@@ -1660,7 +1643,7 @@ test("旧X球员存档重载后以62为基础总评并正确叠加强化", () =>
   try {
     const user = account("x-old-save-owner");
     const first = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
-    const team = join(first, user);
+    const team = join(first, user); addLegacyXPlayer(first, user);
     const xPlayerId = team.rosterIds.find(isXPlayer);
     const card = first.representativeCard(user.id, xPlayerId);
     card.upgradeLevel = 5;
@@ -1670,16 +1653,18 @@ test("旧X球员存档重载后以62为基础总评并正确叠加强化", () =>
 
     const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
     const view = reloaded.view(user);
+    assert.equal(view.xGrowth,null);
+    const savedGrowth = reloaded.publicXGrowth(user.id);
     const xPlayer = view.ownTeam.roster.find((player) => player.id === xPlayerId);
-    assert.equal(view.xGrowth.player.overall, 69);
+    assert.equal(savedGrowth.player.overall, 69);
     assert.equal(xPlayer.baseOverall, 62);
     assert.equal(xPlayer.effectiveOverall, 69);
     assert.equal(xPlayer.cards[0].effectiveOverall, 69);
-    assert.equal(view.xGrowth.baseOverall, 62);
-    assert.equal(view.xGrowth.effectiveOverall, 69);
-    assert.equal(view.xGrowth.upgradeLevel, 5);
-    assert.ok(view.xGrowth.attributes.every((attribute) => attribute.effectiveValue === attribute.value + 7));
-    assert.equal(view.xGrowth.height.effectiveValue, view.xGrowth.height.value);
+    assert.equal(savedGrowth.baseOverall, 62);
+    assert.equal(savedGrowth.effectiveOverall, 69);
+    assert.equal(savedGrowth.upgradeLevel, 5);
+    assert.ok(savedGrowth.attributes.every((attribute) => attribute.effectiveValue === attribute.value + 7));
+    assert.equal(savedGrowth.height.effectiveValue, savedGrowth.height.value);
   } finally {
     rmSync(directory, { recursive:true, force:true });
   }
@@ -1691,7 +1676,7 @@ test("旧X门将存档优先使用实际初始能力计算成长基准", () => {
   try {
     const user = account("x-old-gk-save-owner");
     const first = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
-    const team = join(first, user);
+    const team = join(first, user); addLegacyXPlayer(first, user);
     const xPlayerId = team.rosterIds.find(isXPlayer);
     const config = first.state.xPlayers.configs[xPlayerId];
     const baseAttributes = Object.fromEntries(ATTRIBUTE_NAMES.map((key) => [key, 1]));
@@ -1703,15 +1688,17 @@ test("旧X门将存档优先使用实际初始能力计算成长基准", () => {
 
     const reloaded = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
     const view = reloaded.view(user);
+    assert.equal(view.xGrowth,null);
+    const savedGrowth = reloaded.publicXGrowth(user.id);
     assert.equal(reloaded.state.xPlayers.configs[xPlayerId].baseAbilityOverall, 51);
-    assert.equal(view.xGrowth.baseOverall, 78);
-    assert.equal(view.xGrowth.effectiveOverall, 87);
+    assert.equal(savedGrowth.baseOverall, 78);
+    assert.equal(savedGrowth.effectiveOverall, 87);
   } finally {
     rmSync(directory, { recursive:true, force:true });
   }
 });
 
-test("X级球员只能作为主卡并使用同位置普通卡强化至三特性", () => {
+test("X级球员只能作为主卡并使用同位置普通卡强化至三特性", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
   const user = account("x-enhancement-owner");
   const team = join(service, user);
@@ -1743,7 +1730,7 @@ test("X级球员只能作为主卡并使用同位置普通卡强化至三特性"
   assert.equal(xCard.traitIds.length, 3);
 });
 
-test("X级强化不能消耗其他球员的最后一张所有权锚点卡", () => {
+test("X级强化不能消耗其他球员的最后一张所有权锚点卡", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   [0, 1].forEach((roll, index) => {
     const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => roll });
     const user = account(`x-anchor-material-owner-${index}`);
@@ -1768,7 +1755,7 @@ test("X级强化不能消耗其他球员的最后一张所有权锚点卡", () =
   });
 });
 
-test("任意最后一张传奇卡作为X级副卡时都会同步移出名单并保持存档一致", () => {
+test("任意最后一张传奇卡作为X级副卡时都会同步移出名单并保持存档一致", {skip:"X 获取与成长已暂停；当前规则由 team-draft.test.js 覆盖，保留旧规则供未来重启评估"}, () => {
   ["legend-messi-rat", "legend-pele"].forEach((legendId, index) => {
     const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => 0 });
     const user = account(`x-legend-material-${index}`);
@@ -1799,9 +1786,9 @@ test("X级球员只能无金币一换一且成交后完整交换归属", () => {
   const first = account("x-trade-first");
   const second = account("x-trade-second");
   const observer = account("x-trade-observer");
-  const firstTeam = join(service, first);
-  const secondTeam = join(service, second);
-  join(service, observer);
+  const firstTeam = join(service, first); addLegacyXPlayer(service, first);
+  const secondTeam = join(service, second); addLegacyXPlayer(service, second);
+  join(service, observer); addLegacyXPlayer(service, observer);
   const firstXId = firstTeam.rosterIds.find(isXPlayer);
   const secondXId = secondTeam.rosterIds.find(isXPlayer);
   const firstCard = service.representativeCard(first.id, firstXId);
@@ -1845,8 +1832,7 @@ test("桌面联赛浅色主题只在宽屏生效并记忆用户选择", () => {
   const componentCompletionBlock = styles.slice(styles.indexOf("/* Desktop light appearance: component completion */"));
 
   assert.match(appSource, /LEAGUE_DESKTOP_THEME_KEY = "yellowdogs_league_desktop_theme_v1"/);
-  assert.match(appSource, /localStorage\.getItem\(LEAGUE_DESKTOP_THEME_KEY\) === "dark" \? "dark" : "light"/);
-  assert.match(appSource, /catch \{ return "light"; \}/);
+  assert.equal(DEFAULT_GAME_SETTINGS.theme, "light");
   assert.match(appSource, /window\.matchMedia\("\(min-width: 1051px\)"\)/);
   assert.match(appSource, /data-league-theme-toggle aria-pressed=/);
   assert.match(appSource, /localStorage\.setItem\(LEAGUE_DESKTOP_THEME_KEY, leagueDesktopTheme\)/);
@@ -2215,7 +2201,7 @@ test("mobile league screens retain card traits, inbox details, and cup records",
 
 test("tactical board bond bonus display is optional and disabled by default", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
-  assert.match(appSource, /let leagueShowBondBonuses = false/);
+  assert.equal(DEFAULT_GAME_SETTINGS.bondBonuses, false);
   assert.match(appSource, /data-league-bond-bonus-toggle/);
   assert.match(appSource, /applyS4BondBonuses\(starters\.map/);
   assert.match(appSource, /leagueOverallFromAttributes\(player\.attributes, player\.role\)/);
@@ -2368,17 +2354,11 @@ test("enhancement result never falls back to a stale account trait offer", () =>
   assert.doesNotMatch(appSource, /result\.traitOffer \?\? league\.enhancement\?\.traitOffer/);
 });
 
-test("V2 formal match stats update X player save tasks", () => {
+test("existing X goalkeeper still plays formal matches while growth rewards stay paused", () => {
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const user = account("x-v2-save-task-owner");
-  service.beginDraft(user, "X V2 Save Task FC");
-  service.autoDraft(user);
-  service.configureXPlayer(user, { role:"GK", heightCm:186 });
-  service.chooseXPlayerTrait(user, service.eligibleXTraits("GK")[0].id);
-  service.finishDraft(user);
-
-  const team = service.accountTeam(user.id);
-  const xPlayerId = team.rosterIds.find(isXPlayer);
+  const team = join(service,user);
+  const xPlayerId = addLegacyXPlayer(service,user,{role:"GK"});
   const replacedGoalkeeperId = team.preferredStarterIds.find((playerId) => REAL_PLAYER_BY_ID[playerId]?.role === "GK");
   team.preferredStarterIds = team.preferredStarterIds.map((playerId) => playerId === replacedGoalkeeperId ? xPlayerId : playerId);
   Object.values(team.positionPresets).forEach((preset) => {
@@ -2401,7 +2381,8 @@ test("V2 formal match stats update X player save tasks", () => {
   service.finalizeFixture(fixture, 1, created.match);
 
   assert.equal(service.xFormalStats(xPlayerId).saves, savesBefore + reportPlayer.stats.saves);
-  assert.equal(service.view(user).xGrowth.tasks.find((task) => task.id === "saves").completed, 1);
+  assert.equal(service.view(user).xGrowth,null);
+  assert.equal(service.xGrowthState(xPlayerId).earnedPoints,0);
 });
 
 test("保留现有世界杯模式和国家队战术接口", () => {
@@ -2433,7 +2414,7 @@ test("新版电视台复用现有转播资源并把双方阵型压缩到各自�
   assert.match(appSource, /function broadcastCombinedPosition[\s\S]*?y:50 \+ y \* \.5[\s\S]*?x:100 - x, y:50 - y \* \.5/);
   assert.match(appSource, /function broadcastCombinedPitchMarkup[\s\S]*?broadcastMagnet[\s\S]*?pitchMarkup/);
   assert.match(appSource, /function broadcastV2MatchLayoutMarkup[\s\S]*?matchEventMarkup[\s\S]*?matchStatsMarkup/);
-  assert.match(appSource, /\$\{broadcastV2MatchLayoutMarkup\(match, broadcast\)\}/);
+  assert.match(appSource, /\$\{broadcastV2MatchLayoutMarkup\(match, broadcast, highlight\)\}/);
   assert.match(styles, /\.broadcast-v2-layout\{display:grid;grid-template-columns:/);
   assert.match(styles, /\.broadcast-overlay \.broadcast-v2-pitch\{[^}]*aspect-ratio:\.64/);
   assert.match(styles, /\.broadcast-v2-sidebar\{[^}]*grid-template-rows:/);

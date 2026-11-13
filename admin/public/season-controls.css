@@ -1,0 +1,18 @@
+.season-control-form{padding:20px;display:grid;gap:18px}
+.season-control-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.season-control-choices label{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px;padding:15px;border:1px solid var(--line);cursor:pointer}
+.season-control-choices label.selected{border-color:var(--cyan);background:rgba(113,217,208,.08)}
+.season-control-choices label.destructive.selected{border-color:var(--red);background:rgba(255,89,100,.07)}
+.season-control-choices input{width:auto;margin:0;align-self:center}
+.season-control-choices b{font-size:13px}.season-control-choices small{grid-column:2;color:var(--muted);font-size:11px}
+.season-control-impact{padding:20px;border:1px solid var(--line);background:rgba(113,217,208,.04)}
+.season-control-impact h3{margin:0 0 12px}.season-control-impact>strong{color:var(--cyan)}
+.season-control-impact.destructive>strong{color:var(--red)}
+.season-control-impact p,.season-control-impact li{color:var(--muted);font-size:12px;line-height:1.8}
+.season-control-impact ul{padding-left:20px;margin-bottom:0}
+.season-control-confirm{display:grid;gap:9px;font-size:12px}.season-control-confirm input{width:100%;min-height:44px;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);color:var(--ink);background:var(--panel);font:inherit}
+.season-control-confirm input:focus{outline:2px solid var(--cyan);outline-offset:2px}
+.season-control-form button:disabled{opacity:.45;cursor:not-allowed}
+.season-control-form footer{display:flex;justify-content:space-between;gap:12px}
+.season-control-feedback,.season-control-blocked{margin:0;color:var(--orange);font-size:12px;line-height:1.7}
+@media(max-width:640px){.season-control-form{padding:14px;gap:14px}.season-control-choices{grid-template-columns:1fr}.season-control-impact{padding:14px}}

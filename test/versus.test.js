@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { INDIVIDUALIZED_PLAYERS, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "../versus/player-pool.js";
-import { ATTRIBUTE_NAMES } from "../game/public/schema.js";
+import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
 import { VersusRoomService } from "../versus/room-service.js";
 import { createLineupSeed, parseLineupSeed } from "../versus/lineup-seed.js";
 import { buildMatchReview, hydrateHistoricalMatchDetail } from "../versus/history-detail.js";

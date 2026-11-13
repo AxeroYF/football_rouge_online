@@ -14,8 +14,8 @@ async function request(pathname, { method = "GET", token = "", body = {}, addres
 test("联赛旧数据冲突时后台提供开启全新赛季的恢复入口", () => {
   const source = readFileSync(new URL("../admin/public/app.js", import.meta.url), "utf8");
   assert.match(source, /function renderLeagueRecovery\(error\)/);
-  assert.match(source, /开启全新YFFM1 联赛赛季/);
-  assert.match(source, /\/api\/admin\/league\/fresh-season/);
+  assert.match(source, /查看完全重置影响/);
+  assert.match(source, /\/api\/admin\/league\/season-controls/);
   assert.match(source, /error\.status === 409 && error\.code === "YDL_SEASON_DATA_CONFLICT"/);
   assert.match(source, /function renderLeagueUnavailable\(error\)/);
   assert.match(source, /SERVICE UNAVAILABLE/);
@@ -99,13 +99,16 @@ test("管理员登录后可以读取去敏玩家列表和竞技统计", async ()
   assert.equal((await request("/api/admin/dashboard", { token:login.value.token })).statusCode, 401);
 });
 
-test("后台球员数值保存以26项为权威并自动适配总评", () => {
-  const storeSource = readFileSync(new URL("../versus/ydl-content-store.js", import.meta.url), "utf8");
-  assert.match(storeSource, /player\.overall = playerOverallFromAttributes\(player\.attributes, player\.role\)/);
-  assert.match(storeSource, /S4_PLAYER_DEFAULT_ATTRIBUTE_CAP/);
-  assert.match(storeSource, /player\.referenceAttributes = clone\(player\.attributes\)/);
-  assert.match(storeSource, /cleanPatch\.overall = player\.overall/);
-  assert.match(storeSource, /cleanPatch\.attributes = clone\(player\.attributes\)/);
-  assert.match(storeSource, /applyPlayerPatch\(player, patch, \{ preserveOverall:true \}\)/);
-  assert.match(storeSource, /migrated = applyOverrides\(\) \|\| migrated/);
+test("后台球员数值保存以26项为权威并自动适配总评", async () => {
+  const { updateYdlPlayer } = await import("../versus/ydl-content-store.js");
+  const { playerOverallFromAttributes } = await import("../shared/football/schema.js");
+  const player = REAL_PLAYERS.find(player => !isXPlayer(player));
+  const original = structuredClone(player);
+  try {
+    const attributes = Object.fromEntries(Object.keys(player.attributes).map(key => [key, 61]));
+    const saved = await updateYdlPlayer(player.id, { overall:99, attributes });
+    assert.equal(saved.overall, playerOverallFromAttributes(attributes, player.role));
+    assert.deepEqual(saved.attributes, attributes);
+    assert.deepEqual(player.referenceAttributes, attributes);
+  } finally { await updateYdlPlayer(player.id, original); }
 });

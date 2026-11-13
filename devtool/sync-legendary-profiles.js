@@ -104,7 +104,7 @@ function normalizedProfile(profile, playerId, profileKey) {
   };
 }
 
-export async function syncLegendaryProfiles({ assetTargetDirectory = null } = {}) {
+export async function syncLegendaryProfiles({ assetTargetDirectory = null, requireOriginals = true } = {}) {
   const source = JSON.parse(await readFile(POSITION_PATH, "utf8"));
   const additionSource = JSON.parse(await readFile(ADDITION_POSITION_PATH, "utf8"));
   const messiRatProfile = additionSource?.profiles?.MessiRat;
@@ -124,7 +124,7 @@ export async function syncLegendaryProfiles({ assetTargetDirectory = null } = {}
   const entries = [];
   for (const [playerId, profileKey] of Object.entries(PROFILE_KEY_BY_PLAYER_ID)) {
     const profile = normalizedProfile(profiles[profileKey], playerId, profileKey);
-    await stat(path.join(PROFILE_DIRECTORY, profile.fileName));
+    if (requireOriginals) await stat(path.join(PROFILE_DIRECTORY, profile.fileName));
     Object.assign(profile, await optimizedProfileAsset(PROFILE_DIRECTORY, "legendary_profile", profile.fileName));
     entries.push(profile);
   }
