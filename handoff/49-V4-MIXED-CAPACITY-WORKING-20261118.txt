@@ -1,0 +1,19 @@
+V4混合业务容量 · 工作记录 · 2026-11-18
+
+基于48验收继续，目标active。先本地，不连接云主机，不启用生产。
+下一步：实际原业务API、十个隔离账户、原分片存储、整轮八场生产/结算、账户鉴权播放器及一个原V1/24样本后台预测任务，在同一2逻辑CPU/2GiB Windows Job下测量。重点观察结算时同步核对/保存的请求延迟，以及收件箱延迟写入与原存储严格一致性检查的协调。
+已新增scripts/benchmark-v4-mixed-local.mjs及benchmark-v4-mixed-worker.mjs，当前iteration2（180秒）运行中，尚未验收；不能引用46的最小统计容量来替代。
+iteration1仅初始化失败：旧存档firstRoundAt导致新杯赛nextRoundAt仍在过去，没有可供原后台生成器发布的未来市场。失败worker.log保留于outputs/v4-mixed-capacity-20261118/iteration1/run-S3Clfk。iteration2仅在测试副本把新杯赛时间设为一小时后；原预测V1、24样本和赔率逻辑不变。
+负载通过原handleVersusApi和真实隔离账户；保留原已有玩家并按原选秀/授卡流程补足十个玩家，预置各64封测试通知；原分片存储，联赛/联赛head/收件箱列表/预测读取与每十次循环一次已读写入，八场动态回放，64倍公开时钟。资源限制包括服务、生产子进程与原预测worker，客户端在Job外。
+结果门槛：完整结算八场、十账户、八场有画面、预测实际发布24样本、无错误、整体Job<1.5GiB，head/业务P95<150ms、分块P95<300ms。所有源文件哈希及保护文件前后核对。真实存档及正式服务不变。
+
+iteration2正式失败结果已保存capacity.json：八场首画面均出现，head/分块/业务P95约38.3/52.5/24.4ms，整体Job峰值493162496字节；但逐场结算因updatedAt,inbox未落盘差异被assertCurrent拒绝，轮次未完成。预测启动后返回false，检查发现选中的原副本市场已有24样本报价缓存，本次任务并未实际发布。
+修复：canonical-storage-settlement仅在原已读延迟保存标记仍存在，并能完整证明磁盘/内存差异只有各既有消息单调增加的readAt及updatedAt时，先调用原save保存再重新严格核对。钱包、消息内容和外部保存差异仍拒绝。4项新协调测试及8项原存储、4项轮次测试通过（outputs/tests/2026-11-17T19-56-40-588Z/report.json）。
+容量夹具现在选无投注的未来杯赛市场，只在副本清除该市场报价缓存后让原register/后台生成器重新生成并发布24样本。未改生产预测代码、样本数或赔率规则。
+iteration3/4（同180秒预算）均通过：八场全结算，实际24样本预测发布，十账户；分别152.826/150.157秒，Job峰值500916224/502149120字节；head P95 50.64/51.69ms、分块57.998/64.95ms、业务30.08/31.23ms。head/分块最高约0.9秒，结算同步峰值仍存在。两次负载为每账户顺序请求画面及业务，可能掩盖业务等待。
+iteration5运行中：每账户独立观看循环和业务循环，各300ms思考时间；门槛增加180秒内结束、全部首画面10秒内。不能把这次新模型未完成的测试提前视为通过。
+已读协调新增保存前/后失败恢复测试，总计6项通过，见outputs/tests/2026-11-17T20-01-44-111Z/report.json。
+当前桥重放48号冻结的两轮16场全比赛，两种原存储均通过，见outputs/v4-mixed-capacity-20261118/round-replay-verification.json（round-replay-Rbr53D）。包括收件箱内容/奖励引用及重开后的真实ID完全不变。首轮验证round-replay-7TPDdp因原流水ID含Date.now及未持久化undefined属性而断言失败，日志保留；现在仅在新流水逐条业务内容相同后映射其收件箱reward.id，其他ID/字段严格比较。没有改动原ID生成规则。
+新增scripts/accept-v4-mixed-capacity.mjs，计划通过19文件64项后冻结独立50号验收；目前尚未运行，不代表已验收。杯赛/季末全赛事调度、全赛季与生产接入/归档仍未完成。
+已查明可复用原versus/api.js的handleVersusApi；须在动态import前隔离全部数据环境路径并先导入ydl-content-store.js，不启动带正式tick定时器的devtool/server.js。原API使用versusRooms/yellowDogsLeague单例，测试必须让这两个实例只指向标记副本。
+原预测：ensurePredictionMarkets(0)初始化市场；startPredictionMarketGeneration(entry)使用原后台V1/24样本；可选未来杯赛市场与联赛同时运行，不能改样本/价格逻辑。原收件箱read存在延迟持久化，可能暴露bridge.assertCurrent磁盘/内存差异，应根据实际失败证据处理，不能忽略任意业务字段差异。

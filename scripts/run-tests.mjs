@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 process.chdir(root);
 const quick=process.argv.includes('--quick');
-const extended=new Set(['league-shards.test.js','league.test.js','match-engine-v2.test.js','mirror-marketplace.test.js','season-simulation.test.js','ydl-league-engine-v2.test.js']);
+const extended=new Set(['engine-v4-formal-schedule.test.js','league-shards.test.js','league.test.js','match-engine-v2.test.js','mirror-marketplace.test.js','season-simulation.test.js','ydl-league-engine-v2.test.js']);
 const requested=process.argv.slice(2).filter(a=>a!=='--quick');
 const discovered=fs.readdirSync('test').filter(f=>f.endsWith('.test.js')).sort();
 const files=requested.length?requested.map(f=>path.basename(f)):discovered.filter(f=>!quick||!extended.has(f));

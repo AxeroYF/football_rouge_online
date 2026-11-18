@@ -1,0 +1,40 @@
+AI 队徽、赛程排版与入盟席位修复（2026-11-17）
+
+用户要求
+所有 AI 使用对应真实俱乐部队徽，复用玩家装饰资源。
+赛程对阵中的 AI、有装饰玩家、无装饰玩家需要一致对齐。
+新玩家加入时优先替换较弱 AI。
+
+实现
+1. aiClubBadge 根据 AI 模板 clubId 找到俱乐部名称，复用 cosmetic-items.js 的 CLUB_BADGES。
+   联赛公开球队与详情返回 equippedClubBadge；不向 AI 发放任何装饰背包资产。
+   前端移除通用 AI 盾徽的特殊分支，统一渲染俱乐部徽章。16 支模板都有真实资源。
+2. 赛程、战绩和杯赛使用统一 competition-team-identity。
+   宽赛程的队名中心固定，徽章在独立栏中对齐；窄赛程和杯赛用徽章在上、队名在下。
+   无装饰球队保留相同栏位，长队名在窄屏换行，不推挤比分。
+3. beginDraft 从未被玩家拥有、未被其他选秀预占的 AI 中按阵容实力升序选择。
+   实力口径：最强 1 名门将 + 最强 10 名非门将的基础综合能力均值；相同时比较全名单均值，再按队伍 ID 稳定排序。
+   不受临时体能、伤停、轮换及杯赛名次干扰。已开始选秀继续保留原预占席位。
+   玩家仍继承所替换席位的等级、积分和赛程，不回溯改动已加入的玩家。
+   原 bug：杯赛未开始选数组第一队，开始后选杯赛名次最靠前的 AI。
+
+验证
+test/ai-club-identity.test.js：5 项，16 队资源与公开数据、两种杯赛状态下弱队优先、预占隔离、无装饰真人不继承 AI 队徽、实力计算。
+test/league-divisions.test.js：9 项；两处旧夹具改为使用实际入盟席位，不再假设玩家必为前两队。
+test/team-draft.test.js：16 项通过；test/ai-clubs.test.js：6 项通过。
+scripts/verify-club-badges-ui.mjs：隔离服务真实建两支球队，一支佩戴双装饰，一支无装饰。
+验证 16 份队徽在浏览器可加载，2200/1400/390 宽度的全部 16 个赛程队名中心误差小于 1px，手机无横向溢出，杯赛 32 个身份组件正常，页面异常为零。
+产物：outputs/club-badges-20261117/fixtures-desktop.png、fixtures-medium.png、fixtures-mobile.png、cup.png、ui-verification.json。
+
+生效
+源码已改，未重启正式服务、未修改真实联赛存档。后端重启并刷新页面后生效。
+本补充不在旧交接 ZIP 中。
+
+同日追加：AI 球队主页战术区样式统一
+versus/public/ai-club-ui.js、ai-clubs.css：两套战术使用统一圆角卡片，默认同时展开；桌面双列、手机单列。
+移除固定深绿色按钮/边框，使用全局主题变量，适配浅色与深色；默认/领先/落后有 active 与 aria-pressed 状态。
+进攻、防守摘要置于球场上方并随方案阶段更新；轮换原因、补员名单保留于折叠说明，简化默认展示。
+手机磁贴位置标签限制宽度，避免与能力数字重叠。
+scripts/verify-ai-tactics-ui.mjs 在隔离服务验证两套方案六个阶段的实际球员坐标、选中状态、键盘操作、折叠及手机无溢出，页面异常为零。
+截图与报告：outputs/ai-tactics-ui-20261117/desktop-light.png、desktop-dark.png、mobile.png、mobile-scheme-2.png、verification.json。
+此次只改前端展示；刷新页面即可加载，未修改 AI 战术逻辑或真实存档。

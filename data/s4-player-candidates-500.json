@@ -127,7 +127,8 @@
         "goalkeeperHandling": 89,
         "goalkeeperKicking": 76,
         "goalkeeperPositioning": 88,
-        "goalkeeperReflexes": 90
+        "goalkeeperReflexes": 90,
+        "ballDribbling": 13
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/thibaut-courtois/192119",
       "sourceDataset": "EAFC26 Player Database + Existing YellowDogs League legend",
@@ -201,7 +202,8 @@
         "goalkeeperHandling": 85,
         "goalkeeperKicking": 86,
         "goalkeeperPositioning": 90,
-        "goalkeeperReflexes": 89
+        "goalkeeperReflexes": 89,
+        "ballDribbling": 27
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alisson/212831",
       "sourceDataset": "EAFC26 Player Database",
@@ -275,7 +277,8 @@
         "goalkeeperHandling": 83,
         "goalkeeperKicking": 70,
         "goalkeeperPositioning": 87,
-        "goalkeeperReflexes": 90
+        "goalkeeperReflexes": 90,
+        "ballDribbling": 28
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/gianluigi-donnarumma/230621",
       "sourceDataset": "EAFC26 Player Database",
@@ -349,7 +352,8 @@
         "goalkeeperHandling": 90,
         "goalkeeperKicking": 78,
         "goalkeeperPositioning": 86,
-        "goalkeeperReflexes": 87
+        "goalkeeperReflexes": 87,
+        "ballDribbling": 12
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jan-oblak/200389",
       "sourceDataset": "EAFC26 Player Database",
@@ -423,7 +427,8 @@
         "goalkeeperHandling": 83,
         "goalkeeperKicking": 85,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 88
+        "goalkeeperReflexes": 88,
+        "ballDribbling": 30
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mike-maignan/215698",
       "sourceDataset": "EAFC26 Player Database",
@@ -497,7 +502,8 @@
         "goalkeeperHandling": 82,
         "goalkeeperKicking": 85,
         "goalkeeperPositioning": 87,
-        "goalkeeperReflexes": 89
+        "goalkeeperReflexes": 89,
+        "ballDribbling": 22
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/yann-sommer/177683",
       "sourceDataset": "EAFC26 Player Database",
@@ -571,7 +577,8 @@
         "goalkeeperHandling": 84,
         "goalkeeperKicking": 87,
         "goalkeeperPositioning": 85,
-        "goalkeeperReflexes": 87
+        "goalkeeperReflexes": 87,
+        "ballDribbling": 19
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/david-raya/220901",
       "sourceDataset": "EAFC26 Player Database",
@@ -645,7 +652,8 @@
         "goalkeeperHandling": 83,
         "goalkeeperKicking": 64,
         "goalkeeperPositioning": 86,
-        "goalkeeperReflexes": 87
+        "goalkeeperReflexes": 87,
+        "ballDribbling": 24
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/gregor-kobel/235073",
       "sourceDataset": "EAFC26 Player Database",
@@ -719,7 +727,8 @@
         "goalkeeperHandling": 84,
         "goalkeeperKicking": 89,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 21
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/marc-andre-ter-stegen/192448",
       "sourceDataset": "EAFC26 Player Database",
@@ -793,7 +802,8 @@
         "goalkeeperHandling": 82,
         "goalkeeperKicking": 91,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 30
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ederson/210257",
       "sourceDataset": "EAFC26 Player Database",
@@ -867,7 +877,8 @@
         "goalkeeperHandling": 82,
         "goalkeeperKicking": 82,
         "goalkeeperPositioning": 85,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 24
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/emiliano-martinez/202811",
       "sourceDataset": "EAFC26 Player Database",
@@ -941,7 +952,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 71,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 87
+        "goalkeeperReflexes": 87,
+        "ballDribbling": 18
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/de-gea/193080",
       "sourceDataset": "EAFC26 Player Database",
@@ -1015,7 +1027,8 @@
         "goalkeeperHandling": 83,
         "goalkeeperKicking": 74,
         "goalkeeperPositioning": 87,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 19
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/peter-gulacsi/185122",
       "sourceDataset": "EAFC26 Player Database",
@@ -1089,7 +1102,8 @@
         "goalkeeperHandling": 80,
         "goalkeeperKicking": 76,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 12
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/unai-simon/230869",
       "sourceDataset": "EAFC26 Player Database",
@@ -1163,7 +1177,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 88,
         "goalkeeperPositioning": 81,
-        "goalkeeperReflexes": 87
+        "goalkeeperReflexes": 87,
+        "ballDribbling": 20
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/jordan-pickford/204935",
       "sourceDataset": "EAFC26 Player Database",
@@ -1237,7 +1252,8 @@
         "goalkeeperHandling": 81,
         "goalkeeperKicking": 72,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 11
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/giorgi-mamardashvili/262621",
       "sourceDataset": "EAFC26 Player Database",
@@ -1311,7 +1327,8 @@
         "goalkeeperHandling": 81,
         "goalkeeperKicking": 90,
         "goalkeeperPositioning": 86,
-        "goalkeeperReflexes": 81
+        "goalkeeperReflexes": 81,
+        "ballDribbling": 30
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/manuel-neuer/167495",
       "sourceDataset": "EAFC26 Player Database",
@@ -1385,7 +1402,8 @@
         "goalkeeperHandling": 83,
         "goalkeeperKicking": 75,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 11
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/wojciech-szczesny/186153",
       "sourceDataset": "EAFC26 Player Database",
@@ -1459,7 +1477,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 82,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 86
+        "goalkeeperReflexes": 86,
+        "ballDribbling": 18
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/diogo-costa/234577",
       "sourceDataset": "EAFC26 Player Database",
@@ -1533,7 +1552,8 @@
         "goalkeeperHandling": 83,
         "goalkeeperKicking": 71,
         "goalkeeperPositioning": 85,
-        "goalkeeperReflexes": 86
+        "goalkeeperReflexes": 86,
+        "ballDribbling": 14
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/marco-carnesecchi/252154",
       "sourceDataset": "EAFC26 Player Database",
@@ -1607,7 +1627,8 @@
         "goalkeeperHandling": 82,
         "goalkeeperKicking": 77,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 86
+        "goalkeeperReflexes": 86,
+        "ballDribbling": 17
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/joan-garcia/259532",
       "sourceDataset": "EAFC26 Player Database",
@@ -1681,7 +1702,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 80,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 19
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alex-remiro/227127",
       "sourceDataset": "EAFC26 Player Database",
@@ -1755,7 +1777,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 73,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 86
+        "goalkeeperReflexes": 86,
+        "ballDribbling": 14
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lucas-chevalier/251752",
       "sourceDataset": "EAFC26 Player Database",
@@ -1829,7 +1852,8 @@
         "goalkeeperHandling": 80,
         "goalkeeperKicking": 79,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 19
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/matz-sels/199641",
       "sourceDataset": "EAFC26 Player Database",
@@ -1903,7 +1927,8 @@
         "goalkeeperHandling": 81,
         "goalkeeperKicking": 78,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 19
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/oliver-baumann/193698",
       "sourceDataset": "EAFC26 Player Database",
@@ -1977,7 +2002,8 @@
         "goalkeeperHandling": 77,
         "goalkeeperKicking": 80,
         "goalkeeperPositioning": 81,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 14
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/geronimo-rulli/215316",
       "sourceDataset": "EAFC26 Player Database",
@@ -2051,7 +2077,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 78,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 22
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/guglielmo-vicario/240091",
       "sourceDataset": "EAFC26 Player Database",
@@ -2125,7 +2152,8 @@
         "goalkeeperHandling": 80,
         "goalkeeperKicking": 77,
         "goalkeeperPositioning": 82,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 26
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/mile-svilar/230872",
       "sourceDataset": "EAFC26 Player Database",
@@ -2199,7 +2227,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 74,
         "goalkeeperPositioning": 84,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 16
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alex-meret/225116",
       "sourceDataset": "EAFC26 Player Database",
@@ -2273,7 +2302,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 80,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 16
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ivan-provedel/224987",
       "sourceDataset": "EAFC26 Player Database",
@@ -2347,7 +2377,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 74,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 14
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/koen-casteels/192984",
       "sourceDataset": "EAFC26 Player Database",
@@ -2421,7 +2452,8 @@
         "goalkeeperHandling": 82,
         "goalkeeperKicking": 76,
         "goalkeeperPositioning": 82,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 20
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/yassine-bounou/209981",
       "sourceDataset": "EAFC26 Player Database",
@@ -2495,7 +2527,8 @@
         "goalkeeperHandling": 76,
         "goalkeeperKicking": 84,
         "goalkeeperPositioning": 78,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 26
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/alexander-nubel/223885",
       "sourceDataset": "EAFC26 Player Database",
@@ -2569,7 +2602,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 77,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 13
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/dean-henderson/233306",
       "sourceDataset": "EAFC26 Player Database",
@@ -2643,7 +2677,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 79,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 85
+        "goalkeeperReflexes": 85,
+        "ballDribbling": 30
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/michele-di-gregorio/235840",
       "sourceDataset": "EAFC26 Player Database",
@@ -2717,7 +2752,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 79,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 11
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/andriy-lunin/243952",
       "sourceDataset": "EAFC26 Player Database",
@@ -2791,7 +2827,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 74,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 16
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/david-soria/223952",
       "sourceDataset": "EAFC26 Player Database",
@@ -2865,7 +2902,8 @@
         "goalkeeperHandling": 80,
         "goalkeeperKicking": 74,
         "goalkeeperPositioning": 76,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 10
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/kevin-trapp/188943",
       "sourceDataset": "EAFC26 Player Database",
@@ -2939,7 +2977,8 @@
         "goalkeeperHandling": 81,
         "goalkeeperKicking": 68,
         "goalkeeperPositioning": 78,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 15
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/nick-pope/203841",
       "sourceDataset": "EAFC26 Player Database",
@@ -3013,7 +3052,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 79,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 18
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lucas-perri/230670",
       "sourceDataset": "EAFC26 Player Database",
@@ -3087,7 +3127,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 64,
         "goalkeeperPositioning": 81,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 10
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/lukas-hradecky/190941",
       "sourceDataset": "EAFC26 Player Database",
@@ -3161,7 +3202,8 @@
         "goalkeeperHandling": 78,
         "goalkeeperKicking": 77,
         "goalkeeperPositioning": 81,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 18
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/rui-silva/210385",
       "sourceDataset": "EAFC26 Player Database",
@@ -3235,7 +3277,8 @@
         "goalkeeperHandling": 81,
         "goalkeeperKicking": 75,
         "goalkeeperPositioning": 76,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 13
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/wladimiro-falcone/210676",
       "sourceDataset": "EAFC26 Player Database",
@@ -3309,7 +3352,8 @@
         "goalkeeperHandling": 75,
         "goalkeeperKicking": 85,
         "goalkeeperPositioning": 77,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 26
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/andre-onana/226753",
       "sourceDataset": "EAFC26 Player Database",
@@ -3383,7 +3427,8 @@
         "goalkeeperHandling": 79,
         "goalkeeperKicking": 76,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 81
+        "goalkeeperReflexes": 81,
+        "ballDribbling": 16
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/bernd-leno/192563",
       "sourceDataset": "EAFC26 Player Database",
@@ -3457,7 +3502,8 @@
         "goalkeeperHandling": 80,
         "goalkeeperKicking": 80,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 80
+        "goalkeeperReflexes": 80,
+        "ballDribbling": 14
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/brice-samba/204883",
       "sourceDataset": "EAFC26 Player Database",
@@ -3531,7 +3577,8 @@
         "goalkeeperHandling": 76,
         "goalkeeperKicking": 71,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 83
+        "goalkeeperReflexes": 83,
+        "ballDribbling": 19
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/dominik-livakovic/241671",
       "sourceDataset": "EAFC26 Player Database",
@@ -3605,7 +3652,8 @@
         "goalkeeperHandling": 76,
         "goalkeeperKicking": 77,
         "goalkeeperPositioning": 83,
-        "goalkeeperReflexes": 84
+        "goalkeeperReflexes": 84,
+        "ballDribbling": 13
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/anatoliy-trubin/250753",
       "sourceDataset": "EAFC26 Player Database",
@@ -3679,7 +3727,8 @@
         "goalkeeperHandling": 80,
         "goalkeeperKicking": 69,
         "goalkeeperPositioning": 78,
-        "goalkeeperReflexes": 82
+        "goalkeeperReflexes": 82,
+        "ballDribbling": 13
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/frederik-r-nnow/201269",
       "sourceDataset": "EAFC26 Player Database",
@@ -3753,7 +3802,8 @@
         "goalkeeperHandling": 76,
         "goalkeeperKicking": 74,
         "goalkeeperPositioning": 80,
-        "goalkeeperReflexes": 79
+        "goalkeeperReflexes": 79,
+        "ballDribbling": 17
       },
       "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/ugurcan-cak-r/226300",
       "sourceDataset": "EAFC26 Player Database",

@@ -1,8 +1,11 @@
 import { REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
 import { V3_MATCH_PARAMETERS } from "./v3/match-parameters-v3.js";
+import {createLiveV4Match,advanceLiveV4Match} from "./v4-adapter/live-match.js";
+import {VERSION} from "./v4/world.js";
 
-export const MIRROR_BATCH_WORKER_ENGINE_VERSION = "v3.3-tactical-execution-r1";
+const useV4 = process.env.YDL_V4_SCHEDULE !== "0";
+export const MIRROR_BATCH_WORKER_ENGINE_VERSION = useV4 ? VERSION : "v3.3-tactical-execution-r1";
 export const MIRROR_BATCH_DIRECTOR_NODE = "director";
 export const MIRROR_BATCH_CLOUD_NODE = "cloud";
 export const MIRROR_BATCH_DIRECTOR_CONCURRENCY = 5;
@@ -47,7 +50,8 @@ function compactMirrorBatchWorkerReport(report) {
 }
 export function runMirrorBatchWorkerMatch(payload, specification) {
   const startedAt = Date.now();
-  const match = createYdlLeagueV2Match(structuredClone([payload.callerSeat, payload.opponentSeat]), {
+  const create = useV4 ? createLiveV4Match : createYdlLeagueV2Match;
+  const match = create(structuredClone([payload.callerSeat, payload.opponentSeat]), {
     parameters:V3_MATCH_PARAMETERS,
     now:startedAt,
     seed:specification.seed,
@@ -56,9 +60,10 @@ export function runMirrorBatchWorkerMatch(payload, specification) {
     regulationOnly:true,
     competitionMode:"friendly",
     recordEvents:false,
-    matchEngine:"v3",
+    matchEngine:useV4 ? "v4" : "v3",
   });
-  advanceYdlLeagueV2Match(match, startedAt + REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + 1, { maximumChains:Infinity });
+  if(useV4)advanceLiveV4Match(match,startedAt+3600000);
+  else advanceYdlLeagueV2Match(match, startedAt + REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + 1, { maximumChains:Infinity });
   if (!match.report) throw new Error(`mirror batch match ${specification.number} did not finish`);
   return { number:specification.number, seed:specification.seed, report:compactMirrorBatchWorkerReport(match.report) };
 }

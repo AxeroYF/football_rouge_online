@@ -333,6 +333,7 @@ export async function handleAdminApi(request, response, pathname, readJson, send
         mimeType:contentType,
         sourceFileName,
         xPercent:request.headers["x-ydl-profile-x"],
+        manuallyAdjusted:request.headers["x-ydl-profile-manually-adjusted"] === "true",
         yPercent:request.headers["x-ydl-profile-y"],
         widthPercent:request.headers["x-ydl-profile-width"],
       });
@@ -349,7 +350,7 @@ export async function handleAdminApi(request, response, pathname, readJson, send
       return sendJson(response, 200, { ok:true, trait:await updateYdlTrait(decodeURIComponent(contentTraitMatch[1]), body) });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/simulate") {
-      yellowDogsLeague.simulateNextRound();
+      await yellowDogsLeague.simulateNextRound();
       return sendJson(response, 200, { ok:true, league:yellowDogsLeague.adminView() });
     }
     if (request.method === "POST" && pathname === "/api/admin/league/start-simulation") {

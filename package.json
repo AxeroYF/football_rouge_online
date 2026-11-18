@@ -53,7 +53,13 @@
     "simulate:season:s3": "node versus/season-simulation.js --config=season-simulation-config-s3.json",
     "test": "node scripts/run-tests.mjs",
     "start": "node server.mjs",
+    "start:v4": "node server.mjs --v4-schedule",
     "dev": "node server.mjs",
+    "dev:v4": "node scripts/serve-v4-lab.mjs",
+    "test:engine:v4": "node --test test/engine-v4.test.js test/engine-v4-coordination.test.js test/engine-v4-rules.test.js test/engine-v4-periods.test.js test/engine-v4-opportunity.test.js test/engine-v4-tactics.test.js test/engine-v4-aerial.test.js test/engine-v4-availability.test.js test/engine-v4-competition.test.js test/engine-v4-execution.test.js test/engine-v4-effects.test.js",
+    "test:engine:v4-stream": "node --test test/engine-v4-stream.test.js test/engine-v4-archive.test.js test/engine-v4-playback.test.js test/engine-v4-stream-http.test.js test/engine-v4-atomic-file.test.js",
+    "dev:v4-stream": "node scripts/serve-v4-stream-lab.mjs",
+    "test:engine:v4-rollout": "node --test test/engine-v4-rollout.test.js",
     "test:quick": "node scripts/run-tests.mjs --quick",
     "test:storage": "node scripts/run-tests.mjs storage-p1.test.js storage-policy.test.js shard-compaction.test.js league-shards.test.js league-shard-safety.test.js season-final-tournament.test.js",
     "check": "node scripts/check-source.mjs && node scripts/run-tests.mjs",
@@ -62,7 +68,8 @@
     "test:engine:v33": "node scripts/run-tests.mjs engine-v33.test.js engine-v33-service-resume.test.js engine-v32.test.js engine-v32-service-resume.test.js engine-v31-reliability.test.js engine-v3-runtime.test.js tactical-principles.test.js tactical-shape-preview-v2.test.js",
     "diagnose:engine:v33": "node scripts/diagnose-engine-v33.mjs",
     "calibrate:engine:v33": "node scripts/calibrate-engine-v33.mjs",
-    "test:draft": "node scripts/run-tests.mjs team-draft.test.js s4-assets.test.js tactical-principles.test.js"
+    "test:draft": "node scripts/run-tests.mjs team-draft.test.js s4-assets.test.js tactical-principles.test.js",
+    "test:engine:v4-adapter": "node --test test/engine-v4-source.test.js test/engine-v4-shadow.test.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

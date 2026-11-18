@@ -10,7 +10,7 @@ import { REAL_PLAYERS } from "../versus/player-pool.js";
 const teams = Array.from({ length: 10 }, (_, index) => ({ id: `T${index + 1}`, name: `队${index + 1}`, ownerId: index === 9 ? null : `u${index + 1}` }));
 
 function completeCompetitions(service, cupCompletedAt = 123) {
-  service.state.teams.slice(0, 9).forEach((team, index) => { team.ownerId = `player-${index + 1}`; });
+  service.state.teams.slice(0, 9).forEach((team, index) => { team.ownerId = `player-${index + 1}`; team.rosterIds=[]; team.preferredStarterIds=[]; team.playerState={}; delete team.aiClub; });
   service.state.season.currentRound = 15;
   service.state.cup.status = "completed";
   service.state.cup.completedAt = cupCompletedAt;
@@ -327,7 +327,7 @@ test("a sharded legacy season-final live round migrates to the live scope and ad
 
 test("service locks the tournament from the latest completed round when the cup final ends", () => {
   const service = new YellowDogsLeagueService({ statePath: null, now: () => 123 });
-  service.state.teams.slice(0, 9).forEach((team, index) => { team.ownerId = `player-${index + 1}`; });
+  service.state.teams.slice(0, 9).forEach((team, index) => { team.ownerId = `player-${index + 1}`; team.rosterIds=[]; team.preferredStarterIds=[]; team.playerState={}; delete team.aiClub; });
   service.state.season.currentRound = 14;
   const preview = service.seasonFinalTournamentView();
   assert.equal(preview.preview, true);
@@ -356,7 +356,7 @@ test("Ballon d'Or waits for the season final to finish", () => {
 
 test("service resolves the complete double-elimination path through both final legs", () => {
   const service = new YellowDogsLeagueService({ statePath: null, now: () => 123 });
-  service.state.teams.slice(0, 9).forEach((team, index) => { team.ownerId = `player-${index + 1}`; });
+  service.state.teams.slice(0, 9).forEach((team, index) => { team.ownerId = `player-${index + 1}`; team.rosterIds=[]; team.preferredStarterIds=[]; team.playerState={}; delete team.aiClub; });
   service.state.season.status = "completed";
   service.state.cup.status = "completed";
   service.state.cup.completedAt = 123;

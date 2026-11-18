@@ -1,13 +1,14 @@
-import {mkdtemp,rm} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-export async function startLocalServer({publicOnly = true, matchEngine = 'v3'} = {}) {
+export async function startLocalServer({publicOnly = true, matchEngine = 'v3', contentOverrides = null, v4Schedule = false} = {}) {
   const root=fileURLToPath(new URL('../../',import.meta.url));
   const data=await mkdtemp(path.join(os.tmpdir(),'yffm1-http-'));
-  const child=spawn(process.execPath,['server.mjs'],{cwd:root,windowsHide:true,env:{...process.env,APP_ENV:'test',APP_LABEL:'YFFM1 Test',VERSUS_HOST:'127.0.0.1',DEVTOOL_PORT:'0',VERSUS_PUBLIC_ONLY:publicOnly?'1':'0',YFFM_MATCH_ENGINE:matchEngine,YFFM_ADMIN_PASSWORD:'isolated-test-password-only',VERSUS_ACCOUNTS_PATH:path.join(data,'accounts.json'),YELLOWDOGS_LEAGUE_PATH:path.join(data,'league.json'),YDL_CONTENT_OVERRIDES_PATH:path.join(data,'content.json'),YDL_PLAYER_CARD_STUDIO_PATH:path.join(data,'studio.json')}});
+  if(contentOverrides)await writeFile(path.join(data,'content.json'),JSON.stringify(contentOverrides),'utf8');
+  const child=spawn(process.execPath,['server.mjs',...(v4Schedule===true?['--v4-schedule']:[])],{cwd:root,windowsHide:true,env:{...process.env,APP_ENV:'test',APP_LABEL:'YFFM1 Test',VERSUS_HOST:'127.0.0.1',DEVTOOL_PORT:'0',VERSUS_PUBLIC_ONLY:publicOnly?'1':'0',YDL_V4_SCHEDULE:v4Schedule==='default'?'':'0',YFFM_MATCH_ENGINE:matchEngine,YFFM_ADMIN_PASSWORD:'isolated-test-password-only',VERSUS_ACCOUNTS_PATH:path.join(data,'accounts.json'),YELLOWDOGS_LEAGUE_PATH:path.join(data,'league.json'),YDL_CONTENT_OVERRIDES_PATH:path.join(data,'content.json'),YDL_PLAYER_CARD_STUDIO_PATH:path.join(data,'studio.json')}});
   let output='';
   const exit=new Promise(resolve=>child.once('exit',resolve));
   async function stop(){if(child.exitCode===null)child.kill();await exit;await rm(data,{recursive:true,force:true});}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>V4 战术实验室 · YFFM1</title><link rel="stylesheet" href="/lab/style.css"></head>
+<body>
+<header class="header"><a class="brand" href="/">YFFM<span>1</span><i> / </i>战术实验室</a><span class="badge">V4 · 战术过程与选择</span></header>
+<main>
+  <section class="intro"><div><p class="eyebrow">从战术，到真实发生的动作</p><h1>让每一次跑动都有来由。</h1><p class="subtitle">观察接应、压迫与射门机会，点击事件比较射门、回做和推进的依据。</p></div><div class="scope"><span class="status-dot"></span>独立实验 · 合成阵容<small>基础空间规则，未接入正式比赛</small></div></section>
+  <form id="config" class="config">
+    <label>观察场景<select id="scenario" aria-label="观察场景"></select></label>
+    <label><span class="team-mark blue"></span>蓝队战术<select id="home" aria-label="蓝队战术"></select></label>
+    <span class="versus">VS</span>
+    <label><span class="team-mark coral"></span>珊瑚队战术<select id="away" aria-label="珊瑚队战术"></select></label>
+    <label class="seed-label">重复测试编号<input id="seed" value="v4-first-match" maxlength="120" required></label>
+    <label>比赛长度<select id="duration"><option value="60">1分钟演练</option><option value="180" selected>3分钟</option><option value="300">5分钟</option><option value="600">10分钟</option><option value="5400">完整90分钟</option></select></label>
+    <label>平局处理<select id="resolution"><option value="draw">允许平局</option><option value="penalties">直接点球大战</option><option value="extraTimeAndPenalties">加时后点球</option></select></label>
+    <button id="generate" class="primary" type="submit">生成比赛片段 <span>↗</span></button>
+  </form>
+  <details class="tactic-config"><summary>蓝队单项对照与赛前预案</summary><div>
+    <label>只覆盖一项指令<select id="override-field"><option value="">沿用预设</option><option value="width">进攻宽度</option><option value="press">压迫强度</option><option value="directness">直接性</option><option value="lineHeight">防线高度</option><option value="compactness">紧凑程度</option></select></label>
+    <label>指令值 <input id="override-value" type="number" min="0" max="100" value="50" step="1"></label>
+    <label><input id="score-plans" type="checkbox">启用赛前预案：领先加强保护，落后加快推进</label>
+    <p>生成时锁定；其余指令继承预设。修改后重新生成生效。</p>
+  </div></details>
+  <div id="message" role="status" aria-live="polite">正在准备演示…</div>
+  <p id="locked-instructions" class="muted" aria-live="polite"></p>
+  <p id="shootout-score" class="phase-summary" hidden></p>
+  <section class="workspace">
+    <div class="match-panel">
+      <div class="scorebar"><div><span class="team-mark blue"></span><strong>蓝队</strong><small id="home-preset">左侧套上</small></div><div class="score-center"><strong id="score">0 <span>:</span> 0</strong><span id="clock">00:00</span><small id="period-status">演示片段</small></div><div class="away-title"><small id="away-preset">高位压迫</small><strong>珊瑚队</strong><span class="team-mark coral"></span></div></div>
+      <div class="pitch-wrap"><canvas id="pitch" width="1260" height="816" aria-label="22名球员与球的空间回放；可点击球员查看任务"></canvas><div class="pitch-legend"><span><i class="legend-line"></i>当前任务目标</span><span id="direction">蓝队进攻 →</span></div></div>
+      <div class="transport"><button id="play" class="play" aria-label="播放">▶</button><span id="elapsed">00:00</span><input id="timeline" aria-label="播放进度" type="range" min="0" max="180" step="0.02" value="0"><span id="length">03:00</span><select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option><option value="16">16×</option><option value="64">64×</option></select><button id="next-half" type="button" hidden>下半场</button><button id="end" title="跳到片段末尾">末尾</button></div>
+      <div class="view-options"><label><input id="slow" type="checkbox" checked>射门片段慢放</label><label><input id="tasks" type="checkbox" checked>显示选中球员任务</label><label><input id="labels" type="checkbox" checked>球员号码</label><span id="rate-status">已暂停</span></div>
+      <div id="phase-summary" class="phase-summary">常规组织</div>
+      <div id="match-metrics" class="phase-summary">已播放统计</div>
+      <div id="caption" class="caption">选择球员，查看他正在执行的任务。</div>
+    </div>
+    <aside>
+      <section class="inspector"><div class="section-label">球员观察 <span>PLAYER FOCUS</span></div><div id="player-info"><h2>点击球场上的圆点</h2><p>查看任务来源、目标位置与当前负荷。</p></div><label class="player-select-label">或选择球员<select id="player-select" aria-label="观察球员"><option value="">选择球员</option></select></label></section>
+      <section class="decision-panel"><div class="section-label">为何这样踢 <span>DECISION TRACE</span></div><div id="decision"><p class="muted">播放到一次传球或射门，查看选择依据。</p></div></section>
+      <section class="events-panel"><div class="section-label">发生了什么 <span id="event-count">0</span></div><select id="event-filter" aria-label="事件分类"><option value="all">全部事件</option><option value="coordination">协同与转换</option><option value="control">触球与二点</option><option value="rules">判罚与定位球</option></select><div id="events" aria-label="已播放事件"></div></section>
+    </aside>
+  </section>
+  <footer><span>V4 / 战术过程与选择</span><p>独立合成原型。支持高球争顶、门框反弹、被动伤退、加时和点球大战；短演练按所选时长缩短半场，加时为常规时长的三分之一。新阶段开发中，未覆盖手球及有利进攻。</p><a href="/engine.js" target="_blank" rel="noopener">查看独立内核 ↗</a></footer>
+</main><script type="module" src="/lab/app.js"></script>
+</body></html>

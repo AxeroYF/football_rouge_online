@@ -28,7 +28,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 49,
       "firstTouch": 24,
-      "dribbling": 91,
+      "dribbling": 14,
       "crossing": 45,
       "finishing": 15,
       "longShots": 18,
@@ -42,7 +42,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 67,
       "offBall": 14,
       "discipline": 80,
-      "pace": 86,
+      "pace": 53,
       "acceleration": 43,
       "strength": 71,
       "stamina": 39,
@@ -93,7 +93,8 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 89,
       "goalkeeperKicking": 76,
       "goalkeeperPositioning": 88,
-      "goalkeeperReflexes": 90
+      "goalkeeperReflexes": 90,
+      "ballDribbling": 13
     },
     "sourceUrl": "https://www.ea.com/games/ea-sports-fc/ratings/player-ratings/thibaut-courtois/192119",
     "sourceDataset": "EAFC26 Player Database + Existing YellowDogs League legend",
@@ -145,11 +146,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 89,
       "goalkeeperKicking": 76,
       "goalkeeperPositioning": 88,
-      "goalkeeperReflexes": 90
+      "goalkeeperReflexes": 90,
+      "ballDribbling": 13
     },
     "localizationMethod": "existing-legend",
     "localizationConfidence": "high",
-    "localizationNote": ""
+    "localizationNote": "",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-212831",
@@ -180,7 +183,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 68,
       "firstTouch": 42,
-      "dribbling": 89,
+      "dribbling": 27,
       "crossing": 66,
       "finishing": 13,
       "longShots": 14,
@@ -194,7 +197,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 66,
       "offBall": 13,
       "discipline": 77,
-      "pace": 86,
+      "pace": 49,
       "acceleration": 60,
       "strength": 78,
       "stamina": 32,
@@ -255,11 +258,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 85,
       "goalkeeperKicking": 86,
       "goalkeeperPositioning": 90,
-      "goalkeeperReflexes": 89
+      "goalkeeperReflexes": 89,
+      "ballDribbling": 27
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-230621",
@@ -290,7 +295,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 47,
       "firstTouch": 30,
-      "dribbling": 90,
+      "dribbling": 28,
       "crossing": 60,
       "finishing": 12,
       "longShots": 18,
@@ -304,7 +309,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 54,
       "offBall": 14,
       "discipline": 72,
-      "pace": 90,
+      "pace": 55,
       "acceleration": 50,
       "strength": 75,
       "stamina": 41,
@@ -365,11 +370,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 83,
       "goalkeeperKicking": 70,
       "goalkeeperPositioning": 87,
-      "goalkeeperReflexes": 90
+      "goalkeeperReflexes": 90,
+      "ballDribbling": 28
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-200389",
@@ -400,7 +407,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 55,
       "firstTouch": 31,
-      "dribbling": 88,
+      "dribbling": 13,
       "crossing": 68,
       "finishing": 12,
       "longShots": 13,
@@ -414,7 +421,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 69,
       "offBall": 12,
       "discipline": 75,
-      "pace": 86,
+      "pace": 54,
       "acceleration": 43,
       "strength": 79,
       "stamina": 43,
@@ -475,11 +482,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 90,
       "goalkeeperKicking": 78,
       "goalkeeperPositioning": 86,
-      "goalkeeperReflexes": 87
+      "goalkeeperReflexes": 87,
+      "ballDribbling": 12
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-215698",
@@ -510,7 +519,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 71,
       "firstTouch": 41,
-      "dribbling": 89,
+      "dribbling": 31,
       "crossing": 66,
       "finishing": 16,
       "longShots": 21,
@@ -524,7 +533,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 69,
       "offBall": 16,
       "discipline": 75,
-      "pace": 85,
+      "pace": 63,
       "acceleration": 66,
       "strength": 84,
       "stamina": 40,
@@ -585,11 +594,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 83,
       "goalkeeperKicking": 85,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 88
+      "goalkeeperReflexes": 88,
+      "ballDribbling": 30
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-177683",
@@ -620,7 +631,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 57,
       "firstTouch": 31,
-      "dribbling": 90,
+      "dribbling": 23,
       "crossing": 65,
       "finishing": 14,
       "longShots": 13,
@@ -634,7 +645,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 55,
       "offBall": 16,
       "discipline": 69,
-      "pace": 84,
+      "pace": 55,
       "acceleration": 49,
       "strength": 69,
       "stamina": 46,
@@ -695,11 +706,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 82,
       "goalkeeperKicking": 85,
       "goalkeeperPositioning": 87,
-      "goalkeeperReflexes": 89
+      "goalkeeperReflexes": 89,
+      "ballDribbling": 22
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-220901",
@@ -730,7 +743,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 72,
       "firstTouch": 43,
-      "dribbling": 87,
+      "dribbling": 19,
       "crossing": 68,
       "finishing": 19,
       "longShots": 14,
@@ -744,7 +757,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 68,
       "offBall": 15,
       "discipline": 76,
-      "pace": 86,
+      "pace": 59,
       "acceleration": 64,
       "strength": 38,
       "stamina": 31,
@@ -805,11 +818,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 84,
       "goalkeeperKicking": 87,
       "goalkeeperPositioning": 85,
-      "goalkeeperReflexes": 87
+      "goalkeeperReflexes": 87,
+      "ballDribbling": 19
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-235073",
@@ -840,7 +855,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 46,
       "firstTouch": 35,
-      "dribbling": 88,
+      "dribbling": 25,
       "crossing": 60,
       "finishing": 11,
       "longShots": 11,
@@ -854,7 +869,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 67,
       "offBall": 11,
       "discipline": 78,
-      "pace": 88,
+      "pace": 53,
       "acceleration": 39,
       "strength": 82,
       "stamina": 31,
@@ -915,11 +930,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 83,
       "goalkeeperKicking": 64,
       "goalkeeperPositioning": 86,
-      "goalkeeperReflexes": 87
+      "goalkeeperReflexes": 87,
+      "ballDribbling": 24
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-192448",
@@ -950,7 +967,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 72,
       "firstTouch": 31,
-      "dribbling": 86,
+      "dribbling": 22,
       "crossing": 71,
       "finishing": 15,
       "longShots": 11,
@@ -964,7 +981,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 71,
       "offBall": 12,
       "discipline": 73,
-      "pace": 85,
+      "pace": 51,
       "acceleration": 46,
       "strength": 79,
       "stamina": 36,
@@ -1025,11 +1042,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 84,
       "goalkeeperKicking": 89,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 21
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-210257",
@@ -1060,7 +1079,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 76,
       "firstTouch": 46,
-      "dribbling": 84,
+      "dribbling": 31,
       "crossing": 71,
       "finishing": 15,
       "longShots": 19,
@@ -1074,7 +1093,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 71,
       "offBall": 21,
       "discipline": 74,
-      "pace": 84,
+      "pace": 64,
       "acceleration": 65,
       "strength": 79,
       "stamina": 45,
@@ -1135,11 +1154,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 82,
       "goalkeeperKicking": 91,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 30
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-202811",
@@ -1170,7 +1191,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 68,
       "firstTouch": 44,
-      "dribbling": 86,
+      "dribbling": 25,
       "crossing": 68,
       "finishing": 17,
       "longShots": 17,
@@ -1184,7 +1205,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 70,
       "offBall": 13,
       "discipline": 73,
-      "pace": 84,
+      "pace": 58,
       "acceleration": 56,
       "strength": 79,
       "stamina": 41,
@@ -1245,11 +1266,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 82,
       "goalkeeperKicking": 82,
       "goalkeeperPositioning": 85,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 24
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-193080",
@@ -1280,7 +1303,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 50,
       "firstTouch": 32,
-      "dribbling": 87,
+      "dribbling": 18,
       "crossing": 45,
       "finishing": 13,
       "longShots": 12,
@@ -1294,7 +1317,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 45,
       "offBall": 9,
       "discipline": 73,
-      "pace": 85,
+      "pace": 45,
       "acceleration": 47,
       "strength": 38,
       "stamina": 30,
@@ -1355,11 +1378,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 71,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 87
+      "goalkeeperReflexes": 87,
+      "ballDribbling": 18
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-185122",
@@ -1390,7 +1415,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 47,
       "firstTouch": 25,
-      "dribbling": 84,
+      "dribbling": 19,
       "crossing": 44,
       "finishing": 10,
       "longShots": 12,
@@ -1404,7 +1429,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 45,
       "offBall": 11,
       "discipline": 66,
-      "pace": 83,
+      "pace": 44,
       "acceleration": 42,
       "strength": 74,
       "stamina": 37,
@@ -1465,11 +1490,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 83,
       "goalkeeperKicking": 74,
       "goalkeeperPositioning": 87,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 19
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-230869",
@@ -1500,7 +1527,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 49,
       "firstTouch": 16,
-      "dribbling": 85,
+      "dribbling": 12,
       "crossing": 48,
       "finishing": 14,
       "longShots": 13,
@@ -1514,7 +1541,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 40,
       "offBall": 14,
       "discipline": 66,
-      "pace": 84,
+      "pace": 50,
       "acceleration": 48,
       "strength": 76,
       "stamina": 44,
@@ -1575,11 +1602,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 80,
       "goalkeeperKicking": 76,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 12
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-204935",
@@ -1610,7 +1639,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 70,
       "firstTouch": 43,
-      "dribbling": 88,
+      "dribbling": 21,
       "crossing": 70,
       "finishing": 20,
       "longShots": 14,
@@ -1624,7 +1653,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 66,
       "offBall": 19,
       "discipline": 70,
-      "pace": 85,
+      "pace": 48,
       "acceleration": 58,
       "strength": 73,
       "stamina": 41,
@@ -1685,11 +1714,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 88,
       "goalkeeperPositioning": 81,
-      "goalkeeperReflexes": 87
+      "goalkeeperReflexes": 87,
+      "ballDribbling": 20
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-262621",
@@ -1720,7 +1751,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 37,
       "firstTouch": 22,
-      "dribbling": 84,
+      "dribbling": 11,
       "crossing": 34,
       "finishing": 9,
       "longShots": 7,
@@ -1734,7 +1765,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 26,
       "offBall": 8,
       "discipline": 60,
-      "pace": 84,
+      "pace": 48,
       "acceleration": 48,
       "strength": 74,
       "stamina": 45,
@@ -1795,11 +1826,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 81,
       "goalkeeperKicking": 72,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 11
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-167495",
@@ -1830,7 +1863,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 72,
       "firstTouch": 44,
-      "dribbling": 81,
+      "dribbling": 30,
       "crossing": 68,
       "finishing": 13,
       "longShots": 16,
@@ -1844,7 +1877,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 67,
       "offBall": 12,
       "discipline": 75,
-      "pace": 81,
+      "pace": 35,
       "acceleration": 29,
       "strength": 80,
       "stamina": 43,
@@ -1905,11 +1938,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 81,
       "goalkeeperKicking": 90,
       "goalkeeperPositioning": 86,
-      "goalkeeperReflexes": 81
+      "goalkeeperReflexes": 81,
+      "ballDribbling": 30
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-186153",
@@ -1940,7 +1975,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 64,
       "firstTouch": 22,
-      "dribbling": 84,
+      "dribbling": 11,
       "crossing": 48,
       "finishing": 12,
       "longShots": 14,
@@ -1954,7 +1989,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 65,
       "offBall": 14,
       "discipline": 70,
-      "pace": 82,
+      "pace": 46,
       "acceleration": 49,
       "strength": 65,
       "stamina": 45,
@@ -2015,11 +2050,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 83,
       "goalkeeperKicking": 75,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 11
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-234577",
@@ -2050,7 +2087,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 61,
       "firstTouch": 29,
-      "dribbling": 85,
+      "dribbling": 17,
       "crossing": 66,
       "finishing": 5,
       "longShots": 8,
@@ -2064,7 +2101,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 43,
       "offBall": 17,
       "discipline": 69,
-      "pace": 82,
+      "pace": 38,
       "acceleration": 32,
       "strength": 62,
       "stamina": 27,
@@ -2125,11 +2162,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 82,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 86
+      "goalkeeperReflexes": 86,
+      "ballDribbling": 18
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-252154",
@@ -2160,7 +2199,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 45,
       "firstTouch": 20,
-      "dribbling": 85,
+      "dribbling": 13,
       "crossing": 53,
       "finishing": 7,
       "longShots": 9,
@@ -2174,7 +2213,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 39,
       "offBall": 8,
       "discipline": 62,
-      "pace": 85,
+      "pace": 38,
       "acceleration": 23,
       "strength": 54,
       "stamina": 27,
@@ -2235,11 +2274,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 83,
       "goalkeeperKicking": 71,
       "goalkeeperPositioning": 85,
-      "goalkeeperReflexes": 86
+      "goalkeeperReflexes": 86,
+      "ballDribbling": 14
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-259532",
@@ -2270,7 +2311,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 58,
       "firstTouch": 28,
-      "dribbling": 86,
+      "dribbling": 17,
       "crossing": 54,
       "finishing": 6,
       "longShots": 9,
@@ -2284,7 +2325,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 59,
       "offBall": 6,
       "discipline": 70,
-      "pace": 81,
+      "pace": 44,
       "acceleration": 48,
       "strength": 59,
       "stamina": 35,
@@ -2345,11 +2386,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 82,
       "goalkeeperKicking": 77,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 86
+      "goalkeeperReflexes": 86,
+      "ballDribbling": 17
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-227127",
@@ -2380,7 +2423,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 47,
       "firstTouch": 25,
-      "dribbling": 83,
+      "dribbling": 18,
       "crossing": 43,
       "finishing": 12,
       "longShots": 10,
@@ -2394,7 +2437,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 54,
       "offBall": 10,
       "discipline": 67,
-      "pace": 82,
+      "pace": 45,
       "acceleration": 43,
       "strength": 72,
       "stamina": 41,
@@ -2455,11 +2498,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 80,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 19
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-251752",
@@ -2490,7 +2535,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 47,
       "firstTouch": 16,
-      "dribbling": 85,
+      "dribbling": 13,
       "crossing": 46,
       "finishing": 8,
       "longShots": 7,
@@ -2504,7 +2549,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 44,
       "offBall": 6,
       "discipline": 68,
-      "pace": 83,
+      "pace": 45,
       "acceleration": 51,
       "strength": 52,
       "stamina": 40,
@@ -2565,11 +2610,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 73,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 86
+      "goalkeeperReflexes": 86,
+      "ballDribbling": 14
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-199641",
@@ -2600,7 +2647,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 59,
       "firstTouch": 32,
-      "dribbling": 82,
+      "dribbling": 18,
       "crossing": 57,
       "finishing": 15,
       "longShots": 17,
@@ -2614,7 +2661,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 61,
       "offBall": 17,
       "discipline": 72,
-      "pace": 81,
+      "pace": 34,
       "acceleration": 36,
       "strength": 66,
       "stamina": 25,
@@ -2675,11 +2722,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 80,
       "goalkeeperKicking": 79,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 19
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-193698",
@@ -2710,7 +2759,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 46,
       "firstTouch": 16,
-      "dribbling": 82,
+      "dribbling": 18,
       "crossing": 43,
       "finishing": 10,
       "longShots": 12,
@@ -2724,7 +2773,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 51,
       "offBall": 9,
       "discipline": 68,
-      "pace": 82,
+      "pace": 40,
       "acceleration": 36,
       "strength": 68,
       "stamina": 38,
@@ -2785,11 +2834,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 81,
       "goalkeeperKicking": 78,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 19
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-215316",
@@ -2820,7 +2871,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 54,
       "firstTouch": 14,
-      "dribbling": 82,
+      "dribbling": 13,
       "crossing": 67,
       "finishing": 14,
       "longShots": 16,
@@ -2834,7 +2885,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 60,
       "offBall": 11,
       "discipline": 72,
-      "pace": 81,
+      "pace": 51,
       "acceleration": 55,
       "strength": 72,
       "stamina": 41,
@@ -2895,11 +2946,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 77,
       "goalkeeperKicking": 80,
       "goalkeeperPositioning": 81,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 14
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-240091",
@@ -2930,7 +2983,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 62,
       "firstTouch": 40,
-      "dribbling": 83,
+      "dribbling": 21,
       "crossing": 67,
       "finishing": 5,
       "longShots": 4,
@@ -2944,7 +2997,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 61,
       "offBall": 12,
       "discipline": 72,
-      "pace": 82,
+      "pace": 48,
       "acceleration": 53,
       "strength": 59,
       "stamina": 37,
@@ -3005,11 +3058,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 78,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 22
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-230872",
@@ -3040,7 +3095,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 53,
       "firstTouch": 27,
-      "dribbling": 84,
+      "dribbling": 25,
       "crossing": 52,
       "finishing": 13,
       "longShots": 17,
@@ -3054,7 +3109,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 47,
       "offBall": 8,
       "discipline": 67,
-      "pace": 79,
+      "pace": 54,
       "acceleration": 59,
       "strength": 60,
       "stamina": 31,
@@ -3115,11 +3170,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 80,
       "goalkeeperKicking": 77,
       "goalkeeperPositioning": 82,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 26
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-225116",
@@ -3150,7 +3207,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 42,
       "firstTouch": 24,
-      "dribbling": 84,
+      "dribbling": 15,
       "crossing": 39,
       "finishing": 16,
       "longShots": 16,
@@ -3164,7 +3221,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 66,
       "offBall": 19,
       "discipline": 75,
-      "pace": 80,
+      "pace": 47,
       "acceleration": 40,
       "strength": 64,
       "stamina": 28,
@@ -3225,11 +3282,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 74,
       "goalkeeperPositioning": 84,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 16
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-224987",
@@ -3260,7 +3319,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 65,
       "firstTouch": 21,
-      "dribbling": 83,
+      "dribbling": 15,
       "crossing": 62,
       "finishing": 16,
       "longShots": 19,
@@ -3274,7 +3333,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 67,
       "offBall": 15,
       "discipline": 73,
-      "pace": 82,
+      "pace": 39,
       "acceleration": 43,
       "strength": 55,
       "stamina": 27,
@@ -3335,11 +3394,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 80,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 16
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-192984",
@@ -3370,7 +3431,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 48,
       "firstTouch": 22,
-      "dribbling": 84,
+      "dribbling": 13,
       "crossing": 41,
       "finishing": 14,
       "longShots": 17,
@@ -3384,7 +3445,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 39,
       "offBall": 14,
       "discipline": 63,
-      "pace": 81,
+      "pace": 45,
       "acceleration": 43,
       "strength": 71,
       "stamina": 43,
@@ -3445,11 +3506,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 74,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 14
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-209981",
@@ -3480,7 +3543,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 51,
       "firstTouch": 10,
-      "dribbling": 83,
+      "dribbling": 18,
       "crossing": 60,
       "finishing": 12,
       "longShots": 17,
@@ -3494,7 +3557,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 55,
       "offBall": 8,
       "discipline": 69,
-      "pace": 79,
+      "pace": 35,
       "acceleration": 36,
       "strength": 67,
       "stamina": 41,
@@ -3555,11 +3618,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 82,
       "goalkeeperKicking": 76,
       "goalkeeperPositioning": 82,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 20
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-223885",
@@ -3590,7 +3655,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 61,
       "firstTouch": 40,
-      "dribbling": 81,
+      "dribbling": 25,
       "crossing": 64,
       "finishing": 17,
       "longShots": 17,
@@ -3604,7 +3669,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 68,
       "offBall": 9,
       "discipline": 76,
-      "pace": 80,
+      "pace": 45,
       "acceleration": 48,
       "strength": 73,
       "stamina": 38,
@@ -3665,11 +3730,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 76,
       "goalkeeperKicking": 84,
       "goalkeeperPositioning": 78,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 26
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-233306",
@@ -3700,7 +3767,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 56,
       "firstTouch": 34,
-      "dribbling": 81,
+      "dribbling": 12,
       "crossing": 54,
       "finishing": 8,
       "longShots": 5,
@@ -3714,7 +3781,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 59,
       "offBall": 7,
       "discipline": 69,
-      "pace": 81,
+      "pace": 55,
       "acceleration": 54,
       "strength": 63,
       "stamina": 31,
@@ -3775,11 +3842,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 77,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 13
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-235840",
@@ -3810,7 +3879,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 59,
       "firstTouch": 34,
-      "dribbling": 84,
+      "dribbling": 29,
       "crossing": 64,
       "finishing": 8,
       "longShots": 17,
@@ -3824,7 +3893,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 55,
       "offBall": 8,
       "discipline": 67,
-      "pace": 81,
+      "pace": 56,
       "acceleration": 54,
       "strength": 67,
       "stamina": 35,
@@ -3885,11 +3954,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 79,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 85
+      "goalkeeperReflexes": 85,
+      "ballDribbling": 30
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-243952",
@@ -3920,7 +3991,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 41,
       "firstTouch": 13,
-      "dribbling": 80,
+      "dribbling": 9,
       "crossing": 58,
       "finishing": 6,
       "longShots": 5,
@@ -3934,7 +4005,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 54,
       "offBall": 9,
       "discipline": 71,
-      "pace": 78,
+      "pace": 33,
       "acceleration": 37,
       "strength": 59,
       "stamina": 30,
@@ -3995,11 +4066,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 79,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 11
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-223952",
@@ -4030,7 +4103,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 44,
       "firstTouch": 18,
-      "dribbling": 80,
+      "dribbling": 14,
       "crossing": 49,
       "finishing": 17,
       "longShots": 16,
@@ -4044,7 +4117,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 59,
       "offBall": 10,
       "discipline": 71,
-      "pace": 79,
+      "pace": 32,
       "acceleration": 44,
       "strength": 74,
       "stamina": 41,
@@ -4105,11 +4178,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 74,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 16
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-188943",
@@ -4140,7 +4215,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 36,
       "firstTouch": 22,
-      "dribbling": 82,
+      "dribbling": 8,
       "crossing": 46,
       "finishing": 11,
       "longShots": 11,
@@ -4154,7 +4229,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 63,
       "offBall": 10,
       "discipline": 72,
-      "pace": 80,
+      "pace": 48,
       "acceleration": 41,
       "strength": 73,
       "stamina": 43,
@@ -4215,11 +4290,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 80,
       "goalkeeperKicking": 74,
       "goalkeeperPositioning": 76,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 10
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-203841",
@@ -4250,7 +4327,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 52,
       "firstTouch": 23,
-      "dribbling": 80,
+      "dribbling": 13,
       "crossing": 48,
       "finishing": 12,
       "longShots": 13,
@@ -4264,7 +4341,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 61,
       "offBall": 11,
       "discipline": 68,
-      "pace": 79,
+      "pace": 45,
       "acceleration": 48,
       "strength": 73,
       "stamina": 33,
@@ -4325,11 +4402,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 81,
       "goalkeeperKicking": 68,
       "goalkeeperPositioning": 78,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 15
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-230670",
@@ -4360,7 +4439,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 54,
       "firstTouch": 11,
-      "dribbling": 79,
+      "dribbling": 15,
       "crossing": 62,
       "finishing": 8,
       "longShots": 10,
@@ -4374,7 +4453,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 41,
       "offBall": 9,
       "discipline": 61,
-      "pace": 77,
+      "pace": 36,
       "acceleration": 29,
       "strength": 80,
       "stamina": 35,
@@ -4435,11 +4514,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 79,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 18
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-190941",
@@ -4470,7 +4551,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 39,
       "firstTouch": 17,
-      "dribbling": 80,
+      "dribbling": 7,
       "crossing": 50,
       "finishing": 8,
       "longShots": 11,
@@ -4484,7 +4565,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 42,
       "offBall": 6,
       "discipline": 63,
-      "pace": 80,
+      "pace": 41,
       "acceleration": 35,
       "strength": 52,
       "stamina": 31,
@@ -4545,11 +4626,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 64,
       "goalkeeperPositioning": 81,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 10
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-210385",
@@ -4580,7 +4663,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 42,
       "firstTouch": 21,
-      "dribbling": 81,
+      "dribbling": 15,
       "crossing": 52,
       "finishing": 17,
       "longShots": 11,
@@ -4594,7 +4677,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 46,
       "offBall": 17,
       "discipline": 66,
-      "pace": 79,
+      "pace": 27,
       "acceleration": 28,
       "strength": 73,
       "stamina": 24,
@@ -4655,11 +4738,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 78,
       "goalkeeperKicking": 77,
       "goalkeeperPositioning": 81,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 18
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-210676",
@@ -4690,7 +4775,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 39,
       "firstTouch": 17,
-      "dribbling": 81,
+      "dribbling": 10,
       "crossing": 42,
       "finishing": 16,
       "longShots": 17,
@@ -4704,7 +4789,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 41,
       "offBall": 2,
       "discipline": 66,
-      "pace": 80,
+      "pace": 25,
       "acceleration": 23,
       "strength": 59,
       "stamina": 25,
@@ -4765,11 +4850,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 81,
       "goalkeeperKicking": 75,
       "goalkeeperPositioning": 76,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 13
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-226753",
@@ -4800,7 +4887,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 64,
       "firstTouch": 37,
-      "dribbling": 80,
+      "dribbling": 23,
       "crossing": 65,
       "finishing": 9,
       "longShots": 14,
@@ -4814,7 +4901,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 62,
       "offBall": 8,
       "discipline": 66,
-      "pace": 78,
+      "pace": 57,
       "acceleration": 59,
       "strength": 75,
       "stamina": 37,
@@ -4875,11 +4962,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 75,
       "goalkeeperKicking": 85,
       "goalkeeperPositioning": 77,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 26
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-192563",
@@ -4910,7 +4999,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 55,
       "firstTouch": 32,
-      "dribbling": 78,
+      "dribbling": 13,
       "crossing": 50,
       "finishing": 6,
       "longShots": 11,
@@ -4924,7 +5013,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 60,
       "offBall": 4,
       "discipline": 69,
-      "pace": 77,
+      "pace": 48,
       "acceleration": 51,
       "strength": 67,
       "stamina": 41,
@@ -4985,11 +5074,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 79,
       "goalkeeperKicking": 76,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 81
+      "goalkeeperReflexes": 81,
+      "ballDribbling": 16
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-204883",
@@ -5020,7 +5111,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 55,
       "firstTouch": 33,
-      "dribbling": 77,
+      "dribbling": 11,
       "crossing": 45,
       "finishing": 6,
       "longShots": 7,
@@ -5034,7 +5125,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 63,
       "offBall": 8,
       "discipline": 71,
-      "pace": 75,
+      "pace": 57,
       "acceleration": 46,
       "strength": 75,
       "stamina": 34,
@@ -5095,11 +5186,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 80,
       "goalkeeperKicking": 80,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 80
+      "goalkeeperReflexes": 80,
+      "ballDribbling": 14
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-241671",
@@ -5130,7 +5223,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 57,
       "firstTouch": 25,
-      "dribbling": 80,
+      "dribbling": 16,
       "crossing": 57,
       "finishing": 9,
       "longShots": 6,
@@ -5144,7 +5237,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 61,
       "offBall": 8,
       "discipline": 72,
-      "pace": 77,
+      "pace": 51,
       "acceleration": 54,
       "strength": 72,
       "stamina": 29,
@@ -5205,11 +5298,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 76,
       "goalkeeperKicking": 71,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 83
+      "goalkeeperReflexes": 83,
+      "ballDribbling": 19
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-250753",
@@ -5240,7 +5335,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 46,
       "firstTouch": 26,
-      "dribbling": 81,
+      "dribbling": 10,
       "crossing": 61,
       "finishing": 6,
       "longShots": 5,
@@ -5254,7 +5349,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 47,
       "offBall": 3,
       "discipline": 65,
-      "pace": 74,
+      "pace": 35,
       "acceleration": 46,
       "strength": 66,
       "stamina": 30,
@@ -5315,11 +5410,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 76,
       "goalkeeperKicking": 77,
       "goalkeeperPositioning": 83,
-      "goalkeeperReflexes": 84
+      "goalkeeperReflexes": 84,
+      "ballDribbling": 13
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-201269",
@@ -5350,7 +5447,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 38,
       "firstTouch": 9,
-      "dribbling": 79,
+      "dribbling": 10,
       "crossing": 45,
       "finishing": 6,
       "longShots": 10,
@@ -5364,7 +5461,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 28,
       "offBall": 11,
       "discipline": 62,
-      "pace": 77,
+      "pace": 42,
       "acceleration": 45,
       "strength": 64,
       "stamina": 29,
@@ -5425,11 +5522,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 80,
       "goalkeeperKicking": 69,
       "goalkeeperPositioning": 78,
-      "goalkeeperReflexes": 82
+      "goalkeeperReflexes": 82,
+      "ballDribbling": 13
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "s4-fc26-226300",
@@ -5460,7 +5559,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
     "attributes": {
       "passing": 41,
       "firstTouch": 24,
-      "dribbling": 76,
+      "dribbling": 14,
       "crossing": 57,
       "finishing": 10,
       "longShots": 16,
@@ -5474,7 +5573,7 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "composure": 57,
       "offBall": 11,
       "discipline": 66,
-      "pace": 78,
+      "pace": 53,
       "acceleration": 50,
       "strength": 66,
       "stamina": 37,
@@ -5535,11 +5634,13 @@ export const S4_PLAYER_DATABASE = Object.freeze([
       "goalkeeperHandling": 76,
       "goalkeeperKicking": 74,
       "goalkeeperPositioning": 80,
-      "goalkeeperReflexes": 79
+      "goalkeeperReflexes": 79,
+      "ballDribbling": 17
     },
     "localizationMethod": "user-workbook",
     "localizationConfidence": "high",
-    "localizationNote": "用户已在审阅工作簿中校正"
+    "localizationNote": "用户已在审阅工作簿中校正",
+    "goalkeeperMappingVersion": 1
   },
   {
     "id": "legend-beckenbauer",

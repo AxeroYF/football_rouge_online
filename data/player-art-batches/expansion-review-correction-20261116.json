@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "frame": "shield-v1",
+  "appliedAt": "2026-11-16T08:27:24.811Z",
+  "backupDirectory": "D:\\YFFM1\\outputs\\card-art-imports\\2026-11-16T08-27-24-262Z",
+  "players": [
+    {
+      "id": "s4-dlc2-20260803-033",
+      "name": "弗兰克·德波尔",
+      "sourceName": "Frank de Boer",
+      "grade": "A",
+      "overall": 86,
+      "role": "CB",
+      "club": "阿贾克斯",
+      "nationality": "荷兰",
+      "imageFile": "player_profiles/webp/1dbe55aa3359a087cf20c216-be2e82c74227.webp",
+      "imageUrl": "/versus/player_profiles/webp/1dbe55aa3359a087cf20c216-be2e82c74227.webp?v=be2e82c74227",
+      "sha256": "be2e82c74227ab58f82a480179f62b34df48dee018c5a73be942557670aa9239",
+      "position": {
+        "xPercent": 61.8,
+        "yPercent": 80,
+        "widthPercent": 123.4
+      },
+      "source": {
+        "file": "outputs/card-art-expansion-20261116/edited/s4-dlc2-20260803-033.png",
+        "originalFile": "outputs/card-art-expansion-20261116/sources/frank-de-boer-player.png",
+        "edit": "imagegen background extraction",
+        "prompt": "Remove the gray-and-white checkerboard and yellow rectangle from this existing football photo, leaving the exact original Ajax player Frank de Boer and football on a real transparent PNG background. Preserve the existing face, hair, expression, pose, kit, historic photographic grain and proportions. No beautification, repainting or new detail. Do not invent any unseen body. The checkerboard is part of the unwanted background: delete it completely.",
+        "qualityNote": "AI 去背景，替换教练时期照片；脸部及边缘需复核",
+        "pageUrl": "https://www.pngfind.com/mpng/imwibmx_frank-de-boer-was-a-legend-both-as/",
+        "imageUrl": "https://www.pngfind.com/pngs/m/429-4290521_frank-de-boer-was-a-legend-both-as.png",
+        "title": "Frank de Boer Ajax playing career",
+        "identityMatch": "named image source and Ajax playing kit",
+        "width": 840,
+        "height": 1293,
+        "collection": "manual"
+      },
+      "quality": {
+        "level": "Q3",
+        "label": "重点复核",
+        "identity": "I2 来源页实名匹配",
+        "sourceResolution": {
+          "width": 840,
+          "height": 1293
+        },
+        "sourceResolutionMeaning": "下载源文件尺寸；不证明上游从未放大",
+        "effectiveForegroundResolution": null,
+        "assetResolution": {
+          "width": 1011,
+          "height": 1556
+        },
+        "resolutionLevel": "R1",
+        "transparent": true,
+        "transparentFraction": 0.6831876923076923,
+        "aiEdited": true,
+        "visualLevel": "V3 AI 细节待确认",
+        "reasons": [
+          "AI 抠图可能重绘细节，必须复核；输出放大不计入原始清晰度",
+          "AI 去背景，替换教练时期照片；脸部及边缘需复核"
+        ],
+        "positionStatus": "待用户手动精调",
+        "reviewStatus": "来源字段核对 + 联系表可见缺陷检查（非逐像素或生物识别验证）"
+      },
+      "previewFile": "outputs/card-art-expansion-20261116/preview/s4-dlc2-20260803-033.webp",
+      "expectedCurrentSha256": "217a5e9a626f85ab99001ac7cc72bdf11e31f6a480ce10ded3b2f5fd1eb6d462",
+      "reviewReplacementReason": "Review rejected coaching-era photo; use playing-era Ajax cutout",
+      "cardProfile": {
+        "playerId": "s4-dlc2-20260803-033",
+        "grade": "A",
+        "sourceFileName": "s4-dlc2-20260803-033.png",
+        "optimizedFileName": "1dbe55aa3359a087cf20c216-be2e82c74227.webp",
+        "imageUrl": "/versus/player_profiles/webp/1dbe55aa3359a087cf20c216-be2e82c74227.webp?v=be2e82c74227",
+        "contentHash": "be2e82c74227",
+        "xPercent": 61.8,
+        "yPercent": 80,
+        "widthPercent": 123.4,
+        "pixelWidth": 1011,
+        "pixelHeight": 1556,
+        "updatedAt": "2026-11-16T08:27:24.776Z"
+      }
+    }
+  ]
+}

@@ -94,6 +94,10 @@ export function trackedMutationVersion(value) {
 }
 export function trackedSubtreeVersion(value) { return SUBTREE_VERSION_BY_RAW.get(trackedRawReference(value))?.version ?? null; }
 
+// Serialization is read-only. Unwrap each encountered proxy before JSON walks its
+// children; composed objects can contain proxies below an untracked root.
+const jsonStorageValue = (_key, value) => trackedRawReference(value);
+
 export function createTrackedState(state, onDirty) {
   const versionByScope = new Map();
   const versionBox = (scope) => {
@@ -110,7 +114,7 @@ export function createTrackedState(state, onDirty) {
     const raw = RAW_BY_PROXY.get(value) ?? value;
     const existing = PROXY_BY_RAW.get(raw);
     if (existing) return existing;
-    if (!subtree && valuePath && ((valuePath.length === 3 && ["s4Assets:cards", "s4Packs:inventory"].includes(valuePath.slice(0, 2).join(":"))) || (valuePath.length === 2 && ["inbox", "inboxDeleted"].includes(valuePath[0])))) {
+    if (!subtree && valuePath && ((valuePath.length === 3 && ["s4Assets:cards", "s4Packs:inventory"].includes(valuePath.slice(0, 2).join(":"))) || (valuePath.length === 2 && ["inbox", "inboxDeleted"].includes(valuePath[0])) || (valuePath.length === 1 && ["friendlyInvitations", "cardTradeOffers"].includes(valuePath[0])))) {
       subtree = { version:0 };
       SUBTREE_VERSION_BY_RAW.set(raw, subtree);
     }
@@ -213,7 +217,7 @@ function resolveRef(root, reference) {
 }
 
 function stateCore(state) {
-  return Object.fromEntries(Object.entries(state).filter(([key]) => !LARGE_STATE_KEYS.has(key)));
+  return Object.fromEntries(Object.entries(trackedRawReference(state)).filter(([key]) => !LARGE_STATE_KEYS.has(key)));
 }
 
 function matchWithoutReport(match) {
@@ -383,6 +387,7 @@ export class LeagueShardStore {
         season:entry.season,
         standings:entry.standings ?? [],
         matchCount:Number(entry.matchCount ?? 0),
+        matchRefs:entry.matchRefs ?? null,
       };
     });
   }
@@ -422,7 +427,7 @@ export class LeagueShardStore {
     const revisionPath = path.join(this.revisionsPath, String(revision));
     mkdirSync(temporaryRevisionPath, { recursive:true });
     const shards = { ...(previous.shards ?? {}) };
-    if (scopes.has("core") || !shards.core) shards.core = this.writeRevisionJson(temporaryRevisionPath, "core.json", stateCore(state), previous.shards?.core);
+    if (scopes.has("core") || !shards.core) shards.core = this.writeRevisionJson(temporaryRevisionPath, "core.json", stateCore(state), previous.shards?.core, { plain:true });
     if (scopes.has("matches") || !shards.matches) shards.matches = this.writeMatches(temporaryRevisionPath, revisionPath, state, options, previous.shards?.matches);
     if (scopes.has("seasonFinal") || !shards.seasonFinal) shards.seasonFinal = this.writeSeasonFinal(temporaryRevisionPath, revisionPath, state.seasonFinalTournament, options, previous.shards?.seasonFinal);
     if (scopes.has("ledger") || !shards.ledger) shards.ledger = this.writeLedger(temporaryRevisionPath, state.ledger ?? [], previous.shards?.ledger);
@@ -467,12 +472,20 @@ export class LeagueShardStore {
     return manifest;
   }
 
-  writeRevisionJson(revisionPath, fileName, value, previousReference = null) {
-    const serialized = JSON.stringify(value);
+  writeRevisionJson(revisionPath, fileName, value, previousReference = null, { plain = false } = {}) {
+    const raw = trackedRawReference(value);
+    // Tracked assignments already own a plain subtree. Core is also projected
+    // from the raw state. Keep JSON's native fast path for these large shards;
+    // use the replacer for composed objects containing proxies at deeper levels.
+    const serialized = measureRuntimeSync("league.storage.serialize", () => JSON.stringify(raw, plain || raw !== value ? undefined : jsonStorageValue));
     const previousPath = resolveRef(this.root, previousReference);
-    if (previousPath && existsSync(previousPath) && readFileSync(previousPath, "utf8") === serialized) return previousReference;
+    // Different byte lengths already prove the immutable shard changed. Avoid
+    // reading megabytes of old mail just to compare a newly added read timestamp.
+    if (previousPath && measureRuntimeSync("league.storage.compare", () => existsSync(previousPath)
+      && statSync(previousPath).size === Buffer.byteLength(serialized)
+      && readFileSync(previousPath, "utf8") === serialized)) return previousReference;
     const filePath = path.join(revisionPath, fileName);
-    atomicWriteSerialized(filePath, serialized);
+    measureRuntimeSync("league.storage.write", () => atomicWriteSerialized(filePath, serialized));
     return relativeToRoot(this.root, filePath);
   }
 
@@ -631,6 +644,7 @@ export class LeagueShardStore {
         season:archive.season,
         standings:archive.standings ?? [],
         matchCount:Number(archive.matchCount ?? archive.matches?.length ?? 0),
+        matchRefs:archive.matchRefs ?? previous?.matchRefs ?? null,
       };
     });
     this.archivePaths = new Map(entries.map((entry) => [entry.key, entry.path]));

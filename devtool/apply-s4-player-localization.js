@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {goalkeeperOutfieldFromReference} from '../shared/football/player-source-attributes.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
@@ -43,6 +44,7 @@ function coreAttributes(player) {
   const source = player.eafcReferenceAttributes ?? player.attributes;
   const delta = player.suggestedOverall - player.referenceOverall;
   const isGoalkeeper = player.role === "GK";
+  const goalkeeperOutfield=isGoalkeeper?goalkeeperOutfieldFromReference(source):null;
   const isDefensiveRole = ["CB", "LB", "RB", "DM"].includes(player.role);
   const goalkeeperAverage = roundAverage(
     source.goalkeeperDiving,
@@ -54,7 +56,7 @@ function coreAttributes(player) {
   const raw = {
     passing: roundAverage(source.passing, source.shortPassing, source.longPassing),
     firstTouch: source.ballControl,
-    dribbling: source.dribbling,
+    dribbling: goalkeeperOutfield?.dribbling ?? source.dribbling,
     crossing: source.crossing,
     finishing: source.finishing,
     longShots: source.longShots,
@@ -70,7 +72,7 @@ function coreAttributes(player) {
     composure: source.composure,
     offBall: source.positioning,
     discipline: clamp(roundAverage(source.composure, source.reactions, 105 - source.aggression), 35, 95),
-    pace: source.pace,
+    pace: goalkeeperOutfield?.pace ?? source.pace,
     acceleration: source.acceleration,
     strength: source.strength,
     stamina: source.stamina,
@@ -195,6 +197,7 @@ const localizedPlayers = sourcePlayers.map((player) => {
     club,
     referenceAttributes: player.eafcReferenceAttributes ?? player.attributes,
     attributes: coreAttributes(player),
+    ...(player.role==='GK'&&(player.eafcReferenceAttributes||!CORE_ATTRIBUTE_KEYS.every(key=>Number.isFinite(player.attributes[key])))?{goalkeeperMappingVersion:1}:{}),
     localizationMethod,
     localizationConfidence,
     localizationNote,

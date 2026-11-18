@@ -1,0 +1,25 @@
+2026-11-16 卡画工作与旧定位排查补充
+
+最新状态以本文件和 docs/YFFM1-CARD-ART.md 为准。旧 14:33 ZIP 没有包含随后完成的卡画工作，不能当作本次完整备份。
+
+已补齐：非 X 共 723 人全部有有效卡画，S73、A230、B237、C183。X 不处理。
+本轮触及 470 人：A50、B237、C183；43 人恢复旧图（包括试批中的 9 人），11 人保留首批新素材，416 人后续补齐。
+质量评级：Q1 333 / Q2 102 / Q3 35；17 张 AI 处理全部列 Q3。评级不等于构图定位验收。
+
+用户最新问题：皮克、纳尼本来有定位，为何预览位置不好？
+排查结果：43 人全部带回原参数和原图，42 人额外与 8 月服务器 studio 备份一致，迪马利亚为旧 A 映射。
+皮克参数 61.9 / 51.4 / 172；纳尼 45.1 / 77.7 / 122。
+根因：矩形卡 4:5 改成盾形 26:35，ABC 底部姓名板与 79.14% 人物裁切挡住原图下方的脸。不是参数漏恢复。
+排查没有擅自覆盖这些原参数；用户已明确后续自己调整定位。43 人单独放入复核工具，和 ABC 工具中的同一批人重叠。
+
+入口：
+- outputs/card-art-final-20261116/index.html：470 人质量总览，可离线打开。
+- 同目录 positioner-A.html、positioner-B.html、positioner-C.html、positioner-restored.html。
+- outputs/card-art-position-audit-20261116/comparison.html / comparison.png：原卡 CSS 重建与新卡对照。
+- 同目录 audit.json：43 人定位和原文件哈希核对证据。
+- docs/YFFM1-CARD-ART.md：台账、回执、测试、限制。
+
+运行卡画数据 data/ydl-player-card-studio.json 和 player_profiles/webp/ 可能被 Git 忽略，后续打包必须显式携带。
+图片台账：data/player-art-pilot-20261116.json 与 data/player-art-batches/ 下 archive-restored、expansion、expansion-review-correction（20261116），后记录优先。
+不要重放导入批次或运行旧 A 总评阈值同步覆盖；不改玩法字段；X 不处理。
+没有提交、推送或部署。不要声称现有交接 ZIP 包含本次新增素材。

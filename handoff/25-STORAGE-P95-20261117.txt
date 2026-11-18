@@ -1,0 +1,86 @@
+重负载P95与同步存档优化
+日期：2026-11-17
+
+范围与状态
+承接24，继续优化10人在线重负载的P95和同步存档峰值。
+保留24场预测样本、逐场seed、引擎和全部赔率规则；预测线程调度/截止/锁价逻辑未改。
+完成源码优化、87项相关测试、三档受限资源压测及重负载复核。
+没有部署、提交、推送或重启正式服务，没有迁移正式存档。
+data/yellowdogs-league.json仍为11,303,214 bytes，最后写入2026-11-17 00:11:26。
+
+定位证据
+新增league.storage.validate/serialize/compare/write计时，保留原league.save等指标。
+优化前重负载诊断：P95 131ms、最大HTTP587ms、同步save峰值515ms。
+38次分片序列化平均19.17ms/最大121.17ms，旧文件比较平均11.37ms/最大33.39ms。
+资产校验最大2.48ms、单次原子文件写入最大11.96ms，不能把全部停顿归因于刷盘。
+主要重复工作：JSON遍历逐层触发状态代理；大分片先整文件读回再比较；
+每个收件箱请求重建所有邀请/交易索引，普通邮件详情还扫描整份邀请列表。
+
+实现
+1. versus/league-shard-store.js
+   stateCore从只读原始状态提取；已追踪分片直接用原始子树进入JSON原生序列化路径。
+   拼装对象用只读replacer解开其内部代理，保持原有JSON格式/字段和延迟报告行为。
+   旧文件字节长度不同即可确定内容不同，省去无意义的全文件读取；字节数相同仍完整比对。
+   不缓存过期正文、不省略内容校验，不改变版本目录、manifest原子提交、fsync、失败回滚和备份策略。
+   为friendlyInvitations/cardTradeOffers添加独立子树版本，嵌套修改也触发失效。
+2. versus/inbox-page-service.js
+   邀请/交易索引按原始数组身份+子树版本复用，普通updatedAt变化不再让索引失效。
+   无追踪版本的JSON/离线状态仍逐次重建，避免漏掉原地修改；缓存最多两类索引。
+   详情从只读邮件引用复制输出，关联对象按ID查索引并保留收件人校验。
+   待办状态仍按当前业务对象和当前时间计算，没有缓存过期结果；批量范围/奖励规则不变。
+3. scripts/stress-inbox-online.mjs
+   继续使用24中的同一10人场景；重启校验由第一人扩展为全部10人的已读/有效待办/两个礼包。
+   每档必须实际生成至少一个24样本预测市场并落盘，不跳过预测tick或预热后测量。
+
+适用范围
+同步存档优化针对LeagueShardStore分片模式，与23/24压测存储方式一致。
+旧单JSON文件仍可正常读写，但本次没有把它迁移为分片或改成异步存档，不能套用分片性能数字。
+当前本地正式JSON未迁移；远端实际使用哪种存储应以部署环境的YELLOWDOGS_LEAGUE_PATH为准。
+
+正确性验证：最终代码87项通过
+node --test test/storage-hot-path.test.js test/storage-p1.test.js test/league-shards.test.js test/prediction-background.test.js test/pack-batch-recovery.test.js
+  48项：新增4项只读序列化/UTF8字节比较/缓存失效及时间到期测试；
+  存档失败重试、manifest中断、备份/归档/延迟报告、联赛杯赛恢复、100包幂等及回滚；
+  13项预测回归仍通过，包括72场逐seed统计和赔率一致性。
+node --test test/storage-policy.test.js test/shard-compaction.test.js test/league-shard-safety.test.js test/inbox-pagination.test.js test/inbox-consistency.test.js
+  39项：备份清理/损坏恢复/分片收敛、收件箱分页/待办保护/已读同步/旧战报。
+涉及JS语法检查和已跟踪文件git diff --check通过。未执行全量测试；无前端界面改动。
+
+压测口径
+目标：阿里云香港2核/2GB/64GB，10人在线。
+实际：本地Windows，i7-12700K、约32GiB主机内存；服务固定2个逻辑处理器（mask=3），
+Windows Job Object限制服务进程组2GiB，主Node堆1024MiB，预测Worker老生代256MiB。
+本地回环HTTP，10独立账号，每250ms思考时间，100/500/2000封邮件每人，各20秒。
+包含有效待办、大正文、详情/分页/已读/全分类批量已读，以及正常后台首次预测。
+64GB未做磁盘硬配额，只核对用量远低于64GiB；未模拟香港公网延迟/云磁盘或同时进行的真实比赛。
+不是阿里云香港实机验收。保留既有原子持久化，未靠延后确认保存或降低预测精度换取数字。
+
+最终结果（原24三档结果 → 本次三档）
+每人邮件数 | P95(ms) | 最大HTTP(ms) | 同步save最大(ms)
+100        | 31.5→41.3   | 158.7→120.6 | 153.8→67.2
+500        | 48.3→36.4   | 227.3→107.2 | 216.4→102.8
+2000       | 125.0→47.3  | 534.0→249.6 | 490.1→215.5
+三档共2249请求，0失败；每档10人数据重启核对通过。
+预测线程耗时约1.91/2.00/2.47秒；发布含保存约15/25/53ms；进程峰值RSS约188/221/291MiB。
+重负载复核：735请求，0失败；P95 51.8ms，最大HTTP279.8ms，同步save最大184.2ms，
+事件循环最大267.8ms，预测线程2.42秒、发布51ms，RSS约309MiB，测试存档约157MiB。
+合计最终两轮2984请求无失败；预测样本、有效待办、奖励礼包及已读均保存。
+对比24重负载两轮：P95 114～125→47～52ms，save峰值490～530→184～216ms，
+最大HTTP534～570→250～280ms，预测准备也由约3秒降为约2.5秒。
+
+限制与剩余边界
+100封档P95有波动，本轮41ms高于24的32ms；不声称所有档位所有指标都改善。
+100封档另有509ms事件循环采样尖峰，HTTP最大121ms、save最大67ms，未能据本轮聚合计时归因；
+该指标的统计窗口还包含测量后的校验阶段，不能直接认定该尖峰为用户请求或同步save耗时。
+重负载两轮事件循环最大约268～274ms（24为547～598ms）。
+同步保存仍有约0.2秒峰值；跨玩家批量已读会写多份完整邮件分片，云磁盘还需实机验证。
+后续如继续降低峰值，应评估邮件已读增量持久化或事务化异步写入；必须保留顺序、确认语义和故障恢复。
+
+产物与复现
+outputs/storage-profile-before-20261117/result.json：优化前分段计时诊断。
+outputs/storage-load-stage1-20261117/result.json：第一阶段重负载检查（P95约46ms、save206ms）。
+outputs/storage-load-after-20261117/result.json及scenario-100/500/2000.json：最终三档结果。
+outputs/storage-load-heavy-repeat-20261117/result.json：最终重负载复核。
+node scripts/stress-inbox-online.mjs --prediction-after --output=outputs/storage-load-after-20261117
+node scripts/stress-inbox-online.mjs --prediction-after --heavy-only --output=outputs/storage-load-heavy-repeat-20261117
+再次复测请换新的--output路径，保留本轮证据。

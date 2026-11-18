@@ -187,6 +187,6 @@ test("large pack and market interfaces mount bounded collections", () => {
   assert.match(appSource, /returnedS4OwnershipPlayerIds/);
   assert.match(appSource, /removedS4PlayerIds/);
   assert.match(appSource, /s4RosterDelta/);
-  assert.match(appSource, /leagueRequest\("\/cards\/release",[\s\S]*?\{ render:false \}\)[\s\S]*?renderLeague\(\)/);
-  assert.match(appSource, /leagueRequest\("\/ownership\/return-batch",[\s\S]*?\{ render:false \}\)[\s\S]*?renderLeague\(\)/);
+  assert.match(appSource, /leagueRequest\("\/cards\/release",[\s\S]*?\{ render:false(?:, trigger:button)? \}\)[\s\S]*?renderLeague\(\)/);
+  assert.match(appSource, /leagueRequest\("\/ownership\/return-batch",[\s\S]*?\{ render:false(?:, trigger:button)? \}\)[\s\S]*?renderLeague\(\)/);
 });

@@ -1532,8 +1532,8 @@ export function advanceVersusMatch(match, now = Date.now()) {
   return match;
 }
 
-export function requestTacticalPause(match, ownerIndex, now = Date.now()) {
-  advanceVersusMatch(match, now);
+export function requestTacticalPause(match, ownerIndex, now = Date.now(), advance = advanceVersusMatch) {
+  advance(match, now);
   if (match.finished || !["regular", "extra"].includes(match.segment)) throw new Error("当前不能申请战术暂停");
   if (match.pause) throw new Error("比赛已经处于暂停状态");
   if (match.pauseUsed[ownerIndex]) throw new Error("本场战术暂停机会已经使用");
@@ -1606,8 +1606,8 @@ export function resumeVersusMatch(match, ownerIndex, now = Date.now()) {
   return match;
 }
 
-export function publicMatch(match, now = Date.now(), viewerIndex = null, revealAllStrategies = false) {
-  advanceVersusMatch(match, now);
+export function publicMatch(match, now = Date.now(), viewerIndex = null, revealAllStrategies = false, advance = advanceVersusMatch) {
+  advance(match, now);
   const duration = match.segment === "regular" ? REGULAR_DURATION_MS : match.segment === "extra" ? EXTRA_DURATION_MS : PENALTY_KICK_INTERVAL_MS * 10;
   const segmentElapsed = match.pause ? match.pause.startedAt - match.segmentStartedAt : now - match.segmentStartedAt;
   const report = match.report ? {

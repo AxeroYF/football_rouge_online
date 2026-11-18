@@ -1,0 +1,94 @@
+源码与证据索引 · 2026-11-18
+以下路径均相对 D:\YFFM1。
+
+比赛引擎与正式入口
+versus/v4/ 为 V4 引擎源码。devtool/server.js 为普通启动服务入口。
+versus/v4-host/formal-schedule.js 接入正式赛程与结算，versus/v4-adapter/live-match.js 适配实时对战。
+versus/v4-rollout/scheduled-kernel.json 记录正式赛程使用的内核指纹。
+
+战术板与赛后复盘
+versus/league-service.js 负责把战术板当前首发、预案及职责传入 V4 推演。
+versus/v4-adapter/shape-preview.js 生成固定场景，versus/v4-adapter/tactical-outlook.js 提供四项诊断。
+versus/v4-host/match-tactical-review.js 生成正式赛后对照，versus/v4-host/settled-tactical-review.js 读取归档复盘。
+versus/public/match-tactical-review.js 与 versus/v4-host/public/app.js 提供战报证据和录像入口。
+versus/public/tactics-interface.js 管理三预案评估和调整前基线，versus/public/app.js 串联预览、复盘与编辑器。
+versus/public/shape-preview-player.js 显示单套跑位。versus/public/shape-movement.js 提取公共时窗、按球员身份配对并换算米数。versus/public/shape-comparison-player.js 绘制两套轨迹并处理选人，样式在 versus/public/tactics-interface.css。
+test/v4-shape-comparison.test.js 验证轨迹比较，test/tactical-principles.test.js 验证真实推演接口。专项报告和浏览器脚本见 03-VERIFICATION.txt。
+
+历史阶段源码与专题索引
+V4 独立原型（26–29）
+versus/v4/world.js、fixtures.js、tasks.js、engine.js、replay.js：独立空间/任务/解释/回放。
+versus/v4/coordination.js、ball-control.js、scenarios.js：协同、触球与二点、专项场景。
+versus/v4/rules.js：越位、犯规判定、七类定位球、纪律与场上球员集合。
+versus/v4/lab/：静态播放器及浏览器Worker。
+scripts/serve-v4-lab.mjs：npm run dev:v4，本机4314静态入口，不加载正式业务。
+test/engine-v4.test.js、engine-v4-coordination.test.js；scripts/verify-v4-core.mjs、verify-v4-lab.mjs。
+test/engine-v4-rules.test.js；scripts/calibrate-v4.mjs、verify-v4-acceptance.mjs：规则与校准验收。
+docs/YFFM1-V4-MINIMUM-LOOP-20261117.md：实现和限制；对应ASSESSMENT文档为重做评估。
+outputs/v4-lab-20261117/：核心/旧引擎测试、模拟和浏览器证据。此前ZIP未包含V4。
+docs/YFFM1-V4-COORDINATION-20261117.md：第二阶段实现和边界。
+outputs/v4-coordination-20261117/：第二阶段测试/组合/专项场景/浏览器/哈希证据。
+outputs/v4-before-stage2-20261117/：第二阶段改动前的V4源码及保护文件哈希。
+docs/YFFM1-V4-RULES-20261117.md：第三阶段规则、来源、统计口径和限制。
+outputs/v4-rules-20261117/：第三阶段证据，acceptance.json是最终索引。
+outputs/v4-before-stage3-20261117/：第三阶段改动前的V4源码/测试和保护文件哈希。
+
+versus/v4/period-clock.js、tempo.js：双半场/换边/补时与控制观察节奏。
+test/engine-v4-periods.test.js：时间、方向、恢复、回放和节奏专项回归。
+docs/YFFM1-V4-PERIODS-20261117.md、handoff/29-V4-PERIODS-20261117.txt：第四阶段实现/结果/边界。
+outputs/v4-periods-20261117/：最新acceptance、四份校准、核心/浏览器/测试与保护证据。
+outputs/v4-before-stage4-20261117/：改动前第三阶段源码/测试及六项保护文件哈希。
+
+预测/存档（24–25）
+versus/league-service.js：tick、预测准备/发布/投注、保存入口。
+versus/prediction-simulation.js、prediction-worker.js：单Worker与24样本。
+versus/league-shard-store.js：分片/原子manifest/状态追踪/序列化/比较。
+versus/inbox-page-service.js：索引缓存、分页、详情、跨页选择与保留策略。
+test/prediction-background.test.js、storage-hot-path.test.js、storage-p1.test.js、league-shards.test.js。
+scripts/stress-inbox-online.mjs、inbox-load-limits.ps1、inbox-load-metrics.mjs：隔离压力/资源限制/计时。
+outputs/storage-load-after-20261117/、storage-load-heavy-repeat-20261117/：最新结果。
+outputs/storage-profile-before-20261117/、storage-load-stage1-20261117/：诊断和中间验证。
+outputs/prediction-load-after-20261117/、prediction-load-heavy-repeat-20261117/：24基线。
+docs/league-sharded-persistence.md：存储模式和迁移说明，本次未迁移真实JSON。
+
+收件箱/开包（19–23）
+versus/api.js、league-service.js、s4-assets.js；versus/public/direct-pack-batch.js。
+versus/public/inbox-pager.js、inbox-policy.js、inbox-rules.js、inbox-read-sync.js、inbox-content.js/.css。
+test/pack-batch-recovery.test.js、inbox-pagination.test.js、inbox-consistency.test.js、inbox-content.test.js。
+scripts/verify-inbox-pagination-ui.mjs、verify-inbox-content-ui.mjs。
+outputs/inbox-pagination-ui-20261117/、inbox-content-ui-20261117/、inbox-load-after-20261117/。
+
+AI/赛制/战术（08–17）
+versus/ai-clubs.js、league-format.js；versus/public/ai-club-config.js、ai-club-ui.js、division-ui.js。
+versus/passive-substitution.js、prematch-rotation.js；versus/public/fitness-rules.js。
+versus/public/lineup-competition.js、position-preset-links.js；versus/league-service.js。
+versus/v2/match-engine-v2.js、ydl-league-engine-adapter.js；versus/v3/conditional-tactics.js、tactical-execution.js。
+test/ai-clubs.test.js、ai-club-identity.test.js、league-divisions.test.js、passive-substitution.test.js、
+prematch-rotation.test.js、lineup-competition.test.js、position-preset-links.test.js。
+对应UI与赛季模拟产物见08–17，不能继续套用旧10队断言。
+
+卡画/后台（05–07）
+data/ydl-player-card-studio.json、player_profiles/webp/：真实已生效定位/图片，可能Git忽略，未入本次文档包。
+data/player-art-pilot-20261116.json、data/player-art-batches/：批次台账，后记录优先。
+versus/player-card-studio-store.js；versus/public/player-art-preview.js、player-art-positioner.js。
+admin/public/studio-autosave.js、app.js、league.css：键盘/自动保存/人工标记。
+outputs/card-art-final-20261116/index.html：470人质量总览。
+outputs/card-art-library-20261116/index.html、inventory.json：全库批次/生效/质量。
+outputs/card-art-replacements-20261116/index.html、candidate-batch.json：R04四人未应用候选。
+outputs/card-art-position-audit-20261116/：旧定位核对。docs/YFFM1-CARD-ART.md：详细台账。
+
+既有球员与榜单
+data/ydl-content-overrides.json：实际生效覆盖。
+data/player-balance-s-final-20261116.json：当前S台账；player-balance-a-20261116.json为已执行A方案，
+player-balance-s-peak-20261116.json为历史S方案。
+versus/player-pool.js、ydl-content-store.js、player-data-migrations.js；shared/football/schema.js。
+devtool/player-tier-model.js、player-tier-report.js；scripts/build-player-tier-lists.mjs。
+outputs/player-tier-lists-20261116/：榜单与验证。旧应用脚本/备份/依赖详见旧快照04，不重跑--apply。
+
+快照边界
+LATEST.json 的 archive 字段指向 11 月 17 日的历史 context-and-evidence 快照：00–25文档、选定压测JSON、manifest与ZIP校验。
+不含源码增量、仓库、图片资源、账号、凭据、真实运行存档或node_modules，不能直接部署恢复。
+artifacts/YFFM1-handoff-20261116-143224/保留当时source-delta，仅对应当时HEAD及工作树。
+后续实现不在旧包内，不在当前脏工作区重放。本次没有制作新源码恢复包或做恢复演练。
+
+第64阶段：versus/v4-host/match-metrics.js 与 broadcast-summary.js 提供控球时间、估算xG和已发布直播摘要；versus/public/v4-key-clip.js 按需取真实短录像，broadcast-key-plays.js 同时支持V4实录帧。详情见64。

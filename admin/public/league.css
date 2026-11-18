@@ -100,6 +100,11 @@
 .studio-upload-row label b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px; }
 .studio-upload-row input { position:absolute; width:1px; height:1px; opacity:0; }
 .studio-controls { padding:14px; align-self:start; display:grid; gap:13px; border:1px solid var(--line); background:#071611; }
+.studio-keyboard-nav { display:flex; gap:8px; }
+.studio-keyboard-nav button { flex:1; }
+#studio-player-adjusted { margin:0 12px 10px; width:calc(100% - 24px); padding:10px; color:var(--ink); border:1px solid var(--line); background:#071611; font:inherit; }
+#studio-save-summary { color:var(--cyan); font-size:11px; }
+#studio-card-preview:focus-visible, [data-studio-player]:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
 .studio-controls > label { display:grid; gap:5px; }
 .studio-controls > label span { display:flex; justify-content:space-between; color:var(--muted); font-size:9px; }
 .studio-controls > label b { color:var(--cyan); }

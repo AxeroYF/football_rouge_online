@@ -1,0 +1,49 @@
+.ai-player-label { display:inline-block; padding:1px 5px; margin-left:5px; border:1px solid #69d6c3; color:#69d6c3; font-size:10px; border-radius:3px; }
+.ai-club-boards { padding:20px 16px; border-top:1px solid var(--line); color:var(--ink); }
+.ai-club-boards-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.ai-club-boards-heading h3 { margin:0; font-size:17px; }
+.ai-club-boards p,.ai-club-boards li { color:var(--muted); font-size:12px; line-height:1.7; }
+.ai-club-boards-heading p { margin:0; }
+.ai-club-schemes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.ai-scheme-card { min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--panel2); overflow:hidden; }
+.ai-club-boards summary { cursor:pointer; font-weight:700; }
+.ai-scheme-card>summary { display:flex; align-items:center; gap:10px; padding:14px; list-style:none; font-size:14px; }
+.ai-scheme-card>summary::-webkit-details-marker { display:none; }
+.ai-scheme-card>summary::after { content:'+'; margin-left:auto; color:var(--muted); font-size:18px; }
+.ai-scheme-card[open]>summary::after { content:'−'; }
+.ai-scheme-number { display:grid; place-items:center; width:30px; height:30px; border-radius:8px; background:color-mix(in srgb,var(--cyan) 12%,transparent); color:var(--cyan); font-size:12px; font-variant-numeric:tabular-nums; }
+.ai-scheme-content { padding:0 14px 14px; }
+.ai-board-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+.ai-board-controls button { min-height:34px; padding:6px 10px; border:1px solid transparent; border-radius:6px; background:transparent; color:var(--muted); font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.ai-board-controls button:hover { color:var(--ink); background:var(--panel2); }
+.ai-board-controls button.active { border-color:color-mix(in srgb,var(--cyan) 35%,transparent); background:color-mix(in srgb,var(--cyan) 12%,var(--panel)); color:var(--cyan); }
+.ai-club-boards :is(button,summary):focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+.ai-plan-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:12px 0; gap:10px; }
+.ai-plan-metrics>div { display:flex; align-items:center; gap:8px; min-width:0; }
+.ai-plan-metrics dt { color:var(--muted); font-size:11px; }
+.ai-plan-metrics dd { margin:0; color:var(--ink); font-size:12px; font-weight:650; }
+.ai-scheme-pitch .league-public-pitch { min-height:500px; border:1px solid var(--line); border-radius:8px; }
+.ai-club-boards .ai-plan-caption { margin:10px 0 0; font-size:11px; }
+.ai-club-notes { margin-top:14px; border:1px solid var(--line); border-radius:10px; background:var(--panel2); }
+.ai-club-notes>summary { padding:13px 14px; font-size:12px; }
+.ai-club-notes>summary span { margin-left:8px; color:var(--muted); font-weight:400; font-size:11px; }
+.ai-club-notes>div { padding:0 14px 12px; }
+.ai-club-notes p { margin:0 0 8px; }
+.ai-club-notes ul { margin:0; padding:0; list-style:none; }
+.ai-club-notes li { display:flex; gap:12px; padding:8px 0; border-top:1px solid var(--line); }
+.ai-club-notes li b { color:var(--ink); min-width:90px; font-weight:600; }
+[data-board-population] { padding:7px 10px; border:1px solid #375b4a; background:#142a21; color:#def0e5; cursor:pointer; }
+[data-board-population].active { background:#c6ef54; color:#132111; }
+[data-ai-system-options] p { grid-column:1/-1; color:#a9bdb2; font-size:12px; }
+.ai-training-form input[name="trainingSeed"] { grid-column:1/-1; width:100%; min-width:0; min-height:40px; padding:8px 10px; color:var(--ink); background:var(--panel,#10261c); border:1px solid var(--line); border-radius:7px; font:inherit; }
+.ai-training-form label:has([name="trainingSeed"]) > span { grid-column:1/-1; }
+.ai-club-schemes .league-public-magnet { width:18%; min-width:0; max-width:86px; min-height:48px; padding:5px; }
+.ai-club-schemes .league-public-magnet b { position:absolute; left:4px; right:4px; bottom:11px; font-size:10px; }
+.ai-club-schemes .league-public-magnet .league-magnet-role { position:absolute; left:5px; top:5px; max-width:calc(100% - 28px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-sizing:border-box; padding:1px 3px; font-size:9px; }
+.ai-club-schemes .league-public-magnet i { font-size:13px; }
+html[data-league-theme="light"] [data-ai-system-options] p { color:#526579; }
+html[data-league-theme="light"] .ai-training-form input[name="trainingSeed"] { background:#fff; color:#17212c; }
+[data-ai-system-options][hidden], [data-ai-club-scheme][hidden] { display:none; }
+@media(max-width:700px) { .ai-club-schemes { grid-template-columns:1fr; } .ai-club-boards{padding:18px 10px}.ai-club-boards-heading{align-items:flex-start;flex-direction:column;gap:5px}.ai-scheme-content{padding:0 10px 12px}.ai-scheme-pitch .league-public-pitch{min-height:460px}.ai-club-notes li{flex-direction:column;gap:2px} }
+
+.ai-training-phases[hidden],[data-ai-custom-style][hidden] { display:none; }

@@ -592,30 +592,30 @@
       "weakFoot": null,
       "skillMoves": null,
       "attributes": {
-        "passing": 68,
-        "firstTouch": 65,
-        "dribbling": 46,
-        "crossing": 42,
-        "finishing": 37,
-        "longShots": 42,
-        "heading": 88,
-        "setPieces": 44,
-        "tackling": 95,
-        "marking": 95,
+        "passing": 81,
+        "firstTouch": 75,
+        "dribbling": 58,
+        "crossing": 48,
+        "finishing": 70,
+        "longShots": 84,
+        "heading": 92,
+        "setPieces": 88,
+        "tackling": 93,
+        "marking": 93,
         "positioning": 94,
-        "vision": 59,
-        "decisions": 84,
-        "composure": 80,
-        "offBall": 45,
-        "discipline": 73,
-        "pace": 72,
-        "acceleration": 67,
-        "strength": 89,
-        "stamina": 80,
-        "agility": 63,
-        "jumping": 88,
+        "vision": 76,
+        "decisions": 87,
+        "composure": 86,
+        "offBall": 63,
+        "discipline": 72,
+        "pace": 73,
+        "acceleration": 65,
+        "strength": 92,
+        "stamina": 79,
+        "agility": 58,
+        "jumping": 90,
         "workRate": 82,
-        "aggression": 78,
+        "aggression": 84,
         "goalkeeping": 11,
         "reflexes": 11
       },
@@ -625,6 +625,56 @@
         "overall": 87,
         "url": "",
         "note": "EA 当前接口未收录；使用项目 S3 的 EA 派生历史档案；巅峰赛季：1997/98，年龄30岁，效力皇家马德里，惯用右脚；来源耦合回归；目标OVR 89；输入覆盖26；近邻：蒂亚戈·席尔瓦、温贝托·科埃略、温贝托·科埃略、卢西奥、塞尔希奥·拉莫斯"
+      },
+      "attributeBasis": "game-final",
+      "dataCorrections": {
+        "profileRevision": {
+          "revision": "20261116-profiles-1",
+          "kind": "curated-game-profile",
+          "description": "攻守中卫：力量、争顶、远射和定位球突出，转身与加速保留短板。",
+          "preScaled": false,
+          "previous": {
+            "source": {
+              "id": "real-def-131",
+              "type": "project S3 EA-derived historical profile",
+              "overall": 87,
+              "url": "",
+              "note": "EA 当前接口未收录；使用项目 S3 的 EA 派生历史档案；巅峰赛季：1997/98，年龄30岁，效力皇家马德里，惯用右脚；来源耦合回归；目标OVR 89；输入覆盖26；近邻：蒂亚戈·席尔瓦、温贝托·科埃略、温贝托·科埃略、卢西奥、塞尔希奥·拉莫斯"
+            },
+            "attributes": {
+              "passing": 68,
+              "firstTouch": 65,
+              "dribbling": 46,
+              "crossing": 42,
+              "finishing": 37,
+              "longShots": 42,
+              "heading": 88,
+              "setPieces": 44,
+              "tackling": 95,
+              "marking": 95,
+              "positioning": 94,
+              "vision": 59,
+              "decisions": 84,
+              "composure": 80,
+              "offBall": 45,
+              "discipline": 73,
+              "pace": 72,
+              "acceleration": 67,
+              "strength": 89,
+              "stamina": 80,
+              "agility": 63,
+              "jumping": 88,
+              "workRate": 82,
+              "aggression": 78,
+              "goalkeeping": 11,
+              "reflexes": 11
+            },
+            "attributeBasis": "reference"
+          },
+          "evidence": [
+            "https://www.realmadrid.com/es-ES/el-club/historia/leyendas-futbol/fernando-ruiz-hierro/"
+          ]
+        }
       }
     },
     {
@@ -2048,30 +2098,30 @@
       "weakFoot": null,
       "skillMoves": null,
       "attributes": {
-        "passing": 68,
-        "firstTouch": 65,
-        "dribbling": 46,
-        "crossing": 42,
-        "finishing": 37,
-        "longShots": 42,
-        "heading": 88,
-        "setPieces": 44,
-        "tackling": 95,
+        "passing": 90,
+        "firstTouch": 79,
+        "dribbling": 62,
+        "crossing": 44,
+        "finishing": 38,
+        "longShots": 51,
+        "heading": 84,
+        "setPieces": 48,
+        "tackling": 94,
         "marking": 95,
-        "positioning": 94,
-        "vision": 59,
-        "decisions": 84,
-        "composure": 80,
+        "positioning": 96,
+        "vision": 84,
+        "decisions": 90,
+        "composure": 89,
         "offBall": 45,
-        "discipline": 73,
+        "discipline": 78,
         "pace": 72,
-        "acceleration": 67,
-        "strength": 89,
-        "stamina": 80,
-        "agility": 63,
-        "jumping": 88,
-        "workRate": 82,
-        "aggression": 78,
+        "acceleration": 64,
+        "strength": 88,
+        "stamina": 79,
+        "agility": 60,
+        "jumping": 82,
+        "workRate": 80,
+        "aggression": 73,
         "goalkeeping": 13,
         "reflexes": 13
       },
@@ -2081,6 +2131,56 @@
         "overall": 84,
         "url": "",
         "note": "EA 当前接口未收录；使用项目 S3 的 EA 派生历史档案；巅峰赛季：2016/17，年龄30岁，效力尤文图斯，惯用右脚；来源耦合回归；目标OVR 89；输入覆盖26；近邻：蒂亚戈·席尔瓦、温贝托·科埃略、温贝托·科埃略、卢西奥、塞尔希奥·拉莫斯"
+      },
+      "attributeBasis": "game-final",
+      "dataCorrections": {
+        "profileRevision": {
+          "revision": "20261116-profiles-1",
+          "kind": "curated-game-profile",
+          "description": "后场组织中卫：传球、视野、决策与站位突出，射门、定位球与加速有限。",
+          "preScaled": false,
+          "previous": {
+            "source": {
+              "id": "real-def-035",
+              "type": "project S3 EA-derived historical profile",
+              "overall": 84,
+              "url": "",
+              "note": "EA 当前接口未收录；使用项目 S3 的 EA 派生历史档案；巅峰赛季：2016/17，年龄30岁，效力尤文图斯，惯用右脚；来源耦合回归；目标OVR 89；输入覆盖26；近邻：蒂亚戈·席尔瓦、温贝托·科埃略、温贝托·科埃略、卢西奥、塞尔希奥·拉莫斯"
+            },
+            "attributes": {
+              "passing": 68,
+              "firstTouch": 65,
+              "dribbling": 46,
+              "crossing": 42,
+              "finishing": 37,
+              "longShots": 42,
+              "heading": 88,
+              "setPieces": 44,
+              "tackling": 95,
+              "marking": 95,
+              "positioning": 94,
+              "vision": 59,
+              "decisions": 84,
+              "composure": 80,
+              "offBall": 45,
+              "discipline": 73,
+              "pace": 72,
+              "acceleration": 67,
+              "strength": 89,
+              "stamina": 80,
+              "agility": 63,
+              "jumping": 88,
+              "workRate": 82,
+              "aggression": 78,
+              "goalkeeping": 13,
+              "reflexes": 13
+            },
+            "attributeBasis": "reference"
+          },
+          "evidence": [
+            "https://www.juventus.com/en/news/articles/bonucci-extends-contract-until-2021"
+          ]
+        }
       }
     },
     {
@@ -2447,5 +2547,6 @@
         "note": "EA 当前接口未收录；使用 FUT 历史六维卡面作为回归锚点；巅峰赛季：2011/12，年龄28岁，效力沙尔克04，惯用右脚；来源锚点+回归补齐；目标OVR 87；输入覆盖6；近邻：贡萨洛·伊瓜因、贡萨洛·伊瓜因、迭戈·米利托、奥马尔·西沃里、奥马尔·西沃里"
       }
     }
-  ]
+  ],
+  "attributeBasis": "game-final"
 }

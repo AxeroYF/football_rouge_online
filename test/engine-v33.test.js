@@ -7,7 +7,7 @@ import {V3_MATCH_PARAMETERS} from '../versus/v3/match-parameters-v3.js';
 import {configurationDigest} from '../versus/v3/match-configuration.js';
 import {makeAssessmentTeam} from '../scripts/engine-assessment-fixtures.mjs';
 import {prepareDefensiveAssignments,buildUpPreference,tacticalProcessSummary} from '../versus/v3/tactical-execution.js';
-import {conditionalPlanName,conditionalReplacement} from '../versus/v3/conditional-tactics.js';
+import {conditionalPlanName} from '../versus/v3/conditional-tactics.js';
 import {resolveCornerRoutine} from '../versus/v3/corner-routines.js';
 import {tacticalExecutionFields,EXECUTION_GROUPS} from '../versus/public/tactical-execution.js';
 import {changeTacticalPrinciple,tacticalPrincipleFields} from '../versus/public/tactical-principles.js';
@@ -75,17 +75,23 @@ test('score plans obey their start time and persisted cooldown',()=>{
   assert.equal(conditionalPlanName(restored,restored.teams[0],'trailing'),'trailing');
 });
 
-test('conditional rotation uses suitable fresh substitutes, prevents reentry and shares a five-player limit',()=>{
+test('legacy active substitution settings cannot replace tired or booked players, including resumed games',()=>{
   const seats=teams();seats[0].players.push(...seats[0].players.slice(1,4).map((p,i)=>({...structuredClone(p),id:'bench'+i,active:false})));
   for(const state of ['opening','leading','trailing'])Object.assign(seats[0].tacticalPlans[state],{rotationPolicy:'balanced',rotationAfter:'60',rotationFitness:'75'});
   const m=createV3Match(seats,options),team=m.teams[0];Object.assign(m.flowState,{period:1,periodElapsed:1200,elapsedSeconds:3900});m.minute=65;
-  team.players[1].state.fitness=40;
-  const before=conditionalReplacement(m,team);assert.ok(before);
-  advanceV2Match(m,1);
-  assert.ok(m.events.some(e=>e.type==='substitution'&&e.reason==='conditional'));
-  assert.equal(before.outgoing.active,false);assert.equal(before.outgoing.substitutedOut,true);assert.equal(before.incoming.active,true);
-  assert.equal(conditionalReplacement(m,team),null,'cooldown');
-  m.flowState.elapsedSeconds+=301;team.stats.substitutions=5;assert.equal(conditionalReplacement(m,team),null,'shared limit');
+  team.players[1].state.fitness=40;team.players[2].matchStats.yellowCards=1;
+  // Simulate an old checkpoint with rotation fields already applied to the runtime team.
+  Object.assign(team,{rotationPolicy:'balanced',rotationAfter:'60',rotationFitness:'85'});
+  const resumed=json(m);
+  for(const game of [m,resumed]){
+    advanceV2Match(game,1);
+    assert.equal(game.events.some(e=>e.type==='substitution'&&e.reason==='conditional'),false);
+    for(const event of game.events.filter(e=>e.type==='substitution'))assert.ok(['injury','goalkeeperRedCard'].includes(event.reason));
+  }
+  for(const field of ['rotationPolicy','rotationAfter','rotationFitness']){
+    assert.equal(EXECUTION_GROUPS[field],undefined);
+    assert.equal(tacticalExecutionFields(team)[field],undefined);
+  }
 });
 
 test('near, far and short corners allocate separate jobs, consume time and expose a clearance restart',()=>{

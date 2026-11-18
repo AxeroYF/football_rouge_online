@@ -1,5 +1,7 @@
+import {playerArtPreviewContent,artPositionStyle} from "/versus/player-art-preview.js";
 import {X_PLAYER_FEATURE_ENABLED} from "/versus/team-draft-config.js";
 import { ADMIN_SEASON_ACTIONS } from "./season-controls.js";
+import { createStudioAutosave } from "./studio-autosave.js";
 import { aPlayerProfileForPlayer } from "/versus/a-player-profiles.js";
 import { legendaryProfileForPlayer } from "/versus/legendary-profiles.js";
 import { xPlayerProfileForPlayer } from "/versus/x-player-profiles.js";
@@ -32,6 +34,37 @@ let studioUploadFile = null;
 let studioPosition = { xPercent:50, yPercent:52, widthPercent:200 };
 let studioDragState = null;
 let studioPublishSelection = new Set();
+const studioAutosave = createStudioAutosave({
+  save: (id, value) => value.file
+    ? uploadStudioProfile(id, value.file, value.position, value.manuallyAdjusted)
+    : api(`/api/admin/content/player-profiles/${encodeURIComponent(id)}`, { method:"POST", body:{ ...value.position, manuallyAdjusted:value.manuallyAdjusted } }),
+  onSaved(id, result, snapshot) {
+    for (const key of ["playerDrafts", "profilePlayers", "players"]) {
+      const target = contentData?.[key]?.find((entry) => entry.id === id);
+      if (target) target.cardProfile = result.profile;
+    }
+    const entry = studioAutosave.get(id);
+    if (!entry.value.file && snapshot.file) {
+      URL.revokeObjectURL(entry.value.previewUrl);
+      entry.value.previewUrl = null;
+      if (selectedStudioPlayerId === id) {
+        studioUploadDataUrl = null;
+        studioUploadFile = null;
+        studioUploadFileName = null;
+        const image = document.querySelector("#studio-card-image");
+        if (image) image.src = result.profile.imageUrl;
+      }
+    }
+    // Update labels in place so saving cannot steal keyboard focus or stop a drag.
+    document.querySelectorAll("[data-studio-player]").forEach((button) => {
+      if (button.dataset.studioPlayer === id) button.querySelector("strong").textContent = studioProfileLabel(result.profile);
+    });
+  },
+  onChange: () => renderStudioSaveStatus(),
+});
+window.addEventListener("beforeunload", (event) => {
+  if (studioAutosave.unsettled()) { event.preventDefault(); event.returnValue = ""; }
+});
 let selectedPlayerBatchId = null;
 let playerExcelPreview = null;
 let batchImageQueue = [];
@@ -451,7 +484,7 @@ function renderLeagueAdmin() {
   };
   document.querySelector("#league-season-controls").onclick = () => openSeasonControls();
   document.querySelector("#league-cup-start").onclick = () => {
-    if (window.confirm("确认开启黄狗冠军杯？当前10支球队将进行9轮单循环联赛，前八名进入两回合淘汰赛。")) runLeagueAdminAction("/api/admin/league/cup/start", {}, "黄狗冠军杯已开启，首轮将在下一个杯赛时间档开始");
+    if (window.confirm("确认开启黄狗冠军杯？A、B两级共16支球队，从十六强起进行两回合淘汰赛，决赛单场。")) runLeagueAdminAction("/api/admin/league/cup/start", {}, "黄狗冠军杯已开启，首轮将在下一个杯赛时间档开始");
   };
   document.querySelector("#league-daily-reward").onclick = () => {
     if (window.confirm("确认按当前已完成赛季排名补发金币、传奇礼包及联赛名次追加礼包？已发放的奖励不会重复发放。")) runLeagueAdminAction("/api/admin/league/daily-settlement/reward", {}, "联赛排名奖励及追加礼包已补发或已确认发放");
@@ -753,24 +786,62 @@ function studioSuggestedFileName(player) {
 }
 
 function setStudioSelection(playerId) {
+  if (selectedStudioPlayerId === playerId) return;
+  void studioAutosave.flush(selectedStudioPlayerId);
   selectedStudioPlayerId = playerId;
-  if (studioUploadDataUrl) URL.revokeObjectURL(studioUploadDataUrl);
-  studioUploadDataUrl = null;
-  studioUploadFileName = null;
-  studioUploadFile = null;
+  studioDragState = null;
+  const pending = studioAutosave.get(playerId);
+  studioUploadDataUrl = pending?.value.previewUrl ?? null;
+  studioUploadFile = pending?.value.file ?? null;
+  studioUploadFileName = studioUploadFile?.name ?? null;
   const profile = studioProfile(selectedStudioPlayer());
-  studioPosition = {
+  studioPosition = pending?.dirty || pending?.running ? { ...pending.value.position } : {
     xPercent:Number(profile?.xPercent ?? 50),
     yPercent:Number(profile?.yPercent ?? 52),
     widthPercent:Number(profile?.widthPercent ?? 200),
   };
 }
 
+function studioProfileLabel(profile) {
+  return profile?.manuallyAdjustedAt ? "已调整 ✓" : profile ? "已有卡画 · 未调整" : "待补卡画";
+}
+
+function renderStudioSaveStatus() {
+  const entry = studioAutosave.get(selectedStudioPlayerId);
+  const status = document.querySelector("#studio-profile-status");
+  if (status && entry) status.textContent = entry.status === "error" ? `保存失败：${entry.error}；调整已保留，请重试`
+    : entry.status === "saved" ? "已自动保存 ✓" : entry.status === "saving" ? "正在保存…" : "待自动保存…";
+  const summary = document.querySelector("#studio-save-summary");
+  const failed = [...studioAutosave.entries.values()].filter((item) => item.status === "error").length;
+  if (summary) summary.textContent = failed ? `${failed} 名球员保存失败，请点“重试未保存”` : studioAutosave.unsettled() ? "有调整正在保存" : "全部调整已保存";
+  const retry = document.querySelector("#studio-retry-saves");
+  if (retry) retry.hidden = !failed;
+}
+
+function scheduleStudioSave(manuallyAdjusted = true) {
+  const player = selectedStudioPlayer();
+  if (!player || (!studioUploadFile && !studioProfile(player))) return;
+  studioAutosave.change(player.id, { position:studioPosition, file:studioUploadFile, previewUrl:studioUploadDataUrl, manuallyAdjusted });
+}
+
+function moveStudioSelection(offset, focusList = false) {
+  const buttons = [...document.querySelectorAll("[data-studio-player]")];
+  const current = buttons.findIndex((button) => button.dataset.studioPlayer === selectedStudioPlayerId);
+  const index = current < 0 ? (offset < 0 ? buttons.length - 1 : 0) : Math.max(0, Math.min(buttons.length - 1, current + offset));
+  if (!buttons[index]) return;
+  setStudioSelection(buttons[index].dataset.studioPlayer);
+  renderStudioEditor();
+  filterStudioPlayers();
+  const selected = [...document.querySelectorAll("[data-studio-player]")].find((button) => button.dataset.studioPlayer === selectedStudioPlayerId);
+  selected?.scrollIntoView({ block:"nearest" });
+  (focusList ? selected : document.querySelector("#studio-card-preview"))?.focus({ preventScroll:true });
+}
+
 function studioPlayerRows(entries = studioEntries()) {
   return entries.map((player) => {
     const profile = studioProfile(player);
     const englishName = studioEnglishName(player);
-    return `<div class="studio-player-row ${player.id === selectedStudioPlayerId ? "active" : ""}"><button type="button" data-studio-player="${escapeHtml(player.id)}"><span><b>${escapeHtml(player.name)}${englishName ? `<i>${escapeHtml(englishName)}</i>` : ""}</b><small>${escapeHtml(player.club)} · ${escapeHtml(player.nationality)}</small></span><em>${escapeHtml(player.role)} · ${escapeHtml(player.grade)}级</em><strong>${profile ? "已有卡画" : "待补卡画"}</strong></button>${player.draft ? `<label title="加入批量上线"><input type="checkbox" data-studio-publish="${escapeHtml(player.id)}"${studioPublishSelection.has(player.id) ? " checked" : ""}><span>暂存</span></label>` : ""}</div>`;
+    return `<div class="studio-player-row ${player.id === selectedStudioPlayerId ? "active" : ""}"><button type="button" data-studio-player="${escapeHtml(player.id)}"><span><b>${escapeHtml(player.name)}${englishName ? `<i>${escapeHtml(englishName)}</i>` : ""}</b><small>${escapeHtml(player.club)} · ${escapeHtml(player.nationality)}</small></span><em>${escapeHtml(player.role)} · ${escapeHtml(player.grade)}级</em><strong>${studioProfileLabel(profile)}</strong></button>${player.draft ? `<label title="加入批量上线"><input type="checkbox" data-studio-publish="${escapeHtml(player.id)}"${studioPublishSelection.has(player.id) ? " checked" : ""}><span>暂存</span></label>` : ""}</div>`;
   }).join("");
 }
 
@@ -780,9 +851,11 @@ function filterStudioPlayers() {
   const search = document.querySelector("#studio-player-search")?.value.trim().toLowerCase() ?? "";
   const status = document.querySelector("#studio-player-status")?.value ?? "all";
   const grade = document.querySelector("#studio-player-grade")?.value ?? "all";
+  const adjusted = document.querySelector("#studio-player-adjusted")?.value ?? "all";
   const entries = studioEntries().filter((player) =>
     (status === "all" || status === "draft" && player.draft || status === "active" && !player.draft || status === "missing" && !studioProfile(player))
     && (grade === "all" || player.grade === grade)
+    && (adjusted === "all" || Boolean(studioProfile(player)?.manuallyAdjustedAt) === (adjusted === "yes"))
     && `${player.name} ${player.sourceName ?? ""} ${player.club} ${player.nationality} ${player.id}`.toLowerCase().includes(search));
   list.innerHTML = studioPlayerRows(entries) || `<p class="empty">没有匹配的球员卡</p>`;
   bindStudioList();
@@ -794,6 +867,7 @@ function bindStudioList() {
       setStudioSelection(button.dataset.studioPlayer);
       renderStudioEditor();
       filterStudioPlayers();
+      [...document.querySelectorAll("[data-studio-player]")].find((item) => item.dataset.studioPlayer === selectedStudioPlayerId)?.focus({ preventScroll:true });
     };
   });
   document.querySelectorAll("[data-studio-publish]").forEach((input) => {
@@ -809,13 +883,7 @@ function bindStudioList() {
 function studioCardMarkup(player) {
   const profile = studioProfile(player);
   const imageUrl = studioUploadDataUrl ?? profile?.imageUrl ?? "";
-  return `<button type="button" class="s4-player-card grade-${String(player.grade ?? "C").toLowerCase()} band-base ${imageUrl ? "has-player-profile" : ""}" id="studio-card-preview" aria-label="${escapeHtml(`${player.name}卡画预览`)}">
-    <div class="s4-player-card-head"><strong>${Number(player.overall ?? player.requestedOverall ?? 0)}</strong>${player.role ? `<b>${escapeHtml(player.role)}</b>` : ""}</div>
-    <div class="s4-player-card-grade"><span>${escapeHtml(player.grade ?? "C")}</span></div>
-    <div class="s4-player-card-name"><h3>${escapeHtml(player.name)}</h3></div>
-    <footer><b>${escapeHtml(player.club ?? "无俱乐部")} / ${escapeHtml(player.nationality ?? "无国家队")}</b></footer>
-    ${imageUrl ? `<img class="s4-player-card-profile" id="studio-card-image" src="${escapeHtml(imageUrl)}" alt="" draggable="false" decoding="async" style="--profile-x:${studioPosition.xPercent}%;--profile-y:${studioPosition.yPercent}%;--profile-width:${studioPosition.widthPercent}%">` : ""}
-  </button>`;
+  return `<button type="button" class="s4-player-card ydl-player-card player-card-shield player-card-static grade-${String(player.grade ?? "C").toLowerCase()} band-base ${imageUrl ? "has-player-profile" : ""}" id="studio-card-preview" style="${artPositionStyle(studioPosition)}" aria-label="${escapeHtml(`${player.name}卡画预览`)}">${playerArtPreviewContent(player,imageUrl,studioPosition,{imageId:"studio-card-image"})}</button>`;
 }
 
 function studioAttributeInputs(player) {
@@ -833,7 +901,8 @@ function studioDraftFormMarkup(player) {
 }
 
 function studioApplyPosition() {
-  const image = document.querySelector("#studio-card-image");
+  scheduleStudioSave();
+  const image = document.querySelector("#studio-card-preview");
   if (image) {
     image.style.setProperty("--profile-x", `${studioPosition.xPercent}%`);
     image.style.setProperty("--profile-y", `${studioPosition.yPercent}%`);
@@ -872,7 +941,7 @@ function bindStudioPositioner() {
   }
 }
 
-async function uploadStudioProfile(playerId, file, position = studioPosition) {
+async function uploadStudioProfile(playerId, file, position = studioPosition, manuallyAdjusted = false) {
   const response = await fetch(`/api/admin/content/player-profiles/${encodeURIComponent(playerId)}/image`, {
     method:"POST",
     headers:{
@@ -882,6 +951,7 @@ async function uploadStudioProfile(playerId, file, position = studioPosition) {
       "x-ydl-profile-x":String(position.xPercent),
       "x-ydl-profile-y":String(position.yPercent),
       "x-ydl-profile-width":String(position.widthPercent),
+      "x-ydl-profile-manually-adjusted":String(manuallyAdjusted),
     },
     body:file,
     cache:"no-store",
@@ -900,7 +970,7 @@ function renderStudioEditor() {
   const englishName = studioEnglishName(player);
   editor.innerHTML = `<section class="studio-editor-head"><div><small>${player.draft ? "暂存新卡" : "正式球员卡"} · ${escapeHtml(player.id)}</small><h2>${escapeHtml(player.name)}${englishName ? `<i>${escapeHtml(englishName)}</i>` : ""}</h2></div><strong>${player.overall}<small>${escapeHtml(player.grade)}级 · ${escapeHtml(player.role)}</small></strong></section>
     <div class="studio-editor-grid"><section class="studio-stage"><header><div><small>CARD ART POSITIONER</small><h3>卡画定位</h3></div><span>${profile ? player.cardProfile ? "服务器WebP" : "旧卡画" : "尚无卡画"}</span></header>${studioCardMarkup(player)}<div class="studio-upload-row"><label><b>${studioUploadFileName ?? `上传：${studioSuggestedFileName(player)}`}</b><input id="studio-image-input" type="file" accept="image/png,image/webp"></label><button type="button" id="studio-reset-position">重置定位</button></div></section>
-    <section class="studio-controls"><h3>定位参数</h3>${[["xPercent","横向位置",-50,150,.1],["yPercent","纵向位置",-50,150,.1],["widthPercent","人物宽度",40,360,.5]].map(([key,label,min,max,step]) => `<label><span>${label}<b data-studio-position-value="${key}">${Number(studioPosition[key]).toFixed(1)}%</b></span><input type="range" min="${min}" max="${max}" step="${step}" value="${studioPosition[key]}" data-studio-position="${key}"></label>`).join("")}<p>X/S级卡画覆盖文字；A/B/C级卡画自动位于文字下层。</p><button type="button" class="content-save-button" id="studio-save-profile">保存定位并生成WebP</button><span id="studio-profile-status">${profile ? `当前资源：${escapeHtml(profile.optimizedFileName ?? profile.fileName ?? "旧卡画")}` : "首次保存必须上传图片"}</span></section></div>${studioDraftFormMarkup(player)}`;
+    <section class="studio-controls"><h3>定位参数 · 自动保存</h3><div class="studio-keyboard-nav"><button type="button" id="studio-prev">上一名</button><button type="button" id="studio-next">下一名</button></div><p>PageUp / PageDown 切换球员；列表中 ↑↓ 选择。点击卡面后，方向键移动 1%，Shift + 方向键移动 5%，+ / − 缩放。停止调整 0.6 秒后自动保存。</p>${[["xPercent","横向位置",-50,150,.1],["yPercent","纵向位置",-50,150,.1],["widthPercent","人物宽度",40,360,.5]].map(([key,label,min,max,step]) => `<label><span>${label}<b data-studio-position-value="${key}">${Number(studioPosition[key]).toFixed(1)}%</b></span><input type="range" min="${min}" max="${max}" step="${step}" value="${studioPosition[key]}" data-studio-position="${key}"></label>`).join("")}<p>X/S级卡画覆盖文字；A/B/C级卡画自动位于文字下层。</p><button type="button" class="content-save-button" id="studio-save-profile">立即保存 / 重试</button><span id="studio-profile-status" role="status" aria-live="polite">${profile ? `当前资源：${escapeHtml(profile.optimizedFileName ?? profile.fileName ?? "旧卡画")}` : "首次保存必须上传图片"}</span></section></div>${studioDraftFormMarkup(player)}`;
   bindStudioPositioner();
   document.querySelector("#studio-image-input").onchange = async (event) => {
     const file = event.target.files?.[0];
@@ -912,32 +982,18 @@ function renderStudioEditor() {
       studioUploadDataUrl = URL.createObjectURL(file);
       studioUploadFileName = file.name;
       studioUploadFile = file;
+      scheduleStudioSave(false);
       renderStudioEditor();
     } catch (error) { status.textContent = error.message; }
   };
   document.querySelector("#studio-reset-position").onclick = () => { studioPosition = { xPercent:50, yPercent:52, widthPercent:200 }; studioApplyPosition(); };
-  document.querySelector("#studio-save-profile").onclick = async () => {
-    const status = document.querySelector("#studio-profile-status");
-    status.textContent = studioUploadDataUrl ? "正在上传并转换WebP…" : "正在保存定位…";
-    try {
-      const result = studioUploadFile
-        ? await uploadStudioProfile(player.id, studioUploadFile)
-        : await api(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}`, { method:"POST", body:{ ...studioPosition } });
-      const saved = result.profile;
-      contentData = { ...contentData, ...result.summary };
-      const target = player.draft ? contentData.playerDrafts.find((entry) => entry.id === player.id) : contentData.profilePlayers.find((entry) => entry.id === player.id);
-      if (target) target.cardProfile = saved;
-      const editable = (contentData.players ?? []).find((entry) => entry.id === player.id);
-      if (editable) editable.cardProfile = saved;
-      if (studioUploadDataUrl) URL.revokeObjectURL(studioUploadDataUrl);
-      studioUploadDataUrl = null;
-      studioUploadFileName = null;
-      studioUploadFile = null;
-      studioPosition = { xPercent:saved.xPercent, yPercent:saved.yPercent, widthPercent:saved.widthPercent };
-      renderStudioEditor();
-      filterStudioPlayers();
-    } catch (error) { status.textContent = error.message; }
+  document.querySelector("#studio-save-profile").onclick = () => {
+    scheduleStudioSave();
+    void studioAutosave.flush(player.id);
   };
+  document.querySelector("#studio-prev").onclick = () => moveStudioSelection(-1);
+  document.querySelector("#studio-next").onclick = () => moveStudioSelection(1);
+  renderStudioSaveStatus();
   const draftForm = document.querySelector("#studio-draft-form");
   if (draftForm) {
     const draftPatch = () => {
@@ -989,10 +1045,36 @@ function openCreatePlayerDraft() {
 }
 
 function contentStudioMarkup() {
-  return `<section class="studio-toolbar"><div><b>球员卡工作室</b><span>上传抠图、定位、WebP生成、新卡暂存与批量上线</span></div><button id="studio-create-player">+ 制作新卡</button><button id="studio-publish-selected">批量上线（${studioPublishSelection.size}）</button></section><section class="studio-workspace"><aside class="content-browser panel"><header class="panel-head"><div><h2>正式库与暂存池</h2><small>X/S/A/B/C全部支持上传卡画</small></div></header><div class="content-filters"><input class="search" id="studio-player-search" placeholder="搜索球员、俱乐部或国籍"><select id="studio-player-status"><option value="all">全部状态</option><option value="draft">仅暂存</option><option value="active">仅正式</option><option value="missing">缺少卡画</option></select><select id="studio-player-grade"><option value="all">全部等级</option>${["X","S","A","B","C"].map((grade) => `<option>${grade}</option>`).join("")}</select></div><div class="content-list studio-player-list" id="studio-player-list">${studioPlayerRows()}</div></aside><main class="studio-editor panel" id="studio-editor"></main></section>`;
+  return `<section class="studio-toolbar"><div><b>球员卡工作室</b><span>上传抠图、定位、WebP生成、新卡暂存与批量上线</span></div><span id="studio-save-summary" role="status"></span><button id="studio-retry-saves" hidden>重试未保存</button><button id="studio-create-player">+ 制作新卡</button><button id="studio-publish-selected">批量上线（${studioPublishSelection.size}）</button></section><section class="studio-workspace"><aside class="content-browser panel"><header class="panel-head"><div><h2>正式库与暂存池</h2><small>X/S/A/B/C全部支持上传卡画</small></div></header><div class="content-filters"><input class="search" id="studio-player-search" placeholder="搜索球员、俱乐部或国籍"><select id="studio-player-status"><option value="all">全部状态</option><option value="draft">仅暂存</option><option value="active">仅正式</option><option value="missing">缺少卡画</option></select><select id="studio-player-grade"><option value="all">全部等级</option>${["X","S","A","B","C"].map((grade) => `<option>${grade}</option>`).join("")}</select></div><select id="studio-player-adjusted" aria-label="手动调整状态"><option value="all">全部调整状态</option><option value="yes">已调整</option><option value="no">未调整</option></select><div class="content-list studio-player-list" id="studio-player-list">${studioPlayerRows()}</div></aside><main class="studio-editor panel" id="studio-editor"></main></section>`;
 }
 
 function bindContentStudio() {
+  document.querySelector("#studio-player-adjusted").onchange = filterStudioPlayers;
+  document.querySelector("#studio-retry-saves").onclick = () => studioAutosave.retry();
+  document.querySelector(".studio-workspace").onkeydown = (event) => {
+    if (event.isComposing || !modal.hidden) return;
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      void studioAutosave.flush(selectedStudioPlayerId);
+      return;
+    }
+    if (event.target.closest("input, textarea, select, [contenteditable=true]") || event.ctrlKey || event.metaKey || event.altKey) return;
+    const inList = Boolean(event.target.closest("[data-studio-player]"));
+    if (["PageUp", "PageDown"].includes(event.key) || inList && ["ArrowUp", "ArrowDown"].includes(event.key)) {
+      event.preventDefault();
+      moveStudioSelection(["PageUp", "ArrowUp"].includes(event.key) ? -1 : 1, inList);
+      return;
+    }
+    if (event.target.id !== "studio-card-preview" || !document.querySelector("#studio-card-image")) return;
+    const directions = { ArrowLeft:["xPercent",-1], ArrowRight:["xPercent",1], ArrowUp:["yPercent",-1], ArrowDown:["yPercent",1], "+":["widthPercent",1], "=":["widthPercent",1], "-":["widthPercent",-1] };
+    const move = directions[event.key];
+    if (!move) return;
+    event.preventDefault();
+    const [key, direction] = move;
+    const width = key === "widthPercent";
+    studioPosition[key] = Math.round(Math.max(width ? 40 : -50, Math.min(width ? 360 : 150, studioPosition[key] + direction * (event.shiftKey ? 5 : 1))) * 10) / 10;
+    studioApplyPosition();
+  };
   document.querySelector("#studio-player-search").oninput = filterStudioPlayers;
   document.querySelector("#studio-player-status").onchange = filterStudioPlayers;
   document.querySelector("#studio-player-grade").onchange = filterStudioPlayers;
@@ -1007,7 +1089,7 @@ function bindContentStudio() {
       const result = await api("/api/admin/content/player-drafts/publish", { method:"POST", body:{ ids:[...studioPublishSelection] } });
       contentData = { ...contentData, ...result.summary, ...result.studio };
       studioPublishSelection.clear();
-      selectedStudioPlayerId = contentData.profilePlayers.some((player) => player.id === selectedStudioPlayerId) ? selectedStudioPlayerId : contentData.profilePlayers[0]?.id;
+      setStudioSelection(contentData.profilePlayers.some((player) => player.id === selectedStudioPlayerId) ? selectedStudioPlayerId : contentData.profilePlayers[0]?.id);
       renderContentAdmin();
     } catch (error) { alert(error.message); button.disabled = false; button.textContent = `批量上线（${studioPublishSelection.size}）`; }
   };
@@ -1211,7 +1293,7 @@ function bindContentBatch() {
   document.querySelector("#batch-png-input")?.addEventListener("change", (event) => { matchBatchImages([...event.target.files]); renderContentAdmin(); });
   document.querySelector("#batch-upload-matched")?.addEventListener("click", uploadBatchImages);
   document.querySelectorAll("[data-batch-edit-player]").forEach((button) => {
-    button.onclick = () => { selectedStudioPlayerId = button.dataset.batchEditPlayer; contentTab = "studio"; setStudioSelection(selectedStudioPlayerId); renderContentAdmin(); };
+    button.onclick = () => { contentTab = "studio"; setStudioSelection(button.dataset.batchEditPlayer); renderContentAdmin(); };
   });
   document.querySelector("#batch-publish")?.addEventListener("click", async (event) => {
     const batch = selectedPlayerBatch();

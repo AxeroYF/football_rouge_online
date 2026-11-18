@@ -4,6 +4,7 @@ import { legendAbilityForName } from "./legend-abilities.js";
 import { S4_PLAYER_DATABASE } from "./player-pool-s4-generated.js";
 import { S4_DLC_PLAYER_DATABASE } from "./player-pool-s4-dlc-generated.js";
 import { isXPlayer, X_PLAYER_BY_ID, X_PLAYERS } from "./x-player-pool.js";
+import { FINAL_GAME_ATTRIBUTE_BASIS, REFERENCE_ATTRIBUTE_BASIS, TARGET_SCALED_ATTRIBUTE_BASIS } from '../shared/football/player-source-attributes.js';
 
 export const VERSUS_LINES = Object.freeze({
   GK: Object.freeze({ label: "门将", roles: ["GK"] }),
@@ -73,7 +74,11 @@ export function versusPlayerGrade(name, overall) {
 function buildPlayer(candidate, index) {
   const legendary = candidate.suggestedGrade === "S";
   const overall = Math.min(S4_PLAYER_DEFAULT_ATTRIBUTE_CAP, candidate.suggestedOverall);
-  const attributes = normalizedGameAttributes(candidate.attributes, candidate.role, overall, candidate.referenceOverall);
+  const basis=candidate.attributeBasis??REFERENCE_ATTRIBUTE_BASIS;
+  if(![FINAL_GAME_ATTRIBUTE_BASIS,REFERENCE_ATTRIBUTE_BASIS,TARGET_SCALED_ATTRIBUTE_BASIS].includes(basis))throw new Error(`未知球员属性口径：${candidate.id}`);
+  const attributes = basis!==REFERENCE_ATTRIBUTE_BASIS
+    ? normalizedS4LegendAttributes(candidate.attributes,candidate.role,overall)
+    : normalizedGameAttributes(candidate.attributes, candidate.role, overall, candidate.referenceOverall);
   const normalized = normalizePlayerSchema({
     id: candidate.id,
     name: candidate.displayNameZh,
@@ -119,6 +124,8 @@ function buildPlayer(candidate, index) {
     secondaryRole: candidate.secondaryRole,
     overall,
     referenceOverall: candidate.referenceOverall,
+    attributeBasis:basis,
+    goalkeeperMappingVersion:candidate.goalkeeperMappingVersion??0,
     grade: candidate.suggestedGrade,
     weakFoot: candidate.weakFoot,
     skillMoves: candidate.skillMoves,

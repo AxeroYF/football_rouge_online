@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {YellowDogsLeagueService,S4_BOND_CATALOG} from '../versus/league-service.js';
+import {REAL_PLAYERS} from '../versus/player-pool.js';
+import {openLocalCupScheduler} from '../versus/v4-host/local-cup-scheduler.js';
+import {createLocalDispatcher,openLocalDispatcher} from '../versus/v4-host/dispatcher.js';
+import {createEngineBundle} from '../versus/v4-rollout/bundle.js';
+import {dependencyHashes} from '../scripts/v4-source-hashes.mjs';
+import {VERSION} from '../versus/v4/world.js';
+
+test('local cup scheduler resumes partial enqueue, waits for publication and consumes locked jobs after rollback without recomputing',async()=>{
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'v4-cup-scheduler-')),bundleDirectory=path.join(root,'engine');
+  await fs.writeFile(path.join(root,'v4-local-storage.json'),JSON.stringify({format:'yffm-v4-canonical-local-settlement-1'}));
+  const bundle=await createEngineBundle(bundleDirectory,{sourceRoot:process.cwd(),engineVersion:VERSION,files:dependencyHashes(['versus/v4/engine.js'])}),candidate={accepted:true,bundleDirectory,engineVersion:VERSION,sourceDigest:bundle.sourceDigest};
+  const createService=options=>new YellowDogsLeagueService(options),sourceCatalog={catalog:REAL_PLAYERS,traitCatalog:[],bondCatalog:S4_BOND_CATALOG};
+  let time=1794934800000;const now=()=>time,options={statePath:path.join(root,'league.json'),backupDir:null,now,rng:()=>.5};
+  let service=createService(options);service.startCup();service.save({skipDailyBackup:true});
+  const request={seasonId:service.state.season.id,eventId:service.state.cup.events[0].id,duration:60},open=enabled=>openLocalCupScheduler({root,service,createService,sourceCatalog,candidate,enabled,now});
+  assert.deepEqual(await(await open(false)).advance(request),{enabled:false,productionEnabled:false});assert.equal(service.state.v4LocalCupEvents,undefined);
+  let scheduler=await open(true);const event=await scheduler.settlement.beginCupEvent({...request,enginePin:{engineVersion:VERSION,sourceDigest:bundle.sourceDigest}}),queueDirectory=path.join(root,'cup-queue-'+event.key);
+  const partial=await createLocalDispatcher(queueDirectory,{settlement:scheduler.settlement,candidate,maxPending:64});await partial.setPolicy({mode:'shadow'},{expectedRevision:0});await partial.enqueue(event.tasks[0]);
+  const produced=await scheduler.advance(request,{onRoundStarted:round=>assert.equal(round.competition,'cup')});assert.equal(produced.complete,false);assert.equal(produced.computed,8);assert.ok(produced.pendingReleaseAt>time);
+  assert.equal(service.state.matches.length,0);const queue=await openLocalDispatcher(queueDirectory,{settlement:scheduler.settlement,candidate});await queue.setPolicy({mode:'off'},{expectedRevision:1});
+  service=createService(options);scheduler=await open(true);await scheduler.recover();time+=3600000;
+  const finished=await scheduler.advance(request);assert.equal(finished.complete,true);assert.equal(finished.computed,0);assert.equal(finished.settled,8);
+  assert.equal(service.state.matches.length,8);assert.equal(service.state.cup.events.find(event=>event.status==='pending').leg,2);assert.equal((await scheduler.advance(request)).duplicate,true);
+  assert.ok((await queue.read()).jobs.every(job=>job.status==='settled'&&job.attempts===1));
+});

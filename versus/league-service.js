@@ -1,8 +1,17 @@
+import {inboxPageMethods} from './inbox-page-service.js';
+import {readSettledReview,readSettledReplay,readSettledMetrics} from './v4-host/settled-tactical-review.js';
+import {LEAGUE_FORMAT_VERSION,DIVISIONS,DIVISION_SIZE,LEAGUE_TEAM_COUNT,LEAGUE_ROUNDS,PROMOTION_COUNT,SEASON_FINAL_ENABLED,compareLeagueTeams,divisionStandings,assignInitialDivisions,buildDivisionRounds,divisionMovement,emptyKnockoutCup} from './league-format.js';
+import {installAiClub,planAiClub,seededAiRandom,aiClubBadge,aiSquadStrength} from './ai-clubs.js';
+import {AI_CLUBS} from './public/ai-club-config.js';
+import {INBOX_CATEGORIES,inboxMatchesCategory,resolveInboxAction} from './public/inbox-rules.js';
+import {selectPrematchLineup} from './prematch-rotation.js';
+import {effectivePrematchFitness} from './public/fitness-rules.js';
 import {TEAM_DRAFT_FORMATIONS as AI_TRAINING_FORMATIONS,TEAM_DRAFT_LIMIT,X_PLAYER_FEATURE_ENABLED} from "./public/team-draft-config.js";
-import {generateTeamDraft,validateTeamDraftPreferences,batchDraftView,recommendedDraftEntries} from "./team-draft.js";
+import {generateTeamDraft,validateTeamDraftPreferences,batchDraftView,recommendedDraftEntries,draftStyleScore} from "./team-draft.js";
 import {EXECUTION_GROUPS} from "./public/tactical-execution.js";
 import { resolveMatchEngines } from "../src/runtime-config.js";
 import { assertLineupRevision } from "./lineup-revision.js";
+import {resolvePositionPresetLinks,samePositionMap,sameFormationLines} from './public/position-preset-links.js';
 import { withBroadcastRevision } from "./broadcast-revision.js";
 import { ADMIN_SEASON_ACTIONS } from "../admin/public/season-controls.js";
 import { closeSync, copyFileSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -15,21 +24,20 @@ import { collectShardReferences } from "./infrastructure/shard-references.js";
 import { advanceVersusMatch, createVersusMatch, drawVersusReferee, publicMatch, REGULAR_DURATION_MS, HALFTIME_ADJUSTMENT_MS } from "./match-engine.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
 import { isS4Legend, isXPlayer, REAL_PLAYER_BY_ID, REAL_PLAYER_POOLS, REAL_PLAYERS, X_PLAYERS } from "./player-pool.js";
-import { analyzeElevenFormation, drawUniqueMixedPlayers, drawUniquePlayers, inferElevenBoardRoles, sanitizePositions } from "./rules.js";
+import { analyzeElevenFormation, drawUniqueMixedPlayers, drawUniquePlayers, sanitizePositions } from "./rules.js";
 import { ATTRIBUTE_LABELS, ATTRIBUTE_NAMES, PLAYER_OVERALL_ATTRIBUTE_KEYS, playerOverallFromAttributes, roleGroup } from "../shared/football/schema.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
 import { advanceYdlLeagueV2Match, createYdlLeagueV2Match, drawYdlV2Weather, publicYdlLeagueV2Match } from "./v2/ydl-league-engine-adapter.js";
 import { restoreV2MatchRuntime } from "./v2/match-engine-v2.js";
+import { createLiveV4Match, advanceLiveV4Match, publicLiveV4Match } from "./v4-adapter/live-match.js";
 import { resolveV2MatchParameters } from "./v2/match-parameters-v2.js";
 import { V3_MATCH_PARAMETERS } from "./v3/match-parameters-v3.js";
 import { engineProfile } from "./v3/model-config.js";
-import { resolveV2PlayerDuty } from "./v2/player-duties-v2.js";
-import { buildV21TacticalShapePreview } from "./v2/tactical-shape-preview-v2.js";
-import { buildV2TeamSnapshots } from "./v2/team-snapshot-v2.js";
-import { buildV2TacticalProjection, resolveV2TacticalDimensions } from "./v2/spatial-model-v2.js";
-import { buildTacticalOutlook } from "./v2/tactical-outlook.js";
-import { tacticalPrincipleFields, isPrinciplesPlan } from "./public/tactical-principles.js";
-import { hasV2SplitTacticalPlan, resolveV2SplitTacticalPlan } from "./public/v2-tactical-profiles.js";
+import { resolveBoardDuty } from "./public/v2-player-duty-options.js";
+import { createShapePreviewRunner } from "./v4-adapter/shape-preview.js";
+import { captureMovement } from "./public/shape-movement.js";
+import { buildV4TacticalOutlook } from "./v4-adapter/tactical-outlook.js";
+import { tacticalPrincipleFields, applyPrinciplePreset } from "./public/tactical-principles.js";
 import { applyS4Enhancement, S4_ECONOMY, S4_ENHANCEMENT, S4_PACK_PRICES, S4_PRICING, s4BaseCardReferenceValue, s4CardValueMultiplier, s4EffectiveOverall, s4EnhancementChanceForLevels, s4EnhancementProtectionCost, s4OwnershipReferenceValue } from "./s4-balance.js";
 import { applyS4BondBonuses, createS4BondCatalog, evaluateS4LineupBonds } from "./public/bond-rules.js";
 import { DEFAULT_CAPTAIN_STYLE, normalizeCaptainStyle } from "./public/captain-rules.js";
@@ -40,7 +48,8 @@ import {
   IN_POSSESSION_DETAIL_OPTIONS,
   OUT_OF_POSSESSION_DETAIL_OPTIONS,
 } from "./public/v2-tactical-profiles.js";
-import { measureRuntimeSync } from "../src/runtime-metrics.js";
+import { measureRuntimeSync, measureRuntimeAsync } from "../src/runtime-metrics.js";
+import { runPredictionSimulation } from "./prediction-simulation.js";
 import {
   MIRROR_BATCH_CLOUD_NODE,
   MIRROR_BATCH_DIRECTOR_CONCURRENCY,
@@ -51,7 +60,6 @@ import {
   MIRROR_BATCH_WORKER_LEASE_MS,
   MIRROR_BATCH_WORKER_ONLINE_MS,
 } from "./mirror-batch-worker-protocol.js";
-import { automaticSubstitutionRank, compareAutomaticSubstitutes } from "./automatic-substitution.js";
 import { createSeasonFinalState, positionLine, SEASON_FINAL_RULES, SEASON_FINAL_SCHEDULE_MINUTES, validateFinalBanSelection } from "./season-final-tournament.js";
 import { HONOR_ROOM_SEED } from "./honor-room-seed.js";
 import { CLUB_BADGE_PACK, CLUB_BADGES, COSMETIC_BADGE_BY_ID, COSMETIC_BADGE_MINIMUM_LISTING_PRICE, COSMETIC_BADGES, COUNTRY_BADGE_BY_ID, COUNTRY_BADGE_PACK, COUNTRY_BADGES, drawCosmeticBadgeChoices } from "./cosmetic-items.js";
@@ -64,6 +72,7 @@ import {
   publicS4AssetsForOwner,
   publicS4Card,
   recordS4AssetTransaction,
+  withS4AssetTransactionBatch,
   recycleS4Card,
   representativeCard,
   returnPlayerOwnershipToSystem,
@@ -81,7 +90,7 @@ const DEFAULT_STATE_PATH = process.env.YELLOWDOGS_LEAGUE_PATH
   ? path.resolve(process.env.YELLOWDOGS_LEAGUE_PATH)
   : path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data/yellowdogs-league.json");
 const V2_REVIEW_DEMO_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data/v2-review-demo-alpha7.json");
-const TEAM_COUNT = 10;
+const TEAM_COUNT = LEAGUE_TEAM_COUNT;
 const DRAFT_ROSTER_SIZE = 22;
 const X_PLAYER_HEIGHT_MIN = 160;
 const X_PLAYER_INITIAL_HEIGHT_MAX = 186;
@@ -141,7 +150,7 @@ function v2TacticalDetailsProperty(plan, fallback = {}) {
 
 function sanitizeV2PlayerDuties(value, playerIds, roles, fallback = {}) {
   return Object.fromEntries((playerIds ?? []).flatMap((playerId) => {
-    const resolved = resolveV2PlayerDuty(roles?.[playerId], value?.[playerId] ?? fallback?.[playerId]);
+    const resolved = resolveBoardDuty(roles?.[playerId], (value ?? fallback)?.[playerId]);
     return resolved ? [[playerId, resolved]] : [];
   }));
 }
@@ -153,12 +162,13 @@ function v2PlayerDutiesProperty(value, playerIds, roles, fallback = {}) {
 
 function tacticalPlansWithInheritedDuties(tacticalPlans, rotations = []) {
   const plans = clone(tacticalPlans ?? {});
+  const original = clone(tacticalPlans ?? {});
+  for(const plan of Object.values(plans))for(const {outId,inId} of rotations)if(outId!==inId&&plan?.playerDuties)delete plan.playerDuties[outId];
   for (const { outId, inId } of rotations) {
     if (!outId || !inId || outId === inId) continue;
-    Object.values(plans).forEach((plan) => {
-      if (!plan?.playerDuties || !Object.hasOwn(plan.playerDuties, outId)) return;
-      plan.playerDuties[inId] = plan.playerDuties[outId];
-      delete plan.playerDuties[outId];
+      Object.entries(plans).forEach(([key,plan]) => {
+        if (!plan?.playerDuties || !Object.hasOwn(original[key]?.playerDuties??{}, outId)) return;
+        plan.playerDuties[inId] = original[key].playerDuties[outId];
     });
   }
   return plans;
@@ -281,12 +291,13 @@ const MATCH_ENGINE_BY_COMPETITION = resolveMatchEngines();
 const DEFAULT_MATCH_ENGINE = MATCH_ENGINE_BY_COMPETITION.default;
 const STABLE_V21_PARAMETERS = resolveV2MatchParameters({ dynamicShape:{ mode:"stable" } });
 const parametersForEngine = engine => engine === "v3" ? V3_MATCH_PARAMETERS : STABLE_V21_PARAMETERS;
-const createLeagueMatch = (seats, options) => ["v2", "v3"].includes(options?.matchEngine)
+const createLeagueMatch = (seats, options) => options?.matchEngine === "v4" ? createLiveV4Match(seats, options) : ["v2", "v3"].includes(options?.matchEngine)
   ? createYdlLeagueV2Match(seats, {...options, parameters:options.parameters ?? parametersForEngine(options.matchEngine)})
   : createVersusMatch(seats, options);
-const advanceLeagueMatch = (match, now, options) => match?.version === 2 ? advanceYdlLeagueV2Match(match, now, options) : advanceVersusMatch(match, now);
+const advanceLeagueMatch = (match, now, options) => match?.version === 4 ? advanceLiveV4Match(match, now, options) : match?.version === 2 ? advanceYdlLeagueV2Match(match, now, options) : advanceVersusMatch(match, now);
 const publicLeagueMatch = (match, now, viewerIndex = null, revealAllStrategies = false) => {
   const plainMatch = unwrapTracked(match);
+  if (plainMatch?.version === 4) return publicLiveV4Match(plainMatch, now, viewerIndex, revealAllStrategies);
   return plainMatch?.version === 2
     ? publicYdlLeagueV2Match(plainMatch, now, viewerIndex, revealAllStrategies)
     : publicMatch(plainMatch, now, viewerIndex, revealAllStrategies);
@@ -408,7 +419,7 @@ const MIRROR_MARKETPLACE_PRICES = Object.freeze(new Map([
 ]));
 const IN_POSSESSION_PLANS = new Set(["balanced", "shortPassing", "vertical", "wideOverload", "centralCombination", "longBall"]);
 const OUT_OF_POSSESSION_PLANS = new Set(["balanced", "highPress", "midBlock", "lowBlock", "zonal", "manMark"]);
-const CUP_STAGE_NAMES = Object.freeze({ quarterfinals:"四分之一决赛", semifinals:"半决赛", final:"决赛" });
+const CUP_STAGE_NAMES = Object.freeze({ roundOf16:"十六强赛", quarterfinals:"四分之一决赛", semifinals:"半决赛", final:"决赛" });
 
 const clone = (value) => structuredClone(unwrapTracked(value));
 const beijingDate = (value) => new Date(Number(value instanceof Date ? value.getTime() : value) + BEIJING_OFFSET_MS);
@@ -616,7 +627,8 @@ function injuryAbsenceMatches(player) {
 function initialTeam(index) {
   return {
     id:`ydl-team-${index + 1}`,
-    name:TEAM_NAMES[index],
+    name:AI_CLUBS[index % AI_CLUBS.length].name,
+    division:index < DIVISION_SIZE ? "A" : "B",
     ownerId:null,
     ownerName:null,
     joinedAt:null,
@@ -651,9 +663,10 @@ function createState(now, seasonName = "S1") {
   return {
     version:2,
     ruleset:"S4",
-    season:{ id:`${seasonName}-${localDateKey(new Date(now))}`, name:seasonName, date:localDateKey(new Date(now)), status:"active", currentRound:0, totalRounds:18, nextRoundAt:null, firstRoundAt:null, startedAt:now, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null },
+    season:{ id:`${seasonName}-${localDateKey(new Date(now))}`, name:seasonName, date:localDateKey(new Date(now)), status:"active", currentRound:0, totalRounds:LEAGUE_ROUNDS, nextRoundAt:null, firstRoundAt:null, startedAt:now, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null },
     teams,
-    rounds:roundRobin(teams.map((team) => team.id)),
+    rounds:buildDivisionRounds(teams,roundRobin),
+    competitionFormat:{version:LEAGUE_FORMAT_VERSION,promotionCount:PROMOTION_COUNT,movements:[]},
     matches:[],
     playerStats:{},
     drafts:{},
@@ -687,12 +700,12 @@ function createState(now, seasonName = "S1") {
     liveSeasonFinalRound:null,
     liveFriendlies:[],
     mirrorMarketplace:{ uploads:{}, usageByDate:{}, settledDates:[], batchJobs:[], batchReceipts:[], computeNodes:{} },
-    cup:{ format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null },
+    cup:{ format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ roundOf16:[], quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null },
     seasonFinalTournament:null,
     completedBroadcasts:[],
     archives:[],
     dailyAutomation:{
-      enabled:false,
+      enabled:true,
       activatedAt:null,
       initializedDate:localDateKey(new Date(now)),
       lastRewardedSeasonId:null,
@@ -760,7 +773,7 @@ function loadState(filePath, now) {
   for (const candidate of [filePath, `${filePath}.bak`]) {
     try {
       const state = JSON.parse(readFileSync(candidate, "utf8"));
-      if ([1, 2].includes(state?.version) && state?.teams?.length === TEAM_COUNT) return state;
+      if ([1, 2].includes(state?.version) && [10, TEAM_COUNT].includes(state?.teams?.length)) return state;
     } catch { /* 尝试备份文件 */ }
   }
   throw new Error("YFFM1 存档损坏，主文件和备份均无法读取");
@@ -797,8 +810,8 @@ function chemistryPairKey(firstId, secondId) {
   return [firstId, secondId].sort().join("::");
 }
 
-function eligibleChemistryPairs(players, positions) {
-  const roles = inferElevenBoardRoles(players.map((player) => ({ id:player.id, position:positions[player.id] })));
+function eligibleChemistryPairs(players, positions, formationLines) {
+  const roles = inferFormationBoardRoles(players.map((player) => ({ id:player.id, position:positions[player.id] })), formationLines);
   const pairs = [];
   for (let first = 0; first < players.length; first += 1) {
     for (let second = first + 1; second < players.length; second += 1) {
@@ -817,9 +830,9 @@ function eligibleChemistryPairs(players, positions) {
   return pairs;
 }
 
-function publicChemistryLinks(team, starterIds = team.preferredStarterIds, positions = team.positions) {
+function publicChemistryLinks(team, starterIds = team.preferredStarterIds, positions = team.positions, formationLines = team.formationLinePresets?.position1) {
   const starters = starterIds.map((id) => REAL_PLAYER_BY_ID[id]).filter(Boolean);
-  const eligibleKeys = new Set(eligibleChemistryPairs(starters, positions).map((pair) => pair.key));
+  const eligibleKeys = new Set(eligibleChemistryPairs(starters, positions, formationLines).map((pair) => pair.key));
   return Object.entries(team.chemistry ?? {})
     .filter(([key, relation]) => eligibleKeys.has(key) && Number(relation.value ?? 0) >= CHEMISTRY_VISIBLE_THRESHOLD)
     .map(([, relation]) => ({
@@ -907,7 +920,7 @@ function removeRosterPlayerPreservingShape(team, playerId) {
   const wasStarter = team.preferredStarterIds.includes(playerId);
   const presets = team.positionPresets ?? Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions ?? {})]));
   const vacatedPositions = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, presets[key]?.[playerId] ? { ...presets[key][playerId] } : null]));
-  const roles = inferElevenBoardRoles(team.preferredStarterIds.map((id) => ({ id, position:team.positions[id] })));
+  const roles = inferFormationBoardRoles(team.preferredStarterIds.map((id) => ({ id, position:team.positions[id] })), team.formationLinePresets?.position1);
   const assignedRole = roles[playerId] ?? REAL_PLAYER_BY_ID[playerId]?.role;
   team.rosterIds = team.rosterIds.filter((id) => id !== playerId);
   team.preferredStarterIds = team.preferredStarterIds.filter((id) => id !== playerId);
@@ -936,13 +949,14 @@ function normalizedLineupSchemeCompetition(value) {
 }
 
 function lineupSchemeSnapshot(team, id = "lineup-1", name = "方案 1") {
-  return clone({
+  const snapshot=clone({
     id,
     name,
     revision:Math.max(0, Math.floor(Number(team.lineupSchemeRevision ?? 0))),
     preferredStarterIds:team.preferredStarterIds ?? [],
     positions:team.positions ?? {},
     positionPresets:team.positionPresets ?? {},
+    positionPresetOverrides:team.positionPresetOverrides,
     formationLinePresets:team.formationLinePresets ?? {},
     tactic:team.tactic,
     style:team.style,
@@ -954,11 +968,14 @@ function lineupSchemeSnapshot(team, id = "lineup-1", name = "方案 1") {
     tacticalPlans:team.tacticalPlans ?? {},
     competitionScope:normalizedLineupSchemeCompetition(team.competitionScope) ?? undefined,
   });
+  return {...snapshot,...resolvePositionPresetLinks(snapshot)};
 }
 
 function applyLineupScheme(team, scheme) {
+  scheme={...scheme,...resolvePositionPresetLinks(scheme)};
   team.preferredStarterIds = clone(scheme.preferredStarterIds ?? []);
   team.positionPresets = clone(scheme.positionPresets ?? {});
+  team.positionPresetOverrides = clone(scheme.positionPresetOverrides);
   team.formationLinePresets = clone(scheme.formationLinePresets ?? {});
   team.positions = clone(scheme.positions ?? team.positionPresets.position1 ?? {});
   team.tactic = scheme.tactic ?? team.tactic;
@@ -979,23 +996,22 @@ function syncActiveLineupScheme(team) {
   Object.assign(active, snapshot, { revision });
 }
 
-function rebuildLineupSchemeAssignments(team, preferredSchemeId = null) {
+function rebuildLineupSchemeAssignments(team) {
   const schemes = team.lineupSchemes ?? [];
-  const preferred = schemes.find((scheme) => scheme.id === preferredSchemeId) ?? null;
-  const fallback = schemes.find((scheme) => scheme.competitionScope === "all")
-    ?? schemes.find((scheme) => scheme.id === team.activeLineupSchemeId)
+  const fallback = schemes.find((scheme) => scheme.id === team.activeLineupSchemeId)
     ?? schemes[0];
   if (!fallback) return;
-  const assignments = Object.fromEntries(LINEUP_SCHEME_COMPETITIONS.map((competition) => [competition, fallback.id]));
-  if (preferred?.competitionScope === "all") {
-    LINEUP_SCHEME_COMPETITIONS.forEach((competition) => { assignments[competition] = preferred.id; });
-  } else {
-    schemes.filter((scheme) => scheme !== preferred).forEach((scheme) => {
-      if (LINEUP_SCHEME_COMPETITIONS.includes(scheme.competitionScope)) assignments[scheme.competitionScope] = scheme.id;
-    });
-    if (preferred && LINEUP_SCHEME_COMPETITIONS.includes(preferred.competitionScope)) assignments[preferred.competitionScope] = preferred.id;
-  }
+  // The explicit map is authoritative. Repair only missing/deleted references.
+  const assignments = Object.fromEntries(LINEUP_SCHEME_COMPETITIONS.map(competition=>{
+    const id=team.lineupSchemeAssignments?.[competition];
+    return [competition,schemes.some(s=>s.id===id)?id:fallback.id];
+  }));
   team.lineupSchemeAssignments = assignments;
+  // Legacy metadata is derived for compatibility, never used to rebuild bindings.
+  for(const scheme of schemes){
+    const assigned=LINEUP_SCHEME_COMPETITIONS.filter(c=>assignments[c]===scheme.id);
+    scheme.competitionScope=assigned.length===3?'all':assigned.length===1?assigned[0]:undefined;
+  }
 }
 
 function lineupTeamForCompetition(team, competition) {
@@ -1101,14 +1117,16 @@ function aiSubstitutes(teamIndex, roundNumber, humanOwned, starters) {
 }
 
 function publicTeam(team, includeRoster = false, equippedBadge = null, equippedClubBadge = null) {
+  if (!team.ownerId) equippedClubBadge = aiClubBadge(team);
   return {
-    id:team.id, name:team.name, isAi:!team.ownerId, ownerId:team.ownerId, ownerName:team.ownerName, equippedBadge:equippedBadge ? clone(equippedBadge) : null, equippedClubBadge:equippedClubBadge ? clone(equippedClubBadge) : null, championBadges:clone(team.championBadges ?? []), seasonFinalStarCount:(team.seasonFinalChampionStars ?? []).length, table:{ ...team.table }, form:[...team.form], tactic:team.tactic, style:team.style, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus,
+    id:team.id, name:team.name, division:team.division, isAi:!team.ownerId, ownerId:team.ownerId, ownerName:team.ownerName, equippedBadge:equippedBadge ? clone(equippedBadge) : null, equippedClubBadge:equippedClubBadge ? clone(equippedClubBadge) : null, championBadges:clone(team.championBadges ?? []), seasonFinalStarCount:(team.seasonFinalChampionStars ?? []).length, table:{ ...team.table }, form:[...team.form], tactic:team.tactic, style:team.style, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus,
     fitnessThreshold:team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD,
     captainId:team.captainId ?? null,
     captainStyle:normalizeCaptainStyle(team.captainStyle),
     tacticalPlans:clone(team.tacticalPlans ?? { opening:{ tactic:team.tactic, style:team.style, positionPreset:"position1" }, leading:{ tactic:"defensive", style:"counterAttack", positionPreset:"position2" }, trailing:{ tactic:"positive", style:"possession", positionPreset:"position3" } }),
     roster:includeRoster ? team.rosterIds.map((id) => ({ ...playerSummary(REAL_PLAYER_BY_ID[id]), state:{ fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0, ...(team.playerState[id] ?? {}) }, starter:team.preferredStarterIds.includes(id), rosterOverlimitLocked:Boolean(team.playerState?.[id]?.rosterOverlimitLocked), listed:false })) : undefined,
     positions:includeRoster ? { ...team.positions } : undefined,
+    positionPresetOverrides:includeRoster ? clone(team.positionPresetOverrides ?? {}) : undefined,
     positionPresets:includeRoster ? clone(team.positionPresets ?? Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, team.positions ?? {}]))) : undefined,
     formationLinePresets:includeRoster ? clone(team.formationLinePresets ?? {}) : undefined,
     activeLineupSchemeId:includeRoster ? team.activeLineupSchemeId : undefined,
@@ -1121,6 +1139,9 @@ function publicTeam(team, includeRoster = false, equippedBadge = null, equippedC
 
 export class YellowDogsLeagueService {
   constructor(options = {}) {
+    this.predictionGenerationJob = null;
+    this.predictionRetryAt = new Map();
+    this.pagedInbox = options.pagedInbox === true;
     this.now = options.now ?? Date.now;
     this.rng = options.rng ?? Math.random;
     this.statePath = options.statePath === undefined ? DEFAULT_STATE_PATH : options.statePath;
@@ -1231,7 +1252,7 @@ export class YellowDogsLeagueService {
       if (match?.version !== 2 || match.finished) return;
       restoreV2MatchRuntime(match);
     });
-    this.state.cup ??= { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
+    this.state.cup ??= { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ roundOf16:[], quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     this.state.cup.finalStartedAt ??= null;
     this.state.seasonFinalTournament ??= null;
     this.state.season.seasonFinalLeagueRanks ??= null;
@@ -1240,6 +1261,7 @@ export class YellowDogsLeagueService {
     this.state.cup.format ??= this.state.cup.stage === "swiss" ? "swiss-v1" : null;
     this.state.cup.leagueRounds ??= [];
     this.state.cup.swissRounds ??= [];
+    this.state.cup.knockout.roundOf16 ??= [];
     Object.values(this.state.cup.table ?? {}).forEach((entry) => { entry.status ??= "active"; entry.drawn ??= 0; });
     this.state.completedBroadcasts ??= [];
     this.state.reports ??= {};
@@ -1297,7 +1319,9 @@ export class YellowDogsLeagueService {
     this.state.dailyAutomation.lastResetDate ??= null;
     this.state.dailyAutomation.lastCupStartDate ??= null;
     this.state.dailyAutomation.settlements ??= [];
+    this.upgradeAiClubs();
     this.state.teams.forEach((team) => {
+      if (!team.ownerId && team.aiClub) return;
       this.ensureClubManagement(team);
       team.chemistry ??= {};
       team.championBadges ??= [];
@@ -1323,7 +1347,7 @@ export class YellowDogsLeagueService {
       });
       const legacyScheme = lineupSchemeSnapshot(team);
       team.lineupSchemes = (Array.isArray(team.lineupSchemes) ? team.lineupSchemes : [legacyScheme]).slice(0, LINEUP_SCHEME_LIMIT).map((scheme, index) => ({
-        ...lineupSchemeSnapshot({ ...team, ...scheme }, String(scheme?.id || `lineup-${index + 1}`), String(scheme?.name || `方案 ${index + 1}`).trim().slice(0, 20) || `方案 ${index + 1}`),
+        ...lineupSchemeSnapshot({ ...team, ...scheme,positionPresetOverrides:scheme.positionPresetOverrides }, String(scheme?.id || `lineup-${index + 1}`), String(scheme?.name || `方案 ${index + 1}`).trim().slice(0, 20) || `方案 ${index + 1}`),
         revision:Math.max(0, Math.floor(Number(scheme?.revision ?? 0))),
       }));
       if (!team.lineupSchemes.length) team.lineupSchemes = [legacyScheme];
@@ -1332,11 +1356,7 @@ export class YellowDogsLeagueService {
         const assignedId = team.lineupSchemeAssignments?.[competition];
         return [competition, team.lineupSchemes.some((scheme) => scheme.id === assignedId) ? assignedId : team.activeLineupSchemeId];
       }));
-      team.lineupSchemes.forEach((scheme) => {
-        if (normalizedLineupSchemeCompetition(scheme.competitionScope)) return;
-        const assignedCompetitions = LINEUP_SCHEME_COMPETITIONS.filter((competition) => team.lineupSchemeAssignments[competition] === scheme.id);
-        scheme.competitionScope = assignedCompetitions.length === 1 ? assignedCompetitions[0] : "all";
-      });
+      rebuildLineupSchemeAssignments(team);
       team.lineupSchemes.forEach((scheme) => repairLineupSchemeAgainstRoster(team, scheme));
       applyLineupScheme(team, team.lineupSchemes.find((scheme) => scheme.id === team.activeLineupSchemeId));
       Object.keys(team.playerState ?? {}).filter((playerId) => !team.rosterIds.includes(playerId)).forEach((playerId) => {
@@ -1344,13 +1364,14 @@ export class YellowDogsLeagueService {
         removePlayerChemistry(team, playerId);
       });
     });
-    if (this.state.season.status === "active" && (!this.state.season.nextRoundAt || this.state.season.nextRoundAt < this.now())) this.state.season.nextRoundAt = nextSlot(this.now());
+    if (!this.state.v4LocalLeagueRounds?.active && this.state.season.status === "active" && (!this.state.season.nextRoundAt || this.state.season.nextRoundAt < this.now())) this.state.season.nextRoundAt = nextSlot(this.now());
     if (this.state.season.status === "registration") this.state.season.nextRoundAt = null;
     if (this.state.cup.status === "active" && this.state.season.firstRoundAt) {
       const earliestCupAt = this.state.season.firstRoundAt + 10 * 60 * 1000;
       if (!this.state.cup.nextRoundAt || this.state.cup.nextRoundAt < earliestCupAt) this.state.cup.nextRoundAt = nextCupSlot(this.now(), this.state.season.firstRoundAt);
     }
     this.adoptState(this.state, false);
+    this.ensureCompetitionFormat();
     if (this.state.listings.some((listing) => listing.kind === "cosmetic" && listing.status === "active")) {
       this.backupFile("pre-free-cosmetics-v1.json");
       this.retireCosmeticListings();
@@ -1429,7 +1450,9 @@ export class YellowDogsLeagueService {
   }
 
   save(options = {}) {
-    return measureRuntimeSync("league.save", () => this.saveUnmeasured(options));
+    const result = measureRuntimeSync("league.save", () => this.saveUnmeasured(options));
+    this.inboxReadPersistStartedAt=null;this.inboxReadPersistFailures=0;
+    return result;
   }
 
   saveUnmeasured(options = {}) {
@@ -1437,7 +1460,7 @@ export class YellowDogsLeagueService {
       clearTimeout(this.inboxReadPersistTimer);
       this.inboxReadPersistTimer = null;
     }
-    assertS4AssetInvariants(this.state);
+    measureRuntimeSync("league.storage.validate", () => assertS4AssetInvariants(this.state));
     this.state.updatedAt = Math.max(this.now(), Number(this.state.updatedAt ?? 0) + 1);
     if (this.shardStore) {
       const scopes = new Set(options.scopes ?? this.dirtyScopes);
@@ -1482,7 +1505,7 @@ export class YellowDogsLeagueService {
       try {
         const checkpoint = JSON.parse(readFileSync(path.join(directory, name), "utf8"));
         const live = liveByCode.get(String(checkpoint.code ?? "").toUpperCase());
-        if (!live || checkpoint.version !== 1 || checkpoint.match?.version !== 2) continue;
+        if (!live || checkpoint.version !== 1 || checkpoint.match?.version !== live.match?.version || ![2,4].includes(checkpoint.match?.version)) continue;
         if (Number(checkpoint.match.nextChainIndex ?? 0) < Number(live.match?.nextChainIndex ?? 0)) continue;
         live.match = checkpoint.match;
         live.completed = false;
@@ -2256,11 +2279,16 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
-  openDirectS4Pack(account, team, item, pack, options = {}) {
+  drawDirectS4Pack(accountId, pack, cachedCandidates) {
     const legendaryHit = pack.id === "private-mixed" && this.rng() < S4_PRIVATE_MIXED_LEGEND_RATE;
-    const candidates = legendaryHit ? this.legendPackCandidates() : options.candidates ?? this.privatePackCandidates(account.id, pack);
+    const candidates = legendaryHit ? this.legendPackCandidates() : cachedCandidates ?? this.privatePackCandidates(accountId, pack);
     if (!candidates.length) throw new Error(`${pack.name}当前没有可抽取的私有池球员`);
     const player = this.randomS4Players(candidates, 1)[0];
+    return {player,legendaryHit};
+  }
+
+  openDirectS4Pack(account, team, item, pack, options = {}) {
+    const {player, legendaryHit} = options.draw ?? this.drawDirectS4Pack(account.id, pack, options.candidates);
     const card = this.grantS4Card(team, player.id, {
       grantOwnership:false,
       acquisitionSource:legendaryHit ? "private-mixed-legend-hit" : "private-pack",
@@ -2339,6 +2367,7 @@ export class YellowDogsLeagueService {
       starterIds:snapshot.roster.filter((player) => player.starter).map((player) => player.id),
       positions:snapshot.positions,
       positionPresets:snapshot.positionPresets,
+      positionPresetOverrides:snapshot.positionPresetOverrides,
       formationLinePresets:snapshot.formationLinePresets,
       activeLineupSchemeId:snapshot.activeLineupSchemeId,
       lineupSchemes:snapshot.lineupSchemes,
@@ -2443,14 +2472,53 @@ export class YellowDogsLeagueService {
     };
   }
 
+  directPackRequestKey(packIds, requestId) {
+    if (requestId != null && (typeof requestId !== 'string' || !/^[A-Za-z0-9_-]{8,96}$/.test(requestId))) throw new Error('开包操作标识无效');
+    return requestId ?? `packs-${createHash('sha256').update(JSON.stringify([...packIds].sort())).digest('hex')}`;
+  }
+
+  directPackBatchView(account, receipt, {compact = true, replayed = false} = {}) {
+    const results = receipt.results.map(result => ({
+      mode:result.mode, packId:result.packId, player:playerSummary(REAL_PLAYER_BY_ID[result.playerId]),
+      card:clone(result.card), legendaryHit:Boolean(result.legendaryHit),
+    }));
+    const packBatchOpening = {id:receipt.id, requestId:receipt.requestId, mode:'direct', complete:true, packType:receipt.packType, total:results.length, results, replayed};
+    if (!compact) return {...this.view(account), packBatchOpening};
+    // Recovered results describe the original award. Refresh current assets rather
+    // than re-adding a card that may since have been upgraded, traded or recycled.
+    if (replayed) return this.compactMutationView(account, {s4Packs:true, ownTeam:true, extra:{packBatchOpening}});
+    const changedPlayerIds = [...new Set(results.map(result => result.player.id))];
+    return this.compactMutationView(account, {s4Packs:true, extra:{
+      packBatchOpening,
+      s4CardDeltas:results.map(result => ({playerId:result.player.id, card:result.card, ownershipGranted:false})),
+      s4PlayerDeltas:changedPlayerIds.map(id => this.s4PlayerAssetDelta(account.id, id)),
+      s4RosterSlotsUsed:this.rosterSlotsUsed(account.id),
+    }});
+  }
+
+  directPackBatchResult(account, requestId) {
+    if (typeof requestId !== 'string' || !requestId) throw new Error('开包操作标识无效');
+    this.directPackRequestKey([], requestId);
+    const receipt = this.state.s4Packs.directReceipts?.[account.id]?.find(r => r.requestId === requestId);
+    return receipt ? this.directPackBatchView(account, receipt, {replayed:true})
+      : this.compactMutationView(account, {extra:{packBatchLookup:{found:false, requestId}}});
+  }
+
   openS4PacksBatch(account, packIdValues, options = {}) {
     const team = this.accountTeam(account.id);
     const packIds = [...new Set((Array.isArray(packIdValues) ? packIdValues : []).map(String).filter(Boolean))];
     if (!team) throw new Error("你还没有加入联赛");
     if (!packIds.length || packIds.length > S4_MAX_PACK_PURCHASE_QUANTITY) throw new Error(`每次批量打开1至${S4_MAX_PACK_PURCHASE_QUANTITY}份礼包`);
-    if (this.state.s4Packs.offers[account.id]?.status === "pending" || this.state.s4Packs.batchOpenings[account.id]?.status === "active") throw new Error("请先完成当前开包流程");
     const inventory = this.s4PackInventory(account.id);
-    const items = packIds.map((packId) => inventory.find((item) => item.id === packId));
+    const requestId = this.directPackRequestKey(packIds, options.requestId);
+    const receipt = this.state.s4Packs.directReceipts?.[account.id]?.find(r => r.requestId === requestId);
+    if (receipt) {
+      if (JSON.stringify([...receipt.packIds].sort()) !== JSON.stringify([...packIds].sort())) throw new Error('开包操作标识已用于其他礼包');
+      return this.directPackBatchView(account, receipt, {compact:options.compact === true, replayed:true});
+    }
+    if (this.state.s4Packs.offers[account.id]?.status === "pending" || this.state.s4Packs.batchOpenings[account.id]?.status === "active") throw new Error("请先完成当前开包流程");
+    const byId = new Map(inventory.map(item => [item.id, item]));
+    const items = packIds.map(packId => byId.get(packId));
     if (items.some((item) => !item || item.status !== "unopened")) throw new Error("批量打开中包含不可用的礼包");
     const packTypes = new Set(items.map((item) => item.packType));
     if (packTypes.size !== 1) throw new Error("每次只能批量打开同一种礼包");
@@ -2461,18 +2529,52 @@ export class YellowDogsLeagueService {
     if (pack.selectionMode === "direct") {
       const candidates = this.privatePackCandidates(account.id, pack);
       if (!candidates.length) throw new Error(`${pack.name}当前没有可抽取的私有池球员`);
-      const rawResults = items.map((item) => this.openDirectS4Pack(account, team, item, pack, { candidates, deferPublicResult:true }));
-      const results = rawResults.map((result) => this.publicDirectS4PackResult(result));
-      this.save();
-      const packBatchOpening = { id:makeId("s4-pack-batch", `${account.id}-${pack.id}`), mode:"direct", complete:true, packType:pack.id, total:results.length, results };
-      if (options.compact) {
-        const changedPlayerIds = [...new Set(results.map((result) => result.player.id))];
-        return this.compactMutationView(account, { s4Packs:true, extra:{ packBatchOpening, s4CardDeltas:results.map((result) => ({ playerId:result.player.id, card:result.card, ownershipGranted:false })), s4PlayerDeltas:changedPlayerIds.map((playerId) => this.s4PlayerAssetDelta(account.id, playerId)), s4RosterSlotsUsed:this.rosterSlotsUsed(account.id) } });
-      }
-      return {
-        ...this.view(account),
-        packBatchOpening,
+      // Keep daily backups, but perform fallible maintenance before granting
+      // rewards so its failure cannot turn a committed batch into an error.
+      this.maintainBackups();
+      const draws = items.map(() => this.drawDirectS4Pack(account.id, pack, candidates));
+      const assets = this.state.s4Assets;
+      const before = {
+        cardIds:new Set(Object.keys(assets.cards)), sequence:assets.nextCardSequence, transactions:assets.transactions,
+        ledgerLength:this.state.ledger.length, rosterIds:clone(team.rosterIds), playerState:clone(team.playerState),
+        items:items.map(item => clone(item)), receipts:this.state.s4Packs.directReceipts?.[account.id],
+        updatedAt:this.state.updatedAt, manifest:this.shardStore?.manifest,
       };
+      let completed;
+      try {
+        const rawResults = withS4AssetTransactionBatch(this.state, () => items.map((item, index) =>
+          this.openDirectS4Pack(account, team, item, pack, {draw:draws[index], deferPublicResult:true})));
+        completed = {
+          id:makeId('s4-pack-batch', `${account.id}-${pack.id}`), requestId, ownerId:account.id, packType:pack.id,
+          packIds, createdAt:this.now(), results:rawResults.map(result => ({...result, card:this.publicDirectS4PackResult(result).card})),
+        };
+        this.state.s4Packs.directReceipts ??= {};
+        this.state.s4Packs.directReceipts[account.id] = [...(before.receipts ?? []), completed].slice(-20);
+        this.save({skipDailyBackup:true});
+      } catch (error) {
+        // A shard manifest is the commit point; post-commit housekeeping must not
+        // undo rewards which are already durable on disk.
+        const committed = this.shardStore && this.shardStore.manifest !== before.manifest;
+        if (!committed) {
+          for (const id of Object.keys(assets.cards)) if (!before.cardIds.has(id)) delete assets.cards[id];
+          assets.nextCardSequence = before.sequence;
+          assets.transactions = before.transactions;
+          this.state.ledger.length = before.ledgerLength;
+          team.rosterIds = before.rosterIds;
+          team.playerState = before.playerState;
+          items.forEach((item, index) => {
+            for (const key of Object.keys(item)) delete item[key];
+            Object.assign(item, before.items[index]);
+          });
+          if (this.state.s4Packs.directReceipts) {
+            if (before.receipts) this.state.s4Packs.directReceipts[account.id] = before.receipts;
+            else delete this.state.s4Packs.directReceipts[account.id];
+          }
+          this.state.updatedAt = before.updatedAt;
+          throw error;
+        }
+      }
+      return this.directPackBatchView(account, completed, {compact:options.compact === true});
     }
 
     const batch = {
@@ -3535,28 +3637,78 @@ export class YellowDogsLeagueService {
     const deletedIds = new Set(this.state.inboxDeleted[team.id] ?? []);
     const messageId = message.id ?? makeId("mail", `${team.id}-${message.type}`);
     if (deletedIds.has(messageId)) return null;
+    const index = inbox.findIndex((item) => item.id === messageId);
+    const previous = index >= 0 ? inbox[index] : null;
     const entry = {
       id:messageId,
       type:message.type ?? "notice",
       title:String(message.title ?? "联赛通知"),
       summary:String(message.summary ?? ""),
       body:String(message.body ?? ""),
-      createdAt:Number(message.createdAt ?? this.now()),
+      createdAt:Number(previous?.createdAt ?? message.createdAt ?? this.now()),
+      seasonId:previous?.seasonId ?? message.seasonId ?? this.state.season.id,
+      seasonName:previous?.seasonName ?? message.seasonName ?? this.state.season.name,
+      seasonDate:previous?.seasonDate ?? message.seasonDate ?? this.state.season.date,
       round:message.round ?? null,
       matchId:message.matchId ?? null,
       report:message.report ? clone(message.report) : null,
       payload:message.payload ? clone(message.payload) : null,
-      readAt:null,
+      readAt:previous?.readAt ?? null,
     };
-    const index = inbox.findIndex((item) => item.id === entry.id);
+    const contentKey = item => JSON.stringify({type:item.type,title:item.title,summary:item.summary,body:item.body,
+      round:item.round,matchId:item.matchId,payload:item.payload,report:item.report ? {...item.report,generatedAt:undefined} : null});
+    entry.updatedAt = previous && contentKey(previous) === contentKey(entry)
+      ? previous.updatedAt ?? previous.createdAt : this.now();
     if (index >= 0) inbox[index] = entry;
     else inbox.push(entry);
-    const ordered = inbox.sort((left, right) => left.createdAt - right.createdAt);
-    const pending = [];
-    const ordinary = [];
-    ordered.forEach((item) => (this.inboxMessageDeletable(item) ? ordinary : pending).push(item));
-    this.state.inbox[team.id] = [...ordinary.slice(-120), ...pending].sort((left, right) => left.createdAt - right.createdAt);
+    this.pruneInbox(team);
     return entry;
+  }
+
+  pushActivityInbox(team, message) {
+    const date = localDateKey(new Date(this.now()));
+    const id = `activity:${date}:${team.id}`;
+    const previous = this.state.inbox[team.id]?.find(item => item.id === id);
+    const entries = [...(previous?.payload?.entries ?? [])];
+    if (entries.some(item => item.id === message.id)) return previous;
+    entries.push({id:message.id, summary:message.summary, createdAt:this.now(),
+      destination:message.type === "friendly" ? "television" : "enhancement"});
+    const total = Number(previous?.payload?.total ?? 0) + 1;
+    return this.pushInbox(team, {id, type:"activity-digest", title:`${date} 全服动态`,
+      summary:`${total}条动态 · ${message.summary}`, payload:{date,total,entries:entries.slice(-40)}});
+  }
+
+  sendMatchSettlement(team, record, {event = null, results, reward} = {}) {
+    if (!team?.ownerId || !record || ![record.homeId, record.awayId].includes(team.id)) return null;
+    const id = `match-settlement:${this.state.season.id}:${record.id}:${team.id}`;
+    const previous = this.state.inbox[team.id]?.find(item => item.id === id);
+    const competition = record.competition ?? "league", ownIndex = record.homeId === team.id ? 0 : 1;
+    const round = event?.round ?? record.round ?? record.cupRound;
+    const stage = event?.stage ?? record.cupStage, leg = event?.leg ?? record.legNumber;
+    const competitionLabel = competition === "cup" ? `杯赛 · ${CUP_STAGE_NAMES[stage] ?? stage ?? "比赛"}${stage === "final" ? "" : ` · 第${leg ?? 1}回合`}` : `${team.division ?? "A"}级联赛 · 第${round}轮`;
+    const summary = this.matchSummary(record);
+    const ownName = ownIndex === 0 ? summary.homeName : summary.awayName;
+    const opponentName = ownIndex === 0 ? summary.awayName : summary.homeName;
+    const rewards = new Map((previous?.payload?.rewards ?? []).map(item => [item.id,item]));
+    const ledger = competition === "league" ? this.state.ledger.filter(item => item.accountId === team.ownerId && item.matchId === record.id && ["league-match-reward","league-round-pack-reward"].includes(item.type)) : [];
+    for (const item of [...ledger, ...(reward ? [reward] : [])]) rewards.set(item.id, {
+      id:item.id,amount:Number(item.amount ?? 0),packType:item.packType ?? null,
+      packName:S4_PACK_BY_ID[item.packType]?.name ?? "礼包",quantity:Number(item.quantity ?? 0),award:item.award ?? null,
+    });
+    const next = this.nextOpponent(team.id);
+    const availability = this.inboxAvailability(team,competition);
+    return this.pushInbox(team, {id,type:"matchweek",title:`${competitionLabel} · 赛后结算`,
+      summary:`${ownName} ${record.score[ownIndex]}:${record.score[1-ownIndex]} ${opponentName}`,
+      round,matchId:record.id,payload:{settlementVersion:1,competition,competitionLabel,
+        seasonName:this.state.season.name,seasonDate:this.state.season.date,division:team.division,
+        stage,leg,results:results ?? previous?.payload?.results ?? [summary],ownName,opponentName,
+        ownScore:record.score[ownIndex],opponentScore:record.score[1-ownIndex],venue:ownIndex === 0 ? "home" : "away",
+        penalties:record.penalties ? [record.penalties[ownIndex],record.penalties[1-ownIndex]] : null,
+        rank:this.standings().find(item => item.id === team.id)?.rank,points:team.table.points,
+        injured:availability.injured,suspended:availability.suspended,next,
+        nextAvailability:next ? this.inboxAvailability(team,next.competition) : null,
+        autoRotations:record.autoRotations?.[ownIndex] ?? [],rewards:[...rewards.values()],
+        homeTicketIncome:this.homeTicketIncomeSummary(team,record)}});
   }
 
   notifyEnhancementSuccess(team, player, card, details) {
@@ -3565,7 +3717,7 @@ export class YellowDogsLeagueService {
     const chance = Number(details.chance ?? 0);
     const ownerName = team.ownerName ?? "玩家";
     const playerInfo = `${player.club ?? "自由球员"} / ${player.nationality ?? "未知国家队"} / ${player.role} / 能力 ${player.overall}`;
-    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
+    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushActivityInbox(recipient, {
       id:`enhancement-success:${details.resultId}:${recipient.ownerId}`,
       type:"announcement",
       title:`${player.name}强化至+${upgradeLevel}`,
@@ -3596,11 +3748,11 @@ export class YellowDogsLeagueService {
     if (maxLevel < 6) return;
     const ownerName = team.ownerName ?? "玩家";
     const playerInfo = `${player.club ?? "自由球员"} / ${player.nationality ?? "未知国家队"} / ${player.role} / 能力 ${player.overall}`;
-    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
+    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushActivityInbox(recipient, {
       id:`enhancement-batch-success:${details.batchId}:${recipient.ownerId}`,
       type:"announcement",
       title:`${player.name}批量强化完成`,
-      summary:`${ownerName}批量合成${details.quantity}次，成功${details.successCount}次，最高达到+${maxLevel}。`,
+      summary:`${ownerName}强化${player.name}${details.quantity}次，成功${details.successCount}次，最高+${maxLevel}。`,
       body:`玩家${ownerName}（${team.name}）完成${player.name}的批量强化：主卡+${details.mainLevel}、副卡+${details.materialLevel}，合成${details.quantity}次，成功${details.successCount}次，失败${details.failureCount}次，成功率${details.chance}%，最高强化至+${maxLevel}。球员信息：${playerInfo}。`,
       payload:{ accountId:team.ownerId, ownerName, teamId:team.id, teamName:team.name, playerId:player.id, playerName:player.name, beforeLevel:details.mainLevel, materialLevel:details.materialLevel, upgradeLevel:maxLevel, chance:details.chance, quantity:details.quantity, successCount:details.successCount, failureCount:details.failureCount },
     }));
@@ -3610,7 +3762,7 @@ export class YellowDogsLeagueService {
     if (!team?.ownerId || !trait || offer?.source === "threshold-compensation" || !S4_ENHANCEMENT.traitUnlockLevels.includes(Number(offer?.unlockLevel ?? card?.upgradeLevel))) return;
     const ownerName = team.ownerName ?? "玩家";
     const chance = Number(offer?.chance ?? 0);
-    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushInbox(recipient, {
+    this.state.teams.filter((recipient) => recipient.ownerId && recipient.ownerId !== team.ownerId).forEach((recipient) => this.pushActivityInbox(recipient, {
       id:`enhancement-trait:${offer.id}:${recipient.ownerId}`,
       type:"announcement",
       title:`${player.name} +${card.upgradeLevel}绑定特性`,
@@ -3704,18 +3856,50 @@ export class YellowDogsLeagueService {
     this.save();
     return true;
   }
+  inboxActionState(message, context = null) {
+    if (!['trade-offer','friendly-invite','trait-compensation'].includes(message.type)) return {status:'none'};
+    const payload = message.payload ?? {};
+    const offer = this.state.s4Assets.traitOffers?.[payload.offerId ?? payload.traitOffer?.id];
+    const card = this.state.s4Assets.cards[offer?.cardId];
+    const invitation = context ? context.invitations.get(payload.friendlyInvitationId) : this.state.friendlyInvitations.find(item => item.id === payload.friendlyInvitationId);
+    return resolveInboxAction(message, {
+      trade:context ? context.trades.get(payload.tradeOfferId) : this.state.cardTradeOffers.find(item => item.id === payload.tradeOfferId),
+      invitation:invitation ? {...invitation,expiresAt:this.friendlyInvitationExpiresAt(invitation)} : null,
+      offer, card, now:this.now(),
+      traitEligible:Boolean(card && offer && Number(card.upgradeLevel) >= Number(offer.unlockLevel ?? Infinity)
+        && this.requiredS4EnhancementTraitCount(card) > Number(card.traitIds?.length ?? 0)
+        && (X_PLAYER_FEATURE_ENABLED || !isXPlayer(card.playerId))),
+    });
+  }
+
   inbox(team) {
-    return clone((this.state.inbox[team.id] ?? []).slice().sort((left, right) => right.createdAt - left.createdAt));
+    return (this.state.inbox[team.id] ?? []).slice().sort((left, right) => right.createdAt - left.createdAt)
+      .map(message => ({...clone(message),action:this.inboxActionState(message),
+        ...(message.matchId ? {matchLink:this.inboxMatchLink(message.matchId)} : {})}));
   }
 
   scheduleInboxReadPersist() {
     if (!this.statePath) return;
+    this.inboxReadPersistStartedAt ??= Date.now();
     clearTimeout(this.inboxReadPersistTimer);
-    this.inboxReadPersistTimer = setTimeout(() => {
-      this.inboxReadPersistTimer = null;
-      this.save({ skipDailyBackup:true });
-    }, 500);
+    const delay=Math.min(500,Math.max(0,5000-(Date.now()-this.inboxReadPersistStartedAt)));
+    this.inboxReadPersistTimer=setTimeout(()=>this.flushInboxReadPersist(),delay);
     this.inboxReadPersistTimer.unref?.();
+  }
+
+  flushInboxReadPersist() {
+    clearTimeout(this.inboxReadPersistTimer);this.inboxReadPersistTimer=null;
+    try {
+      this.save({skipDailyBackup:true});
+      this.inboxReadPersistStartedAt=null;this.inboxReadPersistFailures=0;
+    } catch (error) {
+      this.inboxReadPersistFailures=Number(this.inboxReadPersistFailures ?? 0)+1;
+      console.error('[inbox] read-state persistence failed:',error.message);
+      if (this.inboxReadPersistFailures<=3) {
+        this.inboxReadPersistTimer=setTimeout(()=>this.flushInboxReadPersist(),1000*this.inboxReadPersistFailures);
+        this.inboxReadPersistTimer.unref?.();
+      }
+    }
   }
 
   readInbox(account, messageIdValue, options = {}) {
@@ -3723,7 +3907,8 @@ export class YellowDogsLeagueService {
     if (!team) throw new Error("你还没有加入联赛");
     const message = (this.state.inbox[team.id] ?? []).find((entry) => entry.id === String(messageIdValue ?? ""));
     if (!message) throw new Error("找不到这封邮件");
-    if (!message.readAt) {
+    if (options.expectedUpdatedAt != null && Number(message.updatedAt ?? message.createdAt) > Number(options.expectedUpdatedAt)) return {stale:true,meta:this.inboxMeta(team)};
+    if (!message.readAt || Number(message.updatedAt) > Number(message.readAt)) {
       message.readAt = this.now();
       this.state.updatedAt = Math.max(this.now(), Number(this.state.updatedAt ?? 0) + 1);
       this.scheduleInboxReadPersist();
@@ -3733,23 +3918,32 @@ export class YellowDogsLeagueService {
       serverTime:this.now(),
       messageId:message.id,
       readAt:message.readAt,
+      ...(this.pagedInbox ? {meta:this.inboxMeta(team)} : {}),
       inboxUnreadCount:(this.state.inbox[team.id] ?? []).filter((entry) => !entry.readAt).length,
     });
     return this.view(account);
   }
 
-  readInboxBatch(account, messageIdsValue = []) {
+  readInboxBatch(account, messageIdsValue = [], options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
     const messageIds = new Set((Array.isArray(messageIdsValue) ? messageIdsValue : []).slice(0, 200).map((value) => String(value ?? "")).filter(Boolean));
+    const category = options.category ?? 'all';
+    if (!INBOX_CATEGORIES.some(item => item.id === category)) throw new Error('邮件分类无效');
     const readAt = this.now();
     const readMessageIds = [];
+    const skippedMessageIds = [];
+    let changed = false;
     (this.state.inbox[team.id] ?? []).forEach((message) => {
-      if (!messageIds.has(message.id) || message.readAt) return;
-      message.readAt = readAt;
+      if (!messageIds.has(message.id)) return;
+      if (!inboxMatchesCategory(message,category,this.inboxActionState(message))) { skippedMessageIds.push(message.id); return; }
+      if (!message.readAt || Number(message.updatedAt) > Number(message.readAt)) {
+        changed = true;
+        message.readAt = readAt;
+      }
       readMessageIds.push(message.id);
     });
-    if (readMessageIds.length) {
+    if (changed) {
       this.state.updatedAt = Math.max(readAt, Number(this.state.updatedAt ?? 0) + 1);
       this.scheduleInboxReadPersist();
     }
@@ -3757,25 +3951,32 @@ export class YellowDogsLeagueService {
       updatedAt:this.state.updatedAt,
       serverTime:this.now(),
       messageIds:readMessageIds,
+      missingMessageIds:[...messageIds].filter(id => !readMessageIds.includes(id) && !skippedMessageIds.includes(id)),
+      skippedMessageIds,
       readAt,
       inboxUnreadCount:(this.state.inbox[team.id] ?? []).filter((message) => !message.readAt).length,
     });
   }
 
-  deleteInbox(account, messageIdValue) {
+  deleteInbox(account, messageIdValue, options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
     const messageId = String(messageIdValue ?? "");
     const inbox = this.state.inbox[team.id] ?? [];
     const message = inbox.find((entry) => entry.id === messageId);
-    if (!message) throw new Error("找不到这封邮件");
+    if (!message) {
+      if(options.compact)return {deletedCount:0,meta:this.inboxMeta(team),serverTime:this.now()};
+      throw new Error("找不到这封邮件");
+    }
     if (!this.inboxMessageDeletable(message)) throw new Error("请先处理这封邮件中的待办事项");
+    const previousDeleted=[...(this.state.inboxDeleted[team.id] ?? [])];
     this.state.inbox[team.id] = inbox.filter((entry) => entry.id !== messageId);
     const deleted = this.state.inboxDeleted[team.id] ?? (this.state.inboxDeleted[team.id] = []);
     if (!deleted.includes(messageId)) deleted.push(messageId);
     this.state.inboxDeleted[team.id] = deleted.slice(-500);
-    this.save();
-    return this.view(account);
+    try { this.save(); }
+    catch(error) {this.state.inbox[team.id]=inbox;this.state.inboxDeleted[team.id]=previousDeleted;throw error;}
+    return options.compact ? {deletedCount:1,meta:this.inboxMeta(team),serverTime:this.now()} : this.view(account);
   }
 
   cupStandings() {
@@ -3803,7 +4004,7 @@ export class YellowDogsLeagueService {
       leagueRounds:cup.leagueRounds.map((round) => ({ ...round, fixtures:round.fixtures.map((fixture) => ({ ...fixture, homeName:teamName(fixture.homeId), awayName:teamName(fixture.awayId) })) })),
       swissRounds:cup.swissRounds.map((round) => ({ ...round, fixtures:round.fixtures.map((fixture) => ({ ...fixture, homeName:teamName(fixture.homeId), awayName:teamName(fixture.awayId) })) })),
       standings:this.cupStandings(),
-      knockout:{ quarterfinals:cup.knockout.quarterfinals.map(decorateTie), semifinals:cup.knockout.semifinals.map(decorateTie), final:cup.knockout.final.map(decorateTie) },
+      knockout:{ roundOf16:(cup.knockout.roundOf16??[]).map(decorateTie), quarterfinals:cup.knockout.quarterfinals.map(decorateTie), semifinals:cup.knockout.semifinals.map(decorateTie), final:cup.knockout.final.map(decorateTie) },
     });
   }
 
@@ -3811,11 +4012,11 @@ export class YellowDogsLeagueService {
     if (this.state.season.status !== "active") throw new Error("请先在后台开启联赛推进，再开启黄狗冠军杯");
     if (this.state.cup.status !== "waiting") throw new Error("杯赛已经开启，请先完成或重置当前杯赛");
     const participants = this.state.teams.map((team) => team.id);
-    if (participants.length !== TEAM_COUNT) throw new Error("杯赛需要10支球队");
+    if (participants.length !== TEAM_COUNT) throw new Error("杯赛需要16支球队");
     const seedOrder = this.standings();
     const table = Object.fromEntries(seedOrder.map((entry) => [entry.id, { played:0, won:0, drawn:0, lost:0, goalsFor:0, goalsAgainst:0, points:0, seed:entry.rank, status:"active" }]));
-    this.state.cup = { format:"round-robin-v1", status:"active", stage:"league", participants, table, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:nextCupSlot(this.now(), this.state.season.firstRoundAt ?? this.state.season.nextRoundAt), championId:null, startedAt:this.now(), finalStartedAt:null, completedAt:null };
-    this.createCupLeagueStage();
+    this.state.cup = {...emptyKnockoutCup(),status:"active",stage:"roundOf16",participants,table,nextRoundAt:nextCupSlot(this.now(), this.state.season.firstRoundAt ?? this.state.season.nextRoundAt),startedAt:this.now()};
+    this.createKnockoutStage("roundOf16", seededShuffle(participants,`${this.state.season.id}:cup-draw`));
     this.save();
     return this.adminView();
   }
@@ -3922,7 +4123,7 @@ export class YellowDogsLeagueService {
 
   cancelExpiredSeasonFinal(now = this.now()) {
     if (!this.seasonCompetitionDayExpired(now)) return false;
-    const tournament = this.state.seasonFinalTournament;
+    const tournament = SEASON_FINAL_ENABLED ? this.state.seasonFinalTournament : null;
     if (!tournament || ["completed", "cancelled"].includes(tournament.status)) return false;
     tournament.status = "cancelled";
     tournament.cancelledAt = Number(now);
@@ -3936,6 +4137,7 @@ export class YellowDogsLeagueService {
   }
 
   ensureSeasonFinalTournament() {
+    if (!SEASON_FINAL_ENABLED) return null;
     if (this.seasonCompetitionDayExpired()) {
       this.cancelExpiredSeasonFinal();
       return this.state.seasonFinalTournament ?? null;
@@ -4095,7 +4297,7 @@ export class YellowDogsLeagueService {
 
   seasonFinalBanEligiblePlayers(team, roundNumber = 100) {
     if (!team) return [];
-    const playerIds = team.ownerId
+    const playerIds = team.ownerId || team.aiClub
       ? team.rosterIds ?? []
       : (() => {
           const starters = aiLineup(this.state.teams.indexOf(team), roundNumber, this.ownedPlayerIds());
@@ -4163,6 +4365,7 @@ export class YellowDogsLeagueService {
   }
 
   seasonFinalBannedPlayerIds(teamId, tournament = this.state.seasonFinalTournament) {
+    if (!SEASON_FINAL_ENABLED) return [];
     const confirmed = this.confirmedSeasonFinalBanDecisions(tournament);
     if (!confirmed) return [];
     const opponentDecision = confirmed.decisions.find((decision) => decision.opponentTeamId === teamId);
@@ -4199,6 +4402,7 @@ export class YellowDogsLeagueService {
   }
 
   finalizeSeasonFinalBansIfDue(tournament = this.state.seasonFinalTournament, now = this.now()) {
+    if(!SEASON_FINAL_ENABLED)return false;
     if (!tournament || tournament.preview || ["completed", "cancelled"].includes(tournament.status) || now < Number(tournament.finalBanDeadlineAt ?? Infinity)) return false;
     const node = tournament.bracket?.find((entry) => entry.id === "FINAL-1" && entry.status === "pending");
     if (!node || !this.seasonFinalNodeTeamId(tournament, node.home) || !this.seasonFinalNodeTeamId(tournament, node.away)) return false;
@@ -4258,6 +4462,7 @@ export class YellowDogsLeagueService {
   }
 
   startSeasonFinalNode(node, tournament = this.ensureSeasonFinalTournament(), options = {}) {
+    if (!SEASON_FINAL_ENABLED) return false;
     if (!node || !tournament || tournament.preview || tournament.seasonId !== this.state.season.id || (this.state.liveSeasonFinalRound && !options.batch)) return false;
     const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
     const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
@@ -4311,6 +4516,7 @@ export class YellowDogsLeagueService {
   }
 
   startSeasonFinalWave(nodes, tournament = this.ensureSeasonFinalTournament()) {
+    if (!SEASON_FINAL_ENABLED) return false;
     if (!nodes?.length || !tournament || this.state.liveSeasonFinalRound) return false;
     const liveMatches = [];
     this.cupNewUnavailable = new Set();
@@ -4324,6 +4530,7 @@ export class YellowDogsLeagueService {
   }
 
   completeSeasonFinalNode(node, match, tournament = this.ensureSeasonFinalTournament(), options = {}) {
+    if (!SEASON_FINAL_ENABLED) return null;
     if (!node || node.status === "complete") return tournament.matches.find((entry) => entry.seasonFinalNodeId === node?.id) ?? null;
     const record = { id:`${tournament.id}-${node.id}-${tournament.matches.length + 1}`, competition:"season-final", seasonFinalNodeId:node.id, round:node.order + 1, playedAt:this.now(), homeId:match.teams?.[0]?.id ?? this.seasonFinalNodeTeamId(tournament, node.home), awayId:match.teams?.[1]?.id ?? this.seasonFinalNodeTeamId(tournament, node.away), score:[...(match.report?.score ?? [0, 0])], penalties:match.report?.penalties ?? null, formations:match.report?.teams?.map((team) => team.formation) ?? [], autoRotations:clone(match.leagueAutoRotations ?? [[], []]), report:match.report };
     const homeId = record.homeId; const awayId = record.awayId;
@@ -4374,9 +4581,9 @@ export class YellowDogsLeagueService {
       const reportPlayers = report.teams?.[teamIndex]?.players ?? [];
       const playedPlayerIds = new Set(reportPlayers.map((player) => player.id));
       reportPlayers.forEach((player) => {
-        const key = `${team.id}:${player.id}`;
-        const stat = this.state.cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
-        const penaltiesWon = (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
+        const key = `${team.id}:${player.id}${team.ownerId ? "" : ":ai"}`;
+        const stat = this.state.cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, isAi:!team.ownerId, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
+        const penaltiesWon = report.schema === "v4-legacy-player-report-1" ? Number(player.stats.penaltiesWon ?? 0) : (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
         stat.appearances += 1;
         stat.goals += Number(player.stats?.goals ?? 0);
         stat.assists += Number(player.stats?.assists ?? 0);
@@ -4392,7 +4599,7 @@ export class YellowDogsLeagueService {
         stat.ratingTotal += Number(player.rating ?? 0);
         this.state.cup.playerStats[key] = stat;
         if (isXPlayer(REAL_PLAYER_BY_ID[player.id])) this.settleXGrowthTasks(player.id);
-        if (team.ownerId && team.playerState[player.id]) {
+        if ((team.ownerId || team.aiClub) && team.playerState[player.id]) {
           const state = team.playerState[player.id];
           const beforeMatch = Number(state.fitness ?? 100);
           const drain = Math.max(0, beforeMatch - Number(player.fitness ?? beforeMatch));
@@ -4438,6 +4645,7 @@ export class YellowDogsLeagueService {
   }
 
   simulateNextSeasonFinalMatch() {
+    if (!SEASON_FINAL_ENABLED) throw new Error("赛季总决赛已停用");
     const tournament = this.ensureSeasonFinalTournament();
     if (!tournament || tournament.preview || !this.state.season.seasonFinalLeagueRanks || this.state.cup?.status !== "completed") throw new Error("杯赛决赛结束并锁定最近一轮联赛排名后才能开始赛季总决赛");
     if (this.state.liveSeasonFinalRound) throw new Error("赛季总决赛当前有进行中的比赛");
@@ -4525,7 +4733,7 @@ export class YellowDogsLeagueService {
       const activeCard = player.cards.find((card) => card.id === player.activeCardId) ?? player.cards[0];
       return { ...player, traits:(activeCard?.traits ?? []).map((trait) => trait.id) };
     });
-    const roles = inferElevenBoardRoles(starters.map((player) => ({ id:player.id, position:team.positions[player.id] })));
+    const roles = inferFormationBoardRoles(starters.map((player) => ({ id:player.id, position:team.positions[player.id] })), team.formationLinePresets?.position1);
     ownTeam.bonds = evaluateS4LineupBonds(starters, S4_BOND_CATALOG, { roles });
     ownTeam.clubManagement = this.clubManagementView(account);
     return ownTeam;
@@ -4556,9 +4764,11 @@ export class YellowDogsLeagueService {
   s4PacksView(accountId) {
     const offer = this.state.s4Packs.offers[accountId];
     const batchOpening = this.state.s4Packs.batchOpenings[accountId];
+    const lastDirect = this.state.s4Packs.directReceipts?.[accountId]?.at(-1);
     return {
       inventory:this.s4PackInventory(accountId).filter((item) => ["unopened", "choosing"].includes(item.status)).map((item) => this.publicS4PackItem(item)),
       offer:this.publicS4PackOffer(offer),
+      lastDirectOpening:lastDirect ? {requestId:lastDirect.requestId, total:lastDirect.results.length, createdAt:lastDirect.createdAt} : null,
       batchOpening:batchOpening?.status === "active" ? {
         id:batchOpening.id,
         packType:batchOpening.packType,
@@ -4641,6 +4851,7 @@ export class YellowDogsLeagueService {
     const team = this.accountTeam(account.id);
     return {
       updatedAt:this.state.updatedAt,
+      ...(this.pagedInbox ? {inboxMeta:this.inboxMeta(team)} : {}),
       serverTime:this.now(),
       seasonStatus:this.state.season?.status ?? null,
       seasonCurrentRound:Number(this.state.season?.currentRound ?? 0),
@@ -4659,9 +4870,10 @@ export class YellowDogsLeagueService {
       season:this.state.season,
       cup:this.cupView(),
       seasonFinalTournament:this.seasonFinalTournamentView(account),
+      competitionFormat:{...clone(this.state.competitionFormat??{}),pendingMigration:this.state.competitionFormat?.version!==LEAGUE_FORMAT_VERSION,divisionSize:DIVISION_SIZE,promotionCount:PROMOTION_COUNT,seasonFinalEnabled:SEASON_FINAL_ENABLED},
       serverTime:this.now(),
       schedule:{ activeHours:"10:00 - 22:00", intervalMinutes:20, serverPause:true, fixtures:team ? this.teamSchedule(team.id) : [] },
-      teams:this.standings().map((entry) => { const teamEntry = this.state.teams.find((candidate) => candidate.id === entry.id); return { ...publicTeam(teamEntry, false, this.equippedTeamBadge(teamEntry?.ownerId), this.equippedClubBadge(teamEntry?.ownerId)), rank:entry.rank }; }),
+      teams:this.standings().map((entry) => { const teamEntry = this.state.teams.find((candidate) => candidate.id === entry.id); return { ...publicTeam(teamEntry, false, this.equippedTeamBadge(teamEntry?.ownerId), this.equippedClubBadge(teamEntry?.ownerId)), ...entry }; }),
       ownTeam,
       bondCatalog:S4_BOND_CATALOG,
       draft:this.draftView(account),
@@ -4695,18 +4907,8 @@ export class YellowDogsLeagueService {
         } : null,
       },
       cosmetics:this.cosmeticsView(account.id),
-      s4Packs:{
-        inventory:this.s4PackInventory(account.id).filter((item) => ["unopened", "choosing"].includes(item.status)).map((item) => this.publicS4PackItem(item)),
-        offer:this.publicS4PackOffer(this.state.s4Packs.offers[account.id]),
-        batchOpening:this.state.s4Packs.batchOpenings[account.id]?.status === "active" ? {
-          id:this.state.s4Packs.batchOpenings[account.id].id,
-          packType:this.state.s4Packs.batchOpenings[account.id].packType,
-          total:this.state.s4Packs.batchOpenings[account.id].packIds.length,
-          completed:this.state.s4Packs.batchOpenings[account.id].results.length,
-          remaining:this.state.s4Packs.batchOpenings[account.id].packIds.length - this.state.s4Packs.batchOpenings[account.id].results.length,
-          status:"active",
-        } : null,
-      },
+      s4Packs:this.s4PacksView(account.id),
+      aiTrainingTraits:YDL_TRAIT_CARDS.map(({id,name,eligibleRoleGroups})=>({id,name,eligibleRoleGroups})),
       leaderboards:this.leaderboards(),
       cupLeaderboards:this.cupLeaderboards(),
       teamLeaderboards:team ? this.teamLeaderboards(team.id) : { scorers:[], assists:[], ratings:[], saves:[], cards:[] },
@@ -4728,7 +4930,7 @@ export class YellowDogsLeagueService {
       tradeLockedCardIds:[...new Set(this.state.cardTradeOffers.filter((offer) => offer.status === "pending").flatMap((offer) => offer.offeredCardIds))],
       friendlyInvitations:this.state.friendlyInvitations.filter((item) => item.fromOwnerId === account.id || item.toOwnerId === account.id).map((item) => this.friendlyInvitationView(item)),
       mirrorMarketplace:this.mirrorMarketplaceCatalog(account),
-      inbox:team ? this.inbox(team) : [],
+      ...this.inboxProjection(team),
       inboxUnreadCount:team ? (this.state.inbox[team.id] ?? []).filter((message) => !message.readAt).length : 0,
       report:team ? this.teamReport(team) : null,
       reportHistory:team ? clone((this.state.reports[team.id] ?? []).slice(-7).reverse()) : [],
@@ -4736,22 +4938,22 @@ export class YellowDogsLeagueService {
     });
   }
 
-  standings() {
-    return [...this.state.teams].sort((a,b) => b.table.points - a.table.points || (b.table.goalsFor - b.table.goalsAgainst) - (a.table.goalsFor - a.table.goalsAgainst) || b.table.goalsFor - a.table.goalsFor || a.name.localeCompare(b.name, "zh-CN"))
-      .map((team, index) => ({ id:team.id, rank:index + 1 }));
+  standings(division = null) {
+    if(this.state.competitionFormat?.version===LEAGUE_FORMAT_VERSION)return divisionStandings(this.state.teams,division);
+    return [...this.state.teams].sort(compareLeagueTeams).map((team,index)=>({id:team.id,rank:index+1,points:team.table.points}));
   }
 
   leaderboards(teamId = null) {
     const entries = Object.values(this.state.playerStats).filter((entry) => !teamId || entry.teamId === teamId).map((entry) => ({ ...entry, averageRating:entry.appearances ? Number((entry.ratingTotal / entry.appearances).toFixed(2)) : 0 }));
-    const limit = teamId ? CLUB_ROSTER_LIMIT : 20;
+    const limit = teamId ? CLUB_ROSTER_LIMIT : entries.length;
     const sort = (field) => [...entries].filter((entry) => entry[field] > 0).sort((a,b) => b[field] - a[field] || b.averageRating - a.averageRating).slice(0, limit);
     return { scorers:sort("goals"), assists:sort("assists"), ratings:[...entries].filter((entry) => entry.appearances >= Math.max(1, Math.ceil(this.state.season.currentRound * .25))).sort((a,b) => b.averageRating - a.averageRating).slice(0,limit), saves:sort("saves"), cards:[...entries].filter((entry) => entry.yellowCards || entry.redCards).sort((a,b) => b.redCards - a.redCards || b.yellowCards - a.yellowCards).slice(0,limit) };
   }
 
   cupLeaderboards() {
     const entries = Object.values(this.state.cup?.playerStats ?? {}).map((entry) => ({ ...entry, averageRating:entry.appearances ? Number((entry.ratingTotal / entry.appearances).toFixed(2)) : 0 }));
-    const sort = (field) => [...entries].filter((entry) => entry[field] > 0).sort((a,b) => b[field] - a[field] || b.averageRating - a.averageRating).slice(0, 20);
-    return { scorers:sort("goals"), assists:sort("assists"), ratings:[...entries].filter((entry) => entry.appearances > 0).sort((a,b) => b.averageRating - a.averageRating).slice(0,20), saves:sort("saves"), cards:[...entries].filter((entry) => entry.yellowCards || entry.redCards).sort((a,b) => b.redCards - a.redCards || b.yellowCards - a.yellowCards).slice(0,20) };
+    const sort = (field) => [...entries].filter((entry) => entry[field] > 0).sort((a,b) => b[field] - a[field] || b.averageRating - a.averageRating).slice(0, entries.length);
+    return { scorers:sort("goals"), assists:sort("assists"), ratings:[...entries].filter((entry) => entry.appearances > 0).sort((a,b) => b.averageRating - a.averageRating).slice(0,entries.length), saves:sort("saves"), cards:[...entries].filter((entry) => entry.yellowCards || entry.redCards).sort((a,b) => b.redCards - a.redCards || b.yellowCards - a.yellowCards).slice(0,entries.length) };
   }
 
   teamLeaderboards(teamId) {
@@ -4789,10 +4991,11 @@ export class YellowDogsLeagueService {
         ? "友谊赛"
       : competition === "season-final"
         ? `赛季总决赛 · ${match.seasonFinalNodeId ?? "淘汰赛"}`
-        : Number.isFinite(Number(match.round)) ? `第${match.round}轮` : "联赛";
+        : Number.isFinite(Number(match.round)) ? `${match.division?`${match.division}级 · `:""}第${match.round}轮` : "联赛";
     return {
       id:match.id,
       competition,
+      division:match.division??null,
       label,
       round:match.round,
       cupStage:match.cupStage ?? null,
@@ -4871,7 +5074,7 @@ export class YellowDogsLeagueService {
       return {
         id:`league:${this.state.season.id}:${round.number}:${teamId}`,
         competition:"league",
-        competitionName:"YFFM1 联赛",
+        competitionName:`YFFM1 ${fixture.division??""}级联赛`,
         round:round.number,
         label:`第${round.number}轮`,
         startsAt,
@@ -4898,7 +5101,7 @@ export class YellowDogsLeagueService {
       const scheduledAt = Number(this.state.cup.nextRoundAt) + Math.max(0, pendingIndex) * CUP_INTERVAL_MS;
       return { id:`cup:${fixture.id}`, competition:"cup", competitionName:"黄狗冠军杯", round:event.round, stage:event.stage, leg:event.leg, label, startsAt:match?.playedAt ?? (live ? this.state.liveCupRound.startedAt : event.status === "pending" ? scheduledAt : this.now()), status:match ? "complete" : live ? "live" : "scheduled", opponentId:ownIsHome ? fixture.awayId : fixture.homeId, opponentName:this.state.teams.find((team) => team.id === (ownIsHome ? fixture.awayId : fixture.homeId))?.name ?? "待定", venue:ownIsHome ? "home" : "away", matchId:match?.id ?? null, broadcastCode:live?.code ?? null, score:match ? (ownIsHome ? [...match.score] : [match.score[1], match.score[0]]) : null, weather:conditions.weather, referee:conditions.referee };
     }).filter(Boolean));
-    const tournament = this.state.seasonFinalTournament;
+    const tournament = SEASON_FINAL_ENABLED ? this.state.seasonFinalTournament : null;
     const seasonFinalFixtures = tournament && !tournament.preview ? tournament.bracket.map((node) => {
       const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
       const awayId = this.seasonFinalNodeTeamId(tournament, node.away);
@@ -4935,6 +5138,20 @@ export class YellowDogsLeagueService {
       const opponent = this.state.teams.find((team) => team.id === opponentId);
       return { id:`friendly:${fixture.id}`, competition:"friendly", competitionName:"YDL友谊赛", round:0, label:"友谊赛", startsAt:fixture.startsAt, status:fixture.status, opponentId, opponentName:opponent?.name ?? "未知球队", venue:ownIsHome ? "home" : "away", matchId:fixture.matchId ?? null, broadcastCode:fixture.broadcastCode ?? null, score:fixture.score ? (ownIsHome ? [...fixture.score] : [fixture.score[1], fixture.score[0]]) : null, weather:null, referee:null };
     });
+    const leagueRounds = this.state.v4LocalLeagueRounds;
+    const cupEvents = this.state.v4LocalCupEvents;
+    const running = leagueRounds?.rounds[leagueRounds.active] ?? cupEvents?.events[cupEvents.active];
+    if (running) {
+      const index = running.tasks.findIndex(task => task.envelope.input.teams.some(team => team.id === teamId));
+      const fixture = running.competition === "cup"
+        ? cupFixtures.find(row => row.id === "cup:" + this.state.cup.events.find(event => event.id === running.eventId)?.fixtureIds[index])
+        : leagueFixtures.find(row => row.round === running.number);
+      if (index >= 0 && fixture && fixture.status !== "complete") {
+        fixture.status = "live";
+        fixture.startsAt = running.startedAt;
+        fixture.v4MatchId = running.tasks[index].fixture.id;
+      }
+    }
     return [...leagueFixtures, ...cupFixtures, ...seasonFinalFixtures, ...friendlyFixtures].sort((left, right) => left.startsAt - right.startsAt || left.competition.localeCompare(right.competition));
   }
 
@@ -4947,12 +5164,13 @@ export class YellowDogsLeagueService {
 
   liveView(account) {
     const team = this.accountTeam(account.id);
-    const leagueStandings = this.standings().map(({ id, rank }) => {
+    const leagueStandings = this.standings().map(({ id, rank, division, movement }) => {
       const standingTeam = this.state.teams.find((entry) => entry.id === id);
       const table = standingTeam?.table ?? {};
       return {
         id,
         rank,
+        division, movement,
         name:standingTeam?.name ?? "未知球队",
         played:Number(table.played ?? 0),
         won:Number(table.won ?? 0),
@@ -4993,7 +5211,7 @@ export class YellowDogsLeagueService {
       leagueRound.fixtures.forEach((fixture) => entries.push({
         id:this.predictionMarketId("league", `R${leagueRound.number}`, fixture),
         competition:"league",
-        competitionName:"YFFM1 联赛",
+        competitionName:`YFFM1 ${fixture.division??""}级联赛`,
         round:leagueRound.number,
         stage:null,
         leg:1,
@@ -5030,7 +5248,7 @@ export class YellowDogsLeagueService {
         });
       });
     }
-    const tournament = this.state.seasonFinalTournament;
+    const tournament = SEASON_FINAL_ENABLED ? this.state.seasonFinalTournament : null;
     if (tournament && !tournament.preview && !["completed", "cancelled"].includes(tournament.status)) {
       tournament.bracket.filter((node) => node.status === "pending" && Number(node.scheduledAt) > this.now()).forEach((node) => {
         const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
@@ -5322,7 +5540,8 @@ export class YellowDogsLeagueService {
     }));
   }
 
-  generatePredictionMarket(entry) {
+  generatePredictionMarket(entry, reports = null) {
+    if (reports && reports.length !== MATCH_PREDICTION_SIMULATIONS) throw new Error("预测模拟样本不完整");
     const existing = this.state.matchPredictions.markets[entry.id];
     if (existing && existing.status !== "preparing" && Number.isInteger(existing.resultHandicap)) return existing;
     const goalCounts = Object.fromEntries(MATCH_PREDICTION_OPTIONS.goals.map((key) => [key, 0]));
@@ -5336,14 +5555,18 @@ export class YellowDogsLeagueService {
       redCards:[0, 0],
     };
     for (let index = 0; index < MATCH_PREDICTION_SIMULATIONS; index += 1) {
-      const created = this.createFixtureMatch(entry.fixture, entry.round, entry.startsAt, {
-        ...entry.matchOptions,
-        seed:`prediction:${entry.id}:${index + 1}`,
-        recordEvents:false,
-        matchEngine:"v1",
-      });
-      settleAutomatedMatch(created.match, created.startedAt);
-      const report = created.match.report;
+      let report = reports?.[index];
+      if (reports && !report) throw new Error("预测模拟样本缺失");
+      if (!report) {
+        const created = this.createFixtureMatch(entry.fixture, entry.round, entry.startsAt, {
+          ...entry.matchOptions,
+          seed:`prediction:${entry.id}:${index + 1}`,
+          recordEvents:false,
+          matchEngine:"v1",
+        });
+        settleAutomatedMatch(created.match, created.startedAt);
+        report = created.match.report;
+      }
       const totalGoals = report.score[0] + report.score[1];
       const totalCards = report.teams.reduce((sum, team) => sum + Number(team.stats.yellowCards ?? 0) + Number(team.stats.redCards ?? 0), 0);
       const halfFull = this.predictionHalfFullOutcome(report);
@@ -5448,7 +5671,58 @@ export class YellowDogsLeagueService {
     return true;
   }
 
-  ensurePredictionMarkets(generationLimit = 1) {
+  runPredictionSimulation(input) {
+    return runPredictionSimulation(input);
+  }
+
+  startPredictionMarketGeneration(entry) {
+    if (this.predictionGenerationJob || this.now() < (this.predictionRetryAt.get(entry.id) ?? 0)) return false;
+    const markets = this.state.matchPredictions.markets;
+    const pending = markets[entry.id];
+    const seasonId = this.state.season.id;
+    const snapshot = clone(entry);
+    const job = { id:entry.id, promise:null };
+    this.predictionGenerationJob = job;
+    job.promise = (async () => {
+      try {
+        const input = measureRuntimeSync("league.prediction.prepare", () => this.prepareFixtureMatch(
+          snapshot.fixture, snapshot.round, snapshot.startsAt,
+          { ...snapshot.matchOptions, recordEvents:false, matchEngine:"v1", snapshotTeams:true },
+        ));
+        const identities = [input.home, input.away].map(team => [team.id, team.ownerId, team.name]);
+        const reports = await measureRuntimeAsync("league.prediction.worker", () => this.runPredictionSimulation({
+          seats:input.seats, options:input.matchOptions, marketId:snapshot.id, samples:MATCH_PREDICTION_SIMULATIONS,
+        }));
+        // A season reset, fixture reschedule/takeover or deadline must not revive a stale market.
+        const current = this.nextPredictionFixtures().find(item => item.id === snapshot.id);
+        if (this.state.season.id !== seasonId || this.state.matchPredictions.markets !== markets
+          || markets[snapshot.id] !== pending || pending.status !== "preparing"
+          || !current || JSON.stringify(current) !== JSON.stringify(snapshot)
+          || this.now() >= this.predictionClosesAt(current.startsAt)
+          || identities.some(([id, ownerId, name]) => !this.state.teams.some(team => team.id === id && team.ownerId === ownerId && team.name === name))) return false;
+        return measureRuntimeSync("league.prediction.publish", () => {
+          try {
+            this.generatePredictionMarket(snapshot, reports);
+            this.save({ skipDailyBackup:true });
+            this.predictionRetryAt.delete(snapshot.id);
+          } catch (error) {
+            markets[snapshot.id] = pending;
+            throw error;
+          }
+          return true;
+        });
+      } catch (error) {
+        this.predictionRetryAt.set(entry.id, this.now() + 60_000);
+        console.error("YFFM1 预测市场初始化失败，稍后重试：", error.message);
+        return false;
+      } finally {
+        if (this.predictionGenerationJob === job) this.predictionGenerationJob = null;
+      }
+    })();
+    return true;
+  }
+
+  ensurePredictionMarkets(generationLimit = 1, { background = false } = {}) {
     let changed = false;
     let generated = 0;
     const now = this.now();
@@ -5458,7 +5732,7 @@ export class YellowDogsLeagueService {
         market.closesAt = expectedClosesAt;
         changed = true;
       }
-      if (market.status === "open" && now >= Number(market.closesAt)) {
+      if (["open", "preparing"].includes(market.status) && now >= Number(market.closesAt)) {
         market.status = "locked";
         changed = true;
       }
@@ -5470,11 +5744,20 @@ export class YellowDogsLeagueService {
       }
     });
     const entries = this.nextPredictionFixtures();
+    const activeIds = new Set(entries.map(entry => entry.id));
+    for (const id of this.predictionRetryAt.keys()) if (!activeIds.has(id)) this.predictionRetryAt.delete(id);
     entries.forEach((entry) => {
       if (this.registerPredictionMarket(entry)) changed = true;
     });
     entries.forEach((entry) => {
-      if (this.state.matchPredictions.markets[entry.id]?.status !== "preparing" || generated >= generationLimit) return;
+      const market = this.state.matchPredictions.markets[entry.id];
+      if (market?.status !== "preparing") return;
+      if (now >= Number(market.closesAt)) { market.status = "locked"; changed = true; return; }
+      if (generated >= generationLimit) return;
+      if (background) {
+        if (this.startPredictionMarketGeneration(entry)) generated += 1;
+        return;
+      }
       this.generatePredictionMarket(entry);
       generated += 1;
       changed = true;
@@ -5628,7 +5911,7 @@ export class YellowDogsLeagueService {
   }
 
   placeMatchPrediction(account, marketIdValue, categoryValue, selectionValue, amountValue, options = {}) {
-    this.ensurePredictionMarkets();
+    this.ensurePredictionMarkets(0);
     const marketId = String(marketIdValue ?? "");
     const category = String(categoryValue ?? "");
     const selection = String(selectionValue ?? "");
@@ -5637,6 +5920,7 @@ export class YellowDogsLeagueService {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("请先建立联赛球队");
     if (!market) throw new Error("找不到这场待预测比赛");
+    if (market.status === "preparing" && this.now() < Number(market.closesAt)) throw new Error("本场预测正在准备，请稍后再试");
     if (market.status !== "open" || this.now() >= Number(market.closesAt)) throw new Error("本场比赛预测已经截止");
     if ([market.homeId, market.awayId].includes(team.id)) throw new Error("不能预测自己球队参加的比赛");
     const marketSelections = Object.keys(market.payoutRates?.[category] ?? {});
@@ -5882,26 +6166,35 @@ export class YellowDogsLeagueService {
       : this.actualLineup(team, Math.max(1, this.state.season.currentRound + 1));
     const positions = this.actualPositions(team, lineup);
     const upgradeLevel = (playerId) => Number(this.representativeCard(team.ownerId, playerId)?.upgradeLevel ?? 0);
-    const publicStarter = (player) => applyS4Enhancement(playerSummary(player), upgradeLevel(player.id));
+    const publicStarter = (player) => ({...applyS4Enhancement(playerSummary(player), upgradeLevel(player.id)),assignedRole:player.assignedRole,state:{...(team.playerState[player.id]??player.state??{})}});
     const publicRosterPlayer = (player) => {
       const level = upgradeLevel(player.id);
       return { id:player.id, name:player.name, role:player.role, secondaryRole:player.secondaryRole, grade:player.grade, overall:s4EffectiveOverall(player, level), upgradeLevel:level };
     };
-    const roster = team.ownerId
+    const roster = team.ownerId || team.aiClub
       ? team.rosterIds.map((id) => publicRosterPlayer(REAL_PLAYER_BY_ID[id]))
       : lineup.map(publicRosterPlayer);
     const recentHistoryPage = this.teamHistoryPage(account, team.id, 0, 5);
     return clone({
       id:team.id,
       name:team.name,
+      division:team.division,
       isAi:!team.ownerId,
       ownerName:team.ownerName,
       equippedBadge:this.equippedTeamBadge(team.ownerId),
-      equippedClubBadge:this.equippedClubBadge(team.ownerId),
+      equippedClubBadge:team.ownerId ? this.equippedClubBadge(team.ownerId) : aiClubBadge(team),
       table:{ ...team.table },
       formation:lineup.length === 11 ? analyzeElevenFormation(lineup, positions).name : null,
       starters:lineup.map((player) => ({ ...publicStarter(player), position:{ ...positions[player.id] }, captain:player.id === team.captainId })),
       roster,
+      aiClub:!team.ownerId ? team.aiClub ?? null : null,
+      aiDecision:!team.ownerId ? team.aiDecision ?? null : null,
+      aiSchemes:!team.ownerId && team.aiClub ? [0,1].map(schemeIndex => {
+        const result = planAiClub(team, REAL_PLAYERS, {schemeIndex});
+        return {name:team.lineupSchemes[schemeIndex].name, ...result.configuration,
+          starters:result.lineup.map(p=>({...publicStarter(p),position:result.configuration.positions[p.id]}))};
+      }) : [],
+      playerFitness:!team.ownerId ? clone(team.playerState) : null,
       recentHistory:recentHistoryPage.history,
       historyTotal:recentHistoryPage.total,
       isOwn:team.ownerId === account.id,
@@ -5909,11 +6202,94 @@ export class YellowDogsLeagueService {
     });
   }
 
-  matchDetail(account, matchIdValue) {
-    if (String(matchIdValue ?? "") === "__v2_review_demo__") return this.v2ReviewDemoDetail();
-    const match = this.state.matches.find((entry) => entry.id === String(matchIdValue ?? ""))
+  archiveMatchRefs(archive) {
+    return archive.matchRefs ?? (archive.matches ? [...archive.matches, ...(archive.seasonFinalTournament?.matches ?? [])]
+      .map(match => ({id:match.id,hasReport:Boolean(matchReportMetadata(match)?.hasDetails ?? match.report)})) : null);
+  }
+
+  inboxMatchLink(matchId) {
+    const current = this.state.matches.find(match => match.id === matchId)
+      ?? this.state.seasonFinalTournament?.matches?.find(match => match.id === matchId);
+    if (current) return {available:Boolean(matchReportMetadata(current)?.hasDetails ?? current.report),archived:false};
+    let legacyUnknown = false;
+    for (const archive of this.state.archives ?? []) {
+      const refs = this.archiveMatchRefs(archive);
+      if (!refs) { legacyUnknown = true; continue; }
+      const ref = refs.find(match => match.id === matchId);
+      if (ref) return {available:ref.hasReport,archived:true};
+    }
+    return {available:legacyUnknown,archived:true};
+  }
+
+  historicalMatchRecord(matchIdValue) {
+    const matchId = String(matchIdValue ?? '');
+    let match = this.state.matches.find((entry) => entry.id === matchId)
       ?? this.state.seasonFinalTournament?.matches?.find((entry) => entry.id === String(matchIdValue ?? ""));
-    if (!match?.report) throw new Error("找不到这场比赛的详细记录");
+    let archived = false;
+    if (!match) {
+      for (const archive of [...(this.state.archives ?? [])].reverse()) {
+        const refs = this.archiveMatchRefs(archive);
+        if (refs && !refs.some(ref => ref.id === matchId && ref.hasReport)) continue;
+        const full = archive.matches ? archive : this.shardStore?.readFullArchive(archive);
+        match = full?.matches?.find(entry => entry.id === matchId)
+          ?? full?.seasonFinalTournament?.matches?.find(entry => entry.id === matchId);
+        if (match) { archived = true; break; }
+      }
+    }
+    if (!match?.report) throw Object.assign(new Error('详细战报已不在保留范围，邮件中的比赛摘要仍可查看'), {code:'MATCH_REPORT_UNAVAILABLE',statusCode:404});
+    return {match,archived};
+  }
+
+  settledReviewReference(account,match) {
+    const {report}=match, binding=report.v4ReviewArchive;
+    const teamIds=[match.homeId,match.awayId];
+    const side=teamIds.indexOf(this.accountTeam(account.id)?.id);
+    if(side<0||!this.statePath||report.schema!=='v4-legacy-player-report-1'||!binding||binding.competition!==match.competition)return null;
+    return {...clone(binding),statePath:this.statePath,fixtureId:report.fixtureId,inputFingerprint:report.inputFingerprint,
+      engineVersion:report.engineVersion,teamIds,side};
+  }
+
+  async matchTacticalReplay(account,id,segment) {
+    const {match}=this.historicalMatchRecord(id);
+    const ref=this.settledReviewReference(account,match);
+    if(!ref)throw Object.assign(new Error('无权查看本场球队战术录像'),{statusCode:403});
+    return readSettledReplay(ref,segment);
+  }
+
+  async matchDetailWithReview(account,id) {
+    if(id==='__v2_review_demo__')return this.v2ReviewDemoDetail();
+    const record=this.historicalMatchRecord(id);
+    const detail=this.matchDetail(account,id,record);
+    if(detail.schema==='v4-legacy-player-report-1'&&['league','cup'].includes(record.match.competition)
+      &&[record.match.homeId,record.match.awayId].includes(this.accountTeam(account.id)?.id)){
+      const ref=this.settledReviewReference(account,record.match);
+      if(ref){
+        detail.v4Replay={matchId:ref.fixtureId,reportId:record.match.id};
+        if(!detail.metricDefinitions?.model){
+          try{
+            const metrics=await readSettledMetrics(ref);
+            const possessionTotal=metrics.stats.reduce((n,s)=>n+s.possession,0);
+            detail.teams.forEach((team,side)=>Object.assign(team.stats,{xg:metrics.stats[side].xg,possession:possessionTotal?Number((metrics.stats[side].possession/possessionTotal*100).toFixed(1)):null}));
+            detail.importantEvents=metrics.events.map(e=>({...e,...detail.importantEvents?.find(row=>row.id===e.id)}));
+            detail.metricDefinitions=metrics.metricDefinitions;
+          }catch{detail.teams.forEach(team=>Object.assign(team.stats,{xg:null,possession:null}));}
+        }
+      }
+
+      try{
+        const review=ref&&await readSettledReview(ref);
+        if(review)detail.tacticalReview={...review,reportId:record.match.id};
+        else detail.tacticalReviewUnavailable=true;
+      }catch{
+        detail.tacticalReviewUnavailable='unreadable';
+      }
+    }
+    return detail;
+  }
+
+  matchDetail(account, matchIdValue,record) {
+    if (String(matchIdValue ?? "") === "__v2_review_demo__") return this.v2ReviewDemoDetail();
+    const {match,archived}=record??this.historicalMatchRecord(matchIdValue);
     const ownTeam = this.accountTeam(account.id);
     const viewerTeamId = match.competition === "worldcup" ? null : ownTeam?.id;
     const viewerIndex = viewerTeamId === match.awayId ? 1 : 0;
@@ -5927,8 +6303,10 @@ export class YellowDogsLeagueService {
     });
     detail.competition = summary.competition;
     detail.matchLabel = summary.label;
-    if (detail.teams?.[0]) detail.teams[0].name = this.state.teams.find((team) => team.id === match.homeId)?.name ?? detail.teams[0].name;
-    if (detail.teams?.[1]) detail.teams[1].name = this.state.teams.find((team) => team.id === match.awayId)?.name ?? detail.teams[1].name;
+    detail.archived = archived;
+    delete detail.v4ReviewArchive;
+    if (!archived && detail.teams?.[0]) detail.teams[0].name = this.state.teams.find((team) => team.id === match.homeId)?.name ?? detail.teams[0].name;
+    if (!archived && detail.teams?.[1]) detail.teams[1].name = this.state.teams.find((team) => team.id === match.awayId)?.name ?? detail.teams[1].name;
     return clone(detail);
   }
 
@@ -5943,11 +6321,12 @@ export class YellowDogsLeagueService {
       || Object.values(this.state.drafts).some((draft) => draft.teamName.toLocaleLowerCase("zh-CN") === normalizedName)) throw new Error("该球队名称已经被使用");
     const reservedTeamIds = new Set(Object.values(this.state.drafts).map((draft) => draft.teamId));
     const availableTeams = this.state.teams.filter((entry) => !entry.ownerId && !reservedTeamIds.has(entry.id));
-    const cupRanks = new Map(this.cupStandings().map((entry) => [entry.id, entry.rank]));
-    const team = this.state.cup.status === "waiting"
-      ? availableTeams[0]
-      : availableTeams.sort((left, right) => (cupRanks.get(left.id) ?? TEAM_COUNT) - (cupRanks.get(right.id) ?? TEAM_COUNT))[0];
-    if (!team) throw new Error("当前10支球队都已由真人接管");
+    const strength = new Map(availableTeams.map(entry => [entry.id, aiSquadStrength(entry, REAL_PLAYER_BY_ID)]));
+    const team = availableTeams.sort((left, right) =>
+      strength.get(left.id).firstTeam - strength.get(right.id).firstTeam
+      || strength.get(left.id).squad - strength.get(right.id).squad
+      || left.id.localeCompare(right.id))[0];
+    if (!team) throw new Error("当前16支球队都已由真人接管");
     const validated = validateTeamDraftPreferences(preferences);
     this.state.drafts[account.id] = { mode:"batch", teamId:team.id, teamName, preferences:validated, attemptsUsed:0, current:null, candidates:[], selectedIds:[], offerIds:[], startedAt:this.now() };
     this.save();
@@ -6128,6 +6507,8 @@ export class YellowDogsLeagueService {
     team.name = draft.teamName;
     team.clubManagement = null;
     this.ensureClubManagement(team);
+    delete team.aiClub;
+    delete team.aiDecision;
     team.ownerId = account.id;
     team.ownerName = account.nickname;
     team.joinedAt = this.now();
@@ -6142,6 +6523,7 @@ export class YellowDogsLeagueService {
       team.formationLinePresets = Object.fromEntries(POSITION_PRESET_KEYS.map(key => [key,clone(lines)]));
     }
     team.positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(team.positions)]));
+    team.positionPresetOverrides = {position2:false,position3:false};
     team.activeLineupSchemeId = "lineup-1";
     team.lineupSchemes = [lineupSchemeSnapshot({ ...team, competitionScope:"all" }, "lineup-1", "方案 1")];
     team.lineupSchemeAssignments = { league:"lineup-1", cup:"lineup-1", friendly:"lineup-1" };
@@ -6177,6 +6559,7 @@ export class YellowDogsLeagueService {
         preferredStarterIds:team.preferredStarterIds,
         positions:team.positions,
         positionPresets:team.positionPresets,
+        positionPresetOverrides:team.positionPresetOverrides,
         formationLinePresets:team.formationLinePresets,
         tactic:team.tactic,
         style:team.style,
@@ -6207,7 +6590,7 @@ export class YellowDogsLeagueService {
     return clone({ teamId:team.id, history, total:matches.length, nextOffset:nextOffset < matches.length ? nextOffset : null });
   }
 
-  tacticalShapePreview(account, body = {}) {
+  tacticalBoardDraft(account, body = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
     const starters = [...new Set(body.starterIds ?? team.preferredStarterIds ?? [])];
@@ -6241,7 +6624,10 @@ export class YellowDogsLeagueService {
     };
     const scoreState = planState === "leading" ? "leading" : planState === "trailing" ? "trailing" : "level";
     const minute = planState === "opening" ? 25 : 70;
-    return buildV21TacticalShapePreview({
+    return {
+      formationLines,
+      positionPreset,
+      team,
       players,
       positions,
       roles,
@@ -6250,49 +6636,50 @@ export class YellowDogsLeagueService {
       defenseFocus:body.defenseFocus ?? team.defenseFocus,
       scoreState,
       minute,
-      parameters:parametersForEngine(DEFAULT_MATCH_ENGINE),
-    });
+      planState,
+    };
+  }
+
+  tacticalBoardPreviewRunner(draft, body) {
+    const { team, players, positions, formationLines, positionPreset, plan } = draft;
+    const lineup = players.map(player => ({
+      ...player,
+      ...(isXPlayer(player) ? this.xPlayerConfig(player.id) : {}),
+      state:{ fitness:100, ...team.playerState[player.id] },
+    }));
+    return createShapePreviewRunner({
+      name:team.name,
+      players:this.chemistryAdjustedLineup(team, lineup, positions, formationLines),
+      positions, positionPresets:{ [positionPreset]:positions }, formationLinePresets:{ [positionPreset]:formationLines },
+      tacticalPlans:{ opening:{ ...plan, positionPreset } }, bondCatalog:S4_BOND_CATALOG,
+      captainId:Object.hasOwn(body, "captainId") ? body.captainId : team.captainId,
+      captainStyle:body.captainStyle ?? team.captainStyle,
+      attackFocus:draft.attackFocus, defenseFocus:draft.defenseFocus,
+    }, { minute:draft.minute, scoreState:draft.scoreState });
+  }
+
+  tacticalShapePreview(account, body = {}) {
+    return this.tacticalBoardPreviewRunner(this.tacticalBoardDraft(account, body), body)(body.scenario);
   }
 
   tacticalOutlook(account, body = {}) {
-    const team = this.accountTeam(account.id);
-    if (!team) throw new Error("你还没有加入联赛");
-    const preview = this.tacticalShapePreview(account, body);
-    const state = ["opening", "leading", "trailing"].includes(body.planState) ? body.planState : "opening";
-    const preset = { opening:"position1", leading:"position2", trailing:"position3" }[state];
-    const positions = Object.fromEntries(preview.frames[0].players.map(player => [player.id, player.basePosition]));
-    const roles = Object.fromEntries(preview.frames[0].players.map(player => [player.id, player.assignedRole]));
-    const starters = Object.keys(positions);
-    const formationLines = sanitizeFormationLines(body.formationLinePresets?.[preset] ?? team.formationLinePresets?.[preset]);
-    const raw = starters.map(id => ({ ...REAL_PLAYER_BY_ID[id], state:{ fitness:100, ...team.playerState[id] } }));
-    const shape = analyzeElevenBoardFormation(raw, positions, formationLines);
-    if (shape.counts.GK !== 1 || state === "opening" && [shape.counts.DEF, shape.counts.MID, shape.counts.ATT].some(count => count < 1)) {
-      return { valid:false, axes:[], message:"请先调整当前预案的阵型结构" };
+    const draft = this.tacticalBoardDraft(account, body);
+    const shape = analyzeElevenBoardFormation(draft.players, draft.positions, draft.formationLines);
+    if (shape.counts.GK !== 1 || draft.scoreState === "level" && [shape.counts.DEF, shape.counts.MID, shape.counts.ATT].some(count => count < 1)) {
+      return { valid:false, planState:draft.planState, axes:[], diagnostics:[], message:"请先调整当前预案的阵型结构" };
     }
-    const fallback = team.tacticalPlans?.[state] ?? { tactic:team.tactic, style:team.style };
-    const submitted = body.tacticalPlans?.[state] ?? {};
-    const plan = {
-      tactic:TACTICS.has(submitted.tactic) ? submitted.tactic : fallback.tactic,
-      style:STYLES.has(submitted.style) ? submitted.style : fallback.style,
-      inPossession:IN_POSSESSION_PLANS.has(submitted.inPossession) ? submitted.inPossession : fallback.inPossession ?? "balanced",
-      outOfPossession:OUT_OF_POSSESSION_PLANS.has(submitted.outOfPossession) ? submitted.outOfPossession : fallback.outOfPossession ?? "balanced",
-      ...v2TacticalDetailsProperty(submitted, fallback),
-      ...v2TacticalDimensionsProperty(submitted.tacticalDimensions, fallback.tacticalDimensions, submitted),
-      ...tacticalPrincipleFields(submitted, fallback),
-      ...v2PlayerDutiesProperty(submitted.playerDuties, starters, roles, fallback.playerDuties),
-    };
-    const parameters = parametersForEngine(DEFAULT_MATCH_ENGINE);
-    const seat = { ...plan, ...resolveV2SplitTacticalPlan(plan), splitTacticsExplicit:hasV2SplitTacticalPlan(plan),
-      players:this.chemistryAdjustedLineup(team, raw, positions), positions, formationLines,
-      tacticalDimensions:preview.dimensions, bondCatalog:S4_BOND_CATALOG,
-      captainId:Object.hasOwn(body, "captainId") ? body.captainId : team.captainId, captainStyle:body.captainStyle ?? team.captainStyle };
-    const score = state === "leading" ? [1,0] : state === "trailing" ? [0,1] : [0,0];
-    const snapshot = buildV2TeamSnapshots([seat], { parameters, state:{ minute:preview.minute, score }, environment:{ weather:"sunny", precipitation:5 } })[0];
-    const outlookPlan = { ...plan, tacticalDimensions:resolveV2TacticalDimensions(plan.tactic, isPrinciplesPlan(plan) ? "__split__" : plan.style, plan.tacticalDimensions, parameters) };
-    const effectivePreview = buildV21TacticalShapePreview({ players:snapshot.players, positions, roles, plan:outlookPlan, parameters,
-      scoreState:preview.scoreState, minute:preview.minute, attackFocus:body.attackFocus ?? team.attackFocus, defenseFocus:body.defenseFocus ?? team.defenseFocus });
-    return buildTacticalOutlook({ projection:buildV2TacticalProjection(snapshot, parameters), preview:effectivePreview, plan,
-      unavailableCount:raw.filter(player => Number(player.state.injuryRounds ?? 0) > 0 || Number(player.state.suspension ?? 0) > 0).length });
+    const run = this.tacticalBoardPreviewRunner(draft, body);
+    const clips = Object.fromEntries(["attack","left","defense","loss"].map(scenario => [scenario,run(scenario)]));
+    const unavailable = draft.players.filter(p => {
+      const state = draft.team.playerState[p.id];
+      return state?.injuryRounds > 0 || state?.suspension > 0;
+    }).length;
+    const result=buildV4TacticalOutlook(clips, draft.planState, unavailable);
+    if(body.captureMovement===true){
+      result.movements=Object.fromEntries(Object.entries({...clips,gain:run('gain')})
+        .map(([scenario,clip])=>[scenario,captureMovement(clip)]));
+    }
+    return result;
   }
 
   saveTeam(account, body, options = {}) {
@@ -6305,19 +6692,33 @@ export class YellowDogsLeagueService {
     const players = starters.map((id) => REAL_PLAYER_BY_ID[id]);
     const submittedPresets = body.positionPresets;
     const submittedLinePresets = body.formationLinePresets;
-    const formationLinePresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => {
+    let formationLinePresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => {
       const entries = players.map((player) => ({ id:player.id, position:(submittedPresets?.[key] ?? team.positionPresets?.[key] ?? team.positions)?.[player.id] }));
       return [key, sanitizeFormationLines(submittedLinePresets?.[key] ?? team.formationLinePresets?.[key] ?? deriveFormationLines(entries))];
     }));
-    const positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => {
+    let positionPresets = Object.fromEntries(POSITION_PRESET_KEYS.map((key) => {
       const source = submittedPresets?.[key] ?? (!submittedPresets ? body.positions : null) ?? team.positionPresets?.[key] ?? team.positions;
       const sanitized = sanitizePositions(players, source);
+      return [key, sanitized];
+    }));
+    const previous=resolvePositionPresetLinks(team);
+    const overrides=Object.fromEntries(['position2','position3'].map(key=>{
+      const explicit=body.positionPresetOverrides?.[key];
+      if(explicit!=null&&typeof explicit!=='boolean')throw new Error('站位跟随状态无效');
+      const changed=Boolean(submittedPresets?.[key]&&!samePositionMap(submittedPresets[key],team.positionPresets?.[key]))
+        || Boolean(submittedLinePresets?.[key]&&!sameFormationLines(submittedLinePresets[key],team.formationLinePresets?.[key]));
+      return [key,explicit??(changed?true:previous.positionPresetOverrides[key])];
+    }));
+    const resolved=resolvePositionPresetLinks({preferredStarterIds:starters,positionPresets,formationLinePresets,positionPresetOverrides:overrides});
+    positionPresets=resolved.positionPresets;formationLinePresets=resolved.formationLinePresets;
+    for(const key of POSITION_PRESET_KEYS){
+      const sanitized=positionPresets[key];
       const formation = analyzeElevenBoardFormation(players, sanitized, formationLinePresets[key]);
       const valid = players.length === 11 && formation.counts.GK === 1 && (key !== "position1" || [formation.counts.DEF, formation.counts.MID, formation.counts.ATT].every((count) => count >= 1));
       if (!valid) throw new Error(`${key === "position1" ? "默认站位" : key === "position2" ? "领先站位" : "落后站位"}：门将必须且只能有一人${key === "position1" ? "，并保留前中后三条外场线" : ""}`);
-      return [key, sanitized];
-    }));
+    }
     team.preferredStarterIds = starters;
+    team.positionPresetOverrides = resolved.positionPresetOverrides;
     team.positionPresets = positionPresets;
     const captainId = String(body.captainId ?? "");
     if (captainId && !starters.includes(captainId)) throw new Error("队长必须来自当前方案的默认11人首发");
@@ -6375,7 +6776,7 @@ export class YellowDogsLeagueService {
       const index = [1, 2, 3].find((value) => !used.has(`lineup-${value}`)) ?? team.lineupSchemes.length + 1;
       const name = String(body.name ?? `方案 ${index}`).trim().slice(0, 20) || `方案 ${index}`;
       const scheme = lineupSchemeSnapshot(team, `lineup-${index}`, name);
-      scheme.competitionScope = "all";
+      scheme.competitionScope = undefined;
       team.lineupSchemes.push(scheme);
       team.activeLineupSchemeId = scheme.id;
     } else {
@@ -6389,7 +6790,7 @@ export class YellowDogsLeagueService {
           team.activeLineupSchemeId = fallback.id;
           applyLineupScheme(team, fallback);
         }
-        rebuildLineupSchemeAssignments(team, team.activeLineupSchemeId);
+        rebuildLineupSchemeAssignments(team);
       } else if (action === "rename") {
         const name = String(body.name ?? "").trim();
         if (!name) throw new Error("方案名称不能为空");
@@ -6398,8 +6799,9 @@ export class YellowDogsLeagueService {
       } else if (action === "assign") {
         const competition = String(body.competition ?? "");
         if (competition !== "all" && !LINEUP_SCHEME_COMPETITIONS.includes(competition)) throw new Error("不支持的赛事类型");
-        scheme.competitionScope = competition;
-        rebuildLineupSchemeAssignments(team, scheme.id);
+        if(competition==='all') team.lineupSchemeAssignments=Object.fromEntries(LINEUP_SCHEME_COMPETITIONS.map(c=>[c,scheme.id]));
+        else team.lineupSchemeAssignments={...team.lineupSchemeAssignments,[competition]:scheme.id};
+        rebuildLineupSchemeAssignments(team);
       } else if (action === "select") {
         team.activeLineupSchemeId = scheme.id;
         applyLineupScheme(team, scheme);
@@ -6468,6 +6870,7 @@ export class YellowDogsLeagueService {
       .filter(([sourceId]) => playerIdMap.has(sourceId))
       .map(([sourceId, duty]) => [playerIdMap.get(sourceId), duty]));
     const mappedScheme = clone(shared.scheme);
+    mappedScheme.positionPresetOverrides = shared.scheme.positionPresetOverrides;
     mappedScheme.preferredStarterIds = importedStarterIds.map((sourceId) => playerIdMap.get(sourceId));
     mappedScheme.captainId = playerIdMap.get(shared.scheme?.captainId) ?? null;
     mappedScheme.captainStyle = normalizeCaptainStyle(shared.scheme?.captainStyle);
@@ -6485,7 +6888,7 @@ export class YellowDogsLeagueService {
     repairLineupSchemeAgainstRoster(team, imported);
     Object.assign(current, imported, { revision:currentRevision + 1 });
     applyLineupScheme(team, current);
-    rebuildLineupSchemeAssignments(team, current.id);
+    rebuildLineupSchemeAssignments(team);
     this.save();
     if (options.compact) return this.teamSaveMutationView(team);
     return this.view(account);
@@ -6606,25 +7009,28 @@ export class YellowDogsLeagueService {
   }
 
   inboxMessageDeletable(message) {
-    if (message.type === "friendly-invite" && this.state.friendlyInvitations.some((item) => item.id === message.payload?.friendlyInvitationId && item.status === "pending" && this.now() < this.friendlyInvitationExpiresAt(item))) return false;
-    if (message.type === "trade-offer" && this.state.cardTradeOffers.some((item) => item.id === message.payload?.tradeOfferId && item.status === "pending")) return false;
-    if (message.type === "trait-compensation" && !message.payload?.resolvedAt) return false;
-    return true;
+    return this.inboxActionState(message).status !== 'pending';
   }
 
-  deleteInboxBatch(account, modeValue = "all") {
+  deleteInboxBatch(account, modeValue = "all", options = {}) {
     const team = this.accountTeam(account.id);
     if (!team) throw new Error("你还没有加入联赛");
     const mode = modeValue === "read" ? "read" : "all";
+    const category = options.category ?? 'all';
+    if (!INBOX_CATEGORIES.some(item => item.id === category)) throw new Error('邮件分类无效');
+    const requestedIds = Array.isArray(options.messageIds) ? new Set(options.messageIds.map(String)) : null;
     const inbox = this.state.inbox[team.id] ?? [];
-    const removable = inbox.filter((message) => this.inboxMessageDeletable(message) && (mode === "all" || message.readAt));
+    const removable = inbox.filter(message => (!requestedIds || requestedIds.has(message.id))
+      && inboxMatchesCategory(message,category,this.inboxActionState(message))
+      && (!options.unreadOnly || !message.readAt)
+      && this.inboxMessageDeletable(message) && (mode === "all" || message.readAt));
     const removableIds = new Set(removable.map((message) => message.id));
     this.state.inbox[team.id] = inbox.filter((message) => !removableIds.has(message.id));
     const deleted = this.state.inboxDeleted[team.id] ?? (this.state.inboxDeleted[team.id] = []);
     removableIds.forEach((messageId) => { if (!deleted.includes(messageId)) deleted.push(messageId); });
     this.state.inboxDeleted[team.id] = deleted.slice(-500);
     this.save();
-    return this.view(account);
+    return options.compact ? {deletedCount:removableIds.size,meta:this.inboxMeta(team),serverTime:this.now()} : this.view(account);
   }
 
   listOwnership(account, playerId, priceValue, retainedCardId = null, options = {}) {
@@ -7284,7 +7690,7 @@ export class YellowDogsLeagueService {
         tradeLockedCardIds:[...new Set(this.state.cardTradeOffers
           .filter((offer) => offer.status === "pending")
           .flatMap((offer) => offer.offeredCardIds))],
-        inbox:team ? this.inbox(team) : [],
+        ...this.inboxProjection(team),
         ...extra,
       },
     });
@@ -7739,9 +8145,82 @@ export class YellowDogsLeagueService {
     return this.view(account);
   }
 
+  ensureCompetitionFormat() {
+    if(this.state.competitionFormat?.version===LEAGUE_FORMAT_VERSION)return false;
+    // Finish live league/cup matches before switching the competition schedule.
+    if(this.state.liveRound||this.state.liveCupRound||this.liveSettlementJobs.length)return false;
+    this.backupFile('before-two-division-format.json');
+    this.archiveSeason('two-division-format-migration');
+    for(const bet of this.state.matchPredictions?.bets??[])if(bet.status==='pending'){
+      const amount=Number(bet.amount??0);
+      this.wallet(bet.accountId).balance+=amount;
+      bet.status='refunded';bet.payout=amount;bet.settledAt=this.now();
+      this.state.ledger.push({id:`format-refund:${bet.id}`,accountId:bet.accountId,amount,type:'prediction-format-refund',betId:bet.id,createdAt:this.now()});
+    }
+    while(this.state.teams.length<TEAM_COUNT)this.state.teams.push(initialTeam(this.state.teams.length));
+    assignInitialDivisions(this.state.teams);
+    const now=this.now(),status=this.state.season.status==='registration'?'registration':'active';
+    this.state.competitionFormat={version:LEAGUE_FORMAT_VERSION,migratedAt:now,promotionCount:PROMOTION_COUNT,movements:[],initialPlacement:'human-first'};
+    this.state.season={...this.state.season,id:`${this.state.season.name}-divisions-${now.toString(36)}`,date:localDateKey(new Date(now)),status,currentRound:0,totalRounds:LEAGUE_ROUNDS,startedAt:status==='active'?now:null,completedAt:null,nextRoundAt:status==='active'?nextSlot(now):null,firstRoundAt:status==='active'?nextSlot(now):null,seasonFinalLeagueRanks:null,seasonFinalLeagueRound:null,seasonFinalLeagueLockedAt:null};
+    this.state.teams.forEach(team=>{team.table=freshTable();team.form=[];});
+    this.state.matches=[];this.state.playerStats={};this.state.reports={};
+    this.state.rounds=buildDivisionRounds(this.state.teams,roundRobin);
+    this.state.cup=emptyKnockoutCup();
+    this.state.seasonFinalTournament=null;this.state.liveSeasonFinalRound=null;
+    this.state.completedBroadcasts=[];
+    this.state.matchPredictions={schemaVersion:1,markets:{},bets:[],distributions:[]};
+    this.state.dailyAutomation.enabled=true;
+    this.state.dailyAutomation.lastResetDate=localDateKey(new Date(now));
+    this.state.dailyAutomation.lastRewardedSeasonId=null;
+    this.state.dailyAutomation.lastCupStartDate=null;
+    this.state.dailyAutomation.initializedDate=localDateKey(new Date(now));
+    this.upgradeAiClubs(true);
+    this.syncForcedSeedMirrorUploads();
+    for(const team of this.state.teams.filter(t=>t.ownerId))this.pushInbox(team,{id:`division-migration:${this.state.season.id}:${team.id}`,type:'notice',title:'A/B 双级联赛已启用',summary:`你的球队进入${team.division}级联赛。`,body:'首次分级真人球队优先进入A级，其余按旧积分排名分配。每级8队、双循环14轮，赛季结束后两升两降；16队共同参加淘汰制杯赛。旧赛事已归档，未开赛预测本金已退回。',payload:{division:team.division}});
+    this.save();
+    return true;
+  }
+
+  applyDivisionMovement() {
+    const format=this.state.competitionFormat;
+    if(format?.version!==LEAGUE_FORMAT_VERSION||this.state.season.status!=='completed'||this.state.season.currentRound!==LEAGUE_ROUNDS||this.state.rounds.some(r=>r.status!=='complete'))return null;
+    const existing=format.movements.find(m=>m.seasonId===this.state.season.id);
+    if(existing)return existing;
+    const movement={...divisionMovement(this.state.teams,this.state.season.id),appliedAt:this.now()};
+    for(const team of this.state.teams){
+      const from=team.division;
+      if(movement.promoted.includes(team.id))team.division='A';
+      if(movement.relegated.includes(team.id))team.division='B';
+      if(from!==team.division&&team.ownerId)this.pushInbox(team,{id:`division-movement:${movement.seasonId}:${team.id}`,type:'notice',title:team.division==='A'?'升级至A级联赛':'降入B级联赛',summary:`${team.name}：${from}级 → ${team.division}级`,body:'升降级按已完赛的14轮联赛最终排名确定，新赛季生效。球员、战术和资产保持不变。',payload:{from,to:team.division,seasonId:movement.seasonId}});
+    }
+    format.movements.push(movement);format.movements=format.movements.slice(-30);
+    return movement;
+  }
+
+  upgradeAiClubs(force = false) {
+    if (!force && (this.state.season.currentRound > 0 || this.state.matches?.length > 0 || this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound)) return;
+    this.state.teams.forEach((team,index) => {
+      if (team.ownerId) return;
+      // Freeze old AI attribution before a slot changes name or ownership.
+      for (const stats of [this.state.playerStats,this.state.cup?.playerStats]) {
+        for (const [key,entry] of Object.entries(stats ?? {})) if (entry.teamId === team.id && entry.isAi == null) {
+          entry.isAi = true;
+          const aiKey = `${team.id}:${entry.playerId}:ai`;
+          if (!stats[aiKey]) { stats[aiKey] = {...entry,key:aiKey}; delete stats[key]; }
+        }
+      }
+      installAiClub(team,index,REAL_PLAYERS);
+    });
+  }
+
   selectActualLineup(team, roundNumber, competition = "league", options = {}) {
     const humanOwned = this.ownedPlayerIds();
     const bannedPlayerIds = new Set((options.bannedPlayerIds ?? []).map(String));
+    if (!team.ownerId && team.aiClub) {
+      const selected = planAiClub(team, REAL_PLAYERS, {competition,bannedPlayerIds:[...bannedPlayerIds],opponentStyle:options.opponentStyle});
+      Object.assign(team, selected.configuration);
+      return selected;
+    }
     if (!team.ownerId) {
       const teamIndex = this.state.teams.indexOf(team);
       const preferred = aiLineup(teamIndex, roundNumber, humanOwned);
@@ -7749,71 +8228,27 @@ export class YellowDogsLeagueService {
       const available = [...preferred, ...reserves].filter((player) => !bannedPlayerIds.has(String(player.id)));
       return { lineup:available.slice(0, 11), substitutes:available.slice(11), rotations:[] };
     }
-    const desired = team.preferredStarterIds.filter((id) => team.rosterIds.includes(id) && !this.rosterOverlimitLocked(team, id));
-    const threshold = Number(team.fitnessThreshold ?? DEFAULT_FITNESS_THRESHOLD);
-    const effectiveFitness = (id) => {
-      const fixedFitness = fixedFitnessFromTraitIds(this.representativeCard(team.ownerId, id)?.traitIds);
-      if (fixedFitness != null) return fixedFitness;
-      return competition === "friendly" ? 100 : Number(team.playerState[id]?.fitness ?? 100);
-    };
-    const hardAvailable = (id) => {
-      const state = team.playerState[id] ?? {};
-      if (competition === "friendly") return Number(state.injuryRounds ?? 0) <= 0;
-      const suspension = competition === "season-final"
-        ? Number(state.seasonFinalSuspension ?? 0)
-        : competition === "cup" ? Number(state.cupSuspension ?? 0) : Number(state.suspension ?? 0);
-      return !bannedPlayerIds.has(String(id)) && suspension <= 0 && Number(state.injuryRounds ?? 0) <= 0 && effectiveFitness(id) >= 45;
-    };
-    const assignedRoles = inferElevenBoardRoles(desired.map((id) => ({ id, position:team.positions[id] })));
-    const selected = [];
-    const rotations = [];
-    const bench = team.rosterIds.filter((id) => !desired.includes(id) && !this.rosterOverlimitLocked(team, id) && hardAvailable(id));
-    const effectiveOverall = (player) => s4EffectiveOverall(
-      player,
-      this.representativeCard(team.ownerId, player.id)?.upgradeLevel ?? 0,
-    );
-    const takeReplacement = (starterId, requireFresh) => {
-      const assignedRole = assignedRoles[starterId] ?? REAL_PLAYER_BY_ID[starterId]?.role;
-      const candidates = bench
-        .filter((id) => !requireFresh || effectiveFitness(id) > threshold)
-        .map((id) => {
-          const player = REAL_PLAYER_BY_ID[id];
-          const card = this.representativeCard(team.ownerId, id);
-          return player ? { ...player, traits:[...(card?.traitIds ?? [])] } : null;
-        })
-        .filter((player) => player && (!requireFresh || automaticSubstitutionRank(assignedRole, player) > 0))
-        .sort((left, right) => compareAutomaticSubstitutes(
-          assignedRole,
-          left,
-          right,
-          (player) => effectiveFitness(player.id),
-          effectiveOverall,
-        ))[0];
-      if (!candidates) return null;
-      bench.splice(bench.indexOf(candidates.id), 1);
-      return candidates.id;
-    };
-    for (const starterId of desired) {
-      const state = team.playerState[starterId] ?? {};
-      const fitness = effectiveFitness(starterId);
-      const forcedOut = !hardAvailable(starterId);
-      const atRedLine = competition !== "friendly" && !forcedOut && fitness <= threshold;
-      const substitute = forcedOut ? takeReplacement(starterId, false) : atRedLine ? takeReplacement(starterId, true) : null;
-      if (substitute) {
-        selected.push(substitute);
-        const suspension = competition === "season-final"
-          ? Number(state.seasonFinalSuspension ?? 0)
-          : competition === "cup" ? Number(state.cupSuspension ?? 0) : Number(state.suspension ?? 0);
-        rotations.push({ outId:starterId, outName:REAL_PLAYER_BY_ID[starterId]?.name, inId:substitute, inName:REAL_PLAYER_BY_ID[substitute]?.name, reason:forcedOut ? (bannedPlayerIds.has(String(starterId)) ? "赛季总决赛禁用" : suspension > 0 ? "停赛" : Number(state.injuryRounds ?? 0) > 0 ? "伤缺" : "体能不足45") : `体能${Math.round(fitness)}达到红线${threshold}` });
-      } else if (!forcedOut) selected.push(starterId);
-    }
-    while (selected.length < 11 && bench.length) selected.push(bench.shift());
-    const starterIds = selected.slice(0, 11);
-    const playerForMatch = (id) => ({ ...REAL_PLAYER_BY_ID[id], state:{ ...REAL_PLAYER_BY_ID[id].state, fitness:effectiveFitness(id) } });
+    const desired = team.preferredStarterIds.slice(0,11);
+    const preset = team.tacticalPlans?.opening?.positionPreset ?? "position1";
+    const board = team.positionPresets?.[preset] ?? team.positions;
+    const assignedRoles = inferFormationBoardRoles(desired.map(id=>({id,position:board[id]})), team.formationLinePresets?.[preset]);
+    const players = team.rosterIds.map(id=>{
+      const player=REAL_PLAYER_BY_ID[id];if(!player)return null;
+      const card=this.representativeCard(team.ownerId,id),state=team.playerState[id]??{};
+      return {...player,traits:[...(card?.traitIds??[])],
+        blockedReason:bannedPlayerIds.has(id)?"赛事禁用":this.rosterOverlimitLocked(team,id)?"名单超限锁定":null,
+        state:{...state,fitness:effectivePrematchFitness(state,competition,fixedFitnessFromTraitIds(card?.traitIds))}};
+    }).filter(Boolean);
+    const selection=selectPrematchLineup({
+      slots:desired.map(id=>({id,playerId:id,role:assignedRoles[id]??REAL_PLAYER_BY_ID[id]?.role,position:board[id]})),
+      players,threshold:team.fitnessThreshold,competition,
+      quality:player=>s4EffectiveOverall(player,this.representativeCard(team.ownerId,player.id)?.upgradeLevel??0)*(.55+.45*player.state.fitness/100),
+    });
     return {
-      lineup:starterIds.map(playerForMatch),
-      substitutes:bench.filter((id) => !starterIds.includes(id)).map(playerForMatch),
-      rotations,
+      lineup:selection.assignments.map(({player,slot,emergency})=>({...player,assignedRole:slot.role,lineupSlotId:slot.playerId,emergencyGoalkeeper:Boolean(emergency)})),
+      substitutes:selection.substitutes,
+      rotations:selection.rotations,
+      rotationNotes:selection.notes,
     };
   }
 
@@ -7823,14 +8258,14 @@ export class YellowDogsLeagueService {
 
   actualPositions(team, lineup, positionPreset = "position1") {
     const fallback = leagueBoardPositions(lineup);
-    if (!team.ownerId) return fallback;
+    if (!team.ownerId && !team.aiClub) return fallback;
     const savedPositions = team.positionPresets?.[positionPreset] ?? team.positions;
     const lineupIds = new Set(lineup.map((player) => player.id));
     const replacementSlots = team.preferredStarterIds
       .filter((id) => !lineupIds.has(id) && savedPositions[id])
       .map((id) => ({ ...savedPositions[id] }));
-    return Object.fromEntries(lineup.map((player) => [player.id, savedPositions[player.id]
-      ? { ...savedPositions[player.id] }
+    return Object.fromEntries(lineup.map((player) => [player.id, savedPositions[player.lineupSlotId ?? player.id]
+      ? { ...savedPositions[player.lineupSlotId ?? player.id] }
       : replacementSlots.shift() ?? fallback[player.id]]));
   }
 
@@ -7846,8 +8281,8 @@ export class YellowDogsLeagueService {
     });
   }
 
-  chemistryAdjustedLineup(team, lineup, positions) {
-    const links = team.ownerId ? publicChemistryLinks(team, lineup.map((player) => player.id), positions) : [];
+  chemistryAdjustedLineup(team, lineup, positions, formationLines = team.formationLinePresets?.[team.tacticalPlans?.opening?.positionPreset ?? "position1"]) {
+    const links = team.ownerId ? publicChemistryLinks(team, lineup.map((player) => player.id), positions, formationLines) : [];
     const valuesByPlayer = new Map();
     links.forEach((link) => link.playerIds.forEach((id) => {
       const values = valuesByPlayer.get(id) ?? [];
@@ -7861,7 +8296,7 @@ export class YellowDogsLeagueService {
         traits:(card?.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]),
       };
     });
-    eligibleChemistryPairs(lineupWithCards, positions).forEach((pair) => {
+    eligibleChemistryPairs(lineupWithCards, positions, formationLines).forEach((pair) => {
       const pairPlayers = pair.playerIds.map((id) => lineupWithCards.find((player) => player.id === id)).filter(Boolean);
       const traitRule = pairPlayers.flatMap((player) => player.traits.map((id) => YDL_TRAIT_BY_ID[id]))
         .filter(Boolean)
@@ -7887,7 +8322,7 @@ export class YellowDogsLeagueService {
         leagueChemistryBonus:Number(bonus.toFixed(4)),
       };
     });
-    const roles = inferElevenBoardRoles(chemistryLineup.map((player) => ({ id:player.id, position:positions[player.id] })));
+    const roles = inferFormationBoardRoles(chemistryLineup.map((player) => ({ id:player.id, position:positions[player.id] })), formationLines);
     const bonds = evaluateS4LineupBonds(chemistryLineup, S4_BOND_CATALOG, { roles });
     return applyS4BondBonuses(chemistryLineup, bonds);
   }
@@ -7900,13 +8335,16 @@ export class YellowDogsLeagueService {
     return seededConditions(this.fixtureSeed(fixture, roundNumber), options);
   }
 
-  createFixtureMatch(fixture, roundNumber, startedAt = this.now(), options = {}) {
+  prepareFixtureMatch(fixture, roundNumber, startedAt = this.now(), options = {}) {
     const home = this.state.teams.find((team) => team.id === fixture.homeId);
     const away = this.state.teams.find((team) => team.id === fixture.awayId);
     const competitionMode = options.competitionMode ?? "league";
     const availabilityMode = options.availabilityMode ?? competitionMode;
-    const teams = [home, away].map((team) => lineupTeamForCompetition(team, competitionMode));
-    const selections = teams.map((team) => this.selectActualLineup(team, roundNumber, availabilityMode, { bannedPlayerIds:options.bannedPlayerIdsByTeam?.[team.id] ?? [] }));
+    // Forecast planning must not write AI lineup decisions into the live team.
+    const teams = [home, away].map((team) => lineupTeamForCompetition(
+      options.snapshotTeams && (team.ownerId || team.aiClub) ? clone(team) : team, competitionMode,
+    ));
+    const selections = teams.map((team,index) => this.selectActualLineup(team, roundNumber, availabilityMode, { bannedPlayerIds:options.bannedPlayerIdsByTeam?.[team.id] ?? [],opponentStyle:teams[1-index].style }));
     const lineups = selections.map((selection) => selection.lineup);
     const positionPresets = teams.map((team, index) => Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, this.actualPositions(team, lineups[index], key)])));
     const formationLinePresets = teams.map((team) => Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, sanitizeFormationLines(team.formationLinePresets?.[key])])));
@@ -7915,26 +8353,36 @@ export class YellowDogsLeagueService {
       return clone(positionPresets[index][openingPreset] ?? positionPresets[index].position1);
     });
     const conditions = this.fixtureConditions(fixture, roundNumber, options);
-    const matchEngine = options.matchEngine ?? MATCH_ENGINE_BY_COMPETITION[competitionMode] ?? DEFAULT_MATCH_ENGINE;
+    const matchEngine = options.matchEngine ?? this.actualMatchEngine ?? MATCH_ENGINE_BY_COMPETITION[competitionMode] ?? DEFAULT_MATCH_ENGINE;
     const seats = teams.map((team, index) => {
       const starters = this.chemistryAdjustedLineup(team, lineups[index], positions[index]).map((player) => ({ ...player, active:true }));
-      const substitutes = ["v2", "v3"].includes(matchEngine) ? (selections[index].substitutes ?? []).map((player) => {
+      const substitutes = ["v2", "v3", "v4"].includes(matchEngine) ? (selections[index].substitutes ?? []).map((player) => {
         const card = this.representativeCard(team.ownerId, player.id);
         return { ...applyS4Enhancement(player, card?.upgradeLevel ?? 0), traits:(card?.traitIds ?? []).filter((id) => YDL_TRAIT_BY_ID[id]), active:false };
       }) : [];
-      const tacticalPlans = tacticalPlansWithInheritedDuties(unwrapTracked(team.tacticalPlans), selections[index].rotations);
+      const tacticalPlans = team.aiClub && !team.ownerId ? clone(team.tacticalPlans) : tacticalPlansWithInheritedDuties(unwrapTracked(team.tacticalPlans), selections[index].rotations);
       return { name:team.name, players:[...starters, ...substitutes], positions:positions[index], positionPresets:positionPresets[index], formationLinePresets:formationLinePresets[index], tactic:tacticalPlans.opening?.tactic ?? team.tactic, style:tacticalPlans.opening?.style ?? team.style, tacticalPlans, bondCatalog:S4_BOND_CATALOG, attackFocus:team.attackFocus, defenseFocus:team.defenseFocus, captainId:starters.some((player) => player.id === team.captainId) ? team.captainId : null, captainStyle:normalizeCaptainStyle(team.captainStyle), preserveFitness:true };
     });
-    const match = createLeagueMatch(unwrapTracked(seats), { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode, legNumber:options.legNumber ?? 1, allowSuperStorm:options.allowSuperStorm, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false, matchEngine, parameters:["v2", "v3"].includes(matchEngine) ? parametersForEngine(matchEngine) : undefined, engineProfile:engineProfile(parametersForEngine(matchEngine)), dotReplayEnabled:false });
+    const matchOptions = { now:startedAt, seed:options.seed ?? this.fixtureSeed(fixture, roundNumber), weather:conditions.weather.key, referee:conditions.referee.key, regulationOnly:options.regulationOnly ?? true, competitionMode, legNumber:options.legNumber ?? 1, allowSuperStorm:options.allowSuperStorm, aggregateBaseScore:options.aggregateBaseScore ?? null, recordEvents:options.recordEvents ?? this.recordMatchEvents !== false, matchEngine, parameters:["v2", "v3"].includes(matchEngine) ? parametersForEngine(matchEngine) : undefined, engineProfile:engineProfile(parametersForEngine(matchEngine)), dotReplayEnabled:false };
+    return { home, away, seats:unwrapTracked(seats), matchOptions, selections, competitionMode };
+  }
+
+  createFixtureMatch(fixture, roundNumber, startedAt = this.now(), options = {}) {
+    const { home, away, seats, matchOptions, selections, competitionMode } = this.prepareFixtureMatch(fixture, roundNumber, startedAt, options);
+    const match = createLeagueMatch(seats.map((seat,i)=>({...seat,id:i===0?home.id:away.id})), matchOptions);
     match.stadium = this.clubBroadcastVenue(home);
     match.leagueAutoRotations = selections.map((selection) => selection.rotations);
+    match.leagueLineupSchemes = [home,away].map(team=>{
+      const scheme=team.lineupSchemes?.find(s=>s.id===team.lineupSchemeAssignments?.[competitionMode]);
+      return {teamId:team.id,id:scheme?.id??team.activeLineupSchemeId,name:scheme?.name??null,revision:scheme?.revision??null};
+    });
     return { home, away, match, startedAt };
   }
 
   publicChemistryLinksForTeam(team, starterIds = team.preferredStarterIds, positions = team.positions) {
     const links = publicChemistryLinks(team, starterIds, positions);
     const starters = starterIds.map((id) => REAL_PLAYER_BY_ID[id]).filter(Boolean);
-    eligibleChemistryPairs(starters, positions).forEach((pair) => {
+    eligibleChemistryPairs(starters, positions, team.formationLinePresets?.position1).forEach((pair) => {
       const carrier = pair.playerIds
         .map((id) => this.representativeCard(team.ownerId, id))
         .filter(Boolean)
@@ -7970,7 +8418,7 @@ export class YellowDogsLeagueService {
     }));
   }
 
-  aiTrainingPlayers(formation, targetOverall) {
+  aiTrainingPlayers(formation, targetOverall, rng = this.rng, style = "balanced") {
     const slots = AI_TRAINING_FORMATIONS[formation];
     if (!slots) throw new Error("请选择有效的 AI 阵型");
     const target = Math.max(62, Math.min(95, Math.round(Number(targetOverall) || 80)));
@@ -7980,10 +8428,10 @@ export class YellowDogsLeagueService {
       const desired = (target * 11 - totalOverall) / Math.max(1, remainingSlots);
       const candidates = REAL_PLAYERS
         .filter((player) => !isXPlayer(player) && player.role === role && !used.has(player.id))
-        .sort((left, right) => Math.abs(left.overall - desired) - Math.abs(right.overall - desired) || left.id.localeCompare(right.id));
+        .sort((left, right) => Math.abs(left.overall - desired) - Math.abs(right.overall - desired) - .15*(draftStyleScore(left,style)-draftStyleScore(right,style)) || left.id.localeCompare(right.id));
       if (!candidates.length) throw new Error(`球员库缺少主位置为${role}的 AI 球员`);
       const shortlist = candidates.slice(0, Math.min(5, candidates.length));
-      const player = shortlist[Math.floor(this.rng() * shortlist.length)] ?? shortlist[0];
+      const player = shortlist[Math.floor(rng() * shortlist.length)] ?? shortlist[0];
       used.add(player.id);
       return player;
     };
@@ -8006,6 +8454,47 @@ export class YellowDogsLeagueService {
       averageOverall:Number((totalOverall / selected.length).toFixed(1)),
       targetOverall:target,
     };
+  }
+
+  systemAiTrainingSeat(config = {}) {
+    const clubId = String(config.clubId ?? "");
+    const level = Number(config.upgradeLevel ?? 0);
+    if (!Number.isInteger(level) || level < 0 || level > 8) throw new Error("AI强化等级必须为0到8");
+    const traitIds = [...new Set((Array.isArray(config.traitIds) ? config.traitIds : []).filter(Boolean).map(String))];
+    if (traitIds.length > S4_ENHANCEMENT.traitUnlockLevels.filter(n => level >= n).length || traitIds.some(id => !YDL_TRAIT_BY_ID[id])) throw new Error("AI特性超出强化解锁数量或特性不存在");
+    const seed = String(config.trainingSeed ?? "").trim().slice(0,80);
+    let seat, targetOverall = null, label;
+    if (clubId) {
+      const index = AI_CLUBS.findIndex(c => c.id === clubId);
+      if (index < 0) throw new Error("未知AI俱乐部");
+      const team = {id:`training-${clubId}`,rosterIds:[]};
+      installAiClub(team,index,REAL_PLAYERS);
+      const selected = planAiClub(team,REAL_PLAYERS,{schemeIndex:config.schemeIndex ?? 0});
+      const configuration = selected.configuration;
+      label = `${team.name} · ${configuration.aiDecision.formation}`;
+      seat = {...configuration,name:`AI ${label}`,bondCatalog:S4_BOND_CATALOG,preserveFitness:true,
+        players:[...selected.lineup.map(p=>({...p,active:true})),...selected.substitutes.map(p=>({...p,active:false}))]};
+    } else {
+      const formation = String(config.formation ?? "4-3-3");
+      const trainingStyle=String(config.trainingStyle??"custom");
+      if(!["custom","control","press","counter","wing"].includes(trainingStyle))throw new Error("未知训练风格");
+      const selected = this.aiTrainingPlayers(formation,config.averageOverall,seed ? seededAiRandom(seed) : this.rng,trainingStyle==="custom"?"balanced":trainingStyle);
+      const positions = Object.fromEntries(selected.starters.map(({player,position})=>[player.id,position]));
+      const lines = deriveFormationLines(selected.starters.map(({player,position})=>({id:player.id,position})));
+      const tacticalPlans = this.aiTrainingTacticalPlans(config.tacticalPlans);
+      if(trainingStyle!=="custom") for(const phase of ["opening","leading","trailing"]) tacticalPlans[phase]=applyPrinciplePreset(tacticalPlans[phase],phase==="leading"?(trainingStyle==="control"?"control":"protect"):phase==="trailing"&&trainingStyle==="counter"?"vertical":trainingStyle);
+      label=formation; targetOverall=selected.targetOverall;
+      seat={name:`AI 训练队 · ${formation}`,players:[...selected.starters.map(({player})=>({...player,active:true})),...selected.substitutes.map(player=>({...player,active:false}))],
+        positions,positionPresets:Object.fromEntries(POSITION_PRESET_KEYS.map(key=>[key,clone(positions)])),
+        formationLinePresets:Object.fromEntries(POSITION_PRESET_KEYS.map(key=>[key,clone(lines)])),
+        tacticalPlans,tactic:tacticalPlans.opening.tactic,style:tacticalPlans.opening.style,bondCatalog:[],
+        attackFocus:FOCUSES.has(config.attackFocus)?config.attackFocus:'balanced',defenseFocus:FOCUSES.has(config.defenseFocus)?config.defenseFocus:'balanced',preserveFitness:true};
+    }
+    seat.players=seat.players.map(p=>({...applyS4Enhancement(p,level),state:{fitness:100},traits:traitIds.filter(id=>{
+      const roles=YDL_TRAIT_BY_ID[id].eligibleRoleGroups??['ANY'];return roles.includes('ANY')||roles.includes(roleGroup(p.role));
+    }),active:p.active,aiPlayer:true}));
+    const starters=seat.players.filter(p=>p.active);
+    return {seat,label,targetOverall,actualAverageOverall:Number((starters.reduce((sum,p)=>sum+p.overall,0)/starters.length).toFixed(1)),trainingSeed:seed,upgradeLevel:level,traitIds};
   }
 
   aiTrainingPlayerSeat(team) {
@@ -8057,7 +8546,8 @@ export class YellowDogsLeagueService {
   }
 
   forcedSeedMirrorTeams() {
-    const tournament = this.state.seasonFinalTournament;
+    if (!SEASON_FINAL_ENABLED) return [];
+    const tournament = SEASON_FINAL_ENABLED ? this.state.seasonFinalTournament : null;
     if (this.state.season.status !== "completed" || !tournament || tournament.preview || tournament.seasonId !== this.state.season.id) return [];
     return (tournament.seedSnapshot ?? [])
       .filter((entry) => !entry.isAi && Number(entry.seed) >= 1 && Number(entry.seed) <= 3)
@@ -8477,6 +8967,10 @@ export class YellowDogsLeagueService {
     return status;
   }
 
+  mirrorBatchMatchSeed(job, number) {
+    return !job.mirrorTeamId && job.trainingSeed ? `ai-training:${job.trainingSeed}:${number}` : `${this.state.season.id}:${job.id}:${number}`;
+  }
+
   leaseDirectorMirrorBatchJob(info = {}) {
     const workerId = String(info.workerId ?? "") === "axero-director-pc" ? MIRROR_BATCH_DIRECTOR_NODE : String(info.workerId ?? "");
     const engineVersion = String(info.engineVersion ?? "");
@@ -8497,7 +8991,7 @@ export class YellowDogsLeagueService {
     job.updatedAt = now;
     const matches = Array.from({ length:job.totalMatches }, (_, index) => {
       const number = index + 1;
-      const seed = `${this.state.season.id}:${job.id}:${number}`;
+      const seed = this.mirrorBatchMatchSeed(job, number);
       const conditions = seededConditions(seed);
       return { number, seed, weather:conditions.weather.key, referee:conditions.referee };
     });
@@ -8552,13 +9046,14 @@ export class YellowDogsLeagueService {
     if (reports.length !== lease.job.totalMatches) throw new Error(`高速模拟结果必须包含${lease.job.totalMatches}场`);
     const expectedSeeds = new Map(Array.from({ length:lease.job.totalMatches }, (_, index) => {
       const number = index + 1;
-      return [number, `${this.state.season.id}:${lease.job.id}:${number}`];
+      return [number, this.mirrorBatchMatchSeed(lease.job, number)];
     }));
     const seen = new Set();
     const results = reports.map((entry) => {
       const number = Math.floor(Number(entry?.number));
       if (!expectedSeeds.has(number) || seen.has(number) || entry?.seed !== expectedSeeds.get(number)) throw new Error("高速模拟结果编号或随机种子无效");
       if (!Array.isArray(entry.report?.score) || entry.report.score.length !== 2 || !Array.isArray(entry.report?.teams) || entry.report.teams.length !== 2) throw new Error("高速模拟比赛报告结构无效");
+      if (this.actualMatchEngine === "v4" && entry.report.engineVersion !== MIRROR_BATCH_WORKER_ENGINE_VERSION) throw new Error("镜像赛果与本服比赛引擎版本不符");
       seen.add(number);
       return this.mirrorBatchMatchResult({ report:entry.report }, number);
     }).sort((left, right) => left.number - right.number);
@@ -8712,28 +9207,8 @@ export class YellowDogsLeagueService {
         defenseFocus:FOCUSES.has(config.defenseFocus) ? config.defenseFocus : "balanced",
       };
     } else {
-      const formation = String(config.formation ?? "4-3-3");
-      const aiSelection = this.aiTrainingPlayers(formation, config.averageOverall);
-      const positions = Object.fromEntries(aiSelection.starters.map(({ player, position }) => [player.id, position]));
-      const formationLines = deriveFormationLines(aiSelection.starters.map(({ player, position }) => ({ id:player.id, position })));
-      opponentName = `AI 训练队 · ${formation} · ${aiSelection.averageOverall}`;
-      opponentSeat = {
-        name:opponentName,
-        players:[
-          ...aiSelection.starters.map(({ player }) => ({ ...player, state:{ fitness:100 }, traits:[], active:true })),
-          ...aiSelection.substitutes.map((player) => ({ ...player, state:{ fitness:100 }, traits:[], active:false })),
-        ],
-        positions,
-        positionPresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(positions)])),
-        formationLinePresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(formationLines)])),
-        tactic:tacticalPlans.opening.tactic,
-        style:tacticalPlans.opening.style,
-        tacticalPlans,
-        bondCatalog:[],
-        attackFocus:FOCUSES.has(config.attackFocus) ? config.attackFocus : "balanced",
-        defenseFocus:FOCUSES.has(config.defenseFocus) ? config.defenseFocus : "balanced",
-        preserveFitness:true,
-      };
+      const prepared = this.systemAiTrainingSeat(config);
+      opponentSeat=prepared.seat; opponentName=`AI ${prepared.label} · ${prepared.actualAverageOverall}`;
     }
 
     const subtotal = Math.round(unitPrice * totalMatches / MIRROR_BATCH_PRICE_DIVISOR);
@@ -8780,6 +9255,7 @@ export class YellowDogsLeagueService {
       status:"queued",
       callerSeat:clone(this.aiTrainingPlayerSeat(team)),
       opponentSeat:clone(opponentSeat),
+      trainingSeed:mirrorTeamId ? '' : String(config.trainingSeed ?? '').trim().slice(0,80),
       results:[],
       createdAt,
       updatedAt:createdAt,
@@ -9080,7 +9556,7 @@ export class YellowDogsLeagueService {
       job.status = "running";
       const number = Number(job.results?.length ?? 0) + 1;
       if (!job.activeMatch) {
-        const seed = `${this.state.season.id}:${job.id}:${number}`;
+        const seed = this.mirrorBatchMatchSeed(job, number);
         const conditions = seededConditions(seed);
         job.activeMatch = createLeagueMatch(unwrapTracked([clone(job.callerSeat), clone(job.opponentSeat)]), {
           now:this.now(),
@@ -9090,14 +9566,14 @@ export class YellowDogsLeagueService {
           regulationOnly:true,
           competitionMode:"friendly",
           recordEvents:false,
-          matchEngine:"v3",
+          matchEngine:this.actualMatchEngine ?? "v3",
         });
         job.activeMatchStartedAt = this.now();
         advanced = true;
       }
       const activeMatch = unwrapTracked(job.activeMatch);
       const before = Number(activeMatch.nextChainIndex ?? 0);
-      const advanceAt = Number(job.activeMatchStartedAt ?? this.now()) + REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + 1;
+      const advanceAt = Number(job.activeMatchStartedAt ?? this.now()) + (activeMatch.version === 4 ? 3600000 : REGULAR_DURATION_MS + HALFTIME_ADJUSTMENT_MS + 1);
       advanceLeagueMatch(activeMatch, advanceAt, { maximumChains:maximumChainsPerMatch });
       job.activeMatch = activeMatch;
       advanced = advanced || Number(activeMatch.nextChainIndex ?? 0) > before || Boolean(activeMatch.report);
@@ -9148,48 +9624,29 @@ export class YellowDogsLeagueService {
       const activePlayers = opponentSeat.players.filter((player) => player.active !== false);
       actualAverageOverall = Number((activePlayers.reduce((sum, player) => sum + Number(player.overall ?? 0), 0) / activePlayers.length).toFixed(1));
     } else {
-      const formation = String(config.formation ?? "4-3-3");
-      const aiSelection = this.aiTrainingPlayers(formation, config.averageOverall);
-      const positions = Object.fromEntries(aiSelection.starters.map(({ player, position }) => [player.id, position]));
-      const formationLines = deriveFormationLines(aiSelection.starters.map(({ player, position }) => ({ id:player.id, position })));
-      opponentLabel = formation;
-      actualAverageOverall = aiSelection.averageOverall;
-      targetOverall = aiSelection.targetOverall;
-      opponentSeat = {
-        name:`AI 训练队 · ${formation}`,
-        players:[
-          ...aiSelection.starters.map(({ player }) => ({ ...player, state:{ fitness:100 }, traits:[], active:true })),
-          ...aiSelection.substitutes.map((player) => ({ ...player, state:{ fitness:100 }, traits:[], active:false })),
-        ],
-        positions,
-        positionPresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(positions)])),
-        formationLinePresets:Object.fromEntries(POSITION_PRESET_KEYS.map((key) => [key, clone(formationLines)])),
-        tactic:tacticalPlans.opening.tactic,
-        style:tacticalPlans.opening.style,
-        tacticalPlans,
-        bondCatalog:[],
-        attackFocus:FOCUSES.has(config.attackFocus) ? config.attackFocus : "balanced",
-        defenseFocus:FOCUSES.has(config.defenseFocus) ? config.defenseFocus : "balanced",
-        preserveFitness:true,
-      };
+      const prepared = this.systemAiTrainingSeat(config);
+      opponentSeat=prepared.seat; opponentLabel=prepared.label;
+      actualAverageOverall=prepared.actualAverageOverall; targetOverall=prepared.targetOverall;
     }
     for (const [code, live] of this.liveAiTrainings) {
       if (live.ownerId === account.id) this.liveAiTrainings.delete(code);
     }
     const startedAt = this.now();
     const code = `YDL-AI-${makeId("TRAINING", account.id)}`.toUpperCase();
-    const conditions = seededConditions(`${this.state.season.id}:${code}`);
+    const trainingSeed = String(config.trainingSeed ?? "").trim().slice(0,80);
+    const matchSeed = !mirrorTeamId && trainingSeed ? `ai-training:${trainingSeed}` : `${this.state.season.id}:${code}`;
+    const conditions = seededConditions(matchSeed);
     let match;
     try {
       match = createLeagueMatch(unwrapTracked([this.aiTrainingPlayerSeat(team), opponentSeat]), {
         now:startedAt,
-        seed:`${this.state.season.id}:${code}`,
+        seed:matchSeed,
         weather:conditions.weather.key,
         referee:conditions.referee.key,
         regulationOnly:true,
         competitionMode:"friendly",
         recordEvents:this.recordMatchEvents !== false,
-        matchEngine:"v3",
+        matchEngine:this.actualMatchEngine ?? "v3",
       });
       match.stadium = this.clubBroadcastVenue(team);
     } catch (error) {
@@ -9197,7 +9654,7 @@ export class YellowDogsLeagueService {
       throw error;
     }
     const spectatorToken = makeId("training-viewer", account.id);
-    const live = { code, ownerId:account.id, round:"AI 对战", match, spectators:{ [spectatorToken]:{ name:account.name ?? team.ownerName ?? "玩家", lastSeenAt:startedAt } }, startedAt, aiTraining:true, actualAverageOverall, targetOverall, formation:opponentLabel, mirrorTeamId:mirrorTeamId || null, mirrorKind:mirrorCharge?.kind ?? null, mirrorSchemeId:mirrorCharge?.mirrorSchemeId ?? null };
+    const live = { code, ownerId:account.id, round:"AI 对战", match, spectators:{ [spectatorToken]:{ name:account.name ?? team.ownerName ?? "玩家", lastSeenAt:startedAt } }, startedAt, aiTraining:true, trainingSeed, clubId:config.clubId ?? null, upgradeLevel:Number(config.upgradeLevel ?? 0), actualAverageOverall, targetOverall, formation:opponentLabel, mirrorTeamId:mirrorTeamId || null, mirrorKind:mirrorCharge?.kind ?? null, mirrorSchemeId:mirrorCharge?.mirrorSchemeId ?? null };
     this.liveAiTrainings.set(code, live);
     if (mirrorCharge) this.save({ scopes:["core", "mirrorMarketplace"], skipDailyBackup:true });
     return { spectatorToken, broadcast:this.broadcastView(live), actualAverageOverall, targetOverall, walletBalance:this.wallet(account.id).balance, mirrorCharge:mirrorCharge ? { kind:mirrorCharge.kind, price:mirrorCharge.price } : null };
@@ -9271,7 +9728,7 @@ export class YellowDogsLeagueService {
       friendlyInvitations:this.state.friendlyInvitations.filter((item) => item.fromOwnerId === account.id || item.toOwnerId === account.id).map((item) => this.friendlyInvitationView(item)),
       inboxUnreadCount:team ? (this.state.inbox[team.id] ?? []).filter((message) => !message.readAt).length : 0,
     };
-    if (options.inbox && team) result.inbox = this.inbox(team);
+    if (options.inbox && team) Object.assign(result, this.inboxProjection(team));
     if (options.schedule && team) result.schedule = { fixtures:this.teamSchedule(team.id) };
     return clone(result);
   }
@@ -9329,7 +9786,7 @@ export class YellowDogsLeagueService {
       this.state.teams.filter((team) => team.ownerId).forEach((team) => {
         const participant = [fromTeam.id, toTeam.id].includes(team.id);
         const injuryNotice = this.state.season.status === "completed" ? "比赛仍会正常判定受伤和伤退，但不会形成正式伤停。" : "受伤仍会正常形成伤停。";
-        this.pushInbox(team, { id:`friendly-scheduled:${fixture.id}:${team.id}`, type:"friendly", title:participant ? "友谊赛已经排定" : "全服友谊赛直播预告", summary:`${fromTeam.name} vs ${toTeam.name}，${timeText}开赛。`, body:participant ? `比赛将以100体力开赛，不消耗体力且红黄牌不计入正式赛事；${injuryNotice}` : "比赛开始后欢迎前往电视台观看直播。", payload:{ friendlyFixtureId:fixture.id, startsAt, homeTeamId:fromTeam.id, awayTeamId:toTeam.id } });
+        (participant ? this.pushInbox.bind(this) : this.pushActivityInbox.bind(this))(team, { id:`friendly-scheduled:${fixture.id}:${team.id}`, type:"friendly", title:participant ? "友谊赛已经排定" : "全服友谊赛直播预告", summary:`${fromTeam.name} vs ${toTeam.name}，${timeText}开赛。`, body:participant ? `比赛将以100体力开赛，不消耗体力且红黄牌不计入正式赛事；${injuryNotice}` : "比赛开始后欢迎前往电视台观看直播。", payload:{ friendlyFixtureId:fixture.id, startsAt, homeTeamId:fromTeam.id, awayTeamId:toTeam.id } });
       });
     }
     this.save({ scopes:["core", "inbox"], skipDailyBackup:true });
@@ -9339,6 +9796,7 @@ export class YellowDogsLeagueService {
   }
 
   startScheduledFriendlies(now = this.now()) {
+    if (this.state.v4LocalLeagueRounds?.active || this.state.v4LocalCupEvents?.active || this.scheduledHost?.busy) return false;
     let changed = false;
     this.state.friendlyFixtures.filter((fixture) => fixture.status === "scheduled" && fixture.startsAt <= now).forEach((fixture) => {
       fixture.offseason = this.state.season.status === "completed";
@@ -9418,7 +9876,7 @@ export class YellowDogsLeagueService {
     const away = this.state.teams.find((team) => team.id === fixture.awayId);
     const report = match.report;
     const id = `${this.state.season.id}-R${roundNumber}-${home.id}-${away.id}`;
-    const record = { id, round:roundNumber, playedAt:this.now(), homeId:home.id, awayId:away.id, homeName:home.name, awayName:away.name, score:[...report.score], formations:report.teams.map((team) => team.formation), autoRotations:clone(match.leagueAutoRotations ?? [[], []]), report };
+    const record = { id, competition:"league", division:home.division, round:roundNumber, playedAt:this.now(), homeId:home.id, awayId:away.id, homeName:home.name, awayName:away.name, score:[...report.score], formations:report.teams.map((team) => team.formation), autoRotations:clone(match.leagueAutoRotations ?? [[], []]), report };
     this.state.matches.push(record);
     this.settleHomeTicketIncome(record);
     this.rollClubSponsorOffersAfterMatch(record);
@@ -9433,13 +9891,13 @@ export class YellowDogsLeagueService {
       else { team.table.lost += 1; team.form.push("L"); }
       team.form = team.form.slice(-5);
       report.teams[index].players.forEach((player) => {
-        const key = `${team.id}:${player.id}`;
-        const stat = this.state.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
-        const penaltiesWon = (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
+        const key = `${team.id}:${player.id}${team.ownerId ? "" : ":ai"}`;
+        const stat = this.state.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, isAi:!team.ownerId, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
+        const penaltiesWon = report.schema === "v4-legacy-player-report-1" ? Number(player.stats.penaltiesWon ?? 0) : (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
         stat.appearances += 1; stat.goals += player.stats.goals; stat.assists += player.stats.assists; stat.saves += player.stats.saves; stat.tackles = Number(stat.tackles ?? 0) + Number(player.stats.tackles ?? 0); stat.interceptions = Number(stat.interceptions ?? 0) + Number(player.stats.interceptions ?? 0); stat.clearances = Number(stat.clearances ?? 0) + Number(player.stats.clearances ?? 0); stat.blocks = Number(stat.blocks ?? 0) + Number(player.stats.blocks ?? 0); stat.pressuresWon = Number(stat.pressuresWon ?? 0) + Number(player.stats.pressuresWon ?? 0); stat.penaltiesWon = Number(stat.penaltiesWon ?? 0) + penaltiesWon; stat.yellowCards += player.stats.yellowCards; stat.redCards += player.stats.redCards; stat.ratingTotal += player.rating;
         this.state.playerStats[key] = stat;
         if (isXPlayer(REAL_PLAYER_BY_ID[player.id])) this.settleXGrowthTasks(player.id);
-        if (team.ownerId && team.playerState[player.id]) {
+        if ((team.ownerId || team.aiClub) && team.playerState[player.id]) {
           const state = team.playerState[player.id];
           const beforeMatch = Number(state.fitness ?? 100);
           const engineFitness = Number(player.fitness ?? beforeMatch);
@@ -9496,13 +9954,13 @@ export class YellowDogsLeagueService {
     [home, away].forEach((team, index) => {
       const playedPlayerIds = new Set(report.teams[index].players.map((player) => player.id));
       report.teams[index].players.forEach((player) => {
-        const key = `${team.id}:${player.id}`;
-        const stat = cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
-        const penaltiesWon = (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
+        const key = `${team.id}:${player.id}${team.ownerId ? "" : ":ai"}`;
+        const stat = cup.playerStats[key] ?? { key, playerId:player.id, playerName:player.name, teamId:team.id, teamName:team.name, isAi:!team.ownerId, appearances:0, goals:0, assists:0, saves:0, tackles:0, interceptions:0, clearances:0, blocks:0, pressuresWon:0, penaltiesWon:0, yellowCards:0, redCards:0, ratingTotal:0 };
+        const penaltiesWon = report.schema === "v4-legacy-player-report-1" ? Number(player.stats.penaltiesWon ?? 0) : (report.importantEvents ?? []).filter((entry) => entry.type === "penaltyAwarded" && entry.opponentId === player.id).length;
         stat.appearances += 1; stat.goals += player.stats.goals; stat.assists += player.stats.assists; stat.saves += player.stats.saves; stat.tackles = Number(stat.tackles ?? 0) + Number(player.stats.tackles ?? 0); stat.interceptions = Number(stat.interceptions ?? 0) + Number(player.stats.interceptions ?? 0); stat.clearances = Number(stat.clearances ?? 0) + Number(player.stats.clearances ?? 0); stat.blocks = Number(stat.blocks ?? 0) + Number(player.stats.blocks ?? 0); stat.pressuresWon = Number(stat.pressuresWon ?? 0) + Number(player.stats.pressuresWon ?? 0); stat.penaltiesWon = Number(stat.penaltiesWon ?? 0) + penaltiesWon; stat.yellowCards += player.stats.yellowCards; stat.redCards += player.stats.redCards; stat.ratingTotal += player.rating;
         cup.playerStats[key] = stat;
         if (isXPlayer(REAL_PLAYER_BY_ID[player.id])) this.settleXGrowthTasks(player.id);
-        if (team.ownerId && team.playerState[player.id]) {
+        if ((team.ownerId || team.aiClub) && team.playerState[player.id]) {
           const state = team.playerState[player.id];
           const beforeMatch = Number(state.fitness ?? 100);
           const drain = Math.max(0, beforeMatch - Number(player.fitness ?? beforeMatch));
@@ -9541,29 +9999,7 @@ export class YellowDogsLeagueService {
   }
 
   createCupMatchInbox(home, away, record, event) {
-    [home, away].forEach((team, ownIndex) => {
-      if (!team.ownerId) return;
-      const opponent = ownIndex === 0 ? away : home;
-      const ownScore = record.score[ownIndex];
-      const opponentScore = record.score[ownIndex === 0 ? 1 : 0];
-      const resultText = ownScore > opponentScore ? "取胜" : ownScore === opponentScore ? "战平" : "失利";
-      const stageLabel = ["league", "swiss"].includes(event.stage) ? `${event.stage === "league" ? "联赛阶段" : "瑞士轮"}第${event.round}轮` : `${CUP_STAGE_NAMES[event.stage] ?? event.stage} · 第${event.leg}回合`;
-      const rank = this.standings().find((entry) => entry.id === team.id)?.rank ?? TEAM_COUNT;
-      const injured = team.rosterIds.filter((id) => Number(team.playerState[id]?.injuryRounds ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].injuryRounds }));
-      const suspended = team.rosterIds.filter((id) => Number(team.playerState[id]?.cupSuspension ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].cupSuspension }));
-      const next = this.nextOpponent(team.id);
-      const homeTicketIncome = this.homeTicketIncomeSummary(team, record);
-      this.pushInbox(team, {
-        id:`cup-matchweek:${this.state.season.id}:${event.id}:${record.id}:${team.id}`,
-        type:"matchweek",
-        title:`黄狗冠军杯 · ${stageLabel}战报`,
-        summary:`${team.name} ${ownScore}:${opponentScore} ${opponent.name}，本场${resultText}。${homeTicketIncome ? ` 主场门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}`,
-        body:`黄狗冠军杯${stageLabel}结束。${homeTicketIncome ? `本场共有${homeTicketIncome.attendance.toLocaleString("zh-CN")}名观众入场，门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}${next ? `下一场为${next.competitionName} ${next.label}，对阵 ${next.name}。` : "当前没有已确定的后续比赛。"}`,
-        round:event.round,
-        matchId:record.id,
-        payload:{ results:[this.matchSummary(record)], rank, points:team.table.points, injured, suspended, next, autoRotations:record.autoRotations?.[ownIndex] ?? [], competition:"cup", stage:event.stage, leg:event.leg, homeTicketIncome },
-      });
-    });
+    [home, away].forEach(team => this.sendMatchSettlement(team,{...record,competition:"cup"},{event}));
   }
 
   cupEventFixtures(event) {
@@ -9585,7 +10021,7 @@ export class YellowDogsLeagueService {
       ties.push({ id, stage, teams:[first, second], winnerId:null, legs });
     }
     cup.knockout[stage] = ties;
-    cup.events.push({ id:`cup-${stage}-leg1`, stage, round:stage === "quarterfinals" ? 10 : stage === "semifinals" ? 11 : 12, leg:1, status:"pending", fixtureIds:ties.map((tie) => tie.legs[0].id) });
+    cup.events.push({ id:`cup-${stage}-leg1`, stage, round:({roundOf16:1,quarterfinals:2,semifinals:3,final:4})[stage], leg:1, status:"pending", fixtureIds:ties.map((tie) => tie.legs[0].id) });
     return ties;
   }
 
@@ -9640,7 +10076,9 @@ export class YellowDogsLeagueService {
           tie.winnerId = aggregate[0] > aggregate[1] ? tie.teams[0] : aggregate[1] > aggregate[0] ? tie.teams[1] : (second.winnerId ?? tie.teams[0]);
         });
         const winners = ties.map((tie) => tie.winnerId);
-        if (event.stage === "quarterfinals") {
+        if (event.stage === "roundOf16") {
+          this.createKnockoutStage("quarterfinals", winners); cup.stage = "quarterfinals";
+        } else if (event.stage === "quarterfinals") {
           winners.forEach((teamId) => this.grantCupReward(teamId, event, "advance"));
           this.createKnockoutStage("semifinals", winners); cup.stage = "semifinals";
         } else if (event.stage === "semifinals") {
@@ -9667,6 +10105,15 @@ export class YellowDogsLeagueService {
       const cupAfterLeague = Number.isFinite(leagueAnchor) ? leagueAnchor + 10 * 60 * 1000 : 0;
       cup.nextRoundAt = Math.max(nextCupSlot(this.now(), this.state.season.firstRoundAt ?? leagueAnchor), cupAfterLeague);
     }
+    // Refresh the next fixture and availability after the whole event has advanced.
+    for (const fixture of this.cupEventFixtures(event)) {
+      const record = this.state.matches.find(item => item.id === fixture.matchId);
+      if (!record) continue;
+      for (const team of this.state.teams.filter(item => item.ownerId && [record.homeId,record.awayId].includes(item.id))) {
+        this.sendMatchSettlement(team,record,{event});
+      }
+    }
+
   }
 
   startScheduledCupEvent() {
@@ -9781,7 +10228,7 @@ export class YellowDogsLeagueService {
     }
     const liveRound = this.state.liveSeasonFinalRound;
     if (!liveRound) return false;
-    const tournament = this.state.seasonFinalTournament;
+    const tournament = SEASON_FINAL_ENABLED ? this.state.seasonFinalTournament : null;
     if (!tournament) return false;
     this.cupNewUnavailable = new Set(liveRound.newUnavailable ?? []);
     let advanced = false;
@@ -9820,7 +10267,7 @@ export class YellowDogsLeagueService {
   }
 
   recoverUnusedPlayers(team, playedPlayerIds) {
-    if (!team?.ownerId) return;
+    if (!team?.ownerId && !team?.aiClub) return;
     team.rosterIds.forEach((id) => {
       if (playedPlayerIds.has(id)) return;
       const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
@@ -9829,7 +10276,7 @@ export class YellowDogsLeagueService {
   }
 
   advanceAvailability() {
-    this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => {
+    this.state.teams.filter((team) => team.ownerId || team.aiClub).forEach((team) => team.rosterIds.forEach((id) => {
       const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
       if (!this.roundNewUnavailable?.has(`${team.id}:${id}:suspension`)) state.suspension = Math.max(0, Number(state.suspension ?? 0) - 1);
       if (!this.roundNewUnavailable?.has(`${team.id}:${id}:injury`)) state.injuryRounds = Math.max(0, Number(state.injuryRounds ?? 0) - 1);
@@ -9837,7 +10284,7 @@ export class YellowDogsLeagueService {
   }
 
   advanceCupAvailability() {
-    this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => {
+    this.state.teams.filter((team) => team.ownerId || team.aiClub).forEach((team) => team.rosterIds.forEach((id) => {
       const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
       const legacyKey = `${team.id}:${id}`;
       if (!this.cupNewUnavailable?.has(legacyKey) && !this.cupNewUnavailable?.has(`${legacyKey}:suspension`)) state.cupSuspension = Math.max(0, Number(state.cupSuspension ?? 0) - 1);
@@ -9847,7 +10294,7 @@ export class YellowDogsLeagueService {
   }
 
   advanceSeasonFinalAvailability() {
-    this.state.teams.filter((team) => team.ownerId).forEach((team) => team.rosterIds.forEach((id) => {
+    this.state.teams.filter((team) => team.ownerId || team.aiClub).forEach((team) => team.rosterIds.forEach((id) => {
       const state = team.playerState[id] ?? (team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 });
       const legacyKey = `${team.id}:${id}`;
       if (!this.cupNewUnavailable?.has(`${legacyKey}:suspension`)) state.seasonFinalSuspension = Math.max(0, Number(state.seasonFinalSuspension ?? 0) - 1);
@@ -9904,17 +10351,7 @@ export class YellowDogsLeagueService {
           createdAt:this.now(),
         });
       }
-      const packText = packRewardEnabled ? `并获得 ${S4_LEAGUE_ROUND_PACK_REWARD_QUANTITY} 个私有池随机礼包` : "";
-      this.pushInbox(team, {
-        id:`reward:${this.state.season.id}:${roundNumber}`,
-        type:"reward",
-        title:packRewardEnabled ? `第${roundNumber}轮联赛奖励已到账` : `第${roundNumber}轮联赛金币已到账`,
-        summary:`本轮联赛${result === "win" ? "取胜" : result === "draw" ? "战平" : "失利"}，获得 ${amount} 金币${packText}。`,
-        body:`本轮比分为 ${ownScore}:${opponentScore}。${packRewardEnabled ? "礼包已经发放到背包；" : ""}友谊赛不发放金币或其他比赛奖励。`,
-        round:roundNumber,
-        matchId:match.id,
-        payload:{ amount, result, ownScore, opponentScore, competition:"league", packType:packRewardEnabled ? S4_LEAGUE_ROUND_PACK_REWARD_TYPE : null, quantity:packRewardEnabled ? S4_LEAGUE_ROUND_PACK_REWARD_QUANTITY : 0, packIds },
-      });
+      this.sendMatchSettlement(team,match);
     });
   }
 
@@ -10004,6 +10441,13 @@ export class YellowDogsLeagueService {
       createdAt:this.now(),
     };
     this.state.ledger.push(ledgerEntry);
+    const fixture = this.cupEventFixtures(event).find(item => item.homeId === team.id || item.awayId === team.id);
+    const record = fixture?.matchId ? this.state.matches.find(item => item.id === fixture.matchId && item.competition === "cup") : null;
+    if (record) {
+      this.sendMatchSettlement(team,record,{event,reward:ledgerEntry});
+      return ledgerEntry;
+    }
+
     if (finalPackType) {
       const placementName = kind === "champion" ? "冠军" : "亚军";
       const pack = S4_PACK_BY_ID[packType];
@@ -10032,6 +10476,7 @@ export class YellowDogsLeagueService {
   }
 
   awardSeasonFinalChampionStar(teamId, tournament) {
+    if (!SEASON_FINAL_ENABLED) return null;
     const team = this.state.teams.find((entry) => entry.id === teamId);
     if (!team || !tournament?.id) return null;
     team.seasonFinalChampionStars ??= [];
@@ -10047,6 +10492,7 @@ export class YellowDogsLeagueService {
   }
 
   grantSeasonFinalPlacementReward(teamId, tournament, kind) {
+    if (!SEASON_FINAL_ENABLED) return null;
     this.ensureDisciplineState();
     const team = this.state.teams.find((entry) => entry.id === teamId);
     const packType = FINAL_PLACEMENT_REWARD_PACK_TYPES[kind] ?? null;
@@ -10289,62 +10735,29 @@ export class YellowDogsLeagueService {
     this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
   }
 
+  inboxAvailability(team, competition = 'league') {
+    const competitionName = ({league:'联赛',cup:'杯赛',friendly:'友谊赛'})[competition] ?? '比赛';
+    const field = competition === 'cup' ? 'cupSuspension' : competition === 'league' ? 'suspension' : null;
+    const injured = [], suspended = [];
+    for (const id of team.rosterIds) {
+      const state = team.playerState[id] ?? {}, name = REAL_PLAYER_BY_ID[id]?.name ?? id;
+      if (Number(state.injuryRounds) > 0) injured.push({id,name,rounds:state.injuryRounds});
+      if (field && Number(state[field]) > 0) suspended.push({id,name,rounds:state[field]});
+    }
+    return {competition,competitionName,injured,suspended};
+  }
+
   createRoundInbox(roundNumber) {
-    const results = this.state.matches.filter((match) => match.round === roundNumber).map((match) => this.matchSummary(match));
-    this.state.teams.filter((team) => team.ownerId).forEach((team) => {
-      const ownMatch = results.find((match) => match.homeId === team.id || match.awayId === team.id);
-      if (!ownMatch) return;
-      const ownIndex = ownMatch.homeId === team.id ? 0 : 1;
-      const opponentName = ownIndex === 0 ? ownMatch.awayName : ownMatch.homeName;
-      const ownScore = ownMatch.score[ownIndex];
-      const opponentScore = ownMatch.score[ownIndex === 0 ? 1 : 0];
-      const matchRecord = this.state.matches.find((match) => match.id === ownMatch.id);
-      const autoRotations = matchRecord?.autoRotations?.[ownIndex] ?? [];
-      const resultText = ownScore > opponentScore ? "取胜" : ownScore === opponentScore ? "战平" : "失利";
-      const rank = this.standings().find((entry) => entry.id === team.id)?.rank ?? TEAM_COUNT;
-      const injured = team.rosterIds.filter((id) => Number(team.playerState[id]?.injuryRounds ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].injuryRounds }));
-      const suspended = team.rosterIds.filter((id) => Number(team.playerState[id]?.suspension ?? 0) > 0).map((id) => ({ id, name:REAL_PLAYER_BY_ID[id].name, rounds:team.playerState[id].suspension }));
-      const next = this.nextOpponent(team.id);
-      const homeTicketIncome = this.homeTicketIncomeSummary(team, matchRecord);
-      this.pushInbox(team, {
-        id:`matchweek:${this.state.season.id}:${roundNumber}`,
-        type:"matchweek",
-        title:`第${roundNumber}轮比赛周战报`,
-        summary:`${team.name} ${ownScore}:${opponentScore} ${opponentName}，本轮${resultText}。${homeTicketIncome ? ` 主场门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}`,
-        body:`球队目前排名第 ${rank}，积 ${team.table.points} 分。${homeTicketIncome ? `本场共有${homeTicketIncome.attendance.toLocaleString("zh-CN")}名观众入场，门票收入${homeTicketIncome.amount.toLocaleString("zh-CN")}金币。` : ""}${next ? `下一轮将${next.venue === "home" ? "主场" : "客场"}迎战 ${next.name}。` : "本赛季赛程已经完成。"}`,
-        round:roundNumber,
-        matchId:ownMatch.id,
-        payload:{ results, rank, points:team.table.points, injured, suspended, next, autoRotations, homeTicketIncome },
-      });
-      if (autoRotations.length) {
-        const details = autoRotations.map((rotation) => `${rotation.outName}因${rotation.reason}由${rotation.inName}自动替换`).join("；");
-        this.pushInbox(team, {
-          id:`rotation:${this.state.season.id}:${roundNumber}`,
-          type:"lineup",
-          title:`第${roundNumber}轮自动轮换报告`,
-          summary:`系统在赛前完成 ${autoRotations.length} 处自动换人。`,
-          body:`${details}。这些调整只对本轮实际出场阵容生效，不会改变你保存的主力阵容。`,
-          round:roundNumber,
-          matchId:ownMatch.id,
-          payload:{ autoRotations },
-        });
-      }
-      if (injured.length || suspended.length) {
-        this.pushInbox(team, {
-          id:`availability:${this.state.season.id}:${roundNumber}`,
-          type:"medical",
-          title:"下一轮阵容可用性提醒",
-          summary:`${injured.length}人伤缺，${suspended.length}人停赛。`,
-          body:`${[...injured.map((player) => `${player.name}伤缺${player.rounds}轮`), ...suspended.map((player) => `${player.name}停赛${player.rounds}轮`)].join("；")}。系统会按位置从替补席自动补位。`,
-          round:roundNumber,
-          payload:{ injured, suspended },
-        });
-      }
+    const matches = this.state.matches.filter(match => match.round === roundNumber && (!match.competition || match.competition === "league"));
+    const results = matches.map(match => this.matchSummary(match));
+    this.state.teams.filter(team => team.ownerId).forEach(team => {
+      const ownMatch = matches.find(match => match.homeId === team.id || match.awayId === team.id);
+      if (ownMatch) this.sendMatchSettlement(team,ownMatch,{results});
     });
   }
 
   simulateNextRound() {
-    if (this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound || this.liveSettlementJobs.length || this.liveSettlementJobKeys.size) {
+    if (this.state.v4LocalLeagueRounds?.active || this.state.v4LocalCupEvents?.active || this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound || this.liveSettlementJobs.length || this.liveSettlementJobKeys.size) {
       throw Object.assign(new Error("当前有正在直播或等待结算的赛事，请等待结束后再模拟下一轮"), { statusCode:409 });
     }
     if (this.state.season.status === "registration") throw new Error("联赛仍在报名选人阶段，请先在后台开启联赛推进");
@@ -10352,6 +10765,7 @@ export class YellowDogsLeagueService {
     const round = this.state.rounds[this.state.season.currentRound];
     if (!round || round.status === "complete") throw new Error("没有可模拟的轮次");
     if (round.status !== "pending") throw Object.assign(new Error("当前轮次已经开始，请等待直播结算完成"), { statusCode:409 });
+    if (this.scheduledHost) return this.scheduledHost.start("league");
     if (round.number === 1) this.settleMirrorMarketplace("9999-12-31");
     round.status = "running";
     this.roundNewUnavailable = new Set();
@@ -10531,7 +10945,7 @@ export class YellowDogsLeagueService {
     if (this.state.season.status === "active" && leagueRound?.status === "pending" && leagueStartsAt > now) {
       leagueRound.fixtures.filter((fixture) => ["v2", "v3"].includes(MATCH_ENGINE_BY_COMPETITION.league) || hasClubOwner(fixture)).forEach((fixture) => upcoming.push({
         id:`league:${leagueRound.number}:${fixture.homeId}:${fixture.awayId}`,
-        competition:"league", competitionName:"YFFM1 联赛", round:leagueRound.number,
+        competition:"league", competitionName:`YFFM1 ${fixture.division??""}级联赛`, round:leagueRound.number,
         label:`第${leagueRound.number}轮`, startsAt:leagueStartsAt,
         homeName:teamName(fixture.homeId), awayName:teamName(fixture.awayId),
       }));
@@ -10546,7 +10960,7 @@ export class YellowDogsLeagueService {
         homeName:teamName(fixture.homeId), awayName:teamName(fixture.awayId),
       }));
     }
-    const tournament = this.state.seasonFinalTournament;
+    const tournament = SEASON_FINAL_ENABLED ? this.state.seasonFinalTournament : null;
     if (tournament && !tournament.preview && !["completed", "cancelled"].includes(tournament.status)) {
       tournament.bracket.filter((node) => node.status === "pending" && Number(node.scheduledAt) > now).forEach((node) => {
         const homeId = this.seasonFinalNodeTeamId(tournament, node.home);
@@ -10619,7 +11033,7 @@ export class YellowDogsLeagueService {
       match,
       competition:live.aiTraining ? "AI 战术训练赛" : live.code.startsWith("YDL-FRIENDLY-") ? "YDL友谊赛" : live.code.startsWith("YDL-WC-") ? "YellowDogs World Cup" : live.code.startsWith("YDL-CUP-") ? "YellowDogs Champion Cup" : "YFFM1",
       aiTraining:Boolean(live.aiTraining),
-      aiTrainingConfig:live.aiTraining ? { formation:live.formation, actualAverageOverall:live.actualAverageOverall, targetOverall:live.targetOverall } : undefined,
+      aiTrainingConfig:live.aiTraining ? { trainingSeed:live.trainingSeed, clubId:live.clubId, upgradeLevel:live.upgradeLevel, formation:live.formation, actualAverageOverall:live.actualAverageOverall, targetOverall:live.targetOverall } : undefined,
     }));
   }
 
@@ -10722,7 +11136,7 @@ export class YellowDogsLeagueService {
         type:"reward",
         title:`${season.name} 联赛名次追加奖励已到账`,
         summary:`最终排名第${entry.rank}名，获得${quantity}个私有池+3指定礼包。`,
-        body:`本赛季联赛最终排名第${entry.rank}名，${quantity}个私有池+3指定礼包已经发放到 YFFM1 礼包背包。`,
+        body:`本赛季${entry.division??"A"}级联赛最终排名第${entry.rank}名，${quantity}个私有池+3指定礼包已经发放到 YFFM1 礼包背包。`,
         payload:{ settlementId, seasonId:season.id, rank:entry.rank, competition:"league", award:"ranking-gift", packType:LEAGUE_RANKING_GIFT_PACK_TYPE, quantity, packIds },
       });
       return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, quantity, packIds };
@@ -10794,7 +11208,7 @@ export class YellowDogsLeagueService {
     const cupChampionId = this.state.cup?.status === "completed" ? this.state.cup.championId ?? null : null;
     const cupFinal = this.state.cup?.status === "completed" ? this.state.cup.knockout?.final?.[0] ?? null : null;
     const cupRunnerUpId = cupChampionId ? cupFinal?.teams?.find((teamId) => teamId !== cupChampionId) ?? null : null;
-    const seasonFinalTie = this.state.seasonFinalTournament?.status === "completed" ? this.state.seasonFinalTournament.finalTie : null;
+    const seasonFinalTie = SEASON_FINAL_ENABLED && this.state.seasonFinalTournament?.status === "completed" ? this.state.seasonFinalTournament.finalTie : null;
     const seasonFinalChampionId = seasonFinalTie?.championId ?? null;
     const seasonFinalRunnerUpId = seasonFinalChampionId ? [seasonFinalTie.winnerBracketChampionId, seasonFinalTie.loserBracketChampionId].find((teamId) => teamId && teamId !== seasonFinalChampionId) ?? null : null;
     return [...candidates.values()].filter((candidate) => candidate.appearances >= BALLON_DOR_MINIMUM_APPEARANCES && this.representativeCard(candidate.ownerId, candidate.playerId)).map((candidate) => {
@@ -10836,7 +11250,7 @@ export class YellowDogsLeagueService {
   }
 
   archivedBallonDorCandidates(archive, previousResult) {
-    const standings = [...(archive?.standings ?? [])].sort((left, right) => Number(left.rank ?? TEAM_COUNT) - Number(right.rank ?? TEAM_COUNT));
+    const standings = [...(archive?.standings ?? [])].sort((left, right) => Number(left.overallRank ?? left.rank ?? TEAM_COUNT) - Number(right.overallRank ?? right.rank ?? TEAM_COUNT));
     const teams = new Map(standings.map((standing) => {
       const archivedTeam = standing.team ?? {};
       const currentTeam = this.state.teams.find((team) => team.id === standing.id || team.ownerId && team.ownerId === archivedTeam.ownerId);
@@ -11105,7 +11519,7 @@ export class YellowDogsLeagueService {
 
   settleBallonDor() {
     const season = this.state.season;
-    if (season.status !== "completed" || this.state.cup?.status !== "completed" || this.state.seasonFinalTournament?.status !== "completed") return null;
+    if (season.status !== "completed" || this.state.cup?.status !== "completed" || (SEASON_FINAL_ENABLED && this.state.seasonFinalTournament?.status !== "completed")) return null;
     this.state.ballonDor ??= { schemaVersion:3, reconciliationVersion:BALLON_DOR_RECONCILIATION_VERSION, results:[] };
     const existing = this.state.ballonDor.results.find((entry) => entry.seasonId === season.id);
     if (existing) return clone(existing);
@@ -11156,7 +11570,7 @@ export class YellowDogsLeagueService {
         type:rewarded ? "reward" : "announcement",
         title:`${awardDate} 当日金球奖：${winner.ownerName}的${winner.playerName}`,
         summary:`${winner.ownerName}的${winner.playerName}以${winner.score.toFixed(2)}分当选，${winner.appearances}场贡献${winner.goals}球、${winner.assists}次助攻，平均评分${winner.averageRating.toFixed(2)}。`,
-        body:`本次评选在赛季总决赛结束后进行，合并联赛与杯赛正式数据，参评门槛为至少${BALLON_DOR_MINIMUM_APPEARANCES}次出场，杯赛表现按${BALLON_DOR_CUP_WEIGHT}倍计入。${winner.playerName}的冠亚军情况：${championText}。得分构成为：进球${winner.breakdown.goals}分、助攻${winner.breakdown.assists}分、评分${winner.breakdown.rating}分、出场稳定性${winner.breakdown.appearances}分、联赛冠军${winner.breakdown.leagueChampion}分、联赛亚军${winner.breakdown.leagueRunnerUp}分、杯赛冠军${winner.breakdown.cupChampion}分、杯赛亚军${winner.breakdown.cupRunnerUp}分、赛季总决赛冠军${winner.breakdown.seasonFinalChampion}分、赛季总决赛亚军${winner.breakdown.seasonFinalRunnerUp}分。金球积分前三名：${podiumText}。${rewarded ? `你持有该球员卡，${BALLON_DOR_OWNER_REWARD.toLocaleString("zh-CN")}金币奖励已经到账。` : "获奖球员卡将永久累计一枚金色地球标识。"}`,
+        body:`本次评选在联赛和杯赛结束后进行，合并联赛与杯赛正式数据，参评门槛为至少${BALLON_DOR_MINIMUM_APPEARANCES}次出场，杯赛表现按${BALLON_DOR_CUP_WEIGHT}倍计入。${winner.playerName}的冠亚军情况：${championText}。得分构成为：进球${winner.breakdown.goals}分、助攻${winner.breakdown.assists}分、评分${winner.breakdown.rating}分、出场稳定性${winner.breakdown.appearances}分、联赛冠军${winner.breakdown.leagueChampion}分、联赛亚军${winner.breakdown.leagueRunnerUp}分、杯赛冠军${winner.breakdown.cupChampion}分、杯赛亚军${winner.breakdown.cupRunnerUp}分。金球积分前三名：${podiumText}。${rewarded ? `你持有该球员卡，${BALLON_DOR_OWNER_REWARD.toLocaleString("zh-CN")}金币奖励已经到账。` : "获奖球员卡将永久累计一枚金色地球标识。"}`,
         payload:{ ballonDorResultId:result.id, winner:result.winner, podium, rewarded, rewardAmount:rewarded ? BALLON_DOR_OWNER_REWARD : 0 },
       });
     });
@@ -11167,7 +11581,7 @@ export class YellowDogsLeagueService {
     this.ensureDisciplineState();
     const season = this.state.season;
     if (season.status !== "completed") throw new Error("当前联赛尚未完成，不能发放赛季排名奖励");
-    if (this.state.cup?.status !== "completed" || this.state.seasonFinalTournament?.status !== "completed") return null;
+    if (this.state.cup?.status !== "completed" || (SEASON_FINAL_ENABLED && this.state.seasonFinalTournament?.status !== "completed")) return null;
     const leagueRankingGiftSettlement = this.settleLeagueRankingGiftPacks();
     const settlementId = `${season.id}+daily-settlement`;
     const automation = this.state.dailyAutomation;
@@ -11193,7 +11607,7 @@ export class YellowDogsLeagueService {
       const previouslyWithheld = this.state.discipline.withheldRewards.some((item) => item.accountId === team.ownerId && item.grantId === disciplineGrantId);
       if (this.rewardsSuspended(team.ownerId) || previouslyWithheld) {
         if (!previouslyWithheld) this.withholdReward(team.ownerId, "league", disciplineGrantId, { rank:entry.rank, rewardType:"ranking", coins:reward.coins, packType:reward.packType, quantity:reward.packQuantity });
-        return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, points:entry.points, ...reward, packIds:[], withheld:true };
+        return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, division:entry.division, points:entry.points, ...reward, packIds:[], withheld:true };
       }
       const alreadyGranted = this.state.ledger.some((ledgerEntry) => ledgerEntry.type === "daily-season-settlement" && ledgerEntry.grantId === settlementId && ledgerEntry.accountId === team.ownerId);
       let packIds = [];
@@ -11220,12 +11634,12 @@ export class YellowDogsLeagueService {
       this.pushInbox(team, {
         id:`daily-season-settlement:${season.id}:${team.ownerId}`,
         type:"reward",
-        title:`${season.name} 联赛第${entry.rank}名奖励已到账`,
+        title:`${season.name} ${entry.division??"A"}级联赛第${entry.rank}名奖励已到账`,
         summary:`获得${reward.coins.toLocaleString("zh-CN")}金币和${reward.packQuantity}个传奇随机卡包。`,
-        body:`本赛季最终排名第${entry.rank}名，积${entry.points}分。${reward.coins.toLocaleString("zh-CN")}金币和${reward.packQuantity}个与新赛季商店同款的传奇随机卡包已经发放到你的账户。`,
-        payload:{ settlementId, seasonId:season.id, rank:entry.rank, points:entry.points, ...reward, packIds },
+        body:`本赛季${entry.division??"A"}级最终排名第${entry.rank}名，积${entry.points}分。${reward.coins.toLocaleString("zh-CN")}金币和${reward.packQuantity}个与新赛季商店同款的传奇随机卡包已经发放到你的账户。`,
+        payload:{ settlementId, seasonId:season.id, rank:entry.rank, division:entry.division, points:entry.points, ...reward, packIds },
       });
-      return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, points:entry.points, ...reward, packIds };
+      return { accountId:team.ownerId, teamId:team.id, rank:entry.rank, division:entry.division, points:entry.points, ...reward, packIds };
     });
 
     const settlement = { id:settlementId, seasonId:season.id, seasonName:season.name, status:"completed", rewardedAt, recipients, ballonDorResultId:ballonDorResult?.id ?? null, leagueRankingGiftSettlementId:leagueRankingGiftSettlement?.id ?? null };
@@ -11252,9 +11666,9 @@ export class YellowDogsLeagueService {
       if (busy) throw Object.assign(new Error(busy), { statusCode:409 });
       if ((this.state.matchPredictions?.bets ?? []).some(bet => bet.status === "pending")) throw Object.assign(new Error("仍有未结算预测，不能重置赛事进度"), { statusCode:409 });
     }
-    const seasonFinalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
+    const seasonFinalResolved = !SEASON_FINAL_ENABLED || ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
     if (process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed" && (this.state.cup?.status !== "completed" || !seasonFinalResolved)) {
-      throw new Error("杯赛或赛季总决赛尚未结束，不能在金球奖完成评选前重置当日赛事");
+      throw new Error("杯赛尚未结束，不能在金球奖完成评选前重置当日赛事");
     }
     if (process.env.YDL_OFFLINE_MODE !== "1" && !options.skipRewardCheck && this.state.season.status === "completed" && automation.lastRewardedSeasonId !== this.state.season.id) {
       throw new Error("当前已完赛联赛尚未发放排名奖励，请先手动补发奖励");
@@ -11264,6 +11678,8 @@ export class YellowDogsLeagueService {
     if (!options.skipHonorRoomUpdate) this.updateHonorRoomForCompletedSeason();
     if (!options.skipArchive) this.archiveSeason(options.reason ?? (options.manual ? "manual-daily-reset" : "automatic-daily-reset"));
     const completedSeasonId = this.state.season.id;
+    this.applyDivisionMovement();
+    this.upgradeAiClubs(true);
     this.state.teams.forEach((team) => {
       this.settleClubSponsorContractsForSeason(team, completedSeasonId);
       team.table = freshTable();
@@ -11281,7 +11697,7 @@ export class YellowDogsLeagueService {
       date,
       status:"active",
       currentRound:0,
-      totalRounds:18,
+      totalRounds:LEAGUE_ROUNDS,
       nextRoundAt:firstRoundAt,
       firstRoundAt,
       startedAt:firstRoundAt,
@@ -11292,7 +11708,7 @@ export class YellowDogsLeagueService {
     };
     // Keep a day's schedule stable across reloads while changing pairings between daily seasons.
     const dailyTeamOrder = seededShuffle(this.state.teams.map((team) => team.id), `league:${this.state.season.id}`);
-    this.state.rounds = roundRobin(dailyTeamOrder);
+    this.state.rounds = buildDivisionRounds(this.state.teams,roundRobin,ids=>dailyTeamOrder.filter(id=>ids.includes(id)));
     this.state.matches = [];
     this.state.playerStats = {};
     this.state.matchPredictions = { schemaVersion:1, markets:{}, bets:[], distributions:[] };
@@ -11305,7 +11721,7 @@ export class YellowDogsLeagueService {
     this.state.liveFriendlies = [];
     this.state.friendlyInvitations = [];
     this.state.friendlyFixtures = [];
-    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
+    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ roundOf16:[], quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     automation.lastResetDate = date;
     automation.lastCupStartDate = null;
     if (!options.skipSave) this.save();
@@ -11327,7 +11743,7 @@ export class YellowDogsLeagueService {
     if (this.state.season.status === "completed") changed = Boolean(this.settleDailySeason() ?? changed);
 
     const resetAt = beijingTimestamp(date, DAILY_RESET_HOUR, DAILY_RESET_MINUTE);
-    const seasonFinalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
+    const seasonFinalResolved = !SEASON_FINAL_ENABLED || ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(now);
     const seasonReadyForReset = process.env.YDL_OFFLINE_MODE === "1" || this.state.season.status !== "completed"
       || (this.state.cup?.status === "completed" && seasonFinalResolved && automation.lastRewardedSeasonId === this.state.season.id);
     if (date > automation.initializedDate && now >= resetAt && automation.lastResetDate !== date && seasonReadyForReset) {
@@ -11345,14 +11761,17 @@ export class YellowDogsLeagueService {
     return changed;
   }
 
-  tick() {
+  tick(scheduledHost = null) {
+    this.ensureCompetitionFormat();
+    this.maintainInboxRetention();
     const now = this.now();
     if (this.statePath && localDateKey(new Date(now)) !== this.lastBackupMaintenanceDate) this.maintainBackups();
     const staleSeasonFinalChanged = this.cancelExpiredSeasonFinal(now);
     if (staleSeasonFinalChanged) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
     const compensationChanged = measureRuntimeSync("league.compensation", () => this.dispatchS4TraitThresholdCompensation());
-    const automationChanged = this.runDailyAutomation();
-    measureRuntimeSync("league.predictionMarkets", () => this.ensurePredictionMarkets());
+    const activeV4 = this.state.v4LocalLeagueRounds?.active || this.state.v4LocalCupEvents?.active;
+    const automationChanged = activeV4 ? false : this.runDailyAutomation();
+    measureRuntimeSync("league.predictionMarkets", () => this.ensurePredictionMarkets(1, { background:true }));
     const friendlyInvitationChanged = measureRuntimeSync("league.expireInvitations", () => this.expireFriendlyInvitations(now));
     if (friendlyInvitationChanged) this.save({ skipDailyBackup:true });
     const friendlyChanged = measureRuntimeSync("league.advanceFriendlies", () => this.advanceLiveFriendlies(now, { maximumMatches:0 })) || friendlyInvitationChanged;
@@ -11364,7 +11783,11 @@ export class YellowDogsLeagueService {
     if (forcedMirrorChanged) this.save({ scopes:["mirrorMarketplace"], skipDailyBackup:true });
     const seasonFinalBanChanged = this.finalizeSeasonFinalBansIfDue(tournament, now);
     if (seasonFinalBanChanged) this.save({ skipDailyBackup:true, skipLiveBackupCopy:true, compact:true });
-    if (this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound) return friendlyChanged || automationChanged || compensationChanged || staleSeasonFinalChanged || seasonFinalBanChanged || forcedMirrorChanged || mirrorBatchChanged;
+    if (this.state.liveRound || this.state.liveCupRound || this.state.liveSeasonFinalRound || (scheduledHost && this.state.liveFriendlies.some(live => !live.completed))) return friendlyChanged || automationChanged || compensationChanged || staleSeasonFinalChanged || seasonFinalBanChanged || forcedMirrorChanged || mirrorBatchChanged;
+    if (activeV4) {
+      if (!scheduledHost) throw new Error("V4赛程尚未结算，请启用V4赛程宿主");
+      return scheduledHost.resume();
+    }
     if (tournament && !tournament.preview && tournament.status !== "completed" && now >= Number(tournament.nextMatchAt ?? Infinity)) {
       const nodes = this.dueSeasonFinalNodes(tournament, now);
       if (nodes.length && this.startSeasonFinalWave(nodes, tournament)) {
@@ -11373,10 +11796,12 @@ export class YellowDogsLeagueService {
       }
     }
     if (this.state.cup.status === "active" && activeTime(now) && now >= Number(this.state.cup.nextRoundAt ?? Infinity)) {
+      if (scheduledHost) return scheduledHost.start("cup");
       return measureRuntimeSync("league.startScheduledCupEvent", () => this.startScheduledCupEvent());
     }
     const dailyLeagueWindow = this.state.dailyAutomation.lastResetDate === localDateKey(new Date(now)) && now >= Number(this.state.season.firstRoundAt ?? Infinity);
     if (this.state.season.status !== "active" || (!activeTime(now) && !dailyLeagueWindow) || now < this.state.season.nextRoundAt) return friendlyChanged || automationChanged || compensationChanged || staleSeasonFinalChanged || seasonFinalBanChanged || forcedMirrorChanged || mirrorBatchChanged;
+    if (scheduledHost) return scheduledHost.start("league");
     return measureRuntimeSync("league.startScheduledRound", () => this.startScheduledRound());
   }
 
@@ -11400,7 +11825,9 @@ export class YellowDogsLeagueService {
       });
       return {
         matchId:match.id,
-        round:match.round,
+        round:match.round ?? match.cupRound,
+        competition:match.competition ?? "league",
+        label:match.competition === "cup" ? `${CUP_STAGE_NAMES[match.cupStage] ?? "杯赛"}${match.cupStage === "final" ? "" : ` · 第${match.legNumber ?? 1}回合`}` : match.competition === "friendly" ? "友谊赛" : `第${match.round}轮`,
         opponentName:index === 0 ? match.awayName : match.homeName,
         venue:index === 0 ? "home" : "away",
         scoreFor:own,
@@ -11465,8 +11892,8 @@ export class YellowDogsLeagueService {
       this.pushInbox(team, {
         id:`daily:${this.state.season.id}:${date}`,
         type:"daily-report",
-        title:`${date} 球队当日报告`,
-        summary:`${report.headline} · 今日 ${report.today.wins}胜${report.today.draws}平${report.today.losses}负`,
+        title:`${date} 球队日报`,
+        summary:`${report.today.wins}胜${report.today.draws}平${report.today.losses}负 · 平均体能 ${report.availability.averageFitness}`,
         body:report.managerNote,
         report,
       });
@@ -11639,10 +12066,19 @@ export class YellowDogsLeagueService {
   nextOpponent(teamId) {
     const fixture = this.teamSchedule(teamId).find((entry) => entry.status !== "complete" && entry.competition !== "worldcup");
     if (!fixture) return null;
+    const team=this.state.teams.find(t=>t.id===teamId);
+    const live=[...(this.state.liveRound?.matches??[]),...(this.state.liveCupRound?.matches??[]),...(this.state.liveFriendlies??[])]
+      .find(entry=>fixture.broadcastCode&&entry.code===fixture.broadcastCode);
+    const scheme=fixture.status==='live'
+      ? live?.match?.leagueLineupSchemes?.find(s=>s.teamId===teamId)
+      : team?.lineupSchemes?.find(s=>s.id===team.lineupSchemeAssignments?.[fixture.competition]);
     return {
+      status:fixture.status,
+      lineupScheme:scheme?{id:scheme.id,name:scheme.name,revision:scheme.revision??null}:null,
       round:fixture.round,
       startsAt:fixture.startsAt,
       name:fixture.opponentName,
+      venue:fixture.venue ?? null,
       opponentId:fixture.opponentId,
       competition:fixture.competition,
       competitionName:fixture.competitionName,
@@ -11666,6 +12102,8 @@ export class YellowDogsLeagueService {
       season:this.state.season,
       standings:this.standings().map((entry) => ({ ...entry, team:publicTeam(this.state.teams.find((team) => team.id === entry.id)) })),
       matches:this.state.matches,
+      matchRefs:[...this.state.matches, ...(this.state.seasonFinalTournament?.matches ?? [])]
+        .map(match => ({id:match.id,hasReport:Boolean(matchReportMetadata(match)?.hasDetails ?? match.report)})),
       playerStats:this.state.playerStats,
       cup:this.state.cup,
       seasonFinalTournament:this.state.seasonFinalTournament,
@@ -11679,12 +12117,14 @@ export class YellowDogsLeagueService {
     this.assertAdminSeasonControlAllowed(reason === "restarted" ? "replay" : "next");
     this.backupFile(`before-competition-reset-${this.now()}.json`);
     this.archiveSeason(reason);
+    if(reason!=="restarted")this.applyDivisionMovement();
+    this.upgradeAiClubs(true);
     const completedSeasonId = this.state.season.id;
     this.state.teams.forEach((team) => {
       if (options.advanceSponsorContracts === true) this.settleClubSponsorContractsForSeason(team, completedSeasonId);
       team.table = freshTable();
       team.form = [];
-      if (team.ownerId) {
+      if (team.ownerId || team.aiClub) {
         team.rosterIds.forEach((id) => {
           team.playerState[id] = { fitness:100, suspension:0, cupSuspension:0, seasonFinalSuspension:0, injuryRounds:0 };
         });
@@ -11693,8 +12133,8 @@ export class YellowDogsLeagueService {
     // Resets never touch wallets. Pending mirror income is settled by league kickoff.
     const startedAt = this.now();
     const firstRoundAt = status === "active" ? nextSlot(startedAt) : null;
-    this.state.season = { id:`${name}-${localDateKey(new Date(startedAt))}-${startedAt.toString(36)}`, name, date:localDateKey(new Date(startedAt)), status, currentRound:0, totalRounds:18, nextRoundAt:firstRoundAt, firstRoundAt, startedAt:status === "active" ? startedAt : null, registrationOpenedAt:status === "registration" ? startedAt : null, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null };
-    this.state.rounds = roundRobin(this.state.teams.map((team) => team.id));
+    this.state.season = { id:`${name}-${localDateKey(new Date(startedAt))}-${startedAt.toString(36)}`, name, date:localDateKey(new Date(startedAt)), status, currentRound:0, totalRounds:LEAGUE_ROUNDS, nextRoundAt:firstRoundAt, firstRoundAt, startedAt:status === "active" ? startedAt : null, registrationOpenedAt:status === "registration" ? startedAt : null, completedAt:null, seasonFinalLeagueRanks:null, seasonFinalLeagueRound:null, seasonFinalLeagueLockedAt:null };
+    this.state.rounds = buildDivisionRounds(this.state.teams,roundRobin);
     this.state.matches = [];
     this.state.playerStats = {};
     this.state.seasonFinalTournament = null;
@@ -11707,7 +12147,7 @@ export class YellowDogsLeagueService {
     this.state.liveFriendlies = [];
     this.state.friendlyInvitations = [];
     this.state.friendlyFixtures = [];
-    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
+    this.state.cup = { format:null, status:"waiting", stage:"waiting", participants:[], table:{}, leagueRounds:[], swissRounds:[], knockout:{ roundOf16:[], quarterfinals:[], semifinals:[], final:[] }, events:[], playerStats:{}, nextRoundAt:null, championId:null, startedAt:null, finalStartedAt:null, completedAt:null };
     this.save();
     this.adminSeasonControlVersion = Number(this.adminSeasonControlVersion ?? 0) + 1;
     return this.adminView();
@@ -11729,6 +12169,7 @@ export class YellowDogsLeagueService {
     const discipline = clone(this.state.discipline);
     const adminCoinPenalties = clone(this.state.adminCoinPenalties);
     this.adoptState(createState(resetAt, options.seasonName ?? "S1"));
+    this.upgradeAiClubs(true);
     this.liveAiTrainings.clear();
     this.state.discipline = discipline;
     this.state.adminCoinPenalties = adminCoinPenalties;
@@ -11759,8 +12200,8 @@ export class YellowDogsLeagueService {
     if (action !== "full") {
       if ((this.state.matchPredictions?.bets ?? []).some(bet => bet.status === "pending")) return "仍有未结算预测，请先完成赛事结算，避免丢失投注本金";
       if (action === "next" && process.env.YDL_OFFLINE_MODE !== "1" && this.state.season.status === "completed") {
-        const finalResolved = ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(this.now());
-        if (this.state.cup?.status !== "completed" || !finalResolved) return "杯赛或赛季总决赛尚未结束，请先完成赛季结算";
+        const finalResolved = !SEASON_FINAL_ENABLED || ["completed", "cancelled"].includes(this.state.seasonFinalTournament?.status) || this.seasonCompetitionDayExpired(this.now());
+        if (this.state.cup?.status !== "completed" || !finalResolved) return "杯赛尚未结束，请先完成赛季结算";
         if (this.state.dailyAutomation.lastRewardedSeasonId !== this.state.season.id) return "当前赛季排名奖励尚未结算，请先补发奖励再操作";
       }
     }
@@ -11803,6 +12244,7 @@ export class YellowDogsLeagueService {
     this.state.season.nextRoundAt = nextSlot(startedAt);
     this.state.season.firstRoundAt = this.state.season.nextRoundAt;
     // An explicit registration gate must not be bypassed by the next daily tick.
+    this.state.dailyAutomation.enabled = true;
     this.state.dailyAutomation.lastResetDate = localDateKey(new Date(startedAt));
     this.state.dailyAutomation.lastCupStartDate = null;
     this.save();
@@ -11967,6 +12409,7 @@ export class YellowDogsLeagueService {
           preferredStarterIds:[...(team.preferredStarterIds ?? [])],
           positions:clone(team.positions ?? {}),
           positionPresets:clone(team.positionPresets ?? {}),
+          positionPresetOverrides:clone(team.positionPresetOverrides ?? {}),
           formationLinePresets:clone(team.formationLinePresets ?? {}),
           tactic:team.tactic,
           style:team.style,
@@ -12167,4 +12610,5 @@ export class YellowDogsLeagueService {
   }
 }
 
-export const yellowDogsLeague = new YellowDogsLeagueService();
+Object.assign(YellowDogsLeagueService.prototype, inboxPageMethods);
+export const yellowDogsLeague = new YellowDogsLeagueService({pagedInbox:true});

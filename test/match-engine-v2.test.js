@@ -349,11 +349,13 @@ test("V2门将被红牌罚下后换下低评分中后卫并启用替补门将", 
   });
   const team = match.teams[0];
   const dismissed = team.players.find((player) => player.id === startingGoalkeeper.id);
-  const centerBacks = team.players.filter((player) => player.active && player.id !== dismissed.id).slice(0, 2);
-  assert.equal(centerBacks.length, 2);
+  team.players.filter(player=>player.active&&player.id!==dismissed.id).forEach(player=>player.assignedRole="ST");
+  const centerBacks = team.players.filter((player) => player.active && player.id !== dismissed.id).slice(0, 3);
+  assert.equal(centerBacks.length, 3);
   centerBacks.forEach((player) => { player.assignedRole = "CB"; });
   centerBacks[0].overall = 88;
   centerBacks[1].overall = 80;
+  centerBacks[2].overall = 95;
   const dismissedPosition = structuredClone(team.positions[dismissed.id]);
   dismissed.active = false;
   dismissed.sentOff = true;

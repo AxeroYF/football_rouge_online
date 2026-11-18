@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { performance } from "node:perf_hooks";
-import { measureRuntimeSync, recordRuntimeMetric, snapshotRuntimeMetrics } from "../src/runtime-metrics.js";
+import { measureRuntimeAsync, measureRuntimeSync, recordRuntimeMetric, snapshotRuntimeMetrics } from "../src/runtime-metrics.js";
 // 必须先于 api.js/league-service.js 加载：运营评级覆盖（ydl-content-overrides.json）
 // 会把一批退役名宿从 A/B 升级为 S（传奇）。联赛服务单例在 league-service.js
 // 模块求值期间即构造并执行 33 人大名单校验，若覆盖未先行应用，这些球员会按
@@ -17,8 +17,36 @@ import { handleVersusApi } from "../versus/api.js";
 import { handleAdminApi } from "../versus/admin-api.js";
 import { handleOfflineApi } from "../offline/api.js";
 import { versusRooms } from "../versus/room-service.js";
-import { yellowDogsLeague } from "../versus/league-service.js";
+import { yellowDogsLeague, YellowDogsLeagueService, S4_BOND_CATALOG } from "../versus/league-service.js";
+import { REAL_PLAYERS, X_PLAYERS } from "../versus/player-pool.js";
+import { YDL_TRAIT_CARDS } from "../versus/trait-pool.js";
+import { openFormalSchedule } from "../versus/v4-host/formal-schedule.js";
 import { OFFLINE_ATTRIBUTE_SETTINGS } from "../versus/offline-attribute-settings.js";
+import { openConfiguredStreamHost } from "../versus/v4-host/configured-host.js";
+
+// Explicit server-owned opt-in for read-only shadow archives. The default
+// creates no V4 routes, producers or settlement jobs and keeps the formal engine.
+const v4StreamHost = await openConfiguredStreamHost(process.env.YDL_V4_STREAM_MANIFEST, {
+  rooms:versusRooms, league:yellowDogsLeague,
+});
+const v4ScheduleEnabled = process.env.YDL_V4_SCHEDULE !== "0";
+const hasActiveV4 = () => Boolean(yellowDogsLeague.state.v4LocalLeagueRounds?.active || yellowDogsLeague.state.v4LocalCupEvents?.active);
+const scheduledHost = v4ScheduleEnabled || hasActiveV4() ? await openFormalSchedule({
+  service:yellowDogsLeague, rooms:versusRooms,
+  getCatalog:() => ({ catalog:REAL_PLAYERS, traitCatalog:YDL_TRAIT_CARDS, bondCatalog:S4_BOND_CATALOG }),
+  createService(options) {
+    // The in-memory constructor initializes the shared X player catalog for an
+    // empty league. Keep the active league's configured player attributes.
+    const configured = X_PLAYERS.map(player => ({ ...player }));
+    try { return new YellowDogsLeagueService(options); }
+    finally { X_PLAYERS.forEach((player, index) => Object.assign(player, configured[index])); }
+  },
+}) : null;
+if (v4ScheduleEnabled) {
+  yellowDogsLeague.scheduledHost = scheduledHost;
+  yellowDogsLeague.actualMatchEngine = "v4";
+  versusRooms.actualMatchEngine = "v4";
+}
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const versusDirectory = path.resolve(here, "../versus/public");
@@ -33,7 +61,8 @@ const publicOnly = process.env.VERSUS_PUBLIC_ONLY === "1";
 const offlineYdl = process.env.YDL_OFFLINE_MODE === "1";
 const environment = process.env.APP_ENV ?? "development";
 const environmentLabel = process.env.APP_LABEL ?? (environment === "production" ? "正式服" : "开发环境");
-const matchEngines = resolveMatchEngines();
+const legacyEngines = resolveMatchEngines();
+const matchEngines = v4ScheduleEnabled ? { default:"v4", league:"v4", cup:"v4", friendly:"v4", room:"v4", training:"v4", mirror:"v4", prediction:"v1" } : legacyEngines;
 const matchEngine = matchEngines.league;
 const maximumBodyBytes = 18 * 1024 * 1024;
 const metricsToken = process.env.YDL_METRICS_TOKEN ?? "";
@@ -123,7 +152,7 @@ async function handleApi(request, response, pathname) {
   }
   if (pathname.startsWith("/api/admin/")) return handleAdminApi(request, response, pathname, readJson, sendJson, readBuffer);
   if (request.method === "GET" && pathname === "/api/versus/config") {
-    return sendJson(response, 200, { ok: true, publicOnly, offlineYdl, environment, environmentLabel, matchEngine, matchEngines, engineVersion:matchEngine === "v3" ? V3_ENGINE_VERSION : matchEngine === "v2" ? "2.1.0" : "1", engineProfile:matchEngine === "v3" ? V3_ENGINE_PROFILE : matchEngine === "v2" ? "v2.1-stable-dynamic.2" : "v1", offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
+    return sendJson(response, 200, { ok: true, publicOnly, offlineYdl, environment, environmentLabel, matchEngine, matchEngines, engineVersion:v4ScheduleEnabled ? scheduledHost.engineVersion : matchEngine === "v3" ? V3_ENGINE_VERSION : matchEngine === "v2" ? "2.1.0" : "1", engineProfile:v4ScheduleEnabled ? "v4-spatial" : matchEngine === "v3" ? V3_ENGINE_PROFILE : matchEngine === "v2" ? "v2.1-stable-dynamic.2" : "v1", offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
   }
   if (request.method === "GET" && pathname === "/api/health") {
     return sendJson(response, 200, { ok: true, publicOnly, localOnly:isLoopback(host), offlineYdl, environment, environmentLabel, offlineAttributeSettings:OFFLINE_ATTRIBUTE_SETTINGS });
@@ -265,6 +294,8 @@ const server = http.createServer(async (request, response) => {
     recordRuntimeMetric(`http.${request.method}.${route}`, performance.now() - requestStartedAt, { error:response.statusCode >= 400 });
   });
   try {
+    if (scheduledHost && await scheduledHost.handle(request, response)) return;
+    if (v4StreamHost.enabled && await v4StreamHost.handle(request, response)) return;
     if (handleVersusStream(request, response, url)) {
       return;
     }
@@ -298,9 +329,13 @@ server.listen(port, host, () => {
   }
 });
 
-const leagueTimer = setInterval(() => {
-  try { measureRuntimeSync("league.tick", () => yellowDogsLeague.tick()); }
+let ticking = false;
+const leagueTimer = setInterval(async () => {
+  if (ticking) return;
+  ticking = true;
+  try { await measureRuntimeAsync("league.tick", () => yellowDogsLeague.tick(v4ScheduleEnabled || hasActiveV4() ? scheduledHost : null)); }
   catch (error) { console.error("YFFM1 定时任务失败：", error); }
+  finally { ticking = false; }
 }, 15_000);
 leagueTimer.unref();
 

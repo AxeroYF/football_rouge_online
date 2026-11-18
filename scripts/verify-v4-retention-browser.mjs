@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import {once} from 'node:events';
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+import {openScheduledPreviewHost} from '../versus/v4-host/scheduled-preview-host.js';
+import {openLocalReplayRetention} from '../versus/v4-host/local-replay-retention.js';
+import {dependencyHashes} from './v4-source-hashes.mjs';
+import {verifyV4ProtectedFiles} from './v4-protected-files.mjs';
+
+verifyV4ProtectedFiles();const output=path.resolve('outputs/v4-replay-retention-20261118');fs.mkdirSync(output,{recursive:true});const root=fs.mkdtempSync(path.join(output,'browser-'));
+for(const [key,name] of Object.entries({VERSUS_ACCOUNTS_PATH:'accounts.json',YELLOWDOGS_LEAGUE_PATH:'league.json',YDL_CONTENT_OVERRIDES_PATH:'content.json',YDL_PLAYER_CARD_STUDIO_PATH:'studio.json',YDL_PLAYER_PROFILE_ROOT:'profiles'}))process.env[key]=path.join(root,name);
+const proof=JSON.parse(fs.readFileSync('outputs/v4-cup-lifecycle-20261118/verification.json','utf8')),source=path.join(proof.root,'json'),state=JSON.parse(fs.readFileSync(path.join(source,'league.json'),'utf8'));
+const round=Object.values(state.v4LocalCupEvents.events).find(event=>event.event.stage==='final'),task=round.tasks[0],id=task.fixture.id,relative=path.join('cup-queue-'+round.key,'jobs',id);
+fs.mkdirSync(path.dirname(path.join(root,relative)),{recursive:true});fs.cpSync(path.join(source,relative),path.join(root,relative),{recursive:true,errorOnExist:true});
+fs.writeFileSync(path.join(root,'v4-local-storage.json'),JSON.stringify({format:'yffm-v4-canonical-local-settlement-1'}));
+const {VersusRoomService}=await import('../versus/room-service.js'),rooms=new VersusRoomService({accountsPath:process.env.VERSUS_ACCOUNTS_PATH,lineups:new Map()}),account=rooms.bindAccount('retention-browser-owner');
+const league={state:{teams:state.teams.map(team=>({id:team.id,ownerId:team.id===task.envelope.input.teams[0].id?account.profile.id:null}))}};
+let now=round.receipt.completedAt+3*86400000;const manager=await openLocalReplayRetention({root,readLeague:async()=>state,now:()=>now,policy:{maxBytes:0,minAgeMs:0,maxAgeMs:1,keepLatest:0}});
+const host=await openScheduledPreviewHost({root,rooms,league,enabled:true,now:()=>now,lifecycle:manager.lifecycle});host.registerRound({...round,tasks:[task]},{publicWatch:true});
+let requests=0;const server=http.createServer(async(req,res)=>{if(req.url.startsWith('/v4/matches/'))requests++;if(!await host.handle(req,res)){res.writeHead(404);res.end();}});server.listen(0,'127.0.0.1');await once(server,'listening');
+const base=`http://127.0.0.1:${server.address().port}`,packagePath=process.env.PLAYWRIGHT_PACKAGE_PATH??'C:/Program Files/WindowsApps/OpenAI.CodexPrimaryRuntime.v26-1112-611-0_26.1112.611.0_x64__3k8sg7r9htsxt/dependencies/node/node_modules/playwright/package.json',chromium=createRequire(packagePath)('playwright').chromium;
+const entries=['scripts/verify-v4-retention-browser.mjs','versus/v4-host/public/index.html','versus/v4-host/public/app.js','versus/v4-host/public/style.css'],sources=dependencyHashes(entries),errors=[];let browser;
+try{
+  browser=await chromium.launch({executablePath:process.env.CHROME_PATH??'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});const context=await browser.newContext({viewport:{width:1400,height:1000}}),page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base+`/v4-preview/?match=${id}`);await page.evaluate(account=>localStorage.setItem('football_test1_versus_account_v1',JSON.stringify(account)),account);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#player option').length>1);
+  await page.selectOption('#player','0:'+task.envelope.input.teams[0].players[0].id);assert.match(await page.locator('#task').innerText(),/体能/);
+  assert.deepEqual((await manager.sweep()).expired,[]);assert.equal(manager.lifecycle.viewing(id),true);
+  await context.setOffline(true);await page.waitForFunction(()=>document.querySelector('#connection').textContent.includes('连接中断'));assert.ok(await page.locator('#player option').count()>1);
+  now+=90001;const cleaned=await manager.sweep();assert.deepEqual(cleaned.expired,[id]);assert.ok(cleaned.removedBytes>0);
+  await context.setOffline(false);await page.waitForFunction(()=>document.querySelector('#connection').textContent.includes('保留期限'));
+  assert.equal(await page.locator('#controls').evaluate(element=>element.disabled),true);assert.equal(await page.locator('#play').isDisabled(),true);assert.equal(await page.locator('#events button').count(),0);assert.equal(await page.locator('#player option').count(),1);assert.equal(await page.locator('#score').innerText(),'— : —');assert.equal(await page.locator('#decision').innerText(),'');
+  assert.equal(await page.locator('#buffer').innerText(),'暂无播放画面');assert.equal(await page.locator('#timeline').getAttribute('max'),'0');
+  const stopped=requests;await page.waitForTimeout(1200);assert.equal(requests,stopped);
+  await page.screenshot({path:path.join(root,'desktop-expired.png'),fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(root,'mobile-expired.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.reload();await page.waitForFunction(()=>document.querySelector('#connection').textContent.includes('保留期限'));assert.equal(await page.locator('#play').isDisabled(),true);
+  assert.deepEqual(errors,[]);assert.deepEqual(dependencyHashes(entries),sources);
+  const report={passed:true,root,matchId:id,scope:'Copied full cup final archive, actual isolated account and local disk cleanup; online lease protects, offline grace expires, 410 clears private view and halts polling.',cleaned,desktop:true,mobile:true,reloadExpired:true,dependencyHashes:sources,preservation:verifyV4ProtectedFiles(),productionEnabled:false};
+  fs.writeFileSync(path.join(root,'verification.json'),JSON.stringify(report,null,2));fs.writeFileSync(path.join(output,'browser-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({passed:true,root,cleaned}));
+}catch(error){fs.writeFileSync(path.join(root,'failure.json'),JSON.stringify({error:error.stack},null,2));throw error;}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await manager.close();await rooms.accountRepository.flush?.();}

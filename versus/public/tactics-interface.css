@@ -1,4 +1,58 @@
 /* The original pitch aspect ratios and all board/bench interaction selectors are retained. */
+.outlook-plans{display:flex;gap:4px;margin:10px 0}
+.outlook-plans button,.outlook-findings button{color:var(--tactics-text);background:transparent;border:1px solid var(--tactics-border);border-radius:5px;cursor:pointer;font:inherit;font-size:12px;min-height:34px;padding:5px 10px}
+.outlook-plans button[aria-pressed=true]{color:var(--tactics-active);border-color:currentColor;font-weight:700}
+.outlook-findings{display:grid;gap:8px}
+.outlook-findings article{padding:10px 12px;border:1px solid var(--tactics-border);border-radius:6px}
+.outlook-findings header,.outlook-findings footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px}
+.outlook-findings header span,.outlook-findings small{color:var(--tactics-muted);font-size:11px}
+.outlook-findings [data-status=attention]{border-inline-start:3px solid #b87d29}
+.outlook-findings p{font-size:13px;line-height:1.5;margin:6px 0}
+.outlook-findings button{color:var(--tactics-accent)}
+@media(max-width:620px){.outlook-plans button,.outlook-findings button{min-height:40px}}
+.shape-v4-active>.league-squad-magnet,.shape-v4-active>.formation-reference-line,.shape-v4-active>.formation-role-zones,.shape-v4-active>.league-chemistry-lines,.shape-v4-active>.zone-label{visibility:hidden;pointer-events:none}
+.shape-v4-layer,.shape-v4-layer>svg{position:absolute;inset:0;width:100%;height:100%}
+.shape-v4-layer{z-index:8;overflow:hidden}
+.shape-v4-layer>svg{pointer-events:none}
+.shape-v4-layer polyline{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.shape-v4-layer [data-kind=formation]{stroke:#d0e8ea88;stroke-width:1;stroke-dasharray:4 4}
+.shape-v4-layer [data-kind=trail]{stroke:#b7f7c9;stroke-width:2}
+.shape-v4-layer [data-kind=trail][data-selected=true]{stroke:#ffea87;stroke-width:3}
+.shape-v4-dot{position:absolute;transform:translate(-50%,-50%);border-radius:50%;box-sizing:border-box}
+.shape-v4-dot{display:grid;place-items:center;padding:0;width:clamp(22px,4.8%,32px);height:auto;min-height:0;aspect-ratio:1;line-height:1;font-size:10px;font-weight:750;background:#b1f2bf;color:#11251b;border:2px solid #17412c;cursor:pointer}
+.shape-v4-dot[aria-pressed=true],.shape-v4-dot:focus-visible{z-index:2;outline:2px solid #ffea87;outline-offset:2px}
+.shape-v4-dot[hidden]{display:none}
+.shape-v4-panel{display:grid;gap:8px;min-width:0;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.shape-v4-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.shape-v4-toolbar strong{margin-right:auto}
+.shape-v4-toolbar button{font:inherit;font-size:12px;padding:5px 9px;cursor:pointer}
+.shape-v4-panel p{margin:0;min-height:2.8em;line-height:1.4;font-size:13px}
+.shape-v4-panel small{color:var(--muted);font-size:11px}
+.movement-overlay,.movement-comparison{--movement-before:#8cd7ff;--movement-after:#ffdb7a}
+.movement-overlay polyline[data-version=previous]{stroke:var(--movement-before);stroke-width:4;stroke-dasharray:4 4;opacity:.62}
+.movement-overlay polyline[data-version=next]{stroke:var(--movement-after);stroke-width:2;opacity:.8}
+.movement-overlay polyline[data-selected=true]{opacity:1}
+.movement-overlay polyline{pointer-events:stroke;cursor:pointer}
+.movement-overlay polyline[data-selected=true][data-version=previous]{stroke-width:6}
+.movement-overlay polyline[data-selected=true][data-version=next]{stroke-width:3}
+.movement-end,.movement-origin{position:absolute;transform:translate(-50%,-50%);box-sizing:border-box}
+.movement-end{border-radius:50%;padding:0;min-height:0;width:clamp(20px,4.4%,30px);aspect-ratio:1;border:2px solid #342d18;background:var(--movement-after);color:#242317;font-size:10px;font-weight:750;cursor:pointer}
+.movement-end[data-version=previous]{width:clamp(26px,5.8%,38px);border:2px dashed var(--movement-before);background:#16374499;color:#fff}
+.movement-end[aria-pressed=true]{z-index:2;box-shadow:0 0 0 1px white}
+.movement-end[aria-pressed=true][data-version=next]{z-index:3}
+.movement-origin{width:9px;height:9px;background:var(--movement-after);border:1px solid #193026;z-index:4;pointer-events:none}
+.movement-origin[data-version=previous]{width:15px;height:15px;background:transparent;border:2px dashed var(--movement-before)}
+.movement-legend{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;font-size:12px}
+.movement-legend span:before{content:'';display:inline-block;width:18px;margin-right:5px;vertical-align:middle;border-top:3px dashed #4791bd}
+.movement-legend span:nth-child(2):before{border-top:3px solid #b5831e}
+.movement-comparison select{max-width:100%;font:inherit}
+.movement-comparison dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 10px;margin:0;font-size:13px}
+.movement-comparison dd{margin:0;font-variant-numeric:tabular-nums}
+.review-board-note,.outlook-review-comparison{padding:8px 10px;margin:8px 0;border-left:3px solid var(--tactics-accent);background:var(--tactics-soft);color:var(--tactics-text)}
+.review-board-note p,.outlook-review-comparison p{margin:.35em 0;line-height:1.45}
+.review-board-note .button,.outlook-review-comparison .button{margin:3px 5px 0 0}
+#league-squad-form .review-focus-player::after{content:"";position:absolute;inset:-3px;pointer-events:none;border:3px solid var(--tactics-accent);border-radius:inherit}
+@media(max-width:620px){.shape-v4-panel button{min-height:40px}.shape-v4-dot{font-size:9px}}
 #league-squad-form.tactics-principles-workspace{--tactics-panel:#0c211a;--tactics-soft:#102a22;--tactics-text:#eaf5ef;--tactics-muted:#adc3b9;--tactics-border:#365447;--tactics-accent:#83bfff;--tactics-active:#1263bd;--tactics-active-text:#fff}
 #league-squad-form.tactics-principles-workspace .league-lineup-workspace{grid-template-columns:minmax(520px,1.5fr) minmax(204px,.6fr) minmax(330px,1fr);justify-content:stretch;height:auto;gap:12px;align-items:start}
 #league-squad-form.tactics-principles-workspace .league-board-panel,#league-squad-form.tactics-principles-workspace .league-bench{height:auto;max-height:none;overflow:visible}
@@ -107,7 +161,7 @@
 #league-squad-form [data-outlook-retry][hidden]{display:none}
 #league-squad-form.tactics-principles-workspace .league-board-controls{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:8px}
 #league-squad-form .tactics-board-scheme-row,#league-squad-form .tactics-board-plan-row,#league-squad-form .tactics-board-auxiliary-row{grid-column:1;grid-row:auto;min-width:0}
-#league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher{display:grid;grid-template-columns:minmax(115px,1.2fr) repeat(3,30px) minmax(120px,1fr);gap:5px;width:100%;max-width:100%;min-height:32px;overflow:visible}
+#league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher{display:grid;grid-template-columns:minmax(115px,1.2fr) repeat(3,30px);gap:5px;width:100%;max-width:100%;min-height:32px;overflow:visible}
 #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher>label{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:5px;padding:0;border:0;background:none}
 #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher>label>span{font-size:10px;white-space:nowrap}
 #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher select{width:100%;min-width:0;min-height:32px;font-size:11px}
@@ -203,7 +257,7 @@
   #league-squad-form.tactics-principles-workspace .league-board-panel{padding:16px}
   #league-squad-form.tactics-principles-workspace .league-board-heading{padding:0 0 12px}
   #league-squad-form.tactics-principles-workspace .league-board-controls{gap:8px}
-  #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher{grid-template-columns:minmax(160px,1.2fr) repeat(3,36px) minmax(160px,1fr);gap:7px}
+  #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher{grid-template-columns:minmax(160px,1.2fr) repeat(3,36px);gap:7px}
   #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher select,#league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher button{height:36px;min-height:36px;font-size:13px}
   #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher button{width:36px}
   #league-squad-form .tactics-board-scheme-row .league-lineup-scheme-switcher>label>span{font-size:12px}
@@ -328,6 +382,12 @@
   #league-squad-form.tactics-principles-workspace .league-tactics-detail{height:var(--tactics-workspace-height,calc(100dvh - 180px));max-height:var(--tactics-workspace-height,calc(100dvh - 180px));align-self:start}
   #league-squad-form.tactics-principles-workspace .league-lineup-workspace{align-items:start}
 }
+/* Reserve the desktop column for substitutes; keep its controls at the page bottom. */
+@media(min-width:1280px){
+  #league-squad-form.tactics-principles-workspace .league-bench{height:var(--tactics-workspace-height,calc(100dvh - 180px));grid-template-rows:auto minmax(0,1fr) auto;align-self:start}
+  #league-squad-form.tactics-principles-workspace .league-bench .bench-magnet-list{overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+  #league-squad-form .league-bench>.league-autosave-footer{position:relative;z-index:2;border-radius:0 0 19px 19px}
+}
 @media(min-width:1280px) and (max-width:1799px){
   #league-squad-form.tactics-principles-workspace .league-lineup-workspace{grid-template-columns:minmax(340px,min(560px,var(--tactics-fit-board-width,620px))) 180px minmax(300px,1fr);gap:10px}
   #league-squad-form.tactics-principles-workspace .league-tactics-detail-scroll{display:block}
@@ -338,3 +398,13 @@
 @media(max-width:1050px){
   #league-squad-form.tactics-principles-workspace .league-tactics-detail-scroll{max-height:72dvh}
 }
+
+#league-squad-form .league-competition-bindings{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding-top:5px;border-top:1px solid var(--line);min-width:0}
+#league-squad-form .league-competition-bindings label{min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px;padding:0;border:0;background:none}
+#league-squad-form .league-competition-bindings label>span{font-size:11px;align-self:center}
+#league-squad-form .league-competition-bindings select{width:100%;min-width:0;text-overflow:ellipsis}
+#league-squad-form .tactics-board-scheme-row .league-competition-bindings button{width:auto;grid-column:1;padding:0 7px;font-size:11px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink)}
+#league-squad-form .league-competition-bindings label:last-child{grid-column:2/-1;justify-self:end;width:min(100%,210px)}
+#league-squad-form .league-position-follow{grid-column:1/-1;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);white-space:nowrap}
+#league-squad-form .league-position-follow input{margin:0;accent-color:var(--cyan)}
+@media(max-width:620px){#league-squad-form .league-competition-bindings{grid-template-columns:repeat(2,minmax(0,1fr))}#league-squad-form .tactics-board-scheme-row .league-competition-bindings button{grid-column:2;grid-row:2}#league-squad-form .league-competition-bindings label:last-child{grid-column:1/-1}}

@@ -4,7 +4,7 @@
 const keyedAttributes = [
   "id", "data-render-key", "data-enhancement-card", "data-enhancement-card-id",
   "data-enhancement-result-card", "data-s4-card-detail", "data-watch-room",
-  "data-broadcast-player", "data-event-id",
+  "data-broadcast-player", "data-event-id", "data-preserve-open",
 ];
 
 function nodeKey(node) {
@@ -21,6 +21,8 @@ function compatible(current, next) {
 }
 
 function syncControl(current, next) {
+  // Polling must not overwrite text the user is currently editing.
+  if (current === current.ownerDocument.activeElement && current.matches('input,textarea')) return;
   if (current.tagName === "INPUT") {
     if (current.checked !== next.checked) current.checked = next.checked;
     if (current.value !== next.value && current.type !== "file") current.value = next.value;
@@ -36,16 +38,23 @@ function patchNode(current, next) {
     if (current.nodeValue !== next.nodeValue) current.nodeValue = next.nodeValue;
     return;
   }
+  // Long-lived players own their descendants. Keep them connected so polling
+  // cannot restart CSS animations or discard the current replay timeline.
+  const owned = current.getAttribute('data-dom-owned') === 'broadcast-key-plays'
+    && next.getAttribute('data-dom-owned') === 'broadcast-key-plays';
   // isEqualNode uses the browser's native comparison and avoids walking every
   // descendant of unchanged player cards in JavaScript.
   if (current.isEqualNode(next) && !current.matches("input, textarea, option, select")
       && !current.querySelector("input, textarea, select")) return;
   for (const {name} of [...current.attributes]) {
+    if (name === 'open' && current.tagName === 'DETAILS') continue;
     if (!next.hasAttribute(name)) current.removeAttribute(name);
   }
   for (const {name, value} of next.attributes) {
+    if (name === 'open' && current.tagName === 'DETAILS') continue;
     if (current.getAttribute(name) !== value) current.setAttribute(name, value);
   }
+  if (owned) return;
   // Read form properties before moving the template's children.
   const selected = current.tagName === "SELECT" ? [...next.options].map(option => option.selected) : null;
   syncControl(current, next);

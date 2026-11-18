@@ -1,0 +1,15 @@
+V4全赛季与赛季边界 · 工作草稿 · 2026-11-18
+
+持续目标active，本地验证优先，不连接云主机。52完整杯赛已验收，当前继续现有112联赛+29冠军杯的交错完整赛季。保留明确停用的赛季总决赛，不重新启用旧格式。
+新增season-boundary.js纯转换及engine-v4-season-boundary.test.js，2项通过outputs/tests/2026-11-17T20-49-06-071Z/report.json。测试使用明确构造的完整赛程边界夹具，不是141场模拟证据。
+准备将原settleDailySeason、resetDailyCompetitions中的排名奖励/金球奖/荣誉/归档/升降级/新赛程与本地回执一起提交。原重置要求奖励先完成；重复旧赛季请求应返回历史回执，不再次重置新赛季。所有工作仍限标记副本。
+已接canonical-storage-settlement.finishSeasonBoundary；奖励/重置及回执单次提交，旧赛季边界请求在新赛季返回历史回执。JSON/分片保存前后抛错及重开验证通过。分片重置会把完整archive写入冷文件，成功提交后重新采用原摘要形态，避免后续严格一致性检查误报；同时验证141场完整归档可读取。见outputs/tests/2026-11-17T20-52-09-103Z/report.json。
+实际终止进程覆盖JSON/分片×奖励/重置×提交前/后八组合，排名奖励、荣誉、归档、升降只一次；联赛和杯赛恢复回归同批通过，见outputs/tests/2026-11-17T20-54-05-370Z/report.json。
+真实完整交错赛季正在运行：scripts/verify-v4-full-season-local.mjs及worker；根outputs/v4-full-season-20261118/season-yPVGjb，exec session78712，启动2026-11-18约04:58。progress.json记录已完成批次/比赛及内存。
+主流程原分片存储实际调度，14轮联赛每轮8场，前7轮后各推进一批杯赛（29场）；全部5400秒完整协议，64倍公开时钟按真实录像终点放行，虚拟业务日历按20分钟联赛/间隔10分钟杯赛排列。随后全新JSON副本逐轮消费同一批141个锁定归档并核对业务，最后排名奖励、归档、升降和新赛程；不是容量/云端验证。
+父进程超时1小时，源码前后哈希及真实文件保护；已隔离全部五类环境路径。若中断可 --resume=原标记根恢复，不覆盖失败日志。当前尚未完成或验收；不得提前引用为成功。
+赛季边界单测夹具已抽到test/v4-season-boundary-fixture.js；明确构造141场边界数据，不能替代真实完整赛季。52号源码已冻结，当前工作桥有新变更。
+05:10更新：78712首次在分片Proxy记录structuredClone处失败；用unwrapTracked再复制修复后，37184完成44场，在第4轮一场战报反抢次数检查失败。诊断原内核近身抢断用步起点+0.2的原始浮点时间，事件time已舍入，695.2+0.2大于692.4+3导致战报多记1次。只修player-report按原步号还原抢断时刻，接触球仍用原舍入时间；冻结prototype.8及随机/比分不变。7项战报测试通过outputs/tests/2026-11-17T21-08-37-521Z/report.json；同失败完整比赛逐步复现得到23:0反抢，球员与球队一致。
+当前恢复session50850，命令node scripts/verify-v4-full-season-local.mjs --resume=outputs/v4-full-season-20261118/season-yPVGjb --retry-fixture=v4-7c6a573bffc6b807a3622d1d28d81be8-2。只显式重试失败任务；已完成任务复用。失败worker日志保留。全赛季尚未验收。
+05:25更新：50850完成93场后在第9轮成功传球统计检查失败。诊断scripts/diagnose-v4-completed-report.mjs指出门将碰球失误后的自由球头球保留原decisionId，但from为null，不应算原传球成功或拦截。仅修战报头球分支同时核对from===source.actor；8项战报测试通过outputs/tests/2026-11-17T21-23-40-252Z/report.json，同一完整比赛重演传球成功312:379，个人/球队完全一致。
+当前session10946以--retry-fixture=v4-940a558fe711bedac5e46a55bbca1fe8-5恢复，已到101场。上一批109项/34文件回归通过outputs/tests/2026-11-17T21-21-01-650Z/report.json；新增头球修复后正在更新回归session33017。组合验收脚本scripts/accept-v4-season-retention.mjs已准备，须等完整赛季、当前源码单测和浏览器证据一致后才执行。

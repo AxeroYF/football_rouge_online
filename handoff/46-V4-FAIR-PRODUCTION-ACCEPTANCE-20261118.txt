@@ -1,0 +1,13 @@
+V4同轮分组生产验收 · 2026-11-18
+
+验收：outputs/v4-fair-production-20261118/acceptance.json
+冻结源码及证据：outputs/v4-fair-production-accepted-20261118/manifest.json
+设计与边界：docs/YFFM1-V4-FAIR-PRODUCTION-20261118.md
+
+48项、15文件相关回归通过。两个生产进程各交替推进最多四场；八场完整真实阵容和原JSON/分片存储各八场结算、实际账户桌面/手机回放通过。
+实际分组生产容量iteration2、iteration3均通过：2逻辑CPU/2GiB整体Job约束、10观看客户端、八场约118秒完成。head P95分别54.3/56.3ms，分块P95分别72.1/82.3ms，整体Job峰值约400/403MiB。八场首批画面最晚2.02/1.45秒出现。
+iteration1失败证据保留。120秒完成余量较小，不能把此结论扩展为包括资产、奖励、预测和其他HTTP业务的生产容量；香港云主机未连接。
+引擎核心仍prototype.8、fd8479389686f82d52e1d96a9abdef7e2aded00ea1d7bda2a8d52c3ee1bdfee7；本次未改核心。
+保护核对：7文件与原始基线一致；league-service.js仅保留此前三个V4点球受益人数表达式修正，旧战报路径仍为原表达式。真实存档未改。
+
+正式开关保持关闭。下一阶段整轮启动/赛程绑定/发布后结算/伤停奖励推进/跨轮新输入及重叠约束正在实现；新增scheduled-league.js尚不属于本次验收。

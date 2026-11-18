@@ -4,6 +4,7 @@ import {chooseFlowAction,nearestFlowPlayer} from './action-policy.js';
 import {initializeFlowState,periodRemaining,clamp,rounded,flipFlowZone,zonePoint,FLOW_PERIODS} from './flow-state.js';
 import {isV33} from './model-config.js';
 import {prepareDefensiveAssignments} from './tactical-execution.js';
+import {capturePlayPlayers} from './key-plays.js';
 
 const phaseForZone=zone=>({defensiveThird:'buildUp',buildUp:'progression',finalThird:'finalThird',box:'chance'})[zone.split(':')[0]]??'buildUp';
 export function simulatePossessionFlow(teams,options,{attemptStage,compactReplayShape}) {
@@ -14,6 +15,7 @@ export function simulatePossessionFlow(teams,options,{attemptStage,compactReplay
   const available=Math.min(periodRemaining(flow),Number(options.availableSeconds??Infinity));
   let spent=0,previousOwnerSeconds=0;
   const stages=[],actions=[],decisions=options.recordDecisionTrace?[]:null;
+  const keyPlayActions=options.recordKeyPlays?[]:null;
   const opening=buildV2SpatialMatchup(snapshot,{parameters});
   if(flow.owner!==0&&flow.owner!==1) {
     const control=opening.teams.map(team=>Math.max(.01,Number(team.centralControl??.5)));
@@ -71,6 +73,7 @@ export function simulatePossessionFlow(teams,options,{attemptStage,compactReplay
       break;
     }
     const from=flow.zone,previousCarrier=flow.carrierId;
+    const playBefore=keyPlayActions?capturePlayPlayers(spatial.dynamicShape):null;
     flow.zone=action.target;
     if(action.type==='carry')flow.carryTarget={teamIndex:attacking,playerId:previousCarrier,point:zonePoint(flow.zone)};
     const attemptPhase=action.type==='longShot'?'shot':['recycle','switch'].includes(action.type)?'buildUp':phase;
@@ -91,6 +94,10 @@ export function simulatePossessionFlow(teams,options,{attemptStage,compactReplay
       if((options.domainRoll?.('execution')??rng())<offsideChance)Object.assign(result,{success:false,outcome:'offside',turnover:null,foul:{occurred:false},offsideProbability:offsideChance});
     }
     spent+=action.seconds;
+    if(keyPlayActions)keyPlayActions.push({type:action.type,teamIndex:attacking,period:flow.period+1,
+      seconds:rounded(action.seconds),footballSeconds:rounded(flow.elapsedSeconds+spent),
+      fromPlayerId:previousCarrier,toPlayerId:result.actor?.id??null,success:Boolean(result.success),
+      before:playBefore,after:capturePlayPlayers(spatial.dynamicShape)});
     actions.push({type:action.type,from,to:flow.zone,actorId:result.actor?.id??null,seconds:rounded(action.seconds),success:result.success,
       ...(isV33(parameters)?{pressure:pressureContext,reasons:action.reasons??[],turnover:Boolean(result.turnover)}:{})});
     if(isV33(parameters))flow.previousAction={type:action.type,teamIndex:attacking};
@@ -111,5 +118,5 @@ export function simulatePossessionFlow(teams,options,{attemptStage,compactReplay
     completedStages:stages.filter(s=>s.success).map(s=>s.stage),terminalOutcome:last.outcome,goal:false,
     xg:last.stage==='shot'?last.probability:0,stages,actions,previousOwnerSeconds,activeDurationSeconds:rounded(spent),nextFlow:flow,
     independentEvents:weatherRoll<weatherChance?[{type:['storm','superStorm'].includes(weather)?'lightningInjury':'weatherInjury',weather,probability:weatherChance}]:[],
-    ...(decisions?{decisionTrace:decisions}:{}),...(replayShape?{replayShape}:{})};
+    ...(decisions?{decisionTrace:decisions}:{}),...(replayShape?{replayShape}:{}),...(keyPlayActions?{keyPlayActions}:{})};
 }

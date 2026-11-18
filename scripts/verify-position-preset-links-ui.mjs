@@ -1,0 +1,52 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {startLocalServer} from '../test/helpers/local-server.js';
+const require=createRequire('C:/Program Files/WindowsApps/OpenAI.CodexPrimaryRuntime.v26-1112-611-0_26.1112.611.0_x64__3k8sg7r9htsxt/dependencies/node/node_modules/playwright/package.json');
+const {chromium}=require('playwright');
+const out='outputs/position-preset-links-ui-20261117';fs.mkdirSync(out,{recursive:true});
+const server=await startLocalServer({publicOnly:false});let browser;
+try{
+  const post=async(path,body)=>{const r=await fetch(server.url+'/api/versus'+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json();assert.ok(r.ok&&j.ok!==false,JSON.stringify(j));return j;};
+  const account=await post('/register',{nickname:'赛前红线验证',password:'isolated-only'});
+  const identity={playerId:account.profile.id,accountToken:account.accountToken};
+  await post('/league/draft/start',{...identity,teamName:'轮换验证队'});await post('/league/draft/auto',identity);await post('/league/draft/finish',identity);
+  browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+  const page=await browser.newPage({viewport:{width:1500,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.addInitScript(account=>{localStorage.setItem('football_test1_versus_account_v1',JSON.stringify(account));sessionStorage.setItem('football_test1_versus_browser_session_v1','1');localStorage.setItem('football_test1_versus_view_v1',JSON.stringify({playerId:account.profile.id,mode:'league',leagueTab:'squad'}));},account);
+  await page.goto(server.url+'/versus/');
+  const magnets=page.locator('[data-league-magnet]');await magnets.first().waitFor();
+  const positions=()=>magnets.evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.leagueMagnet,{x:parseFloat(n.style.left),y:parseFloat(n.style.top)}])));
+  const id=Object.entries(await positions()).find(([,p])=>p.x<40)[0];
+  const switchTo=async key=>{await page.locator('[data-tactical-plan-select]').selectOption(key);await page.waitForFunction(key=>document.querySelector(`[data-league-position-preset="${key}"]`)?.getAttribute('aria-pressed')==='true',key);};
+  const saveAfter=async action=>{const response=page.waitForResponse(r=>r.request().method()==='POST'&&r.url().endsWith('/league/team'));await action();const r=await response;const j=await r.json();assert.ok(r.ok(),JSON.stringify(j));return j.teamSave.team;};
+  const drag=async dx=>saveAfter(async()=>{
+    const target=page.locator(`[data-league-magnet="${id}"]`);await target.scrollIntoViewIfNeeded();const box=await target.boundingBox();
+    const x=box.x+box.width/2,y=box.y+10;
+    await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y,{steps:6});await page.mouse.up();
+  });
+  let saved=await drag(20);
+  assert.deepEqual(saved.positionPresetOverrides,{position2:false,position3:false});
+  assert.deepEqual(saved.positionPresets.position2,saved.positionPresets.position1);
+  const base=await positions();
+  await switchTo('position2');assert.deepEqual(await positions(),base);assert.equal(await page.locator('[data-position-follow]').isChecked(),true);
+  saved=await drag(20);assert.equal(saved.positionPresetOverrides.position2,true);
+  assert.equal(await page.locator('[data-position-follow]').isChecked(),false);
+  const custom=await positions();
+  await switchTo('position1');saved=await drag(-15);const nextBase=await positions();
+  await switchTo('position2');assert.deepEqual(await positions(),custom);
+  await switchTo('position3');assert.deepEqual(await positions(),nextBase);
+  await page.reload();await magnets.first().waitFor();
+  await switchTo('position2');assert.deepEqual(await positions(),custom);assert.equal(await page.locator('[data-position-follow]').isChecked(),false);
+  saved=await saveAfter(()=>page.locator('[data-position-follow]').check());
+  assert.deepEqual(saved.positionPresets.position2,saved.positionPresets.position1);
+  assert.equal(saved.positionPresetOverrides.position2,false);
+  await page.locator('.league-position-tabs').screenshot({path:out+'/desktop.png'});
+  await page.setViewportSize({width:390,height:844});
+  const follow=page.locator('[data-position-follow]');assert.equal(await follow.isVisible(),true);
+  await follow.locator('..').screenshot({path:out+'/mobile.png'});
+  assert.deepEqual(errors,[]);
+  fs.writeFileSync(out+'/verification.json',JSON.stringify({passed:true,defaultDragFollows:true,manualLeadingIndependent:true,trailingStillFollows:true,reload:true,restoreFollow:true,mobileControlVisible:true,errors},null,2));
+  console.log('PASS: default drag follows, leading manual override persists, trailing follows, restore and mobile.');
+}catch(error){const page=browser?.contexts()[0]?.pages()[0];if(page)await page.screenshot({path:out+'/failure.png',fullPage:true});throw error;}
+finally{await browser?.close();await server.stop();}

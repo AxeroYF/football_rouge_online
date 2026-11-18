@@ -28,13 +28,15 @@ test('display and animation changes persist together and retain the existing key
     assert.equal(previous.compactCards, true);
     assert.equal(next.compactCards, false);
   });
-  const result = settings.update({theme:'dark',uiMotion:'off',packMotion:'on',compactCards:false,stackCards:true,tacticsPieceDisplay:'cards'});
+  const result = settings.update({theme:'dark',uiMotion:'off',packMotion:'on',compactCards:false,stackCards:true,tacticsPieceDisplay:'cards',broadcastPieceDisplay:'cards',sidebarPinned:true});
   assert.equal(result.saved, true);
   assert.equal(changes, 1);
   assert.equal(values.get('yellowdogs_league_desktop_theme_v1'), 'dark');
   assert.equal(values.get('yffm1_pack_opening_motion_v1'), 'on');
   assert.equal(JSON.parse(values.get('yffm1_game_settings_v1')).tacticsPieceDisplay, 'cards');
   assert.equal(JSON.parse(values.get('yffm1_game_settings_v1')).uiMotion, 'off');
+  assert.equal(JSON.parse(values.get('yffm1_game_settings_v1')).sidebarPinned, true);
+  assert.equal(JSON.parse(values.get('yffm1_game_settings_v1')).broadcastPieceDisplay, 'cards');
   const reloaded = createGameSettings(env);
   assert.deepEqual(reloaded.value, settings.value);
   result.value.theme = 'light';
@@ -89,4 +91,15 @@ test('settings screen contains all preferences and explains the system motion ov
   assert.match(markup, /value="on" selected/);
   assert.match(markup, /data-game-account-settings/);
   assert.doesNotMatch(gameSettingsMarkup(DEFAULT_GAME_SETTINGS), /data-game-account-settings/);
+});
+
+test('broadcast card preference is independent of tactics and rejects unknown modes', () => {
+  const {env}=environment();
+  const settings=createGameSettings(env);
+  settings.update({broadcastPieceDisplay:'cards'});
+  assert.equal(settings.value.tacticsPieceDisplay,'magnets');
+  assert.equal(createGameSettings(env).value.broadcastPieceDisplay,'cards');
+  settings.update({broadcastPieceDisplay:'invalid'});
+  assert.equal(settings.value.broadcastPieceDisplay,'magnets');
+  settings.destroy();
 });

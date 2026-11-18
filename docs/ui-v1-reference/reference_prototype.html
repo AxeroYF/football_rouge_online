@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YFFM1 足球经理游戏 UI 外观规范与交互示范系统 v1.0</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #0B0F17;
+      --bg-surface-1: #111827;
+      --bg-surface-2: #1E293B;
+      --bg-surface-3: #334155;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --brand-pitch: #10B981;
+      --brand-pitch-dark: #059669;
+      --brand-broadcast: #3B82F6;
+      --brand-trophy: #F59E0B;
+      --status-live: #EF4444;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(16, 185, 129, 0.45);
+    }
+
+    .theme-light {
+      --bg-canvas: #F1F5F9;
+      --bg-surface-1: #FFFFFF;
+      --bg-surface-2: #F8FAFC;
+      --bg-surface-3: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+      --border-subtle: rgba(15, 23, 42, 0.1);
+      --border-focus: rgba(5, 150, 105, 0.5);
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .font-display {
+      font-family: 'Barlow Condensed', 'Noto Sans SC', sans-serif;
+      letter-spacing: 0.02em;
+    }
+
+    .font-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .surface-1 {
+      background-color: var(--bg-surface-1);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .surface-2 {
+      background-color: var(--bg-surface-2);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .surface-3 {
+      background-color: var(--bg-surface-3);
+    }
+
+    .text-sec {
+      color: var(--text-secondary);
+    }
+
+    .text-mut {
+      color: var(--text-muted);
+    }
+
+    /* Reduced Motion Support */
+    body.reduced-motion *,
+    body.reduced-motion *::before,
+    body.reduced-motion *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.15); }
+    }
+
+    .live-dot {
+      animation: pulse-live 1.6s infinite ease-in-out;
+    }
+
+    @keyframes goal-flash {
+      0% { transform: scale(0.92); opacity: 0; }
+      25% { transform: scale(1.03); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .anim-goal {
+      animation: goal-flash 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Pitch grass pattern */
+    .pitch-grid {
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(16, 185, 129, 0.11) 0px,
+          rgba(16, 185, 129, 0.11) 36px,
+          rgba(5, 150, 105, 0.18) 36px,
+          rgba(5, 150, 105, 0.18) 72px
+        ),
+        radial-gradient(circle at 50% 50%, #064E3B 0%, #022C22 100%);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.4);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP SYSTEM CONTROL BAR (DESIGN SPEC & DEMO SWITCHER) -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/90 border-b border-slate-800 text-slate-100 px-4 py-2.5">
+    <div class="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand & Document Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-display font-bold text-lg">
+          YF
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-sm tracking-tight">YFFM1 UI 外观规范与交互示范系统</span>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">First Draft v1.0</span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">“俱乐部主场 + 赛事转播 + 卡牌收藏” 视觉标准 · 覆盖规范文档与四大核心示范页</p>
+        </div>
+      </div>
+
+      <!-- Main Mode Tabs -->
+      <nav class="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 overflow-x-auto max-w-full" aria-label="系统视图切换">
+        <button id="tab-btn-spec" onclick="switchMainView('spec')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-emerald-600 text-white shadow-sm whitespace-nowrap">
+          1. 全局 UI 规范书 (8大维度)
+        </button>
+        <button id="tab-btn-home" onclick="switchMainView('home')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-300 hover:text-white whitespace-nowrap">
+          2. 示范主稿：俱乐部主场 (联赛主页)
+        </button>
+        <button id="tab-btn-tactics" onclick="switchMainView('tactics')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-300 hover:text-white whitespace-nowrap">
+          3. 延展验证 A：阵容战术
+        </button>
+        <button id="tab-btn-match" onclick="switchMainView('match')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-300 hover:text-white whitespace-nowrap">
+          4. 延展验证 B：直播与比赛记录
+        </button>
+      </nav>
+
+      <!-- Global Settings: Theme & Motion -->
+      <div class="flex items-center gap-2">
+        <button id="btn-theme-toggle" onclick="toggleTheme()" class="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition" title="切换深浅主题 (主场暗夜 / 战术白昼)">
+          <span id="theme-icon">🌙</span>
+          <span id="theme-label">夜赛深色</span>
+        </button>
+        <button id="btn-motion-toggle" onclick="toggleReducedMotion()" class="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition" title="性能与无障碍：减少或关闭动效">
+          <span id="motion-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="motion-label">标准动效</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 1: DESIGN SYSTEM SPECIFICATION (全局 UI 外观规范书)               -->
+  <!-- ===================================================================== -->
+  <main id="view-spec" class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-8">
+
+    <!-- Hero Overview Banner -->
+    <section class="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-lg">
+      <img src="assets/stadium_hero_bg.jpg" alt="YFFM1 主场夜赛氛围参考" class="w-full h-56 sm:h-64 object-cover opacity-35" />
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/40 flex flex-col justify-center p-6 sm:p-8">
+        <div class="inline-flex items-center gap-2 text-xs font-mono text-emerald-400 mb-2">
+          <span class="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30">YFFM1 DESIGN SYSTEM v1.0</span>
+          <span>俱乐部主场 · 赛事转播 · 球星收藏 · 高效经营</span>
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-bold tracking-tight text-white max-w-3xl">
+          从“拼凑的后台表格”升级为“有主场归属感与转播质感的足球经理工作台”
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-300 max-w-3xl mt-2.5 leading-relaxed">
+          本规范针对 YFFM1 现有功能完整但多阶段开发导致的视觉割裂、主页信息重复、导航挤压及装饰失衡问题，制定可直接指导前端落地的 Token 标准、布局栅格、现有资产适配规则及四批迭代路线。点击上方页签可直接体验<strong>俱乐部主场（支持赛前/赛中/赛后/休赛期及桌面/手机切换）</strong>、<strong>阵容战术</strong>与<strong>比赛直播/记录</strong>示范页。
+        </p>
+      </div>
+    </section>
+
+    <!-- Sub-navigation for Spec Chapters -->
+    <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
+      <a href="#spec-sec-1" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">01. 视觉方向与核心取舍</a>
+      <a href="#spec-sec-2" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">02. 色彩规范与色值 Token</a>
+      <a href="#spec-sec-3" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">03. 字体与数字排版规范</a>
+      <a href="#spec-sec-4" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">04. 布局栅格与响应式规范</a>
+      <a href="#spec-sec-5" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">05. 核心组件与现有资产适配</a>
+      <a href="#spec-sec-6" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">06. 交互状态与动效演出实验室</a>
+      <a href="#spec-sec-7" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">07. 各功能页分工与历史决策保留</a>
+      <a href="#spec-sec-8" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-2 hover:border-emerald-500/50 transition">08. 全局/专属边界与四批落地计划</a>
+    </div>
+
+    <!-- SECTION 1: 视觉方向与核心取舍 -->
+    <section id="spec-sec-1" class="surface-1 rounded-xl p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <span class="text-xs font-mono text-emerald-400">SECTION 01 · VISUAL DIRECTION</span>
+          <h2 class="text-xl font-bold mt-0.5">视觉方向：现代体育转播暗夜主场（Modern Broadcast &amp; Tactical Slate）</h2>
+        </div>
+        <span class="text-xs text-sec">回答“我是谁、下一场踢谁、目前处于什么位置、有哪些事要处理”</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div class="lg:col-span-7 space-y-4">
+          <p class="text-sm text-sec leading-relaxed">
+            YFFM1 是玩家每天高频登录处理的网页足球经理游戏。整体设计抛弃“页游式密集发光金边”与“生硬后台管理表格”两个极端，确立<strong>70% 战术深灰蓝高信噪比基底 + 20% 体育转播级焦点横幅 + 10% 球员卡画与荣誉高亮</strong>的黄金配比：
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="surface-2 rounded-lg p-3.5">
+              <div class="flex items-center gap-2 font-semibold text-sm text-emerald-400">
+                <span>🏟️</span> 1. 俱乐部归属感（Identity）
+              </div>
+              <p class="text-xs text-sec mt-1.5 leading-relaxed">
+                顶栏与第一层主视觉常驻本队队徽、俱乐部名称、所属级别（A级/B级）与主场氛围底图；支持提取队徽主色作为焦点区环境微光。
+              </p>
+            </div>
+            <div class="surface-2 rounded-lg p-3.5">
+              <div class="flex items-center gap-2 font-semibold text-sm text-blue-400">
+                <span>📺</span> 2. 体育转播感（Broadcast）
+              </div>
+              <p class="text-xs text-sec mt-1.5 leading-relaxed">
+                下一场比赛采用欧洲主流赛事记分牌（Scorebug）构图，主客队徽对称、比分/开赛倒计时等宽放大、赛事标签（A级联赛/16强杯赛）色彩一眼可辨。
+              </p>
+            </div>
+            <div class="surface-2 rounded-lg p-3.5">
+              <div class="flex items-center gap-2 font-semibold text-sm text-amber-400">
+                <span>🃏</span> 3. 球星收藏感（Collection）
+              </div>
+              <p class="text-xs text-sec mt-1.5 leading-relaxed">
+                严格保护已有球员卡画的手动裁切参数，使用标准化卡槽容器承载卡画与卡框；在阵容、背包和最佳球员模块突出球星立绘。
+              </p>
+            </div>
+            <div class="surface-2 rounded-lg p-3.5">
+              <div class="flex items-center gap-2 font-semibold text-sm text-purple-400">
+                <span>⚡</span> 4. 每日信息效率（Efficiency）
+              </div>
+              <p class="text-xs text-sec mt-1.5 leading-relaxed">
+                合并旧版重复展示的“积分榜、球队简报、近期赛果、长日报”，首屏严控主视觉高度（≤240px），确保桌面端无需滚动即可总览排名与真实待办。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5">
+          <div class="rounded-xl overflow-hidden border border-slate-700/70 bg-white p-2">
+            <img src="assets/ui_hierarchy_diagram.jpg" alt="YFFM1 三层界面信息架构图" class="w-full h-auto rounded-lg" />
+            <p class="text-[11px] text-slate-600 text-center py-1.5 font-medium">
+              图 1-1：YFFM1 联赛主页三层式视觉信息架构（焦点比赛层 → 处境与待办层 → 赛果与摘要层）
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Design Tradeoffs Table -->
+      <div class="overflow-x-auto pt-2">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-700 text-sec uppercase">
+              <th class="py-2.5 px-3">痛点诊断（现状问题）</th>
+              <th class="py-2.5 px-3">第一稿设计取舍（明确做什么）</th>
+              <th class="py-2.5 px-3">视觉禁令（明确不做什么）</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/70">
+            <tr>
+              <td class="py-2.5 px-3 font-medium">主页堆砌积分榜、简报、赛果、日报，重复且平淡</td>
+              <td class="py-2.5 px-3 text-emerald-400">采用三层架构：第一层比赛主视觉 + 第二层本队相邻5行快照与待办 + 第三层上轮战报与3行微简报</td>
+              <td class="py-2.5 px-3 text-rose-400">严禁在主页平铺完整16队榜单或长篇文字日报；严禁无事编造虚假红点提醒</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium">部分页面过度装饰，部分页面像粗糙白底表格</td>
+              <td class="py-2.5 px-3 text-emerald-400">统一 1px 半透明微边框（<code>rgba(255,255,255,0.08)</code>）与三级深色背景；仅在主比赛卡、开包与强化成功使用氛围高光</td>
+              <td class="py-2.5 px-3 text-rose-400">严禁普通列表/面板使用密集霓虹发光外框、大面积跑马灯或全屏背景视频</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-medium">桌面导航展开挤压主体布局，手机端缺少优先级</td>
+              <td class="py-2.5 px-3 text-emerald-400">桌面采用左侧固定宽度可折叠导航（220px/64px）或抽屉覆盖层；手机端采用底部 5 核心主导航 + 顶部俱乐部资源条</td>
+              <td class="py-2.5 px-3 text-rose-400">严禁桌面端次级菜单展开时动态推挤右侧主栅格导致球场/表格抖动变形</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 色彩规范与具体色值 -->
+    <section id="spec-sec-2" class="surface-1 rounded-xl p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <span class="text-xs font-mono text-emerald-400">SECTION 02 · COLOR SYSTEM &amp; TOKENS</span>
+          <h2 class="text-xl font-bold mt-0.5">颜色规范：深浅双主题、四级背景、赛事识别与无障碍状态色</h2>
+        </div>
+        <span class="text-xs text-sec">点击任意色卡可复制 CSS 变量与 HEX 色值 · 满足 WCAG AA/AAA 对比度要求</span>
+      </div>
+
+      <!-- Color Swatches Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Group 1: Background Surfaces -->
+        <div class="surface-2 rounded-lg p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-sec">1. 背景层级（夜赛深色默认 / 浅色备选）</h3>
+          <div class="space-y-2">
+            <div onclick="copyToken('--bg-canvas: #0B0F17')" class="cursor-pointer p-2.5 rounded-lg bg-[#0B0F17] border border-slate-700 flex items-center justify-between text-xs text-slate-200 hover:border-emerald-500 transition">
+              <span>L0 全局画布 <code>--bg-canvas</code></span>
+              <span class="font-num">#0B0F17 / #F1F5F9</span>
+            </div>
+            <div onclick="copyToken('--bg-surface-1: #111827')" class="cursor-pointer p-2.5 rounded-lg bg-[#111827] border border-slate-700 flex items-center justify-between text-xs text-slate-200 hover:border-emerald-500 transition">
+              <span>L1 主面板 <code>--bg-surface-1</code></span>
+              <span class="font-num">#111827 / #FFFFFF</span>
+            </div>
+            <div onclick="copyToken('--bg-surface-2: #1E293B')" class="cursor-pointer p-2.5 rounded-lg bg-[#1E293B] border border-slate-600 flex items-center justify-between text-xs text-slate-100 hover:border-emerald-500 transition">
+              <span>L2 卡片/表头 <code>--bg-surface-2</code></span>
+              <span class="font-num">#1E293B / #F8FAFC</span>
+            </div>
+            <div onclick="copyToken('--bg-surface-3: #334155')" class="cursor-pointer p-2.5 rounded-lg bg-[#334155] border border-slate-500 flex items-center justify-between text-xs text-white hover:border-emerald-500 transition">
+              <span>L3 悬停/弹窗 <code>--bg-surface-3</code></span>
+              <span class="font-num">#334155 / #E2E8F0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group 2: Brand & Competition Accents -->
+        <div class="surface-2 rounded-lg p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-sec">2. 品牌主色与赛事识别色</h3>
+          <div class="space-y-2">
+            <div onclick="copyToken('--brand-pitch: #10B981')" class="cursor-pointer p-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-between text-xs text-emerald-300 hover:border-emerald-400 transition">
+              <span>主场绿（主CTA/本队高亮）</span>
+              <span class="font-num">#10B981</span>
+            </div>
+            <div onclick="copyToken('--comp-league-a: #3B82F6')" class="cursor-pointer p-2.5 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-between text-xs text-blue-300 hover:border-blue-400 transition">
+              <span>A级联赛蓝（顶级联赛标识）</span>
+              <span class="font-num">#3B82F6</span>
+            </div>
+            <div onclick="copyToken('--comp-league-b: #06B6D4')" class="cursor-pointer p-2.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-between text-xs text-cyan-300 hover:border-cyan-400 transition">
+              <span>B级联赛青（次级联赛标识）</span>
+              <span class="font-num">#06B6D4</span>
+            </div>
+            <div onclick="copyToken('--comp-cup: #F59E0B')" class="cursor-pointer p-2.5 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-between text-xs text-amber-300 hover:border-amber-400 transition">
+              <span>足协杯赛金（16队淘汰赛/荣誉）</span>
+              <span class="font-num">#F59E0B</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group 3: Semantic & Match Status -->
+        <div class="surface-2 rounded-lg p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-sec">3. 状态语义与战绩色（必配图标/文字）</h3>
+          <div class="space-y-2">
+            <div class="p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
+              <span><strong>[胜 W]</strong> · 体能充沛 (≥80%) · 达成</span>
+              <span class="font-num">#22C55E</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
+              <span><strong>[平 D]</strong> · 体能预警 (60-79%) · 待办</span>
+              <span class="font-num">#F59E0B</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
+              <span><strong>[负 L]</strong> · 伤停/红牌/LIVE直播中</span>
+              <span class="font-num">#EF4444</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-500/15 border border-slate-500/30 flex items-center justify-between text-xs text-slate-300">
+              <span><strong>[未赛 -]</strong> · 估算指标/休赛/禁用</span>
+              <span class="font-num">#64748B</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group 4: Text & Card Rarity -->
+        <div class="surface-2 rounded-lg p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-sec">4. 文字层级与球星卡框稀有度色</h3>
+          <div class="space-y-2">
+            <div class="p-2 rounded bg-slate-900/90 border border-slate-800 flex justify-between text-xs">
+              <span class="text-[#F8FAFC] font-semibold">主要文字 Primary (对比度 15.8:1)</span>
+              <span class="font-num text-slate-400">#F8FAFC</span>
+            </div>
+            <div class="p-2 rounded bg-slate-900/90 border border-slate-800 flex justify-between text-xs">
+              <span class="text-[#94A3B8]">次要文字 Secondary (对比度 7.2:1)</span>
+              <span class="font-num text-slate-400">#94A3B8</span>
+            </div>
+            <div class="p-2 rounded bg-slate-900/90 border border-slate-800 flex justify-between text-xs">
+              <span class="text-[#64748B]">辅助说明 Muted (对比度 4.6:1)</span>
+              <span class="font-num text-slate-400">#64748B</span>
+            </div>
+            <div class="flex items-center justify-between gap-1 pt-1 text-[11px] font-mono">
+              <span class="px-2 py-1 rounded bg-slate-700 text-slate-200">基础 #64748B</span>
+              <span class="px-2 py-1 rounded bg-blue-900/60 text-blue-300 border border-blue-500/40">精英 #3B82F6</span>
+              <span class="px-2 py-1 rounded bg-purple-900/60 text-purple-300 border border-purple-500/40">核心 #A855F7</span>
+              <span class="px-2 py-1 rounded bg-amber-900/60 text-amber-300 border border-amber-500/40">传奇 #F59E0B</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: 字体与数字排版规范 -->
+    <section id="spec-sec-3" class="surface-1 rounded-xl p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <span class="text-xs font-mono text-emerald-400">SECTION 03 · TYPOGRAPHY &amp; NUMERALS</span>
+          <h2 class="text-xl font-bold mt-0.5">字体规范：中文清晰阅读与比分/统计等宽对齐规则</h2>
+        </div>
+        <span class="text-xs text-sec">强制所有数值列开启 <code>font-variant-numeric: tabular-nums</code></span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-700 text-sec">
+                <th class="py-2 px-3">层级 Token</th>
+                <th class="py-2 px-3">推荐字体栈</th>
+                <th class="py-2 px-3">字号 / 行高 / 字重</th>
+                <th class="py-2 px-3">典型应用场景</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/70">
+              <tr>
+                <td class="py-2.5 px-3 font-mono text-emerald-400">Display-Score</td>
+                <td class="py-2.5 px-3">Barlow Condensed / DIN Alternate</td>
+                <td class="py-2.5 px-3 font-num">40px (2.5rem) / 1.0 / 800</td>
+                <td class="py-2.5 px-3">主比赛卡大比分、直播记分牌、开包总评</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-mono text-emerald-400">Heading-Page (H1)</td>
+                <td class="py-2.5 px-3">PingFang SC / HarmonyOS Sans SC / Microsoft YaHei</td>
+                <td class="py-2.5 px-3 font-num">22px (1.375rem) / 1.3 / 700</td>
+                <td class="py-2.5 px-3">俱乐部名称、页面一级主标题</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-mono text-emerald-400">Heading-Panel (H2)</td>
+                <td class="py-2.5 px-3">中文无衬线系统栈</td>
+                <td class="py-2.5 px-3 font-num">16px (1.0rem) / 1.4 / 600</td>
+                <td class="py-2.5 px-3">模块卡片标题（如“A级积分榜快照”、“俱乐部待办”）</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-mono text-emerald-400">Body-Standard</td>
+                <td class="py-2.5 px-3">Inter + Noto Sans SC</td>
+                <td class="py-2.5 px-3 font-num">14px (0.875rem) / 1.5 / 400-500</td>
+                <td class="py-2.5 px-3">球员姓名、比赛事件流、待办描述、常规按钮</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-mono text-emerald-400">Data-Mono</td>
+                <td class="py-2.5 px-3">JetBrains Mono / Inter (tabular-nums)</td>
+                <td class="py-2.5 px-3 font-num">13px (0.8125rem) / 1.4 / 600</td>
+                <td class="py-2.5 px-3">积分、净胜球、控球率、估算xG、转会价格、倒计时</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 px-3 font-mono text-emerald-400">Caption-Tag</td>
+                <td class="py-2.5 px-3">Inter + Noto Sans SC</td>
+                <td class="py-2.5 px-3 font-num">12px (0.75rem) / 1.35 / 500</td>
+                <td class="py-2.5 px-3">赛事角标、估算说明徽章、位置缩写（ST/CM/CB）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Special Data Rules Box -->
+        <div class="lg:col-span-5 surface-2 rounded-lg p-4 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">数据与统计指标强制排版铁律（保留历史决策）</h3>
+          <div class="space-y-2.5 text-xs">
+            <div class="p-3 rounded bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-slate-200">1. 控球率（严禁使用旧版“控球链”）</div>
+                <div class="text-sec text-[11px] mt-0.5">采用主客双向进度条 + 百分比整数展示</div>
+              </div>
+              <span class="font-num text-sm font-bold text-emerald-400">56% : 44%</span>
+            </div>
+            <div class="p-3 rounded bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-slate-200">2. xG 指标必须附带【估算】标签</div>
+                <div class="text-sec text-[11px] mt-0.5">保留一位或两位小数，右侧固定渲染胶囊说明</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-num text-sm font-bold text-blue-400">1.84</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">估算</span>
+              </div>
+            </div>
+            <div class="p-3 rounded bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-slate-200">3. 缺失数据严禁显示虚构 0.0</div>
+                <div class="text-sec text-[11px] mt-0.5">旧比赛或未采集项统一显示为破折号加灰标</div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-num text-sm font-bold text-slate-500">—</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">未记录</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: 布局与响应式规范 -->
+    <section id="spec-sec-4" class="surface-1 rounded-xl p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <span class="text-xs font-mono text-emerald-400">SECTION 04 · LAYOUT, SPACING &amp; RESPONSIVE RULES</span>
+          <h2 class="text-xl font-bold mt-0.5">布局与响应式规范：解决导航挤压、建立桌面与手机端清晰优先级</h2>
+        </div>
+        <span class="text-xs text-sec">8px 基准间距系统 · 桌面优先兼顾手机独立重排</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div class="surface-2 rounded-lg p-4 space-y-2">
+          <div class="font-bold text-sm text-emerald-400">桌面端栅格与导航防挤压标准</div>
+          <ul class="space-y-1.5 text-sec leading-relaxed list-disc pl-4">
+            <li><strong>容器宽度：</strong>最大内容区 <code>1440px</code>，12 列 CSS Grid，列间距 <code>16px</code>，外边距 <code>24px</code>。</li>
+            <li><strong>导航防挤压机制：</strong>左侧主导航固定 <code>220px</code>（小桌面可一键收起为 <code>64px</code> 纯图标栏）。二级子菜单采用页面顶部<strong>水平胶囊页签（Sub-Tabs）</strong>或<strong>浮动层（Popover）</strong>，严禁展开时推挤右侧主工作区宽度。</li>
+            <li><strong>首屏高度红线：</strong>第一层“当前比赛主视觉”高度控制在 <code>200px–236px</code>，保证 <code>1080p</code> 桌面首屏完整露出第二层（本队排名快照 + 真实待办事项）。</li>
+          </ul>
+        </div>
+
+        <div class="surface-2 rounded-lg p-4 space-y-2">
+          <div class="font-bold text-sm text-blue-400">圆角、边框、阴影与间距 Token</div>
+          <ul class="space-y-1.5 text-sec leading-relaxed list-disc pl-4">
+            <li><strong>8px 间距阶梯：</strong>组件内紧凑间距 <code>8px</code>、卡片内边距 <code>16px–20px</code>、模块区块间距 <code>16px–24px</code>。</li>
+            <li><strong>圆角规范：</strong>主比赛横幅/大容器 <code>12px</code>；常规面板/球员卡槽 <code>8px</code>；按钮/输入框/胶囊标签 <code>6px</code>。</li>
+            <li><strong>克制边框与阴影：</strong>全局面板统一采用 <code>1px solid rgba(255,255,255,0.08)</code>；仅弹窗与拖拽中的球员卡使用投影 <code>0 12px 28px rgba(0,0,0,0.45)</code>，取消一切无意义的发光描边。</li>
+          </ul>
+        </div>
+
+        <div class="surface-2 rounded-lg p-4 space-y-2">
+          <div class="font-bold text-sm text-amber-400">手机端（&lt;768px）重排、折叠与降级策略</div>
+          <ul class="space-y-1.5 text-sec leading-relaxed list-disc pl-4">
+            <li><strong>导航重构：</strong>隐藏左侧边栏，切换为<strong>顶部精简俱乐部身份条（48px）+ 底部 5 格固定主导航（56px）</strong>（主场 / 赛事 / 阵容 / 球员 / 俱乐部）。</li>
+            <li><strong>内容重排：</strong>第一层比赛卡改为紧凑上下对称记分牌；第二层“待办事项”置顶在积分榜上方（方便随时上线消红点）。</li>
+            <li><strong>折叠与移至次级入口：</strong>积分榜快照在手机端仅保留<strong>本队及上下相邻共 3 行</strong>（隐藏胜/平/负明细列，仅留排名/队名/场次/净胜/积分）；近期赛程与日报收起为手风琴抽屉。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: 组件规范与现有素材适配 -->
+    <section id="spec-sec-5" class="surface-1 rounded-xl p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <span class="text-xs font-mono text-emerald-400">SECTION 05 · COMPONENT SPECS &amp; EXISTING ASSET ADAPTATION</span>
+          <h2 class="text-xl font-bold mt-0.5">核心组件规范与现有卡画/队徽/球场素材适配标准</h2>
+        </div>
+        <span class="text-xs text-sec">100% 兼容用户手动微调的卡画裁切坐标（<code>scale / offsetX / offsetY</code>）</span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Player Card Container Spec -->
+        <div class="lg:col-span-6 surface-2 rounded-lg p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-emerald-400">1. 球员卡容器规范（保护现有手动定位参数）</h3>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">Aspect-Ratio 3:4</span>
+          </div>
+          <p class="text-xs text-sec leading-relaxed">
+            现有球员卡画包含大量人工调整过的裁切与偏移参数。UI 升级<strong>严禁重置或覆盖数据库中的裁切坐标</strong>，统一通过外层标准比例裁剪框 + 内层独立变换画布实现三种尺寸无缝缩放：
+          </p>
+
+          <!-- Three Card Sizes Showcase -->
+          <div class="flex flex-wrap items-end justify-around gap-4 py-3 bg-slate-900/80 rounded-lg border border-slate-800 p-4">
+            <!-- Size L: Showcase / Pack / Detail -->
+            <div class="flex flex-col items-center gap-1.5">
+              <div class="relative w-28 h-36 rounded-lg overflow-hidden border-2 border-amber-400/80 bg-gradient-to-b from-amber-900/40 via-slate-900 to-slate-950 shadow-md">
+                <div class="absolute top-1.5 left-1.5 z-10 flex flex-col items-center bg-slate-950/80 px-1.5 py-0.5 rounded border border-amber-400/40">
+                  <span class="font-display font-bold text-sm text-amber-300 leading-none">91</span>
+                  <span class="text-[9px] font-mono text-amber-200">ST</span>
+                </div>
+                <div class="absolute top-1.5 right-1.5 z-10 px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-mono font-bold text-[10px]">
+                  +5
+                </div>
+                <!-- Simulated Player Portrait Layer preserving user offset -->
+                <div class="w-full h-full flex items-center justify-center pt-2">
+                  <svg class="w-20 h-24 text-amber-300/80" viewBox="0 0 80 96" fill="none">
+                    <circle cx="40" cy="28" r="14" fill="currentColor" fill-opacity="0.35" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 86C16 64 26 52 40 52C54 52 64 64 64 86" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <!-- Bottom Name & Stamina Bar -->
+                <div class="absolute bottom-0 inset-x-0 bg-slate-950/90 backdrop-blur-xs p-1.5 border-t border-amber-500/30">
+                  <div class="text-[11px] font-bold text-white truncate text-center">林风 · 队长</div>
+                  <div class="w-full h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+                    <div class="h-full bg-emerald-400 w-[92%]"></div>
+                  </div>
+                </div>
+              </div>
+              <span class="text-[11px] text-sec font-mono">L 展示卡 (112×144)</span>
+            </div>
+
+            <!-- Size M: Pitch Tactical Token -->
+            <div class="flex flex-col items-center gap-1.5">
+              <div class="relative w-20 h-24 rounded-lg overflow-hidden border border-blue-400/70 bg-gradient-to-b from-blue-900/40 via-slate-900 to-slate-950">
+                <div class="absolute top-1 left-1 z-10 bg-slate-950/85 px-1 rounded text-[10px] font-mono font-bold text-blue-300">
+                  87 CM
+                </div>
+                <div class="w-full h-full flex items-center justify-center pt-1">
+                  <svg class="w-12 h-14 text-blue-300/80" viewBox="0 0 80 96" fill="none">
+                    <circle cx="40" cy="28" r="14" fill="currentColor" fill-opacity="0.35" stroke="currentColor" stroke-width="2"/>
+                    <path d="M16 86C16 64 26 52 40 52C54 52 64 64 64 86" fill="currentColor" fill-opacity="0.25" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="absolute bottom-0 inset-x-0 bg-slate-950/90 px-1 py-0.5 text-center">
+                  <div class="text-[10px] font-medium text-white truncate">马修斯</div>
+                  <div class="w-full h-1 bg-slate-800 rounded-full mt-0.5 overflow-hidden">
+                    <div class="h-full bg-amber-400 w-[71%]"></div>
+                  </div>
+                </div>
+              </div>
+              <span class="text-[11px] text-sec font-mono">M 战术卡 (80×96)</span>
+            </div>
+
+            <!-- Size S: Compact Avatar Row -->
+            <div class="flex flex-col items-center gap-1.5">
+              <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-800/90 border border-slate-700 w-44">
+                <div class="w-10 h-10 rounded-md overflow-hidden border border-purple-400/60 bg-purple-950/50 shrink-0 flex items-center justify-center font-display font-bold text-purple-300">
+                  89
+                </div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1">
+                    <span class="text-xs font-bold text-white truncate">阿隆索</span>
+                    <span class="text-[10px] px-1 rounded bg-purple-500/20 text-purple-300 font-mono">CB</span>
+                  </div>
+                  <div class="text-[10px] text-sec mt-0.5 flex items-center gap-2">
+                    <span>体能 88%</span>
+                    <span class="text-emerald-400">状态↑</span>
+                  </div>
+                </div>
+              </div>
+              <span class="text-[11px] text-sec font-mono">S 列表紧凑条 (40×40)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Club Crest, Trophy & Component Standards -->
+        <div class="lg:col-span-6 surface-2 rounded-lg p-4 space-y-4">
+          <h3 class="text-sm font-bold text-blue-400">2. 队徽、奖杯与通用组件规范</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="font-semibold text-white">🛡️ 真实俱乐部队徽容器</div>
+              <p class="text-sec leading-relaxed">
+                统一采用正方形 <code>object-fit: contain</code> 容器，内置 <code>10%</code> 安全内边距与微弱暗角底托，防止亮色或深色异形队徽与背景融合。规范四档尺寸：<code>64px</code>（比赛主卡）、<code>36px</code>（顶栏/战报）、<code>24px</code>（积分榜行）、<code>16px</code>（赛程微标）。
+              </p>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="font-semibold text-white">🏆 荣誉奖杯克制展示</div>
+              <p class="text-sec leading-relaxed">
+                奖杯仅在俱乐部荣誉室、联赛/杯赛冠军角标中独立陈列，配深色丝绒质感底座与冷光描边，不在常规操作按钮或导航栏滥用奖杯图标。
+              </p>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="font-semibold text-white">🔘 按钮体系（杜绝悬停依赖）</div>
+              <p class="text-sec leading-relaxed">
+                一切核心操作（检查阵容、进入直播、一键轮换、报价）必须为<strong>常驻可见按钮</strong>，严禁鼠标悬停才出现操作入口。分为主按钮（主场绿实心）、次按钮（深灰描边）、赛事直播按钮（脉冲红实心）、危险操作（暗红描边）。
+              </p>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900/80 border border-slate-800 space-y-1.5">
+              <div class="font-semibold text-white">📊 球队条目与积分榜行</div>
+              <p class="text-sec leading-relaxed">
+                本队所在行固定使用 <code>rgba(16,185,129,0.12)</code> 绿色底纹 + 左侧 <code>3px</code> 实心绿条 + <strong>[我方]</strong> 胶囊标签，不依赖纯颜色区分升降级区与本队位置。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: 交互状态与动效规范（含互动实验室） -->
+    <section id="spec-sec-6" class="surface-1 rounded-xl p-6 space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-4">
+        <div>
+          <span class="text-xs font-mono text-emerald-400">SECTION 06 · INTERACTION STATES &amp; MOTION LAB</span>
+          <h2 class="text-xl font-bold mt-0.5">交互九态与重点动效演出规范（支持点击实测）</h2>
+        </div>
+        <span class="text-xs text-sec">日常操作快准稳（150ms–220ms）· 进球/强化/开包重点演出有仪式感（600ms–1100ms）</span>
+      </div>
+
+      <!-- 9 Interaction States Matrix -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2.5 text-xs">
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">1. Default 默认</div>
+          <button class="w-full py-1.5 rounded bg-emerald-600 text-white font-medium">保存战术</button>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">2. Hover 悬停</div>
+          <button class="w-full py-1.5 rounded bg-emerald-500 text-white font-medium -translate-y-0.5 shadow">保存战术</button>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">3. Selected 选中</div>
+          <button class="w-full py-1.5 rounded bg-emerald-500/20 text-emerald-300 border-2 border-emerald-400 font-semibold">✓ 领先预案</button>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">4. Focus 键盘聚焦</div>
+          <button class="w-full py-1.5 rounded bg-slate-700 text-white ring-2 ring-emerald-400 ring-offset-2 ring-offset-slate-900">输入框聚焦</button>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">5. Disabled 禁用</div>
+          <button disabled class="w-full py-1.5 rounded bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed">已锁定阵容</button>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">6. Loading 加载</div>
+          <button class="w-full py-1.5 rounded bg-slate-700 text-slate-300 flex items-center justify-center gap-1">
+            <span class="w-3 h-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin"></span>同步中
+          </button>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">7. Success 成功</div>
+          <div class="w-full py-1.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-medium">✓ 已保存</div>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">8. Error 失败</div>
+          <div class="w-full py-1.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 font-medium">✕ 首发不满11人</div>
+        </div>
+        <div class="p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-center space-y-1">
+          <div class="font-mono text-[10px] text-sec">9. Empty 空状态</div>
+          <div class="w-full py-1.5 rounded bg-slate-900 text-slate-400 border border-dashed border-slate-700">✓ 无待办事项</div>
+        </div>
+      </div>
+
+      <!-- Interactive Motion & Ritual Preview Box -->
+      <div class="surface-2 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="text-sm font-bold text-white">✨ 重点仪式感演出预览（区分普通操作与高光时刻）</div>
+          <p class="text-xs text-sec">
+            日常保存/切换仅用轻提示（不打断操作流）；<strong>比赛进球、球员强化成功、高阶球星开包</strong>采用专属横幅或翻牌演出，且自动响应右上角“减少动效”开关。
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+          <button onclick="triggerCeremony('save')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 transition">
+            测试：普通保存反馈 (180ms)
+          </button>
+          <button onclick="triggerCeremony('goal')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition">
+            ⚽ 测试：比赛进球横幅演出
+          </button>
+          <button onclick="triggerCeremony('upgrade')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold transition">
+            🔨 测试：球员强化 +5 成功演出
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic Stage for Ceremony Preview -->
+      <div id="ceremony-stage" class="hidden rounded-xl p-5 border transition-all"></div>
+    </section>
+
+    <!-- SECTION 7 & 8: 各功能页视觉分工 + 全局/专属/新增美术清单 + 四批落地顺序 -->
+    <section id="spec-sec-7" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Functional Pages Division -->
+      <div class="lg:col-span-7 surface-1 rounded-xl p-6 space-y-4">
+        <span class="text-xs font-mono text-emerald-400">SECTION 07 · PAGE-SPECIFIC VISUAL ROLES &amp; GUARDRAILS</span>
+        <h2 class="text-lg font-bold">各功能页视觉分工与红线约束</h2>
+        <div class="space-y-2.5 text-xs">
+          <div class="p-3 rounded-lg surface-2 flex justify-between gap-4">
+            <span class="font-bold text-emerald-400 shrink-0 w-28">1. 俱乐部主场</span>
+            <span class="text-sec">“下一场比赛 + 本队处境 + 真实待办”三层结构；严禁堆砌长篇日报或虚构红点。</span>
+          </div>
+          <div class="p-3 rounded-lg surface-2 flex justify-between gap-4">
+            <span class="font-bold text-emerald-400 shrink-0 w-28">2. 阵容与战术</span>
+            <span class="text-sec">球场与11人卡槽占 65% 面积；支持<strong>默认/领先/落后三套预案</strong>与<strong>联赛/杯赛赛事绑定</strong>；严禁新增盘中主动换人或即时战术按钮。</span>
+          </div>
+          <div class="p-3 rounded-lg surface-2 flex justify-between gap-4">
+            <span class="font-bold text-emerald-400 shrink-0 w-28">3. 比赛直播与记录</span>
+            <span class="text-sec">直播常态展示<strong>阵容/球员卡、比分、文字事件流、技术统计</strong>，仅在关键事件提供对应时段<strong>小圆点动画回放弹窗</strong>；比赛记录保持精简，不加长篇教练诊断。</span>
+          </div>
+          <div class="p-3 rounded-lg surface-2 flex justify-between gap-4">
+            <span class="font-bold text-emerald-400 shrink-0 w-28">4. 球员/背包/强化</span>
+            <span class="text-sec">突出已有卡画与卡框收藏感，左侧高效筛选列表 + 右侧固定属性面板；<strong>完全移除已屏蔽的 X 球员入口与赛季总决赛入口</strong>。</span>
+          </div>
+          <div class="p-3 rounded-lg surface-2 flex justify-between gap-4">
+            <span class="font-bold text-emerald-400 shrink-0 w-28">5. 经营/市场/收件箱</span>
+            <span class="text-sec">俱乐部经营突出球场等级、赞助合同与荣誉展柜；交易市场与收件箱采用高密度表格，优先展示一口价、剩余期限与可执行操作按钮。</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global vs Page-Specific vs New Assets & Rollout Order -->
+      <div id="spec-sec-8" class="lg:col-span-5 surface-1 rounded-xl p-6 space-y-4">
+        <span class="text-xs font-mono text-emerald-400">SECTION 08 · BOUNDARIES &amp; 4-BATCH ROLLOUT</span>
+        <h2 class="text-lg font-bold">边界划分与四批开发落地顺序</h2>
+
+        <div class="space-y-3 text-xs">
+          <div class="p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/30 space-y-1">
+            <div class="font-bold text-emerald-300">A. 全局统一规则（所有页面强制继承）</div>
+            <p class="text-sec">深浅色 CSS 变量、字体与等宽数字规则、8px 间距阶梯、1px 微边框面板、主次按钮状态、顶部俱乐部资源栏与左/底导航框架、数据刷新保持滚动条与展开态机制。</p>
+          </div>
+
+          <div class="p-3 rounded-lg bg-blue-950/30 border border-blue-500/30 space-y-1">
+            <div class="font-bold text-blue-300">B. 页面专属表现（仅特定场景启用）</div>
+            <p class="text-sec">主页焦点比赛横幅球场底图、战术页草皮网格与三预案切换器、直播页关键事件小圆点回放浮层、强化与开包成功光效演出。</p>
+          </div>
+
+          <div class="p-3 rounded-lg bg-amber-950/30 border border-amber-500/30 space-y-1">
+            <div class="font-bold text-amber-300">C. 需新增制作的轻量美术素材（仅 5 项，零重制负担）</div>
+            <p class="text-sec">① 主页焦点卡通用夜景看台渐变遮罩（1张 WebP）；② A级联赛 / B级联赛 / 16强杯赛三枚扁平矢量赛事徽章（SVG）；③ 统一无数据/休赛期空状态线性插画（3枚 SVG）；④ 伤病/停赛/合同到期/体能预警高对比度语义小图标（SVG）；⑤ 强化成功与进球横幅 CSS 扫光纹理（纯代码实现，无需序列帧）。</p>
+          </div>
+
+          <!-- 4 Batches -->
+          <div class="pt-1 space-y-1.5">
+            <div class="font-bold text-white">分批交付路线（点击顶部页签查看对应示范稿）：</div>
+            <div class="flex items-center gap-2 text-emerald-400 font-medium">
+              <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 font-mono text-[10px]">第一批 (本次重点)</span>
+              <span>全局 CSS Token + 响应式导航框架 + 俱乐部主场（4状态）</span>
+            </div>
+            <div class="flex items-center gap-2 text-sec">
+              <span class="px-1.5 py-0.5 rounded bg-slate-800 font-mono text-[10px]">第二批</span>
+              <span>A/B级赛程表、16队双回合杯赛树、常态直播 + 关键小圆点回放、精简比赛记录</span>
+            </div>
+            <div class="flex items-center gap-2 text-sec">
+              <span class="px-1.5 py-0.5 rounded bg-slate-800 font-mono text-[10px]">第三批</span>
+              <span>阵容战术（默认/领先/落后三预案+赛事绑定）、球员卡容器、背包与强化演出</span>
+            </div>
+            <div class="flex items-center gap-2 text-sec">
+              <span class="px-1.5 py-0.5 rounded bg-slate-800 font-mono text-[10px]">第四批</span>
+              <span>球场建设与赞助、荣誉室、紧凑交易市场、收件箱与通用确认弹窗</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 2: DEMO PAGE 1 - CLUB HOME / LEAGUE OVERVIEW (俱乐部主场示范稿)   -->
+  <!-- ===================================================================== -->
+  <section id="view-home" class="hidden flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+
+    <!-- Interactive Demo Control Bar (State & Viewport Switcher) -->
+    <div class="surface-2 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 border border-emerald-500/30">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider px-2">🎛️ 联赛主页状态切换：</span>
+        <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-800">
+          <button id="home-state-pre" onclick="setHomeMatchState('pre')" class="px-3 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white transition">
+            赛前状态 (Pre-Match)
+          </button>
+          <button id="home-state-live" onclick="setHomeMatchState('live')" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+            🔴 比赛中 (Live 67')
+          </button>
+          <button id="home-state-post" onclick="setHomeMatchState('post')" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+            赛后状态 (Full-Time)
+          </button>
+          <button id="home-state-off" onclick="setHomeMatchState('off')" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+            休赛期/无比赛 (Off-Season)
+          </button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Todo Empty State Toggle -->
+        <label class="flex items-center gap-1.5 text-xs text-sec cursor-pointer select-none">
+          <input type="checkbox" id="toggle-empty-todos" onchange="toggleEmptyTodos(this.checked)" class="rounded border-slate-600 text-emerald-500 focus:ring-0" />
+          <span>演示“无待办/全员健康”状态</span>
+        </label>
+
+        <!-- Viewport Switcher: Desktop vs Mobile -->
+        <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-800">
+          <button id="vp-desktop" onclick="setHomeViewport('desktop')" class="px-3 py-1 rounded-md text-xs font-medium bg-blue-600 text-white transition">
+            🖥️ 桌面稿 (1440px 栅格)
+          </button>
+          <button id="vp-mobile" onclick="setHomeViewport('mobile')" class="px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+            📱 手机稿 (390px 独立重排)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- DESKTOP MOCKUP CONTAINER (俱乐部主场 · 桌面端)                   -->
+    <!-- =============================================================== -->
+    <div id="home-desktop-container" class="rounded-2xl overflow-hidden border border-slate-800 bg-[#0B0F17] shadow-2xl flex min-h-[760px]">
+
+      <!-- Left Global Navigation Sidebar (Fixed width, non-pushing) -->
+      <aside id="desktop-sidebar" class="w-56 shrink-0 bg-[#0F1623] border-r border-slate-800/90 flex flex-col justify-between transition-all duration-200">
+        <div>
+          <!-- Club Mini Header in Nav -->
+          <div class="p-4 border-b border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 4.5l4 1.5v4.1c0 3.12-2.11 6.06-4 6.9-1.89-.84-4-3.78-4-6.9V8l4-1.5z"/>
+                </svg>
+              </div>
+              <div class="min-w-0 sidebar-text">
+                <div class="text-xs font-bold text-white truncate">海港竞技 FC</div>
+                <div class="text-[11px] text-emerald-400 font-mono">A级联赛 · S12</div>
+              </div>
+            </div>
+            <button onclick="toggleSidebarCollapse()" class="p-1.5 rounded hover:bg-slate-800 text-slate-400 text-xs" title="折叠/展开导航（不挤压右侧主内容区）">
+              ⇄
+            </button>
+          </div>
+
+          <!-- Nav Groups (Notice: No Season Finale, No X-Player!) -->
+          <nav class="p-2.5 space-y-1 text-xs" aria-label="游戏主导航">
+            <div class="px-2.5 py-1 text-[10px] font-mono uppercase text-slate-500 sidebar-text">核心赛场</div>
+            <button onclick="switchMainView('home')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
+              <span class="flex items-center gap-2.5"><span>🏟️</span><span class="sidebar-text">俱乐部主场</span></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 sidebar-text"></span>
+            </button>
+            <button onclick="openFullStandingsModal()" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>🏆</span><span class="sidebar-text">联赛与16强杯赛</span></span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 sidebar-text">R9/14</span>
+            </button>
+            <button onclick="switchMainView('tactics')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>📋</span><span class="sidebar-text">阵容与三套预案</span></span>
+              <span id="nav-badge-tactics" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 sidebar-text">1缺员</span>
+            </button>
+            <button onclick="switchMainView('match')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>📺</span><span class="sidebar-text">比赛电视台与记录</span></span>
+              <span id="nav-badge-live" class="hidden text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-600 text-white sidebar-text">LIVE</span>
+            </button>
+
+            <div class="px-2.5 pt-3 pb-1 text-[10px] font-mono uppercase text-slate-500 sidebar-text">球队与经营</div>
+            <button onclick="showToast('已为您切换至【球员图鉴与强化】规范延展说明')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>🃏</span><span class="sidebar-text">球员、背包与强化</span></span>
+            </button>
+            <button onclick="showToast('已为您切换至【俱乐部球场建设、赞助与荣誉室】视图')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>🏛️</span><span class="sidebar-text">球场、赞助与荣誉</span></span>
+            </button>
+            <button onclick="showToast('已为您切换至【交易市场与收件箱】紧凑列表视图')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>⚖️</span><span class="sidebar-text">交易市场与商店</span></span>
+            </button>
+            <button onclick="showToast('收件箱：当前有 2 封球探与赞助结算通知')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800/70 transition">
+              <span class="flex items-center gap-2.5"><span>✉️</span><span class="sidebar-text">俱乐部收件箱</span></span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 sidebar-text">2</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Bottom Guardrail Note -->
+        <div class="p-3 m-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-400 sidebar-text">
+          <div class="font-semibold text-slate-300 mb-0.5">规则合规锁定</div>
+          <div>已移除停用的“赛季总决赛”与“X球员”入口，导航固定不挤压主视图。</div>
+        </div>
+      </aside>
+
+      <!-- Main Club Home Workspace -->
+      <div class="flex-1 flex flex-col min-w-0">
+
+        <!-- TIER 1A: Club Identity & Key Resources Bar (第一层顶部：俱乐部身份与轻量资源栏) -->
+        <div class="px-6 py-3.5 bg-[#111827] border-b border-slate-800/90 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <!-- Club Crest 44px -->
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500/25 to-slate-900 border border-emerald-500/40 flex items-center justify-center shadow-inner">
+              <svg class="w-7 h-7 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 4.5l4 1.5v4.1c0 3.12-2.11 6.06-4 6.9-1.89-.84-4-3.78-4-6.9V8l4-1.5z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-lg font-bold text-white tracking-tight">海港竞技足球俱乐部</h2>
+                <span class="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  A级联赛 (8队双循环)
+                </span>
+                <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
+                  第 12 赛季 · 第 9 / 14 轮
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">
+                主场：海港湾专业足球场（Lv.4 · 容量 42,000） · 主教练：你 · 球队总评 <strong class="font-num text-emerald-400">86.4</strong>
+              </p>
+            </div>
+          </div>
+
+          <!-- Key Resources (Restrained, clean tabular numerals) -->
+          <div class="flex items-center gap-3 text-xs">
+            <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+              <span class="text-slate-400">俱乐部资金</span>
+              <span class="font-num font-bold text-amber-400">1,480,000 金币</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+              <span class="text-slate-400">全队平均体能</span>
+              <span class="font-num font-bold text-emerald-400">84%</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center gap-2">
+              <span class="text-slate-400">绑定预案</span>
+              <span class="font-medium text-slate-200">4-3-3 高位压迫</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN 3-TIER BODY CONTENT -->
+        <div class="p-6 space-y-5 flex-1">
+
+          <!-- ========================================================= -->
+          <!-- TIER 1B: NEXT / CURRENT MATCH HERO CARD (第一层主视觉：高度受控 ≤220px) -->
+          <!-- ========================================================= -->
+          <div id="desktop-hero-card" class="relative rounded-xl overflow-hidden border border-emerald-500/35 bg-slate-900 shadow-lg">
+            <!-- Stadium Atmosphere Background with controlled height & high-contrast scrim -->
+            <img src="assets/stadium_hero_bg.jpg" alt="主场看台氛围" class="absolute inset-0 w-full h-full object-cover opacity-30" />
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/95"></div>
+
+            <!-- Dynamic Content Injected by State (Pre / Live / Post / Off) -->
+            <div id="desktop-hero-content" class="relative z-10 px-6 py-5 flex flex-col lg:flex-row items-center justify-between gap-6">
+              <!-- Populated by JS renderHomeState() -->
+            </div>
+          </div>
+
+          <!-- ========================================================= -->
+          <!-- TIER 2: CLUB STANDING & ACTIONABLE TODOS (第二层：本队处境与真实待办) -->
+          <!-- ========================================================= -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+            <!-- Left 7 Cols: Club Position & Nearby Standings Snapshot -->
+            <div class="lg:col-span-7 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-base font-bold text-white">本队联赛处境与相邻积分榜</h3>
+                    <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">A级联赛 · 8队双循环</span>
+                  </div>
+                  <p class="text-xs text-sec mt-0.5">仅展示本队相邻名次快照，避免首页整屏被长表格占据</p>
+                </div>
+                <button onclick="openFullStandingsModal()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                  查看完整 A/B 级榜单 (16队) →
+                </button>
+              </div>
+
+              <!-- 3 Key Position Metrics + Recent 5 Form -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <div class="text-[11px] text-sec">当前排名</div>
+                  <div class="flex items-baseline gap-1.5 mt-1">
+                    <span class="font-display font-bold text-2xl text-emerald-400">第 3 名</span>
+                    <span class="text-[11px] text-emerald-400 font-mono">▲1</span>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <div class="text-[11px] text-sec">当前积分 / 净胜球</div>
+                  <div class="flex items-baseline gap-1.5 mt-1">
+                    <span class="font-num font-bold text-xl text-white">16 分</span>
+                    <span class="font-num text-xs text-emerald-400">+6</span>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <div class="text-[11px] text-sec">相邻分差关系</div>
+                  <div class="text-xs font-medium text-slate-200 mt-1.5">
+                    距榜首 <span class="font-num text-amber-400 font-bold">-3分</span> · 领先第4 <span class="font-num text-emerald-400 font-bold">+2分</span>
+                  </div>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <div class="text-[11px] text-sec">近 5 场战绩（左近右远）</div>
+                  <div class="flex items-center gap-1 mt-1.5 font-mono text-[11px] font-bold">
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">胜</span>
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">胜</span>
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">平</span>
+                    <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">负</span>
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">胜</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5-Row Nearby Standings Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="border-b border-slate-800 text-sec font-mono text-[11px]">
+                      <th class="py-2 px-2.5">排名</th>
+                      <th class="py-2 px-2.5">俱乐部</th>
+                      <th class="py-2 px-2 text-right">已赛</th>
+                      <th class="py-2 px-2 text-right">胜/平/负</th>
+                      <th class="py-2 px-2 text-right">净胜</th>
+                      <th class="py-2 px-2 text-right">积分</th>
+                      <th class="py-2 px-2.5 text-right">与我方分差</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60 font-num">
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-2.5"><span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">1</span></td>
+                      <td class="py-2 px-2.5 font-sans font-medium text-slate-200">皇家星耀 FC <span class="text-[10px] text-amber-400 ml-1">[争冠区]</span></td>
+                      <td class="py-2 px-2 text-right text-sec">8</td>
+                      <td class="py-2 px-2 text-right text-sec">6 / 1 / 1</td>
+                      <td class="py-2 px-2 text-right text-slate-300">+11</td>
+                      <td class="py-2 px-2 text-right font-bold text-white">19</td>
+                      <td class="py-2 px-2.5 text-right text-amber-400">+3 分</td>
+                    </tr>
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-2.5"><span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">2</span></td>
+                      <td class="py-2 px-2.5 font-sans font-medium text-slate-200">北城联队 <span class="text-[10px] text-blue-400 ml-1">[下轮对手]</span></td>
+                      <td class="py-2 px-2 text-right text-sec">8</td>
+                      <td class="py-2 px-2 text-right text-sec">5 / 2 / 1</td>
+                      <td class="py-2 px-2 text-right text-slate-300">+8</td>
+                      <td class="py-2 px-2 text-right font-bold text-white">17</td>
+                      <td class="py-2 px-2.5 text-right text-amber-400">+1 分</td>
+                    </tr>
+                    <!-- Highlighted My Club Row -->
+                    <tr class="bg-emerald-500/15 border-l-4 border-l-emerald-400">
+                      <td class="py-2.5 px-2.5"><span class="px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 font-bold">3</span></td>
+                      <td class="py-2.5 px-2.5 font-sans font-bold text-white flex items-center gap-1.5">
+                        <span>海港竞技 FC</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/40">我方</span>
+                      </td>
+                      <td class="py-2.5 px-2 text-right text-slate-200">8</td>
+                      <td class="py-2.5 px-2 text-right text-slate-200">5 / 1 / 2</td>
+                      <td class="py-2.5 px-2 text-right text-emerald-300 font-bold">+6</td>
+                      <td class="py-2.5 px-2 text-right font-bold text-emerald-300 text-sm">16</td>
+                      <td class="py-2.5 px-2.5 text-right text-emerald-300">基准</td>
+                    </tr>
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-2.5"><span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">4</span></td>
+                      <td class="py-2 px-2.5 font-sans font-medium text-slate-200">铁甲工业 FC</td>
+                      <td class="py-2 px-2 text-right text-sec">8</td>
+                      <td class="py-2 px-2 text-right text-sec">4 / 2 / 2</td>
+                      <td class="py-2 px-2 text-right text-slate-300">+2</td>
+                      <td class="py-2 px-2 text-right font-bold text-white">14</td>
+                      <td class="py-2 px-2.5 text-right text-emerald-400">-2 分</td>
+                    </tr>
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-2.5"><span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">5</span></td>
+                      <td class="py-2 px-2.5 font-sans font-medium text-slate-300">翡翠谷流浪者</td>
+                      <td class="py-2 px-2 text-right text-sec">8</td>
+                      <td class="py-2 px-2 text-right text-sec">3 / 2 / 3</td>
+                      <td class="py-2 px-2 text-right text-slate-400">-1</td>
+                      <td class="py-2 px-2 text-right font-bold text-slate-200">11</td>
+                      <td class="py-2 px-2.5 text-right text-emerald-400">-5 分</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right 5 Cols: Real Business Actionable Todo Center -->
+            <div class="lg:col-span-5 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-base font-bold text-white">俱乐部待办事项</h3>
+                    <span id="todo-count-badge" class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                      3 项需处理
+                    </span>
+                  </div>
+                  <p class="text-xs text-sec mt-0.5">仅展示真实业务阻塞项（伤停/体能/缺员/合同），绝不编造虚假提醒</p>
+                </div>
+              </div>
+
+              <!-- Todo Items List (or Healthy Empty State) -->
+              <div id="desktop-todo-list" class="space-y-2.5 flex-1 flex flex-col justify-center">
+                <!-- Populated by JS renderTodos() -->
+              </div>
+
+              <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-sec">
+                <span>规则说明：赛前轮换与被动换人按预设方案自动执行</span>
+                <button onclick="switchMainView('tactics')" class="text-emerald-400 hover:underline font-medium">配置三套战术预案 →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================================= -->
+          <!-- TIER 3: LAST MATCH RECAP, UPCOMING SCHEDULE & BRIEFING    -->
+          <!-- ========================================================= -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+            <!-- Col 1-4: Last Match Summary Card -->
+            <div class="lg:col-span-4 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-3.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-white">上一场比赛摘要</h3>
+                  <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">A级 第8轮</span>
+                </div>
+                <button onclick="switchMainView('match')" class="text-xs text-emerald-400 hover:underline font-medium">
+                  比赛记录 →
+                </button>
+              </div>
+
+              <div class="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-semibold text-white">海港竞技 FC <span class="text-emerald-400 ml-1">[主]</span></div>
+                  <div class="text-[11px] text-sec mt-0.5">18' 林风 · 74' 马修斯</div>
+                </div>
+                <div class="px-3 py-1 rounded bg-emerald-500/20 border border-emerald-500/40 font-display font-bold text-xl text-emerald-300">
+                  2 : 1
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-semibold text-slate-300">翡翠谷流浪者</div>
+                  <div class="text-[11px] text-sec mt-0.5">52' 科斯塔</div>
+                </div>
+              </div>
+
+              <!-- Key Stats Respecting Historical Rules: Possession Rate + Estimated xG -->
+              <div class="space-y-2 text-xs">
+                <div>
+                  <div class="flex justify-between text-[11px] mb-1">
+                    <span class="font-num font-semibold text-emerald-400">56%</span>
+                    <span class="text-sec">控球率（标准统计）</span>
+                    <span class="font-num font-semibold text-slate-400">44%</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+                    <div class="bg-emerald-500 h-full w-[56%]"></div>
+                    <div class="bg-slate-600 h-full w-[44%]"></div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1 border-t border-slate-800/70">
+                  <span class="text-sec flex items-center gap-1">
+                    期望进球 xG
+                    <span class="px-1.5 py-0.2 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">估算</span>
+                  </span>
+                  <span class="font-num font-semibold text-slate-200">1.84 <span class="text-sec mx-1">vs</span> 0.92</span>
+                </div>
+
+                <div class="flex items-center justify-between pt-1 border-t border-slate-800/70">
+                  <span class="text-sec">全场最佳球员 (MVP)</span>
+                  <span class="font-medium text-amber-300">★ 林风 (ST · 评分 8.6)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 5-8: Upcoming 3 Fixtures Strip (Distinguishing League A vs Cup) -->
+            <div class="lg:col-span-4 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-3.5">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white">近期三场赛程（赛事与主客识别）</h3>
+                <button onclick="showToast('已打开完整 14 轮双循环联赛与 16 强杯赛日程表')" class="text-xs text-emerald-400 hover:underline font-medium">
+                  完整日程 →
+                </button>
+              </div>
+
+              <div class="space-y-2 text-xs">
+                <div class="p-2.5 rounded-lg bg-slate-900/90 border border-blue-500/30 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded font-mono text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30">A级 R9</span>
+                    <span class="px-1.5 py-0.5 rounded font-mono text-[10px] bg-emerald-500/20 text-emerald-300">主场</span>
+                    <span class="font-semibold text-white">vs 北城联队 (第2)</span>
+                  </div>
+                  <span class="font-num text-slate-300">今日 20:00</span>
+                </div>
+
+                <div class="p-2.5 rounded-lg bg-slate-900/90 border border-amber-500/30 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded font-mono text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">杯赛 1/4次回合</span>
+                    <span class="px-1.5 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-300">客场</span>
+                    <span class="font-semibold text-white">vs 银翼城 FC</span>
+                  </div>
+                  <span class="font-num text-sec">周四 20:00</span>
+                </div>
+
+                <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded font-mono text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30">A级 R10</span>
+                    <span class="px-1.5 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-300">客场</span>
+                    <span class="font-semibold text-slate-200">vs 铁甲工业 FC (第4)</span>
+                  </div>
+                  <span class="font-num text-sec">周日 20:00</span>
+                </div>
+              </div>
+
+              <div class="text-[11px] text-sec flex items-center justify-between pt-1 border-t border-slate-800/70">
+                <span>杯赛首回合比分：海港竞技 1-1 银翼城</span>
+                <span class="text-amber-300 font-mono">已绑定：杯赛轮换方案</span>
+              </div>
+            </div>
+
+            <!-- Col 9-12: Top Performer & Concise 3-Line Club Daily Briefing -->
+            <div class="lg:col-span-4 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-3.5">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white">核心球员状态与精简日报</h3>
+                <span class="text-[11px] text-sec">去重合并版</span>
+              </div>
+
+              <!-- Featured Player Strip utilizing existing portrait asset -->
+              <div class="p-3 rounded-lg bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border border-amber-500/30 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-11 h-12 rounded-lg bg-amber-950/60 border border-amber-400/60 flex flex-col items-center justify-center shrink-0">
+                    <span class="font-display font-bold text-sm text-amber-300 leading-none">91</span>
+                    <span class="text-[9px] font-mono text-amber-200">ST</span>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white">林风 · 连续 3 场破门</div>
+                    <div class="text-[11px] text-sec mt-0.5">A级射手榜第 1（8球 2助攻）· 体能 92%</div>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">状态极佳</span>
+              </div>
+
+              <!-- 3-Line Micro Daily Digest (Non-repetitive) -->
+              <ul class="space-y-1.5 text-xs text-sec">
+                <li class="flex items-center justify-between py-1 border-b border-slate-800/60">
+                  <span class="truncate">💰 主场赞助商【海湾航空】发放第 8 轮赢球奖金</span>
+                  <span class="font-num text-emerald-400 shrink-0 ml-2">+35,000</span>
+                </li>
+                <li class="flex items-center justify-between py-1 border-b border-slate-800/60">
+                  <span class="truncate">📈 青训后腰【陈子昂】完成强化突破至 +4 等级</span>
+                  <span class="font-num text-amber-300 shrink-0 ml-2">OVR 83</span>
+                </li>
+                <li class="flex items-center justify-between py-1">
+                  <span class="truncate">🏟️ 球场草皮养护已完成，今晚主场控球加成生效</span>
+                  <span class="font-mono text-blue-300 shrink-0 ml-2">已就绪</span>
+                </li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!-- MOBILE MOCKUP CONTAINER (俱乐部主场 · 手机端 390px 独立重排稿)     -->
+    <!-- =============================================================== -->
+    <div id="home-mobile-container" class="hidden py-4 flex flex-col items-center">
+      <div class="mb-3 text-center max-w-md">
+        <span class="text-xs font-mono text-blue-400">MOBILE RESPONSIVE SPEC · 390px VIEWPORT</span>
+        <p class="text-xs text-sec mt-0.5">
+          手机端并非桌面端等比缩小：改为<strong>顶部精简身份条 + 焦点比赛卡 + 待办事项置顶 + 3行极简相邻榜 + 底部5格固定导航</strong>。
+        </p>
+      </div>
+
+      <!-- Phone Frame 390px -->
+      <div class="w-full max-w-[390px] rounded-[32px] border-[6px] border-slate-800 bg-[#0B0F17] shadow-2xl overflow-hidden flex flex-col min-h-[740px]">
+
+        <!-- Mobile Top Club Bar (48px) -->
+        <div class="px-4 py-2.5 bg-[#111827] border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xs">
+              海
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">海港竞技 FC</div>
+              <div class="text-[10px] font-mono text-blue-400">A级联赛 · R9/14</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 font-num text-[11px]">
+            <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-amber-400 font-bold">1.48M 金币</span>
+            <span class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-emerald-400 font-bold">体能 84%</span>
+          </div>
+        </div>
+
+        <!-- Mobile Scrollable Body -->
+        <div class="p-3.5 space-y-3.5 flex-1 overflow-y-auto">
+
+          <!-- 1. Mobile Match Hero Card (Synced with State!) -->
+          <div id="mobile-hero-content" class="rounded-xl p-4 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-emerald-500/40 shadow-md">
+            <!-- Populated by JS renderHomeState() -->
+          </div>
+
+          <!-- 2. Mobile Priority #2: Actionable Todos Placed ABOVE Standings for Quick Mobile Triage -->
+          <div class="surface-1 rounded-xl p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-white">⚡ 待办事项（手机端置顶优先处理）</span>
+              <span id="mobile-todo-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300">3 项待办</span>
+            </div>
+            <div id="mobile-todo-list" class="space-y-2">
+              <!-- Populated by JS renderTodos() -->
+            </div>
+          </div>
+
+          <!-- 3. Mobile Priority #3: 3-Row Ultra-Compact Standings Slice -->
+          <div class="surface-1 rounded-xl p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-white">A级积分榜快照（仅展示相邻3行）</span>
+                <div class="text-[10px] text-sec">距榜首 -3分 · 近5场：胜 胜 平 负 胜</div>
+              </div>
+              <button onclick="openFullStandingsModal()" class="text-[11px] text-emerald-400 font-medium">全榜 →</button>
+            </div>
+            <table class="w-full text-xs font-num border-collapse">
+              <thead>
+                <tr class="text-[10px] text-sec border-b border-slate-800">
+                  <th class="py-1 text-left">名次</th>
+                  <th class="py-1 text-left">球队</th>
+                  <th class="py-1 text-right">赛</th>
+                  <th class="py-1 text-right">净胜</th>
+                  <th class="py-1 text-right">积分</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                <tr>
+                  <td class="py-1.5">2</td>
+                  <td class="py-1.5 font-sans text-slate-300">北城联队 <span class="text-[10px] text-blue-400">[下轮]</span></td>
+                  <td class="py-1.5 text-right text-sec">8</td>
+                  <td class="py-1.5 text-right">+8</td>
+                  <td class="py-1.5 text-right font-bold">17</td>
+                </tr>
+                <tr class="bg-emerald-500/15 font-bold text-emerald-300">
+                  <td class="py-1.5 pl-1">3</td>
+                  <td class="py-1.5 font-sans text-white">海港竞技 [我方]</td>
+                  <td class="py-1.5 text-right">8</td>
+                  <td class="py-1.5 text-right">+6</td>
+                  <td class="py-1.5 text-right text-sm">16</td>
+                </tr>
+                <tr>
+                  <td class="py-1.5">4</td>
+                  <td class="py-1.5 font-sans text-slate-300">铁甲工业 FC</td>
+                  <td class="py-1.5 text-right text-sec">8</td>
+                  <td class="py-1.5 text-right">+2</td>
+                  <td class="py-1.5 text-right font-bold">14</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 4. Mobile Collapsible Secondary Drawer: Last Match & Upcoming Fixtures -->
+          <details class="surface-1 rounded-xl p-3.5 text-xs group">
+            <summary class="font-bold text-slate-200 cursor-pointer flex items-center justify-between list-none">
+              <span>📊 上轮战报 (2-1 胜) 与近期赛程 (折叠收纳)</span>
+              <span class="text-emerald-400 text-[11px]">展开 ▾</span>
+            </summary>
+            <div class="pt-3 mt-2.5 border-t border-slate-800 space-y-2 text-sec">
+              <div class="flex justify-between text-slate-200">
+                <span>上轮 A级 R8：海港竞技 2 - 1 翡翠谷</span>
+                <span class="font-num text-emerald-400">控球率 56%</span>
+              </div>
+              <div class="flex justify-between">
+                <span>期望进球 xG <span class="px-1 rounded text-[10px] bg-amber-500/20 text-amber-300">估算</span></span>
+                <span class="font-num">1.84 vs 0.92</span>
+              </div>
+              <div class="pt-1 text-slate-300">下周四 20:00 · 杯赛1/4次回合 (客) vs 银翼城 FC</div>
+            </div>
+          </details>
+        </div>
+
+        <!-- Mobile Bottom 5-Tab Navigation Bar (56px) -->
+        <nav class="h-14 bg-[#0F1623] border-t border-slate-800 grid grid-cols-5 text-[10px]" aria-label="手机底部主导航">
+          <button onclick="switchMainView('home')" class="flex flex-col items-center justify-center text-emerald-400 font-bold">
+            <span class="text-base leading-none mb-0.5">🏟️</span>
+            <span>主场</span>
+          </button>
+          <button onclick="openFullStandingsModal()" class="flex flex-col items-center justify-center text-slate-400">
+            <span class="text-base leading-none mb-0.5">🏆</span>
+            <span>赛事</span>
+          </button>
+          <button onclick="switchMainView('tactics')" class="relative flex flex-col items-center justify-center text-slate-400">
+            <span class="text-base leading-none mb-0.5">📋</span>
+            <span>阵容</span>
+            <span class="absolute top-1.5 right-4 w-2 h-2 rounded-full bg-rose-500"></span>
+          </button>
+          <button onclick="switchMainView('match')" class="flex flex-col items-center justify-center text-slate-400">
+            <span class="text-base leading-none mb-0.5">📺</span>
+            <span>直播</span>
+          </button>
+          <button onclick="showToast('手机端【俱乐部/市场/收件箱】聚合入口')" class="flex flex-col items-center justify-center text-slate-400">
+            <span class="text-base leading-none mb-0.5">🏛️</span>
+            <span>俱乐部</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 3: EXTENSION DEMO A - SQUAD & TACTICS (延展验证页：阵容战术)      -->
+  <!-- ===================================================================== -->
+  <section id="view-tactics" class="hidden flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+
+    <!-- Top Specification Banner for Tactics Page -->
+    <div class="surface-2 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 border border-emerald-500/30">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">延展验证页 A</span>
+          <h2 class="text-base font-bold text-white">阵容与战术工作台（11人制 · 三套预案 · 赛事方案绑定）</h2>
+        </div>
+        <p class="text-xs text-sec mt-0.5">
+          视觉分工验证：球场与球员卡占核心视觉，支持切换<strong>【默认 / 领先 / 落后】</strong>三套预案与<strong>【联赛 / 杯赛】</strong>方案绑定；严格遵守规则，不设盘中主动换人按钮。
+        </p>
+      </div>
+
+      <!-- Preset & Competition Binding Controls -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <div class="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+          <span class="px-2 text-sec">战术预案：</span>
+          <button id="preset-default" onclick="switchTacticalPreset('default')" class="px-3 py-1 rounded bg-emerald-600 text-white font-medium transition">
+            1. 默认开场预案
+          </button>
+          <button id="preset-leading" onclick="switchTacticalPreset('leading')" class="px-3 py-1 rounded text-slate-300 hover:text-white transition">
+            2. 领先守势预案 (≥65')
+          </button>
+          <button id="preset-trailing" onclick="switchTacticalPreset('trailing')" class="px-3 py-1 rounded text-slate-300 hover:text-white transition">
+            3. 落后强攻预案 (≥60')
+          </button>
+        </div>
+
+        <select id="comp-bind-select" onchange="bindCompetitionScheme(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200">
+          <option value="league">当前绑定：A级联赛主力方案</option>
+          <option value="cup">当前绑定：16强杯赛轮换方案</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Tactics Layout: Left Pitch (7 Cols) + Right Bench & Auto-Rotation Rules (5 Cols) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left 7 Cols: 11v11 Tactical Pitch -->
+      <div class="lg:col-span-7 surface-1 rounded-xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-3">
+            <span id="tactics-formation-badge" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold text-sm">
+              4 - 3 - 3 控球压迫
+            </span>
+            <span id="tactics-preset-desc" class="text-xs text-sec">
+              默认预案：防线适中 · 边后卫套边插上 · 体能低于 55% 触发被动换人
+            </span>
+          </div>
+          <button onclick="autoFixSuspendedPlayer()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 transition">
+            ⚡ 一键替换停赛/低体能球员
+          </button>
+        </div>
+
+        <!-- Interactive 11-Player Pitch Canvas -->
+        <div class="relative w-full h-[520px] rounded-xl pitch-grid border-2 border-emerald-500/40 overflow-hidden shadow-inner p-4 flex flex-col justify-between select-none">
+          <!-- Pitch Markings -->
+          <div class="absolute inset-x-12 top-0 h-20 border-b-2 border-x-2 border-white/15 pointer-events-none"></div>
+          <div class="absolute inset-x-0 top-1/2 border-t-2 border-white/15 pointer-events-none"></div>
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full border-2 border-white/15 pointer-events-none"></div>
+          <div class="absolute inset-x-12 bottom-0 h-20 border-t-2 border-x-2 border-white/15 pointer-events-none"></div>
+
+          <!-- Pitch Rows Populated by JS renderTacticalPitch() -->
+          <div id="pitch-lineup-container" class="relative z-10 w-full h-full flex flex-col justify-between py-2">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right 5 Cols: Selected Player Inspector, Passive Sub Rules & Bench -->
+      <div class="lg:col-span-5 space-y-5">
+
+        <!-- Selected Slot Inspector -->
+        <div class="surface-1 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">选中球员与卡槽详情（点击球场或替补席切换）</h3>
+            <span class="text-[11px] font-mono text-emerald-400">点击两张卡片即可互换位置</span>
+          </div>
+          <div id="selected-player-panel" class="p-3.5 rounded-lg bg-slate-900 border border-slate-800">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Passive Substitution & Pre-match Rotation Rules (Strict Adherence to Game Rules) -->
+        <div class="surface-1 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">赛前轮换与被动换人规则（已有机制可视化）</h3>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">赛前配置 · 赛中自动触发</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+              <div class="text-sec">被动换人触发阈值</div>
+              <div class="font-bold text-white mt-1">场上球员体能 &lt; <span class="font-num text-amber-400">55%</span> 或轻伤</div>
+              <div class="text-[11px] text-sec mt-0.5">按替补席同位置优先级自动换入</div>
+            </div>
+            <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+              <div class="text-sec">预案自动切换条件</div>
+              <div class="font-bold text-white mt-1">65' 领先切守势 / 60' 落后切强攻</div>
+              <div class="text-[11px] text-sec mt-0.5">无需玩家在直播中手动点击战术按钮</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bench / Substitutes List -->
+        <div class="surface-1 rounded-xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">替补席与轮换候补（点击可换上场）</h3>
+            <span class="text-xs text-sec font-mono">7 人替补名单</span>
+          </div>
+          <div id="bench-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- VIEW 4: EXTENSION DEMO B - LIVE BROADCAST & STREAMLINED MATCH RECORD   -->
+  <!-- ===================================================================== -->
+  <section id="view-match" class="hidden flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-5 space-y-5">
+
+    <!-- Top Guardrail Banner for Broadcast & Match Record -->
+    <div class="surface-2 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 border border-blue-500/30">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30">延展验证页 B · 严格保留近期决策</span>
+          <h2 class="text-base font-bold text-white">比赛电视台直播 &amp; 精简版比赛记录</h2>
+        </div>
+        <p class="text-xs text-sec mt-0.5">
+          1. 直播常态展示<strong>双方阵容/球员卡、比分、文字事件流与技术统计</strong>，<strong>绝不把全程小圆点播放器作为默认主界面</strong>；仅在点击关键事件（进球/红牌）时弹出对应时段小圆点动画回放。<br/>
+          2. 比赛记录保持精简（比分+重点事件+统计+球员表现），不重新加入长篇教练诊断；统计使用<strong>“控球率”</strong>与<strong>“xG（估算）”</strong>，缺失数据显示<strong>“—（未记录）”</strong>。
+        </p>
+      </div>
+
+      <div class="inline-flex rounded-lg bg-slate-900 p-1 border border-slate-800 text-xs">
+        <button id="subtab-live" onclick="switchMatchSubView('live')" class="px-3 py-1.5 rounded bg-rose-600 text-white font-semibold transition">
+          🔴 1. 比赛直播常态视图 (含关键事件回放)
+        </button>
+        <button id="subtab-record" onclick="switchMatchSubView('record')" class="px-3 py-1.5 rounded text-slate-300 hover:text-white transition">
+          📋 2. 赛后精简比赛记录 (含缺失数据示例)
+        </button>
+      </div>
+    </div>
+
+    <!-- Scoreboard Header -->
+    <div class="surface-1 rounded-xl p-5 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-400">
+          海港
+        </div>
+        <div>
+          <div class="text-base font-bold text-white">海港竞技 FC <span class="text-xs font-mono text-emerald-400">[主场 · 4-3-3]</span></div>
+          <div class="text-xs text-sec">18' 林风 ⚽ · 64' 马修斯 ⚽</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-center">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="match-view-badge" class="px-2 py-0.5 rounded text-[11px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-rose-500 live-dot"></span> A级第9轮 · 下半场 67:18
+          </span>
+        </div>
+        <div class="font-display font-extrabold text-4xl sm:text-5xl text-white tracking-wider px-6 py-1 rounded-xl bg-slate-900 border border-slate-800">
+          2 : 1
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 text-right">
+        <div>
+          <div class="text-base font-bold text-white"><span class="text-xs font-mono text-blue-400">[客场 · 4-2-3-1]</span> 北城联队</div>
+          <div class="text-xs text-sec">⚽ 41' 席尔瓦</div>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center font-bold text-blue-400">
+          北城
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-Column Normal Broadcast Layout (Lineup Cards + Text Commentary + Tech Stats) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+      <!-- Left 4 Cols: Active Lineup & Player Cards Status -->
+      <div class="lg:col-span-4 surface-1 rounded-xl p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-white">场上球员实时状态与评分</h3>
+          <span class="text-[11px] text-sec font-mono">常态展示阵容/球员卡</span>
+        </div>
+
+        <div class="space-y-2 text-xs font-num">
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-amber-500/40 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">ST</span>
+              <span class="font-sans font-bold text-white">9. 林风 ⚽</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sec">体能 76%</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">8.5</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-emerald-500/30 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold">CM</span>
+              <span class="font-sans font-bold text-white">8. 马修斯 ⚽</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sec">体能 68%</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">8.2</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold">LW</span>
+              <span class="font-sans font-medium text-slate-200">11. 陆子轩 🅰️</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sec">体能 72%</span>
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-bold">7.6</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">CB</span>
+              <span class="font-sans font-medium text-slate-200">4. 阿隆索 🟨</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sec">体能 80%</span>
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-bold">7.1</span>
+            </div>
+          </div>
+
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">GK</span>
+              <span class="font-sans font-medium text-slate-200">1. 霍华德 (3次扑救)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-sec">体能 94%</span>
+              <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200 font-bold">7.4</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center 5 Cols: Text Commentary Feed + Key Event 2D Dot Replay Trigger -->
+      <div class="lg:col-span-5 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-white">文字事件流与关键时段回放</h3>
+          <span class="text-[11px] text-emerald-400">仅关键事件提供小圆点动画回放</span>
+        </div>
+
+        <!-- Inline Key Event 2D Dot Replay Drawer (Hidden until user clicks a key event replay button) -->
+        <div id="dot-replay-box" class="hidden rounded-xl p-3.5 bg-slate-950 border border-emerald-500/50 space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span id="dot-replay-title" class="font-bold text-emerald-400">▶ 关键事件小圆点回放：64' 马修斯 禁区弧顶远射破门</span>
+            <button onclick="closeDotReplay()" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 hover:text-white">关闭回放 ✕</button>
+          </div>
+          <!-- Mini 2D Pitch with SVG Dot Trajectory -->
+          <div class="relative h-36 rounded-lg pitch-grid border border-emerald-500/40 overflow-hidden flex items-center justify-center">
+            <svg class="w-full h-full" viewBox="0 0 320 140">
+              <!-- Penalty box right -->
+              <rect x="260" y="25" width="58" height="90" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+              <!-- Pass & Shot Path -->
+              <path d="M 140 95 L 220 70 L 312 52" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="4 3"/>
+              <!-- Teammate #11 -->
+              <circle cx="140" cy="95" r="9" fill="#10B981" stroke="#FFFFFF" stroke-width="1.5"/>
+              <text x="140" y="99" text-anchor="middle" fill="#0B0F17" font-size="9" font-weight="bold">11</text>
+              <!-- Scorer #8 -->
+              <circle cx="220" cy="70" r="10" fill="#10B981" stroke="#F59E0B" stroke-width="2"/>
+              <text x="220" y="74" text-anchor="middle" fill="#0B0F17" font-size="9" font-weight="bold">8</text>
+              <!-- Defender & GK -->
+              <circle cx="248" cy="66" r="8" fill="#3B82F6" stroke="#FFFFFF" stroke-width="1"/>
+              <circle cx="304" cy="68" r="8" fill="#3B82F6" stroke="#FFFFFF" stroke-width="1"/>
+              <!-- Ball at Goal -->
+              <circle cx="312" cy="52" r="5" fill="#FFFFFF" stroke="#F59E0B" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="text-[11px] text-sec flex justify-between">
+            <span>回放时段：63:50 - 64:05（15秒真实轨迹切片）</span>
+            <span class="text-emerald-300">常态界面保持文字+统计高效率</span>
+          </div>
+        </div>
+
+        <!-- Text Events Timeline -->
+        <div class="space-y-2.5 text-xs max-h-80 overflow-y-auto pr-1">
+          <!-- Event 65' Auto Tactical Switch -->
+          <div class="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-start justify-between gap-2">
+            <div>
+              <span class="font-num font-bold text-blue-400 mr-1.5">65'</span>
+              <span class="text-slate-200">触发预设方案：本队取得领先且满 65 分钟，自动切换为<strong>【领先守势预案】</strong>。</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-500/20 text-blue-300 shrink-0">自动预案</span>
+          </div>
+
+          <!-- Key Event 64' Goal with Replay Button -->
+          <div class="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-between gap-2">
+            <div>
+              <span class="font-num font-bold text-emerald-400 mr-1.5">64' ⚽</span>
+              <span class="font-bold text-white">进球！海港竞技 2-1 领先！</span>
+              <p class="text-slate-300 mt-0.5">陆子轩左路内切横敲，8号马修斯禁区弧顶迎球怒射直挂死角！</p>
+            </div>
+            <button onclick="openDotReplay('64\' 马修斯 禁区弧顶远射破门 (2-1)')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shrink-0 transition">
+              ▶ 小圆点回放
+            </button>
+          </div>
+
+          <!-- Regular Event 54' -->
+          <div class="p-2.5 rounded-lg bg-slate-900/80 border border-slate-800">
+            <span class="font-num font-bold text-slate-400 mr-1.5">54'</span>
+            <span class="text-sec">北城联队角球传中，门将霍华德高高跃起将球稳稳摘下。</span>
+          </div>
+
+          <!-- Key Event 41' Goal with Replay Button -->
+          <div class="p-3 rounded-lg bg-slate-900 border border-amber-500/30 flex items-center justify-between gap-2">
+            <div>
+              <span class="font-num font-bold text-amber-400 mr-1.5">41' ⚽</span>
+              <span class="font-semibold text-white">北城联队扳平比分 (1-1)</span>
+              <p class="text-sec mt-0.5">席尔瓦反越位单刀推射远角得手。</p>
+            </div>
+            <button onclick="openDotReplay('41\' 席尔瓦 反越位单刀破门 (1-1)')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shrink-0 transition">
+              ▶ 小圆点回放
+            </button>
+          </div>
+
+          <!-- Key Event 18' Goal with Replay Button -->
+          <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-2">
+            <div>
+              <span class="font-num font-bold text-emerald-400 mr-1.5">18' ⚽</span>
+              <span class="font-semibold text-white">进球！9号林风抢点破门 (1-0)</span>
+            </div>
+            <button onclick="openDotReplay('18\' 林风 前点抢射破门 (1-0)')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shrink-0 transition">
+              ▶ 小圆点回放
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right 3 Cols: Technical Statistics (Possession Rate, xG Estimated, Missing Data State) -->
+      <div class="lg:col-span-3 surface-1 rounded-xl p-5 flex flex-col justify-between space-y-4">
+        <div>
+          <h3 class="text-sm font-bold text-white">比赛技术统计</h3>
+          <p class="text-[11px] text-sec mt-0.5">严格遵循数据展示规范</p>
+        </div>
+
+        <div class="space-y-3.5 text-xs font-num">
+          <!-- Possession Rate -->
+          <div class="space-y-1">
+            <div class="flex justify-between">
+              <span class="font-bold text-emerald-400">56%</span>
+              <span class="font-sans text-slate-300">控球率</span>
+              <span class="font-bold text-blue-400">44%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden flex">
+              <div class="bg-emerald-500 h-full w-[56%]"></div>
+              <div class="bg-blue-500 h-full w-[44%]"></div>
+            </div>
+          </div>
+
+          <!-- Estimated xG -->
+          <div class="space-y-1 pt-2 border-t border-slate-800">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-emerald-400">1.84</span>
+              <span class="font-sans text-slate-300 flex items-center gap-1">
+                期望进球 xG
+                <span class="px-1.5 py-0.2 rounded text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30">估算</span>
+              </span>
+              <span class="font-bold text-blue-400">0.92</span>
+            </div>
+            <div class="text-[10px] font-sans text-sec text-center">基于射门位置与防守压力估算</div>
+          </div>
+
+          <!-- Shots & On Target -->
+          <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+            <span class="font-bold text-white">14 (6)</span>
+            <span class="font-sans text-sec">射门 (射正)</span>
+            <span class="font-bold text-slate-300">8 (3)</span>
+          </div>
+
+          <!-- Pass Accuracy -->
+          <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+            <span class="font-bold text-white">86%</span>
+            <span class="font-sans text-sec">传球成功率</span>
+            <span class="font-bold text-slate-300">81%</span>
+          </div>
+
+          <!-- Corner Kicks -->
+          <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+            <span class="font-bold text-white">7</span>
+            <span class="font-sans text-sec">角球</span>
+            <span class="font-bold text-slate-300">4</span>
+          </div>
+
+          <!-- Explicit Missing Data State (Never fake 0!) -->
+          <div class="flex justify-between items-center pt-2 border-t border-slate-800 bg-slate-900/70 p-2 rounded">
+            <span class="text-slate-500">—</span>
+            <span class="font-sans text-sec flex items-center gap-1">
+              高强度冲刺距离
+              <span class="px-1 py-0.2 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">未采集</span>
+            </span>
+            <span class="text-slate-500">—</span>
+          </div>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-sec">
+          精简原则：赛后比赛记录不展示冗长 AI 教练诊断或战术复盘长文，聚焦真实比分、事件与核心数据。
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: FULL A/B LEAGUE STANDINGS (完整 A/B 级 16 队积分榜弹窗)         -->
+  <!-- ===================================================================== -->
+  <div id="modal-standings" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="surface-1 rounded-2xl max-w-3xl w-full p-6 border border-slate-700 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="text-lg font-bold text-white">YFFM1 联赛完整积分榜（A级 / B级 双级 8 队双循环）</h3>
+          <p class="text-xs text-sec mt-0.5">每级 8 支球队，主客场双循环共 14 轮 · 状态通过颜色 + 文字标签双重区分</p>
+        </div>
+        <button onclick="closeFullStandingsModal()" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs">关闭 ✕</button>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="modal-tab-a" onclick="switchModalDivision('A')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white">A级联赛 (第9轮)</button>
+        <button id="modal-tab-b" onclick="switchModalDivision('B')" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300">B级联赛 (第9轮)</button>
+      </div>
+
+      <div id="modal-standings-body" class="overflow-y-auto flex-1">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-box" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-slate-900 border border-emerald-500/50 text-xs text-white shadow-xl"></div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC & STATE MANAGEMENT                                  -->
+  <!-- ===================================================================== -->
+  <script>
+    // Global State
+    const appState = {
+      mainView: 'spec',        // 'spec' | 'home' | 'tactics' | 'match'
+      theme: 'dark',           // 'dark' | 'light'
+      reducedMotion: false,
+      sidebarCollapsed: false,
+      homeMatchState: 'pre',   // 'pre' | 'live' | 'post' | 'off'
+      homeViewport: 'desktop', // 'desktop' | 'mobile'
+      emptyTodos: false,
+      tacticalPreset: 'default', // 'default' | 'leading' | 'trailing'
+      selectedPlayerId: 'p4'
+    };
+
+    // Real Business Todo Items (Never fabricated when emptyTodos is checked)
+    const todoData = [
+      {
+        id: 't1',
+        type: '停赛缺员',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        icon: '🟥',
+        title: '主力左后卫【周凯 (LB)】累计黄牌停赛 1 场',
+        desc: '今晚第 9 轮 A 级联赛无法出战，需在赛前调整首发左后卫人选。',
+        ctaText: '前往阵容替换',
+        action: () => { switchMainView('tactics'); }
+      },
+      {
+        id: 't2',
+        type: '体能预警',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        icon: '🔋',
+        title: '中场核心【马修斯 (CM)】体能仅余 66%',
+        desc: '连续出战联赛与杯赛首回合，建议配置 60 分钟被动换人候补。',
+        ctaText: '设置轮换预案',
+        action: () => { switchMainView('tactics'); }
+      },
+      {
+        id: 't3',
+        type: '合同待办',
+        badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+        icon: '📝',
+        title: '门将【霍华德 (GK)】合同剩余最后 2 轮',
+        desc: '续约周薪诉求 18,000 金币，未续约将在第 14 轮结束后进入自由市场。',
+        ctaText: '处理续约',
+        action: () => { showToast('已打开【霍华德】合同续约谈判弹窗'); }
+      }
+    ];
+
+    // Tactical Pitch Players Data
+    const squadPlayers = [
+      { id: 'p1', pos: 'ST', name: '林风 (C)', ovr: 91, sta: 92, status: 'ok', row: 0 },
+      { id: 'p2', pos: 'LW', name: '陆子轩', ovr: 86, sta: 85, status: 'ok', row: 0 },
+      { id: 'p3', pos: 'RW', name: '赵子龙', ovr: 85, sta: 88, status: 'ok', row: 0 },
+      { id: 'p4', pos: 'CM', name: '马修斯', ovr: 87, sta: 66, status: 'warn', row: 1, note: '体能偏低 (66%)' },
+      { id: 'p5', pos: 'CDM', name: '坎特拉', ovr: 86, sta: 90, status: 'ok', row: 1 },
+      { id: 'p6', pos: 'CAM', name: '奥尔莫', ovr: 88, sta: 84, status: 'ok', row: 1 },
+      { id: 'p7', pos: 'LB', name: '周凯', ovr: 84, sta: 95, status: 'suspended', row: 2, note: '本轮累计黄牌停赛' },
+      { id: 'p8', pos: 'CB', name: '阿隆索', ovr: 89, sta: 89, status: 'ok', row: 2 },
+      { id: 'p9', pos: 'CB', name: '范戴克', ovr: 88, sta: 91, status: 'ok', row: 2 },
+      { id: 'p10', pos: 'RB', name: '阿诺德', ovr: 85, sta: 87, status: 'ok', row: 2 },
+      { id: 'p11', pos: 'GK', name: '霍华德', ovr: 87, sta: 96, status: 'ok', row: 3 }
+    ];
+
+    const benchPlayers = [
+      { id: 'b1', pos: 'LB', name: '李明浩', ovr: 82, sta: 98, status: 'ok', note: '推荐替换停赛的周凯' },
+      { id: 'b2', pos: 'CM', name: '陈子昂 (+4)', ovr: 83, sta: 96, status: 'ok', note: '推荐作为马修斯被动换人候补' },
+      { id: 'b3', pos: 'ST', name: '巴洛特', ovr: 84, sta: 94, status: 'ok', note: '落后强攻预案双前锋人选' },
+      { id: 'b4', pos: 'CB', name: '金玟哉', ovr: 83, sta: 95, status: 'ok', note: '领先守势预案五后卫人选' },
+      { id: 'b5', pos: 'GK', name: '雷纳', ovr: 80, sta: 99, status: 'ok', note: '替补门将' }
+    ];
+
+    // Switch Top-Level Main View
+    function switchMainView(view) {
+      appState.mainView = view;
+      const views = ['spec', 'home', 'tactics', 'match'];
+      views.forEach(v => {
+        const el = document.getElementById('view-' + v);
+        const btn = document.getElementById('tab-btn-' + v);
+        if (el) el.classList.toggle('hidden', v !== view);
+        if (btn) {
+          if (v === view) {
+            btn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-emerald-600 text-white shadow-sm whitespace-nowrap';
+          } else {
+            btn.className = 'px-3 py-1.5 rounded-md text-xs font-medium transition-all text-slate-300 hover:text-white whitespace-nowrap';
+          }
+        }
+      });
+      if (view === 'home') {
+        renderHomeState();
+        renderTodos();
+      } else if (view === 'tactics') {
+        renderTacticalPitch();
+      }
+    }
+
+    // Toggle Dark / Light Theme
+    function toggleTheme() {
+      appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
+      document.body.classList.toggle('theme-light', appState.theme === 'light');
+      document.getElementById('theme-icon').textContent = appState.theme === 'dark' ? '🌙' : '☀️';
+      document.getElementById('theme-label').textContent = appState.theme === 'dark' ? '夜赛深色' : '战术浅色';
+      showToast(appState.theme === 'dark' ? '已切换至【夜赛深色主题 (默认推荐)】' : '已切换至【战术白昼浅色主题】');
+    }
+
+    // Toggle Reduced Motion
+    function toggleReducedMotion() {
+      appState.reducedMotion = !appState.reducedMotion;
+      document.body.classList.toggle('reduced-motion', appState.reducedMotion);
+      const dot = document.getElementById('motion-dot');
+      const label = document.getElementById('motion-label');
+      if (appState.reducedMotion) {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        label.textContent = '减少动效 (已开启)';
+        showToast('已开启【减少或关闭动效】模式：禁用脉冲与过渡动画，提升低配设备与高频操作流畅度');
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        label.textContent = '标准动效';
+        showToast('已恢复【标准动效】模式');
+      }
+    }
+
+    // Copy CSS Token
+    function copyToken(text) {
+      try {
+        navigator.clipboard.writeText(text);
+      } catch (e) {}
+      showToast('已复制色值 Token：' + text);
+    }
+
+    // Trigger Ceremony Preview in Section 6
+    function triggerCeremony(type) {
+      const stage = document.getElementById('ceremony-stage');
+      stage.classList.remove('hidden');
+      if (type === 'save') {
+        stage.className = 'rounded-xl p-4 bg-slate-900 border border-emerald-500/40 flex items-center justify-between text-xs';
+        stage.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">180ms 轻量反馈</span>
+            <span class="text-white font-medium">✓ 默认阵容与三套预案已保存，不阻塞当前页面滚动位置与展开状态。</span>
+          </div>
+          <button onclick="document.getElementById('ceremony-stage').classList.add('hidden')" class="text-sec hover:text-white">关闭</button>
+        `;
+      } else if (type === 'goal') {
+        stage.className = 'rounded-xl p-5 bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border-2 border-emerald-400 flex flex-col sm:flex-row items-center justify-between gap-4 anim-goal';
+        stage.innerHTML = `
+          <div class="flex items-center gap-4">
+            <div class="font-display font-extrabold text-3xl sm:text-4xl text-emerald-400 tracking-wider">GOAL! 64'</div>
+            <div>
+              <div class="text-sm font-bold text-white">海港竞技 FC <span class="text-emerald-400 font-num">2 : 1</span> 北城联队</div>
+              <div class="text-xs text-slate-300">进球队员：8号 马修斯（助攻：11号 陆子轩）· 体育转播级下沿横幅演出 (900ms)</div>
+            </div>
+          </div>
+          <button onclick="switchMainView('match'); openDotReplay('64\\' 马修斯 禁区弧顶远射破门 (2-1)');" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs">
+            查看本球小圆点回放 →
+          </button>
+        `;
+      } else if (type === 'upgrade') {
+        stage.className = 'rounded-xl p-5 bg-gradient-to-r from-amber-950/90 via-slate-900 to-amber-950/90 border-2 border-amber-400 flex flex-col sm:flex-row items-center justify-between gap-4 anim-goal';
+        stage.innerHTML = `
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-14 rounded-lg bg-amber-500/20 border-2 border-amber-400 flex flex-col items-center justify-center font-display font-bold text-amber-300">
+              <span>91</span>
+              <span class="text-[10px]">+5</span>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-amber-300">✨ 球员强化成功！林风 (ST) 突破至 +5 阶卡框</div>
+              <div class="text-xs text-slate-300">射术 +3 · 跑位 +2 · 爆发 +2（保留原有手动卡画裁切坐标，仅升级外层金框光泽）</div>
+            </div>
+          </div>
+          <button onclick="document.getElementById('ceremony-stage').classList.add('hidden')" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-bold text-xs">
+            收下球星卡
+          </button>
+        `;
+      }
+    }
+
+    // Sidebar Collapse without pushing layout jitter
+    function toggleSidebarCollapse() {
+      appState.sidebarCollapsed = !appState.sidebarCollapsed;
+      const sb = document.getElementById('desktop-sidebar');
+      const texts = document.querySelectorAll('.sidebar-text');
+      if (appState.sidebarCollapsed) {
+        sb.classList.remove('w-56');
+        sb.classList.add('w-16');
+        texts.forEach(t => t.classList.add('hidden'));
+      } else {
+        sb.classList.remove('w-16');
+        sb.classList.add('w-56');
+        texts.forEach(t => t.classList.remove('hidden'));
+      }
+    }
+
+    // Set Home Match State (Pre / Live / Post / Off-season)
+    function setHomeMatchState(state) {
+      appState.homeMatchState = state;
+      ['pre', 'live', 'post', 'off'].forEach(s => {
+        const btn = document.getElementById('home-state-' + s);
+        if (btn) {
+          btn.className = s === state
+            ? 'px-3 py-1 rounded-md text-xs font-medium bg-emerald-600 text-white transition'
+            : 'px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition';
+        }
+      });
+      const liveBadge = document.getElementById('nav-badge-live');
+      if (liveBadge) liveBadge.classList.toggle('hidden', state !== 'live');
+      renderHomeState();
+    }
+
+    // Set Home Viewport (Desktop vs Mobile)
+    function setHomeViewport(vp) {
+      appState.homeViewport = vp;
+      document.getElementById('home-desktop-container').classList.toggle('hidden', vp !== 'desktop');
+      document.getElementById('home-mobile-container').classList.toggle('hidden', vp !== 'mobile');
+      document.getElementById('vp-desktop').className = vp === 'desktop'
+        ? 'px-3 py-1 rounded-md text-xs font-medium bg-blue-600 text-white transition'
+        : 'px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition';
+      document.getElementById('vp-mobile').className = vp === 'mobile'
+        ? 'px-3 py-1 rounded-md text-xs font-medium bg-blue-600 text-white transition'
+        : 'px-3 py-1 rounded-md text-xs font-medium text-slate-300 hover:text-white transition';
+    }
+
+    // Render Home Tier 1 Match Hero (Desktop & Mobile) for all 4 States
+    function renderHomeState() {
+      const desk = document.getElementById('desktop-hero-content');
+      const mob = document.getElementById('mobile-hero-content');
+      const s = appState.homeMatchState;
+
+      if (s === 'pre') {
+        desk.innerHTML = `
+          <div class="space-y-2 max-w-md">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">A级联赛 · 第 9 / 14 轮</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">主场作战</span>
+              <span class="text-xs text-slate-300 font-num">今晚 20:00 开球</span>
+            </div>
+            <h3 class="text-xl font-bold text-white">焦点榜首卡位战：胜出即可反超升至 A 级第 2 名</h3>
+            <p class="text-xs text-slate-300">
+              当前已绑定<strong>【A级联赛主力方案 · 4-3-3】</strong> · 注意：左后卫周凯本轮停赛，请在开赛前检查首发名单。
+            </p>
+          </div>
+
+          <!-- Center Broadcast Scorebug -->
+          <div class="flex items-center gap-5 px-6 py-3 rounded-xl bg-slate-950/85 border border-slate-800">
+            <div class="text-right">
+              <div class="text-sm font-bold text-white">海港竞技 FC</div>
+              <div class="text-[11px] text-emerald-400 font-mono">A级第3 · 16分 [主]</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300">海港</div>
+            <div class="text-center px-3">
+              <div class="text-[10px] font-mono text-amber-400 uppercase">距离开赛</div>
+              <div class="font-display font-extrabold text-3xl text-white tracking-wider font-num">02:14:35</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center font-bold text-blue-300">北城</div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-white">北城联队</div>
+              <div class="text-[11px] text-blue-400 font-mono">A级第2 · 17分 [客]</div>
+            </div>
+          </div>
+
+          <!-- Primary & Secondary CTAs (Never hidden behind hover) -->
+          <div class="flex flex-col sm:flex-row items-center gap-2.5 shrink-0">
+            <button onclick="switchMainView('tactics')" class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition">
+              📋 检查阵容 (1人停赛)
+            </button>
+            <button onclick="openFullStandingsModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition">
+              查看赛程与情报
+            </button>
+          </div>
+        `;
+
+        mob.innerHTML = `
+          <div class="flex items-center justify-between text-[10px] font-mono mb-2">
+            <span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">A级 R9 · 主场</span>
+            <span class="text-amber-400">倒计时 02:14:35</span>
+          </div>
+          <div class="flex items-center justify-between py-2">
+            <div class="text-center w-24">
+              <div class="w-10 h-10 mx-auto rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300 text-xs">海港</div>
+              <div class="text-xs font-bold text-white mt-1">海港竞技</div>
+              <div class="text-[10px] text-emerald-400">第3名 · 16分</div>
+            </div>
+            <div class="text-center">
+              <div class="font-display font-bold text-2xl text-white">VS</div>
+              <div class="text-[10px] text-sec font-num">今日 20:00</div>
+            </div>
+            <div class="text-center w-24">
+              <div class="w-10 h-10 mx-auto rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center font-bold text-blue-300 text-xs">北城</div>
+              <div class="text-xs font-bold text-white mt-1">北城联队</div>
+              <div class="text-[10px] text-blue-400">第2名 · 17分</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-3">
+            <button onclick="switchMainView('tactics')" class="py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs">检查阵容 (1停赛)</button>
+            <button onclick="openFullStandingsModal()" class="py-2 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 text-xs">查看赛程</button>
+          </div>
+        `;
+      } else if (s === 'live') {
+        desk.innerHTML = `
+          <div class="space-y-2 max-w-md">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded text-[11px] font-mono font-bold bg-rose-600 text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-white live-dot"></span> LIVE 比赛进行中 · 67'
+              </span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/20 text-blue-300">A级联赛 · 第 9 轮</span>
+            </div>
+            <h3 class="text-xl font-bold text-white">64' 马修斯远射破门！我方 2:1 领先，已自动切入【领先守势预案】</h3>
+            <p class="text-xs text-slate-300">
+              实时控球率 <strong class="font-num text-emerald-400">56% : 44%</strong> · 期望进球 xG <span class="px-1 rounded text-[10px] bg-amber-500/20 text-amber-300">估算</span> <strong class="font-num">1.84 : 0.92</strong>
+            </p>
+          </div>
+
+          <div class="flex items-center gap-5 px-6 py-3 rounded-xl bg-slate-950/90 border-2 border-rose-500/50">
+            <div class="text-right">
+              <div class="text-sm font-bold text-white">海港竞技 FC</div>
+              <div class="text-[11px] text-emerald-400">18' 林风 · 64' 马修斯</div>
+            </div>
+            <div class="font-display font-extrabold text-4xl text-emerald-400 tracking-wider px-4 py-1 rounded bg-slate-900">
+              2 : 1
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-white">北城联队</div>
+              <div class="text-[11px] text-slate-400">41' 席尔瓦</div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-2.5 shrink-0">
+            <button onclick="switchMainView('match')" class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition">
+              📺 进入比赛直播 (查看事件与回放)
+            </button>
+          </div>
+        `;
+
+        mob.innerHTML = `
+          <div class="flex items-center justify-between text-[10px] font-mono mb-2">
+            <span class="px-2 py-0.5 rounded bg-rose-600 text-white font-bold">● LIVE 下半场 67'</span>
+            <span class="text-emerald-400">已触发：领先守势预案</span>
+          </div>
+          <div class="flex items-center justify-between py-2">
+            <div class="text-center w-24">
+              <div class="text-xs font-bold text-white">海港竞技</div>
+              <div class="text-[10px] text-emerald-400">18' 64' ⚽</div>
+            </div>
+            <div class="font-display font-extrabold text-3xl text-emerald-400 px-3 py-0.5 rounded bg-slate-950 border border-rose-500/40">2 : 1</div>
+            <div class="text-center w-24">
+              <div class="text-xs font-bold text-white">北城联队</div>
+              <div class="text-[10px] text-sec">41' ⚽</div>
+            </div>
+          </div>
+          <button onclick="switchMainView('match')" class="w-full mt-3 py-2 rounded-lg bg-rose-600 text-white font-bold text-xs">
+            📺 进入比赛直播
+          </button>
+        `;
+      } else if (s === 'post') {
+        desk.innerHTML = `
+          <div class="space-y-2 max-w-md">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">全场结束 (FT) · 主场获胜</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/20 text-blue-300">A级联赛 · 第 9 轮</span>
+            </div>
+            <h3 class="text-xl font-bold text-white">全取 3 分！海港竞技积分升至 19 分，跃居 A 级联赛第 2 名</h3>
+            <p class="text-xs text-slate-300">
+              全场最佳：8号 马修斯 (评分 8.7) · 控球率 <strong class="font-num">55% : 45%</strong> · xG <span class="px-1 rounded text-[10px] bg-amber-500/20 text-amber-300">估算</span> <strong class="font-num">2.05 : 1.04</strong>
+            </p>
+          </div>
+
+          <div class="flex items-center gap-5 px-6 py-3 rounded-xl bg-slate-950/90 border border-emerald-500/40">
+            <div class="text-right">
+              <div class="text-sm font-bold text-white">海港竞技 FC</div>
+              <div class="text-[11px] text-emerald-400">积分 +3 (升至第2)</div>
+            </div>
+            <div class="font-display font-extrabold text-4xl text-white tracking-wider px-4 py-1 rounded bg-emerald-500/20 border border-emerald-500/40">
+              2 : 1
+            </div>
+            <div class="text-left">
+              <div class="text-sm font-bold text-slate-300">北城联队</div>
+              <div class="text-[11px] text-slate-400">跌至第3</div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-2.5 shrink-0">
+            <button onclick="switchMainView('match')" class="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition">
+              📊 查看精简比赛记录与统计
+            </button>
+            <button onclick="openFullStandingsModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs transition">
+              下轮杯赛备战 →
+            </button>
+          </div>
+        `;
+
+        mob.innerHTML = `
+          <div class="flex items-center justify-between text-[10px] font-mono mb-2">
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">全场结束 FT · 积分 +3</span>
+            <span class="text-amber-300">MVP：马修斯 8.7</span>
+          </div>
+          <div class="flex items-center justify-between py-2">
+            <div class="text-center w-24">
+              <div class="text-xs font-bold text-white">海港竞技</div>
+              <div class="text-[10px] text-emerald-400">升至第 2 名</div>
+            </div>
+            <div class="font-display font-extrabold text-3xl text-white px-3 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40">2 : 1</div>
+            <div class="text-center w-24">
+              <div class="text-xs font-bold text-slate-300">北城联队</div>
+              <div class="text-[10px] text-sec">第 3 名</div>
+            </div>
+          </div>
+          <button onclick="switchMainView('match')" class="w-full mt-3 py-2 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs">
+            📊 查看精简比赛记录
+          </button>
+        `;
+      } else {
+        // Off-season / No match natural state
+        desk.innerHTML = `
+          <div class="space-y-2 max-w-lg">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">休赛期 / 赛程间歇日</span>
+              <span class="text-xs text-emerald-400">新赛季 S13 抽签倒计时 2 天</span>
+            </div>
+            <h3 class="text-xl font-bold text-white">今日无正式比赛安排 · 俱乐部处于休整与阵容储备窗口</h3>
+            <p class="text-xs text-slate-300">
+              全部 14 轮双循环联赛已圆满收官（最终排名：A级第 2 名）。你可前往交易市场补强阵容或处理球员续约。
+            </p>
+          </div>
+
+          <div class="px-6 py-3 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
+            <div class="text-xs text-sec">上赛季最终成绩</div>
+            <div class="font-display font-bold text-2xl text-amber-400 mt-0.5">A级联赛亚军 · 16强杯赛四强</div>
+          </div>
+
+          <div class="flex items-center gap-2.5 shrink-0">
+            <button onclick="switchMainView('tactics')" class="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
+              规划新赛季阵容
+            </button>
+          </div>
+        `;
+
+        mob.innerHTML = `
+          <div class="text-center py-3 space-y-1.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">休赛期 · 今日无比赛</span>
+            <div class="text-sm font-bold text-white">新赛季 S13 赛程将于 2 天后公布</div>
+            <div class="text-xs text-sec">可前往阵容或交易市场进行赛季前备战</div>
+          </div>
+        `;
+      }
+    }
+
+    // Toggle Empty Todos Demo
+    function toggleEmptyTodos(empty) {
+      appState.emptyTodos = empty;
+      renderTodos();
+    }
+
+    // Render Real Business Todos or Clean Healthy State
+    function renderTodos() {
+      const deskList = document.getElementById('desktop-todo-list');
+      const mobList = document.getElementById('mobile-todo-list');
+      const badge = document.getElementById('todo-count-badge');
+      const mobBadge = document.getElementById('mobile-todo-badge');
+
+      if (appState.emptyTodos) {
+        badge.className = 'px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        badge.textContent = '0 项待办';
+        mobBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300';
+        mobBadge.textContent = '全员就绪';
+
+        const healthyHTML = `
+          <div class="p-6 rounded-xl bg-slate-900/60 border border-dashed border-emerald-500/30 text-center space-y-1.5">
+            <div class="text-2xl">✅</div>
+            <div class="text-sm font-bold text-emerald-300">全队健康且首发 11 人齐整，当前无待办事项</div>
+            <p class="text-xs text-sec">无伤停、无体能低于阈值、无近期到期合同。系统绝不编造虚假提醒打扰日常体验。</p>
+          </div>
+        `;
+        deskList.innerHTML = healthyHTML;
+        mobList.innerHTML = `<div class="p-3 rounded-lg bg-slate-900 text-center text-xs text-emerald-400">✓ 全队健康齐整，当前无待办事项</div>`;
+        return;
+      }
+
+      badge.className = 'px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+      badge.textContent = todoData.length + ' 项需处理';
+      mobBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300';
+      mobBadge.textContent = todoData.length + ' 项待办';
+
+      deskList.innerHTML = todoData.map((t, idx) => `
+        <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-slate-700 flex items-center justify-between gap-3 transition">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold border ${t.badgeClass}">${t.icon} ${t.type}</span>
+              <span class="text-xs font-bold text-white truncate">${t.title}</span>
+            </div>
+            <p class="text-[11px] text-sec mt-1 truncate">${t.desc}</p>
+          </div>
+          <button onclick="triggerTodoAction(${idx})" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-emerald-600 hover:text-white text-slate-200 border border-slate-700 text-xs font-medium shrink-0 transition">
+            ${t.ctaText}
+          </button>
+        </div>
+      `).join('');
+
+      mobList.innerHTML = todoData.map((t, idx) => `
+        <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between gap-2 text-xs">
+          <div class="truncate">
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono border ${t.badgeClass} mr-1">${t.type}</span>
+            <span class="text-white font-medium">${t.title}</span>
+          </div>
+          <button onclick="triggerTodoAction(${idx})" class="px-2.5 py-1 rounded bg-slate-800 text-emerald-400 font-semibold shrink-0 text-[11px]">
+            处理
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function triggerTodoAction(idx) {
+      if (todoData[idx] && todoData[idx].action) {
+        todoData[idx].action();
+      }
+    }
+
+    // Tactical Pitch Rendering & Interaction
+    function switchTacticalPreset(preset) {
+      appState.tacticalPreset = preset;
+      ['default', 'leading', 'trailing'].forEach(p => {
+        const btn = document.getElementById('preset-' + p);
+        if (btn) {
+          btn.className = p === preset
+            ? 'px-3 py-1 rounded bg-emerald-600 text-white font-medium transition'
+            : 'px-3 py-1 rounded text-slate-300 hover:text-white transition';
+        }
+      });
+
+      const badge = document.getElementById('tactics-formation-badge');
+      const desc = document.getElementById('tactics-preset-desc');
+      if (preset === 'default') {
+        badge.textContent = '4 - 3 - 3 控球压迫';
+        desc.textContent = '默认预案：防线适中 · 边后卫套边插上 · 体能低于 55% 触发被动换人';
+      } else if (preset === 'leading') {
+        badge.textContent = '5 - 4 - 1 稳守反击';
+        desc.textContent = '领先预案（≥65分钟领先时自动生效）：回收防线保护禁区 · 降低体能消耗';
+      } else {
+        badge.textContent = '3 - 4 - 3 全线强攻';
+        desc.textContent = '落后预案（≥60分钟落后时自动生效）：前场高位逼抢 · 增加禁区抢点人数';
+      }
+      showToast('已切换至【' + badge.textContent + '】战术预案');
+    }
+
+    function bindCompetitionScheme(val) {
+      if (val === 'league') {
+        showToast('已为【A级联赛】绑定当前主力三套预案');
+      } else {
+        showToast('已为【16强杯赛】绑定杯赛轮换方案');
+      }
+    }
+
+    function renderTacticalPitch() {
+      const container = document.getElementById('pitch-lineup-container');
+      if (!container) return;
+
+      const rows = [
+        squadPlayers.filter(p => p.row === 0),
+        squadPlayers.filter(p => p.row === 1),
+        squadPlayers.filter(p => p.row === 2),
+        squadPlayers.filter(p => p.row === 3)
+      ];
+
+      container.innerHTML = rows.map(rowPlayers => `
+        <div class="flex items-center justify-around px-2 sm:px-6">
+          ${rowPlayers.map(p => {
+            const isSelected = appState.selectedPlayerId === p.id;
+            const isSuspended = p.status === 'suspended';
+            const isWarn = p.status === 'warn';
+            const borderCls = isSelected
+              ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/50 scale-105'
+              : isSuspended
+              ? 'border-2 border-rose-500 bg-rose-950/80'
+              : isWarn
+              ? 'border border-amber-400 bg-slate-900/90'
+              : 'border border-slate-600 bg-slate-900/90';
+            const staColor = p.sta >= 80 ? 'bg-emerald-400' : p.sta >= 65 ? 'bg-amber-400' : 'bg-rose-500';
+            return `
+              <div onclick="selectPitchPlayer('${p.id}')" class="cursor-pointer w-20 sm:w-24 rounded-lg p-1.5 ${borderCls} shadow-md transition transform hover:-translate-y-0.5">
+                <div class="flex items-center justify-between text-[10px] font-mono">
+                  <span class="px-1 rounded bg-slate-800 text-emerald-300 font-bold">${p.pos}</span>
+                  <span class="font-bold text-white">${p.ovr}</span>
+                </div>
+                <div class="text-xs font-bold text-white truncate text-center my-1">${p.name}</div>
+                <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div class="h-full ${staColor}" style="width:${p.sta}%"></div>
+                </div>
+                <div class="flex items-center justify-between text-[9px] font-mono mt-0.5">
+                  <span class="text-slate-300">体能 ${p.sta}%</span>
+                  ${isSuspended ? '<span class="text-rose-400 font-bold">🟥停赛</span>' : isWarn ? '<span class="text-amber-300">⚠疲劳</span>' : '<span class="text-emerald-400">✓</span>'}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `).join('');
+
+      renderSelectedPlayerInspector();
+      renderBenchList();
+    }
+
+    function selectPitchPlayer(id) {
+      appState.selectedPlayerId = id;
+      renderTacticalPitch();
+    }
+
+    function renderSelectedPlayerInspector() {
+      const panel = document.getElementById('selected-player-panel');
+      if (!panel) return;
+      const p = squadPlayers.find(x => x.id === appState.selectedPlayerId) || squadPlayers[0];
+      panel.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-14 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex flex-col items-center justify-center font-display font-bold text-emerald-300">
+              <span class="text-lg leading-none">${p.ovr}</span>
+              <span class="text-[10px] font-mono">${p.pos}</span>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-white">${p.name}</div>
+              <div class="text-xs text-sec mt-0.5">当前体能：<strong class="font-num text-emerald-400">${p.sta}%</strong> · ${p.note || '身体状态良好，可打满全场'}</div>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300">保留原卡画坐标</span>
+        </div>
+      `;
+    }
+
+    function renderBenchList() {
+      const benchEl = document.getElementById('bench-list-container');
+      if (!benchEl) return;
+      benchEl.innerHTML = benchPlayers.map((b, idx) => `
+        <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="px-1.5 py-0.5 rounded bg-slate-800 text-blue-300 font-mono font-bold text-[10px]">${b.pos}</span>
+            <span class="font-bold text-white truncate">${b.name}</span>
+            <span class="font-num text-amber-300 font-bold">OVR ${b.ovr}</span>
+            <span class="text-[11px] text-sec truncate hidden sm:inline">· ${b.note}</span>
+          </div>
+          <button onclick="swapWithSelected('${b.id}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-emerald-600 hover:text-white text-emerald-400 border border-slate-700 text-[11px] font-medium shrink-0 transition">
+            替换上场
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function swapWithSelected(benchId) {
+      const bIdx = benchPlayers.findIndex(x => x.id === benchId);
+      const sIdx = squadPlayers.findIndex(x => x.id === appState.selectedPlayerId);
+      if (bIdx === -1 || sIdx === -1) return;
+
+      const sPlayer = squadPlayers[sIdx];
+      const bPlayer = benchPlayers[bIdx];
+
+      // Swap keeping pitch row
+      const targetRow = sPlayer.row;
+      squadPlayers[sIdx] = { ...bPlayer, row: targetRow, status: 'ok' };
+      benchPlayers[bIdx] = { ...sPlayer, note: '已轮换至替补席' };
+      appState.selectedPlayerId = squadPlayers[sIdx].id;
+
+      renderTacticalPitch();
+      showToast(`已完成赛前换人：【${bPlayer.name}】替换【${sPlayer.name}】进入首发`);
+    }
+
+    function autoFixSuspendedPlayer() {
+      const susIdx = squadPlayers.findIndex(p => p.status === 'suspended');
+      const bIdx = benchPlayers.findIndex(b => b.pos === 'LB');
+      if (susIdx !== -1 && bIdx !== -1) {
+        appState.selectedPlayerId = squadPlayers[susIdx].id;
+        swapWithSelected(benchPlayers[bIdx].id);
+        const navBadge = document.getElementById('nav-badge-tactics');
+        if (navBadge) {
+          navBadge.textContent = '11人齐整';
+          navBadge.className = 'text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 sidebar-text';
+        }
+      } else {
+        showToast('当前首发阵容已无停赛球员，11 人名单合法齐整！');
+      }
+    }
+
+    // Match Live & Key Event Dot Replay Controls
+    function openDotReplay(title) {
+      const box = document.getElementById('dot-replay-box');
+      const titleEl = document.getElementById('dot-replay-title');
+      if (box && titleEl) {
+        titleEl.textContent = '▶ 关键事件小圆点回放：' + title;
+        box.classList.remove('hidden');
+      }
+    }
+
+    function closeDotReplay() {
+      const box = document.getElementById('dot-replay-box');
+      if (box) box.classList.add('hidden');
+    }
+
+    function switchMatchSubView(mode) {
+      const badge = document.getElementById('match-view-badge');
+      document.getElementById('subtab-live').className = mode === 'live'
+        ? 'px-3 py-1.5 rounded bg-rose-600 text-white font-semibold transition'
+        : 'px-3 py-1.5 rounded text-slate-300 hover:text-white transition';
+      document.getElementById('subtab-record').className = mode === 'record'
+        ? 'px-3 py-1.5 rounded bg-emerald-600 text-white font-semibold transition'
+        : 'px-3 py-1.5 rounded text-slate-300 hover:text-white transition';
+
+      if (mode === 'live') {
+        badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500 live-dot"></span> A级第9轮 · 下半场 67:18';
+        showToast('已切换至【比赛直播常态视图】');
+      } else {
+        badge.innerHTML = '✓ 全场结束 (FT) · 精简版比赛记录（不设冗长教练诊断）';
+        showToast('已切换至【赛后精简版比赛记录视图】');
+      }
+    }
+
+    // Full A/B League Standings Modal
+    function openFullStandingsModal() {
+      document.getElementById('modal-standings').classList.remove('hidden');
+      switchModalDivision('A');
+    }
+
+    function closeFullStandingsModal() {
+      document.getElementById('modal-standings').classList.add('hidden');
+    }
+
+    function switchModalDivision(div) {
+      document.getElementById('modal-tab-a').className = div === 'A'
+        ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white'
+        : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300';
+      document.getElementById('modal-tab-b').className = div === 'B'
+        ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white'
+        : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300';
+
+      const teamsA = [
+        { r: 1, name: '皇家星耀 FC', p: 8, w: 6, d: 1, l: 1, gd: '+11', pts: 19, tag: '争冠区' },
+        { r: 2, name: '北城联队', p: 8, w: 5, d: 2, l: 1, gd: '+8', pts: 17, tag: '下轮对手' },
+        { r: 3, name: '海港竞技 FC', p: 8, w: 5, d: 1, l: 2, gd: '+6', pts: 16, tag: '我方俱乐部', me: true },
+        { r: 4, name: '铁甲工业 FC', p: 8, w: 4, d: 2, l: 2, gd: '+2', pts: 14, tag: '' },
+        { r: 5, name: '翡翠谷流浪者', p: 8, w: 3, d: 2, l: 3, gd: '-1', pts: 11, tag: '' },
+        { r: 6, name: '银翼城 FC', p: 8, w: 2, d: 2, l: 4, gd: '-4', pts: 8, tag: '' },
+        { r: 7, name: '南湾航海家', p: 8, w: 1, d: 2, l: 5, gd: '-9', pts: 5, tag: '降级区 (降入B级)' },
+        { r: 8, name: '红石矿工 FC', p: 8, w: 0, d: 2, l: 6, gd: '-13', pts: 2, tag: '降级区 (降入B级)' }
+      ];
+
+      const teamsB = [
+        { r: 1, name: '雷霆竞技 FC', p: 8, w: 6, d: 2, l: 0, gd: '+14', pts: 20, tag: '升级区 (升入A级)' },
+        { r: 2, name: '极光联队', p: 8, w: 5, d: 2, l: 1, gd: '+7', pts: 17, tag: '升级区 (升入A级)' },
+        { r: 3, name: '蓝鲸港湾 FC', p: 8, w: 4, d: 2, l: 2, gd: '+4', pts: 14, tag: '' },
+        { r: 4, name: '圣山青年人', p: 8, w: 4, d: 1, l: 3, gd: '+1', pts: 13, tag: '' },
+        { r: 5, name: '黄金海岸 FC', p: 8, w: 3, d: 1, l: 4, gd: '-2', pts: 10, tag: '' },
+        { r: 6, name: '云顶森林', p: 8, w: 2, d: 2, l: 4, gd: '-5', pts: 8, tag: '' },
+        { r: 7, name: '黑水河谷', p: 8, w: 1, d: 2, l: 5, gd: '-8', pts: 5, tag: '' },
+        { r: 8, name: '晨星学院 FC', p: 8, w: 1, d: 0, l: 7, gd: '-11', pts: 3, tag: '' }
+      ];
+
+      const list = div === 'A' ? teamsA : teamsB;
+      document.getElementById('modal-standings-body').innerHTML = `
+        <table class="w-full text-left border-collapse text-xs font-num">
+          <thead>
+            <tr class="border-b border-slate-800 text-sec">
+              <th class="py-2 px-3">名次</th>
+              <th class="py-2 px-3">俱乐部 (${div}级 8 队)</th>
+              <th class="py-2 px-2 text-right">已赛</th>
+              <th class="py-2 px-2 text-right">胜/平/负</th>
+              <th class="py-2 px-2 text-right">净胜球</th>
+              <th class="py-2 px-3 text-right">积分</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/70">
+            ${list.map(t => `
+              <tr class="${t.me ? 'bg-emerald-500/15 font-bold text-white' : 'hover:bg-slate-800/40'}">
+                <td class="py-2.5 px-3">${t.r}</td>
+                <td class="py-2.5 px-3 font-sans flex items-center gap-2">
+                  <span>${t.name}</span>
+                  ${t.tag ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${t.me ? 'bg-emerald-500 text-slate-950' : t.r >= 7 && div === 'A' ? 'bg-rose-500/20 text-rose-300' : 'bg-blue-500/20 text-blue-300'}">${t.tag}</span>` : ''}
+                </td>
+                <td class="py-2.5 px-2 text-right">${t.p}</td>
+                <td class="py-2.5 px-2 text-right">${t.w} / ${t.d} / ${t.l}</td>
+                <td class="py-2.5 px-2 text-right">${t.gd}</td>
+                <td class="py-2.5 px-3 text-right font-bold text-sm">${t.pts}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Toast Utility
+    let toastTimer = null;
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      if (!box) return;
+      box.textContent = msg;
+      box.classList.remove('hidden');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add('hidden');
+      }, 2800);
+    }
+
+    // Initialize default views on load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderHomeState();
+      renderTodos();
+      renderTacticalPitch();
+    });
+  </script>
+</body>
+</html>

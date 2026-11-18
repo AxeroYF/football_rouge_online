@@ -1,0 +1,52 @@
+.league-mail-reader{min-width:0;scroll-margin-top:84px}
+.mail-page-nav{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:12px;border-top:1px solid var(--line);font-size:11px}
+.mail-page-nav .button{padding:0 10px;min-height:36px;font-size:12px}
+.mail-page-status{padding:8px 14px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.mail-page-status button{background:transparent;color:var(--cyan);border:0;cursor:pointer;min-height:28px}
+.mail-retention{padding:10px 14px;font-size:12px;line-height:1.7;color:var(--muted);border-top:1px solid var(--line);max-height:240px;overflow:auto}
+.mail-retention summary{cursor:pointer;color:var(--ink)}
+.mail-retention ul{padding-left:18px}
+@media(min-width:1051px){.league-mail-list:has(.mail-page-nav){grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto auto}}
+.league-mail-reader>header{gap:16px;align-items:flex-start}
+.league-mail-reader>header>div:first-child{min-width:0}
+.league-mail-reader>header h2{font-size:20px;line-height:1.5;overflow-wrap:anywhere}
+.league-mail-reader>header p{line-height:1.7;overflow-wrap:anywhere}
+.mail-context{display:block;margin-top:6px;color:var(--muted);line-height:1.6}
+.league-mail-reader .mail-content{display:grid;gap:18px;line-height:1.7;color:var(--ink);overflow-wrap:anywhere}
+.mail-content p{margin:0;white-space:pre-wrap}
+.mail-content h3{margin:0 0 10px;font-size:14px;color:var(--ink)}
+.mail-content-section,.mail-content-details{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.mail-content ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mail-content li{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px 16px}
+.mail-content li small{color:var(--muted)}
+.mail-content-details summary{cursor:pointer;font-weight:700;min-height:24px}
+.mail-content-details summary:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}
+.mail-content-details[open]>div{margin-top:14px}
+.mail-score{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;text-align:center;gap:16px;padding:22px 12px;border-radius:10px;background:var(--panel2)}
+.mail-score>span{font-size:15px;font-weight:700}
+.mail-score small{display:block;color:var(--muted);font-size:11px;font-weight:400;margin-top:4px}
+.mail-score strong{font-size:30px;font-variant-numeric:tabular-nums;color:var(--cyan);white-space:nowrap}
+.mail-standing{color:var(--muted);text-align:center;font-size:13px}
+.mail-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mail-summary-grid>span{padding:14px;border:1px solid var(--line);border-radius:8px;display:grid;gap:5px}
+.mail-summary-grid small{color:var(--muted);font-size:12px}
+.mail-summary-grid b{font-size:17px}
+.mail-content-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.mail-activity-list{margin:0;padding:0;list-style:none;display:grid;gap:0}
+.mail-content .mail-activity-list li{display:grid;grid-template-columns:48px minmax(0,1fr) auto;padding:14px 0;border-bottom:1px solid var(--line);gap:10px;align-items:center}
+.mail-activity-list time{color:var(--muted);font-size:12px}
+.mail-activity-list .button{font-size:12px;padding:0 10px}
+.league-mail-item>small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;line-height:1.6}
+@media(max-width:700px){
+  .league-mail-reader>header{flex-direction:column}
+  .league-mail-reader>header h2{font-size:18px}
+  .league-mail-reader .mail-content{padding:16px;gap:14px}
+  .mail-summary-grid{grid-template-columns:1fr}
+  .mail-summary-grid>span{display:flex;align-items:center;justify-content:space-between}
+  .mail-score{gap:8px;padding:18px 8px}
+  .mail-score>span{font-size:13px}
+  .mail-score strong{font-size:24px}
+  .mail-content .mail-activity-list li{grid-template-columns:42px minmax(0,1fr)}
+  .mail-activity-list .button{grid-column:2;justify-self:start}
+  .mail-content-actions .button{flex:1 1 auto;min-height:44px}
+}

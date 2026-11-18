@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {readLeagueSource} from '../versus/v4-adapter/read-source.js';
+import {compileRealMatch} from '../versus/v4-adapter/compile-match.js';
+import {runShadowJob} from '../versus/v4-host/shadow-job.js';
+
+const options=Object.fromEntries(process.argv.slice(2).map(arg=>{const found=/^--([a-z-]+)=(.+)$/.exec(arg);if(!found)throw new Error('参数必须为 --名称=值');return [found[1],found[2]];}));
+if(Object.keys(options).some(key=>!['home','away','fixture','seed','output','rate','start-at','public'].includes(key)))throw new Error('未知预览参数');
+if(!options.output||!options.fixture||!options.seed)throw new Error('需要 --output=outputs/子目录、--fixture=比赛ID 和 --seed=固定种子');
+const outputs=path.resolve('outputs'),root=path.resolve(options.output),relative=path.relative(outputs,root);
+if(!relative||relative.startsWith('..')||path.isAbsolute(relative))throw new Error('预览只能写入 outputs 下的新目录');
+const parent=fs.realpathSync(path.dirname(root)),realOutputs=fs.realpathSync(outputs),parentRelative=path.relative(realOutputs,parent);
+if(parentRelative.startsWith('..')||path.isAbsolute(parentRelative))throw new Error('预览父目录超出 outputs');
+const rate=Number(options.rate??1),startAt=options['start-at']?Date.parse(options['start-at']):Date.now();
+if(!Number.isFinite(startAt)||!Number.isFinite(rate)||rate<=0||rate>64||!['true','false'].includes(options.public??'false'))throw new Error('无效发布时钟或观众设置');
+const source=readLeagueSource(process.cwd()),homeId=options.home??source.teams[0].id,awayId=options.away??source.teams[1].id;
+const envelope=compileRealMatch(source,{homeId,awayId,fixtureId:options.fixture,seed:options.seed,competition:'league'});
+const bundleDirectory=path.resolve('outputs/v4-accepted-local-20261118/engine'),bundle=JSON.parse(fs.readFileSync(path.join(bundleDirectory,'manifest.json'),'utf8'));
+fs.mkdirSync(root);fs.writeFileSync(path.join(root,'input.json'),JSON.stringify(envelope),{flag:'wx'});
+const job=await runShadowJob({directory:path.join(root,'job'),bundleDirectory,sourceDigest:bundle.sourceDigest,envelope});
+const manifest={format:'yffm-v4-stream-host-1',scope:'shadow-preview',matches:[{matchId:options.fixture,homeId,awayId,archive:'job/archive',engineVersion:envelope.engineVersion,sourceDigest:bundle.sourceDigest,inputFingerprint:envelope.fingerprint,startAt,releaseRate:rate,publicWatch:options.public==='true'}]};
+const manifestPath=path.join(root,'preview.json');fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2),{flag:'wx'});
+console.log(JSON.stringify({created:true,manifest:manifestPath,viewerPath:`/v4-preview/?match=${options.fixture}`,score:job.result.score,formalEngineChanged:false,formalSettlementEnabled:false,serverStarted:false}));

@@ -25,7 +25,7 @@ npm run dev
 
 可复制 `.env.example` 为 `.env`。生产或非本机监听必须设置至少 16 字符的 `YFFM_ADMIN_PASSWORD`（兼容 `VERSUS_ADMIN_PASSWORD`）。`.env` 不进入版本库。默认仅监听本机。
 
-`server.mjs` 启动主体联赛和后台；`npm start`、`npm run dev`、`npm run demo` 与 `npm run devtool` 均使用此入口。首页自动进入 `/versus/`。七人制 Roguelite、旧场边实验室及其模拟接口已移除，详见 [模式清理记录](docs/YFFM1-MODE-CLEANUP.md)。新比赛默认使用 **V3.3**（`engineVersion:3.3.0`、`v3.3-tactical-execution.1`），新增压迫触发与分工、指定出球、角球套路、针对性防守、时间条件与主动轮换，并提供战术执行复盘；沿用连续足球时间、完整随机状态和锁定配置。旧比赛保留其已保存版本。可显式设置 `YFFM_MATCH_ENGINE=v2` 使用 V2.1 对照；旧 `YDL_MATCH_ENGINE` 及各赛事覆盖变量继续兼容。操作及验证见 [V3.3 升级记录及与 V3.0 对比](docs/YFFM1-V33.md)，连续时间基础见 [V3.2 升级记录](docs/YFFM1-V32.md)，可靠性基础见 [V3.1 记录](docs/YFFM1-V31.md)，历史抽样与战术验证见 [V3.0 记录](docs/YFFM1-V3.md)。
+`server.mjs` 启动主体联赛和后台；`npm start`、`npm run dev`、`npm run demo` 与 `npm run devtool` 均使用此入口。首页自动进入 `/versus/`。七人制 Roguelite、旧场边实验室及其模拟接口已移除，详见 [模式清理记录](docs/YFFM1-MODE-CLEANUP.md)。新开赛的联赛、冠军杯、友谊赛、AI 训练、镜像批量赛和玩家房间默认使用 V4。竞猜赔率继续使用独立的 V1 采样模型。联赛和杯赛直播从球队日程进入。显式设置 `YDL_V4_SCHEDULE=0` 可启动旧版对照服。启动和容量数据见 [V4 接管与服务器压力评估](handoff/58-V4-DEFAULT-PRESSURE-20261118.txt)。
 
 `npm run build` 构建当前游戏和后台至 `versus/dist/`、`admin/dist/`。
 

@@ -1,0 +1,22 @@
+{
+  "source": "User instruction, 2026-11-17",
+  "provider": "Alibaba Cloud",
+  "region": "Hong Kong",
+  "vCPU": 2,
+  "ramGiB": 2,
+  "diskGiB": 64,
+  "onlinePlayers": 10,
+  "diskType": "unspecified",
+  "networkBandwidth": "unspecified",
+  "scenarios": [
+    "10 online players with realistic page polling and browsing",
+    "1 player opens 100 direct-result packs while 9 others browse/poll",
+    "Retest using accumulated cards, pack history and 5000 asset transactions"
+  ],
+  "reportRequirements": [
+    "Record actual hardware, resource limits, storage mode and dataset size",
+    "Separate local simulation from real target-server acceptance",
+    "Report request latency, event-loop delay, memory, response size, errors and reward correctness",
+    "Do not use unconstrained local timings as the target-server pass result"
+  ]
+}

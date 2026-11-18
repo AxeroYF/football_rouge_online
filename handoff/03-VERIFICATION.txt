@@ -1,0 +1,85 @@
+第64阶段补充 · 原直播与统计
+35项专项最终通过，另1项HTTP鉴权通过；1440/390 Chrome联调通过。测试报告、分片代理测试修正后单独复验，以及网络权限导致的首次HTTP失败均详见64-V4-CLASSIC-BROADCAST-20261118.txt。此前报告保留，不将失败报告改写为全绿。
+
+验证记录 · 更新至 2026-11-18 第 63 阶段
+
+跑位对比专项回归
+报告 outputs/tests/2026-11-18T07-16-33-002Z/report.json。8 个测试文件共 58 项通过，失败、跳过、超时均为 0。覆盖共同时间窗、米制位移、途中轨迹分离、换人身份匹配、预案落位、战术评估、赛后复盘及既有阵型行为。
+复现命令（脚本建立隔离存档）
+node scripts/run-tests.mjs v4-shape-comparison.test.js tactical-principles.test.js v4-match-tactical-review.test.js v4-tactical-outlook.test.js position-preset-links.test.js lineup-competition.test.js tactical-shape-preview-v2.test.js dynamic-shape-v2.test.js
+
+浏览器联调
+脚本 outputs/tests/shape-comparison-browser.mjs。隔离账号和临时联赛下，Chrome 在 1440 与 390 像素宽度核对五阶段双轨、点选与名单选人、三预案、复盘定位与返回、拖动球员后的位移。浏览器验证独立于上述 58 项。
+
+正式比赛与容量
+55 记录 JSON 和分片各 141 场的完整赛季。57 记录正式联赛及杯赛开赛、重启、结算。58 记录本地双逻辑核、2 GiB 进程组的压力对照。相同 8 场比赛的两轮均值为 V3.3 用时 23.50 秒、V4 用时 123.52 秒。香港实机容量尚未验证。
+
+已知失败
+outputs/tests/2026-11-18T05-49-22-788Z/engine-v4-canonical-penalties.test.js.tap 中有 6 项在真实联赛存档与 11 月 17 日历史哈希的断言处失败。该保护基线仍保留。58 另记载冻结旧代码可复现的 7 项镜像市场和 1 项球员池位置计数失败。
+本次交接核对已有报告及引用路径，游戏测试与压测沿用此前执行结果。
+
+历史验证记录 · 第 29 阶段及更早
+第 29 轮 V4 半场与节奏
+npm run test:engine:v4：四文件62项通过；旧引擎/回放16项回归通过。
+node scripts/verify-v4-core.mjs：48段组合、12场景恢复、600秒和完整90分钟录制。
+node scripts/verify-v4-lab.mjs：Chrome桌面/390px、完整90分钟Worker、15分钟中场跳转、换边与补时通过。
+训练48/独立验证64，600/5400秒四份校准报告通过全部预设工程门槛；完整两半场/时间台账也核对。
+node scripts/verify-v4-acceptance.mjs：汇总校准门槛/源码哈希/独立种子、测试/浏览器和六项保护文件。
+最新证据 outputs/v4-periods-20261117/acceptance.json；原型功能验收，不是真实联赛拟合或云容量验收。
+源码版本4.0.0-prototype.4；正式引擎和真实存档SHA-256一致。详细口径见29和docs/YFFM1-V4-PERIODS-20261117.md。
+
+此前28轮V4规则与校准（历史结果，以下旧命令现在运行新版）
+npm run test:engine:v4：三文件48项通过。
+node --test test/engine-v33.test.js test/key-plays.test.js：16项旧引擎/回放回归通过。
+node scripts/verify-v4-core.mjs：48段180秒战术组合、11场景断点恢复和600秒长片段。
+node scripts/verify-v4-lab.mjs：真实Chrome桌面/390px手机、播放和回看、文件哈希检查通过。
+此前证据 outputs/v4-rules-20261117/；只使用合成阵容，无正式存档写入。
+node scripts/calibrate-v4.mjs --duration=5400 --seeds=4 --workers=4 --split=validation90 --output=新目录/result.json --enforce=true
+校准分别运行600/5400秒、48训练/64独立验证；不是完整半场/换边/补时赛制。
+node scripts/verify-v4-acceptance.mjs：核对四份最终校准报告门槛/源码哈希/种子独立性、测试、浏览器和保护文件。
+acceptance.json为最终汇总；中间校准报告不能代替最终验收。旧两阶段证据保留。
+以上为V4原型功能验证，不是香港云容量验收；下文仍为此前25轮及更早存档优化证据。
+
+本次handoff整理
+只更新交接、索引和证据快照，校验路径/JSON/SHA-256/ZIP完整性。
+没有重跑游戏测试或压测，没有启动正式服务、部署、提交或迁移。
+以下为此前实现轮已完成的验证，不把文档更新时间当作重新测试时间。
+
+最新25轮：87项相关测试通过
+命令一，48项：
+node --test test/storage-hot-path.test.js test/storage-p1.test.js test/league-shards.test.js test/prediction-background.test.js test/pack-batch-recovery.test.js
+覆盖序列化字节一致性、UTF8比较、缓存失效/过期、提交失败恢复、备份/归档/延迟报告、
+联赛杯赛重载、100包幂等回滚；预测含72场逐seed统计与赔率一致性。
+命令二，39项：
+node --test test/storage-policy.test.js test/shard-compaction.test.js test/league-shard-safety.test.js test/inbox-pagination.test.js test/inbox-consistency.test.js
+覆盖备份清理、损坏恢复、分片收敛、分页/有效待办/已读/旧战报。
+语法和diff空白检查通过。未跑全量，不宣称全仓全绿。
+
+最新压测
+outputs/storage-load-after-20261117/result.json：100/500/2000封每人，各10人20秒，2249请求零失败。
+outputs/storage-load-heavy-repeat-20261117/result.json：2000封复核，735请求零失败。
+重负载P95 47.3/51.8ms，最大HTTP249.6/279.8ms，save最大215.5/184.2ms。
+每档实际生成并落盘24样本市场，全部10人重启后已读/有效待办/礼包核对通过。
+诊断：outputs/storage-profile-before-20261117/result.json。
+上轮基线：outputs/prediction-load-after-20261117/result.json及prediction-load-heavy-repeat-20261117/result.json。
+更早邮箱基线：outputs/inbox-load-after-20261117/result.json。
+
+复现时换新输出目录，保留旧证据：
+node scripts/stress-inbox-online.mjs --prediction-after --output=outputs/storage-load-new-run
+node scripts/stress-inbox-online.mjs --prediction-after --heavy-only --output=outputs/storage-load-heavy-new-run
+脚本创建隔离账号/存档，正常运行tick，不关闭预测或预热后测量。
+Windows服务固定2逻辑处理器、2GiB Job Object进程组限制、主Node堆1024MiB。
+宿主i7-12700K、约32GiB内存；本地回环/磁盘；没有香港公网/云盘或并发真实比赛。
+64GB只验证用量，未加磁盘硬配额；不是整机2GB或阿里云香港实机。
+低负载波动、509ms采样尖峰、JSON/分片差异和残余峰值详见25。
+
+前序证据
+24预测与投注/结算相关58项；25含预测线程13项复验。
+23分页与保留59项，浏览器outputs/inbox-pagination-ui-20261117/result.json。
+22正文/入口/手机排版：outputs/inbox-content-ui-20261117/result.json。
+21、19的待办/已读/战报与100包恢复，以及08–17的AI/赛制/战术验证，见各编号交接。
+05–07为卡画/定位/候选/后台交互验证，候选不是已应用。
+更早球员平衡、榜单、直播验证保留在旧快照03-VERIFICATION.txt，不算本次重跑。
+
+所有验证使用隔离数据；先设置隔离环境变量，再导入可能写迁移的服务。
+不能清空真实账号或赛季，不能减少预测样本或修改赔率来改善数字。

@@ -1,0 +1,31 @@
+V4原结算消费兼容 · 工作记录 · 2026-11-18
+
+用户目标仍active；真实存档、V2/V3引擎源码、预测V1/24样本不变，暂不连接云主机。
+当前工作基于38冻结宿主，加上39协调层。当前新增改动尚未整体冻结验收。
+
+明确的源文件变化（不能再声称全部8文件字节不变）
+versus/league-service.js的联赛、杯赛、赛季总决赛统计消费共3个表达式增加V4专用分支。
+只有report.schema === v4-legacy-player-report-1才使用按球队区分的player.stats.penaltiesWon；旧版战报执行原有完全相同的表达式。
+改前完整服务源码保留在outputs/v4-host-hardened-20261118/source/versus/league-service.js。
+原SHA256 5c22309cad1787835209510b78afa95cd94c22c5f46699fd07d17cebd46adea7
+新SHA256 ee328c15305f647c74d33f8aeb80f383263ad26ac1d36bc2200a2ab1299bb74b
+scripts/v4-protected-files.mjs从冻结原文件重建仅3处替换后的完整预期源码，并逐字节核对；不更新真实数据的基线。其他7保护文件仍与最初哈希一致。
+
+问题与修复
+双方持有同一球员卡时，旧事件按playerId统计点球受益人会重复记给双方。39曾拒绝这种合法比赛，当前改为真正支持：协调层按犯规方teamIndex识别受益方；原业务消费V4按队的个人统计。
+协调层结算后再次核对全部个人统计/出场/评分累计和唯一赛程记录。消费不兼容或重复赛程会在原子提交前回滚。
+上下文和结算时钟严格校验，杯赛轮次与事件轮次必须一致；重试保留原锁定时刻和业务随机序列。
+
+验证
+test/engine-v4-canonical-penalties.test.js：3个入口各验证V4正确统计和旧战报行为不变。
+test/engine-v4-shadow-settlement.test.js：并发幂等、上下文锁定、事务外写入拒绝、消费后核对和错误队伍事件拒绝。
+V3.3 JSON/分片检查点恢复测试通过，见outputs/tests/2026-11-17T17-46-13-808Z/report.json。
+较宽的season-final-tournament.test.js有39项中28项失败，不算通过；用冻结旧service模块做隔离前后对照，失败项完全相同。证据outputs/v4-settlement-20261118/legacy-consumer-regression.json。主要为当前已停用总决赛及旧页面断言，未重新启用这些旧功能。
+原有34/36/38冻结证据继续有效于对应快照；那些强制8文件全部不变的历史验证命令不能直接当作当前服务源文件验证。
+
+接下来
+三场真实阵容消费验证已通过，见outputs/v4-host-20261118/host-local-verification.json（canonical-SyqWYx）。
+协调层提交前/提交后实际杀进程恢复测试通过，保留首次时间和业务随机序列；报告outputs/tests/2026-11-17T17-54-46-016Z/report.json。
+十人64倍速容量复验通过，iteration3/capacity.json：head/segment P95 61.11/69.72ms、RSS约111MiB、零过载或客户端错误。
+接下来运行当前源码整体验收并冻结独立快照。
+正式调度器及真实存储事务桥依然未接线，V4结果settlementAllowed=false，真实服务未启动或部署。

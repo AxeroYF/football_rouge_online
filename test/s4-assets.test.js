@@ -111,9 +111,13 @@ test("全部高能力A级球员均绑定真人卡面且人物位于文字下层"
     })
     .map((player) => player.id)
     .sort();
-  assert.equal(entries.length, expectedPlayerIds.length);
-  assert.equal(new Set(entries.map((entry) => entry.fileName)).size, expectedPlayerIds.length);
-  assert.deepEqual(Object.keys(A_PLAYER_PROFILE_BY_PLAYER_ID).sort(), expectedPlayerIds);
+  // A balance reduction must retain the player's existing portrait, including
+  // players now below the automatic high-overall portrait threshold.
+  assert.equal(new Set(entries.map((entry) => entry.fileName)).size, entries.length);
+  for (const id of expectedPlayerIds) assert.ok(A_PLAYER_PROFILE_BY_PLAYER_ID[id], `Missing A-player portrait: ${id}`);
+  for (const id of Object.keys(A_PLAYER_PROFILE_BY_PLAYER_ID)) {
+    assert.ok(REAL_PLAYER_BY_ID[id], `Unknown portrait player: ${id}`);
+  }
   for (const entry of entries) {
     assertOptimizedProfileAsset(entry, "A_profile");
     assert.ok(Number.isFinite(entry.xPercent));
@@ -2141,7 +2145,7 @@ test("战术板体力条按数字体力红线变色并在输入时即时刷新",
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
 
   assert.match(appSource, /function leagueMagnetFitnessMarkup\(fitnessValue\)/);
-  assert.match(appSource, /const low = fitness < threshold/);
+  assert.match(appSource, /const low = belowFitnessThreshold\(fitness,threshold\)/);
   assert.match(appSource, /data-magnet-fitness="\$\{fitness\}"/);
   assert.match(appSource, /function refreshLeagueMagnetFitnessColors\(thresholdValue\)/);
   assert.match(appSource, /refreshLeagueMagnetFitnessColors\(threshold\)/);
@@ -2154,17 +2158,18 @@ test("战术板体力条按数字体力红线变色并在输入时即时刷新",
 
 test("inbox classification keeps reads local and uses compact single or batch receipts", () => {
   const appSource = readFileSync(new URL("../versus/public/app.js", import.meta.url), "utf8");
+  const rulesSource = readFileSync(new URL("../versus/public/inbox-rules.js", import.meta.url), "utf8");
   const apiSource = readFileSync(new URL("../versus/api.js", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/styles.css", import.meta.url), "utf8");
   assert.match(appSource, /async function leagueInboxReadRequest\(messageId\)/);
-  assert.match(appSource, /message\.readAt = optimisticReadAt;[\s\S]*?refreshLeagueInboxInPlace\(\);[\s\S]*?inboxRead/);
+  assert.match(appSource, /inboxReadSync\.read\(\[messageId\], \{single:true\}\)/);
   assert.doesNotMatch(appSource, /leagueRequest\("\/inbox\/read"/);
-  assert.match(apiSource, /readInbox\(account, body\.messageId, \{ compact:true \}\)/);
-  assert.match(apiSource, /readInboxBatch\(account, body\.messageIds\)/);
-  assert.match(appSource, /\{ id:"action", label:"待处理" \}/);
-  assert.match(appSource, /"trade-offer":\{ label:"交易报价", category:"trades" \}/);
-  assert.match(appSource, /announcement:\{ label:"全服公告", category:"announcements" \}/);
-  assert.match(appSource, /"admin-update":\{ label:"管理员公告", category:"announcements" \}/);
+  assert.match(apiSource, /readInbox\(account, body\.messageId, \{ compact:true,expectedUpdatedAt:body.expectedUpdatedAt \}\)/);
+  assert.match(apiSource, /readInboxBatch\(account, body\.messageIds, \{category:body.category\}\)/);
+  assert.match(rulesSource, /id:'action',label:'待处理'/);
+  assert.match(rulesSource, /'trade-offer':\{label:'交易报价',category:'trades'\}/);
+  assert.match(rulesSource, /announcement:\{label:'全服公告',category:'announcements'\}/);
+  assert.match(rulesSource, /'admin-update':\{label:'管理员公告',category:'announcements'\}/);
   assert.match(appSource, /data-league-inbox-category/);
   assert.match(appSource, /data-league-inbox-unread/);
   assert.match(appSource, /data-league-inbox-read-batch/);

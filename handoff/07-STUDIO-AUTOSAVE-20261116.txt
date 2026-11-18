@@ -1,0 +1,33 @@
+后台卡画交互更新（2026-11-16）
+
+入口：npm start；http://localhost:4310/admin/ → 球员与特性 → 球员卡画。
+包含后端字段变更，已有服务需重启，浏览器刷新后使用。未部署远程环境。
+
+1. 列表获得焦点时 ↑↓ 切换；PageUp / PageDown 按当前筛选列表切换。
+   点击卡面后方向键微调 1%，Shift + 方向键 5%，+ / - 缩放。
+   搜索框、表单和滑条保留原生键盘行为，不抢方向键。
+2. 拖动、滚轮、滑条、键盘和重置后 600ms 自动保存。
+   切换球员立即发送上一人的待保存调整，每人请求串行，保存过程中继续调整会补存最新位置。
+   保存回包不重建编辑器，不夺焦点、不覆盖更新的预览。
+   图片上传也自动保存；同一上传完成后后续只写定位。
+   失败保留本页调整，当前状态和全局失败数量可见，支持重试；未完成时关闭/刷新有浏览器提醒。
+3. 手动定位成功保存写入 cardProfile.manuallyAdjustedAt；列表显示「已调整 ✓」。
+   新筛选支持全部 / 已调整 / 未调整，与搜索、评级、状态叠加。
+   历史导入没有该字段，不反推为人工调整。以后普通定位写入保留标记；替换图片清除标记，重新手调再记录。
+   标记仅成功保存后展示，不因选中或浏览球员打标。
+
+文件：
+admin/public/app.js、studio-autosave.js、league.css
+versus/admin-api.js、player-card-studio-store.js
+test/studio-autosave.test.js、admin-player-card-upload.test.js
+scripts/verify-studio-interactions.mjs（真实前端 + 内存 API，绝不写游戏数据）
+
+验证：
+6 个测试文件通过：outputs/tests/2026-11-16T09-54-32-733Z/report.json
+浏览器通过：outputs/studio-interactions-20261116/verification.json
+截图：outputs/studio-interactions-20261116/admin-studio.png（3 名隔离测试球员）
+覆盖键盘、连续合并、切人、慢回包、失败重试、筛选、拖动/滑条/滚轮/重置、上传只一次、刷新后标记。
+后端隔离测试覆盖标记写入磁盘、普通定位保留、换图重置、上传后人工调整打标。
+
+未修改真实球员定位或卡画；四名待审替换候选仍未应用。X 不处理。
+尚未提交、推送、部署，也未重打旧 ZIP。

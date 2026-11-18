@@ -38,6 +38,27 @@ test("管理员API以二进制流上传卡画并返回轻量概况", async () =>
   assert.equal(result.value.profile.xPercent, 47.5);
   assert.equal(result.value.profile.yPercent, 54);
   assert.equal(result.value.profile.widthPercent, 192);
+  assert.equal(result.value.profile.manuallyAdjustedAt, null);
+  const adjusted = await call(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}`, {
+    method:"POST", token:login.value.token, body:{ xPercent:51, manuallyAdjusted:true },
+  });
+  assert.equal(adjusted.statusCode, 200);
+  assert.ok(adjusted.value.profile.manuallyAdjustedAt);
+  const timestamp = adjusted.value.profile.manuallyAdjustedAt;
+  const positioned = await call(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}`, {
+    method:"POST", token:login.value.token, body:{ xPercent:52 },
+  });
+  assert.equal(positioned.value.profile.manuallyAdjustedAt, timestamp);
+  assert.equal(JSON.parse(await readFile(path.join(root, "studio.json"), "utf8")).profiles[player.id].manuallyAdjustedAt, timestamp);
+  const replaced = await call(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}/image`, {
+    method:"POST", token:login.value.token, buffer:png, headers:{ "content-type":"image/png" },
+  });
+  assert.equal(replaced.value.profile.manuallyAdjustedAt, null);
+  const uploadedAndAdjusted = await call(`/api/admin/content/player-profiles/${encodeURIComponent(player.id)}/image`, {
+    method:"POST", token:login.value.token, buffer:png,
+    headers:{ "content-type":"image/png", "x-ydl-profile-manually-adjusted":"true" },
+  });
+  assert.ok(uploadedAndAdjusted.value.profile.manuallyAdjustedAt);
   assert.ok(result.value.summary.overview.profileCount >= 1);
   assert.equal("players" in result.value.summary, false);
   const webp = await readFile(path.join(root, "profiles", "webp", result.value.profile.optimizedFileName));

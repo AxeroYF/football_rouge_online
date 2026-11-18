@@ -1,0 +1,8 @@
+65 · 俱乐部主场与游戏前端 UI v1
+
+设计交付包保存在 docs/ui-v1-reference。运行时加载本地样式与 versus/public/assets/stadium-home.webp。
+游戏入口 /versus/。主场从现有球队、赛程、绑定阵容、赞助和战报读取数据。新用户默认夜赛主题，已有用户沿用设置。桌面固定侧栏，手机五栏导航。完整 A/B 榜单在主场弹窗中，赛果检索在下方折叠区。
+比赛结束后主卡显示终场五分钟，随后转到下一场或赛程间歇。直播比分采用已发布的比赛快照。控球率和估算 xG 支持缺失状态。关键事件回放取事前十三秒和事后两秒，按已发布轨迹截断。
+阵容采用球场、选中球员、战术预案与替补分区，卡槽复用盾形卡及原始裁切。经营、市场、背包与收件箱使用共享主题和分组导航。市场继续使用现有挂牌和所有权规则。
+相关入口：versus/public/club-home.js、club-navigation.js、club-interface.css、yffm1-tokens.css，以及 app.js。
+验证：scripts/verify-ui-v1.mjs 使用独立临时存档，桌面与手机覆盖、截图见 outputs/ui-v1。比赛轨迹联调使用 outputs/tests/v4-broadcast-browser.mjs。主页状态和历史缺失统计回归在 test/club-home.test.js。

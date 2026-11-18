@@ -7,6 +7,7 @@ import { ATTRIBUTE_NAMES, playerOverallFromAttributes, POSITION_GROUPS, roleGrou
 import { isS4Legend, isXPlayer, moveRealPlayerToPool, normalizedS4LegendAttributes, REAL_PLAYER_BY_ID, REAL_PLAYERS, S4_PLAYER_DEFAULT_ATTRIBUTE_CAP } from "./player-pool.js";
 import { playerCardStudioView } from "./player-card-studio-store.js";
 import { YDL_TRAIT_BY_ID, YDL_TRAIT_CARDS } from "./trait-pool.js";
+import {migrateKnownPlayerDataPatch} from './player-data-migrations.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIRECTORY = path.resolve(HERE, "../data");
@@ -185,8 +186,9 @@ function applyOverrides() {
   for (const [id, patch] of Object.entries(overrides.players ?? {})) {
     const player = REAL_PLAYER_BY_ID[id];
     if (player) {
-      applyPlayerPatch(player, patch, { preserveOverall:true });
-      const nextPatch = { ...patch, overall:player.overall, attributes:clone(player.attributes) };
+      const repairedPatch=migrateKnownPlayerDataPatch(id,patch);
+      applyPlayerPatch(player, repairedPatch, { preserveOverall:true });
+      const nextPatch = { ...repairedPatch, overall:player.overall, attributes:clone(player.attributes) };
       if (JSON.stringify(nextPatch) !== JSON.stringify(patch)) migrated = true;
       overrides.players[id] = nextPatch;
     }

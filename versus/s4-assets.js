@@ -224,6 +224,27 @@ export function returnPlayerOwnershipToSystem(state, playerId, ownerId) {
   delete state.s4Assets.ownerships[playerId];
 }
 
+const transactionBatches = new WeakMap();
+// Keep both card creation and pack award records, but copy tracked history only
+// once per synchronous operation. The caller owns rollback of asset mutations.
+export function withS4AssetTransactionBatch(state, operation) {
+  if (transactionBatches.has(state)) return operation();
+  const entries = [];
+  transactionBatches.set(state, entries);
+  try {
+    const result = operation();
+    if (result && typeof result.then === 'function') throw new Error('资产流水批处理必须同步执行');
+    if (entries.length) {
+      const keep = Math.max(0, 5000 - entries.length);
+      const previous = keep ? state.s4Assets.transactions.slice(-keep) : [];
+      state.s4Assets.transactions = [...previous, ...entries].slice(-5000);
+    }
+    return result;
+  } finally {
+    transactionBatches.delete(state);
+  }
+}
+
 export function recordS4AssetTransaction(state, transaction) {
   const entry = {
     id:transaction.id,
@@ -236,8 +257,12 @@ export function recordS4AssetTransaction(state, transaction) {
     metadata:clone(transaction.metadata ?? {}),
     createdAt:Number(transaction.createdAt ?? Date.now()),
   };
-  state.s4Assets.transactions.push(entry);
-  state.s4Assets.transactions = state.s4Assets.transactions.slice(-5000);
+  const batch = transactionBatches.get(state);
+  if (batch) batch.push(entry);
+  else {
+    state.s4Assets.transactions.push(entry);
+    if (state.s4Assets.transactions.length > 5000) state.s4Assets.transactions = state.s4Assets.transactions.slice(-5000);
+  }
   return entry;
 }
 

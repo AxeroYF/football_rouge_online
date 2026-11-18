@@ -1,0 +1,46 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import http from 'node:http';
+import {once} from 'node:events';
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+import {openScheduledPreviewHost} from '../versus/v4-host/scheduled-preview-host.js';
+import {dependencyHashes} from './v4-source-hashes.mjs';
+
+const output=path.resolve('outputs/v4-scheduled-league-20261118'),sandbox=fs.mkdtempSync(path.join(output,'browser-'));
+for(const [key,name] of Object.entries({VERSUS_ACCOUNTS_PATH:'accounts.json',YELLOWDOGS_LEAGUE_PATH:'league.json',YDL_CONTENT_OVERRIDES_PATH:'content.json',YDL_PLAYER_CARD_STUDIO_PATH:'studio.json',YDL_PLAYER_PROFILE_ROOT:'profiles'}))process.env[key]=path.join(sandbox,name);
+const {VersusRoomService}=await import('../versus/room-service.js');
+const rooms=new VersusRoomService({accountsPath:process.env.VERSUS_ACCOUNTS_PATH,lineups:new Map()}),home=rooms.bindAccount('sched-preview-home'),spectator=rooms.bindAccount('sched-preview-watch');
+const proof=JSON.parse(fs.readFileSync(path.join(output,'verification.json'),'utf8')),root=path.join(proof.root,'json'),state=JSON.parse(fs.readFileSync(path.join(root,'league.json'),'utf8'));
+const round=Object.values(state.v4LocalLeagueRounds.rounds).sort((a,b)=>a.number-b.number)[0],task=round.tasks.at(-1),id=task.fixture.id;
+const archiveDirectory=path.join(root,'league-queue-'+round.key,'jobs',id,'archive'),manifest=JSON.parse(fs.readFileSync(path.join(archiveDirectory,'manifest.json'),'utf8'));
+round.enginePin={engineVersion:manifest.engineVersion,sourceDigest:manifest.sourceDigest};
+const league={state:{teams:state.teams.map(team=>({id:team.id,ownerId:team.id===task.envelope.input.teams[0].id?home.profile.id:null}))}};
+let now=round.startedAt;const host=await openScheduledPreviewHost({root,rooms,league,enabled:true,now:()=>now});host.registerRound(round,{publicWatch:true});
+const server=http.createServer(async(req,res)=>{if(!await host.handle(req,res)){res.writeHead(404);res.end();}});server.listen(0,'127.0.0.1');await once(server,'listening');
+const base=`http://127.0.0.1:${server.address().port}`,url=base+`/v4-preview/?match=${id}`;
+const packagePath=process.env.PLAYWRIGHT_PACKAGE_PATH??'C:/Program Files/WindowsApps/OpenAI.CodexPrimaryRuntime.v26-1112-611-0_26.1112.611.0_x64__3k8sg7r9htsxt/dependencies/node/node_modules/playwright/package.json';
+const {chromium}=createRequire(packagePath)('playwright'),entries=['scripts/verify-v4-scheduled-browser.mjs','versus/v4-host/scheduled-preview-host.js','versus/v4-host/public/index.html','versus/v4-host/public/app.js','versus/v4-host/public/style.css','versus/v4-host/account-playback.js'],sources=dependencyHashes(entries),errors=[];
+let browser;
+try{
+  browser=await chromium.launch({executablePath:process.env.CHROME_PATH??'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+  const context=await browser.newContext({viewport:{width:1400,height:1000}}),page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(url);await page.waitForFunction(()=>document.querySelector('#connection').textContent.includes('先返回游戏登录'));
+  const login=async account=>{await page.evaluate(account=>localStorage.setItem('football_test1_versus_account_v1',JSON.stringify(account)),account);await page.reload();await page.waitForSelector('body[data-ready="true"]');};
+  await login(home);assert.equal(await page.locator('#score').innerText(),'— : —');assert.equal(await page.locator('#player option').count(),1);
+  now=round.startedAt+61000;await page.waitForFunction(()=>document.querySelectorAll('#player option').length>1);
+  await page.waitForFunction(()=>Number(document.querySelector('#timeline').max)>50);await page.locator('#timeline').fill('50');await page.waitForFunction(()=>Math.abs(Number(document.body.dataset.time)-50)<.01);
+  await page.waitForFunction(()=>/受伤|伤退/.test(document.querySelector('#events').innerText));
+  assert.match(await page.locator('#events').innerText(),/替换|换下|替补|登场/);
+  const player=task.envelope.input.teams[0].players[0],key='0:'+player.id;await page.selectOption('#player',key);assert.match(await page.locator('#task').innerText(),/体能/);
+  await page.screenshot({path:path.join(sandbox,'desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(sandbox,'mobile.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await login(spectator);await page.waitForFunction(()=>document.querySelectorAll('#player option').length>1);await page.selectOption('#player',key);assert.match(await page.locator('#task').innerText(),/公开位置/);
+  await login(home);now=round.startedAt+7200000;await page.waitForFunction(end=>Number(document.querySelector('#timeline').max)>=end,manifest.segments.at(-1).through);
+  await page.selectOption('#speed','64');await page.uncheck('#slow');await page.click('#play');await page.waitForFunction(()=>Number(document.body.dataset.time)>120);
+  await page.click('#play');await page.locator('#timeline').fill(String(manifest.segments.at(-1).through));await page.waitForFunction(()=>document.querySelector('#connection').textContent.includes('已结束'));
+  const record=state.matches.find(match=>match.id===round.settled[id].matchId);assert.equal(await page.locator('#score').innerText(),record.score.join(' : '));
+  rooms.accounts.get(home.profile.id.toLowerCase()).loginCooldownUntil=Date.now()+60000;await page.waitForFunction(()=>document.querySelector('#connection').textContent.includes('无权'));assert.equal(await page.locator('#events button').count(),0);
+  assert.deepEqual(errors,[]);assert.deepEqual(dependencyHashes(entries),sources);
+  const report={passed:true,scope:'Actual-account browser against dynamically registered full real-round archive, including the injury/substitution boundary regression. Isolated local HTTP only.',sandbox,archiveDirectory,existingLogin:true,emptyBeforeRelease:true,injuryAndSubstitutionVisible:true,ownerPrivacy:true,spectatorPrivacy:true,desktop:true,mobile:true,fastPlayback:true,fullTimeScore:true,revokedAccountClearsView:true,dependencyHashes:sources};
+  fs.writeFileSync(path.join(output,'browser-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({passed:true,sandbox}));
+}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rooms.accountRepository.flush?.();}

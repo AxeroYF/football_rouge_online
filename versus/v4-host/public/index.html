@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>比赛预览 · YFFM1</title><link rel="stylesheet" href="/v4-preview/style.css"></head>
+<body><header><strong>YFFM1 <span>实时球场</span></strong><span class="badge">比赛预览</span></header>
+<main><div class="intro"><div><p class="eyebrow">看见跑动，也看懂选择</p><h1>比赛继续，节奏由你掌握。</h1><p>暂停、慢放关键片段，或回到当前直播进度。</p></div><a href="/versus/">返回游戏 / 登录</a></div>
+<div id="connection" role="status">正在连接球场…</div><div class="layout"><section class="match"><div class="scorebar"><b id="home-name">主队</b><div><strong id="score">— : —</strong><span id="clock">00:00</span></div><b id="away-name">客队</b></div>
+<div class="competition-meta"><span id="match-stage"></span><span id="aggregate"></span><span id="shootout"></span><strong id="decision"></strong></div>
+<canvas id="pitch" width="1260" height="816" aria-label="实时球员位置，可点击球员观察"></canvas>
+<fieldset id="controls" disabled><div class="controls"><button id="play">播放</button><span id="elapsed">0.0秒</span><input id="timeline" type="range" min="0" max="0" step="0.1" value="0" aria-label="回看时间"><select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option><option value="64">64×</option></select><button id="live">追赶直播</button></div>
+<div class="options"><label><input id="slow" type="checkbox" checked>关键片段慢放</label><span id="buffer">等待画面</span></div></fieldset></section>
+<aside><section><h2>球员观察 <span id="perspective"></span></h2><select id="player" aria-label="选择球员"><option value="">选择球员</option></select><p id="task">点击小圆点查看球员。本队球员可查看任务解释。</p></section><section><h2>已播放事件</h2><div id="events"></div></section></aside></div>
+<footer>回放进度仅影响当前观看画面。</footer></main><script type="module" src="/v4-preview/app.js"></script></body></html>

@@ -1,0 +1,83 @@
+预测市场初始化：后台线程与受限资源复测
+日期：2026-11-17
+
+任务与范围
+继续处理23中定位的预测市场初始化约2秒卡顿。完成代码和本地隔离复测。
+没有重启正式服务、提交、推送或部署。正式 data/yellowdogs-league.json 未改动：
+11,303,214 bytes，最后写入2026-11-17 00:11:26。
+
+原因和实现
+旧 tick 每15秒在主线程连续完成一个市场的24场V1模拟，league.predictionMarkets耗时约1693～1763ms。
+新 tick 仍每15秒最多启动一个市场，使用单个临时Worker执行24场模拟，任务退出后释放线程；无并行池、无无限队列。
+主线程仅准备两队快照、登记市场、校验结果和持久化；不复制整份联赛存档或收件箱到线程。
+模拟保留原有引擎、样本数、逐场随机种子、让球/赔率/半全场算法，不降低模拟精度。
+复用prepareFixtureMatch生成输入，但预测走snapshotTeams，避免AI选阵写回正式球队。
+Worker只导入V1比赛引擎，不导入联赛单例或读写业务存档；execArgv=[]防止继承服务器预加载脚本。
+Worker老生代上限256MiB，任务30秒超时；进程组整体仍受2GiB限制。
+HTTP投注仅校验/登记/截止市场，绝不在请求中同步模拟。未准备好返回“本场预测正在准备，请稍后再试”。
+显式generatePredictionMarket和ensurePredictionMarkets默认同步方式保留给离线模拟和原有测试；生产tick显式background:true。
+
+正确性和刷新边界
+并发tick只占一个任务槽；不完整样本/线程异常/超时不回退到主线程模拟。
+失败保留preparing，每场60秒退避；其他场次可继续准备，不因单场失败一起阻塞。
+完成时重新检查赛季、市场对象、当前赛程及开赛时间、主客队身份、市场状态和截止时间。
+赛季切换、赛程变化、球队被接管、市场已结算/锁定时丢弃旧结果；到截止点的preparing市场也锁定。
+发布失败回滚为preparing，释放任务槽并重试；成功保存才完成发布，推动updatedAt供客户端刷新。
+已投注市场不因赔率版本检查重新定价，投注赔率仍锁定。钱包和奖励结算不进入Worker。
+市场赔率原本就是初始化后固定，并不是动态实时盘口。本轮没有新增实时赔率重算。
+首次准备本地复测约2.0～3.2秒（包含线程启动、模拟及发布），原先主线程约1.7～1.8秒。
+因此不能声称初始化零延迟或所有性能指标均改善：解除主线程阻塞有额外线程启动及CPU竞争成本。
+列表原有12秒轻量轮询及交互期间延后刷新机制不变；后台调度仍每15秒一场。
+首次全部8/16场准备仍受原有分批调度影响，本轮未改为同时批量开放。
+
+测试：58项相关检查通过
+node --test test/prediction-background.test.js
+  13项：真实Worker逐seed比分/统计、聚合概率和赔率逐字段一致（玩家联赛/杯赛首回合/次回合共72场）；
+  模拟期间主线程计时器继续运行；重复调度；异步发布revision/锁价；截止/赛季/市场替换/赛程变化/接管/结算；
+  线程和保存失败重试、单场失败隔离、准备中不扣钱、超时不回退。
+  最后补的异步revision检查单独用test-name-pattern验证，其余12项整文件验证通过。
+node --test --test-name-pattern='比赛预测|半全场|prediction goal|预测公开赔率|红黄牌预测' test/league.test.js
+  9项：原预测、投注、结算、截止、返还与分红幂等回归通过。
+  修正既有过时断言：新赛制每轮8场/联赛杯赛合计16场；钱包计入主场门票；两位小数赔率允许个别seed碰撞。
+node --test test/inbox-pagination.test.js test/lineup-competition.test.js test/prematch-rotation.test.js
+  36项通过，覆盖收件箱、赛事阵容绑定及共用赛前轮换。
+涉及JS语法及已跟踪代码diff空白检查通过。未执行全量测试，未改前端界面。
+
+压测配置与证据
+目标依旧为阿里云香港2核/2GB/64GB、10人在线。
+实际执行：本地Windows，i7-12700K、约32GiB物理内存；服务ProcessorAffinity=3限制2个逻辑处理器；
+Windows Job Object限制整个服务进程组2,147,483,648 bytes；主Node堆1024MiB；Worker在线程内共享进程RSS。
+10个隔离账号HTTP并发，思考时间250ms，每档20秒，100/500/2000封邮件每人（含有效待办及大正文）。
+未运行同时进行的真实比赛。测试过程中保持正常15秒tick，不预热或关闭预测初始化。
+专门清空隔离预测市场、开赛设为一小时后，确保测量窗口确实执行首次预测，且不会因现实时间接近截止跳过。
+每档断言至少一个24样本市场完成、成功持久化并可重启读取；继续校验有效待办、自动到账礼包、已读持久化。
+本地回环网络和本地磁盘，未设置64GB硬配额（只验证用量远小于64GiB）；不是香港云实机/公网验收。
+
+基线：outputs/inbox-load-after-20261117/result.json
+首轮：outputs/prediction-load-after-20261117/result.json（2184请求，0失败）
+每人邮件数 | 最大HTTP延迟旧→新 | P95旧→新 | 主线程predictionMarkets旧→新 | 事件循环最大旧→新
+100        | 1760→159ms      | 41→32ms  | 1693→39ms                  | 1785→162ms
+500        | 1824→227ms      | 47→48ms  | 1730→69ms                  | 1828→239ms
+2000       | 2000→534ms      | 89→125ms | 1763→162ms                 | 1994→598ms
+异步发布（含同步保存）：26/54/104ms；线程耗时1976/2174/3028ms。
+进程峰值RSS约184/232/314MiB；测试存档磁盘用量38/63/157MiB。
+
+重负载复核：outputs/prediction-load-heavy-repeat-20261117/result.json（680请求，0失败）
+最终每场失败隔离逻辑下再跑2000封/人：最大HTTP570ms、P95 114ms、事件循环最大547ms，
+预测登记225ms、发布117ms、Worker2975ms、保存峰值530ms、进程RSS峰值312MiB。
+两轮均有真实24样本市场落盘。合计2864请求、0失败。
+原2秒级峰值已消除；剩余约0.5～0.6秒停顿主要为同步保存。
+重负载P95仍比基线高约25～36ms，不能宣称常态尾延迟全部改善；后台CPU竞争是后续需继续权衡的边界。
+后续优先评估同步存档的序列化/刷盘成本，以及后台预算调度；不要通过减少模拟样本或预热绕过测量来改善数字。
+
+复现命令
+node scripts/stress-inbox-online.mjs --prediction-after
+node scripts/stress-inbox-online.mjs --prediction-after --heavy-only --output=outputs/prediction-load-heavy-repeat-20261117
+再次复测请指定新的--output，避免覆盖本轮证据。
+
+关键文件
+versus/league-service.js：prepareFixtureMatch、startPredictionMarketGeneration、ensurePredictionMarkets、tick与投注入口。
+versus/prediction-simulation.js：单任务Worker封装、超时/退出/结果校验。
+versus/prediction-worker.js：独立V1模拟，返回结算所需小报告。
+test/prediction-background.test.js：异步正确性、结果一致性与失败边界。
+scripts/stress-inbox-online.mjs：沿用23压测场景，新增冷预测校验与独立输出选项。

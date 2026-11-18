@@ -51,7 +51,7 @@ export function buildUpPreference(team,target,zone,pressure) {
 
 export function tacticalProcessSummary(match) {
   const teams=match.teams.map(team=>({name:team.name,press:{attempts:0,recoveries:0,playerSeconds:0},mark:{actions:0,turnovers:0},
-    build:{preferredRoute:0,preferredOutlet:0,escape:0,successes:0,attempts:0},corners:{attempts:0,shots:0,secondBalls:0},rotations:0,blockedZones:{}}));
+    build:{preferredRoute:0,preferredOutlet:0,escape:0,successes:0,attempts:0},corners:{attempts:0,shots:0,secondBalls:0},blockedZones:{}}));
   for(const chain of match.chains??[])for(const action of chain.actions??[]) {
     const attack=teams[chain.attackingTeamIndex],defense=teams[1-chain.attackingTeamIndex];
     if(action.pressure?.trigger){defense.press.attempts++;defense.press.recoveries+=Number(action.turnover===true);defense.press.playerSeconds+=action.seconds*action.pressure.pressers.length;}
@@ -63,7 +63,6 @@ export function tacticalProcessSummary(match) {
     const team=teams[event.teamIndex];if(!team)continue;
     if(event.type==='cornerPlan')team.corners.attempts++;
     if(event.type==='secondBall'&&event.recovered)team.corners.secondBalls++;
-    if(event.type==='substitution'&&event.reason==='conditional')team.rotations++;
   }
   for(const team of teams)team.press.playerSeconds=Math.round(team.press.playerSeconds);
   for(const event of match.events??[])if(['goal','save','miss','block'].includes(event.type)&&event.cornerRoutine) {

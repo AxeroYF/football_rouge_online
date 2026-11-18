@@ -1,6 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {FINAL_GAME_ATTRIBUTE_BASIS,REFERENCE_ATTRIBUTE_BASIS,TARGET_SCALED_ATTRIBUTE_BASIS} from '../shared/football/player-source-attributes.js';
+import {playerOverallFromAttributes,roleGroup} from '../shared/football/schema.js';
+import {correctLegacyDlcPlayer} from './player-dlc-corrections.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
@@ -98,6 +101,7 @@ function convertPlayer(player, index, config, sourceRankIndex) {
   }
   const id = stableId(player, index, existing, config);
   usedIds.add(id);
+  player = correctLegacyDlcPlayer(player, id);
   const resolvedSourceId = sourceId(player, index, existing, config);
   const heightCm = Number(player.heightCm) >= 150 ? Number(player.heightCm) : fallbackHeight(player.role);
   const age = Number(player.age) > 0 ? Number(player.age) : 27;
@@ -105,7 +109,12 @@ function convertPlayer(player, index, config, sourceRankIndex) {
   const weakFoot = Number(player.weakFoot) > 0 ? Number(player.weakFoot) : 3;
   const skillMoves = Number(player.skillMoves) > 0 ? Number(player.skillMoves) : player.role === "GK" ? 1 : 3;
   const sourceDataset = player.source?.type || "S4 player DLC";
-  const referenceOverall = Number.isFinite(Number(player.source?.overall)) ? Number(player.source.overall) : player.overall;
+  const sourceOverall=Number(player.source?.overall);
+  const referenceOverall = Number.isFinite(sourceOverall)&&sourceOverall>0 ? sourceOverall : player.overall;
+  const attributeBasis=player.attributeBasis??config.payload.attributeBasis??REFERENCE_ATTRIBUTE_BASIS;
+  if(![FINAL_GAME_ATTRIBUTE_BASIS,REFERENCE_ATTRIBUTE_BASIS,TARGET_SCALED_ATTRIBUTE_BASIS].includes(attributeBasis))throw new Error(`未知 DLC 属性口径：${id}`);
+  if(attributeBasis===FINAL_GAME_ATTRIBUTE_BASIS&&playerOverallFromAttributes(player.attributes,player.role)!==player.overall)
+    throw new Error(`DLC 最终属性与总评不符：${id}`);
 
   return {
     ...(existing ?? {}),
@@ -124,6 +133,8 @@ function convertPlayer(player, index, config, sourceRankIndex) {
     sourceMainPosition: player.role,
     sourceAlternativePositions: player.secondaryRole ?? "",
     referenceOverall,
+    attributeBasis,
+    ...(player.dataCorrections ? {dataCorrections:player.dataCorrections} : {}),
     suggestedOverall: player.overall,
     suggestedGrade: player.grade,
     nationality: player.nationality,
@@ -170,6 +181,7 @@ const mergedPlayers = [
 const invalid = [];
 for (const player of dlcPlayers) {
   if (!["GK", "DEF", "MID", "ATT"].includes(player.pool)) invalid.push(`${player.id}:pool`);
+  if (roleGroup(player.role) !== player.pool) invalid.push(`${player.id}:role-pool-mismatch`);
   if (!["S", "A", "B", "C"].includes(player.suggestedGrade)) invalid.push(`${player.id}:grade`);
   if (!player.displayNameZh || !player.sourceName || !player.nationality || !player.club) invalid.push(`${player.id}:identity`);
   if (player.heightCm < 150 || player.heightCm > 210) invalid.push(`${player.id}:height`);

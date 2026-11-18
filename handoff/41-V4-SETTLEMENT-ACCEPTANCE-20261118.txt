@@ -1,0 +1,15 @@
+V4隔离原业务结算验收 · 2026-11-18
+
+45项测试、17个测试文件通过；三场真实球队联赛/杯赛/点球决胜消费、实际账号浏览器播放、十人64倍速容量复验均通过。
+报告：outputs/v4-host-20261118/settlement-acceptance.json
+冻结源码与证据：outputs/v4-settlement-accepted-20261118/manifest.json
+内核仍为prototype.8，内核摘要fd8479389686f82d52e1d96a9abdef7e2aded00ea1d7bda2a8d52c3ee1bdfee7，未改动。
+
+关键行为：隔离结算协调层锁定上下文、首个时间和随机序列；实际业务消费后核对累计统计及唯一记录，原子提交状态与回执。并发重复请求及提交前后杀进程恢复均只结算一次。
+原league-service源码仅三个点球统计表达式增加V4分支，双方同卡不串统计；旧战报表达式不变。逐字节保护核对详见40及scripts/v4-protected-files.mjs。其余7个受保护文件包括真实存档/旧引擎/预测保持初始哈希。
+旧总决赛39项测试仍有28项既有失败，冻结旧service与当前service的逐项结果一致；没有将此表述为全通过。
+
+容量：outputs/v4-host-capacity-20261118/iteration3/capacity.json，2逻辑核/2GiB、10实际隔离账号、预计算归档64倍速，全部约103.14秒完成；head/segment P95 61.11/69.72ms、RSS约111MiB、零429或客户端错误。客户端解码不在服务端资源限制内，没有同时生产比赛。
+
+限制：正式调度器和真实存储事务桥仍未接线；所有V4结果settlementAllowed=false。未改实际环境配置、启动正式服务、部署或连接云主机。
+继续目标active；下一步实现持久化调度与受控回退组合流程，并在隔离副本中验证。

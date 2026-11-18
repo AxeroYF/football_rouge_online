@@ -65,15 +65,20 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/club/sponsor/respond") result = { league:yellowDogsLeague.respondClubSponsorOffer(account, body) };
     else if (pathname === "/api/versus/league/team/detail") result = { team:measureRuntimeSync("league.teamDetail", () => yellowDogsLeague.teamDetail(account, body.teamId)) };
     else if (pathname === "/api/versus/league/team/history") result = { teamHistory:measureRuntimeSync("league.teamHistory", () => yellowDogsLeague.teamHistoryPage(account, body.teamId, body.offset, body.limit)) };
-    else if (pathname === "/api/versus/league/match/detail") result = { match:yellowDogsLeague.matchDetail(account, body.matchId) };
+    else if (pathname === "/api/versus/league/match/detail") result = { match:await yellowDogsLeague.matchDetailWithReview(account, body.matchId) };
+    else if (pathname === "/api/versus/league/match/tactical-replay") return sendJson(response,200,await yellowDogsLeague.matchTacticalReplay(account,body.matchId,body.segment));
     else if (pathname === "/api/versus/league/predictions") result = { predictions:yellowDogsLeague.predictionView(account) };
     else if (pathname === "/api/versus/league/predictions/bet") result = { predictions:yellowDogsLeague.placeMatchPrediction(account, body.marketId, body.category, body.selection, body.amount, { compact:true }) };
     else if (pathname === "/api/versus/league/player-directory") result = { playerDirectory:measureRuntimeSync("league.playerDirectory", () => yellowDogsLeague.playerDirectoryView(account)), updatedAt:yellowDogsLeague.state.updatedAt };
     else if (pathname === "/api/versus/league/honor-room") result = { honorRoom:measureRuntimeSync("league.honorRoom", () => yellowDogsLeague.honorRoomView(account)) };
-    else if (pathname === "/api/versus/league/inbox/read") result = { inboxRead:yellowDogsLeague.readInbox(account, body.messageId, { compact:true }) };
-    else if (pathname === "/api/versus/league/inbox/read-batch") result = { inboxReadBatch:yellowDogsLeague.readInboxBatch(account, body.messageIds) };
-    else if (pathname === "/api/versus/league/inbox/delete") result = { league:yellowDogsLeague.deleteInbox(account, body.messageId) };
-    else if (pathname === "/api/versus/league/inbox/delete-batch") result = { league:yellowDogsLeague.deleteInboxBatch(account, body.mode) };
+    else if (pathname === "/api/versus/league/inbox/list") result = { inboxPage:yellowDogsLeague.inboxList(account,body) };
+    else if (pathname === "/api/versus/league/inbox/detail") result = { inboxDetail:yellowDogsLeague.inboxDetail(account,body.messageId) };
+    else if (pathname === "/api/versus/league/inbox/selection") result = { inboxSelection:yellowDogsLeague.inboxSelection(account,body) };
+    else if (pathname === "/api/versus/league/inbox/apply-selection") result = { inboxMutation:yellowDogsLeague.applyInboxSelection(account,body.selectionToken) };
+    else if (pathname === "/api/versus/league/inbox/read") result = { inboxRead:yellowDogsLeague.readInbox(account, body.messageId, { compact:true,expectedUpdatedAt:body.expectedUpdatedAt }) };
+    else if (pathname === "/api/versus/league/inbox/read-batch") result = { inboxReadBatch:yellowDogsLeague.readInboxBatch(account, body.messageIds, {category:body.category}) };
+    else if (pathname === "/api/versus/league/inbox/delete") result = { inboxMutation:yellowDogsLeague.deleteInbox(account, body.messageId, {compact:true}) };
+    else if (pathname === "/api/versus/league/inbox/delete-batch") result = { inboxMutation:yellowDogsLeague.deleteInboxBatch(account, body.mode, {compact:true,category:body.category,messageIds:body.messageIds,unreadOnly:body.unreadOnly === true}) };
     else if (pathname === "/api/versus/league/friendlies/invite") result = { invitation:yellowDogsLeague.createFriendlyInvitation(account, body.targetTeamId, { compact:true }) };
     else if (pathname === "/api/versus/league/friendlies/respond") result = { league:yellowDogsLeague.resolveFriendlyInvitation(account, body.invitationId, body.action, { compact:true }) };
     else if (pathname === "/api/versus/league/ai-training/start") result = yellowDogsLeague.createAiTraining(account, body);
@@ -89,7 +94,8 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/x-growth/spend") result = { growth:yellowDogsLeague.spendXGrowthPoints(account, body.field, body.amount, { compact:true, requestId:body.requestId }) };
     else if (pathname === "/api/versus/league/x-growth/reset") result = { growth:yellowDogsLeague.resetXGrowth(account, body.role, body.secondaryRole, { compact:true, requestId:body.requestId, traitId:body.traitId }) };
     else if (pathname === "/api/versus/league/packs/open") result = { league:yellowDogsLeague.openS4Pack(account, body.packId, { compact:true }) };
-    else if (pathname === "/api/versus/league/packs/open-batch") result = { league:yellowDogsLeague.openS4PacksBatch(account, body.packIds, { compact:true }) };
+    else if (pathname === "/api/versus/league/packs/open-batch") result = { league:yellowDogsLeague.openS4PacksBatch(account, body.packIds, { compact:true,requestId:body.requestId }) };
+    else if (pathname === "/api/versus/league/packs/batch-result") result = { league:yellowDogsLeague.directPackBatchResult(account,body.requestId) };
     else if (pathname === "/api/versus/league/packs/choose") result = { league:yellowDogsLeague.chooseS4Pack(account, body.offerId, body.choiceId ?? body.leaguePlayerId, { compact:true }) };
     else if (pathname === "/api/versus/league/cosmetics/equip") result = { league:yellowDogsLeague.equipCosmetic(account, body.itemId, body.slot, { compact:true }) };
     else if (["/api/versus/league/shop/buy", "/api/versus/league/shop/choose", "/api/versus/league/reward/open", "/api/versus/league/reward/choose"].includes(pathname)) throw new Error("旧赛季卡包已经全部下架");
@@ -110,7 +116,7 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/card/enhancement-trait") result = { enhancementTrait:yellowDogsLeague.chooseS4EnhancementTrait(account, body.offerId, body.traitId, { compact:true }) };
     else if (pathname === "/api/versus/league/ownership/return") result = { league:yellowDogsLeague.returnOwnership(account, body.leaguePlayerId, { compact:true }) };
     else if (pathname === "/api/versus/league/ownership/return-batch") result = { league:yellowDogsLeague.returnOwnerships(account, body.leaguePlayerIds, { compact:true }) };
-    else if (pathname === "/api/versus/league/simulate" && developer) { yellowDogsLeague.simulateNextRound(); result = { league:yellowDogsLeague.view(account, { developer, includePlayerDirectory:false }) }; }
+    else if (pathname === "/api/versus/league/simulate" && developer) { await yellowDogsLeague.simulateNextRound(); result = { league:yellowDogsLeague.view(account, { developer, includePlayerDirectory:false }) }; }
     else return sendJson(response, 404, { ok:false, error:"league API not found" });
   }
   else if (request.method === "POST" && pathname === "/api/versus/live") {

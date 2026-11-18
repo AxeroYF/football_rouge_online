@@ -196,6 +196,7 @@ function aggregateAttributes(row) {
     shooting:number(row.SHO),
     passing:number(row.PAS),
     dribbling:number(row.DRI),
+    ballDribbling:number(row.Dribbling),
     defending:number(row.DEF),
     physical:number(row.PHY),
     acceleration:number(row.Acceleration),

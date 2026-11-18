@@ -1,0 +1,27 @@
+.league-sidebar{display:contents}
+.league-sidebar-handle,.league-sidebar-head{display:none}
+@media(min-width:1051px){
+  body:has(.league-main-layout){--league-sidebar-width:24px}
+  body:has(.league-sidebar:hover),body:has(.league-sidebar:focus-within),body:has(.league-sidebar.sidebar-touch-open),body:has(.league-sidebar[data-sidebar-pinned="true"]){--league-sidebar-width:276px}
+  body:has(.league-main-layout) #app{margin-left:calc(var(--league-sidebar-width) + 40px);min-width:0}
+  .league-page-content{min-width:0}
+  .league-sidebar{position:fixed;left:16px;top:82px;bottom:20px;z-index:90;width:var(--league-sidebar-width);display:flex;flex-direction:column;gap:10px;overflow:hidden;border-radius:16px;pointer-events:none}
+  .league-sidebar:is(:hover,:focus-within,.sidebar-touch-open,[data-sidebar-pinned="true"]){pointer-events:auto}
+  .league-sidebar>.league-nav{position:static;flex:1;min-height:0;width:276px;box-sizing:border-box;margin:0;box-shadow:none}
+  .league-sidebar>.league-theme-toggle{position:relative;left:auto;bottom:auto;flex-shrink:0;width:276px;box-sizing:border-box}
+  .league-sidebar-head{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;flex-shrink:0;width:276px;min-height:42px;padding:6px 10px;color:var(--ink);background:#10241d;border:1px solid var(--line);border-radius:12px}
+  .league-sidebar-head b{font-size:12px}
+  .league-sidebar-head button{min-height:28px;padding:4px 10px;border:1px solid var(--line);border-radius:7px;color:var(--cyan);background:transparent;font-size:11px;cursor:pointer}
+  .league-sidebar-head button[aria-pressed="true"]{background:var(--cyan);color:#071411}
+  .league-sidebar-handle{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:2;display:grid;place-content:center;gap:3px;box-sizing:border-box;width:24px;height:64px;padding:6px 0;border:1px solid var(--line);border-radius:12px;color:var(--cyan);background:linear-gradient(#10241d,#081510);cursor:pointer;pointer-events:auto}
+  .league-sidebar-handle span{font-size:12px;line-height:16px}
+  .league-sidebar-handle i{font-size:17px;line-height:16px;font-style:normal}
+  .league-sidebar:not(:is(:hover,:focus-within,.sidebar-touch-open,[data-sidebar-pinned="true"]))>:not(.league-sidebar-handle){visibility:hidden;opacity:0;pointer-events:none}
+  .league-sidebar:is(:hover,:focus-within,.sidebar-touch-open,[data-sidebar-pinned="true"])>.league-sidebar-handle{opacity:0;pointer-events:none;width:1px;height:1px;padding:0;overflow:hidden;border:0}
+  html[data-league-theme="light"] :is(.league-sidebar-handle,.league-sidebar-head){color:#344153;border-color:#d8dee7;background:#fff}
+  html[data-league-theme="light"] .league-sidebar-head button{color:#086dcc;border-color:#bdd9fb}
+  html[data-league-theme="light"] .league-sidebar-head button[aria-pressed="true"]{color:#fff;background:#0b78f2}
+  html[data-ui-motion="on"] body:has(.league-main-layout) #app{transition:margin-left .28s cubic-bezier(.2,.8,.2,1)}
+  html[data-ui-motion="on"] .league-sidebar{transition:width .28s cubic-bezier(.2,.8,.2,1)}
+  html[data-ui-motion="on"] .league-sidebar>:not(.league-sidebar-handle){transition:opacity .2s ease}
+}

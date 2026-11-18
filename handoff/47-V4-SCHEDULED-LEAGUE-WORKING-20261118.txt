@@ -1,0 +1,15 @@
+V4联赛轮次闭环 · 工作记录 · 2026-11-18
+
+基于46冻结版本继续，当前未验收。所有演练限标记本地副本，生产关闭，不连接云主机。
+新增versus/v4-host/scheduled-league.js：纯内存整轮启动、固定赛程身份和整轮输入、运行状态/赛事重叠检查、原finishRound受控调用。整轮结束必须全部赛程具有匹配结果与已发布回执；新增伤停需跨逐场结算累积后传给原advanceAvailability。
+正在接入canonical-storage-settlement，完成后需要JSON/分片、跨轮次、重启幂等、故障注入及真实全场演练。尚未接入生产定时器。
+
+现已接入原JSON/分片存储桥：beginRound原子提交赛程运行状态和全部锁定输入；settleJob通过context.binding绑定真实round.fixtures，并累计本轮新增伤停；finishRound在全部已发布并消费后调用原轮末奖励/伤停/收件箱/赛季推进方法，并将整轮回执一并提交。
+local-league-scheduler默认关闭，仅显式操作标记副本；部分入队可恢复，已生产但未到公开结束时间的比赛保持produced，返回pendingReleaseAt。策略回退不改变已锁定任务；有未入队任务时不自动撤销off。
+4项scheduled-league测试通过：默认关闭、部分入队恢复、发布门槛、原奖励与伤停、原存储前后写入失败、重开幂等和下一轮输入。1项scheduled-crash覆盖JSON/分片×提交前后实际kill，奖励一次、旧停赛扣减一次、新伤停保留。
+
+连续完整真实轮次首轮失败证据：outputs/v4-scheduled-league-20261118/rounds-CxxSP4。
+其中第8场伤退/替换事件time=49.800000000000004，末帧time=49.8，后续事件time=49.8。归档按time独立filter导致跳过82/83却选择84，报归档事件缺失。scripts/diagnose-v4-archive-order.mjs可读取失败job重现。
+已在archive/publisher改为连续事件前缀，不改变内核、原始事件或RNG；未被末帧覆盖的事件及其后事件等下一片覆盖后提交。专项测试通过。dispatcher的发布等待也不再掩盖本批后续生产错误。
+并发回归复现初始化目录rename EPERM，已新增publishPreparedDirectory有界重试，每次确认最终目录不存在，保留冲突及staging文件；初始化与真实kill回归通过。
+最新专项结果：outputs/tests/2026-11-17T19-33-35-449Z/report.json（stream、archive、scheduled-crash、dispatcher全通过）。当前两轮真实演练重跑中；不能宣称47验收。

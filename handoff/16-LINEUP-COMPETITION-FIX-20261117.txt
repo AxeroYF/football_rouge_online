@@ -1,0 +1,37 @@
+赛事方案绑定修复（2026-11-17）
+
+用户要求已完成
+1. 联赛、杯赛、友谊赛各自选择方案；保留“全部用当前”。编辑方案的选择与赛事使用方案相互独立。
+2. lineupSchemeAssignments 为唯一事实来源。单项改绑只更新一个赛事；全部绑定是一次批量写入，不再通过旧 competitionScope 重算映射。
+3. 新建方案不改变绑定；删除只回退引用被删方案的赛事。删除当前方案回退到剩余第一套；删除非当前方案时，受影响赛事回退当前方案。其他赛事保持不变，至少保留一套方案。
+4. 旧存档保留有效映射，仅修复丢失或指向已删除方案的引用。competitionScope 仅作兼容派生字段，不再影响实际绑定；导入阵容也不会改绑。
+5. 删除弹窗列明受影响赛事和回退方案；未绑定方案明确提示现有赛事绑定不变。
+6. “状态预览”可选联赛/杯赛/友谊赛，仅影响磁贴状态与提示，不会修改绑定。分别读取联赛/杯赛停赛，友谊赛按满体能及不受赛事停赛影响的既有规则预览；伤病仍不可用；固定体能特性保留。体能不足45显示不可用。已屏蔽总决赛的历史标记不再影响磁贴。
+7. 下一场区域显示“本场使用：方案名”。未开赛按当前绑定即时显示；已开赛读取 match.leagueLineupSchemes 快照，后续改绑/改名/删除不影响本场。旧运行中比赛无此元数据时显示“开赛时方案（旧比赛未记录）”，不猜测方案。
+8. 切换/改绑前保留自动保存等待，操作期间禁用方案控件，防止同页重复请求。
+
+涉及文件
+versus/league-service.js：映射修复、assign/delete/import、开赛方案快照、nextOpponent元数据。
+versus/public/lineup-competition.js：赛事标签、方案查询、预览可用性、下一场方案选择。
+versus/public/app.js：三选择器、批量绑定、删除说明、状态预览、下一场方案。
+versus/public/tactics-interface.css：桌面及手机布局。
+test/lineup-competition.test.js：8项行为回归。
+test/league.test.js：同步旧方案测试；修复原测试的旧队长预期、缺失导入版本、源码截取范围及旧布局断言。
+scripts/audit-lineup-competition.mjs：修复后断言；原 audit.json 留作历史证据，新增 audit-after.json。
+scripts/verify-lineup-competition-ui.mjs：独立本地服务浏览器验证。
+
+验证
+6个测试文件共56项通过：lineup-competition 8、prematch-rotation 16、ai-clubs 6、passive-substitution 15、engine-v33-service-resume 2、league-divisions 9。
+报告：outputs/tests/2026-11-17T01-56-10-636Z/report.json。
+league.test.js 方案创建/绑定/删除、并发旧版本拦截、控件、分享导入4条定向测试通过：outputs/lineup-competition-targeted.tap。
+合计60项相关测试通过。全项目测试未重跑。
+浏览器：独立绑定/全部绑定、杯赛方案删除回退、其他赛事保持原值、刷新持久化、改绑前刷新保存红线72、下一场标识、三个赛事的停赛灰显、总决赛旧标记不灰显、390px布局无溢出、页面无JS错误。
+浏览器赛事/伤停状态通过响应拦截注入测试样例；绑定/删除/保存走真实隔离服务API。未改真实数据。
+浏览器产物：outputs/lineup-competition-ui-20261117/（desktop.png、mobile.png、mobile-light.png、verification.json）。
+语法检查及涉及修改文件 git diff --check 通过。
+
+边界与生效
+未重启运行中的正式服务，未修改真实存档，未提交Git。服务重新加载代码后使用新规则，已有比赛保持原开赛快照。
+训练模式继续使用当前编辑方案；本轮未改训练选方案流程，也未增加比赛内主动换人。
+同页重复请求已防护；跨设备绑定专用版本校验仍未新增（原 expectedActiveLineupSchemeId 检查保留）。
+本文件覆盖15审阅中本轮获授权的修复项；15中训练显式选方案与跨设备绑定版本校验仍为可选后续项。

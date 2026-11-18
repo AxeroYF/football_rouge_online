@@ -77,6 +77,11 @@ export function v2BestPlayerDuty(player, assignedRole, positionFit = 1) {
     .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))[0] ?? null;
 }
 
+export function resolveBoardDuty(role, duty) {
+  if (!Object.hasOwn(V2_PLAYER_DUTY_OPTIONS, duty)) return null;
+  return V2_PLAYER_DUTY_OPTIONS[duty].roles.includes(String(role ?? "").toUpperCase()) ? duty : null;
+}
+
 export function v2PlayerDutyOptionsForRole(role, { includeDefault = true } = {}) {
   const normalizedRole = String(role ?? "").toUpperCase();
   const options = Object.entries(V2_PLAYER_DUTY_OPTIONS)

@@ -1,0 +1,15 @@
+V4隔离结算协调层 · 工作记录 · 2026-11-18
+
+上一已验收内核及宿主见34/38；新协调层未冻结验收。持续工作active，暂不连接云主机。
+versus/v4-host/shadow-settlement.js提取原验证脚本中的业务协调：读取完整影子任务，核对元数据/输入/版本/结果哈希/个人统计，锁定赛事上下文，纯内存调用既有联赛/杯赛finalizer，把状态、影子fixture及收据一起提交到隔离日志。
+重试保留首次结算时刻和由输入指纹确定的业务随机序列；拒绝同场改轮次/赛事上下文；重复提交不重跑业务。
+工厂必须返回statePath=null且无shardStore/pagedInbox的内存服务；save、备份和延迟持久化入口在事务中拒绝。模块不导入正式单例。
+所有结果仍settlementAllowed=false，不会把影子数据写回真实联赛；正式调度器/存储事务桥尚未接线。
+
+发现的兼容边界
+旧finalizer按全局playerId统计penaltyAwarded受益人，没有球队区分。若双方同时持有同一球员卡且其制造点球，旧接口可能两队重复计入。
+新模块核对每名球员统计与旧消费口径，不一致则拒绝结算，不能伪称兼容；未改受保护league-service.js或旧引擎。
+test/engine-v4-shadow-settlement.test.js新增并发幂等、上下文冲突、纯内存约束、事务外写入拒绝、损坏统计和同卡点球歧义测试。
+scripts/verify-v4-canonical-settlement-worker.mjs已改用新模块；三场真实阵容完整隔离结算验证进行中。
+
+验证更新：新增协调层单元测试通过，报告outputs/tests/2026-11-17T17-40-43-220Z/report.json。三场实际canonical消费通过，新模块验证目录outputs/v4-host-20261118/canonical-YFgL55；保护文件哈希一致。旧冻结证据38保留，新模块尚未单独冻结。

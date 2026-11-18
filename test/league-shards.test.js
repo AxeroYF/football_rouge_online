@@ -59,7 +59,7 @@ test("分片服务在保存后保留最近 manifest 备份", () => {
     const manifest = JSON.parse(readFileSync(path.join(statePath, "manifest.json"), "utf8"));
     assert.equal(manifest.schemaVersion, 2);
     const reloaded = new YellowDogsLeagueService({ statePath, backupDir, now:() => NOW, rng:() => .37 });
-    assert.equal(reloaded.state.teams.length, 10);
+    assert.equal(reloaded.state.teams.length, 16);
   } finally {
     rmSync(directory, { recursive:true, force:true });
   }
@@ -119,15 +119,13 @@ test("分片每日重启归档后可以重载且既有归档不会重复写入",
   }
 });
 
-test("杯赛联赛阶段直播轮次在分片存储重载后继续保留", () => {
+test("杯赛十六强直播轮次在分片存储重载后继续保留", () => {
   const directory = mkdtempSync(path.join(process.cwd(), ".tmp-ydl-sharded-cup-live-"));
   const statePath = path.join(directory, "league-state");
   try {
     const service = new YellowDogsLeagueService({ statePath, backupDir:null, now:() => NOW, rng:() => .37 });
-    service.state.teams.forEach((team, index) => {
-      team.ownerId = `cup-owner-${index + 1}`;
-      team.ownerName = `Cup Player ${index + 1}`;
-    });
+    const user = account("cup-owner", "Cup Player");
+    service.beginDraft(user, "Cup Reload FC");service.autoDraft(user);service.finishDraft(user);
     service.startCup();
     service.startScheduledCupEvent();
 
@@ -137,7 +135,7 @@ test("杯赛联赛阶段直播轮次在分片存储重载后继续保留", () =>
 
     assert.equal(reloaded.state.liveCupRound.eventId, eventId);
     assert.equal(reloaded.state.liveCupRound.matches.length, liveMatchCount);
-    assert.equal(reloaded.state.cup.format, "round-robin-v1");
+    assert.equal(reloaded.state.cup.format, "knockout-16-v1");
   } finally {
     rmSync(directory, { recursive:true, force:true });
   }

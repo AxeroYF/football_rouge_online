@@ -1,0 +1,16 @@
+V4本地联赛轮次闭环验收 · 2026-11-18
+
+验收：outputs/v4-scheduled-league-20261118/acceptance.json
+冻结源码/证据：outputs/v4-scheduled-league-accepted-20261118/manifest.json
+说明：docs/YFFM1-V4-SCHEDULED-LEAGUE-20261118.md
+58项/18文件通过；真实完整两轮16场（JSON实际调度，分片消费同一组锁定结果），轮次、个人数据、积分、钱包、卡包、预测、原奖励/伤停与重开幂等一致。
+最新完整证据root：outputs/v4-scheduled-league-20261118/rounds-A0tqDw；之前ejSCLc也通过，CxxSP4保留浮点事件边界失败证据。
+动态宿主实际账户浏览器验证：browser-OGnXoz，开播前空画面、原伤退/被动替换边界、主队/旁观者权限、手机/桌面、64倍播放、完场比分和撤销清理通过；截图已查看。
+
+新增或扩展：scheduled-league.js、local-league-scheduler.js、scheduled-preview-host.js、canonical-storage-settlement.js、shadow-settlement.js、dispatcher.js。
+整轮原子开始/固定赛程和输入/内核指纹，完整公开后才消费赛果，真实round.fixtures绑定，跨场新伤停累计，原finishRound和回执单次提交，下一轮重新编译。部分入队/发布等待/策略回退可恢复。
+JSON/分片提交前后实际kill恢复：旧伤停只扣减一次，新伤停保留，奖励一次。拒绝赛程/赛季/输入/内核冲突以及其他直播/训练重叠。
+事件归档连续前缀修复保留原始时间/RNG，不改变内核。初始化目录短暂占用有界重试，并防止覆盖既存目录。
+
+核心得到原prototype.8指纹核对；7个保护文件不变；league-service.js仍只有此前三个V4点球统计表达式修正。真实数据不变，生产关闭，云主机未连接。
+当前容量尚未验收：46容量仅对其冻结源码有效；本阶段同步存储核对/整轮业务/预测及API混合负载需要独立验证。杯赛/季末决赛整轮、录像保留清理、生产定时器仍待接入。

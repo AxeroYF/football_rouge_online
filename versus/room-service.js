@@ -6,6 +6,7 @@ import { REAL_PLAYER_BY_ID, REAL_PLAYERS } from "./player-pool.js";
 import { VERSUS_TRAIT_BY_ID, VERSUS_TRAIT_CARDS } from "./trait-pool.js";
 import { createLineupSeed, parseLineupSeed } from "./lineup-seed.js";
 import { hydrateHistoricalMatchDetail } from "./history-detail.js";
+import {createLiveV4Match,advanceLiveV4Match,publicLiveV4Match,adjustLiveV4Tactics} from "./v4-adapter/live-match.js";
 import {
   advanceVersusMatch,
   createVersusMatch,
@@ -521,7 +522,7 @@ export class VersusRoomService {
       round: Number(room.round ?? 1),
       live: room.phase === "match",
       spectators: this.spectatorList(room),
-      match: publicMatch(room.match, this.now(), null, true),
+      match: (room.match.version===4?publicLiveV4Match:publicMatch)(room.match, this.now(), null, true),
     });
   }
 
@@ -645,7 +646,8 @@ export class VersusRoomService {
       this.beginMatch(room, now);
     }
     if (room.phase === "match") {
-      advanceVersusMatch(room.match, now);
+      if(room.match.version===4)advanceLiveV4Match(room.match,now,{maximumChains:2});
+      else advanceVersusMatch(room.match,now);
       if (room.match.finished) {
         room.phase = "report";
         if (room.competitionMode === "tournament" && room.legNumber === 1) {
@@ -807,7 +809,8 @@ export class VersusRoomService {
   beginMatch(room, now = this.now()) {
     room.phase = "match";
     room.phaseDeadline = null;
-    room.match = createVersusMatch(room.players.map((seat) => ({
+    const create = this.actualMatchEngine === "v4" ? createLiveV4Match : createVersusMatch;
+    room.match = create(room.players.map((seat) => ({
       name: seat.name,
       players: hydrateSelectedPlayers(starterSelections(seat)),
       positions: seat.positions,
@@ -817,7 +820,7 @@ export class VersusRoomService {
       defenseFocus: seat.defenseFocus,
       importedLineup: seat.importedLineup,
     })), {
-      now, seed: `${room.code}:${room.createdAt}:${room.round ?? 1}:${room.legNumber ?? 1}`,
+      now, interactive:true, seed: `${room.code}:${room.createdAt}:${room.round ?? 1}:${room.legNumber ?? 1}`,
       weather: room.weather?.key, referee: room.referee?.key,
       competitionMode: room.competitionMode,
       legNumber: room.legNumber,
@@ -1018,7 +1021,8 @@ export class VersusRoomService {
     const room = this.getRoom(code);
     const { index } = this.seat(room, playerToken);
     if (room.phase !== "match") throw new Error("当前没有进行中的比赛");
-    requestTacticalPause(room.match, index, this.now());
+    // getRoom above already advanced this room within its per-request budget.
+    requestTacticalPause(room.match, index, this.now(), room.match.version===4?()=>{}:advanceVersusMatch);
     room.updatedAt = this.now();
     return this.view(room, playerToken);
   }
@@ -1027,7 +1031,7 @@ export class VersusRoomService {
     const room = this.getRoom(code);
     const { index } = this.seat(room, playerToken);
     if (room.phase !== "match") throw new Error("当前没有进行中的比赛");
-    updatePausedTactics(room.match, index, payload);
+    (room.match.version===4?adjustLiveV4Tactics:updatePausedTactics)(room.match, index, payload);
     room.updatedAt = this.now();
     return this.view(room, playerToken);
   }
@@ -1096,7 +1100,7 @@ export class VersusRoomService {
       weather: ["tactics", "match", "report"].includes(room.phase) ? room.weather ?? room.match?.weather ?? null : null,
       referee: ["tactics", "match", "report"].includes(room.phase) ? room.referee ?? room.match?.referee ?? null : null,
       timer: room.phaseDeadline ? { remainingMs: Math.max(0, room.phaseDeadline - now), durationMs: room.phase === "draft" ? DRAFT_DURATION_MS : TACTICS_DURATION_MS } : null,
-      match: room.match ? publicMatch(room.match, now, viewerIndex) : null,
+      match: room.match ? (room.match.version===4?publicLiveV4Match:publicMatch)(room.match, now, viewerIndex) : null,
       spectators: room.phase === "match" ? this.spectatorList(room) : [],
       profile: ownSeat?.accountId && this.accounts.has(ownSeat.accountId) ? this.publicProfile(this.accounts.get(ownSeat.accountId)) : null,
     });

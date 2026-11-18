@@ -14,13 +14,14 @@ import {
 } from "../public/v2-tactical-profiles.js";
 import { YDL_TRAIT_BY_ID } from "../trait-pool.js";
 import { simulateV2PossessionChain } from "./possession-chain-v2.js";
+import { recordKeyPlays } from "../v3/key-plays.js";
 import { v2EngineAttributeValue, V2_MATCH_PARAMETERS, resolveV2MatchParameters } from "./match-parameters-v2.js";
 import { resolveV2TacticalDimensions } from "./spatial-model-v2.js";
 import { buildV2TeamSnapshots } from "./team-snapshot-v2.js";
 import { v2AttackingCommitmentProfile } from "./tactical-balance-v2.js";
 import {isV3,isV31,isV32,isV33,engineModel,engineProfile} from "../v3/model-config.js";
 import {tacticalExecutionFields} from "../public/tactical-execution.js";
-import {conditionalPlanName,conditionalReplacement} from "../v3/conditional-tactics.js";
+import {conditionalPlanName} from "../v3/conditional-tactics.js";
 import {resolveCornerRoutine} from "../v3/corner-routines.js";
 import {initializeFlowState,assertFlowState,flowMinute,FLOW_PERIODS,periodRemaining,resetFlowRestart,commitFlowClock,finishFlowPossession} from "../v3/flow-state.js";
 import {tacticalFlowFields} from "../public/tactical-flow.js";
@@ -29,7 +30,7 @@ import {matchOutcomeRoll} from "../v3/outcome-sampling.js";
 import {createSerializableMatchRng,initializeMatchRandom,restoreMatchRandom,matchRandom} from "../v3/random-state.js";
 import {captureMatchConfiguration,lockMatchConfiguration} from "../v3/match-configuration.js";
 import {initializeDiagnostics,wantsDecisionTrace,recordChainDiagnostics,recordShotDiagnostics,recordPlanDiagnostic} from "../v3/diagnostics.js";
-import { automaticSubstitutionRank, compareAutomaticSubstitutes } from "../automatic-substitution.js";
+import {applyPassivePlayerExit,PASSIVE_FAILURE_LABELS} from "../passive-substitution.js";
 import {
   resolveV2PlayerDuty,
   v2DutyDefenderMultiplier,
@@ -322,7 +323,7 @@ function dotReplayTerminalBall(event, ball, teams, attackingTeamIndex) {
   if (event.type === "miss") return { x:round(ball.x < 50 ? Math.max(3, ball.x - 12) : Math.min(97, ball.x + 12), 2), y:goalDepth };
   if (["save", "block"].includes(event.type)) {
     const targetId = event.type === "save" ? event.actorId : event.actorId ?? event.opponentId;
-    const target = teams.flatMap((team) => team.players).find((player) => player.id === targetId);
+    const target = teams.find((team) => team.teamIndex === (event.teamIndex ?? 1 - attackingTeamIndex))?.players.find((player) => player.id === targetId);
     if (target) return { x:target.x, y:target.y };
   }
   return { ...ball };
@@ -733,7 +734,8 @@ function applyTacticalPlan(match, team) {
     if (!team.positions[player.id]) return;
     player.boardPosition = structuredClone(team.positions[player.id]);
     if (player.active) {
-      player.assignedRole = assignedRoles[player.id] ?? player.assignedRole ?? player.role;
+      player.assignedRole = player.emergencyGoalkeeper ? "GK" : assignedRoles[player.id] ?? player.assignedRole ?? player.role;
+      if (player.emergencyGoalkeeper) team.structureRoles[player.id] = "GK";
       player.tacticalDuty = resolveV2PlayerDuty(player.assignedRole, team.playerDuties?.[player.id] ?? null);
     }
   });
@@ -815,114 +817,45 @@ function captureAnalysisSnapshot(match) {
   });
 }
 
-function replacePositionPlayer(positions, outgoingId, incomingId) {
-  if (!positions?.[outgoingId]) return false;
-  positions[incomingId] = structuredClone(positions[outgoingId]);
-  delete positions[outgoingId];
-  return true;
-}
-
-function replaceDutyPlayer(duties, outgoingId, incomingId) {
-  if (!duties || !Object.hasOwn(duties, outgoingId)) return false;
-  duties[incomingId] = duties[outgoingId];
-  delete duties[outgoingId];
-  return true;
-}
-
-function autoSubstituteInjuredPlayer(match, team, injuredPlayer, replacement=null) {
-  if (!match.parameters.state.substitutionsEnabled) return null;
-  if(isV33(match.parameters)&&team.stats.substitutions>=5)return null;
-  const targetRole = injuredPlayer.assignedRole ?? injuredPlayer.role;
-  const substitute = replacement?.incoming??team.players
-    .filter((player) => player.active === false && !player.injury && !player.sentOff && (!isV33(match.parameters)||!player.substitutedOut) && automaticSubstitutionRank(targetRole, player) > 0)
-    .sort((left, right) => compareAutomaticSubstitutes(targetRole, left, right))[0];
-  if (!substitute) return null;
-  const outgoingRole = injuredPlayer.assignedRole ?? injuredPlayer.role;
-  replacePositionPlayer(team.positions, injuredPlayer.id, substitute.id);
-  Object.values(team.positionPresets ?? {}).forEach((positions) => replacePositionPlayer(positions, injuredPlayer.id, substitute.id));
-  replaceDutyPlayer(team.playerDuties, injuredPlayer.id, substitute.id);
-  Object.values(team.tacticalPlans ?? {}).forEach((plan) => replaceDutyPlayer(plan.playerDuties, injuredPlayer.id, substitute.id));
-  replaceDutyPlayer(team.openingPlan?.playerDuties, injuredPlayer.id, substitute.id);
-  substitute.active = true;
-  substitute.assignedRole = outgoingRole;
-  substitute.tacticalDuty = resolveV2PlayerDuty(outgoingRole, injuredPlayer.tacticalDuty);
-  substitute.boardPosition = structuredClone(team.positions[substitute.id] ?? injuredPlayer.boardPosition ?? null);
-  substitute.enteredAsSubstitute = true;
-  substitute.substitutedForId = injuredPlayer.id;
-  injuredPlayer.substitutedOut = true;
-  if(isV33(match.parameters)) {
-    injuredPlayer.active=false;
-    const shape=match.flowState.shapes[team.index];
-    shape[substitute.id]={...(shape[injuredPlayer.id]??substitute.boardPosition??{x:50,y:70})};delete shape[injuredPlayer.id];
-    if(match.flowState.carrierId===injuredPlayer.id)match.flowState.carrierId=substitute.id;
+export function resolvePassivePlayerExit(match, team, player, cause) {
+  const result = applyPassivePlayerExit(match, team, player, cause);
+  if (result.status === "ignored") return result;
+  if (result.status === "substituted") {
+    const {incoming, outgoing} = result;
+    const goalkeeperRed = cause === "red";
+    result.message = goalkeeperRed
+      ? `${team.name}启动门将红牌应急换人：${incoming.name}换下${outgoing.name}，接替门将位置。`
+      : `${team.name}完成伤病换人：${incoming.name}替换${outgoing.name}出场。`;
+    addEvent(match, "substitution", team.index, result.message, {
+      actorId:incoming.id, opponentId:outgoing.id,
+      incomingPlayerId:incoming.id, incomingPlayerName:incoming.name,
+      outgoingPlayerId:outgoing.id, outgoingPlayerName:outgoing.name,
+      ...(goalkeeperRed ? {dismissedGoalkeeperId:player.id,dismissedGoalkeeperName:player.name} : {}),
+      reason:goalkeeperRed ? "goalkeeperRedCard" : "injury",
+      assignedRole:incoming.assignedRole, tacticalDuty:incoming.tacticalDuty,
+      detail:`换下：${outgoing.name}；换上：${incoming.name}；接管${incoming.assignedRole}职责；按位置匹配与体能折算能力选择；已用换人名额：${team.stats.substitutions}/5。`,
+    });
+  } else {
+    result.message = result.failureReason ? `${PASSIVE_FAILURE_LABELS[result.failureReason]}，无法完成替补换人。` : "外场球员红牌罚下不可补回。";
+    if (result.emergencyGoalkeeper) {
+      const keeper=result.emergencyGoalkeeper;
+      result.message += `${keeper.name}改任应急门将，场上仍为${activePlayers(team).length}人。`;
+      addEvent(match, "tactical", team.index, result.message, {
+        actorId:keeper.id, departedPlayerId:player.id, assignedRole:"GK",
+        reason:"emergencyGoalkeeper", failureReason:result.failureReason,
+        importance:"major", detail:"场内调整，不增加人数、不占换人名额；已同步所有预案的门将位置与职责。",
+      });
+    } else result.message += `场上剩余${activePlayers(team).length}人。`;
   }
-  team.stats.substitutions = Number(team.stats.substitutions ?? 0) + 1;
-  addEvent(match, "substitution", team.index, `${team.name}完成${replacement?'条件':'伤病'}换人：${substitute.name}替换${injuredPlayer.name}出场。`, {
-    actorId:substitute.id,
-    opponentId:injuredPlayer.id,
-    incomingPlayerId:substitute.id,
-    incomingPlayerName:substitute.name,
-    outgoingPlayerId:injuredPlayer.id,
-    outgoingPlayerName:injuredPlayer.name,
-    reason:replacement?"conditional":"injury",
-    ...(replacement?{condition:replacement.condition,fitnessBefore:injuredPlayer.state.fitness}:{}),
-    assignedRole:outgoingRole,
-    tacticalDuty:substitute.tacticalDuty,
-    detail:`换下：${injuredPlayer.name}；换上：${substitute.name}；位置匹配顺序：主位置、次位置、同位置线；${substitute.name}接管${outgoingRole}职责。`,
-  });
-  return substitute;
+  return result;
 }
 
-function currentMatchRating(player) {
-  const stats = player?.matchStats ?? {};
-  return Math.max(4, Math.min(10, 6.5
-    + Number(stats.goals ?? 0) * 0.8
-    + Number(stats.assists ?? 0) * 0.5
-    + Number(stats.saves ?? 0) * 0.12
-    - Number(stats.redCards ?? 0) * 1.5));
-}
-
-export function autoSubstituteDismissedGoalkeeper(match, team, dismissedGoalkeeper) {
-  if (!match.parameters.state.substitutionsEnabled || (dismissedGoalkeeper.assignedRole ?? dismissedGoalkeeper.role) !== "GK") return null;
-  if(isV33(match.parameters)&&team.stats.substitutions>=5)return null;
-  const substitute = team.players
-    .filter((player) => player.active === false && !player.injury && !player.sentOff && (!isV33(match.parameters)||!player.substitutedOut) && automaticSubstitutionRank("GK", player) > 0)
-    .sort((left, right) => compareAutomaticSubstitutes("GK", left, right))[0];
-  const outgoingCenterBack = activePlayers(team)
-    .filter((player) => (player.assignedRole ?? player.role) === "CB")
-    .sort((left, right) => currentMatchRating(left) - currentMatchRating(right)
-      || Number(left.overall ?? 0) - Number(right.overall ?? 0)
-      || String(left.id ?? "").localeCompare(String(right.id ?? "")))[0];
-  if (!substitute || !outgoingCenterBack) return null;
-
-  replacePositionPlayer(team.positions, dismissedGoalkeeper.id, substitute.id);
-  delete team.positions[outgoingCenterBack.id];
-  Object.values(team.positionPresets ?? {}).forEach((positions) => {
-    replacePositionPlayer(positions, dismissedGoalkeeper.id, substitute.id);
-    delete positions[outgoingCenterBack.id];
-  });
-  outgoingCenterBack.active = false;
-  outgoingCenterBack.substitutedOut = true;
-  substitute.active = true;
-  substitute.assignedRole = "GK";
-  substitute.boardPosition = structuredClone(team.positions[substitute.id] ?? dismissedGoalkeeper.boardPosition ?? null);
-  substitute.enteredAsSubstitute = true;
-  substitute.substitutedForId = outgoingCenterBack.id;
-  team.stats.substitutions = Number(team.stats.substitutions ?? 0) + 1;
-  addEvent(match, "substitution", team.index, `${team.name}启动门将红牌应急换人：${substitute.name}换下${outgoingCenterBack.name}，接替门将位置。`, {
-    actorId:substitute.id,
-    opponentId:outgoingCenterBack.id,
-    incomingPlayerId:substitute.id,
-    incomingPlayerName:substitute.name,
-    outgoingPlayerId:outgoingCenterBack.id,
-    outgoingPlayerName:outgoingCenterBack.name,
-    dismissedGoalkeeperId:dismissedGoalkeeper.id,
-    dismissedGoalkeeperName:dismissedGoalkeeper.name,
-    reason:"goalkeeperRedCard",
-    assignedRole:"GK",
-    detail:`被罚门将：${dismissedGoalkeeper.name}；换下中后卫：${outgoingCenterBack.name}（当前评分${currentMatchRating(outgoingCenterBack).toFixed(1)}，总评${Number(outgoingCenterBack.overall ?? 0)}）；换上门将：${substitute.name}。`,
-  });
-  return { substitute, outgoingCenterBack };
+// Compatibility entry point used by older callers; the same rules handle injury exits.
+export function autoSubstituteDismissedGoalkeeper(match, team, player) {
+  if ((player.assignedRole ?? player.role) !== "GK") return null;
+  const result=resolvePassivePlayerExit(match,team,player,"red");
+  return result.status === "substituted"
+    ? {substitute:result.incoming,outgoingPlayer:result.outgoing,outgoingCenterBack:result.outgoing} : null;
 }
 
 function removePlayer(match, team, player, reason, details = {}) {
@@ -975,12 +908,10 @@ function removePlayer(match, team, player, reason, details = {}) {
       zone:details.zone ?? null,
       detail:`被罚球员：${player.name}；判罚原因：${details.cause === "secondYellow" ? "两黄变红" : details.cause === "blackWhistle" ? "争议直接红牌" : details.cause === "brawl" ? "群体冲突直接红牌" : "严重犯规直接红牌"}；${details.opponentName ? `犯规对象：${details.opponentName}；` : ""}${details.zone ? `犯规区域：${zoneLabel(details.zone)}；` : ""}剩余人数：${activePlayers(team).length}；赛后自动停赛1场。`,
     });
-    const goalkeeperSubstitution = autoSubstituteDismissedGoalkeeper(match, team, player);
-    dismissalEvent.detail += goalkeeperSubstitution
-      ? `门将红牌应急换人已执行，${goalkeeperSubstitution.outgoingCenterBack.name}被换下，${goalkeeperSubstitution.substitute.name}替补出场。`
-      : (player.assignedRole ?? player.role) === "GK"
-        ? "替补席没有可用门将或场上没有可换下的中后卫，无法执行门将红牌应急换人。"
-        : "外场球员红牌罚下不可换人。";
+    const resolution = resolvePassivePlayerExit(match, team, player, "red");
+    dismissalEvent.detail += resolution.message ?? "";
+    dismissalEvent.substitutionFailureReason = resolution.failureReason ?? null;
+    dismissalEvent.emergencyGoalkeeperId = resolution.emergencyGoalkeeper?.id ?? null;
   } else {
     team.stats.injuries += 1;
     const offender = details.offender ?? null;
@@ -1013,11 +944,13 @@ function removePlayer(match, team, player, reason, details = {}) {
       cause:details.cause ?? "match",
       detail:`${details.injuryTransferred ? `原受伤球员：${details.transferredFromPlayerName}；“${details.injuryTransferTraitName}”将伤病转移给${player.name}；` : ""}伤退球员：${player.name}；伤病原因：${details.cause === "foul" ? "对手犯规" : details.cause === "lightningInjury" ? "雷击" : details.cause === "weatherInjury" ? `${WEATHER_LABELS[details.weather ?? match.environment.weather] ?? "恶劣天气"}影响` : "无对抗意外受伤"}；${offender ? `致伤球员：${offender.name}；纪律处罚：${details.card === "red" ? "直接红牌" : details.card === "yellow" ? "黄牌" : "未出牌"}；` : ""}${details.zone ? `发生区域：${zoneLabel(details.zone)}；` : ""}预计缺席：${player.injury.injuryRounds}轮。`,
     });
-    const substitute = autoSubstituteInjuredPlayer(match, team, player);
-    if (!substitute) {
-      injuryEvent.text += `${team.name}替补席没有符合位置要求的球员，只能以${activePlayers(team).length}人继续比赛。`;
-      injuryEvent.detail += `替补席无同位置、次位置或同位置线球员；剩余人数：${activePlayers(team).length}。`;
+    const resolution = resolvePassivePlayerExit(match, team, player, "injury");
+    if (resolution.status !== "substituted") {
+      injuryEvent.text += resolution.message ?? "";
+      injuryEvent.detail += resolution.message ?? "";
     }
+    injuryEvent.substitutionFailureReason = resolution.failureReason ?? null;
+    injuryEvent.emergencyGoalkeeperId = resolution.emergencyGoalkeeper?.id ?? null;
   }
   return true;
 }
@@ -2251,10 +2184,6 @@ function runV2Chain(match, chainIndex, options = {}) {
     ? round((chainIndex + 0.5) / regulationChainCount * 90, 2)
     : round(90 + (chainIndex - regulationChainCount + 0.5) / extraTimeChainCount * 30, 2);
   match.teams.forEach((team) => applyTacticalPlan(match, team));
-  if(isV33(match.parameters))for(const team of match.teams) {
-    const replacement=conditionalReplacement(match,team);
-    if(replacement&&autoSubstituteInjuredPlayer(match,team,replacement.outgoing,replacement))team.lastConditionalRotationAt=match.flowState.elapsedSeconds;
-  }
   captureAnalysisSnapshot(match);
   maybeBlackWhistle(match, chainIndex, regulationChainCount);
   maybeBrawl(match, chainIndex, regulationChainCount);
@@ -2280,9 +2209,11 @@ function runV2Chain(match, chainIndex, options = {}) {
     recordRandomRolls:Boolean(options.recordRandomRolls)||wantsDecisionTrace(match),
     recordDecisionTrace:wantsDecisionTrace(match),
     recordReplayShape:Boolean(match.dotReplayEnabled),
+    recordKeyPlays:Boolean(match.keyPlaysEnabled),
     ...(isV3(match.parameters)?{outcomeRoll:channel=>matchOutcomeRoll(match,channel)}:{}),
   });
-  const { replayShape, replaySequence, nextFlow, ...simulatedChainData } = simulatedChain;
+  const { replayShape, replaySequence, nextFlow, keyPlayActions, ...simulatedChainData } = simulatedChain;
+  const keyPlayEventStart = match.events.length;
   if(continuous)match.flowState=nextFlow;
   match.currentReplayShape = replayShape ?? null;
   match.currentReplaySequence = replaySequence ?? null;
@@ -2394,6 +2325,7 @@ function runV2Chain(match, chainIndex, options = {}) {
   ensurePlayable(match);
   match.currentReplayShape = null;
   match.currentReplaySequence = null;
+  recordKeyPlays(match, keyPlayActions, match.events.slice(keyPlayEventStart));
   if(continuous)delete match.activeFlowChain;
   return chain;
 }
@@ -2450,6 +2382,8 @@ export function createV2Match(teams, options = {}) {
       : null,
     dotReplayEnabled:Boolean(options.dotReplayEnabled),
     dotReplayFrames:[],
+    keyPlaysEnabled:Boolean(options.keyPlaysEnabled),
+    keyPlays:[],
     currentReplayShape:null,
     currentReplaySequence:null,
     lastReplayShape:null,
@@ -2563,6 +2497,11 @@ function advanceContinuousMatch(match,targetChainCount,options) {
 export function advanceV2Match(match, targetChainCount = match.nextChainIndex + 1, options = {}) {
   if (!match || match.finished) return match;
   if(!runtimeMatches.has(match))restoreV2MatchRuntime(match);
+  if (!ensurePlayable(match)) {
+    finishV2Match(match);
+    syncCommentary(match);
+    return match;
+  }
   const chainCount = Number(match.possessionChainCount ?? 180);
   const target = Math.min(chainCount, Math.max(0, Number(targetChainCount)));
   if (!match.started) {

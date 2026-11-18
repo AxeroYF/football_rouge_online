@@ -1,0 +1,948 @@
+{
+  "schemaVersion": 2,
+  "frame": "shield-v1",
+  "appliedAt": "2026-11-16T07:04:44.773Z",
+  "backupDirectory": "D:\\YFFM1\\outputs\\card-art-imports\\2026-11-16T07-04-40-548Z",
+  "players": [
+    {
+      "id": "s4-fc26-210257",
+      "name": "埃德松",
+      "sourceName": "Ederson",
+      "grade": "A",
+      "overall": 86,
+      "role": "GK",
+      "nationality": "巴西",
+      "club": "费内巴切",
+      "imageUrl": "/versus/player_profiles/webp/eedf4db3480df22df2dd09e4-41c01f9307b5.webp?v=41c01f9307b5",
+      "imageFile": "player_profiles/webp/eedf4db3480df22df2dd09e4-41c01f9307b5.webp",
+      "position": {
+        "xPercent": 53.9,
+        "yPercent": 66,
+        "widthPercent": 225.2
+      },
+      "pixelWidth": 720,
+      "pixelHeight": 508,
+      "sha256": "41c01f9307b59e0123076f18334965f0eba26a31b18bc1a282177d921f1ff3a9",
+      "source": {
+        "pageUrl": null,
+        "imageUrl": null,
+        "file": "player_profiles/webp/eedf4db3480df22df2dd09e4.webp",
+        "title": "Existing Ederson upload (player-ID hash match)",
+        "author": null
+      },
+      "bounds": {
+        "left": 224,
+        "top": 26,
+        "right": 522,
+        "bottom": 508
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-210257",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-210257.webp",
+        "optimizedFileName": "eedf4db3480df22df2dd09e4-41c01f9307b5.webp",
+        "imageUrl": "/versus/player_profiles/webp/eedf4db3480df22df2dd09e4-41c01f9307b5.webp?v=41c01f9307b5",
+        "contentHash": "41c01f9307b5",
+        "xPercent": 53.9,
+        "yPercent": 66,
+        "widthPercent": 225.2,
+        "pixelWidth": 720,
+        "pixelHeight": 508,
+        "updatedAt": "2026-11-16T07:04:40.821Z"
+      }
+    },
+    {
+      "id": "s4-fc26-202811",
+      "name": "大马丁",
+      "sourceName": "Emiliano Martínez",
+      "grade": "A",
+      "overall": 86,
+      "role": "GK",
+      "nationality": "阿根廷",
+      "club": "阿斯顿维拉",
+      "imageUrl": "/versus/player_profiles/webp/ae569510ed6e211335dc0c31-adeafeb771bd.webp?v=adeafeb771bd",
+      "imageFile": "player_profiles/webp/ae569510ed6e211335dc0c31-adeafeb771bd.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 63.9,
+        "widthPercent": 85.4
+      },
+      "pixelWidth": 993,
+      "pixelHeight": 1600,
+      "sha256": "adeafeb771bd702b74d319efe378b35ba32cb8b5c4ac87059581d6340f9213ac",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/premier-league/aston-villa/emiliano-martinez-12/",
+        "imageUrl": "https://www.footyrenders.com/render/emiliano-martinez-9.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-202811-2.png",
+        "title": "Emiliano Martinez",
+        "author": "lyovnaape"
+      },
+      "bounds": {
+        "left": 1,
+        "top": 4,
+        "right": 993,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-202811",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-202811.webp",
+        "optimizedFileName": "ae569510ed6e211335dc0c31-adeafeb771bd.webp",
+        "imageUrl": "/versus/player_profiles/webp/ae569510ed6e211335dc0c31-adeafeb771bd.webp?v=adeafeb771bd",
+        "contentHash": "adeafeb771bd",
+        "xPercent": 58,
+        "yPercent": 63.9,
+        "widthPercent": 85.4,
+        "pixelWidth": 993,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:41.071Z"
+      }
+    },
+    {
+      "id": "s4-fc26-234396",
+      "name": "阿方索戴维斯",
+      "sourceName": "Alphonso Davies",
+      "grade": "A",
+      "overall": 86,
+      "role": "LB",
+      "nationality": "加拿大",
+      "club": "拜仁慕尼黑",
+      "imageUrl": "/versus/player_profiles/webp/854c37475ccef171e5013a5e-378e6560281a.webp?v=378e6560281a",
+      "imageFile": "player_profiles/webp/854c37475ccef171e5013a5e-378e6560281a.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 69,
+        "widthPercent": 82.9
+      },
+      "pixelWidth": 879,
+      "pixelHeight": 1600,
+      "sha256": "378e6560281aa602f8c033b52486d1f1a4cfd0ca9664f9a2c69683abfb46d5a1",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/bundesliga/bayern-munich/alphonso-davies-16/",
+        "imageUrl": "https://www.footyrenders.com/render/alphonso-davies-13.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-234396-0.png",
+        "title": "Alphonso Davies",
+        "author": "FRMatchDay"
+      },
+      "bounds": {
+        "left": 1,
+        "top": 1,
+        "right": 879,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-234396",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-234396.webp",
+        "optimizedFileName": "854c37475ccef171e5013a5e-378e6560281a.webp",
+        "imageUrl": "/versus/player_profiles/webp/854c37475ccef171e5013a5e-378e6560281a.webp?v=378e6560281a",
+        "contentHash": "378e6560281a",
+        "xPercent": 58,
+        "yPercent": 69,
+        "widthPercent": 82.9,
+        "pixelWidth": 879,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:41.313Z"
+      }
+    },
+    {
+      "id": "s4-fc26-226851",
+      "name": "帕瓦尔",
+      "sourceName": "Benjamin Pavard",
+      "grade": "A",
+      "overall": 86,
+      "role": "CB",
+      "nationality": "法国",
+      "club": "马赛",
+      "imageUrl": "/versus/player_profiles/webp/212fa9062ffe2428067b9ea1-b6a8aaabd8c9.webp?v=b6a8aaabd8c9",
+      "imageFile": "player_profiles/webp/212fa9062ffe2428067b9ea1-b6a8aaabd8c9.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 64,
+        "widthPercent": 61.7
+      },
+      "pixelWidth": 719,
+      "pixelHeight": 1600,
+      "sha256": "b6a8aaabd8c958f3a926d2b44713927aa15cb36e1e618caa922d9f623c6196a8",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/nations/france/benjamin-pavard-11/",
+        "imageUrl": "https://www.footyrenders.com/render/benjamin-pavard-4.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-226851-1.png",
+        "title": "Benjamin Pavard",
+        "author": "YousefMohamad"
+      },
+      "bounds": {
+        "left": 1,
+        "top": 1,
+        "right": 718,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-226851",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-226851.webp",
+        "optimizedFileName": "212fa9062ffe2428067b9ea1-b6a8aaabd8c9.webp",
+        "imageUrl": "/versus/player_profiles/webp/212fa9062ffe2428067b9ea1-b6a8aaabd8c9.webp?v=b6a8aaabd8c9",
+        "contentHash": "b6a8aaabd8c9",
+        "xPercent": 58,
+        "yPercent": 64,
+        "widthPercent": 61.7,
+        "pixelWidth": 719,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:41.504Z"
+      }
+    },
+    {
+      "id": "s4-fc26-240130",
+      "name": "米利唐",
+      "sourceName": "Éder Militão",
+      "grade": "A",
+      "overall": 86,
+      "role": "CB",
+      "nationality": "巴西",
+      "club": "皇家马德里",
+      "imageUrl": "/versus/player_profiles/webp/b31f28a691be6cf316c0b4f7-41397fa1209c.webp?v=41397fa1209c",
+      "imageFile": "player_profiles/webp/b31f28a691be6cf316c0b4f7-41397fa1209c.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 68,
+        "widthPercent": 73.6
+      },
+      "pixelWidth": 632,
+      "pixelHeight": 1273,
+      "sha256": "41397fa1209c56bd3a0d466aa051601d9a188c05f6ed2820be413beb43c34a37",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/la-liga/real-madrid/eder-militao-19/",
+        "imageUrl": "https://www.footyrenders.com/render/eder-militao-16.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-240130-1.png",
+        "title": "Éder Militão",
+        "author": "toolbaralexxan"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 1,
+        "right": 632,
+        "bottom": 1273
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-240130",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-240130.webp",
+        "optimizedFileName": "b31f28a691be6cf316c0b4f7-41397fa1209c.webp",
+        "imageUrl": "/versus/player_profiles/webp/b31f28a691be6cf316c0b4f7-41397fa1209c.webp?v=41397fa1209c",
+        "contentHash": "41397fa1209c",
+        "xPercent": 58,
+        "yPercent": 68,
+        "widthPercent": 73.6,
+        "pixelWidth": 632,
+        "pixelHeight": 1273,
+        "updatedAt": "2026-11-16T07:04:41.632Z"
+      }
+    },
+    {
+      "id": "s4-fc26-251517",
+      "name": "格瓦迪奥尔",
+      "sourceName": "Joško Gvardiol",
+      "grade": "A",
+      "overall": 86,
+      "role": "LB",
+      "nationality": "克罗地亚",
+      "club": "曼城",
+      "imageUrl": "/versus/player_profiles/webp/2192ecf8e45b8704a1d419cf-44cc20a9d65e.webp?v=44cc20a9d65e",
+      "imageFile": "player_profiles/webp/2192ecf8e45b8704a1d419cf-44cc20a9d65e.webp",
+      "position": {
+        "xPercent": 44,
+        "yPercent": 66.8,
+        "widthPercent": 93.7
+      },
+      "pixelWidth": 1028,
+      "pixelHeight": 1600,
+      "sha256": "44cc20a9d65e2084a57246a1053c82a5b0eec91e087f7ea22a058ace21cd43d7",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/premier-league/manchester-city/josko-gvardiol-8/",
+        "imageUrl": "https://www.footyrenders.com/render/josko-gvardiol-7.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-251517-1.png",
+        "title": "Josko Gvardiol",
+        "author": "resasigit06"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 5,
+        "right": 1028,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-251517",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-251517.webp",
+        "optimizedFileName": "2192ecf8e45b8704a1d419cf-44cc20a9d65e.webp",
+        "imageUrl": "/versus/player_profiles/webp/2192ecf8e45b8704a1d419cf-44cc20a9d65e.webp?v=44cc20a9d65e",
+        "contentHash": "44cc20a9d65e",
+        "xPercent": 44,
+        "yPercent": 66.8,
+        "widthPercent": 93.7,
+        "pixelWidth": 1028,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:41.880Z"
+      }
+    },
+    {
+      "id": "s4-dlc-20260731-009",
+      "name": "加里·内维尔",
+      "sourceName": "Gary Neville",
+      "grade": "A",
+      "overall": 86,
+      "role": "CB",
+      "nationality": "英格兰",
+      "club": "曼联",
+      "imageUrl": "/versus/player_profiles/webp/1963d40cd9933630d529834d-bc8931ccf450.webp?v=bc8931ccf450",
+      "imageFile": "player_profiles/webp/1963d40cd9933630d529834d-bc8931ccf450.webp",
+      "position": {
+        "xPercent": 55.1,
+        "yPercent": 65.3,
+        "widthPercent": 122.2
+      },
+      "pixelWidth": 1217,
+      "pixelHeight": 1600,
+      "sha256": "bc8931ccf450ceb822f9b10dae2462736742f465ac271f63d77e2c291ab73a9d",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/legends/gary-neville/",
+        "imageUrl": "https://www.footyrenders.com/render/Gary-Neville.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-dlc-20260731-009-0.png",
+        "title": "Gary Neville",
+        "author": "dma365"
+      },
+      "bounds": {
+        "left": 112,
+        "top": 98,
+        "right": 1162,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-dlc-20260731-009",
+        "grade": "A",
+        "sourceFileName": "s4-dlc-20260731-009.webp",
+        "optimizedFileName": "1963d40cd9933630d529834d-bc8931ccf450.webp",
+        "imageUrl": "/versus/player_profiles/webp/1963d40cd9933630d529834d-bc8931ccf450.webp?v=bc8931ccf450",
+        "contentHash": "bc8931ccf450",
+        "xPercent": 55.1,
+        "yPercent": 65.3,
+        "widthPercent": 122.2,
+        "pixelWidth": 1217,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:42.151Z"
+      }
+    },
+    {
+      "id": "s4-fc26-241096",
+      "name": "托纳利",
+      "sourceName": "Sandro Tonali",
+      "grade": "A",
+      "overall": 86,
+      "role": "DM",
+      "nationality": "意大利",
+      "club": "纽卡斯尔联",
+      "imageUrl": "/versus/player_profiles/webp/f41c53e12e064d5e923b796a-83162612749f.webp?v=83162612749f",
+      "imageFile": "player_profiles/webp/f41c53e12e064d5e923b796a-83162612749f.webp",
+      "position": {
+        "xPercent": 48,
+        "yPercent": 90.3,
+        "widthPercent": 102.6
+      },
+      "pixelWidth": 785,
+      "pixelHeight": 1600,
+      "sha256": "83162612749fe2fcafa6581ac097f1e8faf0eb9030dc64ac7216750cafa3c082",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/premier-league/newcastle/sandro-tonali-6/",
+        "imageUrl": "https://www.footyrenders.com/render/sandro-tonali-5.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-241096-0.png",
+        "title": "Sandro Tonali",
+        "author": "resasigit06"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 4,
+        "right": 785,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-241096",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-241096.webp",
+        "optimizedFileName": "f41c53e12e064d5e923b796a-83162612749f.webp",
+        "imageUrl": "/versus/player_profiles/webp/f41c53e12e064d5e923b796a-83162612749f.webp?v=83162612749f",
+        "contentHash": "83162612749f",
+        "xPercent": 48,
+        "yPercent": 90.3,
+        "widthPercent": 102.6,
+        "pixelWidth": 785,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:42.344Z"
+      }
+    },
+    {
+      "id": "s4-fc26-256516",
+      "name": "尼科威廉姆斯",
+      "sourceName": "Nico Williams",
+      "grade": "A",
+      "overall": 86,
+      "role": "LM",
+      "nationality": "西班牙",
+      "club": "毕尔巴鄂竞技",
+      "imageUrl": "/versus/player_profiles/webp/e64a12c1918098b9602b24c1-7e3106da9e96.webp?v=7e3106da9e96",
+      "imageFile": "player_profiles/webp/e64a12c1918098b9602b24c1-7e3106da9e96.webp",
+      "position": {
+        "xPercent": 57.9,
+        "yPercent": 93,
+        "widthPercent": 96.5
+      },
+      "pixelWidth": 716,
+      "pixelHeight": 1600,
+      "sha256": "7e3106da9e963f59778a00ff30225fe52276524d01ab8b56d52067bdb7cf0a2d",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/la-liga/athletic-bilbao/nico-williams-3/",
+        "imageUrl": "https://www.footyrenders.com/render/nico-williams-2.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-256516-2.png",
+        "title": "Nico Williams",
+        "author": "crisssfx"
+      },
+      "bounds": {
+        "left": 1,
+        "top": 1,
+        "right": 716,
+        "bottom": 1599
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-256516",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-256516.webp",
+        "optimizedFileName": "e64a12c1918098b9602b24c1-7e3106da9e96.webp",
+        "imageUrl": "/versus/player_profiles/webp/e64a12c1918098b9602b24c1-7e3106da9e96.webp?v=7e3106da9e96",
+        "contentHash": "7e3106da9e96",
+        "xPercent": 57.9,
+        "yPercent": 93,
+        "widthPercent": 96.5,
+        "pixelWidth": 716,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:42.527Z"
+      }
+    },
+    {
+      "id": "s4-fc26-241721",
+      "name": "莱奥",
+      "sourceName": "Rafael Leão",
+      "grade": "A",
+      "overall": 86,
+      "role": "LW",
+      "nationality": "葡萄牙",
+      "club": "AC米兰",
+      "imageUrl": "/versus/player_profiles/webp/d4c7af858f09dffa628ea371-07077e3ec569.webp?v=07077e3ec569",
+      "imageFile": "player_profiles/webp/d4c7af858f09dffa628ea371-07077e3ec569.webp",
+      "position": {
+        "xPercent": 49,
+        "yPercent": 70.4,
+        "widthPercent": 78.7
+      },
+      "pixelWidth": 555,
+      "pixelHeight": 1094,
+      "sha256": "07077e3ec569d2a8a1d585ff823337365831b1df1820c1255f5c934c804caca7",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/serie-a/milan/rafael-leao-13/",
+        "imageUrl": "https://www.footyrenders.com/render/rafael-leao-11.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-241721-2.png",
+        "title": "Rafael Leão",
+        "author": "lyovnaape"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 2,
+        "right": 554,
+        "bottom": 1094
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-241721",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-241721.webp",
+        "optimizedFileName": "d4c7af858f09dffa628ea371-07077e3ec569.webp",
+        "imageUrl": "/versus/player_profiles/webp/d4c7af858f09dffa628ea371-07077e3ec569.webp?v=07077e3ec569",
+        "contentHash": "07077e3ec569",
+        "xPercent": 49,
+        "yPercent": 70.4,
+        "widthPercent": 78.7,
+        "pixelWidth": 555,
+        "pixelHeight": 1094,
+        "updatedAt": "2026-11-16T07:04:42.639Z"
+      }
+    },
+    {
+      "id": "s4-fc26-178509",
+      "name": "吉鲁",
+      "sourceName": "Olivier Giroud",
+      "grade": "A",
+      "overall": 86,
+      "role": "ST",
+      "nationality": "法国",
+      "club": "里尔",
+      "imageUrl": "/versus/player_profiles/webp/18c84f74cea262bbed97df77-6ee38347292b.webp?v=6ee38347292b",
+      "imageFile": "player_profiles/webp/18c84f74cea262bbed97df77-6ee38347292b.webp",
+      "position": {
+        "xPercent": 57.9,
+        "yPercent": 86.9,
+        "widthPercent": 132.8
+      },
+      "pixelWidth": 905,
+      "pixelHeight": 1360,
+      "sha256": "6ee38347292b4864913de1126ec91757a07e0ad22d64f1e838d1c321875cfb42",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/ligue-1/lille/olivier-giroud-112/",
+        "imageUrl": "https://www.footyrenders.com/render/olivier-giroud-55.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-178509-0.png",
+        "title": "Olivier Giroud",
+        "author": "zoranstojanovic"
+      },
+      "bounds": {
+        "left": 2,
+        "top": 2,
+        "right": 904,
+        "bottom": 1360
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-178509",
+        "grade": "A",
+        "sourceFileName": "s4-fc26-178509.webp",
+        "optimizedFileName": "18c84f74cea262bbed97df77-6ee38347292b.webp",
+        "imageUrl": "/versus/player_profiles/webp/18c84f74cea262bbed97df77-6ee38347292b.webp?v=6ee38347292b",
+        "contentHash": "6ee38347292b",
+        "xPercent": 57.9,
+        "yPercent": 86.9,
+        "widthPercent": 132.8,
+        "pixelWidth": 905,
+        "pixelHeight": 1360,
+        "updatedAt": "2026-11-16T07:04:42.844Z"
+      }
+    },
+    {
+      "id": "s4-dlc-20260731-026",
+      "name": "大卫·比利亚",
+      "sourceName": "David Villa",
+      "grade": "A",
+      "overall": 86,
+      "role": "ST",
+      "nationality": "西班牙",
+      "club": "巴塞罗那",
+      "imageUrl": "/versus/player_profiles/webp/3408b11c2b1ab1cf59372fed-47c14fcb8686.webp?v=47c14fcb8686",
+      "imageFile": "player_profiles/webp/3408b11c2b1ab1cf59372fed-47c14fcb8686.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 66.9,
+        "widthPercent": 99
+      },
+      "pixelWidth": 1087,
+      "pixelHeight": 1600,
+      "sha256": "47c14fcb868624aca19099085ab01d32282537b2d90d702ade2fb791cc346745",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/la-liga/barcelona/david-villa-15/",
+        "imageUrl": "https://www.footyrenders.com/render/david-villa-3.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-dlc-20260731-026-1.png",
+        "title": "David Villa",
+        "author": "DarkNaples"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 3,
+        "right": 1087,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-dlc-20260731-026",
+        "grade": "A",
+        "sourceFileName": "s4-dlc-20260731-026.webp",
+        "optimizedFileName": "3408b11c2b1ab1cf59372fed-47c14fcb8686.webp",
+        "imageUrl": "/versus/player_profiles/webp/3408b11c2b1ab1cf59372fed-47c14fcb8686.webp?v=47c14fcb8686",
+        "contentHash": "47c14fcb8686",
+        "xPercent": 58,
+        "yPercent": 66.9,
+        "widthPercent": 99,
+        "pixelWidth": 1087,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:43.100Z"
+      }
+    },
+    {
+      "id": "s4-fc26-193080",
+      "name": "德赫亚",
+      "sourceName": "De Gea",
+      "grade": "B",
+      "overall": 85,
+      "role": "GK",
+      "nationality": "西班牙",
+      "club": "佛罗伦萨",
+      "imageUrl": "/versus/player_profiles/webp/bd765dc01f2d0a55c46766d6-add8a078dd92.webp?v=add8a078dd92",
+      "imageFile": "player_profiles/webp/bd765dc01f2d0a55c46766d6-add8a078dd92.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 64,
+        "widthPercent": 95.5
+      },
+      "pixelWidth": 1046,
+      "pixelHeight": 1505,
+      "sha256": "add8a078dd9239e7a4503fc4a0b06071718c5cc883bd4eb66a41ceb1f664dbe6",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/premier-league/manchester-united/david-de-gea-68/",
+        "imageUrl": "https://www.footyrenders.com/render/david-de-gea-28.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-193080-2.png",
+        "title": "David de Gea",
+        "author": "Zahran74"
+      },
+      "bounds": {
+        "left": 2,
+        "top": 1,
+        "right": 1045,
+        "bottom": 1505
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-193080",
+        "grade": "B",
+        "sourceFileName": "s4-fc26-193080.webp",
+        "optimizedFileName": "bd765dc01f2d0a55c46766d6-add8a078dd92.webp",
+        "imageUrl": "/versus/player_profiles/webp/bd765dc01f2d0a55c46766d6-add8a078dd92.webp?v=add8a078dd92",
+        "contentHash": "add8a078dd92",
+        "xPercent": 58,
+        "yPercent": 64,
+        "widthPercent": 95.5,
+        "pixelWidth": 1046,
+        "pixelHeight": 1505,
+        "updatedAt": "2026-11-16T07:04:43.369Z"
+      }
+    },
+    {
+      "id": "s4-retired-petr-cech",
+      "name": "切赫",
+      "sourceName": "Petr Čech",
+      "grade": "B",
+      "overall": 85,
+      "role": "GK",
+      "nationality": "捷克",
+      "club": "切尔西",
+      "imageUrl": "/versus/player_profiles/webp/285630e887da6e2d60860836-f21936144ba4.webp?v=f21936144ba4",
+      "imageFile": "player_profiles/webp/285630e887da6e2d60860836-f21936144ba4.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 72,
+        "widthPercent": 108
+      },
+      "pixelWidth": 1088,
+      "pixelHeight": 1600,
+      "sha256": "f21936144ba4d3bd7b7b565042422275e9dc080eed7fe22a3a98144d4c010681",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/premier-league/chelsea/petr-cech-14/",
+        "imageUrl": "https://www.footyrenders.com/render/petr-cech-7.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-retired-petr-cech-0.png",
+        "title": "Petr Cech",
+        "author": "ShivRenders"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 0,
+        "right": 1088,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-retired-petr-cech",
+        "grade": "B",
+        "sourceFileName": "s4-retired-petr-cech.webp",
+        "optimizedFileName": "285630e887da6e2d60860836-f21936144ba4.webp",
+        "imageUrl": "/versus/player_profiles/webp/285630e887da6e2d60860836-f21936144ba4.webp?v=f21936144ba4",
+        "contentHash": "f21936144ba4",
+        "xPercent": 58,
+        "yPercent": 72,
+        "widthPercent": 108,
+        "pixelWidth": 1088,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:43.612Z"
+      }
+    },
+    {
+      "id": "s4-dlc-20260731-024",
+      "name": "法比奥·科恩特朗",
+      "sourceName": "Fábio Coentrão",
+      "grade": "B",
+      "overall": 82,
+      "role": "LB",
+      "nationality": "葡萄牙",
+      "club": "皇家马德里",
+      "imageUrl": "/versus/player_profiles/webp/18a39069395b83663948a071-75ce179b25a2.webp?v=75ce179b25a2",
+      "imageFile": "player_profiles/webp/18a39069395b83663948a071-75ce179b25a2.webp",
+      "position": {
+        "xPercent": 43,
+        "yPercent": 86.6,
+        "widthPercent": 109.8
+      },
+      "pixelWidth": 536,
+      "pixelHeight": 1007,
+      "sha256": "75ce179b25a2671624fb939e56dc7e31887a627646741e3d90d4a95e723cb077",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/la-liga/real-madrid/fabio-coentrao-11/",
+        "imageUrl": "https://www.footyrenders.com/render/Fabio-Coentrao-3.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-dlc-20260731-024-0.png",
+        "title": "Fabio Coentrao",
+        "author": "Dianjay"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 20,
+        "right": 535,
+        "bottom": 1006
+      },
+      "cardProfile": {
+        "playerId": "s4-dlc-20260731-024",
+        "grade": "B",
+        "sourceFileName": "s4-dlc-20260731-024.webp",
+        "optimizedFileName": "18a39069395b83663948a071-75ce179b25a2.webp",
+        "imageUrl": "/versus/player_profiles/webp/18a39069395b83663948a071-75ce179b25a2.webp?v=75ce179b25a2",
+        "contentHash": "75ce179b25a2",
+        "xPercent": 43,
+        "yPercent": 86.6,
+        "widthPercent": 109.8,
+        "pixelWidth": 536,
+        "pixelHeight": 1007,
+        "updatedAt": "2026-11-16T07:04:43.702Z"
+      }
+    },
+    {
+      "id": "s4-dlc-20260731-027",
+      "name": "华金",
+      "sourceName": "Joaquín Sánchez Rodríguez",
+      "grade": "B",
+      "overall": 85,
+      "role": "RM",
+      "nationality": "西班牙",
+      "club": "皇家贝蒂斯",
+      "imageUrl": "/versus/player_profiles/webp/c5cc521499366d0e1d0135ff-0ced5c67f759.webp?v=0ced5c67f759",
+      "imageFile": "player_profiles/webp/c5cc521499366d0e1d0135ff-0ced5c67f759.webp",
+      "position": {
+        "xPercent": 68,
+        "yPercent": 67.9,
+        "widthPercent": 57.6
+      },
+      "pixelWidth": 511,
+      "pixelHeight": 1317,
+      "sha256": "0ced5c67f759bd7cce723e0d14ca178f5c7be3f1c43944ae179ff659b606b8a5",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/la-liga/real-betis/joaquin-sanchez-3/",
+        "imageUrl": "https://www.footyrenders.com/render/joaquin-sanchez-3.png",
+        "file": "outputs/card-art-pilot-20261116/sources/s4-dlc-20260731-027-correct-3.png",
+        "title": "Joaquin Sanchez",
+        "author": "DarkNaples"
+      },
+      "bounds": {
+        "left": 0,
+        "top": 3,
+        "right": 511,
+        "bottom": 1317
+      },
+      "cardProfile": {
+        "playerId": "s4-dlc-20260731-027",
+        "grade": "B",
+        "sourceFileName": "s4-dlc-20260731-027.webp",
+        "optimizedFileName": "c5cc521499366d0e1d0135ff-0ced5c67f759.webp",
+        "imageUrl": "/versus/player_profiles/webp/c5cc521499366d0e1d0135ff-0ced5c67f759.webp?v=0ced5c67f759",
+        "contentHash": "0ced5c67f759",
+        "xPercent": 68,
+        "yPercent": 67.9,
+        "widthPercent": 57.6,
+        "pixelWidth": 511,
+        "pixelHeight": 1317,
+        "updatedAt": "2026-11-16T07:04:43.818Z"
+      }
+    },
+    {
+      "id": "s4-fc26-215914",
+      "name": "坎特",
+      "sourceName": "N'Golo Kanté",
+      "grade": "B",
+      "overall": 85,
+      "role": "DM",
+      "nationality": "法国",
+      "club": "吉达联合",
+      "imageUrl": "/versus/player_profiles/webp/bd1110fc878ec7c401f0e60a-2ff99fd2d9c0.webp?v=2ff99fd2d9c0",
+      "imageFile": "player_profiles/webp/bd1110fc878ec7c401f0e60a-2ff99fd2d9c0.webp",
+      "position": {
+        "xPercent": 68,
+        "yPercent": 65.5,
+        "widthPercent": 89
+      },
+      "pixelWidth": 1007,
+      "pixelHeight": 1600,
+      "sha256": "2ff99fd2d9c0a6ddbaff38b563ed0744deb221b939d28e4def14a455b61127ae",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/nations/france/ngolo-kante-46/",
+        "imageUrl": "https://www.footyrenders.com/render/ngolo-kante-23.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-215914-0.png",
+        "title": "N’Golo Kanté",
+        "author": "Footballbest1"
+      },
+      "bounds": {
+        "left": 1,
+        "top": 1,
+        "right": 1006,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-215914",
+        "grade": "B",
+        "sourceFileName": "s4-fc26-215914.webp",
+        "optimizedFileName": "bd1110fc878ec7c401f0e60a-2ff99fd2d9c0.webp",
+        "imageUrl": "/versus/player_profiles/webp/bd1110fc878ec7c401f0e60a-2ff99fd2d9c0.webp?v=2ff99fd2d9c0",
+        "contentHash": "2ff99fd2d9c0",
+        "xPercent": 68,
+        "yPercent": 65.5,
+        "widthPercent": 89,
+        "pixelWidth": 1007,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:44.101Z"
+      }
+    },
+    {
+      "id": "s4-fc26-241637",
+      "name": "楚阿梅尼",
+      "sourceName": "Aurélien Tchouaméni",
+      "grade": "B",
+      "overall": 85,
+      "role": "DM",
+      "nationality": "法国",
+      "club": "皇家马德里",
+      "imageUrl": "/versus/player_profiles/webp/074b16f2d2e2ea164459a59d-982759d989d5.webp?v=982759d989d5",
+      "imageFile": "player_profiles/webp/074b16f2d2e2ea164459a59d-982759d989d5.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 67.9,
+        "widthPercent": 97.1
+      },
+      "pixelWidth": 913,
+      "pixelHeight": 1395,
+      "sha256": "982759d989d52e4c8f3a19c61e2b9e73404531e758bc7de904d7421c2c5c671c",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/la-liga/real-madrid/aurelien-tchouameni-4/",
+        "imageUrl": "https://www.footyrenders.com/render/aurelien-tchouameni-3.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-241637-2.png",
+        "title": "Aurélien Tchouaméni",
+        "author": "DekuGFX"
+      },
+      "bounds": {
+        "left": 2,
+        "top": 3,
+        "right": 911,
+        "bottom": 1395
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-241637",
+        "grade": "B",
+        "sourceFileName": "s4-fc26-241637.webp",
+        "optimizedFileName": "074b16f2d2e2ea164459a59d-982759d989d5.webp",
+        "imageUrl": "/versus/player_profiles/webp/074b16f2d2e2ea164459a59d-982759d989d5.webp?v=982759d989d5",
+        "contentHash": "982759d989d5",
+        "xPercent": 58,
+        "yPercent": 67.9,
+        "widthPercent": 97.1,
+        "pixelWidth": 913,
+        "pixelHeight": 1395,
+        "updatedAt": "2026-11-16T07:04:44.316Z"
+      }
+    },
+    {
+      "id": "s4-fc26-255565",
+      "name": "三笘薰",
+      "sourceName": "Kaoru Mitoma",
+      "grade": "C",
+      "overall": 79,
+      "role": "LM",
+      "nationality": "日本",
+      "club": "布莱顿",
+      "imageUrl": "/versus/player_profiles/webp/3ae1e68636247fb3be472a9e-b24bea910984.webp?v=b24bea910984",
+      "imageFile": "player_profiles/webp/3ae1e68636247fb3be472a9e-b24bea910984.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 50.4,
+        "widthPercent": 155.8
+      },
+      "pixelWidth": 1600,
+      "pixelHeight": 1039,
+      "sha256": "b24bea910984e7f845bce66f13b18c7c824149109ba03ae68656934c3a1f654a",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/premier-league/brighton-hove-albion/kaoru-mitoma/",
+        "imageUrl": "https://www.footyrenders.com/render/kaoru-mitoma.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-255565-1.png",
+        "title": "Kaoru Mitoma",
+        "author": "m4zin3"
+      },
+      "bounds": {
+        "left": 1,
+        "top": 2,
+        "right": 1599,
+        "bottom": 1039
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-255565",
+        "grade": "C",
+        "sourceFileName": "s4-fc26-255565.webp",
+        "optimizedFileName": "3ae1e68636247fb3be472a9e-b24bea910984.webp",
+        "imageUrl": "/versus/player_profiles/webp/3ae1e68636247fb3be472a9e-b24bea910984.webp?v=b24bea910984",
+        "contentHash": "b24bea910984",
+        "xPercent": 58,
+        "yPercent": 50.4,
+        "widthPercent": 155.8,
+        "pixelWidth": 1600,
+        "pixelHeight": 1039,
+        "updatedAt": "2026-11-16T07:04:44.560Z"
+      }
+    },
+    {
+      "id": "s4-fc26-176580",
+      "name": "苏亚雷斯",
+      "sourceName": "Luis Suárez",
+      "grade": "C",
+      "overall": 77,
+      "role": "ST",
+      "nationality": "乌拉圭",
+      "club": "迈阿密国际",
+      "imageUrl": "/versus/player_profiles/webp/5ed9d2d19d76ab3d73e76d7f-c25a05db3b9b.webp?v=c25a05db3b9b",
+      "imageFile": "player_profiles/webp/5ed9d2d19d76ab3d73e76d7f-c25a05db3b9b.webp",
+      "position": {
+        "xPercent": 58,
+        "yPercent": 68,
+        "widthPercent": 59.4
+      },
+      "pixelWidth": 642,
+      "pixelHeight": 1600,
+      "sha256": "c25a05db3b9b7cbf2cf5325e9ada569c051e152a0ad6fcb548716870b5a5b189",
+      "source": {
+        "pageUrl": "https://www.footyrenders.com/other-leagues/mls/inter-miami/luis-suarez-196/",
+        "imageUrl": "https://www.footyrenders.com/render/luis-suarez-104.png",
+        "file": "outputs\\card-art-pilot-20261116\\sources\\s4-fc26-176580-0.png",
+        "title": "Luis Suarez",
+        "author": "NazaninAriaei"
+      },
+      "bounds": {
+        "left": 4,
+        "top": 0,
+        "right": 637,
+        "bottom": 1600
+      },
+      "cardProfile": {
+        "playerId": "s4-fc26-176580",
+        "grade": "C",
+        "sourceFileName": "s4-fc26-176580.webp",
+        "optimizedFileName": "5ed9d2d19d76ab3d73e76d7f-c25a05db3b9b.webp",
+        "imageUrl": "/versus/player_profiles/webp/5ed9d2d19d76ab3d73e76d7f-c25a05db3b9b.webp?v=c25a05db3b9b",
+        "contentHash": "c25a05db3b9b",
+        "xPercent": 58,
+        "yPercent": 68,
+        "widthPercent": 59.4,
+        "pixelWidth": 642,
+        "pixelHeight": 1600,
+        "updatedAt": "2026-11-16T07:04:44.741Z"
+      }
+    }
+  ]
+}

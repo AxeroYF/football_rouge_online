@@ -9,6 +9,10 @@ import {
 } from "../versus/public/tactical-principles.js";
 import { tacticalDimensionsForPlan, createV2Match, advanceV2Match } from "../versus/v2/match-engine-v2.js";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
+import { compileLiveSeat, createLiveV4Match, publicLiveV4Match } from "../versus/v4-adapter/live-match.js";
+import { dutyFor } from "../versus/v4/execution.js";
+import {movementFrames,shapeScenarios} from "../versus/public/shape-preview-player.js";
+import {captureMovement,compareMovements} from "../versus/public/shape-movement.js";
 
 const plain = value => JSON.parse(JSON.stringify(value));
 const base = () => applyPrinciplePreset({ tactic:"balanced", style:"possession", positionPreset:"position1", playerDuties:{ sample:"anchor" } }, "control");
@@ -61,6 +65,95 @@ function fixture(options = {}) {
     lineupSchemeId:team.activeLineupSchemeId, lineupSchemeRevision:team.lineupSchemes.find(scheme => scheme.id === team.activeLineupSchemeId).revision });
   return { service, user, team, body };
 }
+
+test("the board freezes all five leading-plan paths and compares an unsaved position edit by player ID", () => {
+  const {service,user,body}=fixture();
+  const draft={...body(),planState:"leading",positionPresetOverrides:{position2:true,position3:true}};
+  const baseline=service.tacticalOutlook(user,{...draft,captureMovement:true}).movements;
+  assert.deepEqual(Object.keys(baseline).sort(),Object.keys(shapeScenarios).sort());
+  for(const scenario of Object.keys(shapeScenarios)){
+    const current=captureMovement(service.tacticalShapePreview(user,{...draft,scenario}));
+    assert.deepEqual(baseline[scenario],current);
+    assert.deepEqual(new Set(current.players.map(p=>p.id)),new Set(draft.starterIds));
+    assert.ok(compareMovements(baseline[scenario],current).players.every(p=>p.peakGap===0));
+  }
+  const player=draft.starterIds[3],position=draft.positionPresets.position2[player];
+  position.x+=position.x<50?6:-6;
+  const current=captureMovement(service.tacticalShapePreview(user,{...draft,scenario:"defense"}));
+  assert.ok(compareMovements(baseline.defense,current).players.find(p=>p.id===player).start.distance>1);
+  assert.equal(service.tacticalOutlook(user,draft).movements,undefined);
+});
+
+test("V4 board previews run four reproducible situations on an unsaved eleven without modifying the team", () => {
+  const { service, user, team, body } = fixture();
+  const before = plain(team), request = body();
+  for (const scenario of ["attack", "left", "loss", "defense"]) {
+    const input = { ...request, scenario, planState:"trailing" };
+    const preview = service.tacticalShapePreview(user, input);
+    assert.match(preview.engineVersion, /^4\./);
+    assert.equal(preview.scoreState, "trailing");
+    assert.equal(preview.roster.length, 22);
+    const keys = new Set(preview.roster.map(p => p.key));
+    const first = preview.frames[0], last = preview.frames.at(-1);
+    assert.equal(first.owner, ["defense", "loss"].includes(scenario) ? 1 : 0);
+    assert.equal(first.ball.x < 50, scenario === "left");
+    assert.equal(Boolean(first.transition), scenario === "loss");
+    assert.equal(last.time, 12);
+    assert.notDeepEqual(first.ball, last.ball);
+    for (const frame of preview.frames) {
+      assert.equal(frame.players.length, 22);
+      for (const p of frame.players) {
+        assert.ok(keys.has(p.key) && p.x >= 0 && p.x <= 100 && p.y >= 0 && p.y <= 100);
+        if (p.key.startsWith("0:")) {
+          assert.ok(preview.tasks[p.task].reason && Number.isFinite(p.target.x));
+          assert.ok(p.partners.every(key => keys.has(key)));
+        }
+      }
+    }
+    if (scenario === "loss") assert.deepEqual(service.tacticalShapePreview(user, input), preview);
+  }
+  assert.throws(() => service.tacticalShapePreview(user, { ...request, scenario:"unknown" }), /场景/);
+  assert.deepEqual(plain(team), before);
+});
+
+test("editor, preview and played matches resolve the same role across preset lines and clear a saved duty", () => {
+  const { service, user, team, body } = fixture();
+  const request = body(), ids = request.starterIds, playerId = ids[5];
+  const coordinates = [[50,90],[12,68],[40,68],[60,68],[88,68],[50,52],[35,47],[70,43],[10,20],[50,20],[90,20]];
+  const positions = Object.fromEntries(ids.map((id,i) => [id, { x:coordinates[i][0], y:coordinates[i][1] }]));
+  request.positions = positions;
+  request.positionPresetOverrides = { position2:true, position3:true };
+  for (const key of ["position1","position2","position3"]) {
+    request.positionPresets[key] = plain(positions);
+    request.formationLinePresets[key] = { attack:20, midfield:key === "position2" ? 55 : 44, defense:68, goalkeeper:90 };
+  }
+  request.tacticalPlans.opening.playerDuties = { [playerId]:"anchor" };
+  request.tacticalPlans.leading.playerDuties = { [playerId]:"advancedPlaymaker" };
+  service.saveTeam(user, request, { compact:true });
+  const saved = body();
+  for (const [planState,mode,role,duty] of [["opening","normal","DM","anchor"],["leading","leading","AM","advancedPlaymaker"]]) {
+    const view = service.tacticalShapePreview(user, { ...saved, planState }).roster.find(p => p.side === 0 && p.id === playerId);
+    const player = compileLiveSeat(service.aiTrainingPlayerSeat(team),0).players.find(p => p.id === playerId);
+    assert.equal(view.role, role);
+    assert.equal(view.duty, duty);
+    assert.equal(player.sourceRolePlans[mode], role);
+    assert.equal(dutyFor({ activePlans:[mode] }, { ...player, side:0 }), duty);
+  }
+  const seat = service.aiTrainingPlayerSeat(team);
+  const match = createLiveV4Match([seat, plain(seat)], { seed:"board-readout", duration:60 });
+  const display = publicLiveV4Match(match, match.startedAt, 0, false);
+  const ownRow = display.teams[0].players.find(p => p.id === playerId);
+  assert.equal(ownRow.assignedRole, "DM");
+  assert.equal(ownRow.tacticalDuty, "anchor");
+  assert.equal(display.teams[1].players.find(p => p.id === playerId).tacticalDuty, undefined);
+
+  saved.tacticalPlans.leading.playerDuties = {};
+  assert.equal(service.tacticalShapePreview(user, { ...saved, planState:"leading" }).roster.find(p => !p.side && p.id === playerId).duty, null);
+  service.saveTeam(user, saved, { compact:true });
+  const player = compileLiveSeat(service.aiTrainingPlayerSeat(team),0).players.find(p => p.id === playerId);
+  assert.equal(dutyFor({ activePlans:["leading"] }, { ...player, side:0 }), null);
+  assert.equal(player.dutyPlans.normal, "anchor");
+});
 
 test("principles survive save, scheme snapshots, shares, previews and actual match input without moving players", () => {
   const { service, user, team, body } = fixture();
@@ -124,6 +217,60 @@ test("outlook uses the actual lineup, is read-only, changes with tactics and rej
   assert.ok(pressed.axes.find(axis => axis.id === "press").value > original.axes.find(axis => axis.id === "press").value);
   assert.equal(JSON.stringify(service.state), before);
   assert.throws(() => service.tacticalOutlook(user, { starterIds:[...team.preferredStarterIds.slice(1), "foreign-id"] }), /完整|首发/);
+});
+
+test("each V4 outlook points to reproducible frames on its own preset; editing leading leaves opening unchanged", () => {
+  const { service, user, body } = fixture();
+  const request = body();
+  let opening;
+  for (const [planState,scoreState,minute] of [["opening","level",25],["leading","leading",70],["trailing","trailing",70]]) {
+    const payload = { ...request, planState };
+    const report = service.tacticalOutlook(user,payload);
+    if(planState==="opening") opening=report;
+    assert.match(report.engineVersion,/^4\./);
+    assert.equal(report.planState,planState);
+    assert.equal(report.scoreState,scoreState);
+    assert.equal(report.assumptions.minute,minute);
+    assert.deepEqual(report.diagnostics.map(row=>row.id),["pass","press","overlap","loss"]);
+    for(const row of report.diagnostics){
+      if(row.status==="unobserved"){
+        assert.equal(row.samples,0);
+        assert.equal(row.evidence,undefined);
+        continue;
+      }
+      assert.ok(row.samples>=row.flagged && row.samples>0);
+      assert.equal(Object.values(row.issueCounts).reduce((sum,n)=>sum+n,0),row.flagged);
+      const clip=service.tacticalShapePreview(user,{...payload,scenario:row.evidence.scenario});
+      assert.equal(clip.clipId,row.evidence.clipId);
+      const frame=clip.frames.find(f=>f.time===row.evidence.time);
+      const player=clip.roster.find(p=>p.key===row.evidence.playerKey);
+      assert.ok(frame.players.some(p=>p.key===player.key&&p.active));
+      assert.equal(player.side,0);
+    }
+    assert.ok(report.diagnostics.find(row=>row.id==="loss").samples>0);
+  }
+  request.tacticalPlans.leading=applyPrinciplePreset(request.tacticalPlans.leading,"press");
+  assert.deepEqual(service.tacticalOutlook(user,{...request,planState:"opening"}),opening);
+  const invalid={...request,positionPresets:plain(request.positionPresets)};
+  for(const point of Object.values(invalid.positionPresets.position2)) point.y=90;
+  assert.equal(service.tacticalOutlook(user,{...invalid,planState:"leading"}).valid,false);
+  assert.deepEqual(service.tacticalOutlook(user,{...invalid,planState:"opening"}),opening);
+});
+
+test('board movement shows a short coherent phase and can focus a later diagnostic frame',()=>{
+  const {service,user,body}=fixture();
+  for(const scenario of Object.keys(shapeScenarios)){
+    const clip=service.tacticalShapePreview(user,{...body(),scenario,planState:'leading'});
+    const start=clip.frames[0];
+    if(scenario==='gain'){assert.equal(start.owner,0);assert.ok(start.transitionId);}
+    const windows=[movementFrames(clip),movementFrames(clip,9.6)];
+    for(const frames of windows){
+      assert.ok(frames.at(-1).time-frames[0].time<=4.00001);
+      assert.ok(frames.every(f=>f.owner===frames[0].owner&&f.transitionId===frames[0].transitionId));
+    }
+    assert.ok(windows[0].length>1,scenario);
+    assert.ok(windows[1].some(f=>f.time===9.6));
+  }
 });
 
 test("legacy top-level style and mentality saves retain their previous API behavior", () => {

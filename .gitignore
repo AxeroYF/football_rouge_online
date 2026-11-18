@@ -99,3 +99,7 @@ backups/S4_Backup/
 data/ydl-player-card-studio.json
 data/ydl-player-card-studio.json.backup
 offline/windows/*.exe
+
+# Local V4 recordings, match workers and replay queues
+/data/*.v4-schedule/
+

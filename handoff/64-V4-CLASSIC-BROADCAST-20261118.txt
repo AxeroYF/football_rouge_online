@@ -1,0 +1,29 @@
+V4 原直播界面、关键事件回放与比赛统计 · 2026-11-18
+
+按用户要求：第三项明确为控球率，不是控球链。V4 继续承担比赛运算，未回退比赛内核或改动竞猜模型。
+
+正式赛程的观看入口恢复到原阵容/球员卡、比分、事件和统计直播界面。新增已发布录像的增量摘要接口 /v4/matches/:id/broadcast，复用正式宿主的账号鉴权、限流和发布门槛，只读取已公开片段。直播摘要按比赛共享累计结果，不读取生产者的最终比分提前展示。
+
+关键事件在原直播界面的「关键回合」中播放真实短轨迹。正式赛程按需读取事件前8秒至后2秒的已发布录像；实时友谊赛、房间、训练赛保留有界帧缓存。自动回放完成返回阵容，手动可选择回看；不会用旧版区域插值编造 V4 跑位。比赛记录的重点事件提供「回看片段」。历史录像过期时提示不可用。
+
+比赛记录移除了 V4 战术诊断、教练长篇复盘及战术执行复盘，保留比分、事件、统计与球员表现；不再展示默认/领先/落后多套战术图。战术板现有预览与调整前后对比保留，归档诊断数据未删除。
+
+控球率依据有效控球时间：本方控制和传球飞行计入，死球、自由球、中场及点球大战排除。赛后报告保存百分比，同时保留 possessionSeconds；实时统计可归一化显示，不能把秒数当百分比给镜像报告。
+xG 新增独立几何估算，按射门距离、球门张角、头球计算，点球0.76。标记 v4-geometric-xg-1，页面注明估算；不是原引擎决策分，不影响比分与随机过程，也未声称经过实赛校准。每次实际射门计一次，扑救/进球不重复累计，点球大战排除。射门、射正、扑救、角球、纪律等同时接入；V4 攻防页不再显示旧控球回合字段。
+旧正式战报在绑定录像仍在时读取补算控球率和 xG，保留原赛果与结算数据，不写回真实存档。无可用原始数据时显示缺失，不编造历史数据。
+
+源码
+versus/v4-host/match-metrics.js：展示统计与几何 xG。
+versus/v4-host/broadcast-summary.js、scheduled-preview-host.js、versus/v4-stream/http-service.js：已发布比赛摘要及权限。
+versus/v4-host/player-report.js、settled-tactical-review.js、versus/v4-adapter/live-match.js、versus/league-service.js：赛后/实时统计、旧录像补算和短帧缓存。
+versus/public/app.js、broadcast-data.js、broadcast-key-plays.js/.css、v4-key-clip.js：原直播布局、精简记录与短片段回放。
+
+验证
+35项专项用例最终通过，另1项 HTTP 鉴权测试通过，浏览器验证独立计数。
+outputs/tests/2026-11-18T07-45-55-543Z/report.json：基础5文件32项通过，正式联赛及未支持能力两项通过；杯赛新增测试最初因 structuredClone 分片代理失败，已改为 JSON 快照后单独重跑杯赛1项通过。不是全仓全绿报告。
+outputs/tests/2026-11-18T07-48-36-484Z/report.json：最终界面相关3文件18项通过。
+HTTP 测试在沙箱中本机网络被拒，允许本地连接后 node --test test/engine-v4-stream-http.test.js 通过。
+杯赛最终复验：隔离四个存档环境变量后 node --test --test-name-pattern="formal timer.*cup" test/engine-v4-formal-schedule.test.js，1项通过。
+浏览器脚本 outputs/tests/v4-broadcast-browser.mjs 使用临时账号/存档、真实调度宿主与本地HTTP代理，Chrome 1440/390宽度核验原阵容界面、控球率、xG走势、攻防字段、关键片段和精简历史。最终示例射门2:1、xG 0.4303:0.2159、控球率44.9%:55.1%，无页面脚本错误。
+截图 outputs/tests/v4-broadcast-desktop.png、v4-broadcast-mobile.png、v4-history-mobile.png。
+没有部署云端、启动真实赛季或重置真实存档。正在运行的服务需要重启才能加载后端适配。

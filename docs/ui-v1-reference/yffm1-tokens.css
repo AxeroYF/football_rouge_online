@@ -1,0 +1,93 @@
+/**
+ * YFFM1 Football Manager UI Design System Tokens v1.0
+ * Direction: Modern Broadcast & Tactical Slate (Club Home + Match Broadcast + Card Collection)
+ */
+
+:root {
+  /* 1. Background Surfaces (Night Match Default Theme) */
+  --yffm-bg-canvas: #0B0F17;      /* L0 Global viewport background */
+  --yffm-bg-surface-1: #111827;   /* L1 Primary module panel */
+  --yffm-bg-surface-2: #1E293B;   /* L2 Inner card / table header / sub-nav */
+  --yffm-bg-surface-3: #334155;   /* L3 Hover state / modal / active slot */
+  --yffm-bg-scrim: rgba(11, 15, 23, 0.85); /* Hero image overlay scrim */
+
+  /* 2. Typography Colors (WCAG AA/AAA Compliant) */
+  --yffm-text-primary: #F8FAFC;   /* 15.8:1 on L1 */
+  --yffm-text-secondary: #94A3B8; /* 7.2:1 on L1 */
+  --yffm-text-muted: #64748B;     /* 4.6:1 on L1 */
+
+  /* 3. Brand & Competition Identity Colors */
+  --yffm-brand-pitch: #10B981;       /* Primary CTA / My Club row highlight */
+  --yffm-brand-pitch-hover: #059669;
+  --yffm-brand-pitch-tint: rgba(16, 185, 129, 0.14);
+  --yffm-comp-league-a: #3B82F6;     /* Division A League badge */
+  --yffm-comp-league-b: #06B6D4;     /* Division B League badge */
+  --yffm-comp-cup: #F59E0B;          /* 16-Team Knockout Cup / Trophy */
+
+  /* 4. Semantic & Match Status Colors (Must pair with icon/text badge) */
+  --yffm-status-win: #22C55E;        /* Win [胜] / Stamina >= 80% / Healthy */
+  --yffm-status-draw: #F59E0B;       /* Draw [平] / Stamina 60-79% / Todo Warning */
+  --yffm-status-loss: #EF4444;       /* Loss [负] / Injury / Red Card / LIVE Match */
+  --yffm-status-neutral: #64748B;    /* Unplayed / Estimated xG / Missing Data */
+
+  /* 5. Card Rarity Borders */
+  --yffm-rarity-base: #64748B;
+  --yffm-rarity-elite: #3B82F6;
+  --yffm-rarity-core: #A855F7;
+  --yffm-rarity-legend: #F59E0B;
+
+  /* 6. Borders, Radius & Shadows */
+  --yffm-border-subtle: rgba(255, 255, 255, 0.08);
+  --yffm-border-focus: rgba(16, 185, 129, 0.5);
+  --yffm-radius-sm: 6px;   /* Buttons, inputs, tags */
+  --yffm-radius-md: 8px;   /* Panels, player card slots */
+  --yffm-radius-lg: 12px;  /* Hero match banner, modals */
+  --yffm-shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --yffm-shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* 7. Font Stacks */
+  --yffm-font-sans: 'Inter', 'PingFang SC', 'HarmonyOS Sans SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --yffm-font-display: 'Barlow Condensed', 'DIN Alternate', 'PingFang SC', sans-serif;
+  --yffm-font-mono: 'JetBrains Mono', 'Inter', monospace;
+
+  /* 8. Layout & Spacing */
+  --yffm-max-width: 1440px;
+  --yffm-sidebar-expanded: 224px;
+  --yffm-sidebar-collapsed: 64px;
+  --yffm-hero-max-height: 236px;
+}
+
+/* Light Theme Override (Tactical Daylight) */
+.theme-light {
+  --yffm-bg-canvas: #F1F5F9;
+  --yffm-bg-surface-1: #FFFFFF;
+  --yffm-bg-surface-2: #F8FAFC;
+  --yffm-bg-surface-3: #E2E8F0;
+  --yffm-bg-scrim: rgba(15, 23, 42, 0.78);
+  --yffm-text-primary: #0F172A;
+  --yffm-text-secondary: #475569;
+  --yffm-text-muted: #64748B;
+  --yffm-border-subtle: rgba(15, 23, 42, 0.1);
+}
+
+/* Mandatory Tabular Numerals for Scores, Standings, Prices, Timers */
+.yffm-num {
+  font-family: var(--yffm-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Accessibility: Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}

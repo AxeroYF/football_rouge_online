@@ -1,0 +1,16 @@
+V4本地持久化调度验收 · 2026-11-18
+
+报告：outputs/v4-dispatch-20261118/acceptance.json
+冻结源码与证据：outputs/v4-dispatch-accepted-20261118/manifest.json
+说明：docs/YFFM1-V4-LOCAL-DISPATCH-20261118.md
+
+新增dispatcher.js/dispatch-store.js/dispatch-worker.js；服务端策略off/shadow/canary持久化、修订号冲突检查、完整输入和版本锁定、有限队列、最多两个独立生产子进程、按入队顺序隔离结算、显式重试及暂停。
+策略回退仅影响新比赛；已锁定比赛重启后仍继续原内核。默认off不访问不存在的候选包，不生产V4目录；旧引擎执行仍由现有宿主负责。
+Windows高频状态读取曾导致原子替换EPERM；新增同进程多句柄共用读/提交串行队列，保留跨进程锁和有限重试。失败测试输出保留，修复后完整六项测试通过。
+
+六项组合测试涵盖生产者/队列上限、重复入队、失败阻塞顺序、暂停后恢复、提交后实际杀进程、生产中实际杀进程、子进程随IPC断开退出、已提交录像前缀保持、损坏记录拒绝。单测自建内核包，不依赖outputs冻结包。
+八场真实球队完整比赛验证通过：outputs/v4-dispatch-20261118/verification.json，root round-3UE4Y1；峰值两个生产者，约105.6秒完成，积分/出场/顺序/重启幂等核对通过。未施加2核/2GiB限制，这不是容量验收。
+
+正式赛程、跨轮次重新准备、重叠约束、真实JSON/分片事务桥尚未接线。当前canary只是本地副本演练，所有结果仍settlementAllowed=false。
+真实存档、V2/V3引擎和预测保持原哈希；league-service仍只有41验收的三个V4点球统计表达式变更。未启动正式服务、部署或连接云主机。
+目标active；下一步推进原JSON/分片存储的状态与回执原子提交，并先在隔离副本测试。

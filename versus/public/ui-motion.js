@@ -39,6 +39,8 @@ export function createUiMotion(env = globalThis) {
       ? [{opacity:0,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)',offset:.15},{opacity:1,offset:.65},{opacity:0,transform:'translateY(-18px)'}]
       : kind === 'score'
       ? [{transform:'scale(1)'},{transform:'scale(1.18)',color,offset:.35},{transform:'scale(1)'}]
+      : kind === 'shield-pulse'
+      ? [{filter:`drop-shadow(0 0 0 ${color}00)`},{filter:`drop-shadow(0 0 8px ${color})`,offset:.3},{filter:`drop-shadow(0 0 0 ${color}00)`}]
       : kind === 'pulse'
         ? [{boxShadow:'0 0 0 0 transparent'},{boxShadow:`0 0 0 3px ${color}, 0 0 20px ${color}55`,offset:.3},{boxShadow:'0 0 0 0 transparent'}]
         : kind === 'dialog'
@@ -93,7 +95,10 @@ export function createUiMotion(env = globalThis) {
       for(const event of changes.events.filter(e=>colors[e.type]).slice(-4)) {
         const ids=[event.actorId,event.incomingPlayerId,event.outgoingPlayerId].filter(Boolean);
         for(const player of root.querySelectorAll('[data-motion-player]')) {
-          if(ids.includes(player.dataset.motionPlayer)) play(player,'pulse',colors[event.type]);
+          if(ids.includes(player.dataset.motionPlayer)) {
+            const shield = player.querySelector?.('.broadcast-player-card');
+            play(shield ?? player,shield ? 'shield-pulse' : 'pulse',colors[event.type]);
+          }
         }
       }
     },

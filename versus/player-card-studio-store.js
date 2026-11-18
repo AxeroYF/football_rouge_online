@@ -6,6 +6,8 @@ import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ATTRIBUTE_NAMES, normalizePlayerSchema, playerOverallFromAttributes, roleGroup } from "../shared/football/schema.js";
+import { A_PLAYER_PROFILE_BY_PLAYER_ID } from "./public/a-player-profiles.js";
+import { LEGENDARY_PROFILE_BY_PLAYER_ID } from "./public/legendary-profiles.js";
 import {
   isXPlayer,
   normalizedS4LegendAttributes,
@@ -416,16 +418,44 @@ export async function savePlayerCardProfile(playerId, input) {
     const owner = profileOwner(playerId);
     if (!owner) throw Object.assign(new Error("球员或暂存卡不存在"), { statusCode:404 });
     const existing = studio.profiles[playerId];
+    // The editor already displays these legacy assets. A position-only save must
+    // adopt the same bytes lazily, rather than ask the user to upload them again.
+    const legacy = !existing && !input.imageDataUrl && !input.imageBuffer && !isXPlayer(owner)
+      ? owner.grade === "S" || owner.isLegend
+        ? LEGENDARY_PROFILE_BY_PLAYER_ID[playerId]
+        : owner.grade === "A" ? A_PLAYER_PROFILE_BY_PLAYER_ID[playerId] : null
+      : null;
     const position = {
-      xPercent:rounded(clamp(input.xPercent ?? existing?.xPercent ?? 50, -50, 150, "横向位置")),
-      yPercent:rounded(clamp(input.yPercent ?? existing?.yPercent ?? 52, -50, 150, "纵向位置")),
-      widthPercent:rounded(clamp(input.widthPercent ?? existing?.widthPercent ?? 200, 40, 360, "人物宽度")),
+      xPercent:rounded(clamp(input.xPercent ?? existing?.xPercent ?? legacy?.xPercent ?? 50, -50, 150, "横向位置")),
+      yPercent:rounded(clamp(input.yPercent ?? existing?.yPercent ?? legacy?.yPercent ?? 52, -50, 150, "纵向位置")),
+      widthPercent:rounded(clamp(input.widthPercent ?? existing?.widthPercent ?? legacy?.widthPercent ?? 200, 40, 360, "人物宽度")),
     };
     let fileName = existing?.optimizedFileName;
     let contentHash = existing?.contentHash;
     let sourceFileName = existing?.sourceFileName ?? null;
     let width = existing?.pixelWidth ?? null;
     let height = existing?.pixelHeight ?? null;
+    if (legacy) {
+      const assetUrl = String(legacy.imageUrl ?? "").split("?")[0];
+      if (!/^\/versus\/(A_profile|legendary_profile)\/webp\/[^/]+\.webp$/.test(assetUrl)) throw new Error("旧卡画资源路径无效");
+      const assetRoot = path.join(ROOT, assetUrl.includes("/A_profile/") ? "A_profile" : "legendary_profile", "webp");
+      const assetPath = path.resolve(assetRoot, decodeURIComponent(path.basename(assetUrl)));
+      if (path.dirname(assetPath) !== assetRoot) throw new Error("旧卡画资源路径无效");
+      const buffer = readFileSync(assetPath);
+      const metadata = await imageProcessor()(buffer, { failOn:"error" }).metadata();
+      if (metadata.format !== "webp" || !metadata.width || !metadata.height) throw new Error("旧卡画文件无效");
+      contentHash = createHash("sha256").update(buffer).digest("hex").slice(0, 12);
+      fileName = profileTargetFileName(playerId).replace(/\.webp$/, `-${contentHash}.webp`);
+      sourceFileName = legacy.fileName ?? path.basename(assetPath);
+      width = metadata.width;
+      height = metadata.height;
+      await mkdir(PROFILE_WEBP_DIRECTORY, { recursive:true });
+      const temporaryPath = path.join(PROFILE_WEBP_DIRECTORY, `${fileName}.${randomUUID()}.tmp`);
+      try {
+        await writeFile(temporaryPath, buffer, { flag:"wx" });
+        await rename(temporaryPath, path.join(PROFILE_WEBP_DIRECTORY, fileName));
+      } finally { await rm(temporaryPath, { force:true }); }
+    }
     if (input.imageDataUrl || input.imageBuffer) {
       const buffer = uploadedImageBuffer(input);
       const processor = imageProcessor()(buffer, { failOn:"error" });
@@ -459,6 +489,8 @@ export async function savePlayerCardProfile(playerId, input) {
       ...position,
       pixelWidth:width,
       pixelHeight:height,
+      manuallyAdjustedAt:input.manuallyAdjusted === true ? new Date().toISOString()
+        : input.imageDataUrl || input.imageBuffer ? null : existing?.manuallyAdjustedAt ?? null,
       updatedAt:new Date().toISOString(),
     };
     studio.profiles[playerId] = profile;
