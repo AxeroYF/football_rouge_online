@@ -1,3 +1,7 @@
+import {kickoffTraitAnnouncements} from '../v4/kickoff-traits.js';
+import {prepareLegacyTraitSeats} from '../spirit-possession.js';
+import {possessionAnnouncement} from '../public/spirit-form.js';
+import {broadcastCardArt} from '../broadcast-card-art.js';
 import { VERSUS_REFEREES } from "../match-engine.js";
 import { analyzeElevenBoardFormation } from "../public/formation-rules.js";
 import { activeCaptain } from "../public/captain-rules.js";
@@ -134,10 +138,12 @@ function reportPlayer(team, player) {
   const rating = Math.max(4, Math.min(10, 6.5 + stats.goals * 0.8 + stats.assists * 0.5 + stats.saves * 0.12 + defensiveContribution - stats.redCards * 1.5));
   return {
     id:player.id, name:player.name, role:player.role, assignedRole:player.assignedRole ?? player.role, tacticalDuty:player.tacticalDuty ?? null,
+    ...broadcastCardArt(player),
     secondaryRole:player.secondaryRole, overall:player.overall, position:structuredClone(team.positions[player.id] ?? player.boardPosition ?? null),
     rating:Number(rating.toFixed(1)), heightCm:player.heightCm, nationality:player.nationality, club:player.club,
     grade:player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0), legendary:Boolean(player.legendary ?? player.grade === "S"),
     fitness:Number(player.state.fitness.toFixed(1)), active:player.active, sentOff:player.sentOff, injury:player.injury, captain:player.id === team.captainId, stats,
+    ...(player.sponsorEntry ? {sponsorEntry:true} : {}),
     startedMatch:Boolean(player.startedMatch), enteredAsSubstitute:Boolean(player.enteredAsSubstitute), substitutedOut:Boolean(player.substitutedOut), substitutedForId:player.substitutedForId ?? null,
     traits:player.traitDefinitions?.map(({ id, name, summary }) => ({ id, name, summary })) ?? [],
   };
@@ -370,7 +376,7 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   const competitionMode = options.competitionMode ?? "league";
   const legNumber = Number(options.legNumber ?? 1);
   const weather = normalizeYdlV2WeatherKey(options.weather ?? "sunny", { competitionMode, legNumber, allowSuperStorm:options.allowSuperStorm });
-  const teams = seats.map((seat) => ({
+  const teams = prepareLegacyTraitSeats(seats, options.seed ?? startedAt, competitionMode).map((seat) => ({
     ...seat,
     positionPresets:seat.positionPresets ?? { position1:seat.positions },
     tacticalPlans:seat.tacticalPlans ?? { opening:{ tactic:seat.tactic, style:seat.style, positionPreset:"position1" } },
@@ -412,6 +418,11 @@ export function createYdlLeagueV2Match(seats, options = {}) {
   match.pause = null;
   match.pauseUsed = [true, true];
   match.report = null;
+  for (const [side, team] of match.teams.entries()) for (const player of team.players) {
+    if (player.startedMatch && (player.allInMultiplier || player.sponsorEntry)) for (const {text,level} of kickoffTraitAnnouncements(player,team.name,options.seed ?? startedAt,side))
+      adapterEvent(match,"traitActivated",0,side,text,{actorId:player.id,level,importance:"major"});
+    if (player.spiritForm) adapterEvent(match, "spiritPossession", 0, side, possessionAnnouncement(player), {actorId:player.id});
+  }
   lockMatchConfiguration(match);
   return match;
 }

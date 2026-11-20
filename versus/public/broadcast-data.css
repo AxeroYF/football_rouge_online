@@ -1,4 +1,4 @@
-.broadcast-data{--data-home:#ff6d84;--data-away:#5aaeff;display:flex;flex-direction:column;min-height:0}
+.broadcast-data{--data-home:#ff6d84;--data-away:#5aaeff;--data-inset:clamp(12px,3.5cqi,22px);display:flex;flex-direction:column;min-height:0;container-type:inline-size}
 .broadcast-data>header{flex-shrink:0}
 .broadcast-data>header h2{margin:0;font-size:15px;white-space:nowrap}
 .broadcast-data-tabs{display:flex;gap:4px;padding:3px;border-radius:9px;background:rgba(127,148,142,.1)}
@@ -10,20 +10,20 @@
 .broadcast-data .data-side-0{color:var(--data-home)}
 .broadcast-data .data-side-1{color:var(--data-away)}
 .broadcast-data-body{min-height:0;flex:1;padding:8px 14px 14px;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
-.broadcast-data-row{padding:7px 0}
-.broadcast-data-row>div:first-child{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;font-size:12px}
+.broadcast-data-row{padding:8px var(--data-inset)}
+.broadcast-data-row>div:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:8px;font-size:13px}
 .broadcast-data-row b{font-variant-numeric:tabular-nums}
 .broadcast-data-row b:first-child{color:var(--data-home)}
 .broadcast-data-row b:last-child{color:var(--data-away);text-align:right}
-.broadcast-data-row span{color:var(--muted);font-size:11px}
+.broadcast-data-row span{color:var(--muted);font-size:12px;text-align:center}
 .broadcast-data-track{display:flex;justify-content:space-between;gap:3px;height:4px;margin-top:6px;border-radius:4px;background:rgba(127,148,142,.13);overflow:hidden}
 .broadcast-data-track i:first-child{background:var(--data-home)}
 .broadcast-data-track i:last-child{background:var(--data-away)}
-.broadcast-data-possession .broadcast-data-row{padding-top:0}
+.broadcast-data-possession .broadcast-data-row{padding-top:8px}
 .broadcast-data-possession b{font-size:24px}
 .broadcast-data-possession .broadcast-data-track{height:7px}
 .broadcast-data-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:8px 0 4px}
-.broadcast-data-kpis article{min-width:0;padding:9px 5px;border:1px solid var(--line);border-radius:9px;background:rgba(127,148,142,.04);text-align:center}
+.broadcast-data-kpis article{min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:rgba(127,148,142,.04);text-align:center}
 .broadcast-data-kpis small{font-size:10px;color:var(--muted)}
 .broadcast-data-kpis article>div{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:5px;font-size:19px;font-variant-numeric:tabular-nums}
 .broadcast-data-kpis b:first-child{color:var(--data-home)}
@@ -31,6 +31,7 @@
 .broadcast-data-kpis article span{font-size:11px;color:var(--muted)}
 .broadcast-data-chart>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font-size:12px}
 .broadcast-data-chart>header small{color:var(--muted);font-size:10px}
+.broadcast-data-chart{padding:4px var(--data-inset) 10px}
 .broadcast-data-chart svg{display:block;width:100%;max-height:190px;overflow:visible}
 .broadcast-chart-grid line{stroke:var(--line);stroke-dasharray:3 4}
 .broadcast-chart-grid text{fill:var(--muted);font-size:10px}
@@ -55,3 +56,13 @@ html[data-league-theme="light"] .broadcast-data{--data-home:#c52d50;--data-away:
 html[data-league-theme="light"] .broadcast-data-tabs button[aria-selected="true"]{background:#fff;color:#18212b}
 @media(max-width:820px){.broadcast-data-body{max-height:400px}.broadcast-data{min-height:400px}}
 @media(max-width:560px){.broadcast-v2-data-panel.broadcast-data>header{flex-direction:row;align-items:center}.broadcast-data-tabs button{padding:6px 9px}.broadcast-data-kpis article>div{font-size:17px;gap:5px}}
+@container (max-width:420px){
+  .broadcast-data-kpis{grid-template-columns:minmax(0,1fr);gap:4px}
+  .broadcast-data-kpis article{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:8px;padding:7px var(--data-inset)}
+  .broadcast-data-kpis article small{grid-area:1/2}
+  .broadcast-data-kpis article>div{display:contents}
+  .broadcast-data-kpis article b{font-size:15px;font-variant-numeric:tabular-nums}
+  .broadcast-data-kpis article b:first-child{grid-area:1/1;text-align:left}
+  .broadcast-data-kpis article b:last-child{grid-area:1/3;text-align:right}
+  .broadcast-data-kpis article span{display:none}
+}

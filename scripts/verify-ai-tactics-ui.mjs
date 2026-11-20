@@ -14,11 +14,14 @@ try{
   browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
   const page=await browser.newPage({viewport:{width:1500,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(account=>{localStorage.setItem('football_test1_versus_account_v1',JSON.stringify(account));sessionStorage.setItem('football_test1_versus_browser_session_v1','1');localStorage.setItem('football_test1_versus_view_v1',JSON.stringify({playerId:account.profile.id,mode:'league',leagueTab:'overview'}));},account);
-  await page.goto(server.url+'/versus/');await page.locator('[data-league-team-detail="ydl-team-2"]').first().click();
+  await page.goto(server.url+'/versus/');
+  const opponent=page.locator('.home-standing tr:not(.is-own) [data-league-team-detail]').first();
+  const teamId=await opponent.getAttribute('data-league-team-detail');
+  await opponent.click();await page.locator('[data-dossier-tab="ai"]').click();
   const boards=page.locator('.ai-club-boards');await boards.waitFor();
   await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important}'});await page.evaluate(()=>document.getAnimations().forEach(a=>a.finish()));
   assert.equal(await boards.locator('.ai-scheme-card[open]').count(),2);
-  const detail=(await post('/league/team/detail',{...identity,teamId:'ydl-team-2'})).team;
+  const detail=(await post('/league/team/detail',{...identity,teamId})).team;
   for(const index of [0,1])for(const phase of ['leading','trailing','opening']){
     const button=boards.locator(`[data-ai-board="${index}"][data-ai-phase="${phase}"]`);
     await button.click();assert.equal(await button.getAttribute('aria-pressed'),'true');

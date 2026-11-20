@@ -1,0 +1,907 @@
+/* ==========================================================================
+   YFFM1 「俱乐部数据」页面独立作用域样式 (.yffm-ch)
+   对齐全站深灰蓝 + 翠绿 + 琥珀金设计体系，完整支持深浅色与移动端
+   ========================================================================== */
+
+.yffm-ch {
+  isolation: isolate;
+  --ch-bg: #0b0f17;
+  --ch-panel: #111827;
+  --ch-panel2: #182234;
+  --ch-ink: #f8fafc;
+  --ch-muted: #94a3b8;
+  --ch-line: rgba(148, 163, 184, 0.2);
+  --ch-emerald: #10b981;
+  --ch-emerald-solid: #059669;
+  --ch-amber: #f59e0b;
+  --ch-red: #ef4444;
+  --ch-blue: #3b82f6;
+  color: var(--ch-ink);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
+  display: grid;
+  gap: 14px;
+}
+
+html[data-league-theme="light"] .yffm-ch,
+.yffm-ch[data-theme="light"] {
+  --ch-bg: #f1f5f9;
+  --ch-panel: #ffffff;
+  --ch-panel2: #f8fafc;
+  --ch-ink: #0f172a;
+  --ch-muted: #475569;
+  --ch-line: #dbe3ed;
+  --ch-emerald: #059669;
+  --ch-emerald-solid: #059669;
+  --ch-amber: #b45309;
+  --ch-red: #dc2626;
+  --ch-blue: #2563eb;
+}
+
+.yffm-ch *,
+.yffm-ch *::before,
+.yffm-ch *::after {
+  box-sizing: border-box;
+}
+
+.yffm-ch button,
+.yffm-ch select,
+.yffm-ch input {
+  font: inherit;
+  color: inherit;
+}
+
+.yffm-ch button {
+  cursor: pointer;
+}
+
+.yffm-ch button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 1. 页头：球队身份 + 统计范围 + 全局筛选 */
+.yffm-ch .ch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel);
+}
+
+.yffm-ch .ch-club-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.yffm-ch .ch-crest {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(145deg, var(--crest-c, #10b981), #0f172a);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.yffm-ch .ch-crest.sm {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.yffm-ch .ch-title-block {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.yffm-ch .ch-crest.has-badges {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: auto;
+  flex: none;
+  background: transparent;
+  border: 0;
+}
+.yffm-ch .ch-crest.has-badges img { width: 36px; height: 40px; margin: 0; object-fit: contain; }
+.yffm-ch .ch-crest.has-badges.sm img { width: 23px; height: 26px; }
+
+.yffm-ch .ch-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yffm-ch .ch-title-row h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.yffm-ch .ch-scope-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: var(--ch-emerald);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.yffm-ch .ch-coverage {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ch-muted);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yffm-ch .ch-coverage-warn {
+  color: var(--ch-amber);
+  font-weight: 700;
+}
+
+.yffm-ch .ch-global-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yffm-ch .ch-select,
+.yffm-ch .ch-input {
+  min-height: 36px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  color: var(--ch-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.yffm-ch .ch-select:focus-visible,
+.yffm-ch .ch-input:focus-visible,
+.yffm-ch button:focus-visible {
+  outline: 2px solid var(--ch-emerald);
+  outline-offset: 1px;
+}
+
+/* 2. 五页签下划线导航 */
+.yffm-ch .ch-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ch-line);
+  padding-bottom: 1px;
+}
+
+.yffm-ch .ch-tabs button {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--ch-muted);
+  font-size: 14px;
+  font-weight: 700;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.yffm-ch .ch-tabs button:hover {
+  color: var(--ch-ink);
+}
+
+.yffm-ch .ch-tabs button.active {
+  color: var(--ch-emerald);
+  border-bottom-color: var(--ch-emerald);
+}
+
+/* 3. 通用卡片与状态徽章 */
+.yffm-ch .ch-card {
+  border-radius: 14px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel);
+  padding: 16px 18px;
+}
+
+.yffm-ch .ch-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.yffm-ch .ch-card-head h2,
+.yffm-ch .ch-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.yffm-ch .ch-card-head small {
+  color: var(--ch-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.yffm-ch .ch-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.yffm-ch .ch-res-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.yffm-ch .ch-res-badge.res-W {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.yffm-ch .ch-res-badge.res-D {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+}
+
+.yffm-ch .ch-res-badge.res-L {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+html[data-league-theme="light"] .yffm-ch .ch-res-badge.res-W {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+
+html[data-league-theme="light"] .yffm-ch .ch-res-badge.res-D {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+html[data-league-theme="light"] .yffm-ch .ch-res-badge.res-L {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.yffm-ch .ch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  color: var(--ch-muted);
+}
+
+.yffm-ch .ch-pill.emerald {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--ch-emerald);
+}
+
+.yffm-ch .ch-pill.amber {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.38);
+  color: var(--ch-amber);
+}
+
+.yffm-ch .ch-pill.blue {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: var(--ch-blue);
+}
+
+.yffm-ch .ch-btn {
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  color: var(--ch-ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.yffm-ch .ch-btn:hover:not(:disabled) {
+  border-color: var(--ch-emerald);
+  color: var(--ch-emerald);
+}
+
+.yffm-ch .ch-btn.primary {
+  background: var(--ch-emerald-solid);
+  border-color: var(--ch-emerald);
+  color: #ffffff;
+}
+
+.yffm-ch .ch-btn.primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  color: #ffffff;
+}
+
+/* 4. 队史总览 */
+.yffm-ch .ch-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.yffm-ch .ch-kpi {
+  border-radius: 14px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel);
+  padding: 14px 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.yffm-ch .ch-kpi.honor-kpi {
+  border-color: rgba(245, 158, 11, 0.38);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.1), var(--ch-panel));
+}
+
+.yffm-ch .ch-kpi small {
+  color: var(--ch-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yffm-ch .ch-kpi-val {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yffm-ch .ch-kpi-val strong {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yffm-ch .ch-kpi-sub {
+  font-size: 12px;
+  color: var(--ch-muted);
+  font-weight: 600;
+}
+
+.yffm-ch .ch-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.yffm-ch .ch-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.yffm-ch .ch-season-list {
+  display: grid;
+  gap: 8px;
+}
+
+.yffm-ch .ch-season-row {
+  width: 100%;
+  text-align: left;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.yffm-ch .ch-season-row:hover {
+  border-color: var(--ch-emerald);
+}
+
+.yffm-ch .ch-season-row.is-champion {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.yffm-ch .ch-season-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yffm-ch .ch-season-left b {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.yffm-ch .ch-mini-list {
+  display: grid;
+  gap: 8px;
+}
+
+.yffm-ch .ch-mini-row {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.yffm-ch .ch-mini-row:hover {
+  border-color: var(--ch-emerald);
+}
+
+.yffm-ch .ch-mini-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.yffm-ch .ch-rank-dot {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--ch-muted);
+}
+
+.yffm-ch .ch-rank-dot.top-1 {
+  background: #f59e0b;
+  color: #0b0f17;
+}
+
+.yffm-ch .ch-rank-dot.top-2 {
+  background: #94a3b8;
+  color: #0b0f17;
+}
+
+.yffm-ch .ch-rank-dot.top-3 {
+  background: #d97706;
+  color: #ffffff;
+}
+
+/* 5. 全部比赛表格与筛选栏 */
+.yffm-ch .ch-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.yffm-ch .ch-filter-bar .ch-input {
+  flex: 1 1 200px;
+}
+
+.yffm-ch .ch-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--ch-line);
+}
+
+.yffm-ch table.ch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.yffm-ch table.ch-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ch-muted);
+  background: var(--ch-panel2);
+  border-bottom: 1px solid var(--ch-line);
+  white-space: nowrap;
+}
+
+.yffm-ch table.ch-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ch-line);
+  vertical-align: middle;
+}
+
+.yffm-ch table.ch-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.yffm-ch table.ch-table tbody tr:hover td {
+  background: rgba(148, 163, 184, 0.06);
+}
+
+.yffm-ch .ch-score-cell {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.yffm-ch .ch-score-order {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ch-muted);
+}
+
+.yffm-ch .ch-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.yffm-ch .ch-pager {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ch-muted);
+}
+
+/* 6. 交手记录（桌面双栏 / 手机钻取） */
+.yffm-ch .ch-h2h-layout {
+  display: grid;
+  grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.yffm-ch .ch-h2h-list {
+  display: grid;
+  gap: 8px;
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.yffm-ch .ch-rival-item {
+  width: 100%;
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  display: grid;
+  gap: 6px;
+}
+
+.yffm-ch .ch-rival-item.active {
+  border-color: var(--ch-emerald);
+  background: rgba(16, 185, 129, 0.1);
+  box-shadow: inset 3px 0 0 var(--ch-emerald);
+}
+
+.yffm-ch .ch-rival-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.yffm-ch .ch-rival-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ch-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.yffm-ch .ch-h2h-splits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.yffm-ch .ch-split-box {
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  display: grid;
+  gap: 4px;
+}
+
+.yffm-ch .ch-split-box small {
+  font-size: 11px;
+  color: var(--ch-muted);
+  font-weight: 700;
+}
+
+.yffm-ch .ch-split-box strong {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.yffm-ch .ch-form-strip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.yffm-ch .ch-mobile-back {
+  display: none;
+  margin-bottom: 10px;
+}
+
+/* 7. 球员榜单 */
+.yffm-ch .ch-subtabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.yffm-ch .ch-subtabs button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  color: var(--ch-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.yffm-ch .ch-subtabs button.active {
+  background: var(--ch-emerald-solid);
+  border-color: var(--ch-emerald);
+  color: #ffffff;
+}
+
+.yffm-ch .ch-player-row {
+  cursor: pointer;
+}
+
+/* 8. 荣誉与纪录 */
+.yffm-ch .ch-records-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.yffm-ch .ch-record-card {
+  border-radius: 12px;
+  border: 1px solid var(--ch-line);
+  background: var(--ch-panel2);
+  padding: 14px 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.yffm-ch .ch-record-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.yffm-ch .ch-record-top small {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ch-muted);
+}
+
+.yffm-ch .ch-record-val {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 9. 空状态 / 加载中 / 错误重试 */
+.yffm-ch .ch-state-box {
+  padding: 40px 20px;
+  text-align: center;
+  border-radius: 14px;
+  border: 1px dashed var(--ch-line);
+  background: var(--ch-panel);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.yffm-ch .ch-state-box b {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.yffm-ch .ch-state-box p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ch-muted);
+  max-width: 440px;
+  line-height: 1.55;
+}
+
+.yffm-ch .ch-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.yffm-ch .ch-skeleton {
+  height: 86px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--ch-panel2) 25%, rgba(148, 163, 184, 0.14) 50%, var(--ch-panel2) 75%);
+  background-size: 200% 100%;
+  animation: ch-shimmer 1.4s ease infinite;
+}
+
+@keyframes ch-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 10. 弹窗（生涯明细 / 比赛详情 / 连续纪录赛程） */
+.ch-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  padding: 20px;
+  background: rgba(11, 15, 23, 0.78);
+  display: grid;
+  place-items: center;
+  overflow: auto;
+}
+
+.ch-modal {
+  width: min(720px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #111827;
+  color: #f8fafc;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+html[data-league-theme="light"] .ch-modal {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.ch-modal > header {
+  padding: 15px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #182234;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+html[data-league-theme="light"] .ch-modal > header {
+  background: #f8fafc;
+  border-bottom-color: #e2e8f0;
+}
+
+.ch-modal > header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ch-modal > header small {
+  display: block;
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 700;
+}
+
+.ch-modal-body {
+  padding: 16px 18px;
+  display: grid;
+  gap: 14px;
+  max-height: 75dvh;
+  overflow-y: auto;
+}
+
+.ch-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* 响应式 */
+@media (max-width: 960px) {
+  .yffm-ch .ch-kpi-grid,
+  .yffm-ch .ch-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .yffm-ch .ch-overview-grid,
+  .yffm-ch .ch-records-grid {
+    grid-template-columns: 1fr;
+  }
+  .yffm-ch .ch-h2h-layout {
+    grid-template-columns: 1fr;
+  }
+  .yffm-ch .ch-h2h-layout[data-mobile-view="list"] .ch-h2h-detail {
+    display: none;
+  }
+  .yffm-ch .ch-h2h-layout[data-mobile-view="detail"] .ch-h2h-master {
+    display: none;
+  }
+  .yffm-ch .ch-mobile-back {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 600px) {
+  .yffm-ch .ch-header {
+    padding: 13px 14px;
+  }
+  .yffm-ch .ch-h2h-splits {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yffm-ch .ch-skeleton {
+    animation: none;
+  }
+}

@@ -35,14 +35,20 @@ function availabilityMarkup(availability) {
 export function inboxStructuredMarkup(message, {matchRow = () => ''} = {}) {
   const p = message.payload ?? {};
   if (message.type === 'matchweek' && p.settlementVersion === 1) {
-    const rewardLines = (p.rewards ?? []).flatMap(r => [r.amount ? `比赛奖励 +${num(r.amount)} 金币` : '',r.quantity ? `${({champion:'冠军奖励',runnerUp:'亚军奖励',advance:'晋级奖励'})[r.award] ?? '比赛奖励'} · ${r.packName ?? '礼包'} ×${r.quantity}` : ''].filter(Boolean));
-    if (p.homeTicketIncome) rewardLines.push(`主场门票 +${num(p.homeTicketIncome.amount)} 金币`);
+    const rewardLines = (p.rewards ?? []).flatMap(r => [r.amount ? `${r.sponsorCount ? `带资进组 · ${num(r.sponsorCount)}人 × ${num(r.unit)}` : "比赛奖励"} +${num(r.amount)} 金币` : '',r.quantity ? `${({champion:'冠军奖励',runnerUp:'亚军奖励',advance:'晋级奖励'})[r.award] ?? '比赛奖励'} · ${r.packName ?? '礼包'} ×${r.quantity}` : ''].filter(Boolean));
+    if (p.homeTicketIncome) {
+      const {amount, attendance} = p.homeTicketIncome;
+      const crowd = Number.isFinite(attendance) ? ` · ${num(attendance)} 名观众入场` : '';
+      rewardLines.push(`主场门票 +${num(amount)} 金币${crowd}`);
+    }
     const rewards = rewardLines.length ? section('已自动到账',`<ul>${rewardLines.map(line => `<li>${esc(line)}</li>`).join('')}</ul>`) : '';
+    const wear=p.nineDragonsWear;
+    const wearNote=wear ? section('九龙拉棺 · 本体卡永久损耗',`<p>${esc(wear.name)} · 基础总评 ${num(wear.before)} → ${num(wear.after)}</p>`) : '';
     const rotations = p.autoRotations?.length ? details(`赛前轮换 · ${p.autoRotations.length}处`, `<ul>${p.autoRotations.map(r => `<li>${esc(r.outName)} → ${esc(r.inName)}<small>${esc(r.reason)}</small></li>`).join('')}</ul><small class="muted">仅用于本场出场阵容。</small>`) : '';
     const alerts = [...(p.injured ?? []).map(player => `${player.name} · 伤缺${player.rounds}轮`),...(p.suspended ?? []).map(player => `${player.name} · ${p.competition === 'cup' ? '杯赛' : '联赛'}停赛${player.rounds}场`)];
     const currentAvailability = alerts.length && (!p.nextAvailability || p.nextAvailability.competition !== p.competition)
       ? details(`本项${p.competition === 'cup' ? '杯赛' : '联赛'} · 赛后伤停`,`<ul>${alerts.map(text => `<li>${esc(text)}</li>`).join('')}</ul>`) : '';
-    return `<div class="league-mail-body mail-content"><div class="mail-score"><span>${esc(p.ownName)}<small>${p.venue === 'home' ? '主场' : '客场'}</small></span><strong>${num(p.ownScore)} : ${num(p.opponentScore)}</strong><span>${esc(p.opponentName)}</span></div>${p.penalties ? `<p class="muted">点球 ${num(p.penalties[0])}:${num(p.penalties[1])}</p>` : ''}${p.competition === 'league' ? `<p class="mail-standing">${esc(p.division ?? 'A')}级第${num(p.rank)}名 · ${num(p.points)}分</p>` : ''}${rewards}${availabilityMarkup(p.nextAvailability)}${currentAvailability}${nextMarkup(p.next)}${rotations}${p.results?.length > 1 ? details('本轮赛果',p.results.map(matchRow).join('')) : ''}${inboxActionsMarkup(message)}</div>`;
+    return `<div class="league-mail-body mail-content"><div class="mail-score"><span>${esc(p.ownName)}<small>${p.venue === 'home' ? '主场' : '客场'}</small></span><strong>${num(p.ownScore)} : ${num(p.opponentScore)}</strong><span>${esc(p.opponentName)}</span></div>${p.penalties ? `<p class="muted">点球 ${num(p.penalties[0])}:${num(p.penalties[1])}</p>` : ''}${p.competition === 'league' ? `<p class="mail-standing">${esc(p.division ?? 'A')}级第${num(p.rank)}名 · ${num(p.points)}分</p>` : ''}${rewards}${wearNote}${availabilityMarkup(p.nextAvailability)}${currentAvailability}${nextMarkup(p.next)}${rotations}${p.results?.length > 1 ? details('本轮赛果',p.results.map(matchRow).join('')) : ''}${inboxActionsMarkup(message)}</div>`;
   }
   if (message.type === 'daily-report' && message.report) {
     const report = message.report, today = report.today ?? {}, availability = report.availability ?? {};

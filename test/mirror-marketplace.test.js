@@ -87,79 +87,28 @@ test("full mirror upload is opt-in and does not expose tactical data in the cata
   assert.equal(service.mirrorMarketplaceCatalog(viewer).entries.some((entry) => entry.teamId === ownerTeam.id && entry.kind === "full"), false);
 });
 
-test("top three offseason seeds are forced to publish every saved tactical board", () => {
-  let now = Date.parse("2026-08-06T22:30:00+08:00");
-  const service = new YellowDogsLeagueService({ statePath:null, now:() => now, rng:() => .37 });
-  const viewer = account("forced-mirror-viewer", "查看者");
-  const seedOne = account("forced-mirror-seed-1", "Akira");
-  const seedTwo = account("forced-mirror-seed-2", "皇马");
-  const seedThree = account("forced-mirror-seed-3", "唱反调");
-  join(service, viewer, "查看者球队");
-  join(service, seedOne, "一号种子球队");
-  join(service, seedTwo, "二号种子球队");
-  join(service, seedThree, "三号种子球队");
-
-  const seedOneTeam = service.accountTeam(seedOne.id);
-  const seedTwoTeam = service.accountTeam(seedTwo.id);
-  const seedThreeTeam = service.accountTeam(seedThree.id);
-  service.updateLineupScheme(seedOne, { action:"create", name:"第二战术板" });
-  service.updateLineupScheme(seedOne, { action:"create", name:"第三战术板" });
-  seedOneTeam.lineupSchemes[1].tacticalPlans.opening.tactic = "attacking";
-  seedOneTeam.lineupSchemes[1].revision += 1;
-  seedOneTeam.lineupSchemes[2].tacticalPlans.opening.tactic = "allOutAttack";
-  seedOneTeam.lineupSchemes[2].revision += 1;
-
+test("former seeds choose whether to share their active tactical board", () => {
+  const service = new YellowDogsLeagueService({statePath:null, rng:()=>.37});
+  const owner = account("old-seed","Akira"), viewer = account("mirror-viewer","Viewer");
+  join(service, owner, "Former seed"); join(service, viewer, "Viewer FC");
+  const team = service.accountTeam(owner.id);
   service.state.season.status = "completed";
-  service.state.season.date = "2026-08-06";
-  service.state.seasonFinalTournament = {
-    seasonId:service.state.season.id,
-    preview:false,
-    seedSnapshot:[
-      { teamId:seedOneTeam.id, seed:1, isAi:false },
-      { teamId:seedTwoTeam.id, seed:2, isAi:false },
-      { teamId:seedThreeTeam.id, seed:3, isAi:false },
-    ],
-  };
-
+  service.state.seasonFinalTournament = {seasonId:service.state.season.id, seedSnapshot:[{teamId:team.id,seed:1}]};
+  const fullEntries = () => service.mirrorMarketplaceCatalog(viewer).entries.filter(e => e.teamId === team.id && e.kind === "full");
+  assert.deepEqual(service.forcedSeedMirrorTeams(), []);
+  assert.deepEqual(fullEntries(), []);
+  service.setFullMirrorUpload(owner,true);
+  const upload = service.state.mirrorMarketplace.uploads[owner.id];
+  Object.assign(upload, {forcedBySeed:true, forcedSeed:1, manualEnabled:true, manualSnapshot:upload.snapshot});
   assert.equal(service.syncForcedSeedMirrorUploads(), true);
-  const seedOneUpload = service.state.mirrorMarketplace.uploads[seedOne.id];
-  assert.equal(seedOneUpload.forcedBySeed, true);
-  assert.equal(seedOneUpload.forcedSeed, 1);
-  assert.equal(seedOneUpload.snapshots.length, 3);
-  assert.equal(service.state.mirrorMarketplace.uploads[seedTwo.id].snapshots.length, 1);
-  assert.equal(service.state.mirrorMarketplace.uploads[seedThree.id].snapshots.length, 1);
-
-  const ownCatalog = service.mirrorMarketplaceCatalog(seedOne);
-  assert.equal(ownCatalog.fullUploadLocked, true);
-  assert.equal(ownCatalog.fullUploadCount, 3);
-  const seedOneEntries = service.mirrorMarketplaceCatalog(viewer).entries.filter((entry) => entry.teamId === seedOneTeam.id);
-  assert.equal(seedOneEntries.filter((entry) => entry.kind === "full").length, 3);
-  assert.ok(seedOneEntries.filter((entry) => entry.kind === "full").every((entry) => entry.price === 300));
-  assert.deepEqual(seedOneEntries.filter((entry) => entry.kind === "full").map((entry) => entry.mirrorSchemeName), ["方案 1", "第二战术板", "第三战术板"]);
-  assert.ok(seedOneEntries.every((entry) => entry.forcedSeed === 1));
-  assert.throws(() => service.setFullMirrorUpload(seedOne, false), /强制上传.*不可取消/);
-
-  service.wallet(viewer.id).balance = 2000;
-  const selected = seedOneUpload.snapshots[1];
-  const training = service.createAiTraining(viewer, {
-    mirrorTeamId:seedOneTeam.id,
-    mirrorKind:"full",
-    mirrorSchemeId:selected.schemeId,
-  });
-  assert.equal(training.broadcast.match.teams[1].tactic, "attacking");
-  assert.match(training.broadcast.match.teams[1].name, /第二战术板/);
-
-  now = Date.parse("2026-08-07T00:05:00+08:00");
-  assert.equal(service.syncForcedSeedMirrorUploads(), true);
-  assert.equal(service.state.mirrorMarketplace.uploads[seedOne.id].forcedBySeed, true);
-  assert.equal(service.state.mirrorMarketplace.uploads[seedOne.id].forcedDate, "2026-08-07");
-  assert.equal(service.mirrorMarketplaceCatalog(viewer).entries.filter((entry) => entry.teamId === seedOneTeam.id && entry.kind === "full").length, 3);
-
-  service.state.season.status = "active";
-  service.state.seasonFinalTournament = null;
-  assert.equal(service.syncForcedSeedMirrorUploads(), true);
-  assert.equal(service.state.mirrorMarketplace.uploads[seedOne.id].forcedBySeed, undefined);
-  assert.equal(service.state.mirrorMarketplace.uploads[seedOne.id].enabled, false);
+  assert.equal(fullEntries().length,1);
+  assert.equal(fullEntries()[0].price,360);
+  assert.equal(service.mirrorMarketplaceCatalog(owner).fullUploadLocked,false);
+  service.setFullMirrorUpload(owner,false);
+  assert.deepEqual(fullEntries(), []);
+  service.state.mirrorMarketplace.uploads[owner.id] = { ...upload, enabled:true, forcedBySeed:true, forcedSeed:1, manualEnabled:false, manualSnapshot:null };
+  assert.deepEqual(fullEntries(), []);
+  assert.equal(service.mirrorMarketplaceCatalog(owner).fullUploadEnabled, false);
 });
 
 test("10-match mirror batch charges a 30 percent service fee and sends a summary mail", () => {
@@ -173,12 +122,7 @@ test("10-match mirror batch charges a 30 percent service fee and sends a summary
   const mirrorTeam = service.accountTeam(seedOwner.id);
   service.state.season.status = "completed";
   service.state.season.date = "2026-08-06";
-  service.state.seasonFinalTournament = {
-    seasonId:service.state.season.id,
-    preview:false,
-    seedSnapshot:[{ teamId:mirrorTeam.id, seed:1, isAi:false }],
-  };
-  service.syncForcedSeedMirrorUploads();
+  service.setFullMirrorUpload(seedOwner, true);
   service.wallet(viewer.id).balance = 5000;
   service.wallet(seedOwner.id).balance = 1000;
   const mirrorSchemeId = service.state.mirrorMarketplace.uploads[seedOwner.id].snapshots[0].schemeId;
@@ -198,21 +142,21 @@ test("10-match mirror batch charges a 30 percent service fee and sends a summary
 
   const created = service.createMirrorBatchSimulation(viewer, config);
   assert.equal(created.mirrorBatchJob.totalMatches, 10);
-  assert.equal(created.mirrorBatchJob.unitPrice, 300);
-  assert.equal(created.mirrorBatchJob.subtotal, 1000);
-  assert.equal(created.mirrorBatchJob.serviceFee, 300);
-  assert.equal(created.mirrorBatchJob.totalCost, 1300);
-  assert.equal(service.wallet(viewer.id).balance, 3700);
+  assert.equal(created.mirrorBatchJob.unitPrice, 360);
+  assert.equal(created.mirrorBatchJob.subtotal, 1200);
+  assert.equal(created.mirrorBatchJob.serviceFee, 360);
+  assert.equal(created.mirrorBatchJob.totalCost, 1560);
+  assert.equal(service.wallet(viewer.id).balance, 3440);
   const repeated = service.createMirrorBatchSimulation(viewer, config);
   assert.equal(repeated.mirrorBatchJob.id, created.mirrorBatchJob.id);
-  assert.equal(service.wallet(viewer.id).balance, 3700);
+  assert.equal(service.wallet(viewer.id).balance, 3440);
 
   const usage = service.state.mirrorMarketplace.usageByDate["2026-08-06"][seedOwner.id];
   assert.equal(usage.fullCalls, 10);
-  assert.equal(usage.gross, 1300);
-  assert.equal(usage.serviceFees, 300);
-  assert.equal(usage.platformCommission, 600);
-  assert.equal(usage.ownerRevenue, 700);
+  assert.equal(usage.gross, 1560);
+  assert.equal(usage.serviceFees, 360);
+  assert.equal(usage.platformCommission, 720);
+  assert.equal(usage.ownerRevenue, 840);
 
   const job = service.state.mirrorMarketplace.batchJobs.find((entry) => entry.id === created.mirrorBatchJob.id);
   service.state.season.status = "active";
@@ -227,7 +171,7 @@ test("10-match mirror batch charges a 30 percent service fee and sends a summary
   assert.equal(job.opponentSeat, undefined);
   assert.equal(job.report.totalMatches, 10);
   assert.equal(job.report.wins + job.report.draws + job.report.losses, 10);
-  assert.equal(job.report.pricing.totalCost, 1300);
+  assert.equal(job.report.pricing.totalCost, 1560);
   const mail = service.state.inbox[viewerTeam.id].find((message) => message.type === "mirror-batch-report");
   assert.ok(mail);
   assert.equal(mail.report.results.length, 10);
@@ -261,8 +205,7 @@ test("mirror batch accepts 10 to 50 matches in steps of ten and prices all match
   const mirrorTeam = service.accountTeam(seedOwner.id);
   service.state.season.status = "completed";
   service.state.season.date = "2026-08-06";
-  service.state.seasonFinalTournament = { seasonId:service.state.season.id, preview:false, seedSnapshot:[{ teamId:mirrorTeam.id, seed:1, isAi:false }] };
-  service.syncForcedSeedMirrorUploads();
+  service.setFullMirrorUpload(seedOwner, true);
   service.wallet(viewer.id).balance = 20_000;
   const mirrorSchemeId = service.state.mirrorMarketplace.uploads[seedOwner.id].snapshots[0].schemeId;
   const config = {
@@ -280,10 +223,10 @@ test("mirror batch accepts 10 to 50 matches in steps of ten and prices all match
   assert.equal(catalog.batchMaximumMatchCount, 50);
   const created = service.createMirrorBatchSimulation(viewer, config);
   assert.equal(created.mirrorBatchJob.totalMatches, 50);
-  assert.equal(created.mirrorBatchJob.subtotal, 5000);
-  assert.equal(created.mirrorBatchJob.serviceFee, 1500);
-  assert.equal(created.mirrorBatchJob.totalCost, 6500);
-  assert.equal(service.wallet(viewer.id).balance, 13_500);
+  assert.equal(created.mirrorBatchJob.subtotal, 6000);
+  assert.equal(created.mirrorBatchJob.serviceFee, 1800);
+  assert.equal(created.mirrorBatchJob.totalCost, 7800);
+  assert.equal(service.wallet(viewer.id).balance, 12_200);
   assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-06"][seedOwner.id].fullCalls, 50);
   assert.throws(() => service.createMirrorBatchSimulation(viewer, { ...config, requestId:"too-many", totalMatches:60 }), /10、20、30、40或50/);
   assert.throws(() => service.createMirrorBatchSimulation(viewer, { ...config, requestId:"invalid-step", totalMatches:15 }), /10、20、30、40或50/);
@@ -302,12 +245,7 @@ test("mirror batches run two at once and reject a third without charging", () =>
   const mirrorTeam = service.accountTeam(seedOwner.id);
   service.state.season.status = "completed";
   service.state.season.date = "2026-08-06";
-  service.state.seasonFinalTournament = {
-    seasonId:service.state.season.id,
-    preview:false,
-    seedSnapshot:[{ teamId:mirrorTeam.id, seed:1, isAi:false }],
-  };
-  service.syncForcedSeedMirrorUploads();
+  service.setFullMirrorUpload(seedOwner, true);
   [first, second, third].forEach((user) => { service.wallet(user.id).balance = 5000; });
   const mirrorSchemeId = service.state.mirrorMarketplace.uploads[seedOwner.id].snapshots[0].schemeId;
   const config = (requestId) => ({
@@ -367,8 +305,7 @@ test("legacy director worker remains permanent and transfers the 30 percent serv
   const mirrorTeam = service.accountTeam(seedOwner.id);
   service.state.season.status = "completed";
   service.state.season.date = "2026-08-06";
-  service.state.seasonFinalTournament = { seasonId:service.state.season.id, preview:false, seedSnapshot:[{ teamId:mirrorTeam.id, seed:1, isAi:false }] };
-  service.syncForcedSeedMirrorUploads();
+  service.setFullMirrorUpload(seedOwner, true);
   service.wallet(viewer.id).balance = 10_000;
   service.wallet(nextViewer.id).balance = 10_000;
   service.wallet(axero.id).balance = 500;
@@ -405,22 +342,22 @@ service.registerDirectorMirrorWorker({ workerId, engineVersion, maximumConcurren
   service.registerDirectorMirrorWorker({ workerId, engineVersion, maximumConcurrency:5, activeLeaseIds:[], acceptingJobs:true });
   const created = service.createMirrorBatchSimulation(viewer, config("director-request-1"));
   assert.equal(created.mirrorBatchJob.executionNode, "director");
-  assert.equal(created.mirrorBatchJob.subtotal, 1000);
-  assert.equal(created.mirrorBatchJob.serviceFee, 300);
+  assert.equal(created.mirrorBatchJob.subtotal, 1200);
+  assert.equal(created.mirrorBatchJob.serviceFee, 360);
   assert.equal(created.mirrorBatchJob.directorSurcharge, 0);
-  assert.equal(created.mirrorBatchJob.directorServiceFeeRevenue, 300);
-  assert.equal(created.mirrorBatchJob.totalCost, 1300);
-  assert.equal(service.wallet(viewer.id).balance, 8700);
-  assert.equal(service.wallet(axero.id).balance, 800);
+  assert.equal(created.mirrorBatchJob.directorServiceFeeRevenue, 360);
+  assert.equal(created.mirrorBatchJob.totalCost, 1560);
+  assert.equal(service.wallet(viewer.id).balance, 8440);
+  assert.equal(service.wallet(axero.id).balance, 860);
   const revenueMail = service.state.inbox[axeroTeam.id].find((message) => message.type === "director-worker-revenue");
   assert.ok(revenueMail);
-  assert.equal(revenueMail.payload.amount, 300);
+  assert.equal(revenueMail.payload.amount, 360);
   assert.equal(revenueMail.payload.source, "batch-service-fee");
-  assert.match(revenueMail.body, /30%批量服务费共300金币.*Axero/);
+  assert.match(revenueMail.body, /30%批量服务费共360金币.*Axero/);
   const repeated = service.createMirrorBatchSimulation(viewer, config("director-request-1"));
   assert.equal(repeated.mirrorBatchJob.id, created.mirrorBatchJob.id);
-  assert.equal(service.wallet(viewer.id).balance, 8700);
-  assert.equal(service.wallet(axero.id).balance, 800);
+  assert.equal(service.wallet(viewer.id).balance, 8440);
+  assert.equal(service.wallet(axero.id).balance, 860);
   assert.equal(service.state.inbox[axeroTeam.id].filter((message) => message.type === "director-worker-revenue").length, 1);
 
   const lease = service.leaseDirectorMirrorBatchJob({ workerId, engineVersion });
@@ -446,7 +383,7 @@ service.registerDirectorMirrorWorker({ workerId, engineVersion, maximumConcurren
   assert.equal(completed.mirrorBatchJob.status, "completed");
   assert.equal(completed.report.totalMatches, 10);
   assert.equal(completed.report.pricing.directorSurcharge, 0);
-  assert.equal(completed.report.pricing.directorServiceFeeRevenue, 300);
+  assert.equal(completed.report.pricing.directorServiceFeeRevenue, 360);
   assert.ok(service.state.inbox[viewerTeam.id].some((message) => message.type === "mirror-batch-report"));
   const repeatedCompletion = service.completeDirectorMirrorBatchJob({ jobId:lease.jobId, leaseId:lease.leaseId, reports });
   assert.equal(repeatedCompletion.mirrorBatchJob.status, "completed");
@@ -461,7 +398,7 @@ service.registerDirectorMirrorWorker({ workerId, engineVersion, maximumConcurren
   const balanceBefore = service.wallet(nextViewer.id).balance;
   assert.throws(() => service.createMirrorBatchSimulation(nextViewer, config("director-request-capacity")), (error) => error.statusCode === 409 && error.details.length === 5);
   assert.equal(service.wallet(nextViewer.id).balance, balanceBefore);
-  assert.equal(service.wallet(axero.id).balance, 800);
+  assert.equal(service.wallet(axero.id).balance, 860);
 });
 test("players can mount private or public compute nodes and their own node waives the system service fee", () => {
   let clock = Date.parse("2026-08-06T22:30:00+08:00");
@@ -475,8 +412,7 @@ test("players can mount private or public compute nodes and their own node waive
   const mirrorTeam = service.accountTeam(seedOwner.id);
   service.state.season.status = "completed";
   service.state.season.date = "2026-08-06";
-  service.state.seasonFinalTournament = { seasonId:service.state.season.id, preview:false, seedSnapshot:[{ teamId:mirrorTeam.id, seed:1, isAi:false }] };
-  service.syncForcedSeedMirrorUploads();
+  service.setFullMirrorUpload(seedOwner, true);
   service.wallet(provider.id).balance = 10_000;
 
   const saved = service.saveMirrorComputeNode(provider, { label:"节点主人的电脑", maximumConcurrency:3, visibility:"private", rotateToken:true });
@@ -505,10 +441,10 @@ test("players can mount private or public compute nodes and their own node waive
   });
   assert.equal(created.mirrorBatchJob.computeNodeOwnerId, provider.id);
   assert.equal(created.mirrorBatchJob.usesOwnComputeNode, true);
-  assert.equal(created.mirrorBatchJob.subtotal, 1000);
+  assert.equal(created.mirrorBatchJob.subtotal, 1200);
   assert.equal(created.mirrorBatchJob.serviceFee, 0);
-  assert.equal(created.mirrorBatchJob.totalCost, 1000);
-  assert.equal(service.wallet(provider.id).balance, 9000);
+  assert.equal(created.mirrorBatchJob.totalCost, 1200);
+  assert.equal(service.wallet(provider.id).balance, 8800);
 
   service.saveMirrorComputeNode(provider, { nodeId:credential.nodeId, label:"节点主人的电脑", maximumConcurrency:3, visibility:"public" });
   const publicNode = service.mirrorMarketplaceCatalog(stranger).batchNodes.find((node) => node.id === credential.nodeId);
@@ -526,12 +462,12 @@ test("players can mount private or public compute nodes and their own node waive
     defenseFocus:"balanced",
     tacticalPlans:{ opening:{ tactic:"balanced", style:"possession" }, leading:{ tactic:"defensive", style:"counterAttack" }, trailing:{ tactic:"positive", style:"wingPlay" } },
   });
-  assert.equal(publicJob.mirrorBatchJob.serviceFee, 300);
-  assert.equal(publicJob.mirrorBatchJob.playerComputeNodeServiceFeeRevenue, 300);
-  assert.equal(service.wallet(provider.id).balance, providerBalanceBeforePublicJob + 300);
+  assert.equal(publicJob.mirrorBatchJob.serviceFee, 360);
+  assert.equal(publicJob.mirrorBatchJob.playerComputeNodeServiceFeeRevenue, 360);
+  assert.equal(service.wallet(provider.id).balance, providerBalanceBeforePublicJob + 360);
   const nodeRevenueMail = service.state.inbox[service.accountTeam(provider.id).id].find((message) => message.type === "compute-node-revenue");
   assert.ok(nodeRevenueMail);
-  assert.equal(nodeRevenueMail.payload.amount, 300);
+  assert.equal(nodeRevenueMail.payload.amount, 360);
   clock = credential.expiresAt + 1;
   assert.equal(service.authenticateMirrorComputeNode(credential.nodeId, credential.token), null);
 });
@@ -581,40 +517,23 @@ test("season reset preserves the wallet and same-day mirror revenue is paid once
   const seedTeam = service.accountTeam(seedOwner.id);
   service.state.season.status = "completed";
   service.state.season.date = "2026-08-07";
-  service.state.seasonFinalTournament = {
-    seasonId:service.state.season.id,
-    preview:false,
-    seedSnapshot:[{ teamId:seedTeam.id, seed:1, isAi:false }],
-  };
-  service.syncForcedSeedMirrorUploads();
-  service.wallet(viewer.id).balance = 10_000;
+  service.state.cup.status = "completed";
+  service.settleDailySeason({manual:true});
+  service.wallet(viewer.id).balance = 10000;
   service.wallet(seedOwner.id).balance = 321;
+  service.chargeMirrorInvocation(viewer, seedTeam, "basic");
+  assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"][seedOwner.id].ownerRevenue, 140);
 
-  const mirrorSchemeId = service.state.mirrorMarketplace.uploads[seedOwner.id].snapshots[0].schemeId;
-  service.createMirrorBatchSimulation(viewer, {
-    requestId:"same-day-reset-seed-revenue",
-    mirrorTeamId:seedTeam.id,
-    mirrorKind:"full",
-    mirrorSchemeId,
-    attackFocus:"balanced",
-    defenseFocus:"balanced",
-    tacticalPlans:{ opening:{ tactic:"balanced", style:"possession" }, leading:{ tactic:"defensive", style:"counterAttack" }, trailing:{ tactic:"positive", style:"wingPlay" } },
-  });
-  assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"][seedOwner.id].ownerRevenue, 700);
-
-  // Exercise resetCompetition directly without invoking the completed-cup guard:
-  // the bug was in reset ordering/date filtering, independent of tournament gates.
-  service.state.season.status = "registration";
-  service.resetCompetition("S2", "new-season", "registration");
+  service.startNewSeason();
 
   assert.equal(service.wallet(seedOwner.id).balance, 321);
-  assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"][seedOwner.id].ownerRevenue, 700);
+  assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"][seedOwner.id].ownerRevenue, 140);
   service.startLeagueSimulation();
   now = Date.parse("2026-08-07T10:00:00+08:00");
   service.startScheduledRound();
-  assert.equal(service.wallet(seedOwner.id).balance, 1021);
+  assert.equal(service.wallet(seedOwner.id).balance, 461);
   assert.equal(service.state.mirrorMarketplace.usageByDate["2026-08-07"], undefined);
   const settlements = service.state.inbox[seedTeam.id].filter((message) => message.type === "mirror-settlement");
   assert.equal(settlements.length, 1);
-  assert.equal(settlements[0].payload.ownerRevenue, 700);
+  assert.equal(settlements[0].payload.ownerRevenue, 140);
 });

@@ -1,3 +1,4 @@
+import {fixtureConditions} from '../match-conditions.js';
 import {createHash} from 'node:crypto';
 import {createSourceSnapshot} from '../v4-adapter/source-snapshot.js';
 import {compileRealMatch} from '../v4-adapter/compile-match.js';
@@ -54,8 +55,9 @@ export function beginScheduledLeagueRound({league:original,seasonId,roundNumber,
   const snapshot=createSourceSnapshot({league,catalog,traitCatalog,bondCatalog}),scheduleDigest=hash(scheduleIdentity(round));
   const tasks=round.fixtures.map((fixture,fixtureIndex)=>{
     const id=`v4-${key.slice(0,32)}-${fixtureIndex}`;
+    const {weather,referee}=fixtureConditions(seasonId,fixture,roundNumber);
     return {fixture:{id,competition:'league'},context:{competition:'league',round:roundNumber,binding:{seasonId,roundKey:key,fixtureIndex,scheduleDigest}},
-      envelope:compileRealMatch(snapshot,{homeId:fixture.homeId,awayId:fixture.awayId,fixtureId:id,seed:`${seasonId}:R${roundNumber}:${fixtureIndex}`,duration})};
+      envelope:compileRealMatch(snapshot,{environment:{weather:weather.key,referee:referee.key},homeId:fixture.homeId,awayId:fixture.awayId,fixtureId:id,seed:`${seasonId}:R${roundNumber}:${fixtureIndex}`,duration})};
   });
   // Compilation and coverage checks finish before changing the round status.
   round.status='running';

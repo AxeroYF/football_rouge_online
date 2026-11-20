@@ -62,6 +62,12 @@ test('warehouse starts inert, opens on mouse hover, survives card rerender and c
   const f=drawerFixture(); assert.equal(f.content.inert,true);
   f.dispatch(f.drawer,'pointerenter',{pointerType:'mouse'});
   assert.equal(f.attrs.get('aria-expanded'),'true');assert.equal(f.content.inert,false);
+  const mouseClick={detail:1,target:{closest:s=>s==='[data-fusion-drawer-toggle]'?f.button:null}};
+  f.dispatch(f.root,'click',mouseClick);
+  assert.equal(f.content.inert,false);
+  f.dispatch(f.root,'click',mouseClick);
+  assert.equal(f.content.inert,true);
+  f.dispatch(f.root,'click',mouseClick);
   f.classes.clear();f.content.inert=true;f.controller.mount(f.root);
   assert.equal(f.content.inert,false);assert.ok(f.classes.has('fusion-warehouse-open'));
   f.dispatch(f.drawer,'pointerleave',{pointerType:'mouse'});assert.equal(f.content.inert,false);

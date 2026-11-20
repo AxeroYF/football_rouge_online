@@ -52,8 +52,13 @@ export function publicFrame(frame,ownerSide=null){
 }
 export function publicEvent(event,ownerSide=null){
   if((ownerSide===null||event.side!==ownerSide)&&['tacticalPlanChanged','pressCoordination','pressBeaten','overlapCoordination','coverReleased','transition','transitionEnd','playerEffectsChanged'].includes(event.type))return null;
-  const keys=['id','time','tick','type','actor','side','position','score','clock','text','scoringSide','ownGoal','restartType','yellowCards'];
+  const keys=['id','time','tick','type','actor','side','position','score','clock','text','scoringSide','traitOpening','sponsorGoal','ownGoal','special','restartType','yellowCards'];
   const out=Object.fromEntries(keys.filter(key=>Object.hasOwn(event,key)).map(key=>[key,copy(event[key])]));
+  if(event.traitOpening)out.level=event.level;
+  if(['substitution','emergencyKeeper'].includes(event.type)&&event.departed)out.departed=event.departed;
+  if(event.type==='goal')for(const key of ['assistId','bodyPart','keeperKey'])
+    if(Object.hasOwn(event,key))out[key]=event[key];
+  if(event.type==='shootoutResult')for(const key of ['goal','shootoutScore'])if(Object.hasOwn(event,key))out[key]=copy(event[key]);
   // Never publish an opponent's instructions, scoring alternatives or RNG draws.
   if(ownerSide!==null&&event.side===ownerSide)for(const key of ['reason','plan','decision','opportunity','decisionId','intent','effects'])if(Object.hasOwn(event,key))out[key]=copy(event[key]);
   return out;

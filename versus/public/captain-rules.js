@@ -58,5 +58,13 @@ export function captainStyleModifiers(team, scoreState = "level") {
     cardMultiplier = .94 - .06 * scale;
     directRedMultiplier = .94 - .06 * scale;
   }
+  const amplify = captain.traitDefinitions?.flatMap(t=>t.rules ?? []).find(r=>r.hook === "captainAmplify")?.multiplier
+    ?? ((captain.traits ?? []).some(t=>(t?.id ?? t) === "captain-boss") ? 2 : 1);
+  if (amplify !== 1) {
+    for (const key of Object.keys(stage)) stage[key] *= amplify;
+    foulMultiplier = 1 + (foulMultiplier - 1) * amplify;
+    cardMultiplier = 1 + (cardMultiplier - 1) * amplify;
+    directRedMultiplier = 1 + (directRedMultiplier - 1) * amplify;
+  }
   return { active:Boolean(captain), captainId:captain?.id ?? null, style, leadership:captain ? captainLeadershipRating(captain) : 0, scale, stage, foulMultiplier, cardMultiplier, directRedMultiplier };
 }

@@ -21,7 +21,7 @@ test('actual broadcast render path uses the current key-play controller on entry
   const context=vm.createContext({document,broadcastKeyPlays:controller,
     lastBroadcastValue:null,lastBroadcastRenderFingerprint:null,broadcastHighlightTimer:null,broadcastDataTab:'overview',
     broadcastHighlights:{update:()=>({})},uiMotion:{broadcast(){}},clearTimeout(){},
-    ensureBroadcastMeteorBackground(){},broadcastRenderFingerprint:value=>value.revision,
+    bindLeagueMagnetTooltips(){},ensureBroadcastMeteorBackground(){},broadcastRenderFingerprint:value=>value.revision,
     captureEventFeedScroll:()=>null,restoreEventFeedScroll(){},broadcastScreenMarkup:()=>'<section class="broadcast-screen"></section>',
     patchHtmlChildren:(node,html)=>{assert.strictEqual(node,contentNode);assert.match(html,/broadcast-screen/);patches++;},
     closeBroadcast(){},openGameSettings(){},

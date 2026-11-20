@@ -14,6 +14,7 @@ import {
   createVersusMatch,
 } from "../versus/match-engine.js";
 import { defaultElevenPositions } from "../versus/rules.js";
+import {createYdlLeagueV2Match, publicYdlLeagueV2Match} from "../versus/v2/ydl-league-engine-adapter.js";
 import { YDL_TRAIT_CARDS, YDL_TRAIT_IDS } from "../versus/trait-pool.js";
 
 const EXPECTED_NAMES = [
@@ -36,6 +37,10 @@ const EXPECTED_NAMES = [
   "赖着不死",
   "别打我大哥",
   "大巴司机",
+  "请神上身",
+  "梭哈是一种智慧",
+  "带资进组",
+  "疯狗来了","卷王来了","队霸来了","九龙拉棺",
 ];
 
 function carrier(traitIds, overrides = {}) {
@@ -61,12 +66,30 @@ function matchSeat(name, offset, playerTraits = {}) {
   return { name, players, positions:defaultElevenPositions(players), tactic:"balanced", style:"possession" };
 }
 
-test("YDL后台和强化池包含19张已实现特性卡，极限一换一不进入正式池", () => {
-  assert.equal(YDL_TRAIT_CARDS.length, 19);
+test("YDL后台和强化池包含26张已实现特性卡，极限一换一不进入正式池", () => {
+  assert.equal(YDL_TRAIT_CARDS.length, 26);
   assert.deepEqual(YDL_TRAIT_CARDS.map((trait) => trait.name), EXPECTED_NAMES);
-  assert.equal(new Set(YDL_TRAIT_IDS).size, 19);
+  assert.equal(new Set(YDL_TRAIT_IDS).size, 26);
   assert.ok(YDL_TRAIT_CARDS.every((trait) => trait.rules.length > 0));
   assert.equal(YDL_TRAIT_CARDS.some((trait) => trait.name === "极限一换一"), false);
+});
+
+test("旧引擎观战同样使用赛前抽中的形态和原球员编号", () => {
+  const seats = [matchSeat("主队",0),matchSeat("客队",12)];
+  const keeper = seats[0].players[0];
+  keeper.traits = ["spirit-possession"];
+  const options = {now:0,seed:"legacy-spirit",competitionMode:"league"};
+  const classic = createVersusMatch(seats,options);
+  const v2 = publicYdlLeagueV2Match(createYdlLeagueV2Match(seats,options),0);
+  const form = classic.teams[0].players[0].spiritForm;
+  assert.ok(form?.name);
+  for (const match of [classic,v2]) {
+    const player = match.teams[0].players.find(row=>row.id===keeper.id);
+    assert.deepEqual(player.spiritForm,form);
+    assert.equal(player.upgradeLevel,4);
+    assert.equal(player.name,keeper.name);
+    assert.ok(match.events.some(event=>event.type==="spiritPossession" && event.text.includes(form.name)));
+  }
 });
 
 test("YDL数值、身高、位置、羁绊和固定体力规则按说明执行", () => {

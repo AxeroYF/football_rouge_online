@@ -9,7 +9,8 @@ export function applyTacticsCardDisplay(root, mode, getPlayer, renderCard) {
     const existing = node.querySelector(':scope > .league-magnet-card');
     if (enabled && !existing) {
       const overall = Number(node.querySelector(':scope > i')?.textContent);
-      const card = renderCard(Number.isFinite(overall) ? {...player, effectiveOverall:overall} : player);
+      const role = node.querySelector(".league-magnet-role")?.textContent ?? player.role;
+      const card = renderCard({...player, role, effectiveOverall:Number.isFinite(overall) ? overall : player.effectiveOverall});
       node.insertAdjacentHTML('afterbegin', `<div class="league-magnet-card" aria-hidden="true">${card}</div>`);
     }
     if (!enabled) existing?.remove();

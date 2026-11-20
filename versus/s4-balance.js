@@ -1,10 +1,13 @@
-﻿import { offlineDisplayAttributeValue } from "./offline-attribute-settings.js";
+import { offlineDisplayAttributeValue } from "./offline-attribute-settings.js";
 
 export const S4_ECONOMY = Object.freeze({
   initialWalletBalance:100000,
   leagueMatchRewards:Object.freeze({ loss:1200, draw:1400, win:1600 }),
-  cupAdvancePackType:"public-random",
-  cupAdvancePackQuantity:2,
+  cupAdvanceRewards:Object.freeze({
+    roundOf16:{ packType:"public-random", quantity:1 },
+    quarterfinals:{ packType:"cup-private-position", quantity:1 },
+    semifinals:{ packType:"public-random", quantity:2 },
+  }),
   marketFeeRate:.05,
   singleCardRecoveryRate:.25,
   forcedCardRecoveryRate:.25,
@@ -66,22 +69,32 @@ export function s4EnhancementAbilityBonus(levelValue) {
   return S4_ENHANCEMENT.abilityBonuses[level];
 }
 
+function cardWear(player,card) {
+  const maximum = Math.max(0,Number(player?.overall ?? 0)-50);
+  return Math.min(maximum,Math.max(0,Math.trunc(Number(card?.permanentOverallPenalty) || 0)));
+}
+
+export function s4CardBaseOverall(player, card) {
+  return Number(player?.overall ?? 0) - cardWear(player,card);
+}
+
 export function s4EffectiveOverall(player, levelValue) {
-  const overall = Number(player?.overall ?? 0) + s4EnhancementAbilityBonus(levelValue);
-  return overall;
+  return s4CardBaseOverall(player,levelValue) + s4EnhancementAbilityBonus(levelValue?.upgradeLevel ?? levelValue);
 }
 
 export function applyS4Enhancement(player, levelValue, options = {}) {
-  const upgradeLevel = Math.max(0, Math.min(S4_ENHANCEMENT.maxLevel, Math.floor(Number(levelValue) || 0)));
+  const wear = cardWear(player,levelValue);
+  const upgradeLevel = Math.max(0, Math.min(S4_ENHANCEMENT.maxLevel, Math.floor(Number(levelValue?.upgradeLevel ?? levelValue) || 0)));
   const upgradeBonus = s4EnhancementAbilityBonus(upgradeLevel);
   const attributes = Object.fromEntries(Object.entries(player?.attributes ?? {}).map(([key, value]) => [
     key,
-    Number.isFinite(value) ? offlineDisplayAttributeValue(Number(value) + upgradeBonus, options.attributeSettings) : value,
+    Number.isFinite(value) ? offlineDisplayAttributeValue(Math.max(1,Number(value) - wear) + upgradeBonus, options.attributeSettings) : value,
   ]));
   return {
     ...player,
-    baseOverall:Number(player?.overall ?? 0),
-    overall:s4EffectiveOverall(player, upgradeLevel),
+    baseOverall:Number(player?.overall ?? 0) - wear,
+    ...(levelValue?.id ? {matchCardId:levelValue.id} : {}),
+    overall:s4EffectiveOverall(player, levelValue),
     attributes,
     upgradeLevel,
     upgradeBonus,

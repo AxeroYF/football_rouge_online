@@ -10,6 +10,8 @@ import {applyS4Enhancement,s4EnhancementAbilityBonus,s4BaseCardReferenceValue,s4
 import {createS4BondCatalog} from '../versus/public/bond-rules.js';
 import {startLocalServer} from './helpers/local-server.js';
 const ledger=JSON.parse(fs.readFileSync(new URL('../data/player-balance-a-20261116.json',import.meta.url),'utf8'));
+const roster=JSON.parse(fs.readFileSync(new URL('../data/player-balance-bc-transfers-20261119.json',import.meta.url),'utf8'));
+const moved=new Map(roster.transfers.map(row=>[row.id,row]));
 const livePath=new URL('../data/ydl-content-overrides.json',import.meta.url);
 const liveBytes=fs.readFileSync(livePath),liveHash=createHash('sha256').update(liveBytes).digest('hex');
 const overrides=JSON.parse(liveBytes);
@@ -29,13 +31,25 @@ test('effective runtime exactly matches all 230 approved profiles and the persis
   for(const approved of ledger.players){const p=REAL_PLAYER_BY_ID[approved.id];
     assert.deepEqual(p.attributes,approved.after,p.name);assert.equal(p.overall,approved.afterOverall);assert.equal(p.baseOverall,p.overall);
     assert.equal(playerOverallFromAttributes(p.attributes,p.role),p.overall);
-    for(const key of ['grade','name','role','secondaryRole','nationality','club'])assert.equal(p[key],approved[key]);
+    for(const key of ['grade','role','secondaryRole','nationality'])assert.equal(p[key],approved[key]);
+    assert.equal(p.club,moved.get(p.id)?.club??approved.club);assert.equal(p.name,moved.get(p.id)?.name??approved.name);
     assert.equal(overrides.players[p.id].balanceRevision,ledger.revision);
     for(const k of ATTRIBUTE_NAMES){assert.ok(p.attributes[k]<=approved.before[k]);assert.ok(p.attributes[k]>=1&&p.attributes[k]<=96);if(p.attributes[k]!==approved.before[k])changed++;}
     for(const k of approved.signatures)assert.equal(p.attributes[k],approved.before[k]);
   }
   assert.equal(changed,3220);
-  assert.deepEqual(Object.fromEntries([86,87,88,89].map(n=>[n,REAL_PLAYERS.filter(p=>p.grade==='A'&&p.overall===n).length])),{86:115,87:80,88:28,89:7});
+  assert.deepEqual(Object.fromEntries([86,87,88,89].map(n=>[n,REAL_PLAYERS.filter(p=>p.grade==='A'&&p.overall===n).length])),{86:120,87:81,88:28,89:7});
+});
+
+test('approved November ratings and transfers load by ID without changing legendary rarity',()=>{
+  assert.equal(new Set(roster.ratings.map(row=>row.id)).size,24);
+  assert.equal(new Set(roster.transfers.map(row=>row.id)).size,55);
+  for(const row of roster.ratings){const player=REAL_PLAYER_BY_ID[row.id];assert.equal(player.overall,row.overall);assert.equal(player.baseOverall,row.overall);assert.equal(player.grade,row.grade);assert.equal(player.legendary,false);assert.deepEqual(player.attributes,row.attributes);assert.equal(playerOverallFromAttributes(player.attributes,player.role),row.overall);}
+  for(const row of roster.transfers)assert.equal(REAL_PLAYER_BY_ID[row.id].club,row.club,row.id);
+  const portraits=JSON.parse(fs.readFileSync(new URL('../data/promoted-a-portrait-fallbacks.json',import.meta.url),'utf8'));
+  assert.deepEqual(Object.keys(portraits).sort(),roster.ratings.filter(row=>row.grade==='A').map(row=>row.id).sort());
+  for(const [id,profile] of Object.entries(portraits)){assert.deepEqual(REAL_PLAYER_BY_ID[id].cardProfile,profile);assert.ok(fs.existsSync(new URL('../player_profiles/webp/'+profile.optimizedFileName,import.meta.url)));}
+  assert.deepEqual(Object.fromEntries(['S','A','B','C'].map(grade=>[grade,REAL_PLAYERS.filter(player=>player.grade===grade).length])),{S:73,A:236,B:248,C:166});
 });
 
 test('approved profiles reload without another normalization or cumulative reduction',()=>{

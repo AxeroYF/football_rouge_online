@@ -50,7 +50,7 @@ export function draftLineupBoardMarkup(attempt,roleLabels={}) {
     const players=starters.filter(p=>roles.includes(p.draftRole)).sort((a,b)=>a.position.x-b.position.x||a.position.y-b.position.y);
     return players.map((p,index)=>{
       const x=players.length===1?50:players.length===2?32+index*36:players.length===3?20+index*30:12+index*76/(players.length-1),y=[17,43,69,90][row];
-      return `<div class="batch-lineup-player grade-${escape(p.grade?.toLowerCase())}" style="left:${x}%;top:${y}%" title="${escape(p.name)} · ${escape(roleLabels[p.draftRole]??p.draftRole)} · ${p.overall}" aria-label="${escape(p.name)}，${escape(roleLabels[p.draftRole]??p.draftRole)}，能力 ${p.overall}"><div><span>${escape(roleLabels[p.draftRole]??p.draftRole)}</span><b>${p.overall}</b></div><strong>${escape(p.name)}</strong></div>`;
+      return `<div class="batch-lineup-player grade-${escape(p.grade?.toLowerCase())}" style="left:${x}%;top:${y}%" title="${escape(p.name)} · ${escape(roleLabels[p.draftRole]??p.draftRole)} · ${p.overall}" aria-label="${escape(p.name)}，${escape(roleLabels[p.draftRole]??p.draftRole)}，能力 ${p.overall}"><div><span>${escape(p.draftRole)}</span><b>${p.overall}</b></div><strong>${escape(p.name)}</strong></div>`;
     });
   }).join('');
   return `<section class="batch-lineup"><header><h2>推荐最强首发</h2><span>${attempt.formation}</span></header><div class="batch-lineup-content"><div class="batch-lineup-pitch" role="img" aria-label="${attempt.formation} 推荐首发战术板"><div class="batch-lineup-markings" aria-hidden="true"><i></i><i></i></div>${pieces}</div><footer><span>首发平均能力</span><b>${attempt.startingOverall??Math.round(starters.reduce((n,p)=>n+p.overall,0)/11*10)/10}</b></footer></div></section>`;

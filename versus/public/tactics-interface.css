@@ -408,3 +408,5 @@
 #league-squad-form .league-position-follow{grid-column:1/-1;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);white-space:nowrap}
 #league-squad-form .league-position-follow input{margin:0;accent-color:var(--cyan)}
 @media(max-width:620px){#league-squad-form .league-competition-bindings{grid-template-columns:repeat(2,minmax(0,1fr))}#league-squad-form .tactics-board-scheme-row .league-competition-bindings button{grid-column:2;grid-row:2}#league-squad-form .league-competition-bindings label:last-child{grid-column:1/-1}}
+#league-squad-form .league-bond-ready .tactical-bond-badge{min-height:25px;padding:4px 8px;border:1px solid var(--cyan);border-radius:7px;color:var(--cyan);background:var(--panel);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.league-magnet-tooltip .lmt-stats.bond-tooltip-stats{grid-template-columns:repeat(2,minmax(0,1fr))}

@@ -20,6 +20,7 @@ function broadcastPollingHarness(apiImpl, privateMatch = false) {
     const api = apiImpl;
     const document = { hidden:false };
     const renderBroadcast = (broadcast) => rendered.push(broadcast);
+    const uiMotion = {resetBroadcast(){}};
     const scheduleSpectatorPolling = (delay) => scheduled.push(delay);
     const clearTimeout = () => {};
     const showToast = (message) => toasts.push(message);

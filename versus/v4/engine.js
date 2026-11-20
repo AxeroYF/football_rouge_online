@@ -1,3 +1,6 @@
+import {possessionAnnouncement} from '../public/spirit-form.js';
+import {planMatchIncidents,runMatchIncidents} from './match-incidents.js';
+import {superWorldieProbability,butterFingersProbability,ownGoalCandidateWeight} from './special-goal-rules.js';
 import {VERSION,FIELD,STEP,clamp,distance,round,worldPoint,coordinates,scoringSideAt,clockSnapshot,playerByKey,seedState,random,sweptContact,snapshot,assertWorld} from './world.js';
 import {createClock,advanceClock,announceAllowance,periodDue,restartTiming} from './period-clock.js';
 import {controlPlan,readyToDecide,updateProgress} from './tempo.js';
@@ -5,6 +8,7 @@ import {verticalAt,launchVertical,aerialReach,sweptAerialContact,goalFrameContac
 import {applyPassiveExit} from './availability.js';
 import {captainModifiers} from './captaincy.js';
 import {positionExecution} from './execution.js';
+import {applyKickoffTraits,kickoffTraitAnnouncements} from './kickoff-traits.js';
 import {refreshPlayerEffects} from './player-effects.js';
 import {resolutionAfterPeriod,createShootout,recordShootoutKick,aggregateScore} from './competition.js';
 import {shotOpportunity,decisionTrace} from './opportunity.js';
@@ -31,9 +35,19 @@ export function createMatch(input,{recording=true,frameInterval=input.format==='
     ball:{mode:'dead',x:52.5,y:34,z:0,vx:0,vy:0,holder:null,flight:null}};
   if(!Number.isFinite(frameInterval)||frameInterval<STEP)throw new Error('录制间隔无效');
   const match={state,recording:Boolean(recording),frameInterval,events:[],frames:[]};
-  refreshPlayerEffects(state);
+  if(locked.matchIncidents)state.incidents=planMatchIncidents(state);
+  if (locked.playerEffects) state.players = state.players.map(p =>
+    applyKickoffTraits(p, p.traitDefinitions ?? [], locked.seed, p.side, locked.competitionMode, p.active));
+  refreshEffectsWithBroadcast(match,0);
   const carrier=state.players.find(p=>p.side===0&&p.role==='DM')??state.players.find(p=>p.side===0&&p.active&&p.role!=='GK');
   carrier.x=52.5;carrier.y=34;hold(state,carrier);carrier.nextDecision=.6;
+  for (const player of state.players) {
+    if (player.active && (player.allInMultiplier || player.sponsorEntry)) {
+      for (const line of kickoffTraitAnnouncements(player,locked.teams[player.side].name,locked.seed,player.side))
+        emit(match,'traitActivated',player,{...line,traitOpening:true});
+    }
+    if (player.spiritForm) emit(match,'spiritPossession',player,{text:possessionAnnouncement(player)});
+  }
   emit(match,'kickoff',carrier,{text:`开球：${locked.teams[0].name}开始组织`,reason:'双方按赛前锁定的阵容与战术，采用同一套空间规则'});
   state.restart={type:'kickoff',side:0,spot:{x:52.5,y:34},reason:'比赛开始，双方遵守中圈开球站位',until:0};
   beginRestart(match);
@@ -62,6 +76,10 @@ function emit(match,type,actor,details={}) {
   const event={id:s.nextEventId++,time:round(s.time),tick:s.tick,type,actor:actor?.key??null,side:actor?.side??null,
     position:{x:s.ball.x,y:s.ball.y},score:[...s.score],source:actor?s.input.teams[actor.side].preset:null,plan:actor?s.activePlans[actor.side]:null,
     sequence:{possession:s.transitionSerial,restart:s.restartSerial},...details,clock:clockSnapshot(s,details.time??s.time)};
+  if (type === 'goal' && actor?.sponsorEntry && !event.ownGoal && !event.special && event.scoringSide === actor.side) {
+    event.sponsorGoal = true;
+    event.text = `谁说带资进组不会踢球？！${actor.name}顶着减益一脚破门打脸全场，赞助商在看台上笑开了花，${event.score.join(' : ')}！`;
+  }
   match.events.push(event);return event;
 }
 function record(match) {if(match.recording)match.frames.push(snapshot(match.state));}
@@ -69,6 +87,13 @@ function syncTacticalPlans(match){
   const s=match.state;
   for(const side of [0,1]){const mode=tacticalMode(s,side);if(mode===s.activePlans[side])continue;
     const before=s.activePlans[side];s.activePlans[side]=mode;
+    if(mode==='leading' || mode==='trailing'){
+      const name=s.input.teams[side].name;
+      const text=mode==='trailing'
+        ? `场边变阵！${name}在落后时作出调整，全力寻找扳平机会！`
+        : `见好就收！${name}在领先时调整部署，准备把胜果守到终场。`;
+      emit(match,'tactical',null,{side,text});
+    }
     for(const p of s.players.filter(p=>p.side===side))if(p.anchorPlans){p.anchor={...(p.anchorPlans[mode]??p.anchorPlans.normal)};}
     for(const p of s.players.filter(p=>p.side===side))if(p.rolePlans){p.role=p.rolePlans[mode]??p.rolePlans.normal;p.sourceRole=p.sourceRolePlans?.[mode]??p.sourceRole;}
     emit(match,'tacticalPlanChanged',null,{side,source:s.input.teams[side].preset,plan:mode,previousPlan:before,
@@ -102,7 +127,6 @@ function beginRestart(match) {
   if(r.cornerTarget){const receiver=playerByKey(s,r.cornerTarget);choice={type:'pass',to:receiver.key,target:{x:receiver.x,y:receiver.y},trajectory:'loft',intent:'cross',utility:choice.utility,
     reason:`执行赛前${effectiveTactics(s,r.side).setPieceRoutine==='far'?'远点':'近点'}角球套路；按实际高球触球争顶，其他队员保留二点与反击保护`};}
   const legal=candidates.filter(c=>r.type==='penalty'?c.type==='shot':c.type==='pass'||r.type==='directFreeKick'&&c.type==='shot');
-  if(r.type==='penalty')preparePenaltyKeeper(match,carrier.side);
   release(match,carrier,choice,[choice,...legal.filter(c=>c!==choice)],r.type);
   record(match);
 }
@@ -110,12 +134,13 @@ function beginRestart(match) {
 function release(match,carrier,choice,candidates,restartType=null) {
   const {worldPoint}=coordinates(match.state);
   const s=match.state,goal=worldPoint({x:105,y:34},carrier.side);
+  const guaranteedKeeper=restartType==='penalty'?preparePenaltyKeeper(match,carrier.side):null;
   let target={...(choice.target??goal)};
   const attributes=carrier.attributes;
   let skill=choice.type==='shot'?distance(carrier,target)>22?attributes.finishing*.4+attributes.longShots*.6:attributes.finishing:
     choice.trajectory==='loft'?attributes.passing*.3+attributes.crossing*.7:attributes.passing;
   if(['corner','directFreeKick','indirectFreeKick'].includes(restartType))skill=clamp(skill+(attributes.setPieces-75)*.25,1,100);
-  skill=clamp(skill*positionExecution(carrier),1,100);
+  skill=clamp(skill*positionExecution(carrier)*(s.input.environment?.execution??1),1,100);
   const pressure=Math.min(...activePlayers(s).filter(p=>p.side!==carrier.side).map(p=>distance(p,carrier)));
   const fatigueError=choice.type==='shot'?(100-carrier.fitness)*(restartType==='penalty'?.02:.06):0;
   const leadership=captainModifiers(s,carrier.side),leadershipEffect=leadership.stage[choice.type==='shot'?'shot':coordinates(s).localPoint(carrier,carrier.side).x<40?'buildUp':'progression']??0;
@@ -126,20 +151,33 @@ function release(match,carrier,choice,candidates,restartType=null) {
   const deviation=(random(s,'execution')*2-1)*error;
   if(choice.type==='shot'){const aimed=coordinates(s).localPoint(target,carrier.side);target=worldPoint({x:105,y:aimed.y+(random(s,'execution')*2-1)*.6+deviation},carrier.side);}
   else {const dx=target.x-carrier.x,dy=target.y-carrier.y,d=Math.hypot(dx,dy);target={x:clamp(target.x-dy/d*deviation,.2,104.8),y:clamp(target.y+dx/d*deviation,.2,67.8)};}
-  const d=distance(carrier,target),speed=choice.type==='shot'?24+skill*.06:22+skill*.035;
+  // The trait steers this one kick into the keeper's reach. Flight, contact,
+  // possession, replay and save attribution still use the normal shot path.
+  if(guaranteedKeeper)target={x:goal.x,y:guaranteedKeeper.y};
+  let special=null;
+  if(s.incidents&&!s.shootout&&!restartType){
+    if(choice.type==='shot'&&distance(carrier,goal)>22&&random(s,'incidents')<superWorldieProbability(carrier)){
+      special='superWorldie';
+      target=worldPoint({x:105,y:34+(target.y<34?-3.2:3.2)},carrier.side);
+    }else if(choice.type==='pass'&&s.incidents.backpass&&coordinates(s).localPoint(carrier,carrier.side).x<50&&random(s,'incidents')<ownGoalCandidateWeight(carrier)){
+      s.incidents.backpass=false;special='backpass';
+      target=worldPoint({x:0,y:34+(random(s,'incidents')-.5)*4},carrier.side);
+    }
+  }
+  const d=distance(carrier,target),speed=special==='superWorldie'?37:choice.type==='shot'?24+skill*.06:22+skill*.035;
   const travel=choice.trajectory==='loft'?Math.max(1.3,d/speed):d/speed;
-  const vertical=choice.trajectory==='loft'?launchVertical(0,1.8,travel):null;
+  const vertical=choice.trajectory==='loft'&&!special?launchVertical(0,1.8,travel):null;
   const landing=vertical?2*vertical.vz/9.81:travel;
   const landingTarget=vertical?{x:carrier.x+(target.x-carrier.x)*landing/travel,y:carrier.y+(target.y-carrier.y)*landing/travel}:target;
   const flight={kind:choice.type,side:carrier.side,from:carrier.key,to:choice.to??null,
-    start:{x:carrier.x,y:carrier.y},target:landingTarget,receivePoint:target,startedAt:s.time,endsAt:s.time+landing,trajectory:choice.trajectory??'ground',restartType,decisionId:s.nextEventId};
+    start:{x:carrier.x,y:carrier.y},target:landingTarget,receivePoint:target,startedAt:s.time,endsAt:s.time+landing,trajectory:choice.trajectory??'ground',restartType,decisionId:s.nextEventId,...(special?{special}:{}),...(guaranteedKeeper?{guaranteedKeeper:guaranteedKeeper.key}:{})};
   if(choice.type==='pass')s.lastPass={side:carrier.side,at:s.time,backward:(target.x-carrier.x)*coordinates(s).direction(carrier.side)<-3};
   s.ball={mode:'flight',holder:null,x:carrier.x,y:carrier.y,z:0,vx:(target.x-carrier.x)/travel,vy:(target.y-carrier.y)/travel,flight,
     ...(vertical??{})};
   s.rules.offside=offsideSnapshot(s,carrier,s.time,restartType);
   s.stats[carrier.side][choice.type==='shot'?'shots':'passes']++;
   if(choice.intent==='cross')s.stats[carrier.side].crosses++;
-  emit(match,s.shootout?.active?'shootoutShot':choice.type,carrier,{to:choice.to??null,target:{...target},text:choice.type==='shot'?`${carrier.name}起脚射门`:`${carrier.name}传给${playerByKey(s,choice.to)?.name}`,
+  emit(match,s.shootout?.active?'shootoutShot':choice.type,carrier,{to:choice.to??null,target:{...target},text:special==='backpass'?carrier.name+'回传失误，球直奔自家球门！':choice.type==='shot'?`${carrier.name}起脚射门`:`${carrier.name}传给${playerByKey(s,choice.to)?.name}`,
     reason:choice.reason,task:carrier.task?.type,actorRole:carrier.role,intent:choice.intent??null,trajectory:choice.trajectory??'ground',opportunity:choice.opportunity??null,decision:decisionTrace(choice,candidates),
     restartType,offside:structuredClone(s.rules.offside),execution:{skill,leadershipEffect,attributeContext:{passing:attributes.passing,crossing:attributes.crossing,finishing:attributes.finishing,longShots:attributes.longShots,setPieces:attributes.setPieces,composure:attributes.composure},fitness:round(carrier.fitness),fatigueError:round(fatigueError),pressureDistance:round(pressure),deviation:round(deviation),errorRange:round(error),distance:round(d)}});
 }
@@ -263,20 +301,25 @@ function ballStep(match,oldPlayers) {
         const event=headBall(match,p,actual,point,time,f,{point,playerPoint:{x:actual.x,y:actual.y},radius},duel,world);
         contactRecord(match,oldPlayers,offset/STEP,point,event);continue;
       }
-      const profile=controlProfile(world,actual,b),roll=random(s,'execution'),controlled=roll<profile.probability;
+      const profile=controlProfile(world,actual,b),roll=random(s,'execution');
+      const guaranteedSave=f?.guaranteedKeeper===p.key;
+      const butter=Boolean(!guaranteedSave&&s.incidents&&!s.shootout&&profile.keeper&&profile.shot&&f?.side!==p.side&&
+        Math.abs(f.target.y-34)<FIELD.goalWidth/2&&roll<profile.probability&&random(s,'incidents')<butterFingersProbability(p));
+      const controlled=guaranteedSave||!butter&&roll<profile.probability;
       const deliberatePlay=s.rules.offside&&p.side!==s.rules.offside.side&&opponentDeliberatePlay(profile,controlled);
       if(deliberatePlay)s.rules.offside=null;
       const contest=b.contest,enemy=f&&p.side!==f.side;
-      const type=controlled?(contest?'secondBall':enemy?(f.kind==='shot'?(profile.keeper?'save':'block'):'interception'):'receive')
+      const type=butter?'keeperSpill':controlled?(contest?'secondBall':enemy?(f.kind==='shot'?(profile.keeper?'save':'block'):'interception'):'receive')
         :profile.keeper&&profile.shot?'parry':profile.shot?'deflection':'miscontrol';
-      const labels={secondBall:'抢到并控制二点球',save:'稳稳抱住射门',block:'封堵并控制球',interception:'截下并控制传球',receive:'接稳来球',parry:'扑救脱手，球仍可争夺',deflection:'封堵形成反弹球',miscontrol:'第一脚未停稳，球脱离控制'};
-      const event=emit(match,type,p,{time,text:`${p.name}${labels[type]}`,from:f?.from??b.lastTouch??null,decisionId:f?.decisionId??null,
-        reason:controlled?'实际先到达触球点，再按来球速度、朝向、压力与接球能力控制':'已碰到球但未能控制：来球速度、朝向、压力与能力共同影响',
+      const labels={keeperSpill:'出现黄油手，皮球从手中滑向自家球门',secondBall:'抢到并控制二点球',save:'稳稳抱住射门',block:'封堵并控制球',interception:'截下并控制传球',receive:'接稳来球',parry:'扑救脱手，球仍可争夺',deflection:'封堵形成反弹球',miscontrol:'第一脚未停稳，球脱离控制'};
+      const saveText=guaranteedSave?`${p.name}触发「一夫当关」，扑出本场面对的第一粒点球！`:null;
+      const event=emit(match,type,p,{time,text:saveText??`${p.name}${labels[type]}`,from:f?.from??b.lastTouch??null,decisionId:f?.decisionId??null,
+        reason:guaranteedSave?'一夫当关保证门将控制本次点球':controlled?'实际先到达触球点，再按来球速度、朝向、压力与接球能力控制':'已碰到球但未能控制：来球速度、朝向、压力与能力共同影响',
         contact:{point,playerPoint:{x:actual.x,y:actual.y},radius},control:profile,roll:round(roll),duel,outcome:controlled?'controlled':'loose',offsideResetByDeliberatePlay:Boolean(deliberatePlay),
         contest:contest?{...contest,challengers:contacts.filter(c=>c.alpha<=alpha+.2).map(c=>({key:c.p.key,arrivalSeconds:round((c.alpha-alpha)*duration)}))}:null});
       p.nextTouch=round(time+(controlled?.2:.45));
       if(controlled) {
-        if(s.shootout?.current){contactRecord(match,oldPlayers,offset/STEP,point,event);finishShootoutAttempt(match,false,time,'门将控制来球');return;}
+        if(s.shootout?.current){contactRecord(match,oldPlayers,offset/STEP,point,event);finishShootoutAttempt(match,false,time,saveText??'门将控制来球',saveText);return;}
         s.pendingPenalty=null;
         if(contest)s.stats[p.side].secondBalls++;
         if(enemy&&f.kind==='pass')s.stats[p.side].interceptions++;
@@ -287,8 +330,12 @@ function ballStep(match,oldPlayers) {
       // A teammate's new touch sets a new line. Opponent deflections/saves retain the old line.
       if(s.rules.offside?.side===p.side)s.rules.offside=offsideSnapshot({...world,ball:s.ball},actual,time);
       const rebound=looseVelocity(b,actual,profile,random(s,'execution'),s);
+      if(butter){
+        const net=coordinates(s).worldPoint({x:0,y:34},p.side),d=Math.max(.01,distance(point,net));
+        rebound.vx=(net.x-point.x)/d*22;rebound.vy=(net.y-point.y)/d*22;
+      }
       s.stats[p.side][type==='parry'?'parries':type==='deflection'?'deflections':'miscontrols']++;
-      s.ball={mode:'loose',holder:null,flight:null,x:point.x,y:point.y,z:point.z,vz:0,airborne:point.z>0,vx:rebound.vx,vy:rebound.vy,lastTouch:p.key,decisionId:f?.decisionId??b.decisionId??null,
+      s.ball={mode:'loose',holder:null,flight:null,x:point.x,y:point.y,z:point.z,vz:0,airborne:point.z>0,vx:rebound.vx,vy:rebound.vy,lastTouch:p.key,...(butter?{special:'butterFingers',shooter:f.from}:{}),decisionId:f?.decisionId??b.decisionId??null,
         contest:contest?{...contest,touches:contest.touches+1}:{id:++s.contestSerial,kind:rebound.kind,createdAt:time,originEventId:event.id,touches:1}};
       event.contest=structuredClone(s.ball.contest);event.rebound={vx:rebound.vx,vy:rebound.vy};
       contactRecord(match,oldPlayers,offset/STEP,point,event);
@@ -318,10 +365,16 @@ function ballStep(match,oldPlayers) {
         contactRecord(match,oldPlayers,offset/STEP,point,event);finishShootoutAttempt(match,goal,event.time,event.reason);return;
       }
       if(goal)s.score[scoringSide]++;
-      const event=emit(match,goal?'goal':'out',lastTouch,{time:round(s.time+offset),text:goal?'进球！球越过球门线':'球出界',
+      const special=f?.special??b.special;
+      const scorer=goal&&special==='butterFingers'&&playerByKey(s,b.shooter)?.side===scoringSide?playerByKey(s,b.shooter):lastTouch;
+      const goalText=special==='superWorldie'?'超级世界波！远射直入球门。':special==='butterFingers'?'黄油手！门将脱手送礼。':special==='backpass'?'回传失误，皮球滚进自家球门！':'进球！球越过球门线';
+      const event=emit(match,goal?'goal':'out',scorer,{time:round(s.time+offset),text:goal?goalText:'球出界',...(goal&&special?{special}:{}),
+        ...(goal&&f?.trajectory==='header'?{bodyPart:'head'}:{}),
+        ...(goal&&special==='butterFingers'?{keeperKey:b.lastTouch}:{}),
         reason:goal?'实际球路穿过球门范围内的门线':prohibitedDirect?'此定位球未经其他球员触球，不能直接计入该球门':'实际球路到达场地边界',decisionId:f?.decisionId??b.decisionId??null,position:point,
-        scoringSide:goal?scoringSide:null,ownGoal:Boolean(goal&&lastTouch&&lastTouch.side!==scoringSide)});
+        scoringSide:goal?scoringSide:null,ownGoal:Boolean(goal&&scorer&&scorer.side!==scoringSide)});
       contactRecord(match,oldPlayers,offset/STEP,point,event);
+      if(goal && s.input.playerEffects)announceTrailingCaptain(match,1-scoringSide,event.time);
       s.pendingPenalty=null;
       if(s.clock.extendingPenalty){s.ball={...s.ball,mode:'dead',holder:null,flight:null,vx:0,vy:0};return;}
       const next=goal?{type:'kickoff',side:1-scoringSide,spot:{x:52.5,y:34}}:outRestart(point,lastTouch?.side??s.lastOwner,s);
@@ -357,6 +410,13 @@ function heldStep(match) {
     const severityRoll=random(s,'execution');
     penalizeFoul(match,defender,carrier,{...foul,roll:foulRoll,severityRoll},foulSanction(foul,severityRoll),s.time+STEP);return;
   }
+  if(foul.penalty&&carrier.penaltyDraw?.simulationYellowChance>0&&random(s,'execution')<carrier.penaltyDraw.simulationYellowChance){
+    const time=s.time+STEP,reason='跳水王子在禁区内假摔，被裁判识破';
+    caution(match,carrier,reason,time,`${carrier.name}触发「跳水王子」，因假摔被出示黄牌`);
+    awardRestart(match,'indirectFreeKick',defender.side,carrier,reason,time,carrier.active?'yellow':'red');
+    checkMinimumPlayers(match,time);
+    return;
+  }
   const probability=clamp(.32+(defender.attributes.tackling-carrier.attributes.decisions)/180-(carrier.attributes.dribbling-75)*.002+(defender.attributes.strength-carrier.attributes.strength)*.001,.12,.72);
   if(random(s,'execution')<probability) {
     s.stats[defender.side].tackles++;
@@ -366,16 +426,54 @@ function heldStep(match) {
   }
 }
 
+function traitAnnouncer(match,time){
+  return (player,text,level)=>emit(match,'traitActivated',player,{time,text,level,traitOpening:true});
+}
+function refreshEffectsWithBroadcast(match,time){
+  const state=match.state,previous=state.activeBonds?.slice();
+  const changes=refreshPlayerEffects(state,traitAnnouncer(match,time));
+  for(const {side} of changes){
+    const team=state.input.teams[side];
+    for(const bond of state.activeBonds[side]){
+      if(previous?.[side]?.some(old=>old.id===bond.id))continue;
+      const label=bond.name ?? bond.id;
+      const text=state.nextEventId%2
+        ? `羁绊亮灯！${team.name}在场激活战术羁绊【${label}】，全队攻防默契度拉满！`
+        : `化学反应生效！${team.name}凑齐【${label}】联动配置，场上配合明显提速！`;
+      emit(match,'bondActive',null,{time,side,text});
+    }
+  }
+  return changes;
+}
+function announceTrailingCaptain(match,side,time){
+  const state=match.state,team=state.input.teams[side];
+  const deficit=state.score[1-side]-state.score[side];
+  const inspiring=team.captainStyle==='inspiring';
+  if(deficit<(inspiring?1:2))return;
+  const captain=state.players.find(p=>p.side===side && p.id===team.captainId && p.active && !p.injury);
+  if(!captain || captain.captainBossAnnounced || captain.encouragedTeam)return;
+  captain.encouragedTeam=true;
+  const text=inspiring
+    ? `队长开启吹风机！落后中的 ${captain.name}怒吼一声「激情鼓舞」，${team.name}全队打满鸡血发起反扑！`
+    : `定海神针！逆境之下队长 ${captain.name}频频挥手稳定军心，号召${team.name}重整阵脚！`;
+  emit(match,'captainBoost',captain,{time,text});
+}
+export function refreshMatchPlayerEffects(match,time=match.state.time){
+  for(const effects of refreshEffectsWithBroadcast(match,time)){
+    emit(match,'playerEffectsChanged',null,{time,side:effects.side,text:'球员特性与在场羁绊更新',reason:'按当前打法、人数与场上位置重新计算',effects});
+  }
+}
 function resolvePassiveExit(match,departed,cause,time){
   const s=match.state,result=applyPassiveExit(s,departed,cause);
   if(result.status==='ignored')return result;
   const incoming=playerByKey(s,result.incoming),outgoing=playerByKey(s,result.outgoing);
   if(result.status==='substituted')emit(match,'substitution',incoming,{time,text:`${incoming.name}替换${outgoing.name}${cause==='red'?'，接管门将职责':''}`,reason:cause==='red'?'门将被罚下，被动换下一名外场球员；场上仍少一人':'无法继续比赛，按位置匹配和体能选择可用替补',cause,departed:departed.key,outgoing:outgoing.key,used:s.stats[departed.side].substitutions});
-  else if(result.status==='emergencyKeeper')emit(match,'emergencyKeeper',incoming,{time,text:`${incoming.name}临时担任门将`,reason:'没有可用的门将替补，由场上球员接管；不增加人数、不占换人名额',cause,failure:result.failure});
+  else if(result.status==='emergencyKeeper')emit(match,'emergencyKeeper',incoming,{time,departed:departed.key,text:`${incoming.name}临时担任门将`,reason:'没有可用的门将替补，由场上球员接管；不增加人数、不占换人名额',cause,failure:result.failure});
   else if(result.failure)emit(match,'replacementUnavailable',departed,{time,text:'本次伤退无法完成替补换人',reason:'没有满足名额、位置或体能要求的替补，暂时少一人',failure:result.failure});
+  refreshMatchPlayerEffects(match,time);
   return result;
 }
-export function injurePlayer(match,player,{time=match.state.time,cause='contact'}={}){
+export function injurePlayer(match,player,{time=match.state.time,cause='contact',injuryRounds=1}={}){
   const s=match.state;
   if(!['restart','halftime'].includes(s.phase))throw new Error('伤退须先进入死球处理');
   if(!player?.active||player.injury)return {status:'ignored'};
@@ -383,42 +481,58 @@ export function injurePlayer(match,player,{time=match.state.time,cause='contact'
   const protector=activePlayers(s).find(p=>p.side===player.side&&p.key!==player.key&&p.injuryTransfer);
   if(protector){emit(match,'traitActivated',protector,{time,text:`${protector.name}承担队友的伤情`,reason:'已生效的团队伤情转移特性',protectedPlayer:player.key});player=protector;cause='traitTransfer';
     if(player.injuryImmune)return {status:'immune'};}
-  player.active=false;player.status='injured';player.vx=0;player.vy=0;player.injury={time:round(time),cause,unableToContinue:true};s.stats[player.side].injuries++;
+  player.active=false;player.status='injured';player.vx=0;player.vy=0;player.injury={time:round(time),cause,injuryRounds,unableToContinue:true};s.stats[player.side].injuries++;
   emit(match,'injury',player,{time,text:`${player.name}受伤，无法继续比赛`,reason:'实际对抗后触发伤退，按被动换人规则处理',injury:structuredClone(player.injury)});
   const result=resolvePassiveExit(match,player,'injury',time);
   if(s.restart){s.restart.until+=45;s.restart.lossCause='injuryAndRestart';}
   if(activePlayers(s).filter(p=>p.side===player.side).length<7){s.phase='finished';s.abandoned=true;emit(match,'abandoned',null,{time,text:'人数不足，比赛终止',reason:'伤退后不足7人，不自动写入正式赛果'});}
   return result;
 }
+function dismiss(match,player,reason,time=match.state.time){
+  const s=match.state;player.active=false;player.status='sentOff';player.vx=0;player.vy=0;s.stats[player.side].redCards++;
+  emit(match,'redCard',player,{time:round(time),text:player.name+(player.yellowCards>=2?'两黄变红':'被红牌罚下'),reason});
+  resolvePassiveExit(match,player,'red',time);
+}
+function caution(match,player,reason,time,text){
+  player.yellowCards++;match.state.stats[player.side].yellowCards++;
+  emit(match,'yellowCard',player,{time:round(time),text:text??`${player.name}被出示黄牌`,reason,yellowCards:player.yellowCards});
+  if(player.yellowCards<2)return;
+  if(player.redCardImmune)emit(match,'traitActivated',player,{time,text:`${player.name}累计黄牌后仍留场`,reason:'既有红牌免疫特性阻止两黄升级，黄牌统计保留'});
+  else dismiss(match,player,'累计两张黄牌',time);
+}
+function checkMinimumPlayers(match,time){
+  const s=match.state;
+  if(s.phase!=='finished'&&[0,1].some(side=>activePlayers(s).filter(p=>p.side===side).length<7)){s.phase='finished';s.abandoned=true;emit(match,'abandoned',null,{time:round(time),text:'人数不足，比赛终止',reason:'一方场上少于7人；不自动写入正式赛果'});}
+}
 export function penalizeFoul(match,defender,carrier,profile,sanction,time=match.state.time) {
   const s=match.state;s.stats[defender.side].fouls++;
   if(defender.redCardImmune&&sanction.card==='red'){sanction={...sanction,card:'yellow',originalCard:'red'};emit(match,'traitActivated',defender,{time,text:`${defender.name}的红牌免疫生效`,reason:'既有游戏特性将本次直接红牌降为黄牌；此为特性规则例外'});}
   emit(match,'foul',defender,{time:round(time),text:`${defender.name}对${carrier.name}犯规`,reason:`近身争抢：${profile.behind?'从身后接近，':''}${sanction.severity==='careless'?'疏忽动作':sanction.severity==='reckless'?'鲁莽动作':'过度力量'}`,
     victim:carrier.key,foul:profile,sanction,position:{x:carrier.x,y:carrier.y}});
-  if(sanction.card==='yellow'){defender.yellowCards++;s.stats[defender.side].yellowCards++;
-    emit(match,'yellowCard',defender,{time:round(time),text:`${defender.name}被出示黄牌`,reason:profile.dogso?'禁区内试图争球但破坏明显进球机会':'鲁莽争抢',yellowCards:defender.yellowCards});}
-  if(sanction.card==='yellow'&&defender.yellowCards>=2&&defender.redCardImmune)emit(match,'traitActivated',defender,{time,text:`${defender.name}累计黄牌后仍留场`,reason:'既有红牌免疫特性阻止两黄升级，黄牌统计保留'});
-  if(sanction.card==='red'||defender.yellowCards>=2&&!defender.redCardImmune){
-    defender.active=false;defender.status='sentOff';defender.vx=0;defender.vy=0;s.stats[defender.side].redCards++;
-    emit(match,'redCard',defender,{time:round(time),text:`${defender.name}${defender.yellowCards>=2?'两黄变红':'被红牌罚下'}`,reason:profile.dogso?'破坏明显进球机会':'严重犯规或累计两张黄牌'});
-    resolvePassiveExit(match,defender,'red',time);
+  if(sanction.card==='yellow')caution(match,defender,profile.dogso?'禁区内试图争球但破坏明显进球机会':'鲁莽争抢',time);
+  if(sanction.card==='red'){
+    dismiss(match,defender,profile.dogso?'破坏明显进球机会':'严重犯规或累计两张黄牌',time);
   }
   const type=profile.penalty?'penalty':'directFreeKick';
   awardRestart(match,type,carrier.side,carrier,profile.penalty?'防守方在本方禁区内接触犯规':'接触犯规，原地直接任意球',time,defender.active===false?'red':sanction.card);
   const injuryChance=clamp(.003+Math.max(0,profile.speed-4)*.0015+(100-carrier.fitness)*.0001,0,.035);
   if(!carrier.injuryImmune&&random(s,'availability')<injuryChance)injurePlayer(match,carrier,{time});
-  if(s.phase!=='finished'&&[0,1].some(side=>activePlayers(s).filter(p=>p.side===side).length<7)){s.phase='finished';s.abandoned=true;emit(match,'abandoned',null,{time:round(time),text:'人数不足，比赛终止',reason:'一方场上少于7人；不自动写入正式赛果'});}
+  checkMinimumPlayers(match,time);
   if(match.recording){const frame=snapshot(s);frame.time=round(time);frame.clock=clockSnapshot(s,time);match.frames.push(frame);}
 }
 
 function preparePenaltyKeeper(match,kickingSide){
   const s=match.state,keeper=s.players.find(p=>p.active&&p.side!==kickingSide&&p.role==='GK');if(!keeper)return;
-  const roll=random(s,'decision'),sign=roll<.45?-1:roll<.9?1:0;
+  const guaranteed=keeper.firstPenaltySave&&!keeper.firstPenaltySaveUsed;
+  const roll=random(s,'decision'),sign=guaranteed?0:roll<.45?-1:roll<.9?1:0;
   keeper.penaltyDive={sign,until:s.time+1.5};keeper.vy=sign*.5;
   emit(match,'keeperCommitment',keeper,{text:`${keeper.name}准备扑救点球`,reason:'出球执行误差产生前选择扑救方向，之后仍须实际移动接触球',direction:sign});
+  if(guaranteed){keeper.firstPenaltySaveUsed=true;return keeper;}
 }
 function startShootout(match){
-  const s=match.state;s.shootout=createShootout(s);s.phase='shootout';
+  const s=match.state;s.phase='shootout';
+  refreshMatchPlayerEffects(match);
+  s.shootout=createShootout(s);
   emit(match,'shootoutStart',null,{text:'进入点球大战',reason:'常规赛果与总比分仍平局，点球大战单独记录胜负',eligibleCount:s.shootout.eligible[0].length,firstSide:s.shootout.turn,goalX:s.shootout.goalX});
 }
 function beginShootoutAttempt(match){
@@ -431,25 +545,30 @@ function beginShootoutAttempt(match){
   s.phase='playing';s.restartSerial++;s.rules={offside:null,restartTouch:null};s.coordination=[{},{}];s.pendingPenalty=null;hold(s,kicker);
   emit(match,'shootoutReady',kicker,{text:`${kicker.name}准备主罚点球`,reason:'双方交替主罚；所有合格球员轮完后才能再次主罚',attempt:shootout.taken[side]+1,shootoutScore:[...shootout.score]});
   const opportunity=shotOpportunity(s,kicker),choice={type:'shot',target:opportunity.target,utility:opportunity.utility,reason:'点球大战主罚，按实际射门、扑救与球路判定',opportunity:opportunity.evidence};
-  preparePenaltyKeeper(match,side);
   release(match,kicker,choice,[choice],'penalty');s.rules.offside=null;record(match);
 }
-function finishShootoutAttempt(match,goal,time,reason){
+function finishShootoutAttempt(match,goal,time,reason,resultText=null){
   const s=match.state,current=s.shootout.current;if(!current)return;
   s.stats=structuredClone(current.statsBefore);
   const winner=recordShootoutKick(s.shootout,{side:current.side,kicker:current.kicker,goal,time,reason});
   s.ball={...s.ball,mode:'dead',holder:null,flight:null,vx:0,vy:0,vz:0,airborne:false,z:0};s.phase=winner===null?'shootout':'finished';
   for(const p of s.players){p.vx=0;p.vy=0;}
-  emit(match,'shootoutResult',playerByKey(s,current.kicker),{time,text:goal?'本轮点球罚入':'本轮点球未罚入',reason,goal,shootoutScore:[...s.shootout.score],taken:[...s.shootout.taken]});
+  emit(match,'shootoutResult',playerByKey(s,current.kicker),{time,text:resultText??(goal?'本轮点球罚入':'本轮点球未罚入'),reason,goal,shootoutScore:[...s.shootout.score],taken:[...s.shootout.taken]});
   if(winner!==null){s.result={winner,method:'penalties',aggregate:aggregateScore(s),shootout:[...s.shootout.score]};emit(match,'fulltime',null,{time,text:'点球大战结束',reason:'一方已提前获胜，或相同轮数的突然死亡决出胜负',winner,shootoutScore:[...s.shootout.score]});}
   if(match.recording){const frame=snapshot(s);frame.time=round(time);frame.clock=clockSnapshot(s,time);match.frames.push(frame);}
 }
-function finishPeriod(match){
+function finishPeriod(match,weatherStop=false){
   const s=match.state,c=s.clock,i=c.period-1;
   c.completed.push({period:c.period,elapsed:c.elapsed,announced:c.announced[i],added:c.added[i],lost:c.lost[i],inPlay:c.played[i],dead:c.dead[i],endedAt:s.time});
   s.restart=null;s.pendingPenalty=null;s.transition=null;s.coordination=[{},{}];s.rules={offside:null,restartTouch:null};
   s.ball={...s.ball,mode:'dead',holder:null,flight:null,vx:0,vy:0};
   const resolution=resolutionAfterPeriod(s);
+  if(weatherStop){
+    const total=aggregateScore(s);
+    s.weatherStopped=Math.floor((clockSnapshot(s).baseSeconds+c.elapsed)/60);
+    Object.assign(resolution,{nextPeriod:null,shootout:false,finish:true,winner:total[0]===total[1]?null:total[0]>total[1]?0:1,method:'regulation'});
+    emit(match,'abandoned',null,{text:'超级雷暴增强，裁判提前终场，按当前比分结算。'});
+  }
   for(const p of s.players){p.vx=0;p.vy=0;if(p.active)p.task={type:'interval',target:{x:p.x,y:p.y},partners:[],reason:resolution.finish?'比赛结束':resolution.shootout?'准备点球大战':'阶段休息，等待下一半场'};}
   if(resolution.nextPeriod){
     s.phase='halftime';c.intervalRemaining=c.period===1?c.intervalLength:c.period===2?(s.input.duration===5400?300:2):(s.input.duration===5400?60:1);
@@ -463,10 +582,12 @@ function startSecondHalf(match){
   const s=match.state,c=s.clock,previousDirection=coordinates(s).direction(0);c.period++;c.elapsed=0;c.extendingPenalty=false;
   s.phase='playing';s.restartSerial++;
   const switched=previousDirection!==coordinates(s).direction(0),side=c.period===2?1:c.period===3?c.extraKickoffSide:1-c.extraKickoffSide;
-  for(const p of s.players){if(switched){p.x=105-p.x;p.y=68-p.y;p.facing+=Math.PI;}p.vx=0;p.vy=0;p.task=null;if(c.period===2)p.fitness=Math.min(100,p.fitness+Math.min(2,c.intervalLength/450));}
+  for(const p of s.players){if(switched){p.x=105-p.x;p.y=68-p.y;p.facing+=Math.PI;}p.vx=0;p.vy=0;p.task=null;if(c.period===2)p.fitness=p.fixedFitness??Math.min(100,p.fitness+Math.min(2,c.intervalLength/450));}
   emit(match,'endsChanged',null,{text:`${c.period===2?'双方换边，下半场':c.period===3?'加时赛开始':'加时赛换边'}由${s.input.teams[side].name}开球`,reason:'按半场和加时赛掷币结果安排方向与开球，纪律和比分继续有效',attackDirections:[coordinates(s).direction(0),coordinates(s).direction(1)]});
+  if(c.period===3)refreshMatchPlayerEffects(match);
   s.restart={type:'kickoff',side,spot:{x:52.5,y:34},reason:c.period===2?'下半场开球':'加时赛开球',until:s.time};beginRestart(match);
 }
+const incidentActions={emit,awardRestart,injurePlayer,dismiss,finishWeather:match=>finishPeriod(match,true)};
 export function advanceMatch(match,steps=1) {
   if(!Number.isSafeInteger(steps)||steps<0||steps>100000)throw new Error('推进步数无效');
   const s=match.state;
@@ -474,7 +595,7 @@ export function advanceMatch(match,steps=1) {
     if(s.phase==='halftime'&&s.clock.intervalRemaining<=0)startSecondHalf(match);
     if(s.phase==='shootout'&&s.shootout.active&&s.time>=s.shootout.nextAt)beginShootoutAttempt(match);
     if(s.phase!=='halftime')syncTacticalPlans(match);
-    if(s.input.playerEffects)for(const effects of refreshPlayerEffects(s))emit(match,'playerEffectsChanged',null,{side:effects.side,text:'球员特性与在场羁绊更新',reason:'根据当前时间、比分、职责和在场名单计算，不叠加上一次加成',effects});
+    if(s.input.playerEffects)refreshMatchPlayerEffects(match);
     if(s.phase==='restart') {
       if(s.time>=s.restart.until)beginRestart(match);
       else for(const p of s.players){p.vx=0;p.vy=0;}
@@ -499,6 +620,7 @@ export function advanceMatch(match,steps=1) {
     if(r)r.lossAccrued=round((r.lossAccrued??0)+loss);
     advanceClock(s,STEP,inPlay,loss,r?.lossCause);
     s.tick++;s.time=round(s.tick*STEP);
+    if(s.incidents)runMatchIncidents(match,incidentActions);
     if(s.phase!=='finished'&&!s.shootout&&s.clock.mode==='full'&&s.phase!=='halftime'){
       const allowance=announceAllowance(s.clock);
       if(allowance)emit(match,'addedTime',null,{text:`${['上半场','下半场','加时上半场','加时下半场'][s.clock.period-1]}至少补时${allowance.seconds/60}分钟`,reason:'按本半场已经发生的庆祝、判罚等额外损失时间计算；常规重启不全部补回',allowance});

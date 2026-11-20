@@ -10,6 +10,11 @@ function fixture() {
   service.wallet(user.id).balance = 43210;
   return { service, user };
 }
+function finishAndPay(service) {
+  service.state.season.status = "completed";
+  service.state.cup.status = "completed";
+  service.settleDailySeason({ manual:true });
+}
 function apply(service, action) {
   const preview = service.adminSeasonControlsPreview();
   return service.applyAdminSeasonControl({ action, confirm:preview.operations.find(entry => entry.id === action).confirmation, seasonId:preview.seasonId, revision:preview.revision });
@@ -18,13 +23,15 @@ function apply(service, action) {
 test("replay and next season preserve wallet, roster, cards, inventory and audit ledger", () => {
   for (const action of ["replay", "next"]) {
     const { service, user } = fixture();
+    if (action === "next") finishAndPay(service);
+    const balance = service.wallet(user.id).balance;
     const team = service.accountTeam(user.id);
     const roster = [...team.rosterIds], cards = JSON.stringify(service.state.s4Assets.cards), packs = JSON.stringify(service.state.s4Packs);
     service.state.ledger.push({ id:"keep-ledger", accountId:user.id, amount:12, type:"admin-coin-grant", createdAt:service.now() });
     const result = apply(service, action);
     assert.equal(result.league.season.name, action === "replay" ? "S1" : "S2");
     assert.equal(result.league.season.status, "registration");
-    assert.equal(service.wallet(user.id).balance, 43210);
+    assert.equal(service.wallet(user.id).balance, balance);
     assert.deepEqual(service.accountTeam(user.id).rosterIds, roster);
     assert.equal(JSON.stringify(service.state.s4Assets.cards), cards);
     assert.equal(JSON.stringify(service.state.s4Packs), packs);
@@ -32,8 +39,10 @@ test("replay and next season preserve wallet, roster, cards, inventory and audit
     assert.equal(service.state.archives.length, 1);
   }
   const { service, user } = fixture();
+  finishAndPay(service);
+  const balance = service.wallet(user.id).balance;
   service.resetDailyCompetitions({ manual:true });
-  assert.equal(service.wallet(user.id).balance, 43210, "automatic daily engine also preserves coins");
+  assert.equal(service.wallet(user.id).balance, balance, "automatic daily engine also preserves coins");
 });
 
 test("only full reset clears assets and old destructive alias uses the same implementation", () => {

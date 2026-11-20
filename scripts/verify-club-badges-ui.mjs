@@ -60,6 +60,8 @@ try{
   await page.locator('.recent-panel').screenshot({path:out+'/fixtures-mobile.png'});
   await page.setViewportSize({width:1600,height:1100});
   await page.locator('[data-sidebar-open]').focus();await page.locator('[data-league-tab="cup"]').first().click();
+  await page.locator('.ko-bracket-symmetric').waitFor();
+  await page.locator('label[for="yffm-cup-view-rounds"]').click();
   await page.locator('.knockout-stages').waitFor();
   assert.equal(await page.locator('[data-cup-stage="roundOf16"] .competition-team-identity').count(),32);
   await page.screenshot({path:out+'/cup.png',fullPage:true});

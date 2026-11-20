@@ -68,7 +68,7 @@ const bondTypes = Object.freeze([
 
 const cleanName = (value) => String(value ?? "").trim();
 
-function playerTraitIds(player) {
+export function playerTraitIds(player) {
   const direct = Array.isArray(player?.traits) ? player.traits : [];
   const activeCard = Array.isArray(player?.cards)
     ? player.cards.find((card) => card.id === player.activeCardId) ?? player.cards[0]
@@ -84,7 +84,7 @@ function effectiveHeight(player) {
     - (traits.has("custom-2c1cb6a5-becb-47d2-bad7-1f52b3716c20") ? 10 : 0);
 }
 
-function assignedGroup(player, roles = {}) {
+export function assignedGroup(player, roles = {}) {
   const role = roles[player.id] ?? player.assignedRole ?? player.role;
   if (role === "GK") return "GK";
   if (["CB", "LB", "RB", "LWB", "RWB"].includes(role)) return "DEF";

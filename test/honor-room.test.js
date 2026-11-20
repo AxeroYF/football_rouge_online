@@ -31,6 +31,9 @@ test("每日完赛快照合并联赛杯赛且按赛季ID幂等更新荣誉室", 
   const service = new YellowDogsLeagueService({ statePath:null, now:() => NOW, rng:() => .37 });
   const account = { id:"honor-daily-owner", nickname:"队史玩家" };
   const team = ownTeam(service, account.id, account.nickname, "每日荣誉队");
+  const bTeam = service.state.teams.find(candidate => candidate.division === "B");
+  Object.assign(bTeam, { ownerId:"honor-b-owner", ownerName:"升级队经理" });
+  bTeam.table.points = 100;
   team.table.points = 99;
   team.table.goalsFor = 30;
   service.state.season.status = "completed";
@@ -46,6 +49,10 @@ test("每日完赛快照合并联赛杯赛且按赛季ID幂等更新荣誉室", 
   service.resetDailyCompetitions({ manual:true, skipRewardCheck:true, skipBackup:true, skipArchive:true, skipSave:true, skipView:true });
   const honorRoom = service.honorRoomView(account);
   assert.deepEqual(honorRoom.honors.league, ["S14"]);
+  assert.deepEqual(honorRoom.honors.divisionB, []);
+  const bHonors = service.honorRoomView({ id:bTeam.ownerId }).honors;
+  assert.deepEqual(bHonors.league, []);
+  assert.deepEqual(bHonors.divisionB, ["S14"]);
   assert.deepEqual(honorRoom.honors.cup, ["S14"]);
   assert.deepEqual([honorRoom.scorer.appearances, honorRoom.scorer.goals, honorRoom.scorer.assists], [24,17,10]);
   assert.equal(honorRoom.assister.player.id, "legend-messi");
@@ -91,7 +98,8 @@ test("荣誉室位于俱乐部子页且奖杯铭牌仅显示放大的赛季", ()
   const index = readFileSync(new URL("../versus/public/index.html", import.meta.url), "utf8");
   const demo = readFileSync(new URL("../versus/public/honor-room-demo.html", import.meta.url), "utf8");
   const styles = readFileSync(new URL("../versus/public/honor-room.css", import.meta.url), "utf8");
-  assert.match(app, /data-league-tab="club">俱乐部/);
+  const navigation = readFileSync(new URL("../versus/public/club-navigation.js", import.meta.url), "utf8");
+  assert.match(navigation, /\['club','俱乐部','club'\]/);
   assert.match(app, /data-club-page="honorRoom">荣誉室/);
   assert.doesNotMatch(app, /data-league-tab="honorRoom">荣誉室/);
   assert.match(index, /\/versus\/honor-room\.css/);

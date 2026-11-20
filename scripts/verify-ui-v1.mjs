@@ -23,7 +23,11 @@ await page.screenshot({path:out+'/home-dark.png',fullPage:true});
  await inspect('home-dark');
  // Hover must never move the workspace. Explicit collapse may change its reserved width.
  const before=await page.locator('.league-page-content').boundingBox();await page.locator('.league-sidebar').hover();const after=await page.locator('.league-page-content').boundingBox();assert.equal(before.x,after.x);assert.equal(before.width,after.width);
- await page.locator('[data-home-standings]').click();assert.equal(await page.locator('.home-standings-dialog tbody tr').count(),16);await page.locator('[data-close-league-dialog]').click();
+ for (const division of ['A','B']) {
+   const rows=page.locator('.home-standing .division-'+division+' tbody tr:visible');
+   assert.equal(await rows.count(),8);
+   assert.deepEqual(await rows.locator('td:first-child').allTextContents(),['1','2','3','4','5','6','7','8']);
+ }
  await page.locator('[data-league-theme-toggle]').click();await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+'/home-light.png',fullPage:true});
  await page.locator('[data-league-theme-toggle]').click();
  for(const tab of ['schedule','cup','squad','players','backpack','enhancement','club','shop','market','inbox','television','stats','predictions']){
@@ -43,7 +47,7 @@ await page.screenshot({path:out+'/home-dark.png',fullPage:true});
  await page.locator('.yffm-bottom-nav [data-league-tab="overview"]').click();
  await page.locator('.home-calendar summary').click();
  assert.ok(await page.locator('.home-calendar').evaluate(el=>el.open));
- assert.equal(await page.locator('.home-standing tbody tr:visible').count(),3);
+ assert.equal(await page.locator('.home-standing tbody tr:visible').count(),16);
  assert.ok(summary.every(entry=>entry.scroll<=entry.width));
  await fs.writeFile(out+'/results.json',JSON.stringify({errors,summary},null,2));console.log(JSON.stringify({errors,summary},null,2));assert.deepEqual(errors,[]);
 }catch(error){const page=browser?.contexts()[0]?.pages()[0];if(page){await page.screenshot({path:out+'/failure.png',fullPage:true});await fs.writeFile(out+'/failure.html',await page.content());}throw error;}

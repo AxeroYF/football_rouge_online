@@ -38,10 +38,12 @@ export async function runShadowJob({directory,bundleDirectory,sourceDigest,envel
     const writer=await createArchive(archiveDirectory,{matchId:input.fixtureId,engineVersion,sourceDigest,inputFingerprint:fingerprint,teams:input.teams,replayExisting:true});
     const ledger=createPlayerReportLedger(input,engineVersion),highWater={frames:0,events:0};
     const review=tacticalReview?createMatchTacticalReview(input,engine):null;
+    // Older pinned jobs must reproduce their original archive bytes on resume.
+    const publishAssist=input.publishGoalAssists ? (goal,assistId)=>{goal.assistId=assistId;} : undefined;
     while(match.state.phase!=='finished'){
       engine.advanceMatch(match,job.stepsPerChunk);
       highWater.frames=Math.max(highWater.frames,match.frames.length);highWater.events=Math.max(highWater.events,match.events.length);
-      ledger.consume(match.events.filter(event=>event.id>ledger.cursor));
+      ledger.consume(match.events.filter(event=>event.id>ledger.cursor),publishAssist);
       review?.consume(match.frames,match.events);
       await writer.appendMatch(match);
       await onCommitted({time:match.state.time,segments:writer.manifest.segments.length});

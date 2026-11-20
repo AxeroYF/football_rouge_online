@@ -1,3 +1,9 @@
+import {kickoffTraitAnnouncements} from './v4/kickoff-traits.js';
+import {prepareLegacyTraitSeats} from './spirit-possession.js';
+import {possessionAnnouncement} from './public/spirit-form.js';
+import {broadcastCardArt} from './broadcast-card-art.js';
+import {butterFingersProbability,superWorldieProbability,ownGoalCandidateWeight} from './v4/special-goal-rules.js';
+export {butterFingersProbability,superWorldieProbability,ownGoalCandidateWeight};
 import { DEFAULT_GAME_CONFIG } from "../shared/football/config.js";
 import { positionFitScore, roleGroup } from "../shared/football/schema.js";
 import {
@@ -142,25 +148,7 @@ function chance(match, probability) {
   return random(match) < clamp(probability, 0, 1);
 }
 
-export function butterFingersProbability(goalkeeper = {}) {
-  const fitness = clamp(Number(goalkeeper.state?.fitness ?? goalkeeper.fitness ?? 100), 35, 100);
-  return clamp((75 - fitness) / 40 * 0.035, 0, 0.035);
-}
 
-export function superWorldieProbability(player = {}, attackType = "longShot") {
-  if (attackType !== "longShot") return 0;
-  const longShots = clamp(Number(player.attributes?.longShots ?? 50), 1, 99);
-  const eliteLongShotFactor = clamp((longShots - 70) / 29, 0, 1);
-  return 0.001 + eliteLongShotFactor ** 2 * 0.024;
-}
-
-export function ownGoalCandidateWeight(player = {}) {
-  const fitness = clamp(Number(player.state?.fitness ?? player.fitness ?? 100), 35, 100);
-  const composure = clamp(Number(player.attributes?.composure ?? 50), 1, 99);
-  const fitnessRisk = clamp((70 - fitness) / 35, 0, 1);
-  const composureRisk = clamp((65 - composure) / 40, 0, 1);
-  return 0.15 + fitnessRisk * 1.2 + composureRisk * 0.9 + fitnessRisk * composureRisk * 0.8;
-}
 
 function choose(match, entries, weight = () => 1) {
   if (!entries.length) return null;
@@ -1408,10 +1396,11 @@ function buildReport(match) {
         grade: player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0), legendary:Boolean(player.legendary ?? player.grade === "S"),
         ...(["league", "cup", "friendly"].includes(match.competitionMode) ? {} : { legendAbility:player.legendAbility ?? null }),
         fitness: Number(player.state.fitness.toFixed(1)), active: player.active, sentOff: player.sentOff, injury: player.injury,
+        ...(player.sponsorEntry ? {sponsorEntry:true,startedMatch:true} : {}),
         stats: player.matchStats,
       })).sort((left, right) => right.rating - left.rating),
     })),
-    importantEvents: match.events.filter((entry) => ["goal", "butterFingers", "ownGoal", "superWorldie", "red", "injury", "lightning", "blackWhistle", "penaltyAwarded", "penalty", "shootout", "halftime", "fulltime", "tactical"].includes(entry.type)),
+    importantEvents: match.events.filter((entry) => ["goal", "butterFingers", "ownGoal", "superWorldie", "red", "injury", "substitution", "replacementUnavailable", "emergencyKeeper", "lightning", "blackWhistle", "penaltyAwarded", "penalty", "shootout", "halftime", "fulltime", "tactical"].includes(entry.type)),
     events: match.events,
     analysisTimeline:structuredClone(match.analysisTimeline ?? []),
   };
@@ -1421,6 +1410,7 @@ export function createVersusMatch(seats, options = {}) {
   const now = options.now ?? Date.now();
   const seed = options.seed ?? `${seats[0].name}:${seats[1].name}:${now}`;
   const competitionMode = options.competitionMode ?? "quick";
+  seats = prepareLegacyTraitSeats(seats, seed, competitionMode);
   const disableLegendAbilities = ["league", "cup", "friendly"].includes(competitionMode);
   const match = {
     version: 1,
@@ -1466,6 +1456,11 @@ export function createVersusMatch(seats, options = {}) {
   const ownGoalPressure = average(match.teams.flatMap((team) => team.players.map(ownGoalCandidateWeight)), 0.15);
   const ownGoalMatchChance = clamp(0.006 + Math.max(0, ownGoalPressure - 0.15) * 0.008, 0.006, 0.022);
   if (chance(match, ownGoalMatchChance)) match.ownGoalMinute = 8 + Math.floor(random(match) * 80);
+  for (const team of match.teams) for (const player of team.players) {
+    if (player.allInMultiplier || player.sponsorEntry) for (const {text,level} of kickoffTraitAnnouncements(player,team.name,seed,team.index))
+      event(match,"traitActivated",team.index,text,{actorId:player.id,level,importance:"major"});
+    if (player.spiritForm) event(match, "spiritPossession", team.index, possessionAnnouncement(player), {actorId:player.id});
+  }
   recordAnalysisSnapshot(match, "kickoff");
   return match;
 }
@@ -1650,6 +1645,7 @@ export function publicMatch(match, now = Date.now(), viewerIndex = null, revealA
       stats: { ...team.stats, xg: Number(team.stats.xg.toFixed(2)) },
       players: team.players.map((player) => ({
         id: player.id, name: player.name, role: player.role, assignedRole: player.assignedRole,
+        ...broadcastCardArt(player),
         secondaryRole: player.secondaryRole, grade: player.grade, upgradeLevel:Number(player.upgradeLevel ?? 0),
         heightCm: player.heightCm, nationality: player.nationality, club: player.club,
         traits: player.traitDefinitions?.map(({ id, name, summary }) => ({ id, name, summary })) ?? [],

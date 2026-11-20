@@ -12,11 +12,14 @@ test("进球停留六秒且普通进程继续更新，连续重要事件按顺�
   const goal = event("g", "goal"), red = event("r", "red");
   let state = highlights.update(view([event("a"), goal, event("b")]), 100);
   assert.equal(state.event.id, "g"); assert.equal(state.nextAt, 6100); assert.equal(state.reviewing, true);
-  state = highlights.update(view([event("a"), goal, event("b"), red, event("c")]), 5900);
-  assert.equal(state.event.id, "g"); assert.equal(state.pending, 1);
-  state = highlights.update(view([event("a"), goal, event("b"), red, event("c")]), 6100);
+  const second = event("g2", "ownGoal");
+  state = highlights.update(view([event("a"), goal, event("b"), red, second, event("c")]), 5900);
+  assert.equal(state.event.id, "g"); assert.equal(state.pending, 2);
+  state = highlights.update(view([event("a"), goal, event("b"), red, second, event("c")]), 6100);
   assert.equal(state.event.id, "r"); assert.equal(state.nextAt, 12100);
   state = highlights.update(view([event("a"), goal, event("b"), red, event("c")]), 12100);
+  assert.equal(state.event.id, "g2");
+  state=highlights.update(view([]),18100);
   assert.equal(state.event, null); assert.equal(state.nextAt, null);
 });
 
@@ -26,7 +29,7 @@ test("新入场不回放历史队列，终场仍能读完关键事件，切换�
   highlights.update(view([event("now"), event("g", "goal")]), 10);
   let snapshot = view([event("now"), event("g", "goal"), event("end", "fulltime")]); snapshot.live = false;
   assert.equal(highlights.update(snapshot, 100).event.id, "g");
-  assert.equal(highlights.update(snapshot, 6010).event.id, "end");
+  assert.equal(highlights.update(snapshot, 6010).event, null);
   snapshot = { ...view([event("new")]), code:"YDL-OTHER" };
   assert.equal(highlights.update(snapshot, 6020).event, null);
 });
@@ -48,4 +51,12 @@ test("统计、体力、评分、球场和赛后字段变化均使 revision 与�
     assert.notEqual(broadcastRenderFingerprint(changed), broadcastRenderFingerprint(base));
   }
   assert.notEqual(broadcastRenderFingerprint(original, { event:event("a") }), broadcastRenderFingerprint(original, { event:event("b") }));
+});
+
+test('关键事件优先于等待中的普通高光，轮询不会重复入队',()=>{
+  const highlights=createBroadcastHighlights(),save=event('s','save'),bar=event('b','woodwork'),goal=event('g','goal');
+  assert.equal(highlights.update(view([save]),0).nextAt,3500);
+  highlights.update(view([save,bar,goal]),10);
+  assert.equal(highlights.update(view([save,bar,goal]),3500).event.id,'g');
+  assert.equal(highlights.update(view([save,bar,goal]),9500).event.id,'b');
 });

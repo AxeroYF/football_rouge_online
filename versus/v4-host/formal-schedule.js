@@ -10,6 +10,8 @@ import {openLocalCupScheduler} from './local-cup-scheduler.js';
 import {openScheduledPreviewHost} from './scheduled-preview-host.js';
 import {recoverDispatchLock} from './dispatch-store.js';
 
+import {completedRounds,compactRound,expireSeasonReplays} from './goal-clips.js';
+
 async function prepareKernel(root){
   const manifest=JSON.parse(await fs.readFile(new URL('../v4-rollout/scheduled-kernel.json',import.meta.url),'utf8'));
   const bundleDirectory=path.join(root,manifest.sourceDigest);
@@ -70,8 +72,29 @@ export async function openFormalSchedule({service,createService,rooms,getCatalog
     const options={root,service,createService,now,sourceCatalog:getCatalog()};
     const settlement=await openScheduledStorageSettlement(options);
     const open=kind==='cup'?openLocalCupScheduler:openLocalLeagueScheduler;
-    return open({...options,settlement,candidate,enabled:true});
+    const pin=active()?.enginePin;
+    let selected=candidate;
+    if(pin&&pin.sourceDigest!==candidate.sourceDigest){
+      if(!/^[a-f0-9]{64}$/.test(pin.sourceDigest))throw new Error('赛程内核签名无效');
+      selected={...pin,accepted:true,bundleDirectory:path.join(root,pin.sourceDigest)};
+      await loadEngineBundle(selected.bundleDirectory,selected);
+    }
+    return open({...options,settlement,candidate:selected,enabled:true});
   }
+  const awaitingCleanup=new Map();
+  for(const round of completedRounds(service.state)){
+    if(round.seasonId===service.state.season.id)awaitingCleanup.set(round.key,round);
+  }
+  for(const season of new Set(completedRounds(service.state).map(r=>r.seasonId))){
+    if(season!==service.state.season.id)expireSeasonReplays(service,season);
+  }
+  async function finishArchives(){
+    for(const [key,round] of awaitingCleanup){
+      await compactRound(root,service,round);
+      awaitingCleanup.delete(key);
+    }
+  }
+  await finishArchives();
   const interrupted=active();
   if(interrupted){
     await (await scheduler(interrupted.competition??'league')).recover();
@@ -87,7 +110,17 @@ export async function openFormalSchedule({service,createService,rooms,getCatalog
       if(!request.eventId)return false;
     }else request.roundNumber=record?.number??service.state.season.currentRound+1;
     const selected=await scheduler(kind);
-    const result=await selected.advance(request,{onRoundStarted:register});
+    await finishArchives();
+    let started=record;
+    const result=await selected.advance(request,{onRoundStarted:round=>{started=round;register(round);}});
+    if(result.complete&&started){
+      const completed=completedRounds(service.state).find(r=>r.key===started.key);
+      if(completed){
+        await preview.finishRound(completed,service.state.matches);
+        awaitingCleanup.set(completed.key,completed);
+        await finishArchives();
+      }
+    }
     waitingUntil=result.pendingReleaseAt??0;
     return {...result,productionEnabled:true};
   }

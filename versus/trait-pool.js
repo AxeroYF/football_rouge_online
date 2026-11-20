@@ -37,7 +37,7 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
     source:"ydl-custom",
     developerLabel:"YDL自定义正式卡",
   }),
-  versusTrait("aerial-beacon", "身高+20cm，获得ST位置熟练度，头球能力提升。", [
+  versusTrait("aerial-beacon", "身高+20cm，获得ST位置熟练度，头球和弹跳各提升5点。", [
     { hook: "height", addCm: 20 },
     { hook: "position", familiarRoles: ["ST"] },
     { hook: "attribute", add: { heading: 5, jumping: 5 } },
@@ -54,14 +54,14 @@ const VERSUS_ADAPTED_TRAIT_CARDS = Object.freeze([
   versusTrait("rain-boots", "该球员在雨天、雷暴、雪天比赛时，综合能力值提升12%。", [
     { hook: "allAttributes", multiply: 1.12, when: { weather: ["rain", "storm", "snow"] } },
   ], { name: "反向晴天娃娃" }),
-  versusTrait("sweeper-keeper", "该球员在比赛第60分钟后，综合能力值提升10%。", [
+  versusTrait("sweeper-keeper", "比赛计时达到60分钟时，该球员综合能力提升10%。", [
     { hook: "allAttributes", multiply: 1.1, when: { minuteGte: 60 } },
   ], { name: "本质大心脏" }),
   versusTrait("lone-finisher", "该球员可以适配任何国家队或俱乐部羁绊。", [
     { hook: "affinityWildcard", nationality: true, club: true },
   ], { name: "变色龙" }),
-  versusTrait("big-stage", "该球员造点球的概率提升。", [
-    { hook: "penaltyDraw", foulMultiplier: 1.35, penaltyMultiplier: 1.75 },
+  versusTrait("big-stage", "更容易制造犯规和点球。在对方禁区内遭遇出脚但未获点球时，有10%概率因假摔吃黄牌。", [
+    { hook: "penaltyDraw", foulMultiplier: 1.35, penaltyMultiplier: 1.75, simulationYellowChance: 0.1 },
   ], { name: "跳水王子" }),
   versusTrait("opening-sprint", "该球员所在球队使用伐木战术时，综合能力提升10%。", [
     { hook: "allAttributes", multiply: 1.1, when: { teamStyle: "roughPlay" } },
@@ -122,9 +122,10 @@ const YDL_CUSTOM_TRAIT_CARDS = Object.freeze([
     eligibleRoleGroups:Object.freeze(["ANY"]),
     tags:Object.freeze(["scoreState", "tradeoff"]),
     polarity:"mixed",
-    summary:"球队领先的时候综合能力提升10%，落后时不受减益影响",
+    summary:"球队领先时全属性提升10%，落后时降低15%，平局时恢复正常。",
     rules:Object.freeze([
       Object.freeze({ hook:"allAttributes", multiply:1.1, when:Object.freeze({ scoreState:"leading" }) }),
+      Object.freeze({ hook:"allAttributes", multiply:0.85, when:Object.freeze({ scoreState:"trailing" }) }),
     ]),
     dropWeight:1,
     maxLevel:1,
@@ -182,8 +183,40 @@ const YDL_CUSTOM_TRAIT_CARDS = Object.freeze([
   }),
 ]);
 
+const spiritPossession = {
+  id:"spirit-possession", name:"请神上身", rarity:"legendary", category:"custom",
+  eligibleRoleGroups:["ANY"], tags:["prematch"], polarity:"mixed",
+  summary:"开赛前随机化身一名 +4 的 S 级球员，位置不限，持续整场。比赛数据归原球员。",
+  rules:[{hook:"spiritPossession"}], dropWeight:1, maxLevel:1,
+  mode:"versus11", source:"ydl-custom", developerLabel:"YDL自定义正式卡",
+};
+
+const matchTraitCards = [
+  {id:"all-in-gamble",name:"梭哈是一种智慧",rarity:"rare",
+    summary:"开赛时各有50%概率使自身全属性提升或降低8%，结果维持至终场。",
+    rules:[{hook:"allInGamble",winMultiply:1.08,loseMultiply:0.92}]},
+  {id:"sponsor-entry",name:"带资进组",rarity:"epic",
+    summary:"正式联赛或冠军杯首发时，自身全属性降低10%。完赛每人赞助：B级500、A级750，杯赛十六强至决赛依次1800、2000、2500、3000金币。多人可叠加。",
+    rules:[{hook:"sponsorEntry",multiply:0.9}]},
+  {id:"high-press-hound",name:"疯狗来了",rarity:"rare",eligibleRoleGroups:["ATT","MID"],polarity:"positive",
+    summary:"高位压迫时抢断、速度、投入和耐力各加6点。切换打法时随之生效或解除。",
+    rules:[{hook:"attribute",when:{teamStyle:"highPress"},add:{tackling:6,pace:6,workRate:6,stamina:6}}]},
+  {id:"overtime-grinder",name:"卷王来了",rarity:"epic",polarity:"positive",
+    summary:"进入加时或点球大战后，首次在场时体能恢复至100；决胜阶段射门、冷静各加6点，门将扑救、反应也各加6点。",
+    rules:[{hook:"extraTimeRecovery",when:{inExtraOrShootout:true}},
+      {hook:"attribute",when:{inExtraOrShootout:true},add:{finishing:6,composure:6}},
+      {hook:"attribute",when:{inExtraOrShootout:true,activeRole:"GK"},add:{goalkeeping:6,reflexes:6}}]},
+  {id:"captain-boss",name:"队霸来了",rarity:"epic",polarity:"positive",
+    summary:"担任在场队长时，队长风格对全队的战术加成和纪律修正幅度翻倍。",
+    rules:[{hook:"captainAmplify",multiplier:2}]},
+  {id:"nine-dragons-coffin",name:"九龙拉棺",rarity:"legendary",
+    summary:"每队每场限一人，在场期间体能锁定100，全属性提升5%。正式联赛或冠军杯正常完赛后，本体卡基础总评永久降低1点，最低50。",
+    rules:[{hook:"nineDragonsCoffin",multiply:1.05}]},
+].map(card=>({category:"custom",eligibleRoleGroups:["ANY"],tags:["match"],polarity:"mixed",...card,
+  dropWeight:1,maxLevel:1,mode:"versus11",source:"ydl-custom",developerLabel:"YDL自定义正式卡"}));
+
 export const VERSUS_TRAIT_CARDS = Object.freeze(
-  [...VERSUS_ADAPTED_TRAIT_CARDS, ...VERSUS_NEW_TRAIT_BATCH, ...YDL_CUSTOM_TRAIT_CARDS].map((trait) => structuredClone(trait)),
+  [...VERSUS_ADAPTED_TRAIT_CARDS, ...VERSUS_NEW_TRAIT_BATCH, ...YDL_CUSTOM_TRAIT_CARDS, spiritPossession, ...matchTraitCards].map((trait) => structuredClone(trait)),
 );
 export { VERSUS_ADAPTED_TRAIT_CARDS, VERSUS_NEW_TRAIT_BATCH };
 
@@ -210,6 +243,8 @@ export const YDL_TRAIT_IDS = Object.freeze([
   "custom-dc038995-c237-4fa4-b29a-b0e5abf0921a",
   "custom-6d0bf2ee-2d26-4f56-9cb7-4c50960df85d",
   "custom-3b12d163-d3d9-47df-b6b7-e1d124abcb62",
+  "spirit-possession",
+  ...matchTraitCards.map(card=>card.id),
 ]);
 export const YDL_TRAIT_CARDS = Object.freeze(YDL_TRAIT_IDS.map((id) => VERSUS_TRAIT_BY_ID[id]));
 export const YDL_TRAIT_BY_ID = Object.freeze(Object.fromEntries(YDL_TRAIT_CARDS.map((trait) => [trait.id, trait])));

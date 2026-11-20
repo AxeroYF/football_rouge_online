@@ -78,7 +78,9 @@
 
 /* Accessibility: Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  :where(:not(html[data-ui-motion="on"] .fusion-workspace *)),
+  :where(:not(html[data-ui-motion="on"] .fusion-workspace *))::before,
+  :where(:not(html[data-ui-motion="on"] .fusion-workspace *))::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;

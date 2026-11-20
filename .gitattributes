@@ -6,3 +6,11 @@
 reference/** -text -whitespace
 versus/public/assets/card-frames/shield-v1/** -text -whitespace
 versus/public/pack-opening-meteors.js -text -whitespace
+
+# Scheduled V4 bundles verify the exact checkout bytes on every platform.
+versus/v4/*.js text eol=lf
+versus/public/bond-rules.js text eol=crlf
+versus/public/spirit-form.js text eol=crlf
+versus/public/tactical-bonds.js text eol=lf
+versus/public/v2-tactical-profiles.js text eol=crlf
+versus/v4/kickoff-traits.js text eol=crlf

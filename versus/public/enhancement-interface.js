@@ -19,9 +19,8 @@ export function modernEnhancementMarkup(classicMarkup, {result, pendingTrait, hi
   const hasResult = Boolean(result || pendingTrait);
   const outcome = result ? result.success ? 'success' : 'failure' : 'pending';
   const status = pendingTrait ? '选择强化特性' : hasResult ? '' : /不足|上限|不能高于|失败可能降级/.test(hint) ? hint : '';
-  const particles = Array.from({length:12}, (_, i) => `<span style="--dust-x:${8 + i * 7.4}%;--dust-y:${20 + (i * 17) % 70}%;--dust-delay:${-i * 1.7}s;--dust-duration:${11 + i % 5}s"></span>`).join('');
   return `<section class="${source.className} fusion-workspace ${hasResult ? 'has-result' : ''} ${skipped ? 'fusion-motion-skipped' : ''}" data-fusion-outcome="${outcome}" data-fusion-tier="${Number(result?.afterLevel ?? 0) >= 4 ? 'high' : 'normal'}">
-    <div class="fusion-atmosphere" aria-hidden="true"><i></i><i></i><i></i>${particles}</div>
+    <div class="fusion-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
     <section class="fusion-stage" aria-label="合卡舞台">
       <header class="fusion-heading"><h2>球员合成</h2><div class="fusion-heading-actions"><button type="button" data-enhancement-history-open>合成记录</button><button type="button" data-fusion-settings>界面设置</button></div></header>
       <div class="fusion-duel">
@@ -44,6 +43,7 @@ export function modernEnhancementMarkup(classicMarkup, {result, pendingTrait, hi
 // a card does not collapse the drawer. The hidden content is not keyboard-focusable.
 export function createFusionWarehouseController(env = globalThis) {
   let root = null, drawer = null, open = false, hovering = false, dragging = false, timer = null;
+  let openedByHover = false;
   const doc = env.document;
   function clear() { if (timer !== null) env.clearTimeout(timer); timer = null; }
   function sync() {
@@ -54,7 +54,7 @@ export function createFusionWarehouseController(env = globalThis) {
     const content = root.querySelector('.fusion-drawer-content');
     if (content) content.inert = !open;
   }
-  function setOpen(value) { clear(); open = value; sync(); }
+  function setOpen(value) { clear(); open = value; openedByHover = false; sync(); }
   function close() { setOpen(false); }
   function focusNeedsDrawer() {
     const active = doc?.activeElement;
@@ -66,7 +66,14 @@ export function createFusionWarehouseController(env = globalThis) {
     timer = env.setTimeout(() => { timer = null; if (!hovering && !dragging && !focusNeedsDrawer()) close(); }, 180);
   }
   const canHover = () => env.matchMedia?.('(min-width: 1051px) and (hover: hover) and (pointer: fine)')?.matches ?? true;
-  function enter(event) { if (event.pointerType === 'touch' || !canHover()) return; hovering = true; setOpen(true); }
+  function enter(event) {
+    if (event.pointerType === 'touch' || !canHover()) return;
+    hovering = true;
+    if (!open) {
+      setOpen(true);
+      openedByHover = true;
+    }
+  }
   function leave(event) { if (event.pointerType === 'touch' || !canHover()) return; hovering = false; scheduleClose(); }
   function focusIn(event) { if (!event.target.matches('[data-fusion-drawer-toggle]')) setOpen(true); }
   function focusOut(event) {
@@ -75,7 +82,10 @@ export function createFusionWarehouseController(env = globalThis) {
     if (event.relatedTarget && !drawer.contains(event.relatedTarget) && !hovering && !dragging) scheduleClose();
   }
   function click(event) {
-    if (event.target.closest('[data-fusion-drawer-toggle]')) setOpen(!open);
+    if (event.target.closest('[data-fusion-drawer-toggle]')) {
+      // A mouse click can arrive immediately after the same pointer opened the drawer.
+      setOpen(!open || (event.detail > 0 && openedByHover));
+    }
     else if (event.target.closest('[data-fusion-open-warehouse]')) {
       setOpen(true);
       root.querySelector('.enhancement-tools input')?.focus({preventScroll:true});

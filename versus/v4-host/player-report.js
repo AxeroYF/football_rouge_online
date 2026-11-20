@@ -1,6 +1,8 @@
+import {publicMatchWeather,publicMatchReferee} from '../match-conditions.js';
 import {createHash} from 'node:crypto';
 import {analyzeElevenBoardFormation} from '../public/formation-rules.js';
 import {STEP,round} from '../v4/world.js';
+import {createMatchCommentary} from './match-commentary.js';
 import {createMatchMetrics,METRIC_DEFINITIONS} from './match-metrics.js';
 
 const digest=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -26,6 +28,7 @@ export function createPlayerReportLedger(input,engineVersion,saved=null){
   if(!Array.isArray(ledger.periodGoals)||ledger.periodGoals.length!==4||ledger.periodGoals.some(score=>!Array.isArray(score)||score.length!==2||score.some(n=>!Number.isSafeInteger(n)||n<0)))throw new Error('球员战报阶段比分无效');
   const actions=new Map(ledger.actions.map(a=>[a.id,a]));
   const metrics=createMatchMetrics(ledger.metrics);
+  const commentary=createMatchCommentary(ledger.commentary);
   const stats=key=>ledger.players[key],identity=key=>identities.get(key);
   function add(key,name,value=1){if(!stats(key))throw new Error('战报事件球员不在比赛名单');stats(key)[name]+=value;}
   function onTarget(action){if(action?.type==='shot'&&!action.onTarget){add(action.actor,'shotsOnTarget');action.onTarget=true;}}
@@ -36,14 +39,15 @@ export function createPlayerReportLedger(input,engineVersion,saved=null){
   }
   return {
     get cursor(){return ledger.cursor;},
-    consume(events){
+    consume(events,onGoal){
+      const goalCredits=new Map();
       for(const event of events){
         if(event.id!==ledger.cursor+1)throw new Error('球员战报事件重复或缺失');ledger.cursor=event.id;
         metrics.consume([event]);
         if(event.type==='shootoutStart')ledger.shootout=true;
         if(ledger.shootout)continue; // Shootout contacts do not become regular saves/goals.
         const actor=identity(event.actor),source=actions.get(event.decisionId);
-        if(actor&&event.bodyPart==='head'){
+        if(actor&&event.bodyPart==='head'&&event.type!=='goal'){
           add(event.actor,'headers');
           // A loose aerial rebound can retain the original decisionId. Only a
           // header whose incoming flight still names that passer completes or
@@ -62,12 +66,12 @@ export function createPlayerReportLedger(input,engineVersion,saved=null){
           if(event.type==='pass')ledger.lastPass[event.side]=null;
         }
         if(event.type==='receive'&&source?.type==='pass'&&actor?.side===source.side){add(source.actor,'completed');ledger.lastPass[actor.side]={from:source.actor,to:event.actor,at:event.time};}
-        const count={tackle:'tackles',interception:'interceptions',save:'saves',block:'blocks',deflection:'blocks',foul:'fouls',yellowCard:'yellowCards',redCard:'redCards',miscontrol:'miscontrols',secondBall:'secondBalls'}[event.type];
+        const count={tackle:'tackles',interception:'interceptions',save:'saves',block:'blocks',deflection:'blocks',foul:'fouls',yellowCard:'yellowCards',redCard:'redCards',miscontrol:'miscontrols',keeperSpill:'miscontrols',secondBall:'secondBalls'}[event.type];
         if(count)add(event.actor,count);
         if(event.type==='parry'){add(event.actor,'saves');add(event.actor,'parries');}
         if(['save','parry'].includes(event.type)&&source?.aimInside)onTarget(source);
-        if(['interception','tackle','save','parry','block','deflection','miscontrol','secondBall','stoppage','halfTime'].includes(event.type))ledger.lastPass=[null,null];
-        if(['save','parry','block','deflection','miscontrol','secondBall'].includes(event.type)&&source)source.assist=null;
+        if(['interception','tackle','save','parry','block','deflection','miscontrol','keeperSpill','secondBall','stoppage','halfTime'].includes(event.type))ledger.lastPass=[null,null];
+        if(['save','parry','block','deflection','miscontrol','keeperSpill','secondBall'].includes(event.type)&&source)source.assist=null;
         if(event.type==='transition'){
           const old=ledger.lastTransition;
           // prototype.8 tests tackles at raw step-start + STEP, while contact
@@ -85,23 +89,30 @@ export function createPlayerReportLedger(input,engineVersion,saved=null){
           if(![1,2,3,4].includes(event.clock.period)||![0,1].includes(event.scoringSide))throw new Error('进球阶段或得分方无效');
           ledger.periodGoals[event.clock.period-1][event.scoringSide]++;
           if(event.ownGoal)add(event.actor,'ownGoals');else {add(event.actor,'goals');onTarget(source);if(source?.assist)add(source.assist,'assists');}
-          important(event,'goal',{teamIndex:event.scoringSide,ownGoal:Boolean(event.ownGoal),assistId:!event.ownGoal?identity(source?.assist)?.id??null:null});ledger.lastPass=[null,null];
+          const assistId=!event.ownGoal?identity(source?.assist)?.id??null:null;
+          important(event,'goal',{teamIndex:event.scoringSide,ownGoal:Boolean(event.ownGoal),assistId});
+          goalCredits.set(event.id,assistId);
+          onGoal?.(event,assistId);
+          ledger.lastPass=[null,null];
         }
         if(event.type==='foul'&&event.foul.penalty){add(event.victim,'penaltiesWon');important(event,'penaltyAwarded',{opponentId:identity(event.victim)?.id});}
         if(event.type==='yellowCard'||event.type==='redCard')important(event,event.type==='yellowCard'?'yellow':'red');
-        if(event.type==='injury'||event.type==='substitution')important(event,event.type,{outgoingId:identity(event.outgoing)?.id??null});
+        if(['injury','substitution','replacementUnavailable','emergencyKeeper'].includes(event.type))important(event,event.type,{outgoingId:identity(event.outgoing)?.id??null});
         for(const [id,action] of actions)if(event.time-action.at>30)actions.delete(id);
         if(actions.size>256)throw new Error('球员战报因果缓存超过上限');
       }
+      const plays=goalCredits.size ? events.map(e=>goalCredits.has(e.id)?{...e,assistId:goalCredits.get(e.id)}:e) : events;
+      commentary.consume(plays,input.teams);
     },
-    checkpoint(){return copy({...ledger,metrics:metrics.checkpoint(),actions:[...actions.values()]});},
+    checkpoint(){return copy({...ledger,commentary:commentary.state,metrics:metrics.checkpoint(),actions:[...actions.values()]});},
     finish(state){
       if(state.phase!=='finished'||state.abandoned||state.clock.mode!=='full'||state.version!==engineVersion||digest({engineVersion,input:state.input})!==fingerprint||state.nextEventId-1!==ledger.cursor)throw new Error('战报尚未完整或比赛不可正常结算');
       const teams=input.teams.map((team,side)=>{
         const played=state.players.filter(p=>p.side===side&&p.status!=='bench'),positions=Object.fromEntries(played.map(p=>[p.id,position(p)]));
-        const players=played.map(p=>{const s=copy(stats(p.key));return {id:p.id,name:p.name,role:p.sourceRole??p.role,assignedRole:p.sourceRole??p.role,secondaryRole:p.secondaryRole,overall:p.overall,
+        const players=played.map(p=>{const s=copy(stats(p.key));return {id:p.id,name:p.name,grade:p.grade??p.sourceCard?.grade,upgradeLevel:p.upgradeLevel,club:p.club,nationality:p.nationality,...(p.spiritForm ? {spiritForm:copy(p.spiritForm),upgradeLevel:4,grade:"S"} : {}),role:p.sourceRole??p.role,assignedRole:p.sourceRole??p.role,secondaryRole:p.secondaryRole,overall:p.overall,
           position:positions[p.id],fitness:Number(p.fitness.toFixed(1)),active:p.active,sentOff:p.status==='sentOff',injury:copy(p.injury??null),captain:p.id===team.captainId,
-          startedMatch:team.players.some(q=>q.id===p.id),enteredAsSubstitute:Number.isFinite(p.enteredAt),substitutedOut:['substituted','injured'].includes(p.status),substitutedForId:identity(p.substitutedFor)?.id??null,
+          ...(p.nineDragonsActive ? {nineDragonsActive:true,matchCardId:p.matchCardId} : {}),
+          ...(p.sponsorEntry ? {sponsorEntry:true} : {}),startedMatch:team.players.some(q=>q.id===p.id),enteredAsSubstitute:Number.isFinite(p.enteredAt),substitutedOut:['substituted','injured'].includes(p.status),substitutedForId:identity(p.substitutedFor)?.id??null,
           rating:legacyScaleRating(s),stats:s,traits:(p.traitDefinitions??[]).map(t=>({id:t.id,name:t.name}))};});
         const sum=name=>players.reduce((n,p)=>n+p.stats[name],0);
         for(const name of ['passes','completed','shots','interceptions','tackles','fouls','yellowCards','redCards','headers','crosses','secondBalls'])if(sum(name)!==state.stats[side][name])throw new Error(`球员统计与球队统计不一致：${side}/${name}`);
@@ -115,8 +126,11 @@ export function createPlayerReportLedger(input,engineVersion,saved=null){
       for(const team of teams){team.stats.possessionSeconds=team.stats.possession;team.stats.possession=possessionTotal?Number((team.stats.possession/possessionTotal*100).toFixed(1)):null;}
       const periodScore=count=>[0,1].map(side=>ledger.periodGoals.slice(0,count).reduce((n,score)=>n+score[side],0));
       if(periodScore(4).some((n,side)=>n!==state.score[side]))throw new Error('阶段比分与完场比分不一致');
-      return {schema:'v4-legacy-player-report-1',engineVersion,engineProfile:'v4-spatial',fixtureId:input.fixtureId??null,inputFingerprint:fingerprint,
-        score:[...state.score],penalties:state.shootout?[...state.shootout.score]:null,winnerIndex:state.result?.winner??null,teams,importantEvents:[...metrics.view().events.map(e=>({...e,...ledger.importantEvents.find(row=>row.id===e.id)})),...ledger.importantEvents.filter(e=>!metrics.view().events.some(row=>row.id===e.id))].sort((a,b)=>a.minute-b.minute),
+      const important=new Map(metrics.view().events.map(e=>[e.id,e]));
+      for(const e of ledger.importantEvents)important.set(e.id,{...important.get(e.id),...e});
+      const rendered=commentary.feed(important.values()).filter(e=>important.has(e.id)||e.importance==='major');
+      return {schema:'v4-legacy-player-report-1',weather:publicMatchWeather(input.environment),referee:publicMatchReferee(input.environment),...(state.weatherStopped!=null?{abandoned:true,abandonmentReason:'superStorm',stoppedAtMinute:state.weatherStopped}:{}),engineVersion,engineProfile:'v4-spatial',fixtureId:input.fixtureId??null,inputFingerprint:fingerprint,
+        score:[...state.score],penalties:state.shootout?[...state.shootout.score]:null,winnerIndex:state.result?.winner??null,teams,importantEvents:rendered,
         halfTimeScore:periodScore(1),regulationScore:periodScore(2),extraTimeScore:state.clock.completed.length===4?ledger.periodGoals[2].map((n,side)=>n+ledger.periodGoals[3][side]):null,
         aggregateBaseScore:copy(input.competition.aggregate),aggregateScore:copy(state.result?.aggregate??null),
         extraTimePlayed:state.clock.completed.length===4,penaltyShootout:copy(state.shootout),settlementAllowed:false,

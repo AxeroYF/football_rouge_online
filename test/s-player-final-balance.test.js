@@ -11,6 +11,7 @@ import {S_FINAL_CHARACTER} from '../devtool/s-player-final-profiles.js';
 import {startLocalServer} from './helpers/local-server.js';
 const read=f=>JSON.parse(fs.readFileSync(new URL(f,import.meta.url),'utf8'));
 const ledger=read('../data/player-balance-s-final-20261116.json'),aLedger=read('../data/player-balance-a-20261116.json');
+const moved=new Map(read('../data/player-balance-bc-transfers-20261119.json').transfers.map(row=>[row.id,row.club]));
 const live=new URL('../data/ydl-content-overrides.json',import.meta.url),bytes=fs.readFileSync(live),digest=b=>createHash('sha256').update(b).digest('hex'),hash=digest(bytes);
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'yffm-s-final-')),content=path.join(dir,'content.json');fs.writeFileSync(content,bytes);
 process.env.YDL_CONTENT_OVERRIDES_PATH=content;process.env.YDL_PLAYER_CARD_STUDIO_PATH=path.join(dir,'studio.json');
@@ -21,7 +22,8 @@ test('all 70 scoped profiles load exact final values, with 41 character revision
  assert.equal(ledger.players.filter(p=>p.preserveNoncore).length,29);assert.equal(Object.keys(S_FINAL_CHARACTER).length,41);
  let inc=0,dec=0,changed=0;
  for(const row of ledger.players){const p=REAL_PLAYER_BY_ID[row.id];assert.equal(p.overall,row.overall);assert.equal(p.baseOverall,row.overall);assert.equal(playerOverallFromAttributes(p.attributes,p.role),row.overall);assert.deepEqual(p.attributes,row.after);
-  for(const k of ['grade','role','secondaryRole','nationality','club'])assert.equal(p[k],row[k]);
+  for(const k of ['grade','role','secondaryRole','nationality'])assert.equal(p[k],row[k]);
+  assert.equal(p.club,moved.get(p.id)??row.club);
   for(const k of keys){assert.ok(Number.isInteger(p.attributes[k])&&p.attributes[k]>=1&&p.attributes[k]<=96);if(row.after[k]>row.before[k])inc++;if(row.after[k]<row.before[k])dec++;if(row.preserveNoncore&&!core[roleGroup(p.role)].includes(k))assert.equal(row.after[k],row.before[k]);}
   if(row.changed)changed++;
   for(const level of [0,4,8]){const q=applyS4Enhancement(p,level),bonus=s4EnhancementAbilityBonus(level);assert.equal(q.overall,row.overall+bonus);for(const k of keys)assert.equal(q.attributes[k],Math.min(99,row.after[k]+bonus));}

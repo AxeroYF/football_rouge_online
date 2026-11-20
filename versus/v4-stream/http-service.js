@@ -18,7 +18,7 @@ export function createStreamService({authorize,now=Date.now,maxMatches=16,maxCli
     unregister(matchId){matches.delete(matchId);},
     async handle(req,res){
       const url=new URL(req.url,'http://localhost');
-      const route=/^\/v4\/matches\/([a-zA-Z0-9_-]{1,100})\/(head|broadcast|segments\/(\d{1,6}))$/.exec(url.pathname);
+      const route=/^\/v4\/matches\/([a-zA-Z0-9_-]{1,100})\/(head|scoreboard|broadcast|segments\/(\d{1,6}))$/.exec(url.pathname);
       if(!route)return false;
       if(req.method!=='GET'){send(res,405,{error:'只允许读取'});return true;}
       // Owner identity, release time and simulation speed are never URL knobs.
@@ -35,9 +35,12 @@ export function createStreamService({authorize,now=Date.now,maxMatches=16,maxCli
         const archive=matches.get(route[1]);if(!archive){send(res,404,{error:'比赛暂不可用'});return true;}
         if(lifecycle)release=await lifecycle.acquire(route[1]);
         await archive.refresh({snapshot:false});
-        if(route[2]==='broadcast'){
+        if(route[2]==='broadcast'||route[2]==='scoreboard'){
           if(typeof archive.broadcast!=='function')send(res,404,{error:'本场暂无直播摘要'});
-          else send(res,200,await archive.broadcast(),/\bgzip\b/.test(req.headers['accept-encoding']??''));
+          else if(route[2]==='scoreboard'){
+            const {match}=await archive.broadcast();
+            send(res,200,{score:match.score,minute:match.minute});
+          }else send(res,200,await archive.broadcast(),/\bgzip\b/.test(req.headers['accept-encoding']??''));
         }else if(route[2]==='head'){
           let head;
           if(typeof archive.publishedHead==='function')head=archive.publishedHead();

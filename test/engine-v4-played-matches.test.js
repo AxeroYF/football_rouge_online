@@ -64,18 +64,28 @@ test('AI training produces a V4 report from the account lineup',()=>{
 
 test('interactive V4 match keeps score, next tick and report across JSON reload and tactical pause',()=>{
   const {seats,matchOptions}=setup();
+  const bond='club:巴塞罗那';
+  for(const plan of Object.values(seats[0].tacticalPlans)){plan.possessionStyle='possession';plan.bondIds=[bond];}
+  seats[0].tacticalPlans.leading.possessionStyle='vertical';
+  for(const p of seats[0].players)p.club='巴塞罗那';
   const match=createLiveV4Match(seats,{...matchOptions,duration:120});
+  assert.ok(match.spatial.state.activeBonds[0].some(b=>b.id===bond));
   advanceLiveV4Match(match,1500);
   const before=match.nextChainIndex;
   requestTacticalPause(match,0,1500,advanceLiveV4Match);
+  adjustLiveV4Tactics(match,0,{tactic:match.teams[0].tactic,style:match.teams[0].style,positions:match.teams[0].positions});
+  assert.equal(match.spatial.state.input.teams[0].sourcePlans.leading.possessionStyle,'vertical');
+  assert.ok(match.spatial.state.activeBonds[0].some(b=>b.id===bond));
   adjustLiveV4Tactics(match,0,{tactic:'positive',style:'wingPlay',positions:match.teams[0].positions});
+  assert.equal(match.spatial.state.input.teams[0].sourcePlans.normal.bondIds,undefined);
+  assert.ok(!match.spatial.state.activeBonds[0].some(b=>b.id===bond));
   advanceLiveV4Match(match,2000);
   assert.equal(match.nextChainIndex,before);
   resumeVersusMatch(match,0,2200);resumeVersusMatch(match,1,2200);
   const reopened=JSON.parse(JSON.stringify(match));
   for(const m of [match,reopened])advanceLiveV4Match(m,100000);
   assert.deepEqual(reopened.report,match.report);
-  assert.equal(match.report.tacticalChanges.length,1);
+  assert.equal(match.report.tacticalChanges.length,2);
   assert.equal(publicLiveV4Match(match,100000,0,false).teams[1].style,null);
 });
 

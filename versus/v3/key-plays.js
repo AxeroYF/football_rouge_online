@@ -1,5 +1,5 @@
 // Presentation-only observer. Never samples randomness or writes simulation state.
-const SHOTS = new Set(['goal', 'save', 'miss', 'block']);
+import {isGoalEvent} from '../public/goal-event.js';
 const UNSUPPORTED = new Set(['penalty', 'setPiece', 'freeKick', 'rebound']);
 const point = p => ({x:Number(p.x), y:Number(p.y)});
 
@@ -14,20 +14,19 @@ export function recordKeyPlays(match, frames, events) {
   const last = frames.at(-1);
   if (!['shoot', 'longShot'].includes(last.type) || !last.success) return;
   for (const event of events) {
-    if (!SHOTS.has(event.type) || UNSUPPORTED.has(event.attackType)) continue;
+    if (!isGoalEvent(event) || UNSUPPORTED.has(event.attackType)) continue;
     const side = event.attackingTeamIndex ?? event.teamIndex;
-    const shooterId = ['save','block'].includes(event.type) ? event.opponentId : event.actorId;
+    const shooterId = event.actorId;
     // Crosses can select a different shooter during resolution. Until that touch
     // is recorded, show the event/card celebration rather than invent a pass.
     if (side !== last.teamIndex || shooterId !== last.toPlayerId) continue;
-    if (event.type !== 'goal' && Number(event.xg) < .12) continue;
     const actions = frames.slice(-5);
     if (!actions.every(a => a.fromPlayerId && a.toPlayerId && a.before.length && a.after.length)) continue;
     const clip = {
       version:1, id:`play-${event.id}`, eventId:event.id, minute:event.minute,
       period:last.period, teamIndex:side, type:event.type, actorId:shooterId,
       zone:event.zone ?? null, attackType:event.attackType ?? null,
-      assistId:event.assistId ?? null, defenderId:['save','block'].includes(event.type) ? event.actorId : event.opponentId ?? null,
+      assistId:event.assistId ?? null, defenderId:event.opponentId ?? null,
       xg:event.xg, score:[...match.teams.map(t=>t.score)], actions,
     };
     (match.keyPlays ??= []).push(clip);

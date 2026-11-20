@@ -68,6 +68,30 @@ function playerMetric(player, name) {
   return Object.entries(weights).reduce((sum, [key, weight]) => sum + Number(player.attributes?.[key] ?? player.overall ?? 60) * weight, 0);
 }
 
+// Each axis uses the same attribute weights as the tactical fit preview.
+export function playerTacticalRadar(player, role, duty, plan) {
+  const fit = positionFitScore(player, role);
+  const keeper = role === "GK";
+  const group = roleGroup(role);
+  const metric = key => playerMetric(player, key);
+  const roleMetric = {GK:"goalkeeping", DEF:"defensiveDuel", MID:"buildUp", ATT:"finishing"}[group];
+  const dutyScore = v2PlayerDutySuitability(player, role, duty, fit) ?? metric(roleMetric) * fit;
+  const distribution = {
+    possession:["短传组织", "buildUp"], vertical:["纵向推进", "progression"],
+    wingPlay:["边路创造", "chanceCreation"], longBall:["长传衔接", "buildUp"],
+  }[plan.possessionStyle] ?? ["组织推进", "progression"];
+  const defence = plan.defensiveBlock === "highPress" ? ["前场压迫","pressing"]
+    : plan.defensiveBlock === "lowBlock" ? ["低位保护","shotPrevention"] : ["防守对抗","defensiveDuel"];
+  const axes = [
+    ["位置适配", fit * 100], ["职责执行", dutyScore],
+    [distribution[0], metric(distribution[1])],
+    keeper ? ["门线扑救", metric("goalkeeping")] : [defence[0], metric(defence[1])],
+    keeper ? ["站位保护", metric("shotPrevention")] : ["无球跑动", metric("movement")],
+    ["抗压处理", metric("pressResistance")],
+  ];
+  return axes.map(([label,value]) => ({label, value:Math.round(clamp(value, 0, 100))}));
+}
+
 function squadMetric(entries, weights) {
   if (!entries.length) return 55;
   return average(entries.map((player) => Object.entries(weights).reduce((sum, [name, weight]) => sum + playerMetric(player, name) * weight, 0)));

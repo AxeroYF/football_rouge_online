@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ATTRIBUTE_NAMES } from "../shared/football/schema.js";
-import { V2_PLAYER_DUTY_OPTIONS, v2PlayerDutyOptionsForRole } from "../versus/public/v2-player-duty-options.js";
+import { dutyFieldPosition, V2_PLAYER_DUTY_OPTIONS, v2PlayerDutyOptionsForRole } from "../versus/public/v2-player-duty-options.js";
 import { buildV21DynamicTeamShape } from "../versus/v2/dynamic-shape-v2.js";
 import { advanceV2Match, createV2Match, publicV2Match, v2SelectSetPieceTaker } from "../versus/v2/match-engine-v2.js";
 import { resolveV2MatchParameters } from "../versus/v2/match-parameters-v2.js";
@@ -14,6 +14,19 @@ import {
 } from "../versus/v2/player-duties-v2.js";
 import { simulateV2PossessionChain } from "../versus/v2/possession-chain-v2.js";
 import { resolveV2TacticalDimensions } from "../versus/v2/spatial-model-v2.js";
+
+test("场上位置由当前识别区域和兼容职责共同决定", () => {
+  for (const [role, duty, expected] of [
+    ["LB", "overlappingFullback", "LWB"], ["RB", "overlappingFullback", "RWB"],
+    ["LWB", "overlappingFullback", "LWB"], ["RWB", "holdingFullback", "RB"],
+    ["ST", "deepLyingForward", "CF"], ["AM", "shadowStriker", "SS"],
+    ["DM", "anchor", "CDM"], ["LW", "bylineWinger", "LW"],
+    ["CB", "overlappingFullback", "CB"], ["GK", "anchor", "GK"],
+    ["LB", "", "LB"], ["LB", "obsoleteDuty", "LB"], ["lb", null, "LB"],
+  ]) {
+    assert.equal(dutyFieldPosition(role, duty), expected);
+  }
+});
 
 const LAYOUT = Object.freeze([
   ["GK", 50, 90],

@@ -4,6 +4,12 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {shieldCardContent} from '../versus/public/player-card-shield.js';
 import {cardFlagUrl,cardClubBadgeUrl} from '../versus/public/card-identities.js';
+import {REAL_PLAYER_BY_ID} from '../versus/player-pool.js';
+import {A_PLAYER_PROFILE_BY_PLAYER_ID} from '../versus/public/a-player-profiles.js';
+import {LEGENDARY_PROFILE_BY_PLAYER_ID} from '../versus/public/legendary-profiles.js';
+import {createBroadcastSummary} from '../versus/v4-host/broadcast-summary.js';
+import {spectatorCardPlayer} from '../versus/public/spirit-form.js';
+import {demoInput} from '../versus/v4/fixtures.js';
 
 const root = new URL('../', import.meta.url);
 const esc = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
@@ -56,6 +62,39 @@ test('local portrait profile and loading preference reach the shield without pro
   assert.match(lazy,/data-player-card-art src="\/versus\/assets\/portrait.webp"[^>]*loading="lazy"/);
   assert.doesNotMatch(lazy,/fetchpriority="high"|<canvas/);
   assert.match(render(player),/data-player-card-art[^>]*loading="eager"/);
+});
+
+test('直播从球员 ID 恢复已有卡画，双方、替补及请神卡使用对应的手调定位',async t=>{
+  const input=demoInput();
+  const id='s4-fc26-201024',owner=REAL_PLAYER_BY_ID[id];
+  const previous=owner.cardProfile;
+  t.after(()=>{if(previous)owner.cardProfile=previous;else delete owner.cardProfile;});
+  const profile={imageUrl:'/versus/player_profiles/webp/fixture.webp?v=2',xPercent:40.2,yPercent:93,widthPercent:108};
+  owner.cardProfile={...profile,sourceFileName:'studio-source.png'};
+  Object.assign(input.teams[0].players[0],{id,grade:'B'});
+  input.teams[1].bench=[{...input.teams[1].players[1],id,grade:'B'}];
+  const oldId=Object.keys(A_PLAYER_PROFILE_BY_PLAYER_ID).find(key=>!REAL_PLAYER_BY_ID[key]?.cardProfile);
+  Object.assign(input.teams[1].players[0],{id:oldId,grade:'C'});
+  const legendId=Object.keys(LEGENDARY_PROFILE_BY_PLAYER_ID).find(key=>!REAL_PLAYER_BY_ID[key]?.cardProfile);
+  input.teams[1].players[1].spiritForm={id:legendId,name:'请神形态',role:'ST'};
+  input.teams[1].players[1].cardProfile=profile;
+  const summary=createBroadcastSummary(input);
+  const read=async()=> (await summary(null,{segments:[]})).match.teams;
+  const teams=await read();
+  for(const player of [teams[0].players[0],teams[1].players.at(-1)]){
+    assert.deepEqual(player.cardProfile,profile);
+    const html=render(player);
+    assert.match(html,/data-player-card-art src="\/versus\/player_profiles\/webp\/fixture.webp\?v=2"/);
+    assert.match(html,/--profile-x:40.2%;--profile-y:93%;--profile-width:108%/);
+  }
+  const spirit=spectatorCardPlayer(teams[1].players[1]);
+  assert.equal(spirit.id,legendId);
+  assert.equal(spirit.cardProfile.imageUrl,LEGENDARY_PROFILE_BY_PLAYER_ID[legendId].imageUrl);
+  assert.equal(teams[1].players[0].cardProfile.imageUrl,A_PLAYER_PROFILE_BY_PLAYER_ID[oldId].imageUrl);
+  assert.equal(teams[1].players[0].grade,'C');
+  owner.cardProfile={...profile,xPercent:45};
+  assert.equal((await read())[0].players[0].cardProfile.xPercent,45);
+  assert.equal(input.teams[0].players[0].cardProfile,undefined);
 });
 
 test('unknown identities fall back to text; all resolved URLs point at existing local assets',()=>{

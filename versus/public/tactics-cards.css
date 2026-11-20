@@ -1,7 +1,7 @@
 /* Rougelite's mini shields, without the removed fit scores or fit colours. */
-#league-tactics-pitch{container-type:inline-size}
+#league-tactics-pitch,.league-public-pitch{container-type:inline-size;--tactics-card-width:clamp(38px,11.5cqw,99px)}
 #league-squad-form .league-board-panel>.pitch:not(.is-tactical-shape-previewing) .league-squad-magnet.is-card-mode,
-.league-field-drag-ghost.is-card-mode{--tactics-card-width:clamp(58px,13.5cqw,110px);width:var(--tactics-card-width);height:auto;min-height:0;padding:0;aspect-ratio:26/35;display:block;border:0;border-radius:0;background:none;box-shadow:none;transform:translate(-50%,calc(32px - 100%))}
+.league-field-drag-ghost.is-card-mode{width:var(--tactics-card-width);height:auto;min-height:0;padding:0;aspect-ratio:26/35;display:block;border:0;border-radius:0;background:none;box-shadow:none;transform:translate(-50%,calc(32px - 100%))}
 .league-squad-magnet.is-card-mode::before,.league-squad-magnet.is-card-mode::after{display:none!important}
 .league-squad-magnet.is-card-mode>.league-magnet-card{position:relative;width:100%;pointer-events:none;user-select:none}
 .league-magnet-card>.s4-player-card.ydl-player-card.tactics-shield-card{width:100%;height:auto;pointer-events:none;cursor:inherit}
@@ -20,8 +20,14 @@
 .league-squad-magnet.is-card-mode:is(:hover,:focus,.dragging,.swap-target,.role-swap-primary,.role-swap-secondary,:focus-visible)>.league-magnet-card{filter:drop-shadow(0 0 5px var(--tactics-card-highlight,#83bfff))}
 #league-tactics-pitch.is-tactical-shape-previewing .league-magnet-card{display:none}
 #league-squad-form .league-board-panel>.pitch.is-tactical-shape-previewing .league-squad-magnet.is-card-mode{width:30px;min-width:30px;height:30px;min-height:30px;padding:0;aspect-ratio:auto}
-.league-field-drag-ghost.is-card-mode{width:90px!important;min-height:0!important;height:auto!important;max-height:none!important;padding:0!important;border:0!important;background:none!important;outline:0!important;box-shadow:none!important;filter:none!important;transform:translate(-50%,-50%)!important}
+.league-field-drag-ghost.is-card-mode{width:81px!important;min-height:0!important;height:auto!important;max-height:none!important;padding:0!important;border:0!important;background:none!important;outline:0!important;box-shadow:none!important;filter:none!important;transform:translate(-50%,-50%)!important}
 .league-field-drag-ghost.is-card-mode>.league-magnet-role,.league-field-drag-ghost.is-card-mode>b,.league-field-drag-ghost.is-card-mode>i,.league-field-drag-ghost.is-card-mode>.league-magnet-upgrade{display:none}
 @media(min-width:2000px) and (min-height:1100px){#league-squad-form .league-board-panel>.pitch:not(.is-tactical-shape-previewing) .league-squad-magnet.is-card-mode{transform:translate(-50%,calc(44px - 100%))}}
 @media(min-width:1051px){#league-squad-form .league-board-panel>.pitch .league-squad-magnet.is-card-mode[data-assigned-role="GK"]>.league-magnet-role{top:-3px}}
-@media(max-width:1050px){#league-squad-form .league-board-panel>.pitch:not(.is-tactical-shape-previewing) .league-squad-magnet.is-card-mode{--tactics-card-width:clamp(48px,14cqw,90px);transform:translate(-50%,calc(21px - 100%))}#league-squad-form .league-board-panel>.pitch .league-squad-magnet.is-card-mode>.league-magnet-role{font-size:8px;top:-13px}}
+@media(max-width:1050px){#league-squad-form .league-board-panel>.pitch:not(.is-tactical-shape-previewing) .league-squad-magnet.is-card-mode{transform:translate(-50%,calc(21px - 100%))}#league-squad-form .league-board-panel>.pitch .league-squad-magnet.is-card-mode>.league-magnet-role{font-size:8px;top:-13px}}
+
+.league-public-pitch .league-public-magnet.is-card-mode{
+  width:var(--tactics-card-width);min-width:0;height:auto;min-height:0;padding:0;
+  aspect-ratio:26/35;border:0;border-radius:0;background:none;box-shadow:none
+}
+.league-public-magnet.is-card-mode>.league-magnet-fitness{left:9%;right:9%;bottom:-3px;height:3px}

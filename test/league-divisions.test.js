@@ -57,7 +57,14 @@ test('daily reset archives old division ranks, applies movement and rebuilds bot
 });
 
 test('16-team cup contains 29 matches across 7 events and no group stage',()=>{
- const s=service();s.startCup();assert.equal(s.state.cup.participants.length,16);assert.equal(s.state.cup.leagueRounds.length,0);
+ const s=service();
+ for (let index = 0; index < 16; index++) {
+   const owner = { id:`cup-owner-${index}`, nickname:`杯赛经理${index}` };
+   s.beginDraft(owner, `杯赛球队${index}`);
+   s.autoDraft(owner);
+   s.finishDraft(owner);
+ }
+ s.startCup();assert.equal(s.state.cup.participants.length,16);assert.equal(s.state.cup.leagueRounds.length,0);
  const events=[];let matches=0;
  while(s.state.cup.status!=='completed'){
   const e=s.state.cup.events.find(e=>e.status==='pending');assert.ok(e);events.push(e.stage+':'+e.leg);
@@ -66,6 +73,14 @@ test('16-team cup contains 29 matches across 7 events and no group stage',()=>{
   s.completeCupEvent(e);
   const count=s.state.cup.events.length;s.completeCupEvent(e);assert.equal(s.state.cup.events.length,count);
  }
+ const awards = s.state.ledger.filter(entry => entry.type === 'cup-pack-reward');
+ for (const [stage, packType, quantity] of [['roundOf16','public-random',1], ['quarterfinals','cup-private-position',1], ['semifinals','public-random',2]]) {
+   const winners = s.state.cup.knockout[stage].map(tie => s.state.teams.find(team => team.id === tie.winnerId).ownerId).sort();
+   const payments = awards.filter(entry => entry.stage === stage);
+   assert.deepEqual(payments.map(entry => entry.accountId).sort(), winners);
+   assert.ok(payments.every(entry => entry.packType === packType && entry.quantity === quantity));
+ }
+ assert.equal(awards.length, 16);
  assert.equal(matches,29);assert.deepEqual(events,['roundOf16:1','roundOf16:2','quarterfinals:1','quarterfinals:2','semifinals:1','semifinals:2','final:1']);
  assert.ok(s.state.cup.championId);assert.equal(s.state.cup.knockout.final[0].legs.length,1);
  assert.equal(s.ensureSeasonFinalTournament(),null);

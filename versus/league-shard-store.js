@@ -8,6 +8,7 @@ import {attachDeferredReport,copyDeferredReport,deferredReport,reportMetadata,st
 const SHARD_SCHEMA_VERSION = 2;
 const DEFAULT_CLEANUP_INTERVAL_MS = 60_000;
 const LARGE_STATE_KEYS = new Set([
+  "clubHistory",
   "matches",
   "ledger",
   "s4Assets",
@@ -27,6 +28,7 @@ const LARGE_STATE_KEYS = new Set([
   "seasonFinalTournament",
 ]);
 const ALL_SCOPES = Object.freeze([
+  "clubHistory",
   "core",
   "matches",
   "ledger",
@@ -47,6 +49,7 @@ const MUTATION_VERSION_BY_RAW = new WeakMap();
 const SUBTREE_VERSION_BY_RAW = new WeakMap();
 
 function scopeForKey(key) {
+  if (key === "clubHistory") return key;
   if (["matches"].includes(key)) return "matches";
   if (["ledger"].includes(key)) return "ledger";
   if (["s4Assets"].includes(key)) return "assets";
@@ -80,6 +83,7 @@ function copyTracked(value, seen, preserveDeferred) {
   return result;
 }
 export function unwrapTracked(value, seen = new WeakMap()) { return copyTracked(value, seen, false); }
+export function snapshotForReset(state) { return copyTracked(state, new WeakMap(), true); }
 export function matchReportMetadata(value) { return storedReportMetadata(trackedRawReference(value)); }
 
 // Read-only identity/version access for derived indexes. Mutations must still go
@@ -300,6 +304,7 @@ export class LeagueShardStore {
     state.matchPredictions = this.readObjectShard(manifest.shards.predictions, { schemaVersion:1, markets:{}, bets:[], distributions:[] });
     state.reports = this.readObjectShard(manifest.shards.reports, {});
     state.archives = this.readArchives(manifest.shards.archives);
+    if (manifest.shards.clubHistory) state.clubHistory = this.readMapShards(manifest.shards.clubHistory);
     if (manifest.shards.seasonFinal) state.seasonFinalTournament = this.readSeasonFinal(manifest.shards.seasonFinal);
     const live = this.readObjectShard(manifest.shards.live, { liveRound:null, liveCupRound:null, liveWorldCupRound:null, liveFriendlies:[] });
     state.liveRound = live.liveRound ?? null;
@@ -382,6 +387,8 @@ export class LeagueShardStore {
       this.archivePaths.set(String(entry.key), entry.path);
       return {
         archiveKey:entry.key,
+        replaysTrimmed:entry.replaysTrimmed,
+        replayRevision:entry.replayRevision,
         reason:entry.reason,
         archivedAt:entry.archivedAt,
         season:entry.season,
@@ -427,6 +434,8 @@ export class LeagueShardStore {
     const revisionPath = path.join(this.revisionsPath, String(revision));
     mkdirSync(temporaryRevisionPath, { recursive:true });
     const shards = { ...(previous.shards ?? {}) };
+    if (!state.clubHistory) delete shards.clubHistory;
+    else if (scopes.has("clubHistory") || !shards.clubHistory) shards.clubHistory = this.writeMapShards(temporaryRevisionPath, "club-history", state.clubHistory, previous.shards?.clubHistory, options);
     if (scopes.has("core") || !shards.core) shards.core = this.writeRevisionJson(temporaryRevisionPath, "core.json", stateCore(state), previous.shards?.core, { plain:true });
     if (scopes.has("matches") || !shards.matches) shards.matches = this.writeMatches(temporaryRevisionPath, revisionPath, state, options, previous.shards?.matches);
     if (scopes.has("seasonFinal") || !shards.seasonFinal) shards.seasonFinal = this.writeSeasonFinal(temporaryRevisionPath, revisionPath, state.seasonFinalTournament, options, previous.shards?.seasonFinal);
@@ -630,8 +639,9 @@ export class LeagueShardStore {
       const previous = previousEntries.get(key);
       let archivePath = previous?.path ?? this.archivePaths.get(key) ?? null;
       const previousPath = resolveRef(this.root, archivePath);
-      if (!previousPath || !existsSync(previousPath) || options.forceFull && !archivePath.endsWith(".gz")) {
-        const fullArchive = previousPath && existsSync(previousPath) ? this.coldCache.read(previousPath) : archive;
+      const rewritten = archive.matches && archive.replayRevision !== previous?.replayRevision;
+      if (rewritten || !previousPath || !existsSync(previousPath) || options.forceFull && !archivePath.endsWith(".gz")) {
+        const fullArchive = !rewritten && previousPath && existsSync(previousPath) ? this.coldCache.read(previousPath) : archive;
         const filePath = path.join(revisionPath, "archives", `${safePart(key)}.json.gz`);
         atomicWriteSerialized(filePath, compressColdJson(JSON.stringify(fullArchive)));
         archivePath = relativeToRoot(this.root, path.join(committedRevisionPath, "archives", `${safePart(key)}.json.gz`));
@@ -639,6 +649,8 @@ export class LeagueShardStore {
       return {
         key,
         path:archivePath,
+        replaysTrimmed:archive.replaysTrimmed,
+        replayRevision:archive.replayRevision,
         reason:archive.reason,
         archivedAt:archive.archivedAt,
         season:archive.season,

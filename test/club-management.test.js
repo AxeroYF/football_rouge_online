@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { YellowDogsLeagueService } from "../versus/league-service.js";
+import { inboxStructuredMarkup } from "../versus/public/inbox-content.js";
 
 const NOW = Date.parse("2026-08-22T12:00:00+08:00");
 const account = { id:"club-owner", nickname:"俱乐部经理" };
@@ -70,11 +71,12 @@ test("stadium expansion is limited to 5000 seats per purchase with rising stage 
   const ticket = service.state.ledger.find((entry) => entry.type === "home-ticket-income" && entry.matchId === "club-ticket-match");
   assert.equal(ticket.capacity, 40_000);
   service.createRoundInbox(1);
-  const homeReport = service.view(account).inbox.find((message) => message.id === `matchweek:${service.state.season.id}:1`);
+  const homeReport = service.view(account).inbox.find((message) => message.type === "matchweek" && message.matchId === ticket.matchId);
   assert.equal(homeReport.payload.homeTicketIncome.amount, ticket.amount);
   assert.equal(homeReport.payload.homeTicketIncome.attendance, ticket.attendance);
-  assert.match(homeReport.summary, /主场门票收入/);
-  assert.match(homeReport.body, /名观众入场/);
+  const rendered = inboxStructuredMarkup(homeReport);
+  assert.ok(rendered.includes(`主场门票 +${ticket.amount.toLocaleString("zh-CN")} 金币`));
+  assert.ok(rendered.includes(`${ticket.attendance.toLocaleString("zh-CN")} 名观众入场`));
   assert.ok(service.wallet(account.id).balance > beforeTickets);
   service.payRewards(1);
   assert.equal(service.state.ledger.filter((entry) => entry.type === "home-ticket-income" && entry.matchId === "club-ticket-match").length, 1);
@@ -99,7 +101,7 @@ test("post-match sponsor offers can be accepted or rejected and enforce contract
   const beforeBonus = service.wallet(account.id).balance;
   service.respondClubSponsorOffer(account, { offerId:stadiumOffer.id, action:"accept" });
   assert.equal(service.view(account).ownTeam.clubManagement.stadium.displayName, `${stadiumOffer.sponsorName}竞技场`);
-  assert.equal(service.wallet(account.id).balance, beforeBonus + stadiumOffer.bonus);
+  assert.equal(service.wallet(account.id).balance, beforeBonus + stadiumOffer.bonus / 2);
   assert.throws(() => service.updateClubStadium(account, { name:"另一个球场" }), /无法修改主场名称/);
   const broadcastSponsors = service.clubBroadcastVenue(team).sponsors;
   assert.equal(broadcastSponsors.length, 3);
@@ -119,6 +121,8 @@ test("sponsor contracts survive real season rollovers, settle once per season an
   const namingOffer = service.createClubSponsorOffer(team, { type:"team", durationSeasons:1, force:true });
   service.respondClubSponsorOffer(account, { offerId:namingOffer.id, action:"accept" });
   const normalContract = team.clubManagement.sponsorship.activeContracts.find((contract) => contract.offerId === normalOffer.id);
+  const installments = () => service.state.ledger.filter(row => row.contractId === normalContract.id).map(row => row.amount);
+  assert.deepEqual(installments(), [5000]);
   assert.equal(normalContract.remainingSeasons, 3);
   assert.equal(team.name, `${team.clubManagement.baseTeamName}-${namingOffer.sponsorName}`);
 
@@ -126,6 +130,10 @@ test("sponsor contracts survive real season rollovers, settle once per season an
   assert.equal(normalContract.remainingSeasons, 3);
   assert.ok(team.clubManagement.sponsorship.activeContracts.some((contract) => contract.offerId === namingOffer.id));
 
+  assert.throws(() => service.startNewSeason(), /尚未完赛/);
+  assert.deepEqual(installments(), [5000]);
+  service.state.season.status = "completed";
+  service.state.cup.status = "completed";
   const completedSeasonId = service.state.season.id;
   service.resetDailyCompetitions({ manual:true, skipRewardCheck:true, skipBackup:true, skipHonorRoomUpdate:true, skipArchive:true, skipSave:true, skipView:true });
   assert.equal(normalContract.remainingSeasons, 2);
@@ -135,9 +143,24 @@ test("sponsor contracts survive real season rollovers, settle once per season an
   assert.equal(service.settleClubSponsorContractsForSeason(team, completedSeasonId), false);
   assert.equal(normalContract.remainingSeasons, 2);
 
+  assert.deepEqual(installments(), [5000, 5000]);
+  service.state.season.status = "completed";
+  service.state.cup.status = "completed";
   service.startNewSeason();
+  assert.deepEqual(installments(), [5000, 5000, 5000]);
   assert.equal(normalContract.remainingSeasons, 1);
   assert.ok(team.clubManagement.sponsorship.activeContracts.includes(normalContract));
+});
+
+test("旧版已付清的赞助合同跨季只扣期限", () => {
+  const service = createClub("旧约联队");
+  const team = service.accountTeam(account.id);
+  const contract = { id:"legacy-paid", type:"normal", bonus:15000, durationSeasons:3, remainingSeasons:3 };
+  team.clubManagement.sponsorship.activeContracts.push(contract);
+  const balance = service.wallet(account.id).balance;
+  service.settleClubSponsorContractsForSeason(team, service.state.season.id);
+  assert.equal(contract.remainingSeasons, 2);
+  assert.equal(service.wallet(account.id).balance, balance);
 });
 
 test("pending sponsor offers stop at five until the player accepts or rejects one", () => {

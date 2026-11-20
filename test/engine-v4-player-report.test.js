@@ -24,20 +24,26 @@ test('bounded player ledger is identical across chunk boundaries and checkpoint 
 
 test('departed starters and passive replacements appear once; unused substitutes do not gain appearances',()=>{
   const input=demoInput({duration:120,format:'full',seed:'player-ledger-exit'});
-  input.teams[0].bench=[{...structuredClone(input.teams[0].players[2]),id:'replacement'},{...structuredClone(input.teams[0].players[0]),id:'unused-keeper'}];
+  Object.assign(input.teams[0].players[2],{grade:'A',upgradeLevel:3});
+  input.teams[0].bench=[{...structuredClone(input.teams[0].players[2]),id:'replacement',grade:'B'},{...structuredClone(input.teams[0].players[0]),id:'unused-keeper'}];
   const {report}=run(input,20,m=>{const p=m.state.players.find(p=>p.key==='0:p3');awardRestart(m,'goalKick',0,{x:5,y:34},'test');injurePlayer(m,p);});
   const players=report.teams[0].players;assert.equal(players.length,12);assert.ok(!players.some(p=>p.id==='unused-keeper'));
   assert.equal(players.find(p=>p.id==='p3').substitutedOut,true);assert.equal(players.find(p=>p.id==='replacement').enteredAsSubstitute,true);
   assert.equal(players.find(p=>p.id==='replacement').substitutedForId,'p3');
+  assert.equal(players.find(p=>p.id==='replacement').grade,'B');
+  assert.equal(players.find(p=>p.id==='p3').grade,'A');
+  assert.equal(players.find(p=>p.id==='p3').upgradeLevel,3);
 });
 
 test('direct assists and own goals are attributed separately and penalty shootouts never inflate regular statistics',()=>{
   const m=createMatch(demoInput({duration:60,format:'full'}),{recording:false}),ledger=createPlayerReportLedger(m.state.input,m.state.version);
+  const credits=[];
   const e=(id,type,actor,extra={})=>({id,type,actor,side:Number(actor?.split(':')[0]??0),time:id,clock:{period:1,baseSeconds:0,elapsed:id},...extra});
   ledger.consume([
     e(1,'pass','0:p7',{target:{x:80,y:34}}),e(2,'receive','0:p10',{decisionId:1}),e(3,'shot','0:p10',{target:{x:105,y:34}}),e(4,'goal','0:p10',{decisionId:3,scoringSide:0,ownGoal:false}),
     e(5,'goal','1:p3',{scoringSide:0,ownGoal:true}),e(6,'shootoutStart',null),e(7,'save','1:p1',{decisionId:3}),e(8,'shootoutGoal','0:p10')
-  ]);
+  ],(goal,assistId)=>credits.push([goal.actor,assistId]));
+  assert.deepEqual(credits,[['0:p10','p7'],['1:p3',null]]);
   const s=ledger.checkpoint().players;assert.equal(s['0:p7'].assists,1);assert.equal(s['0:p10'].goals,1);assert.equal(s['0:p10'].shotsOnTarget,1);assert.equal(s['1:p3'].ownGoals,1);assert.equal(s['1:p1'].saves,0);
   assert.equal(legacyScaleRating({...s['0:p10'],goals:1,assists:1,saves:0}),7.8);
 });

@@ -69,6 +69,7 @@ export function compileInput(input) {
           if(typeof trait.id!=='string'||!Array.isArray(trait.rules))throw new Error('球员特性定义无效');
           for(const rule of trait.rules){
             if(!rule||typeof rule.hook!=='string'||rule.when&&(typeof rule.when!=='object'||Array.isArray(rule.when)))throw new Error('球员特性条件无效');
+            if(rule.simulationYellowChance!==undefined&&(!Number.isFinite(rule.simulationYellowChance)||rule.simulationYellowChance<0||rule.simulationYellowChance>1))throw new Error('假摔黄牌概率无效');
             for(const key of ['multiply','value','addCm','foulMultiplier','penaltyMultiplier'])if(rule[key]!==undefined&&!Number.isFinite(rule[key]))throw new Error('球员特性数值无效');
             if(rule.add&&Object.entries(rule.add).some(([key,n])=>!Object.hasOwn(p.attributes,key)||!Number.isFinite(n)))throw new Error('球员特性属性无效');
           }

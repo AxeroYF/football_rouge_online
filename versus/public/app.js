@@ -1,11 +1,14 @@
+import {createClubHistoryController} from "./club-history.js";
+import {spectatorCardPlayer} from './spirit-form.js';
 import {clubHomeMarkup,clubHomeStatsMarkup,recentClubMatches} from './club-home.js';
 import {clubNavMarkup,clubMobileNavMarkup,clubSubnavMarkup} from './club-navigation.js';
+import {clubDetailMarkup,bindClubDetailTabs} from './club-detail.js';
 import {createInboxPager} from './inbox-pager.js';
 import {INBOX_RETENTION} from './inbox-policy.js';
 import {inboxStructuredMarkup,inboxPlainBodyMarkup,inboxContext,inboxActionsMarkup} from './inbox-content.js';
 import {INBOX_CATEGORIES as LEAGUE_INBOX_CATEGORIES,INBOX_TYPE_META as LEAGUE_INBOX_TYPE_META,INBOX_ACTION_LABELS,inboxActionAt,inboxCategory,inboxMatchesCategory} from './inbox-rules.js';
 import {createInboxReadSync} from './inbox-read-sync.js';
-import {divisionOverviewMarkup,knockoutCupMarkup} from './division-ui.js';
+import {knockoutCupMarkup} from './division-ui.js';
 import {requestDirectPackBatch} from './direct-pack-batch.js';
 import {AI_CLUBS} from './ai-club-config.js';
 import {resolvePositionPresetLinks,samePositionMap,sameFormationLines} from './position-preset-links.js';
@@ -27,14 +30,16 @@ import { createPackOpeningEffects } from "./pack-opening.js";
 import { createGameSettings, gameSettingsMarkup } from "./game-settings.js";
 import { applyTacticsCardDisplay } from "./tactics-card-display.js";
 import { broadcastDataMarkup } from "./broadcast-data.js";
-import { createBroadcastKeyPlays } from "./broadcast-key-plays.js";
+import {isGoalEvent} from "./goal-event.js";
+import { historyTimelineEvents } from "./history-timeline.js";
+import { createBroadcastKeyPlays,keyPlayEntries,broadcastMinuteLabel } from "./broadcast-key-plays.js";
 import { createBroadcastHighlights, broadcastTacticalSummary, broadcastRenderFingerprint } from "./broadcast-presentation.js";
 import { principlePlanMarkup, tacticalOutlookMarkup, createTacticalOutlookController, createTacticalWorkspaceLayoutController, arrangeTacticalBoardToolbar } from "./tactics-interface.js";
 import { isPrinciplesPlan, compilePrincipleDimensions, tacticalPrincipleFields, changeTacticalPrinciple, applyPrinciplePreset, MENTALITY_VALUES } from "./tactical-principles.js";
 import { meteorLayer } from "./pack-opening-meteors.js";
 import { shieldCardContent } from "./player-card-shield.js";
 import { patchHtmlChildren, patchHtmlElement, patchDomElement, htmlChildrenMatch } from "./dom-patch.js";
-import { applyS4BondBonuses, evaluateS4LineupBonds } from "./bond-rules.js";
+import {evaluateTacticalBonds,applyTacticalBondBonuses,bondStyleLabel} from "./tactical-bonds.js";
 import { CAPTAIN_STYLES, DEFAULT_CAPTAIN_STYLE, normalizeCaptainStyle } from "./captain-rules.js";
 import { aPlayerProfileForPlayer } from "./a-player-profiles.js";
 import { legendaryProfileForPlayer } from "./legendary-profiles.js";
@@ -43,10 +48,11 @@ import { DEFAULT_FORMATION_LINES, FORMATION_LINE_KEYS, formationRoleZones, infer
 import { mountShapePreview, shapeScenarios } from "./shape-preview-player.js";
 import {captureMovement} from "./shape-movement.js";
 import {mountShapeComparison} from "./shape-comparison-player.js";
-import { resolveBoardDuty, v2PlayerDutyOptionsForRole } from "./v2-player-duty-options.js";
+import { playerTacticalRadar } from "./v2-tactical-fit.js";
+import { dutyFieldPosition, resolveBoardDuty, v2PlayerDutyOptionsForRole } from "./v2-player-duty-options.js";
 import { v2OptimalLineupAssignment, v2RecommendedPlayerDuties } from "./v2-tactical-guidance.js";
 import {
-  applyV2TacticalProfiles,
+  resolveV2SplitTacticalPlan, applyV2TacticalProfiles,
   DEFAULT_IN_POSSESSION_DETAILS,
   DEFAULT_OUT_OF_POSSESSION_DETAILS,
   IN_POSSESSION_DETAIL_OPTIONS,
@@ -194,6 +200,7 @@ let roomStateEpoch = 0;
 let lastAnimatedEventId = null;
 let liveBroadcasts = [];
 let upcomingBroadcasts = [];
+let scheduledTvListings = [];
 let spectatorSession = null;
 let spectatorPolling = null;
 let spectatorPollingFailures = 0;
@@ -201,8 +208,12 @@ let spectatorJoinPending = false;
 let lastBroadcastRenderFingerprint = null;
 const broadcastHighlights = createBroadcastHighlights();
 const loadV4Clip=async(replay,clip)=>{const {loadV4KeyClip}=await import('./v4-key-clip.js');return loadV4KeyClip(replay,clip,leagueIdentity());};
-const historyKeyPlays=createBroadcastKeyPlays({loadClip:loadV4Clip,renderCard:player=>s4PlayerCardMarkup(player,{interactive:false})});
-const broadcastKeyPlays = createBroadcastKeyPlays({loadClip:loadV4Clip,renderCard:player=>s4PlayerCardMarkup(player,{interactive:false,upgradeLevel:player.upgradeLevel})});
+const renderReplayCard = player => {
+  const card = spectatorCardPlayer(player);
+  return card.grade ? s4PlayerCardMarkup(card, {interactive:false, upgradeLevel:card.upgradeLevel}) : "";
+};
+const historyKeyPlays = createBroadcastKeyPlays({loadClip:loadV4Clip, renderCard:renderReplayCard});
+const broadcastKeyPlays = createBroadcastKeyPlays({loadClip:loadV4Clip, renderCard:renderReplayCard});
 let broadcastHighlightTimer = null;
 let lastBroadcastValue = null;
 let broadcastDataTab = "overview";
@@ -259,7 +270,8 @@ let leagueShowRoleZones = initialGameSettings.positionZones;
 let leagueMutationPending = false;
 let leagueSyncPending = false;
 let leagueEditorDirty = false;
-let leagueMarketSection = null;
+let leagueMarketSection = "card";
+let leagueMarketShowWarehouse = false;
 let leagueMarketListingSearch = "";
 let leagueMarketWarehouseSearch = "";
 let leagueMarketListingPosition = "ALL";
@@ -390,7 +402,7 @@ function storeLeagueView() {
 }
 
 function restoreLeagueView(value) {
-  const validTabs = new Set(["overview", "cup", "predictions", "schedule", "squad", "coach", "inbox", "backpack", "enhancement", "x-growth", "players", "television", "stats", "club", "shop", "market"]);
+  const validTabs = new Set(["overview", "cup", "predictions", "schedule", "squad", "coach", "inbox", "backpack", "enhancement", "x-growth", "players", "television", "stats", "club", "club-history", "shop", "market"]);
   leagueTab = value.leagueTab === "honorRoom" ? "club" : validTabs.has(value.leagueTab) ? value.leagueTab : "overview";
   leagueClubPage = value.leagueTab === "honorRoom" || value.leagueClubPage === "honorRoom" ? "honorRoom" : "construction";
   leagueCupPage = value.leagueCupPage === "knockout" ? "knockout" : "league";
@@ -664,7 +676,7 @@ function historyPitchMagnets(team, stage = null, landscape = false, attackingLef
     const fitness = Math.max(0, Math.min(100, Math.round(stagePlayer?.fitness ?? player.fitness ?? 100)));
     const upgrade = Number(player.upgradeLevel ?? 0);
     const tooltip = `${player.name} · ${role} · 综合能力 ${player.overall} · 比赛评分 ${Number(player.rating).toFixed(1)}${status ? ` · ${status}` : ""}`;
-    return `<div class="magnet league-squad-magnet history-report-magnet grade-${String(player.grade ?? "C").toLowerCase()} ${status ? "inactive unavailable" : ""}" style="left:${x}%;top:${y}%" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}">${captainBadgeMarkup(Boolean(player.captain ?? (player.id === team.captainId)))}<span class="league-magnet-role">${escapeHtml(role)}${status ? ` · ${status}` : ""}</span><b>${escapeHtml(player.name)}</b><i>${Number(player.overall ?? 0)}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness}"><span style="width:${fitness}%"></span></span><span class="history-report-rating">评分 ${Number.isFinite(player.rating)?player.rating.toFixed(1):"—"}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</div>`;
+    return `<div class="magnet league-squad-magnet history-report-magnet grade-${String(player.grade ?? "C").toLowerCase()} ${status ? "inactive unavailable" : ""}" style="left:${x}%;top:${y}%" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}">${captainBadgeMarkup(Boolean(player.captain ?? (player.id === team.captainId)))}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole, stagePlayer ? stagePlayer.tacticalDuty : player.tacticalDuty))}${status ? ` · ${status}` : ""}</span><b>${escapeHtml(player.name)}</b><i>${Number(player.overall ?? 0)}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness}"><span style="width:${fitness}%"></span></span><span class="history-report-rating">评分 ${Number.isFinite(player.rating)?player.rating.toFixed(1):"—"}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</div>`;
   }).join("");
 }
 
@@ -721,14 +733,29 @@ function historyReviewMarkup(review, ownName, rivalName) {
   return `<section class="history-review"><header><div><small>${v2Review ? "MATCH REVIEW · V2 ENGINE DATA" : "MATCH REVIEW · LEGACY DATA"}</small><h2>赛后复盘</h2></div><span>基于本场实录</span></header><div class="history-review-verdict"><small>${escapeHtml(ownName)}视角</small><h3>${escapeHtml(review.headline)}</h3><p>${escapeHtml(review.summary)}</p><em>射门转化率：本方 ${escapeHtml(review.efficiency?.own ?? "0%")} · 对手 ${escapeHtml(review.efficiency?.rival ?? "0%")}</em></div><div class="history-review-labels"><span>${escapeHtml(ownName)}</span><span>${escapeHtml(rivalName)}</span></div><div class="history-review-metrics">${metrics}</div><div class="history-review-points">${conclusions}</div>${attributionMarkup}</section>`;
 }
 
+function historyReplayMatch(detail, timeline = historyTimelineEvents(detail)) {
+  const events = timeline.filter(isGoalEvent);
+  const clips = new Map((detail.keyPlays ?? []).map(clip => [String(clip.eventId), clip]));
+  for (const event of events) {
+    const id = String(event.id);
+    if (!clips.has(id) && detail.v4Replay && Number.isFinite(event.replayTime)) {
+      clips.set(id, {eventId:event.id, type:'goal', replayTime:event.replayTime});
+    }
+  }
+  return {...detail, events, keyPlays:[...clips.values()]};
+}
+
 function historyMatchMarkup(detail) {
   const viewerIndex = Number(detail.viewerIndex ?? 0);
   const opponentIndex = viewerIndex === 0 ? 1 : 0;
   const displayScore = detail.aggregateScore ?? detail.score;
   const won = detail.winnerIndex === viewerIndex;
-  const timeline = detail.importantEvents?.length ? detail.importantEvents.map(e=>reportTimelineItem(e)+(detail.v4Replay&&Number.isFinite(e.replayTime)&&['goal','shot','save','red'].includes(e.type)?`<button type="button" class="button secondary" data-history-replay="${escapeHtml(e.id)}">回看片段</button>`:'')).join("") : `<p class="history-empty">本场没有重点事件。</p>`;
+  const events = historyTimelineEvents(detail);
+  const match = historyReplayMatch(detail, events);
+  const playable = new Set(keyPlayEntries(match).filter(entry => entry.clip).map(entry => String(entry.event.id)));
+  const timeline = events.length ? events.map(event => reportTimelineItem(event, isGoalEvent(event) && playable.has(String(event.id)))).join("") : `<p class="history-empty">本场没有记录到重要事件。</p>`;
   const matchLabel = detail.matchLabel ?? (detail.competition === "friendly" ? "友谊赛" : Number.isFinite(Number(detail.round)) ? `第${detail.round}轮` : "比赛");
-  return `<header class="history-detail-head"><button class="icon-button" data-close-history aria-label="关闭">×</button><div><small>${new Date(detail.playedAt).toLocaleString()} · ${escapeHtml(detail.roomCode)} · ${escapeHtml(matchLabel)}</small><h2>${displayScore[viewerIndex] === displayScore[opponentIndex] ? "本场战平" : won ? "本场获胜" : "本场失利"}</h2></div></header><div class="history-detail-score"><span>${escapeHtml(detail.teams[viewerIndex].name)}</span><b>${displayScore[viewerIndex]} : ${displayScore[opponentIndex]}</b><span>${escapeHtml(detail.teams[opponentIndex].name)}</span>${detail.aggregateBaseScore ? `<small>首回合 ${detail.aggregateBaseScore[viewerIndex]}:${detail.aggregateBaseScore[opponentIndex]} · 第二回合 ${detail.score[viewerIndex]}:${detail.score[opponentIndex]}</small>` : ""}${detail.penalties ? `<small>点球 ${detail.penalties[viewerIndex]} : ${detail.penalties[opponentIndex]}</small>` : ""}<em>${weatherIcon(detail.weather)} ${escapeHtml(detail.weather?.name ?? "未知天气")}</em></div><div class="history-detail-grid"><section class="report-panel timeline-panel"><h2>重点事件</h2><div class="match-timeline">${timeline}</div></section><section class="report-panel compact-stats-panel"><h2>比赛统计</h2>${matchStatsMarkup(detail, [viewerIndex, opponentIndex])}</section></div>${detail.keyPlays?.length || detail.v4Replay && detail.importantEvents?.some(e=>Number.isFinite(e.replayTime)) ? `<section class="history-key-clips broadcast-v2-field-column"><div data-history-key-controls></div><div data-history-key-host></div></section>` : ""}<div class="history-team-grid">${[viewerIndex, opponentIndex].map((index) => historyTeamMarkup(detail.teams[index], Boolean(detail.hideStrategies), {})).join("")}</div>`;
+  return `<header class="history-detail-head"><button class="icon-button" data-close-history aria-label="关闭">×</button><div><small>${new Date(detail.playedAt).toLocaleString()} · ${escapeHtml(detail.roomCode)} · ${escapeHtml(matchLabel)}</small><h2>${displayScore[viewerIndex] === displayScore[opponentIndex] ? "本场战平" : won ? "本场获胜" : "本场失利"}</h2></div></header><div class="history-detail-score"><span>${escapeHtml(detail.teams[viewerIndex].name)}</span><b>${displayScore[viewerIndex]} : ${displayScore[opponentIndex]}</b><span>${escapeHtml(detail.teams[opponentIndex].name)}</span>${detail.aggregateBaseScore ? `<small>首回合 ${detail.aggregateBaseScore[viewerIndex]}:${detail.aggregateBaseScore[opponentIndex]} · 第二回合 ${detail.score[viewerIndex]}:${detail.score[opponentIndex]}</small>` : ""}${detail.penalties ? `<small>点球 ${detail.penalties[viewerIndex]} : ${detail.penalties[opponentIndex]}</small>` : ""}<em>${weatherIcon(detail.weather)} ${escapeHtml(detail.weather?.name ?? "未知天气")}</em></div><div class="history-detail-grid"><section class="report-panel timeline-panel"><h2>重要事件</h2><div class="match-timeline">${timeline}</div></section><section class="report-panel compact-stats-panel"><h2>比赛统计</h2>${matchStatsMarkup(detail, [viewerIndex, opponentIndex])}</section></div>${playable.size ? `<dialog class="history-key-clips" aria-label="进球回放"><header><strong>进球回放</strong><button type="button" class="icon-button" data-dismiss-replay aria-label="关闭回放" autofocus>×</button></header><div data-history-key-host></div></dialog>` : ""}<div class="history-team-grid">${[viewerIndex, opponentIndex].map((index) => historyTeamMarkup(detail.teams[index], Boolean(detail.hideStrategies), {})).join("")}</div>`;
 }
 
 function switchHistoryStage(button) {
@@ -773,14 +800,108 @@ async function openHistoryMatch(matchId) {
 }
 
 function broadcastListMarkup(leagueOnly = false) {
-  const broadcasts = leagueOnly ? liveBroadcasts.filter((broadcast) => String(broadcast.code).startsWith("YDL-")) : liveBroadcasts;
+  const rawBroadcasts = leagueOnly ? [...scheduledTvListings, ...liveBroadcasts.filter((broadcast) => String(broadcast.code).startsWith("YDL-"))] : liveBroadcasts;
+  const ownId = leagueOnly ? league?.ownTeam?.id : null;
+  const ownName = leagueOnly ? league?.ownTeam?.name : null;
+  const scheduledFixture = leagueOnly && league?.schedule?.fixtures?.find(f => f.status === "live" && f.v4MatchId);
+  if (scheduledFixture && !rawBroadcasts.some(b => b.v4MatchId === scheduledFixture.v4MatchId)) {
+    const opponent = {id:scheduledFixture.opponentId, name:scheduledFixture.opponentName};
+    const sides = [league.ownTeam, opponent];
+    const snapshot = homeLiveSnapshot?.v4MatchId === scheduledFixture.v4MatchId ? homeLiveSnapshot : null;
+    rawBroadcasts.push({
+      v4MatchId:scheduledFixture.v4MatchId, teams:scheduledFixture.venue === "home" ? sides : sides.reverse(),
+      competition:scheduledFixture.competition, competitionName:scheduledFixture.competitionName,
+      score:snapshot?.score, minute:snapshot?.minute, weather:scheduledFixture.weather,
+    });
+  }
+  const isOwnBroadcast = (broadcast) => Boolean(
+    (ownId && broadcast.teams?.some((t) => t.id === ownId || t.teamId === ownId)) ||
+    (ownName && broadcast.teams?.some((t) => t.name === ownName))
+  );
+  const broadcasts = [...rawBroadcasts].sort((a, b) => Number(isOwnBroadcast(b)) - Number(isOwnBroadcast(a)));
   const upcoming = leagueOnly ? upcomingBroadcasts : [];
-  const matches = broadcasts.length
-    ? broadcasts.map((broadcast) => `<button class="broadcast-card" data-watch-room="${escapeHtml(broadcast.code)}"><span><i>LIVE</i><small>${broadcast.minute}' · ${weatherIcon(broadcast.weather)} ${escapeHtml(broadcast.weather?.name ?? "比赛中")}</small></span><div><b>${escapeHtml(broadcast.teams[0].name)}</b><strong>${broadcast.score[0]} : ${broadcast.score[1]}</strong><b>${escapeHtml(broadcast.teams[1].name)}</b></div><em>${broadcast.spectatorCount} 人正在观看 · 进入直播 ›</em></button>`).join("")
-    : upcoming.length
-      ? `<div class="broadcast-upcoming-list"><header><b>下一轮直播预告</b><small>${upcoming.length} 场待播</small></header>${upcoming.map((fixture) => `<article class="broadcast-upcoming"><time><b>${yellowDogsTvTime(fixture.startsAt, false)}</b><small>${yellowDogsTvTime(fixture.startsAt)}</small></time><div><small>${escapeHtml(fixture.competitionName)} · ${escapeHtml(fixture.label ?? "下一轮")}</small><strong>${escapeHtml(fixture.homeName)} <i>vs</i> ${escapeHtml(fixture.awayName)}</strong></div></article>`).join("")}</div>`
-      : `<p class="broadcast-empty">当前没有正在进行的公开比赛，也没有已确定的下一场赛事。</p>`;
-  return `<section class="broadcast-hub ${leagueOnly ? "league-television" : ""}"><header><div><small>${leagueOnly ? "YDL TELEVISION" : "FT1 TELEVISION"}</small><h2>${leagueOnly ? "YFFM1 联赛电视台" : "比赛电视台"}</h2></div><b>${broadcasts.length} 场直播</b></header><div class="broadcast-list">${matches}</div></section>`;
+  const tvCrest = (teamOrId, fallbackName = "FC") => {
+    const team = leagueOnly && league?.teams?.find(t => t.id === teamOrId || t.name === fallbackName);
+    const html = leagueOnly ? teamBadgeMarkup(team || teamOrId) : "";
+    return `<span class="tv-crest">${html || `<span class="tv-crest-fallback" aria-hidden="true">${escapeHtml(String(fallbackName).slice(0, 2))}</span>`}</span>`;
+  };
+  const compPill = (comp, label) => {
+    const isCup = comp === "cup" || /杯|cup/i.test(String(label ?? ""));
+    const isB = /B级/i.test(String(label ?? ""));
+    const cls = isCup ? "comp-cup" : isB ? "comp-b" : "comp-a";
+    const text = label || (isCup ? "冠军杯" : "联赛");
+    return `<span class="yffm-competition ${cls}">${escapeHtml(text)}</span>`;
+  };
+
+  const liveGrid = broadcasts.length
+    ? `<div class="tv-section">
+        <div class="tv-section-head"><h3>正在直播</h3><span>${broadcasts.length} 场进行中</span></div>
+        <div class="broadcast-list ${broadcasts.some(isOwnBroadcast) && broadcasts.length > 1 ? "has-featured-own" : ""}">
+          ${broadcasts.map((broadcast) => {
+            const own = isOwnBroadcast(broadcast);
+            const t0 = broadcast.teams?.[0] ?? { name: "主队" };
+            const t1 = broadcast.teams?.[1] ?? { name: "客队" };
+            const compLabel = broadcast.competitionName ?? ({cup:"冠军杯",friendly:"友谊赛",league:"YFFM1 联赛",YFFM1:"YFFM1 联赛","YellowDogs Champion Cup":"黄狗冠军杯"}[broadcast.competition] ?? broadcast.competition ?? "公开赛");
+            const watch = broadcast.v4MatchId ? `data-watch-v4="${escapeHtml(broadcast.v4MatchId)}"` : `data-watch-room="${escapeHtml(broadcast.code)}"`;
+            return `<button type="button" class="broadcast-card ${own ? "is-own-live" : ""}" ${watch}>
+              ${own ? `<div class="tv-own-ribbon">我方正在比赛</div>` : ""}
+              <div class="tv-card-top">
+                <div class="tv-live-meta"><i class="tv-live-pill">LIVE</i><span class="yffm-num">${broadcast.minute == null ? "" : broadcast.minute + "′"}</span><small>${broadcast.weather ? weatherIcon(broadcast.weather) : ""} ${escapeHtml(broadcast.weather?.name ?? "比赛中")}</small></div>
+                ${compPill(broadcast.competition, compLabel)}
+              </div>
+              <div class="tv-card-score">
+                <div class="tv-side">${tvCrest(t0.id ?? t0.teamId ?? t0, t0.name)}<b>${escapeHtml(t0.name)}</b></div>
+                <strong class="yffm-num">${broadcast.score?.join(" : ") ?? "— : —"}</strong>
+                <div class="tv-side">${tvCrest(t1.id ?? t1.teamId ?? t1, t1.name)}<b>${escapeHtml(t1.name)}</b></div>
+              </div>
+              <div class="tv-card-foot">
+                <span class="tv-viewers yffm-num">${broadcast.spectatorCount == null ? "" : broadcast.spectatorCount + " 人正在观看"}</span>
+                <em class="tv-watch-cta ${own ? "is-primary" : ""}">进入直播 →</em>
+              </div>
+            </button>`;
+          }).join("")}
+        </div>
+      </div>`
+    : `<div class="tv-idle-banner">
+        <div>
+          <b>当前暂无正在进行的公开直播</b>
+          <span>${upcoming.length ? `下一轮共有 ${upcoming.length} 场赛事即将开播，请查看下方直播预告。` : "当前处于赛程间歇期，开赛后将在此自动接入实时直播。"}</span>
+        </div>
+        ${leagueOnly ? `<button type="button" class="button secondary" data-league-tab="schedule">查看完整赛程</button>` : ""}
+      </div>`;
+
+  const upcomingSection = upcoming.length
+    ? `<div class="tv-section">
+        <div class="tv-section-head"><h3>下一轮直播预告</h3><span>${upcoming.length} 场待播</span></div>
+        <div class="tv-upcoming-grid">
+          ${upcoming.map((fixture) => `<article class="broadcast-upcoming tv-upcoming-card">
+            <time class="yffm-num"><b>${yellowDogsTvTime(fixture.startsAt, false)}</b><small>${yellowDogsTvTime(fixture.startsAt)}</small></time>
+            <div class="tv-upcoming-main">
+              <div class="tv-upcoming-meta">${compPill(fixture.competition, fixture.competitionName)}<span>${escapeHtml(fixture.label ?? "下一轮")}</span></div>
+              <div class="tv-upcoming-teams">
+                <span>${tvCrest(fixture.homeId ?? fixture.homeName, fixture.homeName)}<b>${escapeHtml(fixture.homeName)}</b></span>
+                <i>VS</i>
+                <span>${tvCrest(fixture.awayId ?? fixture.awayName, fixture.awayName)}<b>${escapeHtml(fixture.awayName)}</b></span>
+              </div>
+            </div>
+          </article>`).join("")}
+        </div>
+      </div>`
+    : "";
+
+  return `<section class="broadcast-hub tv-hub-v2 ${leagueOnly ? "league-television" : ""}">
+    <header class="tv-hub-header">
+      <div>
+        <small>YFFM1 BROADCAST · 比赛电视台</small>
+        <h2>${leagueOnly ? "YFFM1 比赛电视台" : "比赛电视台"}</h2>
+      </div>
+      <div class="tv-hub-badges">
+        <span class="tv-badge-live ${broadcasts.length ? "is-active" : ""} yffm-num"><i></i>${broadcasts.length} 场直播中</span>
+        ${upcoming.length ? `<span class="tv-badge-upcoming yffm-num">${upcoming.length} 场预告</span>` : ""}
+      </div>
+    </header>
+    <div class="tv-hub-body">${liveGrid}${upcomingSection}</div>
+  </section>`;
 }
 
 let broadcastRefreshPromise = null;
@@ -790,7 +911,20 @@ async function refreshBroadcasts() {
   broadcastRefreshPromise = (async () => {
     try {
       const value = await api("/api/versus/broadcasts");
-      if (document.hidden) return;
+      const fixture = leagueMode && leagueTab === "television" && league?.schedule?.fixtures?.find(f => f.status === "live" && f.v4MatchId);
+      const listings = value.scheduledBroadcasts ?? [];
+      if (leagueMode && leagueTab === "television") {
+        await Promise.all(listings.map(async listing => {
+          const score = await fetchScheduledBroadcast(listing.v4MatchId, "scoreboard").catch(() => null);
+          if (score) Object.assign(listing, {score:score.score, minute:score.minute});
+        }));
+      }
+      if (fixture && !listings.some(listing => listing.v4MatchId === fixture.v4MatchId)) {
+        const published = await fetchScheduledBroadcast(fixture.v4MatchId).catch(() => null);
+        if (published) homeLiveSnapshot = {v4MatchId:fixture.v4MatchId, score:published.match.score, minute:published.match.minute};
+      }
+      if (document.hidden || spectatorSession) return;
+      scheduledTvListings = listings;
       liveBroadcasts = value.broadcasts ?? [];
       upcomingBroadcasts = value.upcomingBroadcasts ?? [];
       const hub = document.querySelector(".broadcast-hub");
@@ -802,9 +936,13 @@ async function refreshBroadcasts() {
   finally { broadcastRefreshPromise = null; }
 }
 
+function broadcastPitchPlayerVisible(player) {
+  return player.active || (!player.replacedOnBoard && (player.sentOff || player.injury));
+}
+
 function broadcastPitchMarkup(team) {
   const magnets = team.players
-    .filter((player) => player.active || player.sentOff || player.injury)
+    .filter(broadcastPitchPlayerVisible)
     .map(broadcastMagnet)
     .join("");
   return pitchMarkup(magnets, "", "live-pitch broadcast-pitch s4-readonly-pitch");
@@ -825,7 +963,7 @@ function broadcastCombinedPosition(position = { x:50, y:50 }, teamIndex = 0) {
 
 function broadcastCombinedPitchMarkup(teams) {
   const magnets = teams.flatMap((team, teamIndex) => team.players
-    .filter((player) => player.active || player.sentOff || player.injury)
+    .filter(broadcastPitchPlayerVisible)
     .map((player) => broadcastMagnet({
       ...player,
       position:broadcastCombinedPosition(player.position, teamIndex),
@@ -880,7 +1018,8 @@ function ensureBroadcastMeteorBackground(overlay, match) {
   layer.innerHTML = broadcastMeteorParticlesMarkup();
   overlay.prepend(layer);
 }
-function broadcastEventForDisplay(event) {
+function broadcastEventForDisplay(entry) {
+  const event = { ...entry, minute:broadcastMinuteLabel(entry.minute) };
   if (event.type !== "tactical" || !event.plan) return event;
   const summary = broadcastTacticalSummary({ ...event, activePlan:event.plan, activePlanTrigger:event }, [event], event.teamIndex);
   return { ...event, detail:[summary.reason, summary.mentality, ...summary.principles.map(item => item.value)].filter(Boolean).join(" · ") };
@@ -891,12 +1030,12 @@ function broadcastV2MatchLayoutMarkup(match, broadcast, highlight) {
   const venue = broadcastVenueProfile(match);
   const sponsorAds = broadcastSponsorBoardsMarkup(venue);
   const strategies = match.teams.map((team, index) => `${broadcastTacticalSummary(team, match.events, index).plan} · ${team.formation}`);
-  const clips = new Set((match.keyPlays ?? []).map(clip => clip.eventId));
+  const clips = new Set(keyPlayEntries(match).filter(entry=>entry.clip).map(entry=>String(entry.event.id)));
   const eventFeed = match.events.length ? [...match.events].reverse().map(entry => {
     const event = matchEventMarkup(broadcastEventForDisplay(entry), true);
-    return clips.has(entry.id) ? `<article class="broadcast-replay-event" data-render-key="clip-${escapeHtml(entry.id)}">${event}<button type="button" class="home-text-button" data-live-replay="${escapeHtml(entry.id)}">▶ 小圆点回放</button></article>` : event;
+    return isGoalEvent(entry) && clips.has(String(entry.id)) ? `<article class="broadcast-replay-event" data-render-key="clip-${escapeHtml(entry.id)}">${event}<button type="button" class="home-text-button" data-live-replay="${escapeHtml(entry.id)}">▶ 小圆点回放</button></article>` : event;
   }).join("") : `<p class="feed-empty">比赛进行中</p>`;
-  return `<div class="broadcast-v2-layout"><section class="broadcast-v2-field-column stand-${escapeHtml(venue.standStyle)}"><header class="broadcast-v2-venue-head"><div><small>HOME STADIUM</small><h2>${escapeHtml(venue.name)}</h2></div><div data-key-play-controls data-render-key="key-play-controls" data-dom-owned="broadcast-key-plays"></div></header><div data-key-play-host data-render-key="key-play-host" data-dom-owned="broadcast-key-plays"></div><div class="broadcast-v2-stadium pitch-${escapeHtml(venue.pitchStyle)}">${sponsorAds}${broadcastCombinedPitchMarkup(match.teams)}</div></section><aside class="broadcast-v2-sidebar"><section class="commentary-panel match-center-panel broadcast-v2-commentary"><header><h2>${broadcast.live ? "实时战况" : "比赛详情"}</h2><div class="broadcast-v2-team-strategies"><div><i></i><span><b>${escapeHtml(match.teams[0].name)}</b><small>${escapeHtml(strategies[0])}</small></span></div><div><i></i><span><b>${escapeHtml(match.teams[1].name)}</b><small>${escapeHtml(strategies[1])}</small></span></div></div><span>${match.events.length}</span></header><div class="broadcast-highlight-slot">${latestEvent ? `<div class="broadcast-highlight level-${highlight.level}" data-render-key="broadcast-highlight-${escapeHtml(latestEvent.id)}" aria-label="置顶重点事件">${matchEventMarkup({ ...latestEvent, detail:undefined, xg:undefined }, false)}</div>` : ""}</div><div class="event-feed">${eventFeed}</div></section>${broadcastDataMarkup(match, broadcastDataTab)}</aside></div>`;
+  return `<div class="broadcast-v2-layout"><section class="broadcast-v2-field-column stand-${escapeHtml(venue.standStyle)}"><header class="broadcast-v2-venue-head"><div><small>HOME STADIUM</small><h2>${escapeHtml(venue.name)}</h2></div><div data-key-play-controls data-render-key="key-play-controls" data-dom-owned="broadcast-key-plays"></div></header><div data-key-play-host data-render-key="key-play-host" data-dom-owned="broadcast-key-plays"></div><div class="broadcast-v2-stadium pitch-${escapeHtml(venue.pitchStyle)}">${sponsorAds}${broadcastCombinedPitchMarkup(match.teams)}</div></section><aside class="broadcast-v2-sidebar"><section class="commentary-panel match-center-panel broadcast-v2-commentary"><header><h2>${broadcast.live ? "实时战况" : "比赛详情"}</h2><div class="broadcast-v2-team-strategies"><div><i></i><span><b>${escapeHtml(match.teams[0].name)}</b><small>${escapeHtml(strategies[0])}</small></span></div><div><i></i><span><b>${escapeHtml(match.teams[1].name)}</b><small>${escapeHtml(strategies[1])}</small></span></div></div><span>${match.events.length}</span></header><div class="broadcast-highlight-slot">${latestEvent ? `<div class="broadcast-highlight level-${highlight.level}" data-render-key="broadcast-highlight-${escapeHtml(latestEvent.id)}" aria-label="置顶重点事件">${matchEventMarkup({ ...broadcastEventForDisplay(latestEvent), detail:undefined, xg:undefined }, false)}</div>` : ""}</div><div class="event-feed">${eventFeed}</div></section>${broadcastDataMarkup(match, broadcastDataTab)}</aside></div>`;
 }
 
 
@@ -926,6 +1065,7 @@ function broadcastScreenMarkup(broadcast, highlight) {
 }
 
 function renderBroadcast(broadcast) {
+  bindLeagueMagnetTooltips();
   let overlay = document.querySelector("#broadcast-overlay");
   if (!overlay) {
     document.body.insertAdjacentHTML("beforeend", `<div class="broadcast-overlay" id="broadcast-overlay"></div>`);
@@ -986,20 +1126,27 @@ function renderBroadcast(broadcast) {
 }
 function mountHistoryClips(dialog,detail){
   const host=dialog.querySelector('[data-history-key-host]');if(!host)return;
-  const events=detail.importantEvents??[];
-  historyKeyPlays.mount(host,{code:'history-'+(detail.v4Replay?.reportId??detail.id??detail.playedAt),history:true,live:false,match:{...detail,events,
-    keyPlays:detail.keyPlays??events.filter(e=>Number.isFinite(e.replayTime)&&['goal','shot','save','red'].includes(e.type)).map(e=>({eventId:e.id,type:e.type,replayTime:e.replayTime}))}},dialog.querySelector('[data-history-key-controls]'));
-  dialog.querySelectorAll('[data-history-replay]').forEach(button=>button.onclick=()=>{historyKeyPlays.play(button.dataset.historyReplay);host.scrollIntoView({block:'nearest',behavior:'smooth'});});
+  const viewer = host.closest("dialog");
+  viewer.querySelector("[data-dismiss-replay]").onclick = () => viewer.close();
+  viewer.addEventListener("close", () => historyKeyPlays.reset());
+  const match = historyReplayMatch(detail);
+  dialog.querySelectorAll("[data-history-replay]").forEach(button => {
+    button.onclick = () => {
+      viewer.showModal();
+      historyKeyPlays.mount(host, {code:"history-" + (detail.id ?? detail.playedAt), history:true, live:false, match});
+      historyKeyPlays.play(button.dataset.historyReplay);
+    };
+  });
 }
-async function fetchScheduledBroadcast(id){
-  const identity=leagueIdentity(),response=await fetch(`/v4/matches/${encodeURIComponent(id)}/broadcast`,{headers:{Authorization:`Bearer ${identity.accountToken}`,'X-Player-Id':encodeURIComponent(identity.playerId)},cache:'no-store'});
+async function fetchScheduledBroadcast(id, view = "broadcast"){
+  const identity=leagueIdentity(),response=await fetch(`/v4/matches/${encodeURIComponent(id)}/${view}`,{headers:{Authorization:`Bearer ${identity.accountToken}`,'X-Player-Id':encodeURIComponent(identity.playerId)},cache:'no-store'});
   if(!response.ok)throw Object.assign(new Error(response.status===403?'无权观看此比赛':'直播暂不可用，请稍后重试'),{status:response.status});
   return response.json();
 }
 async function startScheduledWatching(id){
   await closeBroadcast();
   const session={code:id,scheduled:true};spectatorSession=session;
-  try{const value=await fetchScheduledBroadcast(id);if(spectatorSession!==session)return;renderBroadcast(value);if(value.live)scheduleSpectatorPolling();}
+  try{const value=await fetchScheduledBroadcast(id);if(spectatorSession!==session)return;renderBroadcast(value);if(value.live||value.replaysPending)scheduleSpectatorPolling();}
   catch(error){if(spectatorSession===session){closeBroadcast(false);showToast(error.message);}}
 }
 async function startWatching(code) {
@@ -1059,7 +1206,7 @@ async function refreshBroadcast() {
     if (spectatorPollingFailures > 0) uiMotion.resetBroadcast();
     spectatorPollingFailures = 0;
     renderBroadcast(value.broadcast);
-    if (value.broadcast.live) scheduleSpectatorPolling(700);
+    if (value.broadcast.live || value.broadcast.replaysPending) scheduleSpectatorPolling(700);
     else clearTimeout(spectatorPolling);
   } catch (error) {
     if (spectatorSession !== active || document.hidden) return;
@@ -1821,7 +1968,7 @@ function refreshTacticsConfiguration() {
   });
   const undo = document.querySelector("[data-tactical-undo]");
   if (undo) undo.hidden = !tacticsUndo.has(leagueTacticalOutlookContext()?.key);
-  syncLeagueInteractionFeedback();
+  refreshLeagueSquadPositionUi();
 }
 
 function applyLeaguePrincipleChange(state, key, value) {
@@ -2255,7 +2402,7 @@ async function openLeague() {
   storeLeagueView();
   updateChrome();
   app.innerHTML = `<section class="league-loading"><p class="eyebrow">YFFM1</p><h1>正在读取联赛数据…</h1></section>`;
-  try { await leagueRequest(""); await refreshBroadcasts(); }
+  try { await leagueRequest(""); if (leagueTab === "players") void loadLeaguePlayerDirectory(); await refreshBroadcasts(); }
   catch (error) { leagueMode = false; showToast(error.message); renderLanding(); }
 }
 
@@ -2265,7 +2412,7 @@ function leagueStandingRows(teams = league.teams) {
     const owner = badges ? `<small class="league-team-honors">${badges}</small>` : "";
     const goalDifference = team.table.goalsFor - team.table.goalsAgainst;
     const mobileSummary = `<span class="league-standing-mobile-meta"><b>${team.table.played}场</b><span>${team.table.won}胜 ${team.table.drawn}平 ${team.table.lost}负</span><span>进失 ${team.table.goalsFor}:${team.table.goalsAgainst}</span><span>净胜 ${goalDifference > 0 ? "+" : ""}${goalDifference}</span></span>`;
-    const identity = teamBadgeMarkup(team) || `<span class="club-type">玩家</span>`;
+    const identity = teamBadgeMarkup(team);
     return `<tr class="${league.ownTeam?.id === team.id ? "is-own" : ""} zone-${team.movement??"none"}"><td><b>${team.rank}</b></td><td>${identity}<button class="league-team-link" data-league-team-detail="${team.id}"><span class="league-team-name">${escapeHtml(team.name)}</span>${seasonFinalStarMarkup(team.seasonFinalStarCount)}</button>${owner}${mobileSummary}</td><td>${team.table.played}</td><td>${team.table.won}</td><td>${team.table.drawn}</td><td>${team.table.lost}</td><td>${team.table.goalsFor}:${team.table.goalsAgainst}</td><td>${goalDifference > 0 ? "+" : ""}${goalDifference}</td><td><strong>${team.table.points}</strong></td></tr>`;
   }).join("");
 }
@@ -2334,11 +2481,14 @@ function s4PlayerCardMarkup(player, options = {}) {
   </${tag}>`;
 }
 
+function tacticsShieldCardMarkup(player) {
+  return s4PlayerCardMarkup(player, { interactive:false, className:'tactics-shield-card', upgradeLevel:player.upgradeLevel, traits:player.traits, lazyImage:true });
+}
+
 function applyLeagueTacticsCardDisplay(root) {
   if (!root || !league?.ownTeam) return;
   const roster = new Map(activeTacticsTeam().roster.map(player => [player.id, player]));
-  applyTacticsCardDisplay(root, gameSettings.value.tacticsPieceDisplay, id => roster.get(id), player =>
-    s4PlayerCardMarkup(player, { interactive:false, className:'tactics-shield-card', upgradeLevel:player.upgradeLevel, traits:player.traits, lazyImage:true }));
+  applyTacticsCardDisplay(root, gameSettings.value.tacticsPieceDisplay, id => roster.get(id), tacticsShieldCardMarkup);
 }
 
 function xPlayerDraftMarkup() {
@@ -2415,13 +2565,39 @@ function leagueMatchCentreMarkup() {
   return `<div class="league-match-centre"><section><header><div><small>ROUND RESULTS</small><h3>第 ${leagueRoundPage} 轮${heading}</h3></div><nav class="league-round-pager"><button class="icon-button" data-league-round="${availableRounds[roundIndex - 1] ?? ""}" ${roundIndex <= 0 ? "disabled" : ""} aria-label="上一轮">‹</button><span>${roundIndex + 1}/${availableRounds.length}</span><button class="icon-button" data-league-round="${availableRounds[roundIndex + 1] ?? ""}" ${roundIndex >= availableRounds.length - 1 ? "disabled" : ""} aria-label="下一轮">›</button></nav></header><div>${selectedRound.matches.map((match) => leagueMatchRow(match)).join("")}</div></section><section><header><div><small>TEAM HISTORY</small><h3>${escapeHtml(historyTeam.name)}历史战绩</h3></div><select data-league-history-team aria-label="选择球队">${teamOptions}</select></header><div class="league-history-list">${history.length ? history.map((match) => leagueMatchRow(match, historyTeam.id)).join("") : `<p class="league-empty">这支球队还没有比赛记录。</p>`}</div></section></div>`;
 }
 
+let historyInitialTab = 'overview';
+let mountedClubHistory = null;
+function mountClubHistory() {
+  const host = app.querySelector('[data-club-history-page]');
+  if (!host) { mountedClubHistory = null; return; }
+  const day = new Date(league.serverTime ?? Date.now()).toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'});
+  const badgeIds = league.teams.map(t => [t.id,t.equippedBadge?.id,t.equippedClubBadge?.id]);
+  const key = JSON.stringify([account.profile.id,league.ownTeam.id,league.season.id,day,league.recentMatches?.length,league.recentMatches?.[0]?.id,league.ownTeam.name,league.ownTeam.roster?.map(p=>p.id),badgeIds]);
+  if (mountedClubHistory?.host === host) {
+    if (mountedClubHistory.key !== key) {
+      mountedClubHistory.key = key;
+      void mountedClubHistory.controller.reload();
+    }
+    return;
+  }
+  const controller = createClubHistoryController(host,{
+    initialStatus:'loading', initialTab:historyInitialTab,
+    loadHistory:async () => (await api('/api/versus/league/club-history',{method:'POST',body:leagueIdentity()})).history,
+    renderTeamBadges:teamBadgeMarkup,
+    onOpenMatchDetail:({matchId}) => openLeagueMatch(matchId),
+    onPlayReplay:({matchId}) => openLeagueMatch(matchId,null,true),
+  });
+  mountedClubHistory = {host,key,controller};
+  void controller.reload();
+}
 const homeMatchCache = new Map();
 let homeLiveSnapshot = null;
 function homeMatchCacheKey(matchId) { return `${account?.profile?.id}:${matchId}`; }
 function leagueOverviewMarkup() {
   const last=recentClubMatches(league)[0], cached=homeMatchCache.get(homeMatchCacheKey(last?.id));
-  return clubHomeMarkup(league,{fixtures:resolvedLeagueScheduleFixtures(),broadcasts:homeLiveSnapshot?[homeLiveSnapshot,...liveBroadcasts]:liveBroadcasts,escape:escapeHtml,badge:teamBadgeMarkup,card:s4PlayerCardMarkup,time:scheduleTimeText,countdown:scheduleCountdownText,detail:cached?.match,detailState:cached?.state})
-    .replace('<div class="home-detail-body" data-home-tools></div>',`<div class="home-detail-body" data-home-tools>${leagueOverviewPlayerSearchMarkup()}${leagueMatchCentreMarkup()}${league.developer && league.season.status === "active" ? '<button class="button secondary" data-league-simulate>模拟下一轮</button>' : ''}</div>`);
+  const simulateButton = league.developer && league.season.status === "active" ? '<button class="button secondary" data-league-simulate>模拟下一轮</button>' : '';
+  return clubHomeMarkup(league,{fixtures:resolvedLeagueScheduleFixtures(),broadcasts:homeLiveSnapshot?[homeLiveSnapshot,...liveBroadcasts]:liveBroadcasts,escape:escapeHtml,badge:teamBadgeMarkup,card:s4PlayerCardMarkup,standingRows:leagueStandingRows,time:scheduleTimeText,countdown:scheduleCountdownText,detail:cached?.match,detailState:cached?.state,
+    playerSearch:leagueOverviewPlayerSearchMarkup(), archive:leagueMatchCentreMarkup()+simulateButton});
 }
 async function loadHomeMatchSummary() {
   const last=recentClubMatches(league)[0];
@@ -2871,8 +3047,12 @@ function openPredictionMarket(marketId) {
   });
 }
 
+let leagueCupView = 'tree';
+app.addEventListener('change', event => {
+  if (event.target.matches('.ko-view-radio')) leagueCupView = event.target.id === 'yffm-cup-view-tree' ? 'tree' : 'rounds';
+});
 function leagueCupOverviewMarkup() {
-  return knockoutCupMarkup(league,escapeHtml,competitionTeamNameMarkup,scheduleTimeText);
+  return knockoutCupMarkup(league,escapeHtml,competitionTeamNameMarkup,scheduleTimeText,leagueCupView);
 }
 
 function seasonFinalTournamentMarkup() {
@@ -3003,6 +3183,57 @@ function leaguePlayerTooltip(player, assignedRole = player.role) {
   return `${player.nationality ?? ""}${player.club ? ` · ${player.club}` : ""}\n综合能力：${player.effectiveOverall ?? player.overall}${player.upgradeLevel ? `（基础 ${player.baseOverall ?? player.overall}，强化 +${player.upgradeLevel}）` : ""}\n主位置：${ROLE_LABELS[player.role] ?? player.role} · 副位置：${ROLE_LABELS[player.secondaryRole] ?? "无"}\n当前位置：${ROLE_LABELS[assignedRole] ?? assignedRole}\n身高：${Math.round(player.effectiveHeightCm ?? player.heightCm ?? 0)}cm · ${leaguePlayerStatus(player)}\n${attributes}${enhancementTraits}`;
 }
 
+function leaguePlayerTooltipPayload(player, assignedRole = player.role, isBench = false, live = false) {
+  const assignedGroup = assignedRole === "GK" ? "GK" : ["CB", "LB", "RB", "LWB", "RWB"].includes(assignedRole) ? "DEF" : ["ST", "LW", "RW"].includes(assignedRole) ? "ATT" : "MID";
+  const keys = LEAGUE_ROLE_CORE_ATTRIBUTES[assignedGroup] ?? [];
+  const attributes = player.effectiveAttributes ?? player.attributes ?? {};
+  const stats = keys.filter(key => Number.isFinite(attributes[key])).map(key => ({
+    label:STAT_LABELS[key] ?? key, value:Math.round(attributes[key]),
+  }));
+  const representativeCard = player.cards?.find(card => card.id === player.activeCardId) ?? player.cards?.[0];
+  const traits = (representativeCard?.traits ?? player.traits ?? []).filter(trait => trait?.name)
+    .map(trait => ({ name:trait.name, summary:trait.summary ?? "" }));
+  const avail = live ? null : competitionAvailability(player, leaguePreviewCompetition());
+  const rawFitness = live ? player.fitness : avail?.fitness ?? player.state?.fitness ?? 100;
+  const fitness = Number.isFinite(rawFitness) ? Math.round(Math.max(0, Math.min(100, rawFitness))) : null;
+  const heightCm = Math.round(player.effectiveHeightCm ?? player.heightCm);
+  const fit = isBench ? "primary" : assignedRole === player.role ? "primary" : assignedRole === player.secondaryRole ? "secondary" : "unfamiliar";
+  return JSON.stringify({
+    name: player.name ?? "",
+    grade: String(player.grade ?? "C").toUpperCase(),
+    ovr: Math.round(player.effectiveOverall ?? player.overall ?? 0),
+    baseOvr: live && player.baseOverall == null ? null : Math.round(player.baseOverall ?? player.overall ?? 0),
+    upgrade: Number(player.upgradeLevel ?? 0),
+    meta: [player.nationality, player.club, heightCm > 0 ? `${heightCm}cm` : "身高未记录"].filter(Boolean).join(" · "),
+    role: ROLE_LABELS[player.role] ?? player.role ?? "",
+    secondary: player.secondaryRole && player.secondaryRole !== player.role ? (ROLE_LABELS[player.secondaryRole] ?? player.secondaryRole) : "",
+    assigned: ROLE_LABELS[assignedRole] ?? assignedRole ?? "",
+    fit,
+    isBench: Boolean(isBench),
+    status: live ? (player.sentOff ? "红牌" : player.injury ? "伤退" : "") : avail?.label,
+    fitness,
+    unavailable: live ? Boolean(player.injury || player.sentOff) : Boolean(avail?.unavailable),
+    stats,
+    traits,
+  });
+}
+
+function leagueMagnetTooltipCardMarkup(data) {
+  const grade = String(data.grade ?? "C").toLowerCase();
+  const fitText = data.isBench ? "主位置" : data.fit === "primary" ? "主位置" : data.fit === "secondary" ? "副位置" : "客串";
+  const threshold = normalizeLeagueFitnessThreshold(leagueTacticalDraft?.fitnessThreshold ?? league?.ownTeam?.fitnessThreshold, 65);
+  const statusTone = data.unavailable ? "danger" : belowFitnessThreshold(data.fitness, threshold) ? "warn" : "ok";
+  const statusText = data.unavailable ? data.status : Number.isFinite(data.fitness) ? `体力 ${data.fitness}%` : "";
+  const statsMarkup = (data.stats ?? []).map((s) => {
+    const tier = s.value >= 90 ? "tier-gold" : s.value >= 80 ? "tier-emerald" : "tier-base";
+    return `<div class="lmt-stat ${tier}"><span>${escapeHtml(s.label)}</span><b>${s.value}</b></div>`;
+  }).join("");
+  const traitsMarkup = (data.traits ?? []).length
+    ? `<footer class="lmt-traits">${data.traits.map((t) => `<div class="lmt-trait"><b>✦ ${escapeHtml(t.name)}</b><span>${escapeHtml(t.summary)}</span></div>`).join("")}</footer>`
+    : "";
+  return `<div class="lmt-card grade-${escapeHtml(grade)}"><header class="lmt-head"><div class="lmt-id"><div class="lmt-name-row"><b>${escapeHtml(data.name)}</b><span class="lmt-grade grade-${escapeHtml(grade)}">${escapeHtml(data.grade)}</span>${data.upgrade ? `<span class="lmt-upg">+${data.upgrade}</span>` : ""}</div><small>${escapeHtml(data.meta)}</small></div><div class="lmt-ovr"><strong>${data.ovr}</strong>${data.upgrade && data.baseOvr != null ? `<em>基础 ${data.baseOvr}</em>` : ""}</div></header><div class="lmt-pills"><span class="lmt-fit fit-${escapeHtml(data.fit)}">${data.isBench ? `位置: ${escapeHtml(data.role)}` : `当前: ${escapeHtml(data.assigned)} (${fitText})`}</span>${data.secondary ? `<span class="lmt-sub-role">副: ${escapeHtml(data.secondary)}</span>` : ""}${statusText ? `<span class="lmt-status is-${statusTone}">${escapeHtml(statusText)}</span>` : ""}</div>${statsMarkup ? `<div class="lmt-stats">${statsMarkup}</div>` : ""}${traitsMarkup}</div>`;
+}
+
 function leagueMagnetFitnessMarkup(fitnessValue) {
   const fitness = Math.max(0, Math.min(100, Number(fitnessValue) || 0));
   const threshold = normalizeLeagueFitnessThreshold(ensureLeagueTacticalDraft().fitnessThreshold, 65);
@@ -3037,7 +3268,7 @@ function leagueMagnetDutyMarkup(playerId, assignedRole) {
   const selectedId = leaguePlayerDutySelection(playerId, assignedRole, state);
   const selected = options.find((option) => option.id === selectedId) ?? options[0];
   const shared = `data-league-duty-player="${escapeHtml(playerId)}" data-league-duty-role="${escapeHtml(assignedRole)}" data-league-duty-state="${state}"`;
-  return `<span class="league-magnet-duty" ${shared} aria-label="当前职责：${escapeHtml(selected.label)}"><span role="button" tabindex="0" data-league-duty-step="-1" ${shared} aria-label="上一个职责">‹</span><b data-league-duty-label>${escapeHtml(selected.label)}</b><span role="button" tabindex="0" data-league-duty-step="1" ${shared} aria-label="下一个职责">›</span></span>`;
+  return `<span class="league-magnet-duty" ${shared} aria-label="当前职责：${escapeHtml(selected.label)}"><span role="button" tabindex="0" data-league-duty-step="-1" ${shared} aria-label="上一个职责">‹</span><button type="button" data-league-duty-open data-league-duty-label aria-haspopup="dialog" ${shared}>${escapeHtml(selected.label)}</button><span role="button" tabindex="0" data-league-duty-step="1" ${shared} aria-label="下一个职责">›</span></span>`;
 }
 
 function leagueMagnetPreviewMarkup(playerId, assignedRole) {
@@ -3045,14 +3276,14 @@ function leagueMagnetPreviewMarkup(playerId, assignedRole) {
   const selectedId = leaguePlayerDutySelection(playerId, assignedRole, leaguePlanStateForPositionPreset());
   const selected = options.find((option) => option.id === selectedId) ?? options[0];
   const dutyLabel = selected?.label ?? "默认职责";
-  return `<span class="league-tactical-preview-position" aria-hidden="true">${escapeHtml(assignedRole)}</span><span class="league-tactical-preview-duty" aria-hidden="true">${escapeHtml(dutyLabel)}</span>`;
+  return `<span class="league-tactical-preview-position" aria-hidden="true">${escapeHtml(fieldRoleAbbreviation(assignedRole, selectedId))}</span><span class="league-tactical-preview-duty" aria-hidden="true">${escapeHtml(dutyLabel)}</span>`;
 }
 
 
-function fieldRoleAbbreviation(role) {
+function fieldRoleAbbreviation(role, duty) {
   const raw = String(role ?? "").trim();
   const matchedCode = Object.entries(ROLE_LABELS).find(([code, label]) => code === raw.toUpperCase() || label === raw)?.[0];
-  return String(matchedCode ?? raw).toUpperCase();
+  return dutyFieldPosition(matchedCode ?? raw, duty);
 }
 function captainBadgeMarkup(visible) {
   return visible ? `<span class="captain-c-badge" aria-label="队长" title="队长">C</span>` : "";
@@ -3060,9 +3291,10 @@ function captainBadgeMarkup(visible) {
 
 function leagueBoardMagnet(player, position, assignedRole) {
   const tooltip = leaguePlayerTooltip(player, assignedRole);
+  const tooltipCard = leaguePlayerTooltipPayload(player, assignedRole, false);
   const upgrade = Number(player.upgradeLevel ?? 0);
   const fitness = competitionAvailability(player,leaguePreviewCompetition()).fitness;
-  return `<div class="magnet league-squad-magnet grade-${player.grade.toLowerCase()} ${leaguePlayerUnavailable(player) ? "unavailable" : ""}" role="group" tabindex="0" aria-label="${escapeHtml(player.name)}，${ROLE_LABELS[assignedRole] ?? assignedRole}" data-league-magnet="${player.id}" data-assigned-role="${escapeHtml(assignedRole)}" data-primary-role="${escapeHtml(player.role ?? "")}" data-secondary-role="${escapeHtml(player.secondaryRole ?? "")}" data-traits="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%">${captainBadgeMarkup(player.id === ensureLeagueTacticalDraft().captainId)}${leagueMagnetAvailabilityMarkup(player)}<span class="league-magnet-role">${ROLE_LABELS[assignedRole] ?? assignedRole}</span><b>${escapeHtml(player.name)}</b><i>${player.effectiveOverall ?? player.overall}</i>${leagueMagnetFitnessMarkup(fitness)}${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}${leagueMagnetDutyMarkup(player.id, assignedRole)}${leagueMagnetPreviewMarkup(player.id, assignedRole)}</div>`;
+  return `<div class="magnet league-squad-magnet grade-${player.grade.toLowerCase()} ${leaguePlayerUnavailable(player) ? "unavailable" : ""}" role="group" tabindex="0" aria-label="${escapeHtml(player.name)}，${ROLE_LABELS[assignedRole] ?? assignedRole}" data-league-magnet="${player.id}" data-assigned-role="${escapeHtml(assignedRole)}" data-primary-role="${escapeHtml(player.role ?? "")}" data-secondary-role="${escapeHtml(player.secondaryRole ?? "")}" data-traits="${escapeHtml(tooltip)}" data-tooltip-card="${escapeHtml(tooltipCard)}" style="left:${position.x}%;top:${position.y}%">${captainBadgeMarkup(player.id === ensureLeagueTacticalDraft().captainId)}${leagueMagnetAvailabilityMarkup(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole, leaguePlayerDutySelection(player.id, assignedRole)))}</span><b>${escapeHtml(player.name)}</b><i>${player.effectiveOverall ?? player.overall}</i>${leagueMagnetFitnessMarkup(fitness)}${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}${leagueMagnetDutyMarkup(player.id, assignedRole)}${leagueMagnetPreviewMarkup(player.id, assignedRole)}</div>`;
 }
 
 function leagueMobileDutySheetMarkup() {
@@ -3079,46 +3311,57 @@ function leagueMobileDutySheetMarkup() {
     ? [{ id:"", label:"门线门将", description:"当前版本的门将固定执行门线防守，不设置专项职责。" }]
     : v2PlayerDutyOptionsForRole(assignedRole);
   const selectedId = assignedRole === "GK" ? "" : leaguePlayerDutySelection(player.id, assignedRole, state);
-  const selected = options.find((option) => option.id === selectedId) ?? options[0];
   const shared = `data-league-duty-player="${escapeHtml(player.id)}" data-league-duty-role="${escapeHtml(assignedRole)}" data-league-duty-state="${state}"`;
-  return `<div class="league-mobile-duty-backdrop" data-league-duty-backdrop><section class="league-mobile-duty-sheet" data-league-duty-sheet role="dialog" aria-modal="true" aria-label="设置球员职责"><header><div><small>${phaseLabel} · ${ROLE_LABELS[assignedRole] ?? assignedRole}</small><b>${escapeHtml(player.name)}</b></div><button type="button" data-league-duty-close aria-label="关闭职责面板">×</button></header><div class="league-mobile-duty-selector"><button type="button" data-league-duty-step="-1" ${shared} ${assignedRole === "GK" ? "disabled" : ""} aria-label="上一个职责">‹</button><div><small>当前职责</small><b data-league-duty-label>${escapeHtml(selected.label)}</b><p data-league-duty-description>${escapeHtml(selected.description)}</p></div><button type="button" data-league-duty-step="1" ${shared} ${assignedRole === "GK" ? "disabled" : ""} aria-label="下一个职责">›</button></div><footer>职责只应用于${phaseLabel}；切换站位页可分别设置另外两个阶段。</footer></section></div>`;
+  const choices = options.map(option => `<button type="button" data-league-duty-pick="${escapeHtml(option.id)}" ${shared} aria-pressed="${option.id === selectedId}" ${assignedRole === "GK" ? "disabled" : ""}>
+    <strong>${escapeHtml(fieldRoleAbbreviation(assignedRole, option.id))}</strong><span><b>${escapeHtml(option.label)}</b><small>${escapeHtml(option.description)}</small></span>
+  </button>`).join("");
+  return `<div class="league-mobile-duty-backdrop" data-league-duty-backdrop><section class="league-mobile-duty-sheet" data-league-duty-sheet role="dialog" aria-modal="true" aria-label="设置球员职责">
+    <header><div><small>${phaseLabel} · 基础位置 ${escapeHtml(assignedRole)}</small><b>${escapeHtml(player.name)}</b></div><button type="button" data-league-duty-close aria-label="关闭职责面板">×</button></header>
+    <div class="league-duty-choices">${choices}</div></section></div>`;
 }
 
 function openLeagueMobileDutySheet(playerId) {
   leagueMobileDutyPlayerId = playerId;
   document.querySelector(".league-mobile-duty-backdrop")?.remove();
   const markup = leagueMobileDutySheetMarkup();
-  if (markup) document.querySelector(".league-squad-page")?.insertAdjacentHTML("beforeend", markup);
+  if (markup) {
+    document.querySelector(".league-squad-page")?.insertAdjacentHTML("beforeend", markup);
+    const sheet = document.querySelector("[data-league-duty-sheet]");
+    (sheet?.querySelector('[aria-pressed="true"]:enabled') ?? sheet?.querySelector("[data-league-duty-close]"))?.focus();
+  }
 }
 
 function closeLeagueMobileDutySheet() {
+  const trigger = leagueMobileDutyPlayerId && document.querySelector(`[data-league-magnet="${CSS.escape(leagueMobileDutyPlayerId)}"]`);
   leagueMobileDutyPlayerId = null;
   document.querySelector(".league-mobile-duty-backdrop")?.remove();
+  (trigger?.querySelector("[data-league-duty-open]") ?? trigger)?.focus({preventScroll:true});
 }
 
 function stepLeaguePlayerDuty(playerId, assignedRole, state, direction) {
   if (!playerId || assignedRole === "GK") return;
   const options = v2PlayerDutyOptionsForRole(assignedRole);
   if (options.length <= 1) return;
-  const plan = ensureLeagueTacticalDraft().tacticalPlans[state] ?? ensureLeagueTacticalDraft().tacticalPlans.opening;
-  plan.playerDuties ??= {};
   const currentId = leaguePlayerDutySelection(playerId, assignedRole, state);
   const currentIndex = Math.max(0, options.findIndex((option) => option.id === currentId));
   const next = options[(currentIndex + Number(direction) + options.length) % options.length];
+  setLeaguePlayerDuty(playerId, assignedRole, state, next.id);
+}
+
+function setLeaguePlayerDuty(playerId, assignedRole, state, dutyId) {
+  const next = v2PlayerDutyOptionsForRole(assignedRole).find(option => option.id === dutyId);
+  if (!next || !playerId || assignedRole === "GK") return;
+  const plan = ensureLeagueTacticalDraft().tacticalPlans[state] ?? ensureLeagueTacticalDraft().tacticalPlans.opening;
+  plan.playerDuties ??= {};
   if (next.id) plan.playerDuties[playerId] = next.id;
   else delete plan.playerDuties[playerId];
   leagueEditorDirty = true;
-  document.querySelectorAll("[data-league-duty-player]").forEach((control) => {
-    if (control.dataset.leagueDutyPlayer !== playerId || control.dataset.leagueDutyState !== state) return;
-    control.setAttribute("aria-label", `当前职责：${next.label}`);
-    const label = control.querySelector?.("[data-league-duty-label]");
-    if (label) label.textContent = next.label;
-  });
-  if (leagueMobileDutyPlayerId === playerId) {
-    const current = document.querySelector(".league-mobile-duty-backdrop");
-    const template = document.createElement("template");
-    template.innerHTML = leagueMobileDutySheetMarkup().trim();
-    if (current && template.content.firstElementChild) current.replaceWith(template.content.firstElementChild);
+  const magnet = document.querySelector(`[data-league-magnet="${CSS.escape(playerId)}"]`);
+  if (magnet && state === leaguePlanStateForPositionPreset()) {
+    const fieldPosition = fieldRoleAbbreviation(assignedRole, next.id);
+    magnet.querySelectorAll(".league-magnet-role, .league-tactical-preview-position, .shield-card-role").forEach(label => { label.textContent = fieldPosition; });
+    magnet.querySelectorAll("[data-league-duty-label], .league-tactical-preview-duty").forEach(label => { label.textContent = next.label; });
+    magnet.querySelector(".league-magnet-duty")?.setAttribute("aria-label", `当前职责：${next.label}`);
   }
   syncLeagueInteractionFeedback();
   scheduleLeagueTeamAutoSave(180);
@@ -3207,7 +3450,7 @@ function automaticallyAdaptLeagueDuties() {
 
 function leagueBondDisplayLineup(starters, bonds) {
   if (!leagueShowBondBonuses || !bonds.length) return starters;
-  return applyS4BondBonuses(starters.map((player) => ({
+  return applyTacticalBondBonuses(starters.map((player) => ({
     ...player,
     attributes:{ ...(player.effectiveAttributes ?? player.attributes ?? {}) },
   })), bonds, { maximumAttribute:offlineAttributeSettings.unlocked ? Number.POSITIVE_INFINITY : 99 }).map((player) => ({
@@ -3228,9 +3471,10 @@ function compareLeagueBenchPlayers(left, right) {
 }
 function leagueBenchMagnet(player) {
   const tooltip = leaguePlayerTooltip(player);
+  const tooltipCard = leaguePlayerTooltipPayload(player, player.role, true);
   const upgrade = Number(player.upgradeLevel ?? 0);
   const fitness = competitionAvailability(player,leaguePreviewCompetition()).fitness;
-  return `<button type="button" class="magnet bench-magnet league-bench-magnet grade-${player.grade.toLowerCase()} ${leaguePlayerUnavailable(player) ? "unavailable" : ""}" data-league-bench-magnet="${player.id}" data-primary-role="${escapeHtml(player.role ?? "")}" data-secondary-role="${escapeHtml(player.secondaryRole ?? "")}" data-traits="${escapeHtml(tooltip)}">${leagueMagnetAvailabilityMarkup(player)}<span class="league-magnet-role">${ROLE_LABELS[player.role] ?? player.role}</span><b>${escapeHtml(player.name)}</b><i>${player.effectiveOverall ?? player.overall}</i>${leagueMagnetFitnessMarkup(fitness)}${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
+  return `<button type="button" class="magnet bench-magnet league-bench-magnet grade-${player.grade.toLowerCase()} ${leaguePlayerUnavailable(player) ? "unavailable" : ""}" data-league-bench-magnet="${player.id}" data-primary-role="${escapeHtml(player.role ?? "")}" data-secondary-role="${escapeHtml(player.secondaryRole ?? "")}" data-traits="${escapeHtml(tooltip)}" data-tooltip-card="${escapeHtml(tooltipCard)}">${leagueMagnetAvailabilityMarkup(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(player.role))}</span><b>${escapeHtml(player.name)}</b><i>${player.effectiveOverall ?? player.overall}</i>${leagueMagnetFitnessMarkup(fitness)}${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
 }
 
 function leagueNextMatchMarkup() {
@@ -3240,7 +3484,7 @@ function leagueNextMatchMarkup() {
   const startsAt = new Date(next.startsAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
   const weather = next.weather
     ? `<strong>${weatherIcon(next.weather)} ${escapeHtml(next.weather.name)}</strong><span>降水 ${next.weather.precipitation}% · 风力 ${next.weather.wind}</span>`
-    : `<strong>开赛时生成</strong><span>友谊赛天气将在比赛开始时确定</span>`;
+    : `<strong>天气待公布</strong>`;
   const referee = next.referee
     ? `<strong>${escapeHtml(next.referee.name)}</strong><span>${escapeHtml(next.referee.description)}</span>`
     : `<strong>开赛时生成</strong><span>友谊赛裁判将在比赛开始时确定</span>`;
@@ -3505,6 +3749,7 @@ function openLeagueBatchEnhancementDialog() {
     try {
       const value = await api("/api/versus/league/card/enhance-batch", { method:"POST", body:leagueIdentity({ batchPlayerId:overlay.querySelector("[data-batch-enhancement-player]").value, mainLevel:Number(overlay.querySelector("[data-batch-enhancement-main-level]").value), materialLevel:Number(overlay.querySelector("[data-batch-enhancement-material-level]").value), quantity:Number(overlay.querySelector("[data-batch-enhancement-quantity]").value) }) });
       const result = value.batchEnhancement;
+      if (result.listings) league.listings = result.listings;
       const current = league.ownTeam.roster.find((entry) => entry.id === result.playerId);
       if (current && Array.isArray(result.cards)) current.cards = result.cards;
       if (current) current.pendingTraitOffers = result.pendingTraitOffers ?? current.pendingTraitOffers;
@@ -3829,6 +4074,31 @@ function leagueMatchPlanMarkup(state, label) {
   return principlePlanMarkup(state, label, plan, effectiveLeaguePlanDimensions(plan));
 }
 
+function tacticalBondPanel(rows,starters){
+  const active=rows.filter(b=>b.active);
+  const names=new Map(starters.map(p=>[p.id,p.name]));
+  if (!active.length) return "";
+  const badges = active.map(b => {
+    const tier = b.type === "structure" ? "固定档" : b.tier + "人档";
+    const data = {
+      name:b.name, tier,
+      requirement:`${b.count} 人符合 · 至少 ${b.minimum} 人 · ${b.styles.map(bondStyleLabel).join("或")}`,
+      stats:Object.entries(b.add).map(([key, value]) => [X_ATTRIBUTE_LABELS[key], value]),
+      members:b.memberIds.map(id => (names.get(id) ?? id) + (b.wildcardIds.includes(id) ? "（变色龙）" : "")).join("、"),
+    };
+    return `<button type="button" class="tactical-bond-badge" data-render-key="bond-${escapeHtml(b.id)}" data-bond-tooltip="${escapeHtml(JSON.stringify(data))}">${escapeHtml(b.name)} · ${tier}</button>`;
+  });
+  return `<div class="league-bond-ready" aria-label="已激活战术羁绊">${badges.join("")}</div>`;
+}
+
+function tacticalBondTooltipMarkup(bond) {
+  const stats = bond.stats.map(([label, value]) => `<div class="lmt-stat"><span>${escapeHtml(label)}</span><b>+${escapeHtml(value)}</b></div>`).join("");
+  return `<div class="lmt-card"><div class="lmt-id"><div class="lmt-name-row"><b>${escapeHtml(bond.name)}</b><span class="lmt-status is-ok">生效</span></div>
+    <small>${escapeHtml(bond.tier)} · ${escapeHtml(bond.requirement)}</small></div>
+    <div class="lmt-id"><small>当前增益</small><div class="lmt-stats bond-tooltip-stats">${stats}</div></div>
+    <div class="lmt-traits"><div class="lmt-trait"><b>受益球员</b><span>${escapeHtml(bond.members)}</span></div></div></div>`;
+}
+
 function legacyLeagueSquadMarkup() {
   const team = activeTacticsTeam();
   const roster = team.roster;
@@ -3861,12 +4131,11 @@ function legacyLeagueSquadMarkup() {
   const presetShapes = Object.fromEntries(Object.entries(leaguePositionPresets).map(([key, positions]) => [key, formationFromPositions(starters, positions, { requireOutfieldLines:key === "position1", formationLines:leagueFormationLinePresets[key] })]));
   const chemistryLines = leagueChemistryLinesMarkup(starters, leaguePositions, shape.roles);
   const tacticalDraft = ensureLeagueTacticalDraft();
-  const bonds = evaluateS4LineupBonds(starters, league.bondCatalog ?? [], { roles:shape.roles });
+  const bondPlan=tacticalDraft.tacticalPlans[leaguePlanStateForPositionPreset()];
+  const bonds = evaluateTacticalBonds(starters, league.bondCatalog, bondPlan, shape.roles);
   const displayStarters = leagueBondDisplayLineup(starters, bonds);
   const magnets = displayStarters.map((player) => leagueBoardMagnet(player, leaguePositions[player.id] ?? { x:50, y:50 }, shape.roles[player.id])).join("");
-  const bondReady = bonds.length
-    ? `<div class="league-bond-ready">${bonds.map((bond) => `<span>${escapeHtml(String(bond.name).replace(/羁绊$/u, ""))} ${bond.count}/11 <em>+${(bond.bonus * 100).toFixed(1).replace(".0", "")}%</em></span>`).join("")}</div>`
-    : "";
+  const bondReady = tacticalBondPanel(bonds, starters);
   const presetValidity = Object.fromEntries(Object.entries(presetShapes).map(([key, entry]) => [key, entry.valid]));
   const allPresetsValid = Object.values(presetValidity).every(Boolean);
   const positionLabels = { position1:"默认站位", position2:"领先站位", position3:"落后站位" };
@@ -3875,7 +4144,13 @@ function legacyLeagueSquadMarkup() {
   const fitnessThreshold = normalizeLeagueFitnessThreshold(tacticalDraft.fitnessThreshold, 65);
   const fitnessControl = `<label class="league-board-fitness" title="赛前低于红线时尝试轮休；轮休球员保留在替补席"><span>赛前体力红线</span><input type="number" inputmode="numeric" name="fitnessThreshold" min="45" max="100" step="1" value="${fitnessThreshold}" aria-label="赛前体力红线"><em>%</em></label>`;
   const schemes = team.lineupSchemes ?? [{ id:team.activeLineupSchemeId ?? "lineup-1", name:"方案 1" }];
-  const assignmentSelect = `<div class="league-competition-bindings" aria-label="赛事使用方案">${Object.entries(COMPETITION_LABELS).map(([competition,label])=>`<label><span>${label}</span><select data-lineup-scheme-assignment="${competition}" aria-label="${label}使用方案">${schemes.map(s=>`<option value="${escapeHtml(s.id)}" ${team.lineupSchemeAssignments?.[competition]===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}</select></label>`).join('')}<button type="button" data-lineup-assign-all>全部用当前</button><label><span>状态预览</span><select data-lineup-availability aria-label="球员状态预览赛事">${Object.entries(COMPETITION_LABELS).map(([id,label])=>`<option value="${id}" ${leaguePreviewCompetition()===id?'selected':''}>${label}</option>`).join('')}</select></label></div>`;
+  const competitions = Object.entries(COMPETITION_LABELS);
+  const assigned = competitions.filter(([id]) => team.lineupSchemeAssignments?.[id] === team.activeLineupSchemeId);
+  const bindingSummary = assigned.length === competitions.length ? "全部赛事" : assigned.map(([,label]) => label).join("、") || "选择赛事";
+  const assignmentSelect = `<label class="scheme-binding-control"><span>适用赛事</span><select data-lineup-scheme-assignment aria-label="当前方案适用赛事"><option value="" selected disabled>${escapeHtml(bindingSummary)}</option>${competitions.map(([id,label]) => {
+    const scheme = schemes.find(s => s.id === team.lineupSchemeAssignments?.[id]);
+    return `<option value="${id}">${scheme?.id===team.activeLineupSchemeId?'✓ ':''}${label} · ${escapeHtml(scheme?.name??'默认方案')}</option>`;
+  }).join('')}<option value="all">全部使用当前方案</option></select></label><label class="scheme-preview-control"><span>状态预览</span><select data-lineup-availability aria-label="球员状态预览赛事">${competitions.map(([id,label])=>`<option value="${id}" ${leaguePreviewCompetition()===id?'selected':''}>${label}</option>`).join('')}</select></label>`;
   const schemeSwitcher = `<div class="league-lineup-scheme-switcher"><label><span>阵容方案</span><select data-lineup-scheme-select aria-label="切换阵容方案">${schemes.map((scheme) => `<option value="${escapeHtml(scheme.id)}" ${scheme.id === team.activeLineupSchemeId ? "selected" : ""}>${escapeHtml(scheme.name)}</option>`).join("")}</select></label><button type="button" data-lineup-scheme-rename title="重命名当前方案" aria-label="重命名当前方案">✎</button>${schemes.length < 3 ? `<button type="button" data-lineup-scheme-create title="新增阵容方案" aria-label="新增阵容方案">＋</button>` : ""}<button type="button" class="danger" data-lineup-scheme-delete title="${schemes.length > 1 ? "删除当前方案" : "至少保留一套方案"}" aria-label="删除当前方案" ${schemes.length > 1 ? "" : "disabled"}>×</button>${assignmentSelect}</div>`;
   const boardToolbar = `<div class="league-board-controls"><div class="league-board-tool-stack"><div class="league-relationship-controls">${relationshipControls}${fitnessControl}</div><div class="league-board-toolbar">${positionTabs}</div></div><div class="league-board-side">${bondReady}${schemeSwitcher}</div></div>`;
   const descriptions={base:"回到当前战术板位置",attack:"观察右路接应与套上补位",left:"观察左路接应与套上补位",defense:"观察上抢与身后封线",gain:"观察接应与向前展开",loss:"观察反抢支援与回收"};
@@ -3888,11 +4163,54 @@ function legacyLeagueSquadMarkup() {
 }
 
 let inspectedSquadPlayerId = null;
+function tacticalRadarMarkup(axes) {
+  const point = (i, radius) => {
+    const angle = i * 2 * Math.PI / axes.length - Math.PI / 2;
+    return [130 + radius * Math.cos(angle), 80 + radius * Math.sin(angle)].map(n => n.toFixed(1));
+  };
+  const ring = scale => axes.map((axis, i) => point(i, 50 * scale(axis)).join(",")).join(" ");
+  const grid = [0.25, 0.5, 0.75, 1].map(n => `<polygon points="${ring(() => n)}"/>`).join("");
+  const spokes = axes.map((_, i) => `<path d="M130 80 L${point(i,50).join(" ")}"/>`).join("");
+  const labels = axes.map(({label,value}, i) => {
+    const [x,y] = point(i,65);
+    const anchor = i === 0 || i === 3 ? "middle" : i < 3 ? "start" : "end";
+    return `<text x="${x}" y="${y}" text-anchor="${anchor}" dominant-baseline="middle">${label} <tspan>${value}</tspan></text>`;
+  }).join("");
+  return `<figure class="squad-tactical-radar"><figcaption>战术价值 <small>当前预案估算 · 百分制</small></figcaption>
+    <svg viewBox="0 0 260 160" role="img" aria-label="${axes.map(a => a.label+' '+a.value).join('，')}">
+      <g class="radar-grid">${grid}${spokes}</g><polygon class="radar-values" points="${ring(a => a.value / 100)}"/>${labels}
+    </svg></figure>`;
+}
+
 function squadInspectorMarkup() {
-  const team = activeTacticsTeam();
-  const player = team.roster.find(p => p.id === inspectedSquadPlayerId) ?? team.roster.find(p => leagueStartingIds?.includes(p.id));
-  if (!player) return '';
-  return `<section class="club-player-inspector"><div class="yffm-card-slot size-l">${s4PlayerCardMarkup(player,{interactive:false})}</div><div><small>选中球员</small><h3>${escapeHtml(player.name)}</h3><p>${escapeHtml(ROLE_LABELS[player.role] ?? player.role)} · 能力 ${player.overall}</p><p>${escapeHtml(leaguePlayerStatus(player))}</p><small>赛前可调整阵容。比赛中仅按伤退、门将红牌等情况处理被动换人。</small></div></section>`;
+  const {roster} = activeTacticsTeam();
+  const starters = roster.filter(p => leagueStartingIds.includes(p.id));
+  const player = roster.find(p => p.id === inspectedSquadPlayerId) ?? starters[0];
+  if (!player) return "";
+  const shape = formationFromPositions(starters, leaguePositions, { formationLines:leagueFormationLinePresets?.[leagueActivePositionPreset] });
+  const bench = !shape.roles[player.id];
+  const role = shape.roles[player.id] ?? player.role;
+  const state = leaguePlanStateForPositionPreset();
+  const plan = ensureLeagueTacticalDraft().tacticalPlans[state];
+  const duty = bench ? "" : leaguePlayerDutySelection(player.id, role, state);
+  const dutyLabel = role === "GK" ? "门线门将" : v2PlayerDutyOptionsForRole(role).find(option => option.id === duty)?.label;
+  const info = JSON.parse(leaguePlayerTooltipPayload(player, role, bench));
+  const bonds = bench ? [] : evaluateTacticalBonds(starters, league.bondCatalog, plan, shape.roles).filter(b => b.active && b.memberIds.includes(player.id));
+  const [adjusted] = applyTacticalBondBonuses([{...player, attributes:player.effectiveAttributes ?? player.attributes}], bonds);
+  const axes = playerTacticalRadar({...adjusted,effectiveAttributes:adjusted.attributes}, role, duty, resolveV2SplitTacticalPlan(plan));
+  const foot = {left:"左脚",right:"右脚",both:"双足"}[player.preferredFoot];
+  const position = [info.role, info.secondary].filter(Boolean).join(" / ");
+  const context = [shape.name, {opening:"默认预案",leading:"领先预案",trailing:"落后预案"}[state],
+    bench ? "替补 · 按主位置预估" : "首发", fieldRoleAbbreviation(role, duty), dutyLabel].filter(Boolean).join(" · ");
+  const facts = [
+    ["能力", info.ovr], ["体能", info.fitness ?? "—"], ["擅长位置", position], ["惯用脚", foot ?? "未记录"],
+  ];
+  if (info.unavailable) facts.push(["状态", info.status]);
+  if (bonds.length) facts.push(["生效羁绊", bonds.map(b => b.name).join("、")]);
+  return `<section class="club-player-inspector"><div class="yffm-card-slot size-l">${s4PlayerCardMarkup(player,{interactive:false,upgradeLevel:info.upgrade})}</div>
+    <div class="squad-inspector-profile"><small>${escapeHtml(context)}</small><h3>${escapeHtml(player.name)}</h3>
+    <p>${escapeHtml(info.meta)}</p><dl>${facts.map(([label,value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`).join("")}</dl></div>
+    ${tacticalRadarMarkup(axes)}</section>`;
 }
 function inspectSquadPlayer(event) {
   const magnet = event.target.closest('[data-league-magnet],[data-league-bench-magnet]');
@@ -4299,6 +4617,7 @@ function refreshLeagueSquadPositionUi() {
   const nextSummary = nextForm.querySelector(".league-bench-summary");
   if (currentSummary && nextSummary) patchDomElement(currentSummary, nextSummary);
 
+  patchDomElement(currentForm.querySelector("[data-club-player-inspector]"), nextForm.querySelector("[data-club-player-inspector]"));
   const currentControls = currentForm.querySelector(".league-board-controls");
   const currentBond = currentControls?.querySelector(".league-bond-ready");
   const nextBond = nextForm.querySelector(".league-bond-ready");
@@ -4346,42 +4665,77 @@ function swapLeagueStarter(benchId, starterId) {
   scheduleLeagueTeamAutoSave(180);
 }
 
+let magnetTooltipBound = false;
 function bindLeagueMagnetTooltips() {
-  document.querySelector(".league-magnet-tooltip")?.remove();
-  if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
-  let tooltip = null;
-  const hide = () => {
+  if (magnetTooltipBound) return;
+  magnetTooltipBound = true;
+  const selector = ".league-squad-magnet[data-tooltip-card],.league-bench-magnet[data-tooltip-card],[data-bond-tooltip]";
+  let owner = null, tooltip = null, pointer = null, payload = null;
+  const coarse = window.matchMedia("(hover: none), (pointer: coarse)");
+  function hide() {
+    owner?.removeAttribute("aria-describedby");
     tooltip?.remove();
-    tooltip = null;
+    owner = tooltip = payload = null;
+    pointer = null;
+  }
+  function place(x, y) {
+    const rect = tooltip.getBoundingClientRect();
+    tooltip.style.left = Math.max(8, Math.min(innerWidth - rect.width - 8, x - rect.width / 2)) + "px";
+    const top = y - rect.height - 14;
+    tooltip.style.top = Math.max(8, top >= 8 ? top : Math.min(innerHeight - rect.height - 8, y + 18)) + "px";
+  }
+  function show(magnet, x, y) {
+    const currentPayload = magnet.dataset.bondTooltip ?? magnet.dataset.tooltipCard;
+    if (magnet !== owner || payload !== currentPayload) {
+      hide();
+      payload = currentPayload;
+      owner = magnet;
+      tooltip = document.createElement("div");
+      tooltip.className = "league-magnet-tooltip is-structured";
+      tooltip.id = magnet.hasAttribute("data-bond-tooltip") ? "league-bond-hover-card" : "league-player-hover-card";
+      tooltip.setAttribute("role", "tooltip");
+      tooltip.innerHTML = magnet.hasAttribute("data-bond-tooltip")
+        ? tacticalBondTooltipMarkup(JSON.parse(magnet.dataset.bondTooltip))
+        : leagueMagnetTooltipCardMarkup(JSON.parse(magnet.dataset.tooltipCard));
+      magnet.setAttribute("aria-describedby", tooltip.id);
+      document.body.append(tooltip);
+    }
+    place(x, y);
+  }
+  const hover = event => {
+    if (event.pointerType === "touch" || coarse.matches || draggingMagnet) return;
+    const magnet = event.target.closest?.(selector);
+    if (magnet) {
+      show(magnet, event.clientX, event.clientY);
+      pointer = {x:event.clientX,y:event.clientY};
+    }
   };
-  const show = (magnet, clientX, clientY) => {
-    hide();
-    tooltip = document.createElement("div");
-    tooltip.className = "league-magnet-tooltip";
-    tooltip.textContent = magnet.dataset.traits ?? "";
-    document.body.appendChild(tooltip);
-    const place = (x, y) => {
-      const rect = tooltip.getBoundingClientRect();
-      const left = Math.max(10, Math.min(window.innerWidth - rect.width - 10, x - rect.width / 2));
-      const preferredTop = y - rect.height - 14;
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${preferredTop >= 10 ? preferredTop : Math.min(window.innerHeight - rect.height - 10, y + 18)}px`;
-    };
-    place(clientX, clientY);
-    return place;
-  };
-  document.querySelectorAll(".league-squad-magnet[data-traits],.league-bench-magnet[data-traits]").forEach((magnet) => {
-    let place = null;
-    magnet.addEventListener("pointerenter", (event) => { if (!draggingMagnet) place = show(magnet, event.clientX, event.clientY); });
-    magnet.addEventListener("pointermove", (event) => { if (place && !draggingMagnet) place(event.clientX, event.clientY); });
-    magnet.addEventListener("pointerleave", () => { place = null; hide(); });
-    magnet.addEventListener("pointerdown", () => { place = null; hide(); });
-    magnet.addEventListener("focus", () => {
-      const rect = magnet.getBoundingClientRect();
-      place = show(magnet, rect.left + rect.width / 2, rect.top);
-    });
-    magnet.addEventListener("blur", () => { place = null; hide(); });
+  document.addEventListener("pointerover", hover, true);
+  document.addEventListener("pointermove", hover, true);
+  document.addEventListener("pointerout", event => {
+    if (owner?.contains(event.target) && !owner.contains(event.relatedTarget)) hide();
   });
+  document.addEventListener("focusin", event => {
+    const magnet = event.target.closest?.(selector);
+    if (!magnet || !event.target.matches(":focus-visible")) return;
+    const rect = magnet.getBoundingClientRect();
+    show(magnet, rect.left + rect.width / 2, rect.top);
+  });
+  document.addEventListener("focusout", event => { if (owner?.contains(event.target)) hide(); });
+  document.addEventListener("click", event => {
+    const badge = event.target.closest?.("[data-bond-tooltip], .s4-broadcast-magnet[data-tooltip-card]");
+    if (!badge) return;
+    const rect = badge.getBoundingClientRect();
+    show(badge, rect.left + rect.width / 2, rect.top);
+  });
+  document.addEventListener("pointerdown", hide);
+  document.addEventListener("keydown", event => { if (event.key === "Escape") hide(); });
+  document.addEventListener("scroll", () => {
+    if (!owner) return;
+    if (pointer && owner.contains(document.elementFromPoint(pointer.x, pointer.y))) place(pointer.x, pointer.y);
+    else hide();
+  }, true);
+  window.addEventListener("blur", hide);
 }
 
 function frameThrottlePointerMove(handler) {
@@ -4464,24 +4818,19 @@ function bindLeagueSquad() {
     exportLeagueLineupShare().catch((error) => showToast(error.message));
   });
   document.querySelector("[data-lineup-share-import]")?.addEventListener("click", openLeagueLineupImport);
-  document.querySelectorAll("[data-lineup-scheme-assignment]").forEach(select=>select.addEventListener("change", async (event) => {
+  document.querySelector("[data-lineup-scheme-assignment]")?.addEventListener("change", async (event) => {
     event.stopPropagation();
-    const competition = select.dataset.lineupSchemeAssignment;
-    const previousValue = league.ownTeam.lineupSchemeAssignments?.[competition];
-    const lineupSchemeId=select.value;
+    const select = event.currentTarget;
+    const competition = select.value;
     select.disabled = true;
     try {
-      await mutateLineupScheme({ action:"assign", lineupSchemeId, competition });
-      showToast(`${COMPETITION_LABELS[competition]}方案已更新`);
+      await mutateLineupScheme({action:"assign",lineupSchemeId:league.ownTeam.activeLineupSchemeId,competition});
+      showToast(competition==="all"?"三个赛事已使用当前方案":`${COMPETITION_LABELS[competition]}已使用当前方案`);
     } catch (error) {
-      select.value = previousValue;
+      select.value = "";
       select.disabled = false;
       showToast(error.message);
     }
-  }));
-  document.querySelector('[data-lineup-assign-all]')?.addEventListener('click',async()=>{
-    try{await mutateLineupScheme({action:'assign',lineupSchemeId:league.ownTeam.activeLineupSchemeId,competition:'all'});showToast('三个赛事已使用当前方案');}
-    catch(error){showToast(error.message);}
   });
   document.querySelector('[data-lineup-availability]')?.addEventListener('change',event=>{
     event.stopPropagation();
@@ -4587,7 +4936,7 @@ function bindLeagueSquad() {
     return nearest;
   };
   document.querySelectorAll("[data-league-magnet]").forEach((magnet) => magnet.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || event.target.closest("[data-league-duty-step]")) return;
+    if (event.button !== 0 || event.target.closest("[data-league-duty-step], [data-league-duty-open]")) return;
     event.preventDefault();
     const playerId = magnet.dataset.leagueMagnet;
     const startPosition = { ...leaguePositions[playerId] };
@@ -4753,9 +5102,9 @@ function leagueStatsMarkup() {
     { key:"cup", eyebrow:"CHAMPION CUP", name:"杯赛", entries:league.cupLeaderboards?.[leagueBoard] ?? [] },
     { key:"team", eyebrow:"MY CLUB", name:"本队", entries:league.teamLeaderboards?.[leagueBoard] ?? [] },
   ];
-  scopes.forEach(scope => { scope.entries=scope.entries.filter(entry=>leagueBoardPopulation==="all" || Boolean(entry.isAi)===(leagueBoardPopulation==="ai")).slice(0,20); });
+  scopes.forEach(scope => { scope.entries=scope.entries.filter(entry=>leagueBoardPopulation !== "human" || !entry.isAi).slice(0,20); });
   const cards = scopes.map((scope) => `<section class="league-panel leaderboard-panel league-stats-card scope-${scope.key}"><header><div><small>${scope.eyebrow}</small><h2>${scope.name}${title}</h2></div><b>${scope.entries.length}人</b></header><div class="league-stats-scroll"><table class="league-table"><thead><tr><th>#</th><th>球员</th><th>出场</th><th>${label}</th></tr></thead><tbody>${leagueLeaderboardRows(scope.entries, metric)}</tbody></table></div></section>`).join("");
-  return `<section class="league-stats-page"><header class="league-stats-heading"><div><small>COMPETITION STATS</small><h2>数据榜</h2><div>${[["all","全部"],["human","仅玩家"],["ai","仅AI"]].map(([key,label])=>`<button type="button" data-board-population="${key}" class="${leagueBoardPopulation===key?"active":""}">${label}</button>`).join("")}</div></div><div class="league-board-tabs">${Object.entries(configs).map(([key,value]) => `<button type="button" data-league-board="${key}" class="${leagueBoard === key ? "active" : ""}">${value[0]}</button>`).join("")}</div></header><div class="league-stats-grid">${cards}</div></section>`;
+  return `<section class="league-stats-page"><header class="league-stats-heading"><div><small>COMPETITION STATS</small><h2>数据榜</h2><div>${[["all","全部"],["human","仅玩家"]].map(([key,label])=>`<button type="button" data-board-population="${key}" class="${leagueBoardPopulation===key?"active":""}">${label}</button>`).join("")}</div></div><div class="league-board-tabs">${Object.entries(configs).map(([key,value]) => `<button type="button" data-league-board="${key}" class="${leagueBoard === key ? "active" : ""}">${value[0]}</button>`).join("")}</div></header><div class="league-stats-grid">${cards}</div></section>`;
 }
 
 function marketRoleGroup(player) {
@@ -4799,7 +5148,7 @@ function playerDirectoryCard(player, upgradeLevel = 0, traits = []) {
 }
 
 function leaguePlayerSearchMarkup() {
-  if (leaguePlayerDirectoryLoading && !league.playerDirectory) return `<section class="player-info-shell"><header><button type="button" class="button secondary" data-player-info-section="back">返回功能选择</button><div><small>GLOBAL PLAYER DATABASE</small><h2>球员搜索</h2></div></header><p class="league-empty">正在载入最新球员数据库…</p></section>`;
+  if (leaguePlayerDirectoryLoading && !league.playerDirectory) return `<section class="player-info-shell"><header><button type="button" class="button secondary" data-player-info-section="back">返回球员信息</button><div><small>GLOBAL PLAYER DATABASE</small><h2>球员搜索</h2></div></header><p class="league-empty">正在载入最新球员数据库…</p></section>`;
   const query = leaguePlayerSearchQuery.trim().toLocaleLowerCase("zh-CN");
   const results = query ? playerDirectorySearchResults(leaguePlayerSearchQuery) : [];
   const listMarkup = results.length ? results.map((player) => {
@@ -4819,11 +5168,11 @@ function leaguePlayerSearchMarkup() {
     return `<article class="player-directory-card-item" data-player-directory-detail="${escapeHtml(player.id)}" data-player-directory-upgrade="${player.highestUpgradeLevel}" tabindex="0" role="button">${s4PlayerCardMarkup(player, { card:playerDirectoryCard(player, player.highestUpgradeLevel), compact:true })}<div><b>${escapeHtml(owner)}</b><small>${escapeHtml(secondaryRole ? `${primaryRole} / ${secondaryRole}` : primaryRole)} · ${player.cardCount}张卡 · ${player.holders.length}名持卡玩家</small></div></article>`;
   }).join("") : listMarkup;
   const resultMarkup = leaguePlayerSearchView === "cards" ? `<div class="player-directory-card-grid">${cardMarkup}</div>` : `<div class="player-directory-list">${listMarkup}</div>`;
-  return `<section class="player-info-shell player-search-page"><header><button type="button" class="button secondary" data-player-info-section="back">返回功能选择</button><div><small>GLOBAL PLAYER DATABASE</small><h2>球员搜索</h2></div><b>${results.length} 条结果</b></header><div class="player-search-hero"><small>YDL PLAYER SEARCH</small><form data-player-directory-search><input type="search" value="${escapeHtml(leaguePlayerSearchDraft)}" placeholder="搜索球员、俱乐部、国家队或位置（如 ST、GK）" data-player-directory-search-input><button type="submit">搜索</button></form><div class="player-search-options"><p>支持主位置和副位置英文代码 · 按回车或点击按钮搜索</p>${playerDirectoryViewToggle(leaguePlayerSearchView, "data-player-search-view")}</div></div>${resultMarkup}</section>`;
+  return `<section class="player-info-shell player-search-page"><header><button type="button" class="button secondary" data-player-info-section="back">返回球员信息</button><div><small>GLOBAL PLAYER DATABASE</small><h2>球员搜索</h2></div><b>${results.length} 条结果</b></header><div class="player-search-hero"><small>YDL PLAYER SEARCH</small><form data-player-directory-search><input type="search" value="${escapeHtml(leaguePlayerSearchDraft)}" placeholder="搜索球员、俱乐部、国家队或位置（如 ST、GK）" data-player-directory-search-input><button type="submit">搜索</button></form><div class="player-search-options"><p>支持主位置和副位置英文代码 · 按回车或点击按钮搜索</p>${playerDirectoryViewToggle(leaguePlayerSearchView, "data-player-search-view")}</div></div>${resultMarkup}</section>`;
 }
 
 function leagueEnhancementRankingMarkup() {
-  if (leaguePlayerDirectoryLoading && !league.playerDirectory) return `<section class="player-info-shell"><header><button type="button" class="button secondary" data-player-info-section="back">返回功能选择</button><div><small>S4 ENHANCEMENT RANKING</small><h2>强化排行榜</h2></div></header><p class="league-empty">正在载入最新强化排行…</p></section>`;
+  if (leaguePlayerDirectoryLoading && !league.playerDirectory) return `<section class="player-info-shell"><header><button type="button" class="button secondary" data-player-info-section="back">返回球员信息</button><div><small>S4 ENHANCEMENT RANKING</small><h2>强化排行榜</h2></div></header><p class="league-empty">正在载入最新强化排行…</p></section>`;
   const query = leagueEnhancementRankingSearch.trim().toLocaleLowerCase("zh-CN");
   const ranking = (league.playerDirectory?.enhancementRanking ?? []).map((entry, index) => ({ ...entry, rank:index + 1 })).filter((entry) => {
     const player = entry.player;
@@ -4840,24 +5189,86 @@ function leagueEnhancementRankingMarkup() {
   const rows = ranking.length ? ranking.map((entry) => `<tr><td><strong>${entry.rank}</strong></td><td><div class="enhancement-ranking-player"><i class="grade-${String(entry.player.grade).toLowerCase()}">${escapeHtml(entry.player.grade)}</i><span><b>${escapeHtml(entry.player.name)}</b><small>${escapeHtml(entry.player.club)} · ${escapeHtml(entry.player.nationality)}</small></span></div></td><td>${escapeHtml(ROLE_LABELS[entry.player.role] ?? entry.player.role)}</td><td>${entry.player.overall}</td><td><strong class="enhancement-ranking-level level-${Math.min(8, entry.upgradeLevel)}">+${entry.upgradeLevel}</strong></td><td><b>${escapeHtml(entry.ownerName)}</b><small class="ranking-team-name">${escapeHtml(entry.teamName)}</small></td></tr>`).join("") : `<tr><td colspan="6" class="league-empty">当前筛选条件下没有球员卡。</td></tr>`;
   const cards = ranking.length ? ranking.map((entry) => `<article class="enhancement-ranking-card-item" data-player-directory-detail="${escapeHtml(entry.player.id)}" data-player-directory-upgrade="${entry.upgradeLevel}" tabindex="0" role="button"><strong class="enhancement-ranking-card-rank">#${entry.rank}</strong>${s4PlayerCardMarkup(entry.player, { card:playerDirectoryCard(entry.player, entry.upgradeLevel, entry.traits), compact:true })}<div><b>${escapeHtml(entry.ownerName)}</b><small>${escapeHtml(entry.teamName)}</small></div></article>`).join("") : `<p class="player-directory-empty">当前筛选条件下没有球员卡。</p>`;
   const rankingMarkup = leagueEnhancementRankingView === "cards" ? `<div class="enhancement-ranking-card-grid">${cards}</div>` : `<div class="enhancement-ranking-table"><table><thead><tr><th>排名</th><th>球员</th><th>位置</th><th>默认能力</th><th>强化</th><th>持有玩家</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  return `<section class="player-info-shell enhancement-ranking-page"><header><button type="button" class="button secondary" data-player-info-section="back">返回功能选择</button><div><small>S4 ENHANCEMENT RANKING</small><h2>强化排行榜</h2></div><b>${ranking.length} 张卡</b></header><div class="enhancement-ranking-filters"><input type="search" value="${escapeHtml(leagueEnhancementRankingSearch)}" placeholder="搜索球员、持有玩家或球队" data-enhancement-ranking-search><select data-enhancement-ranking-position><option value="ALL" ${leagueEnhancementRankingPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueEnhancementRankingPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueEnhancementRankingPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueEnhancementRankingPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueEnhancementRankingPosition === "GK" ? "selected" : ""}>门将</option></select><select data-enhancement-ranking-grade><option value="ALL" ${leagueEnhancementRankingGrade === "ALL" ? "selected" : ""}>全部评级</option>${["X", "S", "A", "B", "C"].map((grade) => `<option value="${grade}" ${leagueEnhancementRankingGrade === grade ? "selected" : ""}>${grade}级</option>`).join("")}</select><select data-enhancement-ranking-level><option value="ALL" ${leagueEnhancementRankingLevel === "ALL" ? "selected" : ""}>全部等级</option><option value="ENHANCED" ${leagueEnhancementRankingLevel === "ENHANCED" ? "selected" : ""}>+1以上</option><option value="HIGH" ${leagueEnhancementRankingLevel === "HIGH" ? "selected" : ""}>+5以上</option><option value="MAX" ${leagueEnhancementRankingLevel === "MAX" ? "selected" : ""}>仅+8</option></select>${playerDirectoryViewToggle(leagueEnhancementRankingView, "data-enhancement-ranking-view")}</div>${rankingMarkup}</section>`;
+  return `<section class="player-info-shell enhancement-ranking-page"><header><button type="button" class="button secondary" data-player-info-section="back">返回球员信息</button><div><small>S4 ENHANCEMENT RANKING</small><h2>强化排行榜</h2></div><b>${ranking.length} 张卡</b></header><div class="enhancement-ranking-filters"><input type="search" value="${escapeHtml(leagueEnhancementRankingSearch)}" placeholder="搜索球员、持有玩家或球队" data-enhancement-ranking-search><select data-enhancement-ranking-position><option value="ALL" ${leagueEnhancementRankingPosition === "ALL" ? "selected" : ""}>全部位置</option><option value="ATT" ${leagueEnhancementRankingPosition === "ATT" ? "selected" : ""}>前场</option><option value="MID" ${leagueEnhancementRankingPosition === "MID" ? "selected" : ""}>中场</option><option value="DEF" ${leagueEnhancementRankingPosition === "DEF" ? "selected" : ""}>后场</option><option value="GK" ${leagueEnhancementRankingPosition === "GK" ? "selected" : ""}>门将</option></select><select data-enhancement-ranking-grade><option value="ALL" ${leagueEnhancementRankingGrade === "ALL" ? "selected" : ""}>全部评级</option>${["X", "S", "A", "B", "C"].map((grade) => `<option value="${grade}" ${leagueEnhancementRankingGrade === grade ? "selected" : ""}>${grade}级</option>`).join("")}</select><select data-enhancement-ranking-level><option value="ALL" ${leagueEnhancementRankingLevel === "ALL" ? "selected" : ""}>全部等级</option><option value="ENHANCED" ${leagueEnhancementRankingLevel === "ENHANCED" ? "selected" : ""}>+1以上</option><option value="HIGH" ${leagueEnhancementRankingLevel === "HIGH" ? "selected" : ""}>+5以上</option><option value="MAX" ${leagueEnhancementRankingLevel === "MAX" ? "selected" : ""}>仅+8</option></select>${playerDirectoryViewToggle(leagueEnhancementRankingView, "data-enhancement-ranking-view")}</div>${rankingMarkup}</section>`;
 }
 
 function leaguePlayerInfoMarkup() {
   if (leaguePlayerInfoSection === "search") return leaguePlayerSearchMarkup();
   if (leaguePlayerInfoSection === "ranking") return leagueEnhancementRankingMarkup();
-  return `<section class="s4-market-entry player-info-entry"><header><small>YDL PLAYER INFORMATION</small><h2>球员信息</h2><p>查询全服球员资产与强化情况</p></header><div><button type="button" data-player-info-section="search"><i>⌕</i><b>球员搜索</b><span>搜索球员、俱乐部或国家队并查看资产归属</span></button><button type="button" data-player-info-section="ranking"><i>TOP</i><b>强化排行榜</b><span>查看全服玩家持有球员卡的强化排名</span></button></div></section>`;
+  const groups = [
+    ["前锋", ["LW","ST","RW"]], ["中场", ["LM","AM","DM","RM"]],
+    ["后卫", ["LWB","LB","CB","RB","RWB"]], ["门将", ["GK"]],
+  ];
+  const positions = groups.map(([group, roles]) => `<div><dt>${group}</dt><dd>${roles.map(role =>
+    `<button type="button" data-directory-role="${role}" aria-label="搜索${ROLE_LABELS[role]}">${role}</button>`
+  ).join("")}</dd></div>`).join("");
+  const ranking = league.playerDirectory?.enhancementRanking ?? [];
+  const leaders = ranking.slice(0,5).map((entry, index) => `<li><button type="button" data-player-directory-detail="${escapeHtml(entry.player.id)}" data-player-directory-upgrade="${Number(entry.upgradeLevel)}">
+    <span class="directory-place">${index+1}</span><span class="directory-ranked-player"><b>${escapeHtml(entry.player.name)}</b><small>${escapeHtml(entry.teamName)}</small></span><strong>+${Number(entry.upgradeLevel)}</strong></button></li>`).join("");
+  return `<section class="directory-home"><h1>球员信息</h1><div class="directory-columns">
+    <section class="directory-panel"><h2>球员搜索</h2><form data-player-directory-search>
+      <input type="search" aria-label="球员搜索" data-player-directory-search-input value="${escapeHtml(leaguePlayerSearchDraft)}" placeholder="输入球员、俱乐部、国家队或位置"><button type="submit" class="button primary">搜索</button></form>
+      <h3>按位置查找</h3><dl class="directory-positions">${positions}</dl></section>
+    <section class="directory-panel"><header><h2>强化排行榜</h2><button type="button" class="home-text-button" data-player-info-section="ranking">完整榜单 ↗</button></header>
+      ${leaders ? `<ol class="directory-leaders">${leaders}</ol>` : `<p role="status">${league.playerDirectory ? "暂无上榜球员卡" : leaguePlayerDirectoryLoading ? "正在读取排行…" : "排行尚未载入"}</p>`}</section>
+  </div></section>`;
+}
+
+function marketHeaderMarkup(activeSection, { showListToggle = false, warehouseOpen = false, warehouseCount = 0 } = {}) {
+  const tabs = [
+    ["card", "传奇 / 强化单卡"],
+    ["ownership", "球员所有权"],
+    ["trade", "玩家发起交易"],
+  ];
+  const listToggle = showListToggle
+    ? `<button type="button" class="button ${warehouseOpen ? "secondary" : "primary"} market-warehouse-toggle" data-market-warehouse-toggle>${warehouseOpen ? "← 返回全服行情" : `+ 挂牌我的资产 (${warehouseCount})`}</button>`
+    : "";
+  return `<header class="exchange-header">
+    <div class="exchange-header-top">
+      <div class="exchange-title">
+        <h2>交易市场</h2>
+        <nav class="exchange-tabs" role="tablist" aria-label="交易市场分区">
+          ${tabs.map(([id, label]) => `<button type="button" role="tab" class="${activeSection === id ? "active" : ""}" aria-selected="${activeSection === id ? "true" : "false"}" data-market-section="${id}">${label}</button>`).join("")}
+        </nav>
+      </div>
+      <div class="exchange-header-actions">
+        <span class="exchange-balance yffm-num">${Number(league.wallet.balance ?? 0).toLocaleString("zh-CN")} 金币</span>
+        ${listToggle}
+      </div>
+    </div>
+  </header>`;
 }
 
 function marketListingCard(item) {
   const ownership = item.kind === "ownership";
   const card = ownership ? { upgradeLevel:0, traits:[] } : item.card;
+  const upgrade = Number(card?.upgradeLevel ?? 0);
+  const roleLabel = ROLE_LABELS[item.player.role] ?? item.player.role;
   const meta = ownership
     ? item.retainedUpgradeLevel == null
-      ? "球员所有权 · 卖家不保留基础卡"
-      : `球员所有权 · 卖家保留 ${item.retainedCardCount ?? 0} 张 +${item.retainedUpgradeLevel}`
-    : `${item.player.pool === "LEGEND" ? "传奇单卡" : "强化单卡"} · +${card?.upgradeLevel ?? 0}${item.includesOwnership ? " · 附带所有权" : ""}`;
-  return `<article class="s4-market-listing"><div class="yffm-card-slot size-m">${s4PlayerCardMarkup(item.player, { card, compact:true })}</div><div><strong>${escapeHtml(item.player.name)}</strong><small>${escapeHtml(item.player.role)} · 能力 ${item.player.overall}</small><b class="yffm-num">${Number(item.price).toLocaleString("zh-CN")} 金币</b><small>${escapeHtml(item.sellerTeamName)} · ${escapeHtml(meta)}</small>${item.sellerId === account.profile.id ? `<button class="button secondary" data-market-cancel="${item.id}">撤回挂牌</button>` : `<button class="button primary" data-market-buy="${item.id}">立即购买</button>`}</div></article>`;
+      ? "所有权 · 不保留基础卡"
+      : `所有权 · 卖家留${item.retainedCardCount ?? 0}张+${item.retainedUpgradeLevel}`
+    : `${item.player.pool === "LEGEND" ? "传奇单卡" : "强化单卡"}${item.includesOwnership ? " · 附带所有权" : ""}`;
+  const actionBtn = item.sellerId === account.profile.id
+    ? `<button type="button" class="button secondary" data-market-cancel="${item.id}">撤回挂牌</button>`
+    : `<button type="button" class="button primary" data-market-buy="${item.id}">立即购买</button>`;
+  return `<article class="s4-market-listing exchange-row">
+    <div class="exchange-col-player">
+      <div class="yffm-card-slot size-s">${s4PlayerCardMarkup(item.player, { card, compact:true })}</div>
+      <div class="exchange-player-meta">
+        <strong>${escapeHtml(item.player.name)}</strong>
+        <small>${escapeHtml(meta)}</small>
+      </div>
+    </div>
+    <div class="exchange-col-role">
+      <span class="exchange-role-pill">${escapeHtml(roleLabel)}</span>
+      ${!ownership ? `<span class="exchange-upgrade-pill yffm-num">+${upgrade}</span>` : `<span class="exchange-owner-pill">所有权</span>`}
+    </div>
+    <div class="exchange-col-ovr yffm-num">${item.player.overall}</div>
+    <div class="exchange-col-seller">${escapeHtml(item.sellerTeamName)}</div>
+    <div class="exchange-col-price yffm-num">${Number(item.price).toLocaleString("zh-CN")} <small>金币</small></div>
+    <div class="exchange-col-action">${actionBtn}</div>
+  </article>`;
 }
 
 function tradeCardChoiceMarkup(entry, side) {
@@ -4865,38 +5276,97 @@ function tradeCardChoiceMarkup(entry, side) {
   const player = entry.player;
   const selectedSet = side === "offered" ? leagueTradeOfferedCardIds : leagueTradeRequestedCardIds;
   const selected = selectedSet.has(card.id);
-  const listed = league.listings.some((item) => item.cardId === card.id || item.kind === "ownership" && item.playerId === player.id);
+  const ownerId = side === "offered" ? account.profile.id : leagueTradeTargetOwnerId;
+  const listed = league.listings.some((item) => item.sellerId === ownerId && (item.cardId === card.id || item.kind === "ownership" && item.playerId === player.id));
   const locked = league.tradeLockedCardIds?.includes(card.id);
   const ownLastAnchor = side === "offered" && !player.xPlayer && player.ownsRights && player.cards.length === 1;
   const disabled = listed || locked || ownLastAnchor;
   const reason = listed ? "已挂牌" : locked ? "交易中" : ownLastAnchor ? "所有权锚点" : "";
-  return `<div class="card-trade-choice ${selected ? "selected" : ""} ${disabled ? "disabled" : ""}">${s4PlayerCardMarkup(player, { card, compact:true, attributes:disabled ? `aria-disabled="true"` : `aria-pressed="${selected}" data-card-trade-choice="${card.id}" data-card-trade-side="${side}" data-card-trade-x="${player.xPlayer ? "true" : "false"}"` })}${disabled ? `<span>${escapeHtml(reason)}</span>` : selected ? `<span>已选择</span>` : ""}</div>`;
+  return `<div class="card-trade-choice ${selected ? "selected" : ""} ${disabled ? "disabled" : ""}">${s4PlayerCardMarkup(player, { card, compact:true, attributes:disabled ? `aria-disabled="true"` : `aria-pressed="${selected}" data-card-trade-choice="${card.id}" data-card-trade-side="${side}" data-card-trade-x="${player.xPlayer ? "true" : "false"}"` })}${disabled ? `<span class="trade-disabled-tag">${escapeHtml(reason)}</span>` : ""}</div>`;
 }
 
 function leagueCardTradeMarkup() {
-  if (leaguePlayerDirectoryLoading && !league.playerDirectory) return `<section class="card-trade-shell"><header><button type="button" class="button secondary" data-market-section="back">返回市场选择</button><div><small>PLAYER TO PLAYER TRADE</small><h2>发起交易</h2></div></header><p class="s4-market-empty">正在载入其他玩家的可交易卡片…</p></section>`;
+  const header = marketHeaderMarkup("trade");
+  if (leaguePlayerDirectoryLoading && !league.playerDirectory) {
+    return `<section class="card-trade-shell exchange-shell">${header}<div class="exchange-body"><p class="s4-market-empty">正在载入其他玩家的可交易卡片…</p></div></section>`;
+  }
   const targetTeam = league.teams.find((team) => team.ownerId === leagueTradeTargetOwnerId && !team.isAi);
   const playerOptions = league.teams.filter((team) => !team.isAi && team.ownerId && team.ownerId !== account.profile.id).map((team) => `<option value="${escapeHtml(team.ownerId)}" ${team.ownerId === leagueTradeTargetOwnerId ? "selected" : ""}>${escapeHtml(team.ownerName)} · ${escapeHtml(team.name)}</option>`).join("");
-  const ownCards = league.ownTeam.roster.flatMap((player) => player.cards.filter((card) => player.xPlayer || Number(card.upgradeLevel ?? 0) >= 1).map((card) => ({ player, card })))
+  const ownCards = league.ownTeam.roster.flatMap((player) => player.cards.filter((card) => (X_PLAYER_FEATURE_ENABLED && player.xPlayer) || Number(card.upgradeLevel ?? 0) >= 1).map((card) => ({ player, card })))
     .sort((left, right) => comparePlayerGrade(left, right) || right.card.upgradeLevel - left.card.upgradeLevel || right.player.overall - left.player.overall);
-  const targetCards = targetTeam ? (league.playerDirectory?.enhancementRanking ?? []).filter((entry) => entry.ownerId === targetTeam.ownerId && (entry.player.xPlayer || Number(entry.upgradeLevel ?? 0) >= 1)).map((entry) => ({ player:entry.player, card:{ id:entry.cardId, upgradeLevel:entry.upgradeLevel, traits:entry.traits ?? [] } }))
+  const targetCards = targetTeam ? (league.playerDirectory?.enhancementRanking ?? []).filter((entry) => entry.ownerId === targetTeam.ownerId && ((X_PLAYER_FEATURE_ENABLED && entry.player.xPlayer) || Number(entry.upgradeLevel ?? 0) >= 1)).map((entry) => ({ player:entry.player, card:{ id:entry.cardId, upgradeLevel:entry.upgradeLevel, traits:entry.traits ?? [] } }))
     .sort((left, right) => comparePlayerGrade(left, right) || right.card.upgradeLevel - left.card.upgradeLevel || right.player.overall - left.player.overall) : [];
-  const selectedEntries = [...ownCards, ...targetCards].filter(({ card }) => leagueTradeOfferedCardIds.has(card.id) || leagueTradeRequestedCardIds.has(card.id));
-  const xTradeSelected = selectedEntries.some(({ player }) => player.xPlayer);
+  const requestedEntries = targetCards.filter(({ card }) => leagueTradeRequestedCardIds.has(card.id));
+  const offeredEntries = ownCards.filter(({ card }) => leagueTradeOfferedCardIds.has(card.id));
+  const selectedEntries = [...offeredEntries, ...requestedEntries];
+  const xTradeSelected = X_PLAYER_FEATURE_ENABLED && selectedEntries.some(({ player }) => player.xPlayer);
   const xTradeReady = xTradeSelected && selectedEntries.length === 2 && selectedEntries.every(({ player }) => player.xPlayer) && leagueTradeOfferedCardIds.size === 1 && leagueTradeRequestedCardIds.size === 1;
   const tradeReady = targetTeam && leagueTradeRequestedCardIds.size && leagueTradeOfferedCardIds.size && (!xTradeSelected || xTradeReady);
   const statusLabels = { pending:"等待接受", rejected:"被拒绝", accepted:"交易成功", withdrawn:"已撤回", failed:"交易失败" };
   const outgoing = (league.cardTradeOffers ?? []).filter((offer) => offer.fromOwnerId === account.profile.id);
-  const history = outgoing.length ? outgoing.map((offer) => `<article class="card-trade-status status-${offer.status}" data-motion-trade-offer="${escapeHtml(offer.id)}" data-motion-trade-state="${escapeHtml(offer.status)}"><div><small>${new Date(offer.createdAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false })}</small><b>与 ${escapeHtml(offer.toOwnerName)} 的交易</b><span>我方${offer.offeredCards.length}张 · 对方${offer.requestedCards.length}张${offer.coinAmount ? ` · 附带${offer.coinAmount}金币` : ""}</span></div><strong>${statusLabels[offer.status] ?? offer.status}</strong>${offer.status === "pending" ? `<button type="button" class="button secondary" data-card-trade-withdraw="${offer.id}">撤回</button>` : ""}</article>`).join("") : `<p class="s4-market-empty">你还没有发起过球员卡交易。</p>`;
-  const targetGrid = targetTeam ? targetCards.length ? targetCards.map((entry) => tradeCardChoiceMarkup(entry, "requested")).join("") : `<p class="s4-market-empty">该玩家没有可交易的强化卡。</p>` : `<p class="s4-market-empty">请先选择一名其他真人玩家。</p>`;
+  const history = outgoing.length ? outgoing.map((offer) => `<article class="card-trade-status status-${offer.status}" data-motion-trade-offer="${escapeHtml(offer.id)}" data-motion-trade-state="${escapeHtml(offer.status)}"><div><small>${new Date(offer.createdAt).toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hour12:false })}</small><b>与 ${escapeHtml(offer.toOwnerName)} 的交易</b><span>我方 ${offer.offeredCards.length} 张 ⇄ 对方 ${offer.requestedCards.length} 张${offer.coinAmount ? ` · 附带 ${Number(offer.coinAmount).toLocaleString("zh-CN")} 金币` : ""}</span></div><strong class="trade-status-pill">${statusLabels[offer.status] ?? offer.status}</strong>${offer.status === "pending" ? `<button type="button" class="button secondary" data-card-trade-withdraw="${offer.id}">撤回</button>` : ""}</article>`).join("") : `<p class="s4-market-empty is-compact">你还没有发起过球员卡交易。</p>`;
+  const targetGrid = targetTeam ? targetCards.length ? targetCards.map((entry) => tradeCardChoiceMarkup(entry, "requested")).join("") : `<p class="s4-market-empty">该玩家没有可交易的强化卡。</p>` : `<p class="s4-market-empty">请先在上方协议单选择一名真人玩家。</p>`;
   const ownGrid = ownCards.length ? ownCards.map((entry) => tradeCardChoiceMarkup(entry, "offered")).join("") : `<p class="s4-market-empty">你没有可用于交易的强化卡。</p>`;
-  return `<section class="card-trade-shell"><header><button type="button" class="button secondary" data-market-section="back">返回市场选择</button><div><small>PLAYER TO PLAYER TRADE</small><h2>发起交易</h2></div><b>${league.wallet.balance} 金币</b></header><div class="card-trade-target"><label><span>交易对象</span><select data-card-trade-target><option value="">请选择真人玩家</option>${playerOptions}</select></label><div><span>已选择</span><b>对方 ${leagueTradeRequestedCardIds.size} 张 / 我方 ${leagueTradeOfferedCardIds.size} 张</b></div></div>${xTradeSelected ? `<p class="card-trade-x-notice">X级球员交易仅支持双方各选择1名X级球员，且不能附带金币。</p>` : ""}<div class="card-trade-columns"><section><header><div><small>REQUESTED CARDS</small><h3>${targetTeam ? `${escapeHtml(targetTeam.ownerName)}的强化卡 / X球员` : "对方强化卡 / X球员"}</h3></div></header><div class="s4-market-card-grid">${targetGrid}</div></section><section><header><div><small>MY OFFER</small><h3>我的强化卡 / X球员</h3></div></header><div class="s4-market-card-grid">${ownGrid}</div><footer><label><span>附带金币</span><input type="number" min="0" step="1" value="${xTradeSelected ? "0" : escapeHtml(leagueTradeCoinAmount)}" placeholder="0" data-card-trade-coins ${xTradeSelected ? "disabled" : ""}></label><button type="button" class="button primary" data-card-trade-submit ${tradeReady ? "" : "disabled"}>发起交易</button></footer></section></div><section class="card-trade-history"><header><div><small>MY TRADE OFFERS</small><h3>我发起的交易</h3></div></header><div>${history}</div></section></section>`;
+  const renderDealChips = (entries, emptyText) => entries.length
+    ? entries.map(({ player, card }) => `<div class="deal-sheet-chip"><span class="grade grade-${escapeHtml(player.grade)}">${escapeHtml(player.grade)}</span><b>${escapeHtml(player.name)}</b><small>${escapeHtml(ROLE_LABELS[player.role] ?? player.role)} · +${Number(card.upgradeLevel ?? 0)}</small><strong class="yffm-num">${player.overall}</strong></div>`).join("")
+    : `<p class="deal-sheet-empty">${emptyText}</p>`;
+  const cardHeading = X_PLAYER_FEATURE_ENABLED ? "强化卡 / X球员" : "可交易强化卡";
+  return `<section class="card-trade-shell exchange-shell">
+    ${header}
+    <div class="exchange-body">
+      <section class="trade-deal-sheet">
+        <header class="deal-sheet-head">
+          <small>TRANSFER DEAL SHEET · 双边转会谈判协议单</small>
+          <span>${targetTeam ? `谈判对象：${escapeHtml(targetTeam.ownerName)} (${escapeHtml(targetTeam.name)})` : "请选择交易对象并勾选下方球员卡"}</span>
+        </header>
+        <div class="deal-sheet-grid">
+          <div class="deal-sheet-side">
+            <div class="deal-sheet-side-head">
+              <b>对方送出 (${requestedEntries.length})</b>
+              <select data-card-trade-target aria-label="选择交易对象"><option value="">选择真人玩家</option>${playerOptions}</select>
+            </div>
+            <div class="deal-sheet-list">${renderDealChips(requestedEntries, "在下方左栏勾选期望获得的球员卡")}</div>
+          </div>
+          <div class="deal-sheet-center">
+            <div class="deal-swap-icon" aria-hidden="true">⇄</div>
+            <label class="deal-coin-field">
+              <span>我方附带金币</span>
+              <input type="number" min="0" step="1" value="${xTradeSelected ? "0" : escapeHtml(leagueTradeCoinAmount)}" placeholder="0" data-card-trade-coins ${xTradeSelected ? "disabled" : ""}>
+            </label>
+            <button type="button" class="button primary wide" data-card-trade-submit ${tradeReady ? "" : "disabled"}>提交交易报价</button>
+          </div>
+          <div class="deal-sheet-side">
+            <div class="deal-sheet-side-head">
+              <b>我方送出 (${offeredEntries.length})</b>
+              <span class="deal-own-club">${escapeHtml(league.ownTeam.name)}</span>
+            </div>
+            <div class="deal-sheet-list">${renderDealChips(offeredEntries, "在下方右栏勾选我方出价的球员卡")}</div>
+          </div>
+        </div>
+        ${xTradeSelected ? `<p class="card-trade-x-notice">X级球员交易仅支持双方各选择1名X级球员，且不能附带金币。</p>` : ""}
+      </section>
+
+      <div class="card-trade-columns">
+        <section>
+          <header><h3>${targetTeam ? `${escapeHtml(targetTeam.ownerName)}的${cardHeading}` : `对方${cardHeading}`}</h3><span>点击卡片加入左侧协议</span></header>
+          <div class="s4-market-card-grid">${targetGrid}</div>
+        </section>
+        <section>
+          <header><h3>我的${cardHeading}</h3><span>点击卡片加入右侧协议</span></header>
+          <div class="s4-market-card-grid">${ownGrid}</div>
+        </section>
+      </div>
+
+      <section class="card-trade-history">
+        <header><h3>我发起的交易记录</h3><span>共 ${outgoing.length} 笔</span></header>
+        <div>${history}</div>
+      </section>
+    </div>
+  </section>`;
 }
 
-
 function leagueMarketMarkup() {
-  if (!["card", "ownership", "trade"].includes(leagueMarketSection)) leagueMarketSection = null;
-  if (!leagueMarketSection) return `<section class="s4-market-entry market-entry-three"><header><small>YFFM1 TRANSFER MARKET</small><h2>交易市场</h2><p>选择需要进入的资产市场</p></header><div><button type="button" data-market-section="card"><i>+8</i><b>传奇 / 强化单卡市场</b><span>购买或挂牌传奇卡及强化球员卡</span></button><button type="button" data-market-section="ownership"><i>OWN</i><b>球员所有权市场</b><span>转移非传奇球员的全服唯一所有权</span></button><button type="button" data-market-section="trade"><i>⇄</i><b>发起交易</b><span>与其他真人玩家交换强化卡并附带金币</span></button></div></section>`;
+  if (!["card", "ownership", "trade"].includes(leagueMarketSection)) leagueMarketSection = "card";
   if (leagueMarketSection === "trade") return leagueCardTradeMarkup();
   const ownership = leagueMarketSection === "ownership";
   const listings = league.listings.filter((item) => item.kind === (ownership ? "ownership" : "card"))
@@ -4920,10 +5390,31 @@ function leagueMarketMarkup() {
     const attributes = ownership
       ? `draggable="${!listed}" data-market-drag-ownership="${player.id}"`
       : `draggable="${!listed}" data-market-drag-card="${card.id}"`;
-    const listButton = listed ? `<span>已挂牌</span>` : `<button type="button" class="button secondary s4-market-list-button" data-market-list-kind="${ownership ? "ownership" : "card"}" data-market-list-asset="${ownership ? player.id : card.id}">按键挂牌</button>`;
+    const listButton = listed ? `<span class="warehouse-listed-pill">已挂牌</span>` : `<button type="button" class="button primary s4-market-list-button" data-market-list-kind="${ownership ? "ownership" : "card"}" data-market-list-asset="${ownership ? player.id : card.id}">挂牌出售</button>`;
     return `<div class="s4-market-warehouse-card ${listed ? "listed" : ""}">${s4PlayerCardMarkup(player, { card, compact:true, attributes })}${listButton}</div>`;
   }).join("") : `<p class="s4-market-empty">当前筛选条件下没有可挂牌资产。</p>`;
-  return `<section class="s4-market-shell"><header><button type="button" class="button secondary" data-market-section="back">返回市场选择</button><div><small>${ownership ? "PLAYER OWNERSHIP" : "LEGEND / ENHANCED CARDS"}</small><h2>${ownership ? "球员所有权市场" : "传奇 / 强化单卡市场"}</h2></div><b>${league.wallet.balance} 金币</b></header><div class="s4-market-columns"><section class="s4-market-board" data-market-drop-zone="${ownership ? "ownership" : "card"}"><header><div><small>MARKET LISTINGS</small><h3>市场挂牌</h3></div><span>拖动右侧卡片到这里挂牌</span></header>${marketFilterMarkup("listing", leagueMarketListingSearch, leagueMarketListingPosition)}<div class="s4-market-card-grid">${listingCards}</div>${marketPagerMarkup("listing", listingPage)}</section><aside class="s4-market-warehouse"><header><div><small>MY CARD WAREHOUSE</small><h3>${ownership ? "我的球员所有权" : "我的可交易单卡"}</h3></div><span>成交收取5%手续费</span></header>${marketFilterMarkup("warehouse", leagueMarketWarehouseSearch, leagueMarketWarehousePosition, !ownership)}<div class="s4-market-card-grid">${warehouseCards}</div>${marketPagerMarkup("warehouse", warehousePage)}</aside></div></section>`;
+
+  const header = marketHeaderMarkup(leagueMarketSection, {
+    showListToggle: true,
+    warehouseOpen: leagueMarketShowWarehouse,
+    warehouseCount: warehouseEntries.length,
+  });
+
+  const body = leagueMarketShowWarehouse
+    ? `<section class="s4-market-warehouse is-fullwidth">
+        <header><div><h3>${ownership ? "选择要挂牌的球员所有权" : "选择要挂牌的传奇 / 强化单卡"}</h3></div><span>成交后系统收取 5% 手续费</span></header>
+        ${marketFilterMarkup("warehouse", leagueMarketWarehouseSearch, leagueMarketWarehousePosition, !ownership)}
+        <div class="s4-market-card-grid is-warehouse-full">${warehouseCards}</div>
+        ${marketPagerMarkup("warehouse", warehousePage)}
+      </section>`
+    : `<section class="s4-market-board is-fullwidth" data-market-drop-zone="${ownership ? "ownership" : "card"}">
+        ${marketFilterMarkup("listing", leagueMarketListingSearch, leagueMarketListingPosition)}
+        <div class="exchange-table-head"><span>球员与资产类型</span><span>位置 / 强化</span><span>总评</span><span>卖家俱乐部</span><span>一口价</span><span>操作</span></div>
+        <div class="exchange-table-body">${listingCards}</div>
+        ${marketPagerMarkup("listing", listingPage)}
+      </section>`;
+
+  return `<section class="s4-market-shell exchange-shell">${header}<div class="exchange-body">${body}</div></section>`;
 }
 
 function leagueInboxAction(message) {
@@ -5344,9 +5835,9 @@ function leagueReviewReplaySequence(frames, frameIndex) {
   return [previousSequence.at(-1), current[0]].filter(Boolean);
 }
 
-function mountLeagueReviewDotReplay() {
+function mountLeagueReviewDotReplay(host=app) {
   stopLeagueReviewDotReplay();
-  const root = app.querySelector(".league-review-dot-replay");
+  const root = host.querySelector(".league-review-dot-replay");
   const frames = leagueReviewGoalFrames(leagueReviewDetail);
   if (!root || !frames.length) return;
   const frameIndex = Math.max(0, Math.min(frames.length - 1, leagueReviewReplayFrameIndex));
@@ -5534,14 +6025,15 @@ const HONOR_CLUB_ACCENTS = Object.freeze({
 });
 
 function honorTrophyMarkup(type, season, index) {
-  const label = type === "league" ? "联赛冠军" : type === "cup" ? "杯赛冠军" : "世界杯冠军";
-  const [width, height] = HONOR_TROPHY_DIMENSIONS[type];
-  return `<figure class="honor-trophy type-${type}" style="--trophy-delay:${index * 45}ms" title="${escapeHtml(`${season} ${label}`)}"><div class="trophy-model"><img class="trophy-render" src="${HONOR_TROPHY_ASSETS[type]}" alt="" draggable="false" decoding="async" loading="lazy" fetchpriority="low" width="${width}" height="${height}"></div><figcaption><b>${escapeHtml(season)}</b></figcaption></figure>`;
+  const label = type === "divisionB" ? "B级联赛升级冠军" : type === "league" ? "顶级联赛冠军" : type === "cup" ? "杯赛冠军" : "世界杯冠军";
+  const model = type === "divisionB" ? "league" : type;
+  const [width, height] = HONOR_TROPHY_DIMENSIONS[model];
+  return `<figure class="honor-trophy type-${type}" style="--trophy-delay:${index * 45}ms" title="${escapeHtml(`${season} ${label}`)}"><div class="trophy-model"><img class="trophy-render" src="${HONOR_TROPHY_ASSETS[model]}" alt="" draggable="false" decoding="async" loading="lazy" fetchpriority="low" width="${width}" height="${height}"></div><figcaption><b>${escapeHtml(season)}</b></figcaption></figure>`;
 }
 
 function honorTrophyGalleryMarkup(type, seasons) {
-  const title = type === "league" ? "联赛冠军" : type === "cup" ? "杯赛冠军" : "世界杯";
-  const english = type === "league" ? "LEAGUE" : type === "cup" ? "CUP" : "WORLD CUP";
+  const title = type === "divisionB" ? "B级联赛升级冠军" : type === "league" ? "顶级联赛冠军" : type === "cup" ? "杯赛冠军" : "世界杯";
+  const english = type === "divisionB" ? "DIVISION B" : type === "league" ? "LEAGUE" : type === "cup" ? "CUP" : "WORLD CUP";
   const trophies = seasons.length
     ? seasons.map((season, index) => honorTrophyMarkup(type, season, index)).join("")
     : `<div class="empty-trophy-case"><span>◇</span><b>尚待镌刻</b><small>NO ${english} TROPHY YET</small></div>`;
@@ -5595,7 +6087,7 @@ function leagueHonorRoomMarkup() {
   if (leagueHonorRoomLoading && !history) return `<section class="league-panel honor-room-loading"><span></span><h2>正在载入荣誉档案</h2><p>奖杯与球员卡将在进入页面后按需加载。</p></section>`;
   if (!history) return `<section class="league-panel"><p class="league-empty">荣誉室数据尚未建立，将在下一次每日联赛结算后自动生成。</p></section>`;
   const honors = history.honors ?? { league:[], cup:[], worldCup:[] };
-  const totalTrophies = honors.league.length + honors.cup.length + honors.worldCup.length;
+  const totalTrophies = honors.league.length + (honors.divisionB?.length ?? 0) + honors.cup.length + honors.worldCup.length;
   const accent = HONOR_CLUB_ACCENTS[history.club.ownerId] ?? ["#d7b06f","#7d4e92"];
   const worldCupGallery = honors.worldCup.length ? honorTrophyGalleryMarkup("worldCup", honors.worldCup) : "";
   const appearances = history.appearances ?? [];
@@ -5604,7 +6096,7 @@ function leagueHonorRoomMarkup() {
   const assisters = history.assisters ?? (history.assister ? [history.assister] : []);
   const redCardLeaders = history.redCardLeaders ?? (history.redCardLeader ? [history.redCardLeader] : []);
   const ballonContent = honorBallonDorWinnersMarkup(history.ballonDorWinners ?? (history.ballonDor ? [{ ...history.ballonDor, seasons:[history.ballonDor.season] }] : []));
-  return `<section class="honor-room league-honor-room" style="--club-accent:${accent[0]};--club-accent-2:${accent[1]}"><section class="honor-hero"><div class="honor-hero-copy"><small>CLUB LEGACY · ${history.seasonCount} SEASONS</small><h1>${escapeHtml(history.club.teamName)}</h1><p>经理 ${escapeHtml(history.club.ownerName)} 的俱乐部荣誉档案</p><div class="hero-stat-line"><span><b>${totalTrophies}</b>冠军奖杯</span><span><b>${appearances[0]?.appearances ?? 0}</b>队史出场纪录</span><span><b>${history.scorer?.goals ?? 0}</b>队史进球纪录</span></div></div></section><section class="honor-section trophy-gallery-section"><header class="honor-section-heading"><div><small>TROPHY GALLERY</small><h2>冠军陈列馆</h2></div></header><div class="honor-trophy-galleries ${honors.worldCup.length ? "has-world-cup" : ""}">${honorTrophyGalleryMarkup("league", honors.league)}${honorTrophyGalleryMarkup("cup", honors.cup)}${worldCupGallery}</div></section><section class="honor-section appearances-section"><header class="honor-section-heading"><div><small>ALL-TIME APPEARANCES</small><h2>队史出场殿堂</h2></div></header><div class="appearance-podium">${podium || '<div class="honor-record-empty">暂无队史出场数据</div>'}</div></section><section class="honor-section metric-podium-section"><header class="honor-section-heading"><div><small>ALL-TIME TOP SCORERS</small><h2>队史射手榜</h2></div></header><div class="appearance-podium metric-podium">${honorMetricPodium(scorers, "goals", "球")}</div></section><section class="honor-section metric-podium-section"><header class="honor-section-heading"><div><small>ALL-TIME TOP ASSISTERS</small><h2>队史助攻榜</h2></div></header><div class="appearance-podium metric-podium">${honorMetricPodium(assisters, "assists", "助")}</div></section><section class="honor-section metric-podium-section"><header class="honor-section-heading"><div><small>ALL-TIME RED CARD LEADERS</small><h2>队史红牌榜</h2></div></header><div class="appearance-podium metric-podium">${honorMetricPodium(redCardLeaders, "redCards", "张")}</div></section><section class="honor-section ballon-dor-section"><article class="record-feature ballon-feature"><header><div><small>SEASON BALLON D'OR</small><h2>金球奖荣誉</h2></div><span>GOLDEN LEGACY</span></header><div>${ballonContent}</div></article></section></section>`;
+  return `<section class="honor-room league-honor-room" style="--club-accent:${accent[0]};--club-accent-2:${accent[1]}"><section class="honor-hero"><div class="honor-hero-copy"><small>CLUB LEGACY · ${history.seasonCount} SEASONS</small><h1>${escapeHtml(history.club.teamName)}</h1><p>经理 ${escapeHtml(history.club.ownerName)} 的俱乐部荣誉档案</p><div class="hero-stat-line"><span><b>${totalTrophies}</b>冠军奖杯</span><span><b>${appearances[0]?.appearances ?? 0}</b>队史出场纪录</span><span><b>${history.scorer?.goals ?? 0}</b>队史进球纪录</span></div></div></section><section class="honor-section trophy-gallery-section"><header class="honor-section-heading"><div><small>TROPHY GALLERY</small><h2>冠军陈列馆</h2></div></header><div class="honor-trophy-galleries ${honors.worldCup.length ? "has-world-cup" : ""}">${honorTrophyGalleryMarkup("league", honors.league)}${honors.divisionB?.length ? honorTrophyGalleryMarkup("divisionB", honors.divisionB) : ""}${honorTrophyGalleryMarkup("cup", honors.cup)}${worldCupGallery}</div></section><section class="honor-section appearances-section"><header class="honor-section-heading"><div><small>ALL-TIME APPEARANCES</small><h2>队史出场殿堂</h2></div></header><div class="appearance-podium">${podium || '<div class="honor-record-empty">暂无队史出场数据</div>'}</div></section><section class="honor-section metric-podium-section"><header class="honor-section-heading"><div><small>ALL-TIME TOP SCORERS</small><h2>队史射手榜</h2></div></header><div class="appearance-podium metric-podium">${honorMetricPodium(scorers, "goals", "球")}</div></section><section class="honor-section metric-podium-section"><header class="honor-section-heading"><div><small>ALL-TIME TOP ASSISTERS</small><h2>队史助攻榜</h2></div></header><div class="appearance-podium metric-podium">${honorMetricPodium(assisters, "assists", "助")}</div></section><section class="honor-section metric-podium-section"><header class="honor-section-heading"><div><small>ALL-TIME RED CARD LEADERS</small><h2>队史红牌榜</h2></div></header><div class="appearance-podium metric-podium">${honorMetricPodium(redCardLeaders, "redCards", "张")}</div></section><section class="honor-section ballon-dor-section"><article class="record-feature ballon-feature"><header><div><small>SEASON BALLON D'OR</small><h2>金球奖荣誉</h2></div><span>GOLDEN LEGACY</span></header><div>${ballonContent}</div></article></section></section>`;
 }
 
 async function loadLeagueReviewMatch(matchId = leagueReviewMatchId) {
@@ -5636,8 +6128,11 @@ async function loadLeagueReviewMatch(matchId = leagueReviewMatchId) {
   }
 }
 
+function hasLiveLeagueBroadcast() {
+  return scheduledTvListings.length > 0 || liveBroadcasts.some(b => String(b.code).startsWith("YDL-")) || league?.schedule?.fixtures?.some(f => f.status === "live" && f.v4MatchId);
+}
 function leagueNavMarkup() {
-  return clubNavMarkup(leagueTab,league.inboxUnreadCount,liveBroadcasts.some(b=>String(b.code).startsWith('YDL-')));
+  return clubNavMarkup(leagueTab,league.inboxUnreadCount,hasLiveLeagueBroadcast());
 }
 
 function leagueClubConstructionMarkup() {
@@ -5653,10 +6148,10 @@ function leagueClubConstructionMarkup() {
     ? `<option value="meteor" ${stadium.backgroundEffect === "meteor" ? "selected" : ""}>流星雨背景</option>`
     : `<option value="meteor" disabled>流星雨背景（商店解锁）</option>`;
   const activeMarkup = activeContracts.length
-    ? activeContracts.map((contract) => `<section class="active-sponsor-contract"><img src="${escapeHtml(contract.sponsor?.icon ?? "")}" alt=""><div><small>${escapeHtml(contract.typeName)}</small><h3>${escapeHtml(contract.sponsorName)}</h3><p>剩余 ${contract.remainingSeasons} 个赛季 · 签约奖金 ${Number(contract.bonus).toLocaleString("zh-CN")} 金币</p></div></section>`).join("")
+    ? activeContracts.map((contract) => `<section class="active-sponsor-contract"><img src="${escapeHtml(contract.sponsor?.icon ?? "")}" alt=""><div><small>${escapeHtml(contract.typeName)}</small><h3>${escapeHtml(contract.sponsorName)}</h3><p>剩余 ${contract.remainingSeasons} 个赛季 · 合同总额 ${Number(contract.bonus).toLocaleString("zh-CN")} 金币 · ${contract.seasonBonus ? `每季 ${Number(contract.seasonBonus).toLocaleString("zh-CN")} 金币` : "签约时已付清"}</p></div></section>`).join("")
     : `<p class="league-empty">当前没有生效中的赞助合同。</p>`;
   const offersMarkup = pendingOffers.length
-    ? pendingOffers.map((offer) => `<article class="club-sponsor-offer"><img src="${escapeHtml(offer.sponsorIcon ?? "")}" alt=""><div><small>${escapeHtml(offer.typeName)} · ${offer.durationSeasons} 个赛季</small><h3>${escapeHtml(offer.sponsorName)}</h3><p>签约奖金 ${Number(offer.bonus).toLocaleString("zh-CN")} 金币</p></div><footer><button class="button primary" type="button" data-club-sponsor-offer="${escapeHtml(offer.id)}" data-club-sponsor-action="accept">接受</button><button class="button secondary" type="button" data-club-sponsor-offer="${escapeHtml(offer.id)}" data-club-sponsor-action="reject">拒绝</button></footer></article>`).join("")
+    ? pendingOffers.map((offer) => `<article class="club-sponsor-offer"><img src="${escapeHtml(offer.sponsorIcon ?? "")}" alt=""><div><small>${escapeHtml(offer.typeName)} · ${offer.durationSeasons} 个赛季</small><h3>${escapeHtml(offer.sponsorName)}</h3><p>每季 ${Number(offer.bonus / offer.durationSeasons).toLocaleString("zh-CN")} 金币 · 总额 ${Number(offer.bonus).toLocaleString("zh-CN")} 金币，首期签约时到账</p></div><footer><button class="button primary" type="button" data-club-sponsor-offer="${escapeHtml(offer.id)}" data-club-sponsor-action="accept">接受</button><button class="button secondary" type="button" data-club-sponsor-offer="${escapeHtml(offer.id)}" data-club-sponsor-action="reject">拒绝</button></footer></article>`).join("")
     : `<p class="league-empty">暂无待处理报价。完成联赛或杯赛后，有机会收到新的赞助合同。</p>`;
   return `<section class="club-construction">
     <header class="club-construction-hero"><div><small>CLUB DEVELOPMENT</small><h1>球队建设</h1><p>通过主场建设与商业合作，沉淀长期俱乐部资产。</p></div><dl><div><dt>俱乐部资金</dt><dd>${Number(league.wallet?.balance ?? 0).toLocaleString("zh-CN")}<small>金币</small></dd></div><div><dt>主场容量</dt><dd>${stadium.capacity.toLocaleString("zh-CN")}<small>座</small></dd></div><div><dt>预计门票收入</dt><dd>${stadium.estimatedTicketIncome.toLocaleString("zh-CN")}<small>/主场</small></dd></div></dl></header>
@@ -5725,7 +6220,7 @@ function syncLeagueShellChrome() {
   const xGrowthPoints = Number(league.xGrowth?.points ?? 0);
   syncLeagueNavBadge(growthButton, ':scope > span[title="可用加成点数"]', xGrowthPoints > 0 ? `<span title="可用加成点数">${xGrowthPoints}</span>` : "");
   const televisionButton = shell.querySelector('[data-league-tab="television"]');
-  syncLeagueNavBadge(televisionButton, ":scope > .league-nav-live-badge", liveBroadcasts.some((broadcast) => String(broadcast.code).startsWith("YDL-")) ? `<span class="league-nav-live-badge">LIVE</span>` : "");
+  syncLeagueNavBadge(televisionButton, ":scope > .league-nav-live-badge", hasLiveLeagueBroadcast() ? `<span class="league-nav-live-badge">LIVE</span>` : "");
   return true;
 }
 
@@ -5771,11 +6266,13 @@ function renderLeague() {
   }
   else if (!league.ownTeam) app.innerHTML = leagueJoinMarkup();
   else {
-    const content = leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "seasonFinal" ? seasonFinalTournamentMarkup() : leagueTab === "predictions" ? leaguePredictionsMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "coach" ? leagueCoachMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "x-growth" ? leagueXGrowthMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "club" ? leagueClubMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
+    const content = leagueTab === "club-history" ? '<div data-club-history-page></div>' : leagueTab === "cup" ? leagueCupOverviewMarkup() : leagueTab === "seasonFinal" ? seasonFinalTournamentMarkup() : leagueTab === "predictions" ? leaguePredictionsMarkup() : leagueTab === "schedule" ? leagueScheduleMarkup() : leagueTab === "squad" ? leagueSquadMarkup() : leagueTab === "coach" ? leagueCoachMarkup() : leagueTab === "inbox" ? leagueInboxMarkup() : leagueTab === "backpack" ? leagueBackpackMarkup() : leagueTab === "enhancement" ? leagueEnhancementMarkup() : leagueTab === "x-growth" ? leagueXGrowthMarkup() : leagueTab === "television" ? broadcastListMarkup(true) : leagueTab === "stats" ? leagueStatsMarkup() : leagueTab === "players" ? leaguePlayerInfoMarkup() : leagueTab === "club" ? leagueClubMarkup() : leagueTab === "market" ? leagueMarketMarkup() : leagueTab === "shop" ? leagueShopMarkup() : leagueOverviewMarkup();
     const pageContent = app.querySelector(":scope > .league-shell > .league-main-layout > .yffm-workspace > .league-page-content");
     const unchangedSquad = pageContent && renderedLeagueTab === leagueTab && leagueTab === "squad"
       && htmlChildrenMatch(pageContent, content);
-    if (unchangedSquad) {
+    if (leagueTab === 'club-history' && pageContent?.querySelector('[data-club-history-page]')) {
+      // The history controller owns the filters and open career dialog.
+    } else if (unchangedSquad) {
       // Keep the existing drag bindings when the requested squad HTML is identical.
     } else if (pageContent && renderedLeagueTab === leagueTab && !["squad", "x-growth"].includes(leagueTab)) {
       patchHtmlChildren(pageContent, content);
@@ -5793,6 +6290,7 @@ function renderLeague() {
     else app.innerHTML = leagueShellMarkup(content);
     renderedLeagueTab = leagueTab;
     syncLeagueShellChrome();
+    mountClubHistory();
     if (leagueTab === "x-growth" && league.xGrowth) document.querySelector(".x-growth-hero")?.insertAdjacentHTML("afterend", leagueXGrowthResetMarkup(league.xGrowth));
     if (leagueTab === "squad" && !unchangedSquad) bindLeagueSquad();
     tacticalOutlook.mount(leagueTab === "squad" ? document.querySelector("[data-tactical-outlook]") : null);
@@ -5821,7 +6319,7 @@ function closeLeagueDialog() {
   leaguePackOpeningEffects?.destroy();
   leaguePackOpeningEffects = null;
   document.querySelector("#league-dialog-overlay")?.remove();
-  if (wasGameSettings) gameSettingsButton.focus();
+  if (wasGameSettings) (document.querySelector("[data-league-game-settings]") ?? gameSettingsButton).focus();
 }
 
 function openLeagueDialog(content, className = "", { dismissOnBackdrop = true } = {}) {
@@ -5839,6 +6337,17 @@ function openLeagueDialog(content, className = "", { dismissOnBackdrop = true } 
 }
 
 function openS4PackChoiceDialog(offer) {
+  if (offer.choiceMode === "position") {
+    const names = { GK:"门将", DEF:"后场", MID:"中场", ATT:"前场" };
+    const choices = Object.entries(names).filter(([pool]) => offer.positions.includes(pool)).map(([pool, name]) =>
+      `<button type="button" class="button primary" data-s4-pack-choice="${pool}" data-s4-offer-id="${escapeHtml(offer.id)}">${name}</button>`
+    ).join("");
+    const progress = offer.batchTotal ? ` · 第 ${offer.batchIndex}/${offer.batchTotal} 份` : "";
+    const overlay = openLeagueDialog(`<header><h2>私有池位置自选礼包${progress}</h2><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header><div class="league-confirm-body"><p>${choices ? "选择位置后，从你拥有所有权的该位置球员中等概率获得一张 +0 卡。" : "当前没有可选位置，获得球员所有权后可继续开启。"}</p><div>${choices}<button type="button" class="button secondary" data-s4-pack-choice="defer" data-s4-offer-id="${escapeHtml(offer.id)}">放回背包</button></div></div>`, "league-confirm-dialog");
+    overlay.querySelector(".league-dialog").dataset.s4PackChoiceDialog = offer.id;
+    overlay.querySelectorAll("[data-s4-pack-choice]").forEach(button => { button.onclick = () => void chooseS4PackCard(button); });
+    return;
+  }
   if (offer.kind === "cosmetic") {
     const isClubBadge = offer.cosmeticType === "club-badge";
     const badgeType = isClubBadge ? "俱乐部徽章" : "国家徽章";
@@ -6004,7 +6513,7 @@ async function resumeReviewLink(alreadyOpen=false){
   return true;
 }
 
-async function openLeagueMatch(matchId,focusQuery=null) {
+async function openLeagueMatch(matchId,focusQuery=null,playClip=false) {
   const identity = leagueIdentity();
   const overlay = openLeagueDialog(`<header><div><small>LEAGUE MATCH</small><h2>正在读取比赛详情…</h2></div><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header>`, "league-match-dialog");
   const current = () => account?.profile?.id === identity.playerId && account?.accountToken === identity.accountToken && overlay === document.querySelector('#league-dialog-overlay');
@@ -6016,6 +6525,30 @@ async function openLeagueMatch(matchId,focusQuery=null) {
     if (dialog) {
       dialog.innerHTML = historyMatchMarkup(value.match).replaceAll("data-close-history", "data-close-league-dialog");
       mountHistoryClips(dialog,value.match);
+      if (playClip) {
+        const clip = dialog.querySelector('[data-history-replay]');
+        if (clip) clip.click();
+        else if (leagueReviewGoalFrames(value.match).length) {
+          leagueReviewDetail = value.match;
+          leagueReviewReplayFrameIndex = 0;
+          leagueReviewReplayPlaying = true;
+          const refresh = () => {
+            dialog.innerHTML = '<button class="icon-button" data-close-league-dialog aria-label="关闭回放">×</button>' + leagueReviewDotReplayMarkup(value.match);
+            mountLeagueReviewDotReplay(dialog);
+          };
+          dialog.addEventListener('click',event => {
+            const control = event.target.closest('[data-review-replay-frame],[data-review-replay-step],[data-review-replay-toggle]');
+            if (!control) return;
+            const last = leagueReviewGoalFrames(value.match).length - 1;
+            if (control.hasAttribute('data-review-replay-frame')) leagueReviewReplayFrameIndex = Number(control.dataset.reviewReplayFrame);
+            if (control.hasAttribute('data-review-replay-step')) leagueReviewReplayFrameIndex = Math.max(0,Math.min(last,leagueReviewReplayFrameIndex+Number(control.dataset.reviewReplayStep)));
+            leagueReviewReplayPlaying = control.hasAttribute('data-review-replay-toggle') ? !leagueReviewReplayPlaying : true;
+            refresh();
+          });
+          refresh();
+        }
+        else showToast('这场比赛的回放片段已不可用');
+      }
       dialog.addEventListener('click',async event=>{
         const button=event.target.closest('[data-review-adjust]');
         if(!button||button.disabled||!current())return;
@@ -6042,11 +6575,17 @@ async function openLeagueMatch(matchId,focusQuery=null) {
 }
 
 function leaguePublicPitch(team) {
+  const showCards = gameSettings.value.tacticsPieceDisplay === "cards";
   const magnets = team.starters.map((player) => {
     const publicPlayer = { ...player, state:{ fitness:100, suspension:0, injuryRounds:0, ...player.state } };
     const tooltip = leaguePlayerTooltip(publicPlayer, player.assignedRole ?? player.role);
+    const tooltipCard = leaguePlayerTooltipPayload(publicPlayer, player.assignedRole ?? player.role, false);
     const upgrade = Number(player.upgradeLevel ?? 0);
-    return `<button type="button" class="magnet league-squad-magnet league-public-magnet grade-${player.grade.toLowerCase()}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${player.position.x}%;top:${player.position.y}%">${captainBadgeMarkup(Boolean(player.captain))}<span class="league-magnet-role">${ROLE_LABELS[player.assignedRole ?? player.role] ?? player.role}</span><b>${escapeHtml(player.name)}</b><i>${player.overall}</i><span class="league-magnet-fitness" aria-label="体力 ${Math.round(publicPlayer.state.fitness)}"><span style="width:${Math.max(0,Math.min(100,publicPlayer.state.fitness))}%"></span></span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
+    const role = fieldRoleAbbreviation(player.assignedRole ?? player.role, player.tacticalDuty);
+    const piece = showCards
+      ? `<div class="league-magnet-card" aria-hidden="true">${tacticsShieldCardMarkup({ ...player, role })}</div>`
+      : `<span class="league-magnet-role">${escapeHtml(role)}</span><b>${escapeHtml(player.name)}</b><i>${player.overall}</i>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}`;
+    return `<button type="button" class="magnet league-squad-magnet league-public-magnet${showCards ? " is-card-mode" : ""} grade-${player.grade.toLowerCase()}" data-traits="${escapeHtml(tooltip)}" data-tooltip-card="${escapeHtml(tooltipCard)}" aria-label="${escapeHtml(tooltip)}" style="left:${player.position.x}%;top:${player.position.y}%">${captainBadgeMarkup(Boolean(player.captain))}${piece}<span class="league-magnet-fitness" aria-label="体力 ${Math.round(publicPlayer.state.fitness)}"><span style="width:${Math.max(0,Math.min(100,publicPlayer.state.fitness))}%"></span></span></button>`;
   }).join("");
   return pitchMarkup(magnets, "", "league-public-pitch s4-readonly-pitch");
 }
@@ -6145,13 +6684,23 @@ async function openLeagueTeam(teamId) {
     const value = await api("/api/versus/league/team/detail", { method:"POST", body:leagueIdentity({ teamId }) });
     if (!overlay.isConnected) return;
     const team = value.team;
-    const friendlyAction = team.canInviteFriendly ? `<button type="button" class="button primary league-friendly-invite" data-friendly-invite="${escapeHtml(team.id)}">发起友谊赛</button>` : "";
     const recentHistory = team.recentHistory ?? [];
-    const historyPanel = team.historyTotal
-      ? `<section class="league-team-history"><header><h3>历史战绩</h3><small>已显示最近 ${recentHistory.length} 场 · 共 ${team.historyTotal} 场</small></header><div data-team-history-list>${recentHistory.map((match) => leagueMatchRow(match, team.id)).join("")}</div>${recentHistory.length < team.historyTotal ? `<button type="button" class="button secondary league-team-history-load" data-team-history-load>加载更多比赛（剩余 ${team.historyTotal - recentHistory.length} 场）</button>` : ""}</section>`
-      : `<section class="league-team-history"><header><h3>历史战绩</h3></header><p class="league-empty">还没有比赛记录。</p></section>`;
-    overlay.querySelector(".league-dialog").innerHTML = `<header><div><small>${team.isAi ? "AI CLUB" : "PLAYER CLUB"}</small><h2>${escapeHtml(team.name)}</h2><p>${escapeHtml(team.formation ?? "阵型待定")} · ${team.table.won}胜 ${team.table.drawn}平 ${team.table.lost}负</p></div><div class="league-team-detail-actions">${friendlyAction}<button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></div></header><div class="league-team-detail-grid"><section><h3>当前阵型</h3>${leaguePublicPitch(team)}</section><section><h3>现有球员名单 · ${team.roster.length}人</h3><div class="league-public-roster">${team.roster.map((player) => `<div><span class="grade grade-${player.grade}">${player.grade}</span><b>${escapeHtml(player.name)}<small>${ROLE_LABELS[player.role] ?? player.role}${player.upgradeLevel ? ` · +${player.upgradeLevel}` : ""}${team.isAi ? ` · 体能${Math.round(team.playerFitness?.[player.id]?.fitness??100)}` : ""}</small></b><strong>${player.overall}</strong></div>`).join("")}</div></section></div>${team.isAi ? aiClubBoardsMarkup(team,escapeHtml,leaguePublicPitch) : ""}${historyPanel}`;
-    bindAiClubBoards(overlay,team,leaguePublicPitch);
+    const aiBoards = team.isAi ? aiClubBoardsMarkup(team, escapeHtml, leaguePublicPitch) : "";
+    overlay.querySelector(".league-dialog").innerHTML = clubDetailMarkup(team, {
+      escape: escapeHtml,
+      badge: teamBadgeMarkup,
+      pitch: leaguePublicPitch,
+      matchRow: leagueMatchRow,
+      aiBoards,
+      roleLabels: ROLE_LABELS,
+      leagueTeams: league?.teams ?? [],
+    });
+    bindLeagueMagnetTooltips();
+    bindClubDetailTabs(overlay);
+    bindAiClubBoards(overlay, team, leaguePublicPitch);
+    overlay.querySelectorAll("[data-dossier-panel='overview'] [data-league-match-detail]").forEach((btn) => {
+      btn.addEventListener("click", () => openLeagueMatch(btn.dataset.leagueMatchDetail));
+    });
     overlay.querySelector("[data-friendly-invite]")?.addEventListener("click", () => openLeagueConfirm({ title:"发起友谊赛", text:`向 ${team.ownerName ?? team.name} 发出友谊赛邀请？邀请两小时内有效，对方接受后系统会自动安排最近场次。`, confirmText:"发送邀请", onConfirm:() => leagueFriendlyInviteRequest(team.id).then(() => { closeLeagueDialog(); showToast("友谊赛邀请已发送"); }) }));
     const historyList = overlay.querySelector("[data-team-history-list]");
     historyList?.addEventListener("click", (event) => {
@@ -6326,13 +6875,13 @@ function playerTooltip(player, assignedRole) {
   const secondary = ROLE_LABELS[player.secondaryRole] ?? "无";
   const traits = playerTraitText(player);
   const identity = [player.nationality, player.club].filter((value) => value && !value.startsWith("未登记")).join(" · ");
-  return `${identity ? `${identity}\n` : ""}身高：${Math.round(player.heightCm)}cm\n主位置：${ROLE_LABELS[player.role]}\n副位置：${secondary}\n当前位置：${ROLE_LABELS[assignedRole] ?? assignedRole}\n${traits}`;
+  return `${identity ? `${identity}\n` : ""}身高：${player.heightCm > 0 ? Math.round(player.heightCm) + "cm" : "未记录"}\n主位置：${ROLE_LABELS[player.role]}\n副位置：${secondary}\n当前位置：${ROLE_LABELS[assignedRole] ?? assignedRole}\n${traits}`;
 }
 
 function boardMagnet(player, position, assignedRole, options = {}) {
   const { draggable = false, live = false } = options;
   const dataAttribute = draggable ? `data-magnet="${player.id}"` : "";
-  return `<button class="magnet grade-${player.grade.toLowerCase()} ${live ? "live-magnet" : ""}" ${dataAttribute} data-traits="${escapeHtml(playerTooltip(player, assignedRole))}" title="${escapeHtml(playerTooltip(player, assignedRole))}" style="left:${position.x}%;top:${position.y}%"><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[assignedRole] ?? assignedRole}</small><i>${player.overall}</i></button>`;
+  return `<button class="magnet grade-${player.grade.toLowerCase()} ${live ? "live-magnet" : ""}" ${dataAttribute} data-traits="${escapeHtml(playerTooltip(player, assignedRole))}" title="${escapeHtml(playerTooltip(player, assignedRole))}" style="left:${position.x}%;top:${position.y}%"><b>${escapeHtml(player.name)}</b><small>${escapeHtml(fieldRoleAbbreviation(assignedRole, player.tacticalDuty))}</small><i>${player.overall}</i></button>`;
 }
 
 function benchMagnet(player, interactive = true) {
@@ -6603,8 +7152,8 @@ function matchPhaseLabel(match) {
 }
 
 function matchEventMarkup(entry, keyed = false) {
-  const marks = {shot:"射门", kickoff:"开",duel:"对抗",attack:"推进",counter:"反击",save:"扑救",miss:"射门",block:"封堵",tackle:"抢断",interception:"拦截",goal:"进球",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",foul:"犯规",yellow:"黄牌",red:"红牌",injury:"伤退",substitution:"换人",lightning:"雷击",weather:"天气",blackWhistle:"争议判罚",corner:"角球",setPiece:"定位球",setPieceDuel:"争顶",clearance:"解围",penaltyAwarded:"点球",halftime:"半场",extra:"加时",extraTimeEnd:"加时结束",penaltyShootoutStart:"点球大战",penaltyShootoutEqualise:"人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球结束",tactical:"战术",penalty:"点球",shootout:"点球大战",fulltime:"结束",abandoned:"终止" };
-  const icons = { shot:"↗",save:"◆",yellow:"■",goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",blackWhistle:"⚖",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",save:"◆",block:"◆",tackle:"◆",interception:"◆",setPiece:"◆",setPieceDuel:"◆",clearance:"◇",corner:"◇",miss:"○",tactical:"↔",halftime:"Ⅱ",extraTimeEnd:"Ⅱ",fulltime:"■",abandoned:"!" };
+  const marks = {spiritPossession:"请神",traitActivated:"特性",bondActive:"羁绊",captainBoost:"队长",offside:"越位",emergencyKeeper:"临时门将",attack:"推进",kickoff:"开球",addedTime:"补时",woodwork:"中框",secondBall:"二点球",foul:"犯规",shot:"射门", kickoff:"开",duel:"对抗",attack:"推进",counter:"反击",save:"扑救",miss:"射门",block:"封堵",tackle:"抢断",interception:"拦截",goal:"进球",keeperSpill:"黄油手",brawl:"群体冲突",matchInjury:"意外受伤",weatherInjury:"天气伤病",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",foul:"犯规",yellow:"黄牌",red:"红牌",injury:"伤退",substitution:"换人",lightning:"雷击",weather:"天气",blackWhistle:"争议判罚",corner:"角球",setPiece:"定位球",setPieceDuel:"争顶",clearance:"解围",penaltyAwarded:"点球",halftime:"半场",extra:"加时",extraTimeEnd:"加时结束",penaltyShootoutStart:"点球大战",penaltyShootoutEqualise:"人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球结束",tactical:"战术",penalty:"点球",shootout:"点球大战",fulltime:"结束",abandoned:"终止" };
+  const icons = { spiritPossession:"⚡",traitActivated:"✦",bondActive:"◈",captainBoost:"©",offside:"⚑",emergencyKeeper:"🧤",brawl:"!",keeperSpill:"🧤",woodwork:"◎",shot:"↗",save:"◆",yellow:"■",goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",yellow:"■",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",blackWhistle:"⚖",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",save:"◆",block:"◆",tackle:"◆",interception:"◆",setPiece:"◆",setPieceDuel:"◆",clearance:"◇",corner:"◇",miss:"○",tactical:"↔",halftime:"Ⅱ",extraTimeEnd:"Ⅱ",fulltime:"■",abandoned:"!" };
   return `<details ${keyed === true && entry.id ? `data-render-key="${escapeHtml(entry.id)}"` : ""} class="match-event event-${entry.type} importance-${entry.importance}" ${entry.importance === "major" ? "open" : ""}><summary><b>${entry.minute}'</b><span class="event-icon" aria-hidden="true">${icons[entry.type] ?? "•"}</span><i>${marks[entry.type] ?? "动态"}</i><span>${escapeHtml(entry.text)}${entry.assistId ? `<mark class="assist-mark">助攻</mark>` : ""}</span></summary>${entry.detail ? `<p>${escapeHtml(entry.detail)}</p>` : ""}${Number.isFinite(entry.xg) ? `<small>xG ${entry.xg} <em class="yffm-estimate">估算</em></small>` : ""}</details>`;
 }
 
@@ -6623,21 +7172,23 @@ function liveStatusMarkers(player) {
 function liveMagnet(player, editable, position = player.position ?? { x:50,y:50 }, assignedRole = player.assignedRole) {
   const status = player.sentOff ? "红牌" : player.injury ? "伤退" : "";
   const tooltip = playerTooltip(player, assignedRole);
-  return `<button class="magnet live-magnet grade-${String(player.grade ?? "C").toLowerCase()} rating-${Math.floor(player.rating)} ${status ? "inactive" : ""}" data-live-magnet="${player.id}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" ${editable && player.active ? "" : "disabled"}>${liveStatusMarkers(player)}<b>${escapeHtml(player.name)}</b><small>${status || `${ROLE_LABELS[assignedRole] ?? assignedRole} · 体能 ${Math.round(player.fitness)}`}</small><i class="live-rating">${player.rating.toFixed(1)}</i></button>`;
+  return `<button class="magnet live-magnet grade-${String(player.grade ?? "C").toLowerCase()} rating-${Math.floor(player.rating)} ${status ? "inactive" : ""}" data-live-magnet="${player.id}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" ${editable && player.active ? "" : "disabled"}>${liveStatusMarkers(player)}<b>${escapeHtml(player.name)}</b><small>${status || `${fieldRoleAbbreviation(assignedRole, player.tacticalDuty)} · 体能 ${Math.round(player.fitness)}`}</small><i class="live-rating">${player.rating.toFixed(1)}</i></button>`;
 }
 
 function broadcastMagnet(player) {
+  const cardPlayer = spectatorCardPlayer(player);
   const assignedRole = player.assignedRole ?? player.role;
   const position = player.position ?? { x:50, y:50 };
   const status = player.sentOff ? "红牌" : player.injury ? "伤退" : "";
-  const tooltip = playerTooltip(player, assignedRole);
+  const tooltipCard = leaguePlayerTooltipPayload({...cardPlayer, role:player.naturalRole ?? cardPlayer.role}, assignedRole, false, true);
   const fitness = Number.isFinite(player.fitness) ? Math.max(0, Math.min(100, Math.round(player.fitness))) : null;
   const upgrade = Number(player.upgradeLevel ?? 0);
   const overall = Math.round(player.overall ?? player.rating ?? 0);
   const broadcastSide = Number.isInteger(player.broadcastTeamIndex) ? ` broadcast-side-${player.broadcastTeamIndex}` : "";
   const cards = gameSettings.value.broadcastPieceDisplay === 'cards';
-  const cardMarkup = cards ? '<span class="broadcast-player-card" aria-hidden="true">' + s4PlayerCardMarkup({...player, role:assignedRole}, {interactive:false, upgradeLevel:upgrade, lazyImage:true, className:'broadcast-shield-card'}) + '</span>' : '';
-  return `<button aria-label="${escapeHtml(player.name + '，' + (status || ROLE_LABELS[assignedRole] || assignedRole) + '，体力 ' + (fitness ?? '—') + '，评分 ' + (Number.isFinite(player.rating)?player.rating.toFixed(1):'—'))}" data-motion-player="${escapeHtml(player.id)}" data-render-key="${escapeHtml(`${player.broadcastTeamIndex ?? 0}:${player.id}`)}" type="button" class="magnet live-magnet league-squad-magnet s4-broadcast-magnet${cards ? ' is-card-mode' : ''}${broadcastSide} grade-${String(player.grade ?? "C").toLowerCase()} ${status ? "inactive unavailable" : ""}" data-traits="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}" style="left:${position.x}%;top:${position.y}%" disabled>${cardMarkup}${captainBadgeMarkup(Boolean(player.captain && player.active))}${liveStatusMarkers(player)}<span class="league-magnet-role">${escapeHtml(fieldRoleAbbreviation(assignedRole))}</span><b>${escapeHtml(player.name)}</b><i>${overall}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness ?? "—"}"><span style="width:${fitness ?? 0}%"></span></span><span class="s4-broadcast-rating">评分 ${Number.isFinite(player.rating)?player.rating.toFixed(1):"—"}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
+  const fieldPosition = fieldRoleAbbreviation(assignedRole, player.tacticalDuty);
+  const cardMarkup = cards ? '<span class="broadcast-player-card" aria-hidden="true">' + s4PlayerCardMarkup({...cardPlayer, role:fieldPosition}, {interactive:false, upgradeLevel:upgrade, lazyImage:true, className:'broadcast-shield-card'}) + '</span>' : '';
+  return `<button aria-label="${escapeHtml(cardPlayer.name + '，' + (status || ROLE_LABELS[assignedRole] || assignedRole) + '，体力 ' + (fitness ?? '—') + '，评分 ' + (Number.isFinite(player.rating)?player.rating.toFixed(1):'—'))}" data-motion-player="${escapeHtml(player.id)}" data-render-key="${escapeHtml(`${player.broadcastTeamIndex ?? 0}:${player.id}`)}" type="button" class="magnet live-magnet league-squad-magnet s4-broadcast-magnet${cards ? ' is-card-mode' : ''}${broadcastSide} grade-${String(player.grade ?? "C").toLowerCase()} ${status ? "inactive unavailable" : ""}" data-tooltip-card="${escapeHtml(tooltipCard)}" style="left:${position.x}%;top:${position.y}%">${cardMarkup}${captainBadgeMarkup(Boolean(player.captain && player.active))}${liveStatusMarkers(player)}<span class="league-magnet-role">${escapeHtml(fieldPosition)}</span><b>${escapeHtml(cardPlayer.name)}</b><i>${overall}</i><span class="league-magnet-fitness" aria-label="体力 ${fitness ?? "—"}"><span style="width:${fitness ?? 0}%"></span></span><span class="s4-broadcast-rating">评分 ${Number.isFinite(player.rating)?player.rating.toFixed(1):"—"}</span>${upgrade ? `<em class="league-magnet-upgrade level-${Math.min(8, upgrade)}">+${upgrade}</em>` : ""}</button>`;
 }
 
 function matchStatsMarkup(match, teamOrder = [0, 1]) {
@@ -6767,7 +7318,7 @@ function updateLiveTeamPanel(panel, team, options = {}) {
     const markers = magnet.querySelector(".live-status-markers");
     if (markers) markers.outerHTML = liveStatusMarkers(player);
     const detail = magnet.querySelector("small");
-    if (detail) detail.textContent = status || `${ROLE_LABELS[assignedRole] ?? assignedRole} · 体能 ${Math.round(player.fitness)}`;
+    if (detail) detail.textContent = status || `${fieldRoleAbbreviation(assignedRole, player.tacticalDuty)} · 体能 ${Math.round(player.fitness)}`;
     const rating = magnet.querySelector(".live-rating");
     if (rating) rating.textContent = player.rating.toFixed(1);
   });
@@ -6938,10 +7489,16 @@ function reportPlayerRows(team) {
   return team.players.map((player) => `<tr><td><b>${escapeHtml(player.name)}</b><small>${ROLE_LABELS[player.role] ?? player.role}${player.sentOff ? " · 红牌" : player.injury ? " · 伤退" : player.enteredAsSubstitute ? " · 替补登场" : ""}</small></td><td>${player.rating.toFixed(1)}</td><td>${Math.round(player.fitness)}</td><td>${player.stats.goals}</td><td>${player.stats.assists}</td><td>${player.stats.shotsOnTarget}</td><td>${Number(player.stats.tackles ?? 0)}</td><td>${Number(player.stats.interceptions ?? 0)}</td><td>${Number(player.stats.clearances ?? 0)}</td><td>${Number(player.stats.blocks ?? 0)}</td><td>${Number(player.stats.pressuresWon ?? 0)}</td><td>${player.stats.saves}</td></tr>`).join("");
 }
 
-function reportTimelineItem(entry) {
-  const icons = { shot:"↗",save:"◆",yellow:"■",goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",abandoned:"!",blackWhistle:"⚖",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",extraTimeEnd:"Ⅱ",halftime:"Ⅱ",fulltime:"■",tactical:"↔" };
-  const labels = { shot:"射门",save:"扑救",yellow:"黄牌",goal:"进球",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",red:"红牌",injury:"伤退",substitution:"伤病换人",lightning:"雷击",weather:"天气影响",abandoned:"比赛终止",blackWhistle:"争议判罚",penaltyAwarded:"判罚点球",penalty:"点球",shootout:"点球大战",penaltyShootoutStart:"点球大战开始",penaltyShootoutEqualise:"点球人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球大战结束",extraTimeEnd:"加时赛结束",halftime:"中场",fulltime:"终场",tactical:"战术调整" };
-  return `<article class="timeline-event event-${entry.type}"><time>${entry.minute}'</time><i>${icons[entry.type] ?? "•"}</i><div><b>${labels[entry.type] ?? "比赛事件"}</b><p>${escapeHtml(entry.text)}</p>${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}</div></article>`;
+function reportTimelineItem(entry, withReplay = false) {
+  const commentaryLabels = {
+    spiritPossession:"请神",traitActivated:"特性触发",bondActive:"战术羁绊",
+    captainBoost:"队长激励",woodwork:"击中门框",
+  };
+  const icons = { redCard:"■",matchInjury:"✚",weatherInjury:"✚",replacementUnavailable:"!",emergencyKeeper:"↔",penaltyGoal:"⚽",shootoutResult:"P", shot:"↗",save:"◆",yellow:"■",goal:"⚽",butterFingers:"🧤",ownGoal:"↩",superWorldie:"★",red:"■",injury:"✚",substitution:"↔",lightning:"ϟ",weather:"≈",abandoned:"!",blackWhistle:"⚖",penaltyAwarded:"P",penalty:"P",shootout:"P",penaltyShootoutStart:"P",penaltyShootoutEqualise:"↔",penaltyShootoutKick:"P",penalties:"■",extraTimeEnd:"Ⅱ",halftime:"Ⅱ",fulltime:"■",tactical:"↔" };
+  const labels = { nineDragonsWear:"本体卡永久损耗",redCard:"红牌",replacementUnavailable:"无法换人",emergencyKeeper:"临时门将",penaltyGoal:"点球进球",shootoutResult:"点球主罚", shot:"射门",save:"扑救",yellow:"黄牌",goal:"进球",keeperSpill:"黄油手",brawl:"群体冲突",matchInjury:"意外受伤",weatherInjury:"天气伤病",butterFingers:"黄油手",ownGoal:"乌龙球",superWorldie:"超级世界波",red:"红牌",injury:"伤退",substitution:"换人",lightning:"雷击",weather:"天气影响",abandoned:"比赛终止",blackWhistle:"争议判罚",penaltyAwarded:"判罚点球",penalty:"点球",shootout:"点球大战",penaltyShootoutStart:"点球大战开始",penaltyShootoutEqualise:"点球人数调整",penaltyShootoutKick:"点球主罚",penalties:"点球大战结束",extraTimeEnd:"加时赛结束",halftime:"中场",fulltime:"终场",tactical:"战术调整" };
+  const minute = broadcastMinuteLabel(entry.minute);
+  const eventLabel = commentaryLabels[entry.type] ?? labels[entry.type] ?? "比赛事件";
+  return `<article class="timeline-event event-${entry.type === 'redCard' ? 'red' : escapeHtml(entry.type)}${withReplay ? " has-replay" : ""}"><time>${entry.type === 'nineDragonsWear' ? '赛后' : minute === '—' ? minute : minute + '′'}</time><i>${icons[entry.type] ?? "•"}</i><div><b>${eventLabel}</b><p>${escapeHtml(entry.text)}</p>${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}</div>${withReplay ? `<button type="button" class="button secondary" data-history-replay="${escapeHtml(entry.id)}" aria-haspopup="dialog">回看片段</button>` : ""}</article>`;
 }
 
 function teamHighlightsMarkup(team, index) {
@@ -6962,7 +7519,7 @@ function renderReport() {
   const rematchText = ownRematchReady ? (rivalRematchReady ? (firstTournamentLeg ? "正在进入第二回合" : "正在重新开局") : "已确认，等待好友") : (rivalRematchReady ? (firstTournamentLeg ? "好友已准备，进入第二回合" : "好友已确认，再来一局") : (firstTournamentLeg ? "准备第二回合" : "再来一局"));
   const exportContent = exportedLineupCode ? `<div class="seed-result"><textarea id="exported-lineup-code" readonly>${escapeHtml(exportedLineupCode)}</textarea><button class="button primary" id="copy-lineup-seed">复制阵容码</button></div>` : `<button class="button export-lineup-button" id="export-lineup">导出我的阵容</button>`;
   app.innerHTML = `<section class="report-screen"><header class="report-hero"><h1>${winner}</h1><div class="report-score"><span>${escapeHtml(report.teams[0].name)}</span><b>${report.score[0]} : ${report.score[1]}</b><span>${escapeHtml(report.teams[1].name)}</span></div>${report.penalties ? `<p>点球 ${report.penalties[0]} : ${report.penalties[1]}</p>` : ""}<small>${escapeHtml(report.weather.name)} · ${report.teams[0].activeCount} 对 ${report.teams[1].activeCount} 人</small><button class="button primary rematch-button" id="rematch" ${ownRematchReady ? "disabled" : ""}>${rematchText}</button></header><section class="lineup-export-panel"><h2>保存本场阵容</h2>${exportContent}</section><div class="report-grid"><section class="report-panel"><h2>比赛统计</h2>${matchStatsMarkup(report)}</section><section class="report-panel"><h2>重要事件</h2><div class="report-events">${report.importantEvents.map(matchEventMarkup).join("")}</div></section></div>${report.teams.map((team,index) => `<section class="player-report"><header><h2>${escapeHtml(team.name)}${team.importedLineup ? `<span class="lineup-origin-badge">自带阵容</span>` : ""}</h2><strong>${team.formation} · ${index === room.viewerIndex ? `${TACTICS[team.tactic]} · ${STYLES[team.style]} · 主攻${FOCUSES[team.attackFocus]} · 主守${FOCUSES[team.defenseFocus]}` : "战术保密"}</strong></header><div class="table-wrap"><table><thead><tr><th>球员</th><th>评分</th><th>体能</th><th>进球</th><th>助攻</th><th>射正</th><th>抢断</th><th>拦截</th><th>解围</th><th>封堵</th><th>压迫成功</th><th>扑救</th></tr></thead><tbody>${reportPlayerRows(team)}</tbody></table></div></section>`).join("")}</section>`;
-  const timeline = report.importantEvents.length ? report.importantEvents.map(reportTimelineItem).join("") : `<p class="history-empty">本场没有需要特别记录的事件。</p>`;
+  const timeline = report.importantEvents.length ? report.importantEvents.map(entry => reportTimelineItem(entry)).join("") : `<p class="history-empty">本场没有需要特别记录的事件。</p>`;
   app.innerHTML = `<section class="report-screen"><header class="report-hero compact-report-hero"><h1>${winner}</h1><div class="report-score"><span>${escapeHtml(report.teams[0].name)}</span><b>${displayScore[0]} : ${displayScore[1]}</b><span>${escapeHtml(report.teams[1].name)}</span></div>${report.aggregateBaseScore ? `<p>首回合 ${report.aggregateBaseScore[0]} : ${report.aggregateBaseScore[1]} · 次回合 ${report.score[0]} : ${report.score[1]}</p>` : ""}${report.penalties ? `<p>点球 ${report.penalties[0]} : ${report.penalties[1]}</p>` : ""}<small>${weatherIcon(report.weather)} ${escapeHtml(report.weather.name)} · ${report.teams[0].activeCount} 对 ${report.teams[1].activeCount} 人</small><button class="button primary rematch-button" id="rematch" ${ownRematchReady ? "disabled" : ""}>${rematchText}</button></header><div class="report-story-layout"><section class="report-panel timeline-panel"><h2>比赛时间轴</h2><div class="match-timeline">${timeline}</div></section><section class="report-panel compact-stats-panel"><h2>比赛统计</h2>${matchStatsMarkup(report)}</section></div><div class="team-highlights-grid">${report.teams.map(teamHighlightsMarkup).join("")}</div><section class="lineup-export-panel compact-export-panel"><h2>保存本场阵容</h2>${exportContent}</section></section>`;
   document.querySelector(".compact-report-hero>small")?.insertAdjacentHTML("beforeend", ` · ⚖ ${escapeHtml(refereeText(report.referee))}${report.blackWhistle ? " · 本场出现争议判罚" : ""}`);
   document.querySelector("#rematch")?.insertAdjacentHTML("afterend", `<button class="button secondary return-main-button" id="return-main">返回主菜单</button>`);
@@ -7457,6 +8014,7 @@ async function performLeagueEnhancement() {
     league = {
       ...league,
       updatedAt:enhancement.updatedAt,
+      listings:enhancement.listings ?? league.listings,
       serverTime:enhancement.serverTime,
       wallet:enhancement.wallet,
       ownTeam:{ ...league.ownTeam, roster },
@@ -7489,6 +8047,19 @@ async function performLeagueEnhancement() {
 }
 
 app.addEventListener("keydown", (event) => {
+  const sheet = event.target.closest?.("[data-league-duty-sheet]");
+  if (sheet && event.key === "Escape") {
+    event.preventDefault();
+    return closeLeagueMobileDutySheet();
+  }
+  if (sheet && event.key === "Tab") {
+    const buttons = sheet.querySelectorAll("button:enabled");
+    const first = buttons[0], last = buttons[buttons.length - 1];
+    if (event.shiftKey ? event.target === first : event.target === last) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
+  }
   const dutyStep = event.target.closest?.("[data-league-duty-step][role=button]");
   if (!dutyStep || !["Enter", " "].includes(event.key)) return;
   event.preventDefault();
@@ -7531,6 +8102,13 @@ app.addEventListener("click", async (event) => {
   if (event.target.closest("[data-league-auto-duties]")) {
     automaticallyAdaptLeagueDuties();
     return;
+  }
+  const dutyOpen = event.target.closest("[data-league-duty-open]");
+  if (dutyOpen) return openLeagueMobileDutySheet(dutyOpen.dataset.leagueDutyPlayer);
+  const dutyPick = event.target.closest("[data-league-duty-pick]");
+  if (dutyPick) {
+    setLeaguePlayerDuty(dutyPick.dataset.leagueDutyPlayer, dutyPick.dataset.leagueDutyRole, dutyPick.dataset.leagueDutyState, dutyPick.dataset.leagueDutyPick);
+    return closeLeagueMobileDutySheet();
   }
   const dutyStep = event.target.closest("[data-league-duty-step]");
   if (dutyStep) {
@@ -7596,6 +8174,10 @@ app.addEventListener("click", async (event) => {
   if (batchFinish) leagueRequest("/draft/finish", {attempt:Number(batchFinish.dataset.leagueFinish)}).then(() => { batchDraftPreview = null; leagueTab = "overview"; renderLeague(); showToast("球队建成，阵型与战术风格已应用"); }).catch(error=>showToast(error.message));
   if (event.target.closest("[data-league-back]")) renderLanding();
   if (event.target.closest("[data-league-team-name-edit]")) openLeagueTeamNameEditor();
+  if (event.target.closest("[data-league-game-settings]")) {
+    openGameSettings();
+    return;
+  }
   if (event.target.closest("[data-league-theme-toggle]")) {
     toggleLeagueDesktopTheme();
     return;
@@ -7609,14 +8191,6 @@ app.addEventListener("click", async (event) => {
     return;
   }
 
-  if(event.target.closest('[data-home-standings]')) {
-    const dialog = openLeagueDialog(`<header><h2>联赛完整积分榜</h2><button class="icon-button" data-close-league-dialog aria-label="关闭">×</button></header>${divisionOverviewMarkup(league,leagueStandingRows,escapeHtml)}`,'home-standings-dialog');
-    dialog.addEventListener('click', event => {
-      const team = event.target.closest('[data-league-team-detail]');
-      if (team) openLeagueTeam(team.dataset.leagueTeamDetail);
-    });
-    return;
-  }
   const sidebarOpen = event.target.closest('[data-sidebar-open]');
   if (sidebarOpen) {
     gameSettings.update({sidebarPinned:!gameSettings.value.sidebarPinned});
@@ -7645,6 +8219,10 @@ app.addEventListener("click", async (event) => {
     if (nextTab === "squad" && leagueTab !== "squad") {
       restoreLeagueTacticsContext(leagueTacticsMode);
     }
+    if (nextTab === "club-history") {
+      historyInitialTab = leagueTabButton.dataset.historyStart ?? "overview";
+      if (leagueTab === nextTab) mountedClubHistory?.controller.navigate({tab:historyInitialTab});
+    }
     if (nextTab === "backpack") leagueBackpackPage = inboxTarget === "cards" ? "cards" : "packs";
     if (leagueTabButton.matches("[data-open-player-ranking]")) leaguePlayerInfoSection = "ranking";
     else if (nextTab === "players" && leagueTab !== "players") leaguePlayerInfoSection = null;
@@ -7654,6 +8232,7 @@ app.addEventListener("click", async (event) => {
     leagueMobileNavOpen = false;
     if (nextTab === "club" && leagueClubPage === "honorRoom" && !league.honorRoom) leagueHonorRoomLoading = true;
     renderLeague();
+    if (nextTab === "players") void loadLeaguePlayerDirectory();
     if(tabChanged)window.scrollTo({top:0,left:0,behavior:"instant"});
     if (nextTab === "club" && leagueClubPage === "honorRoom") void loadLeagueHonorRoom();
   }
@@ -7674,8 +8253,17 @@ app.addEventListener("click", async (event) => {
   if (sponsorOfferButton) {
     const action = sponsorOfferButton.dataset.clubSponsorAction;
     leagueRequest("/club/sponsor/respond", { offerId:sponsorOfferButton.dataset.clubSponsorOffer, action }, {trigger:sponsorOfferButton})
-      .then(() => showToast(action === "accept" ? "赞助合同已生效，签约奖金已经到账" : "已拒绝这份赞助报价"))
+      .then(() => showToast(action === "accept" ? "赞助合同已生效，首季赞助金已经到账" : "已拒绝这份赞助报价"))
       .catch((error) => showToast(error.message));
+    return;
+  }
+  const roleShortcut = event.target.closest("[data-directory-role]");
+  if (roleShortcut) {
+    leaguePlayerSearchDraft = roleShortcut.dataset.directoryRole;
+    leaguePlayerSearchQuery = leaguePlayerSearchDraft;
+    leaguePlayerInfoSection = "search";
+    void loadLeaguePlayerDirectory();
+    renderLeague();
     return;
   }
   if (playerInfoSection) {
@@ -8037,12 +8625,18 @@ app.addEventListener("click", async (event) => {
   if (event.target.closest("[data-league-simulate]")) leagueRequest("/simulate").then(() => showToast("下一轮模拟完成")).catch((error) => showToast(error.message));
   const marketSection = event.target.closest("[data-market-section]");
   if (marketSection) {
-    leagueMarketSection = marketSection.dataset.marketSection === "back" ? null : marketSection.dataset.marketSection;
+    leagueMarketSection = marketSection.dataset.marketSection === "back" ? "card" : marketSection.dataset.marketSection;
+    leagueMarketShowWarehouse = false;
     leagueMarketListingPage = 1;
     leagueMarketWarehousePage = 1;
     if (leagueMarketSection === "trade" && !league.playerDirectory) leaguePlayerDirectoryLoading = true;
     renderLeague();
     if (leagueMarketSection === "trade") void loadLeaguePlayerDirectory();
+    return;
+  }
+  if (event.target.closest("[data-market-warehouse-toggle]")) {
+    leagueMarketShowWarehouse = !leagueMarketShowWarehouse;
+    renderLeague();
     return;
   }
   const marketPageButton = event.target.closest("[data-market-page]");
@@ -8600,6 +9194,8 @@ app.addEventListener("submit", (event) => {
   if (event.target.matches("[data-player-directory-search]")) {
     event.preventDefault();
     leaguePlayerSearchQuery = leaguePlayerSearchDraft;
+    leaguePlayerInfoSection = "search";
+    void loadLeaguePlayerDirectory();
     renderLeague();
     return;
   }

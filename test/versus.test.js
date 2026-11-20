@@ -116,6 +116,10 @@ test("旧版比赛详情会补回球员能力并生成分散的阵型坐标", ()
   });
   const team = detail.teams[0];
   assert.equal(team.players.length, 11);
+  assert.ok(team.players.every(player => player.grade === REAL_PLAYER_BY_ID[player.id].grade));
+  const saved = hydrateHistoricalMatchDetail({teams:[{players:[{id:players[0].id, grade:"S", upgradeLevel:4}]}]});
+  assert.equal(saved.teams[0].players[0].grade, "S");
+  assert.equal(saved.teams[0].players[0].upgradeLevel, 4);
   assert.ok(team.players.every((player) => player.overall === REAL_PLAYER_BY_ID[player.id].overall));
   assert.ok(team.players.every((player) => Number.isFinite(player.position.x) && Number.isFinite(player.position.y)));
   assert.ok(new Set(team.players.map((player) => `${player.position.x},${player.position.y}`)).size >= 8);

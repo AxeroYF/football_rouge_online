@@ -136,10 +136,15 @@ async function openStorageSettlement({root,service,createService,now=Date.now,so
       const release=await acquireDispatchLock(lock,{wait:true});
       try{
         noTransientWork();const original=assertCurrent().state,applied=applySeasonBoundary({league:original,seasonId,phase,at:now(),createService});
-        if(applied.duplicate)return {...applied.receipt,duplicate:true};
+        if(applied.duplicate){
+          if(phase==='reset')service.finishSeasonReplayCleanup();
+          return {...applied.receipt,duplicate:true};
+        }
         const identity={fixtureId:applied.receipt.key,identityDigest:digest({receipt:applied.receipt,sourceFingerprint:digest(original)})};
         applied.league[seasonBoundaryField].receipts[identity.fixtureId].identityDigest=identity.identityDigest;
-        const outcome=commit(applied.league,identity,'season-boundary');return {...copy(applied.league[seasonBoundaryField].receipts[identity.fixtureId]),...outcome};
+        const outcome=commit(applied.league,identity,'season-boundary');
+        if(phase==='reset')service.finishSeasonReplayCleanup();
+        return {...copy(applied.league[seasonBoundaryField].receipts[identity.fixtureId]),...outcome};
       }finally{await release();}
     },
     async beginCupEvent({seasonId,eventId,duration=5400,releaseRate=1,enginePin=null}){

@@ -22,7 +22,7 @@
 .key-play-player.side-1 circle{fill:#79c4fb}
 .key-play-player text{fill:#d4e8df;font-size:1.8px;paint-order:stroke;stroke:#09271e;stroke-width:.7;stroke-linejoin:round;opacity:.65}
 .key-play-player.involved circle{stroke:#faffaf;stroke-width:.7}
-.key-play-player.involved text{fill:white;font-weight:750;opacity:1}
+.key-play-player.involved text{fill:white;opacity:1}
 [data-kp-trail]{stroke:#f0f8b9;stroke-width:.4;stroke-dasharray:1 1;opacity:.8}
 .key-play-progress{position:absolute;bottom:0;left:0;right:0;height:3px;background:#ffffff10}
 .key-play-progress i{display:block;height:100%;background:#d4f37b}
@@ -49,11 +49,16 @@
 html[data-ui-motion=off] .key-play-celebration,html[data-ui-motion=off] .key-play-celebration *,html[data-ui-motion=off] .key-play-celebration:before{animation:none;transition:none}
 html[data-league-theme=light] .key-play-toolbar label{color:#365e4c}
 @media(prefers-reduced-motion:reduce){.key-play-celebration,.key-play-celebration *,.key-play-celebration:before{animation:none!important}}
-@container(max-width:480px){.key-play-player text{font-size:2.5px}.key-play-player.involved text{font-size:2.7px}.key-play-player circle{r:1.45px}}
+@container(max-width:480px){.key-play-player text{font-size:2.5px}.key-play-player circle{r:1.45px}}
 @media(max-width:600px){.key-play-stage{max-height:none;min-height:380px}.key-play-caption{gap:4px;font-size:10px;inset:8px 6px auto}.key-play-toolbar [role=tab]{padding:9px 12px}.key-play-goal-cards{gap:15px}.key-play-player text{font-size:2.2px}.key-play-goal-word{font-size:44px}.key-play-goal-cards>div{width:130px}.key-play-goal-cards>.key-play-assister{width:110px}}
 
 @media(max-width:700px){.broadcast-v2-venue-head{flex-direction:row;align-items:center;gap:6px}.broadcast-v2-venue-head small{display:none}.broadcast-v2-venue-head h2{font-size:13px;max-width:110px;margin:0}.key-play-toolbar{gap:6px}.key-play-toolbar label{font-size:10px;gap:3px}.key-play-toolbar input{width:13px;height:13px}.key-play-toolbar [role=tab]{padding:7px 9px;font-size:11px}}
 @media(max-width:390px){.broadcast-v2-venue-head h2{max-width:66px}.key-play-toolbar{gap:4px}.key-play-toolbar [role=tab]{padding:7px}.key-play-toolbar label{font-size:9px}}
 
-.history-key-clips { max-width: 520px; margin: 20px auto; }
-.history-key-clips [data-kp-view="lineup"], .history-key-clips .key-play-toolbar label { display:none; }
+.timeline-event.has-replay { grid-template-columns:30px minmax(0,1fr) auto; }
+.timeline-event.has-replay > button { align-self:center; padding-inline:10px; white-space:nowrap; }
+.history-key-clips { width:min(520px, 94vw); max-height:92dvh; overflow:auto; margin:auto; padding:12px; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:14px; }
+.history-key-clips::backdrop { background:rgb(0 0 0 / .65); }
+.history-key-clips > header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.history-key-clips .key-play-stage { min-height:0; max-height:72dvh; }
+.history-key-clips .key-play-toolbar { display:none; }

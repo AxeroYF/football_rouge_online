@@ -10,7 +10,7 @@ export async function startV4Lab({port=4314}={}) {
     try {
       const url=new URL(req.url,'http://localhost');
       let name=decodeURIComponent(url.pathname);if(name==='/')name='/lab/index.html';
-      const shared=name==='/public/bond-rules.js'?fileURLToPath(new URL('../versus/public/bond-rules.js',import.meta.url)):null;
+      const shared=['/public/bond-rules.js','/public/tactical-bonds.js','/public/v2-tactical-profiles.js','/public/spirit-form.js'].includes(name)?fileURLToPath(new URL('../versus'+name,import.meta.url)):null;
       const file=shared??path.resolve(root,'.'+name),relative=shared?'bond-rules.js':path.relative(root,file);
       if(relative.startsWith('..')||path.isAbsolute(relative)||!['.js','.html','.css'].includes(path.extname(file))) {res.writeHead(404);res.end();return;}
       const data=await readFile(file);

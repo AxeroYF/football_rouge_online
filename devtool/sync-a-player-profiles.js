@@ -34,7 +34,12 @@ function eligiblePlayers() {
     .filter((player) => (player.grade === "A" && Number(player.overall) >= 87) || ADDITIONAL_PROFILE_PLAYER_IDS.has(player.id));
 }
 
-function playerForProfileKey(profileKey, players) {
+function playerForProfileKey(profileKey, players, playerId) {
+  if (playerId) {
+    const player = REAL_PLAYER_BY_ID[playerId];
+    if (!player) throw new Error(`${profileKey} 的头像绑定了未知球员 ${playerId}`);
+    return player;
+  }
   const normalizedKey = normalizedName(profileKey);
   const exactMatches = players.filter((player) => normalizedName(player.sourceName) === normalizedKey);
   const keyWords = normalizedWords(profileKey);
@@ -44,10 +49,10 @@ function playerForProfileKey(profileKey, players) {
   });
   const matches = exactMatches.length ? exactMatches : wordMatches.length ? wordMatches : players.filter((player) => {
     const normalizedSourceName = normalizedName(player.sourceName);
-    return normalizedSourceName.includes(normalizedKey) || normalizedKey.includes(normalizedSourceName);
+    return normalizedSourceName && (normalizedSourceName.includes(normalizedKey) || normalizedKey.includes(normalizedSourceName));
   });
   if (matches.length !== 1) {
-    throw new Error(`${profileKey} 必须唯一匹配一名总评87以上的A级球员，当前匹配：${matches.map((player) => `${player.id}(${player.sourceName})`).join(", ") || "无"}`);
+    throw new Error(`${profileKey} 必须唯一匹配一名球员，当前匹配：${matches.map((player) => `${player.id}(${player.sourceName})`).join(", ") || "无"}`);
   }
   return matches[0];
 }
@@ -79,7 +84,7 @@ export async function syncAPlayerProfiles({ assetTargetDirectory = null, require
 
   const entries = [];
   for (const profileKey of sourceKeys) {
-    const player = playerForProfileKey(profileKey, players);
+    const player = playerForProfileKey(profileKey, players, profiles[profileKey].playerId);
     const profile = normalizedProfile(profiles[profileKey], player, profileKey);
     if (requireOriginals) await stat(path.join(PROFILE_DIRECTORY, profile.fileName));
     Object.assign(profile, await optimizedProfileAsset(PROFILE_DIRECTORY, "A_profile", profile.fileName));
@@ -87,7 +92,7 @@ export async function syncAPlayerProfiles({ assetTargetDirectory = null, require
   }
 
   const mappedPlayerIds = new Set(entries.map((entry) => entry.playerId));
-  const missingPlayers = players.filter((player) => !mappedPlayerIds.has(player.id));
+  const missingPlayers = players.filter((player) => !mappedPlayerIds.has(player.id) && !player.cardProfile?.optimizedFileName);
   const unexpectedMissing = missingPlayers.filter((player) => !player.isDlc);
   if (mappedPlayerIds.size !== entries.length || unexpectedMissing.length) {
     throw new Error(`A级头像映射不完整或存在重复：非DLC未映射 ${unexpectedMissing.map((player) => player.id).join(", ") || "无"}`);

@@ -10,1086 +10,1267 @@
   "note": "x/y 为人物图片中心点占卡片宽高的百分比；width 为人物图片宽度占卡片宽度的百分比。",
   "profiles": {
     "Alexander-Arnold": {
+      "playerId": "s4-fc26-231281",
       "fileName": "Alexander-Arnold.png",
       "xPercent": 56.3,
       "yPercent": 53.2,
       "widthPercent": 212
     },
     "Alisson": {
+      "playerId": "s4-fc26-212831",
       "fileName": "Alisson.png",
       "xPercent": 26.9,
       "yPercent": 71.7,
       "widthPercent": 244
     },
     "Alvarez": {
+      "playerId": "s4-fc26-246191",
       "fileName": "Alvarez.png",
       "xPercent": 50,
       "yPercent": 60.5,
       "widthPercent": 240
     },
     "Barella": {
+      "playerId": "s4-fc26-224232",
       "fileName": "Barella.png",
       "xPercent": 46.8,
       "yPercent": 90.1,
       "widthPercent": 160
     },
     "Bastoni": {
+      "playerId": "s4-fc26-237383",
       "fileName": "Bastoni.png",
       "xPercent": 36.2,
       "yPercent": 62.1,
       "widthPercent": 220
     },
     "Bellingham": {
+      "playerId": "s4-fc26-252371",
       "fileName": "Bellingham.png",
       "xPercent": 45.2,
       "yPercent": 84.5,
       "widthPercent": 172
     },
     "Bremer": {
+      "playerId": "s4-fc26-239580",
       "fileName": "Bremer.png",
       "xPercent": 67.7,
       "yPercent": 85.7,
       "widthPercent": 212
     },
     "Bruno_Fernandes": {
+      "playerId": "s4-fc26-212198",
       "fileName": "Bruno_Fernandes.png",
       "xPercent": 44.4,
       "yPercent": 71,
       "widthPercent": 116
     },
     "Caicedo": {
+      "playerId": "s4-fc26-256079",
       "fileName": "Caicedo.png",
       "xPercent": 59.3,
       "yPercent": 74.1,
       "widthPercent": 156
     },
     "Cambiaso": {
+      "playerId": "s4-fc26-258966",
       "fileName": "Cambiaso.png",
       "xPercent": 44.3,
       "yPercent": 63.8,
       "widthPercent": 172
     },
     "Cancelo": {
+      "playerId": "s4-fc26-210514",
       "fileName": "Cancelo.png",
       "xPercent": 53.9,
       "yPercent": 57.7,
       "widthPercent": 180
     },
     "Carvajal": {
+      "playerId": "s4-fc26-204963",
       "fileName": "Carvajal.png",
       "xPercent": 59.2,
       "yPercent": 61.9,
       "widthPercent": 220
     },
     "David_Raya": {
+      "playerId": "s4-fc26-220901",
       "fileName": "David_Raya.png",
       "xPercent": 47.5,
       "yPercent": 52.8,
       "widthPercent": 100
     },
     "De_Bruyne": {
+      "playerId": "s4-fc26-192985",
       "fileName": "De_Bruyne.png",
       "xPercent": 59.3,
       "yPercent": 64.8,
       "widthPercent": 192
     },
     "de_Jong": {
+      "playerId": "s4-fc26-228702",
       "fileName": "de_Jong.png",
       "xPercent": 34,
       "yPercent": 55.4,
       "widthPercent": 188
     },
     "Dembélé": {
+      "playerId": "s4-fc26-231443",
       "fileName": "Dembélé.png",
       "xPercent": 39.7,
       "yPercent": 59.1,
       "widthPercent": 184
     },
     "Dimarco": {
+      "playerId": "s4-fc26-226268",
       "fileName": "Dimarco.png",
       "xPercent": 39,
       "yPercent": 56.6,
       "widthPercent": 200
     },
     "Donnarumma": {
+      "playerId": "s4-fc26-230621",
       "fileName": "Donnarumma.png",
       "xPercent": 38.7,
       "yPercent": 45.1,
       "widthPercent": 216
     },
     "Doué": {
+      "playerId": "s4-fc26-271421",
       "fileName": "Doué.png",
       "xPercent": 43.6,
       "yPercent": 60.5,
       "widthPercent": 128
     },
     "Dybala": {
+      "playerId": "s4-fc26-211110",
       "fileName": "Dybala.png",
       "xPercent": 51.4,
       "yPercent": 56.5,
       "widthPercent": 208
     },
     "Foden": {
+      "playerId": "s4-fc26-237692",
       "fileName": "Foden.png",
       "xPercent": 45,
       "yPercent": 57.4,
       "widthPercent": 172
     },
     "Gabriel": {
+      "playerId": "s4-fc26-232580",
       "fileName": "Gabriel.png",
       "xPercent": 43.3,
       "yPercent": 57.4,
       "widthPercent": 212
     },
     "Gerrard": {
+      "playerId": "s4-retired-steven-gerrard",
       "fileName": "Gerrard.png",
       "xPercent": 45,
       "yPercent": 53.1,
       "widthPercent": 192
     },
     "Griezmann": {
+      "playerId": "s4-fc26-194765",
       "fileName": "Griezmann.png",
       "xPercent": 55.3,
       "yPercent": 55.7,
       "widthPercent": 208
     },
     "Guimarães": {
+      "playerId": "s4-fc26-247851",
       "fileName": "Guimarães.png",
       "xPercent": 24.5,
       "yPercent": 56.5,
       "widthPercent": 180
     },
     "Guirassy": {
+      "playerId": "s4-fc26-215441",
       "fileName": "Guirassy.png",
       "xPercent": 61.7,
       "yPercent": 55.9,
       "widthPercent": 168
     },
     "Gyökeres": {
+      "playerId": "s4-fc26-241651",
       "fileName": "Gyökeres.png",
       "xPercent": 62.1,
       "yPercent": 51.7,
       "widthPercent": 192
     },
     "Hakimi": {
+      "playerId": "s4-fc26-235212",
       "fileName": "Hakimi.png",
       "xPercent": 41.9,
       "yPercent": 53.7,
       "widthPercent": 204
     },
     "Heung_Min_Son": {
+      "playerId": "s4-fc26-200104",
       "fileName": "Heung_Min_Son.png",
       "xPercent": 44.7,
       "yPercent": 57.1,
       "widthPercent": 148
     },
     "Ibrahimović": {
+      "playerId": "s4-retired-zlatan-ibrahimovic",
       "fileName": "Ibrahimović.png",
       "xPercent": 54.2,
       "yPercent": 54.8,
       "widthPercent": 212
     },
     "Iniesta": {
+      "playerId": "s4-retired-andres-iniesta",
       "fileName": "Iniesta.png",
       "xPercent": 23.4,
       "yPercent": 71.8,
       "widthPercent": 180
     },
     "Iñigo_Martínez": {
+      "playerId": "s4-fc26-204525",
       "fileName": "Iñigo_Martínez.png",
       "xPercent": 53.9,
       "yPercent": 72.9,
       "widthPercent": 164
     },
     "Isak": {
+      "playerId": "s4-fc26-233731",
       "fileName": "Isak.png",
       "xPercent": 69.1,
       "yPercent": 54.5,
       "widthPercent": 200
     },
     "Kane": {
+      "playerId": "s4-fc26-202126",
       "fileName": "Kane.png",
       "xPercent": 51.1,
       "yPercent": 54.3,
       "widthPercent": 192
     },
     "Kimmich": {
+      "playerId": "s4-fc26-212622",
       "fileName": "Kimmich.png",
       "xPercent": 51.1,
       "yPercent": 68.4,
       "widthPercent": 228
     },
     "Kobel": {
+      "playerId": "s4-fc26-235073",
       "fileName": "Kobel.png",
       "xPercent": 52.5,
       "yPercent": 56.2,
       "widthPercent": 188
     },
     "Konaté": {
+      "playerId": "s4-fc26-237678",
       "fileName": "Konaté.png",
       "xPercent": 29.4,
       "yPercent": 54.8,
       "widthPercent": 192
     },
     "Koundé": {
+      "playerId": "s4-fc26-241486",
       "fileName": "Koundé.png",
       "xPercent": 45.4,
       "yPercent": 57.9,
       "widthPercent": 184
     },
     "Kvaratskhelia": {
+      "playerId": "s4-fc26-247635",
       "fileName": "Kvaratskhelia.png",
       "xPercent": 42.6,
       "yPercent": 54.3,
       "widthPercent": 204
     },
     "Lautaro_Martínez": {
+      "playerId": "s4-fc26-231478",
       "fileName": "Lautaro_Martínez.png",
       "xPercent": 41.2,
       "yPercent": 49.7,
       "widthPercent": 112
     },
     "Lewandowski": {
+      "playerId": "s4-fc26-188545",
       "fileName": "Lewandowski.png",
       "xPercent": 47.6,
       "yPercent": 59.6,
       "widthPercent": 200
     },
     "Mac_Allister": {
+      "playerId": "s4-fc26-239837",
       "fileName": "Mac_Allister.png",
       "xPercent": 66.3,
       "yPercent": 53.1,
       "widthPercent": 140
     },
     "Maignan": {
+      "playerId": "s4-fc26-215698",
       "fileName": "Maignan.png",
       "xPercent": 45,
       "yPercent": 56.3,
       "widthPercent": 212
     },
     "Marcos_Llorente": {
+      "playerId": "s4-fc26-226161",
       "fileName": "Marcos_Llorente.png",
       "xPercent": 51.1,
       "yPercent": 56.8,
       "widthPercent": 192
     },
     "Marcus_Thuram": {
+      "playerId": "s4-fc26-228093",
       "fileName": "Marcus_Thuram.png",
       "xPercent": 45.8,
       "yPercent": 54,
       "widthPercent": 200
     },
     "Marquinhos": {
+      "playerId": "s4-fc26-207865",
       "fileName": "Marquinhos.png",
       "xPercent": 45.7,
       "yPercent": 52.8,
       "widthPercent": 204
     },
     "Mbeumo": {
+      "playerId": "s4-fc26-243014",
       "fileName": "Mbeumo.png",
       "xPercent": 28.8,
       "yPercent": 55.4,
       "widthPercent": 216
     },
     "Musiala": {
+      "playerId": "s4-fc26-256790",
       "fileName": "Musiala.png",
       "xPercent": 50.4,
       "yPercent": 48.6,
       "widthPercent": 176
     },
     "Nuno_Mendes": {
+      "playerId": "s4-fc26-252145",
       "fileName": "Nuno_Mendes.png",
       "xPercent": 50,
       "yPercent": 52,
       "widthPercent": 196
     },
     "Oblak": {
+      "playerId": "s4-fc26-200389",
       "fileName": "Oblak.png",
       "xPercent": 74.1,
       "yPercent": 52,
       "widthPercent": 204
     },
     "Ødegaard": {
+      "playerId": "s4-fc26-222665",
       "fileName": "Ødegaard.png",
       "xPercent": 49.3,
       "yPercent": 52,
       "widthPercent": 180
     },
     "Olise": {
+      "playerId": "s4-fc26-247827",
       "fileName": "Olise.png",
       "xPercent": 39.3,
       "yPercent": 57.9,
       "widthPercent": 136
     },
     "Osimhen": {
+      "playerId": "s4-fc26-232293",
       "fileName": "Osimhen.png",
       "xPercent": 46.1,
       "yPercent": 54.3,
       "widthPercent": 132
     },
     "Pacho": {
+      "playerId": "s4-fc26-256196",
       "fileName": "Pacho.png",
       "xPercent": 53.5,
       "yPercent": 52.3,
       "widthPercent": 196
     },
     "Palmer": {
+      "playerId": "s4-fc26-257534",
       "fileName": "Palmer.png",
       "xPercent": 51.4,
       "yPercent": 57.6,
       "widthPercent": 180
     },
     "Pedri": {
+      "playerId": "s4-fc26-251854",
       "fileName": "Pedri.png",
       "xPercent": 56,
       "yPercent": 56,
       "widthPercent": 184
     },
     "Pirlo": {
+      "playerId": "s4-retired-andrea-pirlo",
       "fileName": "Pirlo.png",
       "xPercent": 47.9,
       "yPercent": 53.4,
       "widthPercent": 104
     },
     "Pulisic": {
+      "playerId": "s4-fc26-227796",
       "fileName": "Pulisic.png",
       "xPercent": 53.2,
       "yPercent": 70.3,
       "widthPercent": 176
     },
     "Raphinha": {
+      "playerId": "s4-fc26-233419",
       "fileName": "Raphinha.png",
       "xPercent": 56,
       "yPercent": 58.8,
       "widthPercent": 176
     },
     "Rice": {
+      "playerId": "s4-fc26-234378",
       "fileName": "Rice.png",
       "xPercent": 46.1,
       "yPercent": 50.3,
       "widthPercent": 144
     },
     "Rodrygo": {
+      "playerId": "s4-fc26-243812",
       "fileName": "Rodrygo.png",
       "xPercent": 69.2,
       "yPercent": 52.8,
       "widthPercent": 204
     },
     "Rúben_Dias": {
+      "playerId": "s4-fc26-239818",
       "fileName": "Rúben_Dias.png",
       "xPercent": 50.4,
       "yPercent": 61.6,
       "widthPercent": 128
     },
     "Rüdiger": {
+      "playerId": "s4-fc26-205452",
       "fileName": "Rüdiger.png",
       "xPercent": 63.8,
       "yPercent": 52.3,
       "widthPercent": 192
     },
     "Saka": {
+      "playerId": "s4-fc26-246669",
       "fileName": "Saka.png",
       "xPercent": 49,
       "yPercent": 57,
       "widthPercent": 240
     },
     "Salah": {
+      "playerId": "s4-fc26-209331",
       "fileName": "Salah.png",
       "xPercent": 45,
       "yPercent": 54.3,
       "widthPercent": 188
     },
     "Saliba": {
+      "playerId": "s4-fc26-243715",
       "fileName": "Saliba.png",
       "xPercent": 46.5,
       "yPercent": 54,
       "widthPercent": 172
     },
     "Schick": {
+      "playerId": "s4-fc26-234236",
       "fileName": "Schick.png",
       "xPercent": 41.1,
       "yPercent": 55.1,
       "widthPercent": 192
     },
     "Schlotterbeck": {
+      "playerId": "s4-fc26-247819",
       "fileName": "Schlotterbeck.png",
       "xPercent": 45.7,
       "yPercent": 53.1,
       "widthPercent": 236
     },
     "Sommer": {
+      "playerId": "s4-fc26-177683",
       "fileName": "Sommer.png",
       "xPercent": 46.1,
       "yPercent": 49.5,
       "widthPercent": 180
     },
     "Tah": {
+      "playerId": "s4-fc26-213331",
       "fileName": "Tah.png",
       "xPercent": 50.4,
       "yPercent": 49.1,
       "widthPercent": 200
     },
     "ter_Stegen": {
+      "playerId": "s4-fc26-192448",
       "fileName": "ter_Stegen.png",
       "xPercent": 62.4,
       "yPercent": 53.4,
       "widthPercent": 212
     },
     "Terry": {
+      "playerId": "s4-retired-john-terry",
       "fileName": "Terry.png",
       "xPercent": 34.5,
       "yPercent": 53.5,
       "widthPercent": 172
     },
     "Theo_Hernández": {
+      "playerId": "s4-fc26-232656",
       "fileName": "Theo_Hernández.png",
       "xPercent": 43.6,
       "yPercent": 49.2,
       "widthPercent": 156
     },
     "Torres": {
+      "playerId": "s4-retired-fernando-torres",
       "fileName": "Torres.png",
       "xPercent": 49.3,
       "yPercent": 54.3,
       "widthPercent": 180
     },
     "Upamecano": {
+      "playerId": "s4-fc26-229558",
       "fileName": "Upamecano.png",
       "xPercent": 42.9,
       "yPercent": 60.8,
       "widthPercent": 192
     },
     "Valverde": {
+      "playerId": "s4-fc26-239053",
       "fileName": "Valverde.png",
       "xPercent": 52.5,
       "yPercent": 53.1,
       "widthPercent": 116
     },
     "van_Dijk": {
+      "playerId": "s4-fc26-203376",
       "fileName": "van_Dijk.png",
       "xPercent": 45.8,
       "yPercent": 56.8,
       "widthPercent": 204
     },
     "Vidić": {
+      "playerId": "s4-retired-nemanja-vidic",
       "fileName": "Vidić.png",
       "xPercent": 42.2,
       "yPercent": 50.3,
       "widthPercent": 176
     },
     "Vini_Jr": {
+      "playerId": "s4-fc26-238794",
       "fileName": "Vini_Jr.png",
       "xPercent": 48.2,
       "yPercent": 78.2,
       "widthPercent": 296
     },
     "Vitinha": {
+      "playerId": "s4-fc26-255253",
       "fileName": "Vitinha.png",
       "xPercent": 42.8,
       "yPercent": 41.6,
       "widthPercent": 144
     },
     "Watkins": {
+      "playerId": "s4-fc26-221697",
       "fileName": "Watkins.png",
       "xPercent": 45,
       "yPercent": 55.7,
       "widthPercent": 204
     },
     "Wirtz": {
+      "playerId": "s4-fc26-256630",
       "fileName": "Wirtz.png",
       "xPercent": 44,
       "yPercent": 54.8,
       "widthPercent": 216
     },
     "Xavi": {
+      "playerId": "s4-retired-xavi",
       "fileName": "Xavi.png",
       "xPercent": 47.2,
       "yPercent": 79.1,
       "widthPercent": 296
     },
     "Yamal": {
+      "playerId": "s4-fc26-277643",
       "fileName": "Yamal.png",
       "xPercent": 84.1,
       "yPercent": 51.2,
       "widthPercent": 244
     },
     "Sergio Ramos": {
+      "playerId": "s4-dlc-20260731-001",
       "fileName": "Sergio Ramos.png",
       "xPercent": 44.7,
       "yPercent": 54,
       "widthPercent": 188
     },
     "Gareth Bale": {
+      "playerId": "s4-dlc-20260731-002",
       "fileName": "Gareth Bale.png",
       "xPercent": 49.3,
       "yPercent": 57.1,
       "widthPercent": 192
     },
     "Casemiro": {
+      "playerId": "s4-dlc-20260731-003",
       "fileName": "Casemiro.png",
       "xPercent": 55.3,
       "yPercent": 50.9,
       "widthPercent": 196
     },
     "Diego Milito": {
+      "playerId": "s4-dlc-20260731-008",
       "fileName": "Diego Milito.png",
       "xPercent": 6,
       "yPercent": 59.7,
       "widthPercent": 192
     },
     "Maicon": {
+      "playerId": "s4-dlc-20260731-011",
       "fileName": "Maicon.png",
       "xPercent": 22.6,
       "yPercent": 52.8,
       "widthPercent": 164
     },
     "Raphaël Varane": {
+      "playerId": "s4-dlc-20260731-012",
       "fileName": "Raphaël Varane.png",
       "xPercent": 73,
       "yPercent": 61.3,
       "widthPercent": 200
     },
     "Thiago Silva": {
+      "playerId": "s4-dlc-20260731-015",
       "fileName": "Thiago Silva.png",
       "xPercent": 47.2,
       "yPercent": 56,
       "widthPercent": 108
     },
     "Francesco Totti": {
+      "playerId": "s4-dlc-20260731-021",
       "fileName": "Francesco Totti.png",
       "xPercent": 49.6,
       "yPercent": 56.8,
       "widthPercent": 160
     },
     "Mario Kempes": {
+      "playerId": "s4-dlc-20260731-028",
       "fileName": "Mario Kempes.png",
       "xPercent": 45.4,
       "yPercent": 54,
       "widthPercent": 200
     },
     "Eden Hazard": {
+      "playerId": "s4-dlc-20260731-032",
       "fileName": "Eden Hazard.png",
       "xPercent": 42.2,
       "yPercent": 60.5,
       "widthPercent": 200
     },
     "Radamel Falcao": {
+      "playerId": "s4-dlc-20260731-033",
       "fileName": "Radamel Falcao.png",
       "xPercent": 55.3,
       "yPercent": 59.6,
       "widthPercent": 216
     },
     "Xabi Alonso": {
+      "playerId": "s4-dlc-20260731-034",
       "fileName": "Xabi Alonso.png",
       "xPercent": 28.4,
       "yPercent": 63.3,
       "widthPercent": 236
     },
     "Thomas Müller": {
+      "playerId": "s4-dlc-20260731-035",
       "fileName": "Thomas Müller.png",
       "xPercent": 53.2,
       "yPercent": 55.4,
       "widthPercent": 188
     },
     "Paul Pogba": {
+      "playerId": "s4-dlc-20260731-036",
       "fileName": "Paul Pogba.png",
       "xPercent": 42.2,
       "yPercent": 93.2,
       "widthPercent": 140
     },
     "Robin van Persie": {
+      "playerId": "s4-dlc-20260731-039",
       "fileName": "Robin van Persie.png",
       "xPercent": 59.9,
       "yPercent": 55.7,
       "widthPercent": 204
     },
     "Lúcio": {
+      "playerId": "s4-dlc-20260731-045",
       "fileName": "Lúcio.png",
       "xPercent": 59.2,
       "yPercent": 69.6,
       "widthPercent": 124
     },
     "Jérôme Boateng": {
+      "playerId": "s4-dlc-20260731-047",
       "fileName": "Jérôme Boateng.png",
       "xPercent": 42.6,
       "yPercent": 65.6,
       "widthPercent": 224
     },
     "Robinho": {
+      "playerId": "s4-dlc-20260731-049",
       "fileName": "Robinho.png",
       "xPercent": 47.9,
       "yPercent": 53.5,
       "widthPercent": 208
     },
     "Sávio Bortolini": {
+      "playerId": "s4-dlc-20260731-051",
       "fileName": "Sávio Bortolini.png",
       "xPercent": 46.1,
       "yPercent": 54.8,
       "widthPercent": 108
     },
     "Zé Roberto": {
+      "playerId": "s4-dlc-20260731-052",
       "fileName": "Zé Roberto.png",
       "xPercent": 54.6,
       "yPercent": 73.2,
       "widthPercent": 120
     },
     "Miroslav Klose": {
+      "playerId": "s4-dlc-20260731-053",
       "fileName": "Miroslav Klose.png",
       "xPercent": 40.4,
       "yPercent": 105.2,
       "widthPercent": 184
     },
     "Raúl González": {
+      "playerId": "s4-dlc-20260731-054",
       "fileName": "Raúl González.png",
       "xPercent": 51.1,
       "yPercent": 56.5,
       "widthPercent": 100
     },
     "Daniel Passarella": {
+      "playerId": "s4-dlc2-20260803-002",
       "fileName": "Passarella.png",
       "xPercent": 52.8,
       "yPercent": 103.7,
       "widthPercent": 180
     },
     "Fernando Redondo": {
+      "playerId": "s4-dlc2-20260803-003",
       "fileName": "Redondo.png",
       "xPercent": 55.3,
       "yPercent": 54.3,
       "widthPercent": 184
     },
     "Omar Sívori": {
+      "playerId": "s4-dlc2-20260803-004",
       "fileName": "Omar Sívori.png",
       "xPercent": 50,
       "yPercent": 52,
       "widthPercent": 156
     },
     "Oscar Ruggeri": {
+      "playerId": "s4-dlc2-20260803-008",
       "fileName": "Oscar Ruggeri.png",
       "xPercent": 53.2,
       "yPercent": 90.4,
       "widthPercent": 164
     },
     "Hernán Crespo": {
+      "playerId": "s4-dlc2-20260803-010",
       "fileName": "Crespo.png",
       "xPercent": 9.5,
       "yPercent": 56,
       "widthPercent": 196
     },
     "Juan Sebastián Verón": {
+      "playerId": "s4-dlc2-20260803-011",
       "fileName": "Verón.png",
       "xPercent": 55.3,
       "yPercent": 56.8,
       "widthPercent": 192
     },
     "Osvaldo Ardiles": {
+      "playerId": "s4-dlc2-20260803-012",
       "fileName": "Osvaldo Ardiles.png",
       "xPercent": 50.7,
       "yPercent": 93.2,
       "widthPercent": 184
     },
     "Claudio Caniggia": {
+      "playerId": "s4-dlc2-20260803-013",
       "fileName": "Caniggia.png",
       "xPercent": 46.5,
       "yPercent": 57.4,
       "widthPercent": 188
     },
     "Jorge Burruchaga": {
+      "playerId": "s4-dlc2-20260803-014",
       "fileName": "Burruchaga.png",
       "xPercent": 38.7,
       "yPercent": 70.4,
       "widthPercent": 140
     },
     "Diego Simeone": {
+      "playerId": "s4-dlc2-20260803-015",
       "fileName": "Diego Simeone.png",
       "xPercent": 49.6,
       "yPercent": 57.9,
       "widthPercent": 200
     },
     "Gonzalo Higuaín": {
+      "playerId": "s4-dlc2-20260803-016",
       "fileName": "Higuaín.png",
       "xPercent": 50,
       "yPercent": 52.3,
       "widthPercent": 184
     },
     "Gabriel Heinze": {
+      "playerId": "s4-dlc2-20260803-021",
       "fileName": "Heinze.png",
       "xPercent": 52.8,
       "yPercent": 58.5,
       "widthPercent": 180
     },
     "Arjen Robben": {
+      "playerId": "s4-dlc2-20260803-022",
       "fileName": "Robben.png",
       "xPercent": 63.1,
       "yPercent": 62.5,
       "widthPercent": 196
     },
     "Ronald Koeman": {
+      "playerId": "s4-dlc2-20260803-023",
       "fileName": "Koeman.png",
       "xPercent": 51.1,
       "yPercent": 57.4,
       "widthPercent": 192
     },
     "Johan Neeskens": {
+      "playerId": "s4-dlc2-20260803-024",
       "fileName": "Neeskens.png",
       "xPercent": 50,
       "yPercent": 55.1,
       "widthPercent": 156
     },
     "Wesley Sneijder": {
+      "playerId": "s4-dlc2-20260803-026",
       "fileName": "Sneijder.png",
       "xPercent": 24.4,
       "yPercent": 49.2,
       "widthPercent": 188
     },
     "Ruud van Nistelrooy": {
+      "playerId": "s4-dlc2-20260803-027",
       "fileName": "Nistelrooy.png",
       "xPercent": 50,
       "yPercent": 57.1,
       "widthPercent": 200
     },
     "Edgar Davids": {
+      "playerId": "s4-dlc2-20260803-029",
       "fileName": "Davids.png",
       "xPercent": 36.9,
       "yPercent": 54,
       "widthPercent": 180
     },
     "Jaap Stam": {
+      "playerId": "s4-dlc2-20260803-030",
       "fileName": "Stam.png",
       "xPercent": 51.4,
       "yPercent": 65.9,
       "widthPercent": 100
     },
     "Patrick Kluivert": {
+      "playerId": "s4-dlc2-20260803-031",
       "fileName": "Kluivert.png",
       "xPercent": 76.6,
       "yPercent": 53.7,
       "widthPercent": 180
     },
     "Mark van Bommel": {
+      "playerId": "s4-dlc2-20260803-041",
       "fileName": "van Bommel.png",
       "xPercent": 57.1,
       "yPercent": 53.4,
       "widthPercent": 196
     },
     "Pepe": {
+      "playerId": "s4-dlc2-20260803-044",
       "fileName": "Pepe.png",
       "xPercent": 37.6,
       "yPercent": 54.8,
       "widthPercent": 180
     },
     "Deco": {
+      "playerId": "s4-dlc2-20260803-045",
       "fileName": "Deco.png",
       "xPercent": 63.8,
       "yPercent": 54.5,
       "widthPercent": 200
     },
     "Fernando Gomes": {
+      "playerId": "s4-dlc2-20260803-050",
       "fileName": "Gomes.png",
       "xPercent": 19.8,
       "yPercent": 56.8,
       "widthPercent": 168
     },
     "Rui Patrício": {
+      "playerId": "s4-dlc2-20260803-051",
       "fileName": "Patrício.png",
       "xPercent": 44,
       "yPercent": 56.5,
       "widthPercent": 192
     },
     "João Moutinho": {
+      "playerId": "s4-dlc2-20260803-052",
       "fileName": "Moutinho.png",
       "xPercent": 47.5,
       "yPercent": 59.6,
       "widthPercent": 212
     },
     "Humberto Coelho": {
+      "playerId": "s4-dlc2-20260803-053",
       "fileName": "Coelho.png",
       "xPercent": 52.1,
       "yPercent": 57.4,
       "widthPercent": 140
     },
     "Chalana": {
+      "playerId": "s4-dlc2-20260803-054",
       "fileName": "Chalana.png",
       "xPercent": 46.4,
       "yPercent": 97.4,
       "widthPercent": 188
     },
     "Pauleta": {
+      "playerId": "s4-dlc2-20260803-055",
       "fileName": "Pauleta.png",
       "xPercent": 55.4,
       "yPercent": 61.1,
       "widthPercent": 212
     },
     "Manuel Bento": {
+      "playerId": "s4-dlc2-20260803-056",
       "fileName": "Bento.png",
       "xPercent": 58.9,
       "yPercent": 58.5,
       "widthPercent": 164
     },
     "Paulo Sousa": {
+      "playerId": "s4-dlc2-20260803-061",
       "fileName": "Sousa.png",
       "xPercent": 42.3,
       "yPercent": 87.5,
       "widthPercent": 160
     },
     "Roberto Baggio": {
+      "playerId": "s4-dlc2-20260803-064",
       "fileName": "Baggio.png",
       "xPercent": 46.4,
       "yPercent": 55,
       "widthPercent": 176
     },
     "Gaetano Scirea": {
+      "playerId": "s4-dlc2-20260803-065",
       "fileName": "Gaetano Scirea.png",
       "xPercent": 52.4,
       "yPercent": 81.1,
       "widthPercent": 140
     },
     "Dino Zoff": {
+      "playerId": "s4-dlc2-20260803-066",
       "fileName": "Zoff.png",
       "xPercent": 51,
       "yPercent": 60.2,
       "widthPercent": 108
     },
     "Gianni Rivera": {
+      "playerId": "s4-dlc2-20260803-067",
       "fileName": "Rivera.png",
       "xPercent": 33,
       "yPercent": 63,
       "widthPercent": 156
     },
     "Giacinto Facchetti": {
+      "playerId": "s4-dlc2-20260803-069",
       "fileName": "Giacinto Facchetti.png",
       "xPercent": 55.3,
       "yPercent": 93.2,
       "widthPercent": 168
     },
     "Alessandro Del Piero": {
+      "playerId": "s4-dlc2-20260803-071",
       "fileName": "Del pierro.png",
       "xPercent": 40.8,
       "yPercent": 74.7,
       "widthPercent": 144
     },
     "Keylor Navas": {
+      "playerId": "s4-dlc2-20260803-072",
       "fileName": "Navas.png",
       "xPercent": 57,
       "yPercent": 55.9,
       "widthPercent": 232
     },
     "James Rodríguez": {
+      "playerId": "s4-dlc2-20260803-073",
       "fileName": "Rodríguez.png",
       "xPercent": 62.8,
       "yPercent": 52.6,
       "widthPercent": 160
     },
     "Guti": {
+      "playerId": "s4-dlc2-20260803-074",
       "fileName": "Guti.png",
       "xPercent": 58.5,
       "yPercent": 54,
       "widthPercent": 188
     },
     "Marc Cucurella": {
+      "playerId": "s4-fc26-239231",
       "fileName": "Ccurelia.png",
       "xPercent": 50,
       "yPercent": 59.1,
       "widthPercent": 128
     },
     "Ryan Gravenberch": {
+      "playerId": "s4-fc26-246104",
       "fileName": "Gravenberch.png",
       "xPercent": 32.9,
       "yPercent": 54.3,
       "widthPercent": 188
     },
     "Patrice Evra": {
+      "playerId": "s4-dlc3-20260808-001",
       "fileName": "Evra.png",
       "xPercent": 53.9,
       "yPercent": 67.5,
       "widthPercent": 220
     },
     "Bixente Lizarazu": {
+      "playerId": "s4-dlc3-20260808-003",
       "fileName": "Lizarazu.png",
       "xPercent": 49.6,
       "yPercent": 57.7,
       "widthPercent": 152
     },
     "Lilian Thuram": {
+      "playerId": "s4-dlc3-20260808-004",
       "fileName": "Lilian_Thuram.png",
       "xPercent": 50.4,
       "yPercent": 57.1,
       "widthPercent": 164
     },
     "Adriano": {
+      "playerId": "s4-dlc3-20260808-005",
       "fileName": "Adriano.png",
       "xPercent": 47.1,
       "yPercent": 59.4,
       "widthPercent": 232
     },
     "Pablo Aimar": {
+      "playerId": "s4-dlc3-20260808-006",
       "fileName": "Aimar.png",
       "xPercent": 61.3,
       "yPercent": 79.2,
       "widthPercent": 280
     },
     "Walter Samuel": {
+      "playerId": "s4-dlc3-20260808-007",
       "fileName": "Samuel.png",
       "xPercent": 46.4,
       "yPercent": 62.2,
       "widthPercent": 256
     },
     "Roberto Ayala": {
+      "playerId": "s4-dlc3-20260808-008",
       "fileName": "Ayala.png",
       "xPercent": 50.3,
       "yPercent": 78.5,
       "widthPercent": 140
     },
     "Fernando Hierro": {
+      "playerId": "s4-dlc3-20260808-012",
       "fileName": "Hierro.png",
       "xPercent": 50.7,
       "yPercent": 64.7,
       "widthPercent": 116
     },
     "Michael Ballack": {
+      "playerId": "s4-dlc3-20260808-014",
       "fileName": "Ballack.png",
       "xPercent": 33,
       "yPercent": 57.7,
       "widthPercent": 176
     },
     "Roy Keane": {
+      "playerId": "s4-dlc3-20260808-017",
       "fileName": "Keane.png",
       "xPercent": 52.8,
       "yPercent": 50.6,
       "widthPercent": 180
     },
     "Fabio Grosso": {
+      "playerId": "s4-dlc3-20260808-018",
       "fileName": "Grosso.png",
       "xPercent": 47.2,
       "yPercent": 49.5,
       "widthPercent": 164
     },
     "Davor Šuker": {
+      "playerId": "s4-dlc3-20260808-019",
       "fileName": "Šuker.png",
       "xPercent": 41.1,
       "yPercent": 52,
       "widthPercent": 188
     },
     "Diego Forlán": {
+      "playerId": "s4-dlc3-20260808-021",
       "fileName": "Forlán.png",
       "xPercent": 22.8,
       "yPercent": 59.6,
       "widthPercent": 204
     },
     "Diego Costa": {
+      "playerId": "s4-dlc3-20260808-022",
       "fileName": "Diego_Costa.png",
       "xPercent": 35.1,
       "yPercent": 50.9,
       "widthPercent": 236
     },
     "Nicolas Anelka": {
+      "playerId": "s4-dlc3-20260808-023",
       "fileName": "Anelka.png",
       "xPercent": 73.1,
       "yPercent": 61.9,
       "widthPercent": 212
     },
     "Gianluca Zambrotta": {
+      "playerId": "s4-dlc3-20260808-024",
       "fileName": "Zambrotta.png",
       "xPercent": 55,
       "yPercent": 53.1,
       "widthPercent": 208
     },
     "Filippo Inzaghi": {
+      "playerId": "s4-dlc3-20260808-025",
       "fileName": "Inzaghi.png",
       "xPercent": 50,
       "yPercent": 61.3,
       "widthPercent": 108
     },
     "Philippe Coutinho": {
+      "playerId": "s4-dlc3-20260808-026",
       "fileName": "Coutinho.png",
       "xPercent": 51.8,
       "yPercent": 57.4,
       "widthPercent": 136
     },
     "Júnior": {
+      "playerId": "s4-dlc3-20260808-027",
       "fileName": "Júnior.png",
       "xPercent": 69.8,
       "yPercent": 58.2,
       "widthPercent": 184
     },
     "Gilberto Silva": {
+      "playerId": "s4-dlc3-20260808-028",
       "fileName": "Gilberto.png",
       "xPercent": 50,
       "yPercent": 57.9,
       "widthPercent": 224
     },
     "David Trezeguet": {
+      "playerId": "s4-dlc3-20260808-029",
       "fileName": "Trezeguet.png",
       "xPercent": 41.1,
       "yPercent": 63.8,
       "widthPercent": 212
     },
     "Luca Toni": {
+      "playerId": "s4-dlc3-20260808-031",
       "fileName": "Luca_Toni.png",
       "xPercent": 53.2,
       "yPercent": 58.8,
       "widthPercent": 168
     },
     "Fabien Barthez": {
+      "playerId": "s4-dlc3-20260808-033",
       "fileName": "Barthez.png",
       "xPercent": 73.1,
       "yPercent": 52.6,
       "widthPercent": 188
     },
     "Jens Lehmann": {
+      "playerId": "s4-dlc3-20260808-035",
       "fileName": "Lehmann.png",
       "xPercent": 57.1,
       "yPercent": 67.8,
       "widthPercent": 136
     },
     "Bastian Schweinsteiger": {
+      "playerId": "s4-dlc3-20260808-037",
       "fileName": "Schweinsteiger.png",
       "xPercent": 47.9,
       "yPercent": 57.9,
       "widthPercent": 216
     },
     "Nuno Gomes": {
+      "playerId": "s4-dlc3-20260808-039",
       "fileName": "Nuno_Gomes.png",
       "xPercent": 40.8,
       "yPercent": 55.1,
       "widthPercent": 172
     },
     "Leonardo Bonucci": {
+      "playerId": "s4-dlc3-20260808-040",
       "fileName": "Bonucci.png",
       "xPercent": 50.7,
       "yPercent": 57,
       "widthPercent": 196
     },
     "Víctor Valdés": {
+      "playerId": "s4-dlc3-20260808-042",
       "fileName": "Valdés.png",
       "xPercent": 45.1,
       "yPercent": 63.9,
       "widthPercent": 236
     },
     "David Silva": {
+      "playerId": "s4-dlc3-20260808-043",
       "fileName": "David_Silva.png",
       "xPercent": 48.6,
       "yPercent": 59.3,
       "widthPercent": 212
     },
     "Jesús Navas": {
+      "playerId": "s4-dlc3-20260808-044",
       "fileName": "Jesús_Navas.png",
       "xPercent": 38.3,
       "yPercent": 51.4,
       "widthPercent": 188
     },
     "Juan Mata": {
+      "playerId": "s4-dlc3-20260808-045",
       "fileName": "Mata.png",
       "xPercent": 39.4,
       "yPercent": 57.6,
       "widthPercent": 212
     },
     "Klaas-Jan Huntelaar": {
+      "playerId": "s4-dlc3-20260808-047",
       "fileName": "Huntelaar.png",
       "xPercent": 58.4,
       "yPercent": 61.9,
       "widthPercent": 168
     },
     "Ángel Di María": {
+      "playerId": "s4-fc26-183898",
       "fileName": "Di_Maria.png",
       "xPercent": 49.6,
       "yPercent": 71.2,

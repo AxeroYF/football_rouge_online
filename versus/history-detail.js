@@ -900,6 +900,9 @@ export function hydrateHistoricalMatchDetail(detail) {
       const { legendAbility:discardedLegendAbility, signature:discardedSignature, ...publicPlayer } = player;
       return {
         ...publicPlayer,
+        grade:player.grade ?? catalogPlayer?.grade,
+        club:player.club ?? catalogPlayer?.club,
+        nationality:player.nationality ?? catalogPlayer?.nationality,
         role: player.role ?? catalogPlayer?.role ?? "AM",
         assignedRole: player.assignedRole ?? player.role ?? catalogPlayer?.role ?? "AM",
         overall: Number.isFinite(Number(player.overall)) ? Number(player.overall) : Number(catalogPlayer?.overall ?? 0),

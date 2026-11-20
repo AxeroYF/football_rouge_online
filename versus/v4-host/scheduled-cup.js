@@ -1,3 +1,4 @@
+import {cupConditions} from '../match-conditions.js';
 import {createHash} from 'node:crypto';
 import {createSourceSnapshot} from '../v4-adapter/source-snapshot.js';
 import {compileRealMatch} from '../v4-adapter/compile-match.js';
@@ -52,7 +53,8 @@ export function beginScheduledCupEvent({league:original,seasonId,eventId,at,crea
   const snapshot=createSourceSnapshot({league,catalog,traitCatalog,bondCatalog}),scheduleDigest=hash(scheduleIdentity(league,event));
   const tasks=fixtures.map((fixture,fixtureIndex)=>{
     const id=`v4-cup-${key.slice(0,32)}-${fixtureIndex}`,resolution=event.stage==='league'||!['swiss','final'].includes(event.stage)&&event.leg===1?'draw':'extraTimeAndPenalties';
-    return {fixture:{id,competition:'cup'},context:{competition:'cup',round:event.round,event:descriptor(event),binding:{seasonId,roundKey:key,fixtureIndex,scheduleDigest}},envelope:compileRealMatch(snapshot,{homeId:fixture.homeId,awayId:fixture.awayId,fixtureId:id,seed:`${seasonId}:${event.id}:${fixture.id}`,competition:'cup',resolution,aggregate:aggregateFor(league,event,fixture),duration})};
+    const {weather,referee}=cupConditions(seasonId,fixture,event);
+    return {fixture:{id,competition:'cup'},context:{competition:'cup',round:event.round,event:descriptor(event),binding:{seasonId,roundKey:key,fixtureIndex,scheduleDigest}},envelope:compileRealMatch(snapshot,{environment:{weather:weather.key,referee:referee.key},homeId:fixture.homeId,awayId:fixture.awayId,fixtureId:id,seed:`${seasonId}:${event.id}:${fixture.id}`,competition:'cup',resolution,aggregate:aggregateFor(league,event,fixture),duration})};
   });
   event.status='running';event.startedAt=at;if(event.stage==='final')league.cup.finalStartedAt=at;
   const meta=league[scheduledCupField]??={format,revision:0,active:null,events:{}};

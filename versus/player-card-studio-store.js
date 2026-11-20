@@ -216,6 +216,11 @@ function applyProfileToPlayer(playerId) {
 }
 
 function registerPublishedPlayers() {
+  if (PROFILE_ROOT === path.join(ROOT, "player_profiles")) {
+    for (const [id, fallback] of Object.entries(require("../data/promoted-a-portrait-fallbacks.json"))) {
+      if (!studio.profiles[id] && REAL_PLAYER_BY_ID[id]) REAL_PLAYER_BY_ID[id].cardProfile = clone(fallback);
+    }
+  }
   for (const record of Object.values(studio.published ?? {})) {
     if (!REAL_PLAYER_BY_ID[record.id]) registerCustomRealPlayer(publishedPlayerFromRecord(record));
   }
@@ -235,6 +240,10 @@ function loadStudioSync() {
     };
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
+    if (STUDIO_PATH === path.join(ROOT, "data", "ydl-player-card-studio.json") &&
+        PROFILE_ROOT === path.join(ROOT, "player_profiles")) {
+      studio.profiles = clone(require("../data/player-art-batches/published-profiles-20261120.json"));
+    }
   }
   registerPublishedPlayers();
 }
@@ -417,7 +426,7 @@ export async function savePlayerCardProfile(playerId, input) {
   return mutateStudio(async () => {
     const owner = profileOwner(playerId);
     if (!owner) throw Object.assign(new Error("球员或暂存卡不存在"), { statusCode:404 });
-    const existing = studio.profiles[playerId];
+    const existing = studio.profiles[playerId] ?? owner.cardProfile;
     // The editor already displays these legacy assets. A position-only save must
     // adopt the same bytes lazily, rather than ask the user to upload them again.
     const legacy = !existing && !input.imageDataUrl && !input.imageBuffer && !isXPlayer(owner)

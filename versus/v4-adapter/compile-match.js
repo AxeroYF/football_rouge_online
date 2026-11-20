@@ -1,3 +1,4 @@
+import {matchEnvironment,matchIncidentRules} from '../match-conditions.js';
 import {createHash} from 'node:crypto';
 import {prepareSourceTeam} from './prepare-teams.js';
 import {compilePrincipleDimensions,isPrinciplesPlan} from '../public/tactical-principles.js';
@@ -51,11 +52,12 @@ export function compileTeam(team,coverage){
       const fit=positionRules.some(r=>r.familiarRoles?.includes(assigned)||r.ignoreOutOfPositionPenalty&&r.eligibleRoleGroups?.includes(roleGroup(assigned)))?1:positionFitScore(p,assigned);
       return [assigned,fit];
     }));
-    return {id:p.id,name:p.name,number:index+1,role,sourceRole:assigned,naturalRole:p.role,secondaryRole:roles[p.secondaryRole]??null,
+    return {id:p.id,name:p.name,grade:p.grade,...(p.spiritForm ? {spiritForm:p.spiritForm} : {}),number:index+1,role,sourceRole:assigned,naturalRole:p.role,secondaryRole:roles[p.secondaryRole]??null,
       anchor:starter?point(boards.normal[p.id]):{x:role==='GK'?5:45,y:34},
       ...(starter?{anchorPlans:Object.fromEntries(Object.entries(boards).map(([mode,board])=>[mode,point(board[p.id])])),rolePlans:Object.fromEntries(Object.keys(modes).map(mode=>[mode,roles[rolePlans[mode][p.id]]])),sourceRolePlans:Object.fromEntries(Object.keys(modes).map(mode=>[mode,rolePlans[mode][p.id]])),dutyPlans}:{}),
-      attributes:structuredClone(p.attributes),heightCm:p.heightCm??180,baseHeightCm:p.heightCm??180,fitness:p.state.fitness,overall:p.overall,positionFitByRole,
-      nationality:p.nationality,club:p.club,upgradeLevel:p.upgradeLevel??0,
+      attributes:structuredClone(p.ydlBondBaseAttributes??p.attributes),heightCm:p.heightCm??180,baseHeightCm:p.heightCm??180,fitness:p.state.fitness,overall:p.overall,positionFitByRole,
+      carrierBaseOverall:p.carrierBaseOverall ?? p.baseOverall ?? p.overall,matchCardId:p.matchCardId ?? p.card?.id,
+      nationality:p.nationality,club:p.club,upgradeLevel:p.upgradeLevel??0,...(p.bondIdentity?{bondIdentity:{...p.bondIdentity}}:{}),
       traitDefinitions:structuredClone(p.traitDefinitions??[]),sourceCard:structuredClone(p.card),baseAttributes:structuredClone(p.ydlBondBaseAttributes??p.attributes)};
   };
   const keepers=team.substitutes.filter(p=>p.role==='GK'),outfield=team.substitutes.filter(p=>p.role!=='GK').sort((a,b)=>b.overall-a.overall||a.id.localeCompare(b.id));
@@ -70,14 +72,12 @@ export function compileTeam(team,coverage){
 
 export function compileRealMatch(snapshot,{homeId,awayId,fixtureId,seed,competition='league',resolution='draw',aggregate=[0,0],duration=5400,allowPartial=false,environment={weather:'sunny',precipitation:0}}={}){
   if(!fixtureId||!seed||homeId===awayId)throw new Error('真实球队输入需要不同球队、固定比赛ID和种子');
-  // This adapter has no weather physics yet. Reject an unsupported fixture
-  // before creating a result, rather than silently simulating it as sunshine.
-  if(!environment||environment.weather!=='sunny'||environment.precipitation!==0||Object.keys(environment).some(k=>!['weather','precipitation'].includes(k)))throw new Error('真实球队映射尚未覆盖：非中性天气');
+  environment=matchEnvironment(environment.weather,environment.referee);
   const source=id=>snapshot.teams.find(t=>t.id===id);
-  const prepared=[prepareSourceTeam(snapshot,homeId,{competition,opponentStyle:source(awayId)?.style}),prepareSourceTeam(snapshot,awayId,{competition,opponentStyle:source(homeId)?.style})];
+  const prepared=[prepareSourceTeam(snapshot,homeId,{competition,seed,side:0,opponentStyle:source(awayId)?.style}),prepareSourceTeam(snapshot,awayId,{competition,seed,side:1,opponentStyle:source(homeId)?.style})];
   const coverage={blockers:ATTRIBUTE_NAMES.filter(k=>!implementedAttributes.has(k)).map(k=>`attribute:${k}`),warnings:[],excludedBench:[],scope:'shadow-only'};
-  const input=compileInput(JSON.parse(JSON.stringify({seed:String(seed),duration,format:'full',competition:{resolution,aggregate},environment,adapterVersion:ADAPTER_VERSION,sourceFingerprint:snapshot.fingerprint,fixtureId,
-    teams:prepared.map(team=>({...compileTeam(team,coverage),sourceBondCatalog:structuredClone(snapshot.bondCatalog)})),passiveSubstitutions:true,playerEffects:true})));
+  const input=compileInput(JSON.parse(JSON.stringify({seed:String(seed),duration,format:'full',competitionMode:competition,competition:{resolution,aggregate},environment,matchIncidents:matchIncidentRules,adapterVersion:ADAPTER_VERSION,sourceFingerprint:snapshot.fingerprint,fixtureId,
+    teams:prepared.map(team=>({...compileTeam(team,coverage),sourceBondCatalog:structuredClone(snapshot.bondCatalog)})),passiveSubstitutions:true,playerEffects:true,publishGoalAssists:true})));
   coverage.blockers=[...new Set(coverage.blockers)].sort();
   if(coverage.blockers.length&&!allowPartial)throw Object.assign(new Error(`真实球队映射尚未覆盖：${coverage.blockers.join(', ')}`),{code:'V4_UNSUPPORTED_COVERAGE'});
   const fingerprint=createHash('sha256').update(JSON.stringify({engineVersion:VERSION,input})).digest('hex');

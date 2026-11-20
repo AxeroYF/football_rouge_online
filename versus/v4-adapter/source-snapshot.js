@@ -1,3 +1,4 @@
+import {hasSpiritPossession} from '../spirit-possession.js';
 import {createHash} from 'node:crypto';
 
 export const SOURCE_SCHEMA='yffm-v4-league-source-1';
@@ -22,11 +23,14 @@ export function createSourceSnapshot({league,catalog,traitCatalog,bondCatalog=[]
       const card=team.ownerId?cards.filter(c=>c.ownerId===team.ownerId&&c.playerId===id).sort((a,b)=>strength(b)-strength(a)||String(a.id).localeCompare(String(b.id)))[0]:null;
       const traitIds=card?.traitIds??[];
       const definitions=traitIds.map(id=>{const trait=traits.get(id);if(!trait)throw new Error(`未知特性：${id}`);return fields(trait,['id','name','eligibleRoleGroups','rules']);});
-      return {...fields(source,playerFields),card:card?fields(card,['id','upgradeLevel','traitIds']):null,
+      return {...fields(source,playerFields),card:card?fields(card,['id','upgradeLevel','traitIds','permanentOverallPenalty']):null,
         traitDefinitions:definitions,xConfig:source.xPlayer?copy(league.xPlayers?.configs?.[id]??null):null};
     })};
   });
   const payload={schema:SOURCE_SCHEMA,access:'server-only',season:fields(league.season??{},['id','currentRound']),sourceRevisions:copy(sourceRevisions),bondCatalog:copy(bondCatalog),teams};
+  if (teams.some(team => team.roster.some(hasSpiritPossession))) {
+    payload.spiritCatalog = catalog.filter(p => p.grade === 'S').map(p => fields(p,[...playerFields,'cardProfile','hidden']));
+  }
   return freeze({...payload,fingerprint:createHash('sha256').update(JSON.stringify(payload)).digest('hex')});
 }
 

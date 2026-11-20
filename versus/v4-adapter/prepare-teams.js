@@ -1,10 +1,11 @@
+import {possessPlayer} from '../spirit-possession.js';
 import {selectPrematchLineup} from '../prematch-rotation.js';
 import {effectivePrematchFitness} from '../public/fitness-rules.js';
 import {inferElevenBoardRoles} from '../public/formation-rules.js';
 import {resolvePositionPresetLinks} from '../public/position-preset-links.js';
 import {normalizeCaptainStyle} from '../public/captain-rules.js';
 import {applyS4Enhancement,s4EffectiveOverall} from '../s4-balance.js';
-import {evaluateS4LineupBonds,applyS4BondBonuses} from '../public/bond-rules.js';
+import {evaluateTacticalBonds,applyTacticalBondBonuses} from '../public/tactical-bonds.js';
 import {planAiClub} from '../ai-clubs.js';
 import {roleGroup,playerOverallFromAttributes} from '../../shared/football/schema.js';
 
@@ -38,7 +39,7 @@ function chemistryPlayers(team,players,positions,roles){
   });
 }
 
-export function prepareSourceTeam(snapshot,teamId,{competition='league',bannedPlayerIds=[],opponentStyle=null}={}){
+export function prepareSourceTeam(snapshot,teamId,{competition='league',bannedPlayerIds=[],opponentStyle=null,seed,side}={}){
   if(!['league','cup','season-final','friendly'].includes(competition))throw new Error('未知赛事');
   const source=snapshot.teams.find(t=>t.id===teamId);if(!source)throw new Error('来源球队不存在');
   const team=competitionTeam(source,competition),bans=new Set(bannedPlayerIds);
@@ -57,7 +58,7 @@ export function prepareSourceTeam(snapshot,teamId,{competition='league',bannedPl
     const board=team.positionPresets?.[preset]??team.positions;
     const roles=inferElevenBoardRoles(desired.map(id=>({id,position:board[id]})),team.formationLinePresets?.[preset]);
     const chosen=selectPrematchLineup({slots:desired.map(id=>({id,playerId:id,role:roles[id]??roster.find(p=>p.id===id)?.role,position:board[id]})),players:roster,threshold:team.fitnessThreshold,competition,
-      quality:p=>s4EffectiveOverall(p,p.card?.upgradeLevel??0)*(.55+.45*p.state.fitness/100)});
+      quality:p=>s4EffectiveOverall(p,p.card)*(.55+.45*p.state.fitness/100)});
     selection={lineup:chosen.assignments.map(({player,slot,emergency})=>({...player,assignedRole:slot.role,lineupSlotId:slot.playerId,emergencyGoalkeeper:Boolean(emergency)})),substitutes:chosen.substitutes,rotations:chosen.rotations,rotationNotes:chosen.notes};
   }else throw new Error('未配置的旧式AI球队不能静默生成替代名单');
   if(selection.lineup.length!==11)throw new Error('可用球员不足十一人，不能恢复伤停球员补齐');
@@ -69,15 +70,18 @@ export function prepareSourceTeam(snapshot,teamId,{competition='league',bannedPl
     }))];
   }));
   const preset=team.tacticalPlans?.opening?.positionPreset??'position1',positions=positionPresets[preset];
-  const enhance=p=>applyS4Enhancement(p,p.card?.upgradeLevel??0,{attributeSettings});
+  const enhance = player => {
+    const form = seed == null ? player : possessPlayer(player, seed, side, snapshot.spiritCatalog ?? [], {attributeSettings});
+    return form === player ? applyS4Enhancement(player, player.card, {attributeSettings}) : form;
+  };
   const roles=inferElevenBoardRoles(selection.lineup.map(p=>({id:p.id,position:positions[p.id]})),team.formationLinePresets?.[preset]);
   const starters=chemistryPlayers(team,selection.lineup.map(enhance),positions,roles);
-  const bonds=evaluateS4LineupBonds(starters,snapshot.bondCatalog,{roles});
+  const bonds=evaluateTacticalBonds(starters,snapshot.bondCatalog,team.tacticalPlans?.opening??team,roles).filter(b=>b.active);
   const plans=clone(team.tacticalPlans);
   for(const plan of Object.values(plans??{}))for(const rotation of selection.rotations??[])if(plan.playerDuties?.[rotation.outId]&&!plan.playerDuties?.[rotation.inId])plan.playerDuties[rotation.inId]=plan.playerDuties[rotation.outId];
   return {schema:'yffm-v4-prepared-team-1',sourceFingerprint:snapshot.fingerprint,id:team.id,name:team.name,competition,
     lineupSchemeId:team.humanOwned?team.activeLineupSchemeId??null:null,
-    players:applyS4BondBonuses(starters,bonds),substitutes:selection.substitutes.map(enhance),positions,positionPresets,formationLinePresets:clone(team.formationLinePresets),
+    players:applyTacticalBondBonuses(starters,bonds),substitutes:selection.substitutes.map(enhance),positions,positionPresets,formationLinePresets:clone(team.formationLinePresets),
     tactic:team.tactic,style:team.style,attackFocus:team.attackFocus,defenseFocus:team.defenseFocus,tacticalPlans:plans,captainId:starters.some(p=>p.id===team.captainId)?team.captainId:null,captainStyle:team.captainStyle,
     rotations:clone(selection.rotations??[]),rotationNotes:clone(selection.rotationNotes??[]),bonds};
 }

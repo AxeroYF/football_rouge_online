@@ -2,46 +2,75 @@ import { MENTALITIES, PRINCIPLE_GROUPS } from "./tactical-principles.js";
 import {TACTICAL_FLOW_GROUPS} from "./tactical-flow.js";
 import {EXECUTION_GROUPS} from "./tactical-execution.js";
 
-const CRITICAL = new Set(["goal", "ownGoal", "superWorldie", "butterFingers", "penalty", "penaltyAwarded", "penaltyShootoutKick", "penalties", "red", "injury", "lightning", "abandoned"]);
-const STAGES = new Set(["halftime", "extra", "extraTime", "extraTimeHalfTime", "extraTimeEnd", "penaltyShootoutStart", "fulltime"]);
+import {isGoalEvent} from "./goal-event.js";
 export const PLAN_LABELS = Object.freeze({ opening:"默认预案", leading:"领先预案", trailing:"落后预案" });
 
+const CRITICAL_TYPES = new Set([
+  "red", "redCard", "penaltyAwarded", "blackWhistle", "brawl",
+  "lightning", "spiritPossession", "keeperSpill", "butterFingers",
+  "superWorldie", "ownGoal", "penaltyShootoutStart", "penaltyShootoutKick", "abandoned",
+]);
+
+const HIGHLIGHT_TYPES = new Set([
+  "save", "woodwork", "traitActivated", "bondActive", "captainBoost",
+  "emergencyKeeper", "substitution", "injury", "matchInjury", "weatherInjury",
+]);
+
 export function broadcastEventLevel(event) {
-  return CRITICAL.has(event?.type) ? "critical" : event?.type === "tactical" || STAGES.has(event?.type) ? "tactical" : "normal";
+  if (!event) return "normal";
+  if (event.level === "critical" || isGoalEvent(event) || CRITICAL_TYPES.has(event.type)) return "critical";
+  if (event.level === "highlight" || HIGHLIGHT_TYPES.has(event.type)) return "highlight";
+  return "normal";
+}
+
+function spotlightDurationMs(level) {
+  return level === "critical" ? 6000 : level === "highlight" ? 3500 : 0;
 }
 
 // The spotlight is a local reading aid. The scoreboard, pitch and feed always use
 // the newest authoritative snapshot, including while an earlier event is held.
 export function createBroadcastHighlights() {
-  let code, seen, current, until = 0, critical = [], tactical = null;
+  let code, seen, current, until = 0, queue = [];
   return {
-    reset() { code = undefined; seen = new Set(); current = null; until = 0; critical = []; tactical = null; },
+    reset() { code = undefined; seen = new Set(); current = null; until = 0; queue = []; },
     update(broadcast, now = Date.now()) {
       const events = broadcast.match.events ?? [];
       if (code !== broadcast.code) {
         this.reset(); code = broadcast.code;
         events.forEach(event => seen.add(event.id));
-        current = broadcastEventLevel(events.at(-1)) !== "normal" ? events.at(-1) : null;
-        until = now + (broadcastEventLevel(current) === "critical" ? 6000 : broadcastEventLevel(current) === "tactical" ? 3500 : 0);
+        const latest = events.at(-1);
+        const latestLevel = broadcastEventLevel(latest);
+        current = latestLevel !== "normal" ? latest : null;
+        until = current ? now + spotlightDurationMs(latestLevel) : 0;
       } else {
         for (const event of events) {
           if (seen.has(event.id)) continue;
           seen.add(event.id);
-          if (broadcastEventLevel(event) === "critical") critical.push(event);
-          else if (broadcastEventLevel(event) === "tactical") tactical = event;
+          const lvl = broadcastEventLevel(event);
+          if (lvl === "critical") {
+            // Critical moments jump ahead of queued secondary highlights
+            const idx = queue.findIndex(item => broadcastEventLevel(item) !== "critical");
+            if (idx === -1) queue.push(event);
+            else queue.splice(idx, 0, event);
+          } else if (lvl === "highlight") {
+            if (queue.length < 4) queue.push(event);
+          }
         }
       }
       if (!current || now >= until) {
-        const next = critical.shift() ?? tactical ?? null;
-        if (next === tactical) tactical = null;
+        const next = queue.shift() ?? null;
         if (next?.id !== current?.id) {
           current = next;
-          const level = broadcastEventLevel(current);
-          until = now + (level === "critical" ? 6000 : level === "tactical" ? 3500 : 0);
+          until = current ? now + spotlightDurationMs(broadcastEventLevel(current)) : 0;
         }
       }
-      return { event:current, level:broadcastEventLevel(current), pending:critical.length + Number(Boolean(tactical)),
-        reviewing:Boolean(current && current.id !== events.at(-1)?.id), nextAt:current && until > now ? until : null };
+      return {
+        event: current,
+        level: broadcastEventLevel(current),
+        pending: queue.length,
+        reviewing: Boolean(current && current.id !== events.at(-1)?.id),
+        nextAt: current && until > now ? until : null,
+      };
     },
   };
 }

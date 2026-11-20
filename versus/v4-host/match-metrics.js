@@ -8,8 +8,8 @@ export const METRIC_DEFINITIONS = {
 const fresh=()=>({possession:0,xg:0,shots:0,shotsOnTarget:0,passes:0,completed:0,saves:0,
   corners:0,fouls:0,yellowCards:0,redCards:0,tackles:0,interceptions:0,blocks:0,clearances:0,substitutions:0});
 const controls=new Set(['kickoff','restart','carry','receive','tackle','interception','secondBall','save','pass','shot']);
-const stops=new Set(['goal','stoppage','halfTime','fulltime','abandoned','matchEnd','shootoutStart','loose','miscontrol','parry','block','deflection','offside']);
-const visible=new Set(['shot','goal','save','parry','yellowCard','redCard','injury','substitution','offside']);
+const stops=new Set(['goal','stoppage','halfTime','fulltime','abandoned','matchEnd','shootoutStart','loose','miscontrol','parry','keeperSpill','block','deflection','offside']);
+const visible=new Set(['spiritPossession','shot','goal','save','parry','yellowCard','redCard','injury','substitution','offside','weather','lightning','weatherInjury','matchInjury','keeperSpill','blackWhistle','brawl','abandoned']);
 export function estimateShotXg(event){
   if(event.restartType==='penalty')return .76;
   const p=event.position;
@@ -34,7 +34,10 @@ export function createMatchMetrics(saved){
       if(e.id<=state.cursor)continue;
       advance(e.time);state.cursor=e.id;
       if(e.type==='shootoutStart'){state.shootout=true;state.side=null;}
-      if(state.shootout)continue;
+      if(state.shootout){
+        if(e.type==='shootoutResult')state.events.push({id:'v4-'+e.id,type:'penaltyShootoutKick',shootoutGoal:e.goal===true,time:e.time,replayTime:e.time,minute:Number((((e.clock?.baseSeconds??0)+(e.clock?.elapsed??e.time))/60).toFixed(2)),teamIndex:e.side,actorId:e.actor?.slice(2)??null,text:e.text,detail:e.shootoutScore?'点球比分 '+e.shootoutScore.join(' : '):undefined,importance:'major'});
+        continue;
+      }
       const side=e.side,s=[0,1].includes(side)?state.stats[side]:null;
       if(controls.has(e.type)&&s)state.side=side;
       if(stops.has(e.type))state.side=null;
@@ -45,11 +48,12 @@ export function createMatchMetrics(saved){
       if(s&&e.type==='stoppage'&&e.restartType==='corner')s.corners++;
       if(s&&e.text?.includes('解围')&&['pass','clearance'].includes(e.type))s.clearances++;
       let row=null;
-      if(visible.has(e.type)){
+      if(visible.has(e.type)||e.traitOpening){
         row={id:`v4-${e.id}`,type:({yellowCard:'yellow',redCard:'red',parry:'save'})[e.type]??e.type,
           time:e.time,replayTime:e.time,minute:Number((((e.clock?.baseSeconds??0)+(e.clock?.elapsed??e.time??0))/60).toFixed(2)),
           teamIndex:e.type==='goal'?e.scoringSide:side,actorId:e.actor?.slice(2)??null,text:e.text,
-          score:e.score,importance:e.type==='shot'?'normal':'major',ownGoal:Boolean(e.ownGoal)};
+          score:e.score,...(e.traitOpening?{level:e.level}:{}),importance:e.type==='shot'?'normal':'major',ownGoal:Boolean(e.ownGoal),...(e.special?{special:e.special}:{})};
+        if(e.type==='goal' && Object.hasOwn(e,'assistId'))row.assistId=e.assistId;
         state.events.push(row);
       }
       if(e.type==='shot'&&s){

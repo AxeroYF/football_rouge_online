@@ -20,12 +20,12 @@ assert.equal(JSON.stringify(snapshot),before);
 // Explicit unsupported features fail before match creation, while a knowingly
 // partial shadow run retains a machine-readable blocker and cannot settle.
 const unsupported=structuredClone(snapshot),team=unsupported.teams.find(t=>t.humanOwned),starter=team.preferredStarterIds[0];
-const p=team.roster.find(p=>p.id===starter);p.traitDefinitions=[{id:'unsupported-fixture',rules:[{hook:'firstPenaltySave',guaranteed:true}]}];
+const p=team.roster.find(p=>p.id===starter);p.traitDefinitions=[{id:'unsupported-fixture',rules:[{hook:'unknownTestHook'}]}];
 const options={homeId:team.id,awayId:unsupported.teams.find(t=>t.id!==team.id).id,fixtureId:'unsupported-proof',seed:'unsupported-proof',duration:60};
-assert.throws(()=>compileRealMatch(unsupported,options),/trait:firstPenaltySave/);
-assert.ok(compileRealMatch(unsupported,{...options,allowPartial:true}).coverage.blockers.includes('trait:firstPenaltySave'));
-assert.throws(()=>compileRealMatch(snapshot,{...options,environment:{weather:'rainy',precipitation:5}}),/非中性天气/);
-assert.throws(()=>compileRealMatch(snapshot,{...options,allowPartial:true,environment:{weather:'sunny',precipitation:0,wind:3}}),/非中性天气/);
+assert.throws(()=>compileRealMatch(unsupported,options),/trait:unknownTestHook/);
+assert.ok(compileRealMatch(unsupported,{...options,allowPartial:true}).coverage.blockers.includes('trait:unknownTestHook'));
+assert.throws(()=>compileRealMatch(snapshot,{...options,environment:{weather:'rainy'}}),/未知的比赛天气/);
+assert.equal(compileRealMatch(snapshot,{...options,environment:{weather:'rain'}}).input.environment.weather,'rain');
 const fullEnvelope=compileRealMatch(snapshot,{homeId:snapshot.teams[0].id,awayId:snapshot.teams[2].id,fixtureId:'real-full-proof',seed:'real-full-proof'});
 const started=performance.now(),full=simulateMatch(fullEnvelope.input,{recording:false}),result=resultEnvelope(fullEnvelope,full);
 assert.equal(full.state.clock.completed.length,2);assert.ok(full.state.time>=6300);assert.equal(result.settlementAllowed,false);

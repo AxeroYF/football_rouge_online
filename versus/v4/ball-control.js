@@ -14,6 +14,7 @@ export function controlProfile(state,player,ball) {
   const skill=clamp((keeper&&shot?player.attributes.goalkeeping:player.attributes.firstTouch)*positionExecution(player),1,100);
   let probability=.86+skill*.002-relative*.004-(1-alignment)*.07-(pressure<3?(3-pressure)*.025:0)-(100-player.fitness)*.0006;
   if(shot)probability=.50+skill*.005-relative*.009-(1-alignment)*.15-(pressure<3?(3-pressure)*.045:0)-(100-player.fitness)*.002;
+  probability*=state.input?.environment?.execution??1;
   if(shot&&!keeper)probability-=.33;
   if(keeper&&shot)probability+=player.attributes.reflexes*.001;
   if(keeper&&ball.z>1)probability-=(ball.z-1)*.035;

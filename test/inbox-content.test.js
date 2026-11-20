@@ -41,9 +41,10 @@ test('cup reward joins its exact fixture, never the other leg; repeated grants d
   const cupRecord={...record,id:'cup-leg2',competition:'cup',cupStage:'quarterfinals',legNumber:2};
   tie.legs[1].matchId=cupRecord.id;service.state.matches.push(cupRecord);
   service.createCupMatchInbox(team,other,{...cupRecord,id:'cup-leg1',legNumber:1},{...event,leg:1});
-  service.createCupMatchInbox(team,other,cupRecord,event);service.grantCupReward(team.id,event,'advance');
+  service.createCupMatchInbox(team,other,cupRecord,event);
+  const grant=service.grantCupReward(team.id,event,'advance');
   assert.equal(service.inbox(team).length,2);assert.equal(service.inbox(team).find(m=>m.matchId==='cup-leg1').payload.rewards.length,0);
-  const mail=service.inbox(team).find(m=>m.matchId==='cup-leg2');assert.equal(mail.payload.rewards[0].quantity,2);
+  const mail=service.inbox(team).find(m=>m.matchId==='cup-leg2');assert.ok(grant.packIds.length>0);assert.equal(mail.payload.rewards[0].quantity,grant.packIds.length);
   assert.equal(service.grantCupReward(team.id,event,'advance'),null);service.createCupMatchInbox(team,other,cupRecord,event);
   assert.equal(service.inbox(team).find(m=>m.matchId==='cup-leg2').payload.rewards.length,1);
   assert.match(inboxStructuredMarkup(mail),/晋级奖励/);

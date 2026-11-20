@@ -70,6 +70,7 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     else if (pathname === "/api/versus/league/predictions") result = { predictions:yellowDogsLeague.predictionView(account) };
     else if (pathname === "/api/versus/league/predictions/bet") result = { predictions:yellowDogsLeague.placeMatchPrediction(account, body.marketId, body.category, body.selection, body.amount, { compact:true }) };
     else if (pathname === "/api/versus/league/player-directory") result = { playerDirectory:measureRuntimeSync("league.playerDirectory", () => yellowDogsLeague.playerDirectoryView(account)), updatedAt:yellowDogsLeague.state.updatedAt };
+    else if (pathname === "/api/versus/league/club-history") result = {history:yellowDogsLeague.clubHistoryView(account)};
     else if (pathname === "/api/versus/league/honor-room") result = { honorRoom:measureRuntimeSync("league.honorRoom", () => yellowDogsLeague.honorRoomView(account)) };
     else if (pathname === "/api/versus/league/inbox/list") result = { inboxPage:yellowDogsLeague.inboxList(account,body) };
     else if (pathname === "/api/versus/league/inbox/detail") result = { inboxDetail:yellowDogsLeague.inboxDetail(account,body.messageId) };
@@ -127,7 +128,7 @@ export async function handleVersusApi(request, response, pathname, readJson, sen
     versusRooms.account(body.playerId, body.accountToken);
     result = { active:true };
   }
-  else if (request.method === "GET" && pathname === "/api/versus/broadcasts") result = { broadcasts:[...versusRooms.broadcasts(), ...yellowDogsLeague.broadcasts()], upcomingBroadcasts:yellowDogsLeague.upcomingBroadcasts() };
+  else if (request.method === "GET" && pathname === "/api/versus/broadcasts") result = { broadcasts:[...versusRooms.broadcasts(), ...yellowDogsLeague.broadcasts()], scheduledBroadcasts:yellowDogsLeague.scheduledBroadcasts(), upcomingBroadcasts:yellowDogsLeague.upcomingBroadcasts() };
   else if (request.method === "POST" && pathname === "/api/versus/register") result = versusRooms.register(body.nickname, body.password, body.legacyAccountToken);
   else if (request.method === "POST" && pathname === "/api/versus/login") result = versusRooms.login(body.nickname, body.password);
   else if (request.method === "POST" && pathname === "/api/versus/watch") result = isLeagueBroadcast(body.code) ? yellowDogsLeague.watch(body.code, body.name, body.spectatorToken) : versusRooms.watch(body.code, body.name, body.spectatorToken);

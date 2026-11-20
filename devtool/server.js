@@ -2,6 +2,7 @@ import { acceptsGzip, createStaticAssetCache } from "./static-asset-cache.js";
 import { resolveMatchEngines } from "../src/runtime-config.js";
 import { V3_ENGINE_VERSION, V3_ENGINE_PROFILE } from "../versus/v3/model-config.js";
 import http from "node:http";
+import {handlePreviewAssets} from "../versus/v4-host/preview-assets.js";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -294,6 +295,8 @@ const server = http.createServer(async (request, response) => {
     recordRuntimeMetric(`http.${request.method}.${route}`, performance.now() - requestStartedAt, { error:response.statusCode >= 400 });
   });
   try {
+    // Historical replays also decode frames when the live host is offline.
+    if (url.pathname === "/v4-preview/v4-stream/codec.js") return await handlePreviewAssets(request, response);
     if (scheduledHost && await scheduledHost.handle(request, response)) return;
     if (v4StreamHost.enabled && await v4StreamHost.handle(request, response)) return;
     if (handleVersusStream(request, response, url)) {

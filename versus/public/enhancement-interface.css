@@ -129,17 +129,14 @@ html[data-league-theme] .league-enhancement.fusion-workspace .fusion-drawer .enh
 .league-enhancement.fusion-workspace .fusion-duel .s4-player-card.player-card-shield{width:clamp(230px,28dvh,340px)}
 .league-enhancement.fusion-workspace.fusion-warehouse-open .fusion-duel{transform:translateY(clamp(-220px,-20dvh,-130px))}
 .fusion-workspace .fusion-drawer .enhancement-warehouse>header h2{visibility:hidden}
-.fusion-atmosphere>span{position:absolute;left:var(--dust-x);top:var(--dust-y);width:3px;height:3px;border-radius:50%;background:#b7f8e7;box-shadow:0 0 12px #7febd5;opacity:.18;pointer-events:none}
 html[data-ui-motion="on"] .fusion-workspace .fusion-atmosphere:before{animation:fusion-beam-left 18s ease-in-out infinite alternate}
 html[data-ui-motion="on"] .fusion-workspace .fusion-atmosphere:after{animation:fusion-beam-right 22s ease-in-out infinite alternate}
 html[data-ui-motion="on"] .fusion-workspace .fusion-atmosphere>i{animation:fusion-ring-breathe 9s ease-in-out infinite alternate}
 html[data-ui-motion="on"] .fusion-workspace .fusion-atmosphere>i:nth-child(2){animation-delay:-3s}
 html[data-ui-motion="on"] .fusion-workspace .fusion-atmosphere>i:nth-child(3){animation-delay:-6s}
-html[data-ui-motion="on"] .fusion-workspace .fusion-atmosphere>span{animation:fusion-dust-rise var(--dust-duration) linear var(--dust-delay) infinite}
 @keyframes fusion-beam-left{from{transform:rotate(20deg) translateX(-8%);opacity:.4}to{transform:rotate(39deg) translateX(20%);opacity:.95}}
 @keyframes fusion-beam-right{from{transform:rotate(-18deg) translateX(8%);opacity:.85}to{transform:rotate(-40deg) translateX(-20%);opacity:.35}}
 @keyframes fusion-ring-breathe{from{transform:scale(.96);opacity:.2}to{transform:scale(1.08);opacity:.6}}
-@keyframes fusion-dust-rise{0%{transform:translate(0,40px);opacity:0}20%{opacity:.45}75%{opacity:.28}100%{transform:translate(35px,-100px);opacity:0}}
 @media(max-width:1050px){.league-enhancement.fusion-workspace .fusion-duel .s4-player-card.player-card-shield{width:clamp(160px,22vw,230px)}.league-enhancement.fusion-workspace.fusion-warehouse-open .fusion-duel{transform:translateY(clamp(-145px,-15dvh,-60px))}}
 @media(max-width:620px){.league-enhancement.fusion-workspace .fusion-duel .s4-player-card.player-card-shield{width:min(100%,120px)}.league-enhancement.fusion-workspace .fusion-duel .enhancement-result-frame>.s4-player-card.player-card-shield{width:180px}.league-enhancement.fusion-workspace.fusion-warehouse-open .fusion-duel{transform:translateY(clamp(-160px,-17dvh,-80px))}}
 .league-enhancement.fusion-workspace.has-result .fusion-duel{min-height:clamp(420px,50dvh,570px)}
@@ -151,3 +148,315 @@ html[data-ui-motion="on"] .fusion-workspace:not(.phase-scanning) .enhancement-ca
 .league-enhancement.fusion-workspace:not(.phase-scanning) .enhancement-card-slot.filled>.s4-player-card:is(:hover,:focus-visible){filter:brightness(1.08) drop-shadow(0 0 15px #a2f3d44d)}
 html[data-ui-motion="on"] .fusion-workspace:not(.phase-scanning) .enhancement-card-slot.filled>.s4-player-card:is(:hover,:focus-visible) .shield-card-surface:after{content:"";position:absolute;inset:0;z-index:20;pointer-events:none;background:linear-gradient(110deg,transparent 35%,#e7fff366 50%,transparent 65%);animation:fusion-card-glint .9s ease-out both}
 @media(min-width:1051px){.league-enhancement.fusion-workspace.fusion-warehouse-open .enhancement-card-slot.filled{scale:.88}}
+/* ========================================================================= */
+/* Modern Enhancement (.fusion-workspace) v2 — Unified Slate UI & 4-Stage FX */
+/* ========================================================================= */
+
+/* 1. Unify Palette & Eliminate Idle Looping Particles / Heavy Blur */
+.league-enhancement.fusion-workspace[data-fusion-outcome]{
+  --fusion-accent:var(--yffm-brand-pitch,#10b981);
+  --fusion-gold:var(--yffm-comp-cup,#f59e0b);
+  --fusion-danger:var(--yffm-status-loss,#ef4444);
+  border:1px solid var(--yffm-border-subtle,rgba(255,255,255,.1));
+  border-radius:14px;
+  background:
+    radial-gradient(ellipse 68% 54% at 50% 0%,rgba(16,185,129,.15),transparent 68%),
+    linear-gradient(180deg,#0b0f17 0%,#111827 58%,#0b0f17 100%);
+  box-shadow:var(--yffm-shadow-panel,0 8px 28px rgba(0,0,0,.35));
+}
+.fusion-workspace .fusion-atmosphere:before,
+.fusion-workspace .fusion-atmosphere:after{
+  animation:none!important;
+  filter:none!important;
+  opacity:.35;
+  background:linear-gradient(180deg,rgba(148,163,184,.12),transparent 70%);
+}
+.fusion-workspace .fusion-atmosphere>i{
+  animation:none!important;
+  border-color:rgba(148,163,184,.16);
+  box-shadow:none;
+}
+
+/* Header & Action Controls */
+.fusion-workspace .fusion-heading h2{font-weight:800;letter-spacing:-.01em;color:#f8fafc}
+.fusion-workspace .fusion-heading-actions button,
+.fusion-workspace [data-fusion-skip]{
+  background:rgba(30,41,59,.85);
+  border:1px solid rgba(255,255,255,.14);
+  color:#e2e8f0;
+  font-weight:700;
+  border-radius:8px;
+}
+.fusion-workspace .fusion-heading-actions button:hover,
+.fusion-workspace [data-fusion-skip]:hover{
+  background:#334155;
+  border-color:var(--fusion-accent);
+  color:#ffffff;
+}
+
+/* Framed Central Action Hub */
+.league-enhancement.fusion-workspace .enhancement-action{
+  padding:16px 14px;
+  border-radius:12px;
+  background:rgba(15,23,42,.78);
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 10px 26px rgba(0,0,0,.32);
+}
+.league-enhancement.fusion-workspace .enhancement-action>strong{
+  font-size:38px;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+  color:var(--fusion-gold);
+  text-shadow:none;
+}
+.fusion-workspace .enhancement-action>strong:before{
+  color:#94a3b8;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+.league-enhancement.fusion-workspace .enhancement-trigger{
+  width:100%;
+  min-width:138px;
+  height:42px;
+  min-height:42px;
+  border:1px solid var(--fusion-accent);
+  border-radius:8px;
+  background:var(--fusion-accent);
+  color:#05261b;
+  font-size:15px;
+  font-weight:800;
+  box-shadow:0 6px 20px rgba(16,185,129,.28);
+  transition:transform .14s ease,background-color .14s ease,box-shadow .14s ease;
+}
+.league-enhancement.fusion-workspace .enhancement-trigger:hover:not(:disabled){
+  background:#059669;
+  color:#ffffff;
+  transform:translateY(-1px);
+  box-shadow:0 8px 24px rgba(16,185,129,.38);
+}
+.fusion-workspace .fusion-empty-pick{
+  width:72px;height:72px;
+  border:2px dashed rgba(148,163,184,.35);
+  background:rgba(15,23,42,.45);
+  color:#94a3b8;
+}
+.fusion-workspace .fusion-empty-pick:hover{
+  border-color:var(--fusion-accent);
+  color:var(--fusion-accent);
+  background:rgba(16,185,129,.1);
+}
+
+/* Crisp Non-Blurred Warehouse Drawer */
+.fusion-workspace .fusion-drawer{
+  background:rgba(17,24,39,.97);
+  backdrop-filter:none;
+  border-top:1px solid rgba(255,255,255,.12);
+  box-shadow:0 -12px 32px rgba(0,0,0,.45);
+}
+.fusion-workspace .fusion-drawer-handle{color:#f8fafc}
+.fusion-workspace .fusion-drawer-handle b{font-weight:700}
+.fusion-workspace .fusion-drawer .enhancement-tools input,
+.fusion-workspace .fusion-drawer .enhancement-tools select,
+.fusion-workspace .fusion-drawer .button{
+  background:#1e293b;
+  border:1px solid rgba(255,255,255,.12);
+  color:#f8fafc;
+  border-radius:6px;
+  font-weight:600;
+}
+
+/* Trait Choice Dialog Unification */
+.fusion-trait-grid>button{
+  border:1px solid var(--yffm-border-subtle,rgba(255,255,255,.12));
+  background:var(--panel-2,#1e293b);
+  color:var(--ink,#f8fafc);
+}
+.fusion-trait-grid>button:hover:not(:disabled){
+  border-color:var(--fusion-accent);
+}
+.fusion-trait-grid>button>span,.fusion-trait-grid b{color:var(--fusion-accent);font-weight:700}
+.fusion-trait-grid p{color:var(--muted,#94a3b8)}
+
+/* Result Controls & Outcome Typography */
+.fusion-workspace .fusion-collect,
+.fusion-workspace .enhancement-bind-trait{
+  min-height:38px;
+  padding:8px 20px;
+  border-radius:8px;
+  border:1px solid var(--fusion-accent);
+  background:var(--fusion-accent);
+  color:#05261b;
+  font-size:13px;
+  font-weight:800;
+}
+.fusion-workspace .fusion-collect:hover,
+.fusion-workspace .enhancement-bind-trait:hover{
+  background:#059669;
+  color:#ffffff;
+}
+.fusion-workspace[data-fusion-tier="high"] .enhancement-result-frame h3{color:var(--fusion-gold);font-size:22px;font-weight:800}
+.fusion-workspace[data-fusion-outcome="failure"] .enhancement-result-frame h3{color:#f87171;font-weight:800}
+
+/* 2. Four-Stage Choreographed Enhancement Animations (GPU Composited) */
+.fusion-workspace .fusion-impact{
+  width:240px;height:240px;
+  background:radial-gradient(circle,#ffffff 0%,rgba(16,185,129,.7) 26%,rgba(16,185,129,.18) 56%,transparent 74%);
+}
+.fusion-workspace .fusion-impact:after{
+  content:"";
+  position:absolute;
+  inset:24px;
+  border-radius:50%;
+  border:3px solid rgba(110,231,183,.95);
+  box-shadow:0 0 24px rgba(16,185,129,.65);
+  opacity:0;
+}
+
+/* Stage 1 & 2: Charge Tremble -> Accelerated Collision -> Impact Shockwave + Stage Micro-Shake */
+html[data-ui-motion="on"] .fusion-workspace.phase-scanning:not(.fusion-motion-skipped) [data-enhancement-drop="main"]{
+  animation:fusion-v2-merge-left 1.08s cubic-bezier(.55,0,.2,1) both;
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-scanning:not(.fusion-motion-skipped) [data-enhancement-drop="material"]{
+  animation:fusion-v2-merge-right 1.08s cubic-bezier(.55,0,.2,1) both;
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-scanning:not(.fusion-motion-skipped) .fusion-impact{
+  animation:fusion-v2-impact-core 1.12s ease-out both;
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-scanning:not(.fusion-motion-skipped) .fusion-impact:after{
+  animation:fusion-v2-shockwave 1.12s ease-out both;
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-scanning:not(.fusion-motion-skipped) .fusion-stage{
+  animation:fusion-v2-stage-shake 1.12s linear both;
+}
+
+/* Stage 3A: Normal Success (+1 to +3) — Crisp Emerald Burst + Spring Reveal */
+.fusion-workspace.has-result[data-fusion-outcome="success"] .fusion-reveal:before{
+  inset:-18% 8%;
+  background:radial-gradient(circle,rgba(16,185,129,.34) 0%,rgba(16,185,129,.10) 42%,transparent 68%);
+}
+.fusion-workspace.has-result[data-fusion-outcome="success"] .fusion-reveal:after{
+  content:"";
+  position:absolute;
+  left:50%;top:46%;
+  width:280px;height:280px;
+  border-radius:50%;
+  border:2px solid rgba(16,185,129,.75);
+  transform:translate(-50%,-50%) scale(.4);
+  opacity:0;
+  pointer-events:none;
+  z-index:-1;
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-success:not(.fusion-motion-skipped) .fusion-reveal:after{
+  animation:fusion-v2-ring-pop .72s cubic-bezier(.16,.84,.3,1) both;
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-success:not(.fusion-motion-skipped) .enhancement-result-frame>.s4-player-card{
+  animation:fusion-v2-reveal-pop .78s cubic-bezier(.16,.88,.28,1.08) both;
+}
+
+/* Stage 3B: High-Tier Success (+4 and above) — Golden Burst + Rotating Ray Halo */
+.fusion-workspace.has-result[data-fusion-outcome="success"][data-fusion-tier="high"] .fusion-reveal:before{
+  inset:-24% 0;
+  background:
+    conic-gradient(from 0deg,transparent 0 18deg,rgba(245,158,11,.22) 22deg,transparent 28deg 58deg,rgba(251,191,36,.24) 64deg,transparent 72deg 110deg,rgba(245,158,11,.2) 118deg,transparent 126deg 180deg,rgba(251,191,36,.22) 188deg,transparent 196deg 250deg,rgba(245,158,11,.22) 258deg,transparent 266deg 320deg,rgba(251,191,36,.2) 328deg,transparent 360deg),
+    radial-gradient(circle,rgba(245,158,11,.42) 0%,rgba(245,158,11,.14) 40%,transparent 68%);
+  mask-image:radial-gradient(circle,black 18%,transparent 70%);
+  -webkit-mask-image:radial-gradient(circle,black 18%,transparent 70%);
+}
+.fusion-workspace.has-result[data-fusion-outcome="success"][data-fusion-tier="high"] .fusion-reveal:after{
+  border-color:rgba(251,191,36,.95);
+  box-shadow:0 0 32px rgba(245,158,11,.55);
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-success[data-fusion-tier="high"]:not(.fusion-motion-skipped) .fusion-reveal:before{
+  animation:fusion-v2-gold-rays 12s linear infinite;
+}
+
+/* Stage 3C: Failure — Crimson Cool-down & Crisp Horizontal Recoil Shake */
+.fusion-workspace.has-result[data-fusion-outcome="failure"] .fusion-reveal:before{
+  content:"";
+  position:absolute;
+  inset:-12% 14%;
+  z-index:-1;
+  pointer-events:none;
+  background:radial-gradient(circle,rgba(239,68,68,.26) 0%,transparent 65%);
+}
+html[data-ui-motion="on"] .fusion-workspace.phase-failure:not(.fusion-motion-skipped) .enhancement-result-frame>.s4-player-card{
+  animation:fusion-v2-fail-recoil .52s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Keyframes */
+@keyframes fusion-v2-merge-left{
+  0%{transform:none;opacity:1}
+  12%{transform:translateX(-12px) rotate(-3.5deg)}
+  20%{transform:translateX(-15px) rotate(-4.5deg)}
+  28%{transform:translateX(-10px) rotate(-3deg)}
+  78%{transform:translateX(calc(24cqw + 46px)) scale(.82) rotate(5deg);filter:brightness(1.45);opacity:1}
+  92%,100%{transform:translateX(calc(26cqw + 56px)) scale(.35) rotate(8deg);filter:brightness(2.2);opacity:0}
+}
+@keyframes fusion-v2-merge-right{
+  0%{transform:none;opacity:1}
+  12%{transform:translateX(12px) rotate(3.5deg)}
+  20%{transform:translateX(15px) rotate(4.5deg)}
+  28%{transform:translateX(10px) rotate(3deg)}
+  78%{transform:translateX(calc(-24cqw - 46px)) scale(.82) rotate(-5deg);filter:brightness(1.45);opacity:1}
+  92%,100%{transform:translateX(calc(-26cqw - 56px)) scale(.35) rotate(-8deg);filter:brightness(2.2);opacity:0}
+}
+@keyframes fusion-v2-impact-core{
+  0%,62%{opacity:0;transform:translate(-50%,-50%) scale(.12)}
+  78%{opacity:1;transform:translate(-50%,-50%) scale(1.18)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.85)}
+}
+@keyframes fusion-v2-shockwave{
+  0%,66%{opacity:0;transform:scale(.25)}
+  76%{opacity:1;transform:scale(.85)}
+  100%{opacity:0;transform:scale(2.15)}
+}
+@keyframes fusion-v2-stage-shake{
+  0%,74%,94%,100%{transform:none}
+  78%{transform:translate3d(-3px,2px,0)}
+  82%{transform:translate3d(3px,-2px,0)}
+  86%{transform:translate3d(-2px,-1px,0)}
+  90%{transform:translate3d(2px,1px,0)}
+}
+@keyframes fusion-v2-reveal-pop{
+  0%{opacity:0;transform:scale(.58) translateY(18px);filter:brightness(1.9)}
+  60%{opacity:1;transform:scale(1.05) translateY(-4px);filter:brightness(1.15)}
+  100%{opacity:1;transform:none;filter:none}
+}
+@keyframes fusion-v2-ring-pop{
+  0%{opacity:.95;transform:translate(-50%,-50%) scale(.38)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.75)}
+}
+@keyframes fusion-v2-gold-rays{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+@keyframes fusion-v2-fail-recoil{
+  0%{opacity:0;transform:scale(.92);filter:saturate(.4)}
+  22%{opacity:1;transform:translateX(-8px) rotate(-1.5deg);filter:saturate(.6)}
+  44%{transform:translateX(7px) rotate(1.5deg)}
+  66%{transform:translateX(-4px) rotate(-.8deg)}
+  84%{transform:translateX(2px)}
+  100%{opacity:1;transform:none;filter:none}
+}
+
+/* Light Theme Adaptation for Modern Enhancement Drawer */
+html.theme-light .fusion-workspace .fusion-drawer{
+  background:rgba(255,255,255,.97);
+  border-top-color:rgba(15,23,42,.14);
+}
+html.theme-light .fusion-workspace .fusion-drawer-handle,
+html.theme-light .fusion-workspace .fusion-drawer .enhancement-warehouse,
+html.theme-light .fusion-workspace .fusion-drawer .enhancement-warehouse>header{
+  color:#0f172a;
+}
+html.theme-light .fusion-workspace .fusion-drawer .enhancement-tools input,
+html.theme-light .fusion-workspace .fusion-drawer .enhancement-tools select,
+html.theme-light .fusion-workspace .fusion-drawer .button{
+  background:#f8fafc;
+  border-color:rgba(15,23,42,.16);
+  color:#0f172a;
+}
+html.theme-light .fusion-workspace .fusion-collect,
+html.theme-light .fusion-workspace .enhancement-bind-trait{
+  color:#ffffff;
+}

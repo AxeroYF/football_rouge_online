@@ -82,6 +82,24 @@ export function resolveBoardDuty(role, duty) {
   return V2_PLAYER_DUTY_OPTIONS[duty].roles.includes(String(role ?? "").toUpperCase()) ? duty : null;
 }
 
+// Positions describe the board zone. Duties can refine its on-field designation.
+const DUTY_FIELD_POSITIONS = deepFreeze({
+  advancedForward:"ST", targetForward:"TF", deepLyingForward:"CF",
+  insideForward:"IF", advancedPlaymaker:"CAM", shadowStriker:"SS",
+  anchor:"CDM", ballWinningMidfielder:"BWM", deepLyingPlaymaker:"DLP",
+  invertedWideMidfielder:"IW", defensiveWideMidfielder:"DW",
+  holdingFullback:{ LB:"LB", RB:"RB", LWB:"LB", RWB:"RB" },
+  overlappingFullback:{ LB:"LWB", RB:"RWB", LWB:"LWB", RWB:"RWB" },
+  invertedFullback:"IWB", ballPlayingDefender:"BPD",
+});
+
+export function dutyFieldPosition(role, duty) {
+  const base = String(role ?? "").trim().toUpperCase();
+  const validDuty = resolveBoardDuty(base, duty);
+  const position = validDuty && DUTY_FIELD_POSITIONS[validDuty];
+  return (typeof position === "string" ? position : position?.[base]) ?? base;
+}
+
 export function v2PlayerDutyOptionsForRole(role, { includeDefault = true } = {}) {
   const normalizedRole = String(role ?? "").toUpperCase();
   const options = Object.entries(V2_PLAYER_DUTY_OPTIONS)

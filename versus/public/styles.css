@@ -1774,7 +1774,7 @@ html[data-league-theme="light"] .world-cup-tactical-selects select{background:#f
   }
   .league-theme-toggle:hover{border-color:var(--cyan);transform:translateY(-1px)}
   .league-theme-toggle>span{grid-row:1/3;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;color:var(--cyan);background:#183329;font-size:19px}
-  .league-theme-toggle>b{align-self:end;font-size:13px}
+  .league-theme-toggle>b{align-self:center;font-size:13px;line-height:1.25}
   .league-theme-toggle>small{grid-column:2;align-self:start;color:var(--muted);font-size:10px}
   .league-theme-toggle::after{content:"";grid-column:3;grid-row:1/3;width:28px;height:16px;border-radius:999px;background:#294338;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
   .league-theme-toggle::before{content:"";position:absolute;right:24px;width:10px;height:10px;border-radius:50%;background:var(--muted);transition:transform .16s,background .16s}
@@ -2498,7 +2498,7 @@ html[data-league-theme="light"] .overview-player-ownership>section span{backgrou
 
 /* Desktop leaderboard grids, tactics heading and viewport-height panels */
 .league-stats-page{min-width:0;display:grid;gap:12px}
-.league-stats-heading{padding:14px 16px;display:grid;grid-template-columns:minmax(160px,.35fr) minmax(520px,1fr);gap:18px;align-items:end;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:0 14px 38px rgba(0,0,0,.12)}
+.league-stats-heading{padding:14px 16px;display:grid;grid-template-columns:1fr min(60%, 900px) 1fr;gap:12px;align-items:center;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:0 14px 38px rgba(0,0,0,.12)}
 .league-stats-heading small,.league-stats-card>header small{color:var(--cyan);font-size:10px;font-weight:900;letter-spacing:.12em}
 .league-stats-heading h2,.league-stats-card>header h2{margin:4px 0 0}
 .league-stats-heading .league-board-tabs{padding:0;background:transparent}
@@ -2748,15 +2748,19 @@ html[data-league-theme="light"] #league-squad-form .league-squad-magnet .league-
 .league-mobile-duty-sheet>header{min-height:66px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
 .league-mobile-duty-sheet>header small,.league-mobile-duty-sheet>header b{display:block}.league-mobile-duty-sheet>header small{margin-bottom:4px;color:var(--league-yellow);font-size:9px}.league-mobile-duty-sheet>header b{font-size:17px}
 .league-mobile-duty-sheet>header button{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;color:var(--ink);background:#10251e;font-size:22px}
-.league-mobile-duty-selector{padding:18px 14px;display:grid;grid-template-columns:52px minmax(0,1fr) 52px;gap:12px;align-items:stretch}
-.league-mobile-duty-selector>button{min-height:92px;border:1px solid rgba(245,211,74,.45);border-radius:12px;color:var(--league-yellow);background:rgba(245,211,74,.08);font-size:32px;font-weight:950;touch-action:manipulation}.league-mobile-duty-selector>button:disabled{opacity:.25}
-.league-mobile-duty-selector>div{min-width:0;padding:12px;border:1px solid var(--line);border-radius:12px;background:#071411;text-align:center}.league-mobile-duty-selector small,.league-mobile-duty-selector b{display:block}.league-mobile-duty-selector small{color:var(--muted);font-size:9px}.league-mobile-duty-selector b{margin-top:5px;color:var(--league-yellow);font-size:19px}.league-mobile-duty-selector p{margin:9px 0 0;color:var(--muted);font-size:11px;line-height:1.55}
-.league-mobile-duty-sheet>footer{padding:10px 14px 14px;color:var(--muted);font-size:9px;text-align:center}
-html[data-league-theme="light"] .league-mobile-duty-backdrop{background:rgba(31,42,54,.55)}html[data-league-theme="light"] .league-mobile-duty-sheet{border-color:#d4b343;color:#18212b;background:#fff}html[data-league-theme="light"] .league-mobile-duty-selector>div{border-color:#d8dee7;background:#f7f9fb}html[data-league-theme="light"] .league-mobile-duty-sheet>header button{border-color:#d8dee7;color:#263343;background:#f1f4f7}
+.league-duty-choices{display:grid;gap:6px;padding:12px;max-height:65vh;overflow-y:auto}
+.league-duty-choices button{display:grid;grid-template-columns:46px 1fr;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px;color:inherit;background:transparent;text-align:left}
+.league-duty-choices button[aria-pressed="true"]{border-color:var(--cyan);background:rgba(16,185,129,.12)}
+.league-duty-choices strong{text-align:center}.league-duty-choices small{display:block;margin-top:3px;color:var(--muted);line-height:1.45}
+html[data-league-theme="light"] .league-mobile-duty-backdrop{background:rgba(31,42,54,.55)}html[data-league-theme="light"] .league-mobile-duty-sheet{border-color:#d4b343;color:#18212b;background:#fff}html[data-league-theme="light"] .league-mobile-duty-sheet>header button{border-color:#d8dee7;color:#263343;background:#f1f4f7}
+#league-squad-form .league-magnet-duty>[data-league-duty-open]{min-width:0;height:100%;overflow:hidden;padding:0;border:0;color:inherit;background:transparent;font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+#league-squad-form .league-magnet-duty>[data-league-duty-open]:focus-visible{outline:1px solid currentColor;outline-offset:-2px}
+@media(max-width:1050px),(hover:none) and (pointer:coarse){
+  #league-squad-form .league-squad-magnet .league-magnet-duty{grid-template-columns:1fr}
+  #league-squad-form .league-squad-magnet .league-magnet-duty>[data-league-duty-step]{display:none}
+}
+@media(min-width:1051px) and (hover:hover) and (pointer:fine){.league-mobile-duty-backdrop{align-items:center}}
 
-@media(max-width:1050px),(hover:none) and (pointer:coarse){#league-squad-form .league-squad-magnet .league-magnet-duty{display:none}}
-@media(min-width:1051px) and (hover:hover) and (pointer:fine){.league-mobile-duty-backdrop{display:none}}
-@media(max-width:430px){.league-mobile-duty-backdrop{padding:10px}.league-mobile-duty-selector{grid-template-columns:46px minmax(0,1fr) 46px;padding:14px 10px;gap:8px}.league-mobile-duty-selector>button{min-height:104px}.league-mobile-duty-selector b{font-size:17px}}
 
 /* Independent lineup and duty guidance in the bench header. */
 #league-squad-form .league-bench>header{grid-template-columns:minmax(0,1fr) 116px;grid-template-areas:"bench-title bench-guidance" "bench-subtitle bench-guidance";column-gap:12px}

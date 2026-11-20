@@ -310,6 +310,7 @@ export function publicS4Card(state, card) {
   return {
     id:card.id,
     playerId:card.playerId,
+    permanentOverallPenalty:Number(card.permanentOverallPenalty ?? 0),
     ballonDorWins:Number(card.ballonDorWins ?? 0),
     upgradeLevel:Number(card.upgradeLevel ?? 0),
     traitIds:clone(card.traitIds ?? []),

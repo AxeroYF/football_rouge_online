@@ -151,7 +151,7 @@ export function movePlayers(state, tasks) {
     const moving=Math.hypot(vx,vy),load=moving*STEP*(['press','counterPress'].includes(task.type)?.0025:.0014)*(1.25-p.attributes.stamina/200);
     const watchesBall=['keeper','receive','screen','mark'].includes(task.type);
     const facing=watchesBall?Math.atan2(state.ball.y-y,state.ball.x-x):moving>.05?Math.atan2(vy,vx):p.facing;
-    return {...p,x,y,vx,vy,facing,fitness:p.fixedFitness??Math.max(0,p.fitness-load),task};
+    return {...p,x,y,vx,vy,facing,fitness:p.fixedFitness??Math.max(0,p.fitness-load*(state.input.environment?.fatigue??1)),task};
   });
   state.players=next;
 }

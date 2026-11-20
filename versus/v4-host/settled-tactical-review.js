@@ -1,7 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {openArchive} from '../v4-stream/archive.js';
+import {gunzipSync} from 'node:zlib';
 import {createMatchMetrics} from './match-metrics.js';
+
+export async function readGoalFile(file,ref) {
+  const data=JSON.parse(gunzipSync(await fs.readFile(file),{maxOutputLength:64*1024*1024}));
+  if(data.version!==1||data.fixtureId!==ref.fixtureId||data.inputFingerprint!==ref.inputFingerprint||!Array.isArray(data.clips))throw new Error('进球录像与比赛不匹配');
+  return data.clips;
+}
 
 const cache=new Map();
 const metricCache=new Map();
@@ -28,14 +35,18 @@ async function fileFor(ref,name){
   return file;
 }
 
-export async function readSettledReview(ref){
+export async function readSettledReview(ref,{includeReplay=true}={}){
   try{
     const data=JSON.parse(await fs.readFile(await fileFor(ref,'tactical-review.json'),'utf8'));
     verify(data,ref,'fixtureId');
     if(data.version!==1||!Array.isArray(data.teams)||data.teams.length!==2)throw new Error('未知的战术复盘格式');
+    const summary={fixtureId:ref.fixtureId,lineupSchemeId:data.lineupSchemeIds?.[ref.side]??null,plans:data.teams[ref.side]};
+    if(!includeReplay)return {...summary,replayAvailable:false};
+    let goalClips;
+    try{goalClips=await readGoalFile(await fileFor(ref,'goal-clips.json.gz'),ref);}catch(error){if(error.code!=='ENOENT')throw error;}
     let replayAvailable=true;
     try{await availableArchive(ref);}catch(error){if(error.statusCode!==410)throw error;replayAvailable=false;}
-    return {fixtureId:ref.fixtureId,lineupSchemeId:data.lineupSchemeIds?.[ref.side]??null,plans:data.teams[ref.side],replayAvailable};
+    return {...summary,replayAvailable,goalClips};
   }catch(error){if(error.code==='ENOENT')return null;throw error;}
 }
 

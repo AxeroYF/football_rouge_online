@@ -3,7 +3,9 @@ import path from 'node:path';
 import {createCanonicalStreamHost} from './canonical-host.js';
 import {openArchive} from '../v4-stream/archive.js';
 import {handlePreviewAssets} from './preview-assets.js';
+import {readGoalFile} from './settled-tactical-review.js';
 import {createBroadcastSummary} from './broadcast-summary.js';
+import {isGoalEvent} from '../public/goal-event.js';
 
 // Register the committed round before workers create their archives. Lazy opens
 // occur only behind the existing account authorization and request limits.
@@ -34,7 +36,7 @@ export async function openScheduledPreviewHost({root,rooms,league,enabled=false,
       const identity=JSON.stringify({entries,competition,startAt:round.startedAt,releaseRate:round.releaseRate,publicWatch,allowedAccountIds});
       if(rounds.has(round.key)){if(rounds.get(round.key).identity!==identity)throw new Error('预览轮次已经锁定');return;}
       if([...rounds.values()].reduce((n,r)=>n+r.ids.length,0)+entries.length>16)throw new Error('预览保留比赛已满，请先移除旧轮次');
-      const registered=[];
+      const registered=[],finished=new Map();
       try{
         for(const entry of entries){
           const summary=createBroadcastSummary(round.tasks.find(task=>task.fixture.id===entry.matchId).envelope.input);
@@ -53,10 +55,34 @@ export async function openScheduledPreviewHost({root,rooms,league,enabled=false,
           host.register({matchId:entry.matchId,homeId:entry.teams[0].id,awayId:entry.teams[1].id,publicWatch,allowedAccountIds},{
             get manifest(){return archive?.manifest??{...structuredClone(entry),segments:[],complete:false};},
             get publishedThrough(){return archive?.publishedThrough??-1;},
-            publishedHead(){return {...(archive?.publishedHead()??pendingHead()),competition:structuredClone(entry.competition)};},
-            read(index,ownerSide){return archive?.read(index,ownerSide)??null;},
-            broadcast(){return summary(archive,{...(archive?.publishedHead()??pendingHead()),competition:entry.competition});},
+            publishedHead(){return {...(archive?.publishedHead()??pendingHead()),...(finished.has(entry.matchId)?{segments:[],complete:true}:{}),competition:structuredClone(entry.competition)};},
+            read(index,ownerSide){
+              if(finished.has(entry.matchId))throw Object.assign(new Error('本场全场录像已清理'),{code:'V4_REPLAY_EXPIRED'});
+              return archive?.read(index,ownerSide)??null;
+            },
+            async broadcast(){
+              const report=finished.get(entry.matchId);
+              if(!report)return summary(archive,{...(archive?.publishedHead()??pendingHead()),competition:entry.competition});
+              const value=await summary(null,{...pendingHead(),complete:true,competition:entry.competition});
+              // Settlement can be published one poll before the goal file is committed.
+              const archiveExists=await fs.access(folder).then(()=>true,error=>{if(error.code==='ENOENT')return false;throw error;});
+              const saved=await readGoalFile(path.join(path.dirname(folder),'goal-clips.json.gz'),{fixtureId:entry.matchId,inputFingerprint:entry.inputFingerprint}).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+              const keyPlays=saved??(archiveExists?value.match.keyPlays:[]);
+              value.replaysPending=saved===null && archiveExists && report.importantEvents.some(e=>isGoalEvent(e)&&!keyPlays.some(c=>c.eventId===e.id));
+              const teams=report.teams.map((team,i)=>{
+                const played=new Map(team.players.map(p=>[p.id,p]));
+                const players=value.match.teams[i].players.map(row=>{
+                  const final=played.get(row.id);
+                  return {...row,position:final?.position??row.position,assignedRole:final?.assignedRole??row.assignedRole,active:Boolean(final?.active),stats:{...row.stats,goals:final?.stats.goals??0,assists:final?.stats.assists??0}};
+                });
+                return {...value.match.teams[i],players,positions:Object.fromEntries(players.map(p=>[p.id,p.position])),stats:team.stats,formation:team.formation,activeCount:players.filter(p=>p.active).length};
+              });
+              Object.assign(value.match,{phase:'finished',score:report.score,teams,events:report.importantEvents,keyPlays,metricDefinitions:report.metricDefinitions,penalties:report.penalties?{score:report.penalties}:null,weather:report.weather??value.match.weather,minute:report.stoppedAtMinute??Math.max(report.extraTimePlayed?120:90,...report.importantEvents.map(e=>Math.floor(e.minute)))});
+              delete value.match.v4Replay;
+              return value;
+            },
             async refresh(){
+              if(finished.has(entry.matchId))return;
               if(!archive){opening??=open().finally(()=>{opening=null;});await opening;}
               if(!archive)return;
               await archive.refresh({snapshot:false});
@@ -64,15 +90,26 @@ export async function openScheduledPreviewHost({root,rooms,league,enabled=false,
             },
           });registered.push(entry.matchId);
         }
-        rounds.set(round.key,{identity,ids:registered});
+        rounds.set(round.key,{identity,ids:registered,finished,readers:new Set()});
       }catch(error){registered.forEach(id=>host.unregister(id));throw error;}
+    },
+    async finishRound(round,matches){
+      const registration=rounds.get(round.key);
+      if(!registration)return;
+      for(const {report} of matches)if(registration.ids.includes(report?.fixtureId))registration.finished.set(report.fixtureId,report);
+      await Promise.allSettled([...registration.readers]);
     },
     unregisterRound(key){for(const id of rounds.get(key)?.ids??[])host.unregister(id);rounds.delete(key);},
     async handle(request,response){
       if(await handlePreviewAssets(request,response))return true;
       const route=/^\/v4\/matches\/([a-zA-Z0-9_-]{1,100})\//.exec(new URL(request.url,'http://localhost').pathname);
-      if(!route||scheduled&&!Array.from(rounds.values()).some(round=>round.ids.includes(route[1])))return false;
-      response.setHeader('X-YFFM-V4-Scope',scheduled?'scheduled':'shadow-preview');return host.handle(request,response);
+      if(!route)return false;
+      const round=Array.from(rounds.values()).find(r=>r.ids.includes(route[1]));
+      if(scheduled&&!round)return false;
+      response.setHeader('X-YFFM-V4-Scope',scheduled?'scheduled':'shadow-preview');
+      const reading=host.handle(request,response);
+      round?.readers.add(reading);
+      try{return await reading;}finally{round?.readers.delete(reading);}
     },
   };
 }

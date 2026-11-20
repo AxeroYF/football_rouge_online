@@ -31,3 +31,70 @@ html[data-league-theme="light"] .broadcast-tactics header>span,html[data-league-
 html[data-league-theme="light"] .broadcast-tactics header>strong{color:#137b52}
 @media(max-width:820px){.broadcast-tactics{gap:8px}.broadcast-tactics>article{padding:10px}.broadcast-tactics header{gap:6px;font-size:11px}.broadcast-principles{gap:4px}.broadcast-principles>span{font-size:10px}}
 @media(max-width:560px){.broadcast-tactics{grid-template-columns:1fr}.broadcast-tactics>article{padding:10px 12px}.broadcast-highlight{margin:8px 8px 0}.broadcast-highlight>.match-event{min-height:112px}.broadcast-highlight .match-event>summary{padding:10px 12px;grid-template-columns:40px 30px minmax(0,1fr);gap:4px 8px}.broadcast-highlight .match-event>summary>span:last-child{font-size:14px}.broadcast-overlay .broadcast-v2-commentary{height:510px;max-height:510px}.broadcast-v2-commentary>header{grid-template-columns:1fr auto}}
+/* 3-Tier Broadcast Highlight Escalation (Critical / Highlight / Dramatic Events) */
+.broadcast-highlight.level-critical > .match-event {
+  border: 1.5px solid rgba(245, 158, 11, 0.72);
+  background: linear-gradient(125deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 38, 0.96) 65%);
+  box-shadow: 0 10px 26px rgba(245, 158, 11, 0.16);
+}
+.broadcast-highlight.level-critical .match-event > summary > b,
+.broadcast-highlight.level-critical .match-event > summary > i {
+  color: #fbbf24;
+}
+.broadcast-highlight.level-highlight > .match-event {
+  border: 1.5px solid rgba(16, 185, 129, 0.62);
+  background: linear-gradient(125deg, rgba(16, 185, 129, 0.16), rgba(15, 23, 38, 0.94) 68%);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12);
+}
+.broadcast-highlight.level-highlight .match-event > summary > b,
+.broadcast-highlight.level-highlight .match-event > summary > i {
+  color: #34d399;
+}
+.broadcast-v2-commentary .match-event.event-spiritPossession,
+.broadcast-v2-commentary .match-event.event-blackWhistle,
+.broadcast-v2-commentary .match-event.event-brawl,
+.broadcast-v2-commentary .match-event.event-lightning {
+  border-left: 3px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+.broadcast-v2-commentary .match-event.event-traitActivated,
+.broadcast-v2-commentary .match-event.event-bondActive,
+.broadcast-v2-commentary .match-event.event-captainBoost,
+.broadcast-v2-commentary .match-event.event-save,
+.broadcast-v2-commentary .match-event.event-woodwork,
+.broadcast-v2-commentary .match-event.event-emergencyKeeper {
+  border-left: 3px solid #10b981;
+  background: rgba(16, 185, 129, 0.07);
+}
+html[data-league-theme="light"] .broadcast-highlight.level-critical > .match-event {
+  border-color: #d97706;
+  background: linear-gradient(125deg, #fef3c7, #ffffff 70%);
+  box-shadow: 0 8px 20px rgba(180, 83, 9, 0.12);
+}
+html[data-league-theme="light"] .broadcast-highlight.level-critical .match-event > summary > b,
+html[data-league-theme="light"] .broadcast-highlight.level-critical .match-event > summary > i {
+  color: #b45309;
+}
+html[data-league-theme="light"] .broadcast-highlight.level-highlight > .match-event {
+  border-color: #059669;
+  background: linear-gradient(125deg, #d1fae5, #ffffff 70%);
+  box-shadow: 0 8px 18px rgba(5, 150, 105, 0.1);
+}
+html[data-league-theme="light"] .broadcast-highlight.level-highlight .match-event > summary > b,
+html[data-league-theme="light"] .broadcast-highlight.level-highlight .match-event > summary > i {
+  color: #047857;
+}
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-spiritPossession,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-blackWhistle,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-brawl,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-lightning {
+  background: rgba(245, 158, 11, 0.1);
+}
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-traitActivated,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-bondActive,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-captainBoost,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-save,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-woodwork,
+html[data-league-theme="light"] .broadcast-v2-commentary .match-event.event-emergencyKeeper {
+  background: rgba(16, 185, 129, 0.08);
+}
