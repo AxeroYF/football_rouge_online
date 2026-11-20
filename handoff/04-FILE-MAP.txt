@@ -1,3 +1,23 @@
+第 67 阶段 · 按问题找入口
+球员评分、转会和卡画　data/player-balance-bc-transfers-20261119.json、data/player-art-batches/published-profiles-20261120.json、versus/broadcast-card-art.js。
+俱乐部历史　versus/club-history.js、versus/public/club-history.js、versus/public/history-timeline.js。
+队伍资产与换季　versus/s4-assets.js、versus/league-service.js、versus/league-shard-store.js、test/season-reset-regressions.test.js。
+比赛与战术　versus/v4/engine.js、versus/v4/kickoff-traits.js、versus/public/tactical-bonds.js、versus/v4-rollout/scheduled-kernel.json。
+直播解说与回放　versus/v4-host/match-commentary.js、player-report.js、broadcast-summary.js、goal-clips.js；即时房间入口在 versus/v4-adapter/live-match.js。
+本阶段源文件与证据的完整清单见包内 MANIFEST.json。
+
+──────── 历史记录 ────────
+
+当前源码入口 · 2026-11-19（相对仓库根目录）
+versus/public/tactical-bonds.js 和 versus/v4/engine.js：战术羁绊规则与实战应用。
+versus/spirit-possession.js 和 versus/public/spirit-form.js：赛前变身与观战身份。
+versus/match-conditions.js 和 versus/v4/match-incidents.js：天气与随机事件。
+versus/public/goal-event.js、versus/v4-host/goal-clips.js 和 versus/v4-host/broadcast-summary.js：进球判断、短片与直播摘要。
+versus/public/app.js、club-interface.css、broadcast-data.css、tactics-interface.css（后 3 个同目录）：全局界面、直播、数据栏和战术板。
+交接包内 MANIFEST.json 是源码增量、文档与证据的逐文件索引。
+
+──────── 历史记录（保留当时口径）────────
+
 源码与证据索引 · 2026-11-18
 以下路径均相对 D:\YFFM1。
 

@@ -1,3 +1,18 @@
+第 67 阶段 · 发布验证
+在 2026-11-20 使用 scripts/run-tests.mjs 运行 17 个测试文件，共 287 项通过，失败、取消、跳过均为 0。文件列表、耗时与分项计数见 outputs/tests/2026-11-20T08-12-26-374Z/report.json。该记录为专项回归。
+直播补充记录见 outputs/tests/2026-11-20T06-48-04-273Z/report.json 和 outputs/tests/2026-11-20T06-59-39-683Z/report.json。此前对 8 场 176 个首发位置核对了卡画。各次测试有交集。
+交接核验包括 ZIP 完整性、逐文件摘要、从第 65 阶段恢复后核对内核锁和卡画，以及与 Git 源码版本比对。
+
+──────── 历史记录 ────────
+
+当前交接验证 · 2026-11-19
+在仓库根目录运行以下命令：
+node --test test/v4-tactical-bonds.test.js test/spirit-possession.test.js test/engine-v4-weather.test.js test/broadcast-presentation.test.js test/key-plays.test.js test/v4-broadcast.test.js
+本次结果为 80 通过、0 失败、0 跳过。日志在 outputs/handoff-66/related-regression.tap。
+此前游戏内验收及历史失败分类见 66-V4-AND-UI-20261119.txt 和同目录两份 20261119.md 专题。
+
+──────── 历史记录（保留当时口径）────────
+
 第64阶段补充 · 原直播与统计
 35项专项最终通过，另1项HTTP鉴权通过；1440/390 Chrome联调通过。测试报告、分片代理测试修正后单独复验，以及网络权限导致的首次HTTP失败均详见64-V4-CLASSIC-BROADCAST-20261118.txt。此前报告保留，不将失败报告改写为全绿。
 

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-11-18T14:57:53.469109Z",
+  "updatedAt": "2026-11-20T16:15:46+08:00",
   "timezone": "Asia/Shanghai",
   "workspace": "D:\\YFFM1",
   "branch": "codex/yffm1",
-  "baseCommit": "7d70f508a37ec5ae681c03ff2faea5f52a819ee5",
+  "baseCommit": "ef041486b123ff5f98bec527ce24fe574b682d29",
   "startHere": "00-START-HERE.txt",
   "currentDocuments": [
     "00-START-HERE.txt",
@@ -50,10 +50,15 @@
     "40-V4-CANONICAL-CONSUMER-WORKING-20261118.txt",
     "41-V4-SETTLEMENT-ACCEPTANCE-20261118.txt",
     "42-V4-DISPATCH-ACCEPTANCE-20261118.txt",
+    "43-V4-CANONICAL-STORAGE-WORKING-20261118.txt",
     "44-V4-CANONICAL-STORAGE-ACCEPTANCE-20261118.txt",
+    "45-V4-FAIR-PRODUCTION-WORKING-20261118.txt",
     "46-V4-FAIR-PRODUCTION-ACCEPTANCE-20261118.txt",
+    "47-V4-SCHEDULED-LEAGUE-WORKING-20261118.txt",
     "48-V4-SCHEDULED-LEAGUE-ACCEPTANCE-20261118.txt",
+    "49-V4-MIXED-CAPACITY-WORKING-20261118.txt",
     "50-V4-MIXED-CAPACITY-ACCEPTANCE-20261118.txt",
+    "51-V4-CUP-LIFECYCLE-WORKING-20261118.txt",
     "52-V4-CUP-LIFECYCLE-ACCEPTANCE-20261118.txt",
     "53-V4-SEASON-BOUNDARY-WORKING-20261118.txt",
     "54-V4-REPLAY-RETENTION-WORKING-20261118.txt",
@@ -67,10 +72,15 @@
     "62-V4-REVIEW-TO-BOARD-20261118.txt",
     "63-V4-SHAPE-COMPARISON-20261118.txt",
     "64-V4-CLASSIC-BROADCAST-20261118.txt",
-    "65-CLUB-HOME-UI-20261118.txt"
+    "65-CLUB-HOME-UI-20261118.txt",
+    "66-V4-AND-UI-20261119.txt",
+    "67-CLUB-BROADCAST-20261120.txt",
+    "CLUB-HISTORY-FRONTEND-BRIEF.zh-CN.md",
+    "HISTORICAL-LEAGUE-REGRESSIONS-20261119.md",
+    "UI-REDESIGN-REVIEW-20261119.md"
   ],
-  "latestImplementation": "65-CLUB-HOME-UI-20261118.txt",
-  "latestProductionPathImplementation": "64-V4-CLASSIC-BROADCAST-20261118.txt",
+  "latestImplementation": "67-CLUB-BROADCAST-20261120.txt",
+  "latestProductionPathImplementation": "67-CLUB-BROADCAST-20261120.txt",
   "formalSchedule": {
     "command": "npm start",
     "competitions": [
@@ -665,62 +675,21 @@
         "validationSplit": "adapter-independent-B"
       }
     },
-    "cloudVerified": false
+    "cloudVerified": false,
+    "scheduledKernelDigest": "88f7434f52cbb1b17f1660ac772509570f96d2c00d57c601dc61828232848e58"
   },
   "nextChatPrompt": "02-NEXT-CHAT-PROMPT.txt",
-  "scope": "context-and-evidence",
-  "sourceIncluded": false,
+  "scope": "source-delta-and-evidence",
+  "sourceIncluded": true,
   "runtimeDataIncluded": false,
   "deployed": false,
   "productionRestarted": false,
   "liveJsonMigrated": false,
-  "preserveDirtyWorktree": true,
+  "preserveDirtyWorktree": false,
   "evidence": [
-    "outputs/inbox-load-after-20261117/result.json",
-    "outputs/prediction-load-after-20261117/result.json",
-    "outputs/prediction-load-heavy-repeat-20261117/result.json",
-    "outputs/storage-profile-before-20261117/result.json",
-    "outputs/storage-load-stage1-20261117/result.json",
-    "outputs/storage-load-after-20261117/result.json",
-    "outputs/storage-load-heavy-repeat-20261117/result.json",
-    "outputs/inbox-pagination-ui-20261117/result.json",
-    "outputs/inbox-content-ui-20261117/result.json",
-    "outputs/v4-lab-20261117/verification.json",
-    "outputs/v4-lab-20261117/core-verification.json",
-    "outputs/v4-lab-20261117/tests.tap",
-    "outputs/v4-lab-20261117/legacy-regression.tap",
-    "outputs/v4-coordination-20261117/verification.json",
-    "outputs/v4-coordination-20261117/core-verification.json",
-    "outputs/v4-coordination-20261117/scenarios.json",
-    "outputs/v4-coordination-20261117/tests.tap",
-    "outputs/v4-coordination-20261117/legacy-regression.tap",
-    "outputs/v4-coordination-20261117/preservation.json",
-    "outputs/v4-rules-20261117/acceptance.json",
-    "outputs/v4-rules-20261117/verification.json",
-    "outputs/v4-rules-20261117/core-verification.json",
-    "outputs/v4-rules-20261117/scenarios.json",
-    "outputs/v4-rules-20261117/tests.tap",
-    "outputs/v4-rules-20261117/legacy-regression.tap",
-    "outputs/v4-rules-20261117/preservation.json",
-    "outputs/v4-rules-20261117/calibration-train-600.json",
-    "outputs/v4-rules-20261117/calibration-validation-600.json",
-    "outputs/v4-rules-20261117/calibration-train-5400.json",
-    "outputs/v4-rules-20261117/calibration-validation-5400.json",
-    "outputs/v4-periods-20261117/acceptance.json",
-    "outputs/v4-periods-20261117/verification.json",
-    "outputs/v4-periods-20261117/core-verification.json",
-    "outputs/v4-periods-20261117/scenarios.json",
-    "outputs/v4-periods-20261117/tests.tap",
-    "outputs/v4-periods-20261117/legacy-regression.tap",
-    "outputs/v4-periods-20261117/preservation.json",
-    "outputs/v4-periods-20261117/calibration-train-600.json",
-    "outputs/v4-periods-20261117/calibration-validation-600.json",
-    "outputs/v4-periods-20261117/calibration-train-5400.json",
-    "outputs/v4-periods-20261117/calibration-validation-5400.json",
-    "outputs/v4-tactics-20261117/acceptance.json",
-    "outputs/v4-tactics-20261117/single-factor.json",
-    "outputs/v4-tactics-20261117/tactical-preset-audit.json",
-    "outputs/v4-stream-20261117/full-match-size.json"
+    "outputs/tests/2026-11-20T08-12-26-374Z/report.json",
+    "outputs/tests/2026-11-20T06-48-04-273Z/report.json",
+    "outputs/tests/2026-11-20T06-59-39-683Z/report.json"
   ],
   "historicalArchives": [
     {
@@ -734,6 +703,18 @@
       "sha256": "bda3c92a08bee536245aadefa5c70d9841a9608e22ec6c2fc9aec782b12c0889",
       "bytes": 1582979,
       "scope": "historical source delta and evidence; not current source"
+    },
+    {
+      "archive": "YFFM1-handoff-context-20261117-142123.zip",
+      "sha256": "adcd82e7a2e60b05499ae88f6118a39124d299143d6a6bd31a68773aed330a33",
+      "bytes": 103722,
+      "scope": "context-and-evidence"
+    },
+    {
+      "archive": "YFFM1-handoff-20261119-153615.zip",
+      "bytes": 2262746,
+      "sha256": "0558576595e94c7f60d6438f57579508065fd84e8e1b3cbc0344cd6c84fac141",
+      "scope": "source-delta-and-evidence"
     }
   ],
   "constraints": {
@@ -752,20 +733,14 @@
       "onlinePlayers": 10
     }
   },
-  "latestVerificationScope": "Stage 63 V4 tactical-board movement comparison",
+  "latestVerificationScope": "Stage 67 isolated release regression",
   "latestVerification": {
-    "report": "outputs/tests/2026-11-18T07-16-33-002Z/report.json",
-    "relatedTestFiles": 8,
-    "relatedTestsPassed": 58,
-    "browserScript": "outputs/tests/shape-comparison-browser.mjs",
-    "browserWidths": [
-      1440,
-      390
-    ],
-    "rerunDuringHandoff": false,
-    "fullSuiteVerified": false,
-    "knownGuardFailures": 6,
-    "guardLog": "outputs/tests/2026-11-18T05-49-22-788Z/engine-v4-canonical-penalties.test.js.tap"
+    "report": "outputs/tests/2026-11-20T08-12-26-374Z/report.json",
+    "testFiles": 17,
+    "passed": 287,
+    "failed": 0,
+    "skipped": 0,
+    "fullSuite": false
   },
   "storageStage25Verification": {
     "relatedTestsPassed": 87,
@@ -807,32 +782,18 @@
     "Hong Kong cloud validation and actual storage configuration unverified",
     "No production deployment or JSON-to-shards migration performed",
     "Synchronous saves still peak around 0.2 seconds",
-    "R04 four card-art candidates remain unapplied; positioning is manual",
-    "Historical full-suite failures/timeouts not fully reviewed",
-    "V4 formal-host long-term replay retention and non-neutral weather adaptation remain open"
+    "R04 four card-art candidates remain unapplied; positioning is manual"
   ],
-  "archiveNote": "The 14:21 snapshot contains pre-V4 context and selected reports only. Subsequent V4 source, documents and verification are not included. Historical source archives cannot restore current code.",
-  "snapshot": "artifacts/YFFM1-handoff-context-20261117-142123",
-  "archive": "YFFM1-handoff-context-20261117-142123.zip",
-  "sha256": "adcd82e7a2e60b05499ae88f6118a39124d299143d6a6bd31a68773aed330a33",
-  "bytes": 103722,
-  "files": 39,
-  "handoffVerification": {
-    "zipCrc": "pass",
-    "fileHashes": "pass",
-    "jsonAndPaths": "pass",
-    "sourceFilesIndexed": 10,
-    "gameTestsRerun": false,
-    "restoreRehearsal": false
-  },
+  "archiveNote": "Apply to a clean checkout of baseCommit. Verify MANIFEST.json and sibling .sha256. The external LATEST.json additionally records the completed ZIP digest and size.",
+  "archive": "YFFM1-handoff-20261120-161546.zip",
   "v4ContinuousDevelopment": {
     "status": "paused",
     "instruction": "Continuous goal mode paused after the verified full season. Subsequent stages 57–63 were individually requested.",
     "roadmap": "30-V4-CONTINUOUS-ROADMAP-20261117.txt",
-    "workingStage": "Stage 63 complete locally: formal V4 matches, per-plan assessment, postmatch evidence, return to the board and before/after movement overlays.",
+    "workingStage": "Stage 66, V4 gameplay and integrated frontend polish",
     "lastAcceptedVersion": "4.0.0-prototype.8",
     "productionChanged": true,
-    "workingNotes": "63-V4-SHAPE-COMPARISON-20261118.txt",
+    "workingNotes": "66-V4-AND-UI-20261119.txt",
     "cloudScope": "User explicitly requested local verification first; do not connect to cloud host."
   },
   "v4SeasonRetentionAcceptance": {
@@ -910,7 +871,7 @@
     "productionEnabled": false
   },
   "classicBroadcast": {
-    "implementation": "64-V4-CLASSIC-BROADCAST-20261118.txt",
+    "implementation": "67-CLUB-BROADCAST-20261120.txt",
     "statistics": [
       "possession",
       "geometricEstimatedXg",
@@ -921,7 +882,83 @@
       "discipline"
     ],
     "historyLongReviewRemoved": true,
-    "keyEventReplay": "recorded V4 frames",
-    "verification": "outputs/tests/2026-11-18T07-48-36-484Z/report.json"
-  }
+    "keyEventReplay": "Released goal clips in the club history are retained only for the current day.",
+    "verification": "outputs/tests/2026-11-20T08-12-26-374Z/report.json"
+  },
+  "historicalVerificationThrough65": {
+    "evidence": [
+      "outputs/inbox-load-after-20261117/result.json",
+      "outputs/prediction-load-after-20261117/result.json",
+      "outputs/prediction-load-heavy-repeat-20261117/result.json",
+      "outputs/storage-profile-before-20261117/result.json",
+      "outputs/storage-load-stage1-20261117/result.json",
+      "outputs/storage-load-after-20261117/result.json",
+      "outputs/storage-load-heavy-repeat-20261117/result.json",
+      "outputs/inbox-pagination-ui-20261117/result.json",
+      "outputs/inbox-content-ui-20261117/result.json",
+      "outputs/v4-lab-20261117/verification.json",
+      "outputs/v4-lab-20261117/core-verification.json",
+      "outputs/v4-lab-20261117/tests.tap",
+      "outputs/v4-lab-20261117/legacy-regression.tap",
+      "outputs/v4-coordination-20261117/verification.json",
+      "outputs/v4-coordination-20261117/core-verification.json",
+      "outputs/v4-coordination-20261117/scenarios.json",
+      "outputs/v4-coordination-20261117/tests.tap",
+      "outputs/v4-coordination-20261117/legacy-regression.tap",
+      "outputs/v4-coordination-20261117/preservation.json",
+      "outputs/v4-rules-20261117/acceptance.json",
+      "outputs/v4-rules-20261117/verification.json",
+      "outputs/v4-rules-20261117/core-verification.json",
+      "outputs/v4-rules-20261117/scenarios.json",
+      "outputs/v4-rules-20261117/tests.tap",
+      "outputs/v4-rules-20261117/legacy-regression.tap",
+      "outputs/v4-rules-20261117/preservation.json",
+      "outputs/v4-rules-20261117/calibration-train-600.json",
+      "outputs/v4-rules-20261117/calibration-validation-600.json",
+      "outputs/v4-rules-20261117/calibration-train-5400.json",
+      "outputs/v4-rules-20261117/calibration-validation-5400.json",
+      "outputs/v4-periods-20261117/acceptance.json",
+      "outputs/v4-periods-20261117/verification.json",
+      "outputs/v4-periods-20261117/core-verification.json",
+      "outputs/v4-periods-20261117/scenarios.json",
+      "outputs/v4-periods-20261117/tests.tap",
+      "outputs/v4-periods-20261117/legacy-regression.tap",
+      "outputs/v4-periods-20261117/preservation.json",
+      "outputs/v4-periods-20261117/calibration-train-600.json",
+      "outputs/v4-periods-20261117/calibration-validation-600.json",
+      "outputs/v4-periods-20261117/calibration-train-5400.json",
+      "outputs/v4-periods-20261117/calibration-validation-5400.json",
+      "outputs/v4-tactics-20261117/acceptance.json",
+      "outputs/v4-tactics-20261117/single-factor.json",
+      "outputs/v4-tactics-20261117/tactical-preset-audit.json",
+      "outputs/v4-stream-20261117/full-match-size.json"
+    ],
+    "latestVerification": {
+      "report": "outputs/tests/2026-11-18T07-16-33-002Z/report.json",
+      "relatedTestFiles": 8,
+      "relatedTestsPassed": 58,
+      "browserScript": "outputs/tests/shape-comparison-browser.mjs",
+      "browserWidths": [
+        1440,
+        390
+      ],
+      "rerunDuringHandoff": false,
+      "fullSuiteVerified": false,
+      "knownGuardFailures": 6,
+      "guardLog": "outputs/tests/2026-11-18T05-49-22-788Z/engine-v4-canonical-penalties.test.js.tap"
+    },
+    "latestVerificationScope": "Stage 63 V4 tactical-board movement comparison"
+  },
+  "handoffVerification": {
+    "manifest": "MANIFEST.json",
+    "checksum": "YFFM1-handoff-20261120-161546.zip.sha256",
+    "restoreBase": "ef041486b123ff5f98bec527ce24fe574b682d29",
+    "sourceCommit": "752edbd33e2411b3956e82e18df71151231e82b9",
+    "pinnedEngineDigest": "88f7434f52cbb1b17f1660ac772509570f96d2c00d57c601dc61828232848e58"
+  },
+  "sourceCommit": "752edbd33e2411b3956e82e18df71151231e82b9",
+  "releaseTag": "yffm1-stage67-club-broadcast",
+  "sha256": "b20ac8c939addf97554bb3014bbe3a7b4d75cffd80b4cd31cb512dd0edd417da",
+  "bytes": 4566209,
+  "files": 252
 }
